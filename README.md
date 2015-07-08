@@ -16,5 +16,18 @@ it is a WPF UI, console application, or web service.  A standard console applica
 so that you can easily consume Editor Services functionality in any editor using either the included
 standard input/output transport protocol or a transport of your own design.
 
+## Cloning the Code
 
+To clone the repository and initialize all the submodules at once you can run:
+
+```
+git clone --recursive https://github.com/PowerShell/PowerShellEditorServices.git
+```
+
+If you have already cloned the repository without `--recursive` option, you can run following commands to initialize the submodules:
+
+```
+git submodule init
+git submodule update
+```
 
