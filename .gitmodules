@@ -1,0 +1,4 @@
+[submodule "submodules/PSScriptAnalyzer"]
+	path = submodules/PSScriptAnalyzer
+	url = https://github.com/daviwil/PSScriptAnalyzer.git
+	branch = UseScriptAnalyzerAsLibrary
