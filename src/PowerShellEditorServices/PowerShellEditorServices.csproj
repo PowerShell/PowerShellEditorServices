@@ -70,8 +70,17 @@
     <Compile Include="IHost.cs" />
     <Compile Include="Language\AstOperations.cs" />
     <Compile Include="Language\CompletionResults.cs" />
+    <Compile Include="Language\FindCommandVisitor.cs" />
+    <Compile Include="Language\FindDeclartionVisitor.cs" />
+    <Compile Include="Language\FindOccurrencesResult.cs" />
+    <Compile Include="Language\FindReferencesResult.cs" />
+    <Compile Include="Language\FindReferencesVisitor.cs" />
+    <Compile Include="Language\FindSymbolVisitor.cs" />
+    <Compile Include="Language\GetDefinitionResult.cs" />
     <Compile Include="Language\LanguageService.cs" />
+    <Compile Include="Language\ParameterSetSignatures.cs" />
     <Compile Include="Language\ScriptExtent.cs" />
+    <Compile Include="Language\SymbolReference.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Console\ConsoleService.cs" />
     <Compile Include="Session\EditorSession.cs" />

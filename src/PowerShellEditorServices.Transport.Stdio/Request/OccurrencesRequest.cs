@@ -10,8 +10,8 @@ using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
-    [MessageTypeName("completions")]
-    public class CompletionsRequest : FileRequest<CompletionsRequestArgs>
+    [MessageTypeName("occurrences")]
+    public class OccurrencesRequest : FileRequest<FileLocationRequestArgs>
     {
         public override void ProcessMessage(
             EditorSession editorSession,
@@ -19,20 +19,18 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
         {
             ScriptFile scriptFile = this.GetScriptFile(editorSession);
 
-            CompletionResults completions =
-                editorSession.LanguageService.GetCompletionsInFile(
+            FindOccurrencesResult occurrencesResult =
+                editorSession.LanguageService.FindOccurrencesInFile(
                     scriptFile,
                     this.Arguments.Line,
                     this.Arguments.Offset);
 
+            OccurrencesResponse occurrencesResponce = 
+                OccurrencesResponse.Create(occurrencesResult, this.Arguments.File);
+
             messageWriter.WriteMessage(
                 this.PrepareResponse(
-                    CompletionsResponse.Create(
-                        completions)));
+                    occurrencesResponce));
         }
-    }
-    public class CompletionsRequestArgs : FileLocationRequestArgs
-    {
-        public string Prefix { get; set; }
     }
 }

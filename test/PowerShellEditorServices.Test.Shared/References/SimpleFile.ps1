@@ -9,6 +9,4 @@ $things
 
 My-Function $things
 
-Write-Output "Hi";
-
-Write-Output ""
+Write-Output "Hello World";
