@@ -31,6 +31,18 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Constructors
 
+        /// <summary>
+        /// Creates an instance of the SynchronizingConsoleHostWrapper
+        /// class that wraps the given IConsoleHost implementation and
+        /// invokes its calls through the given SynchronizationContext.
+        /// </summary>
+        /// <param name="wrappedConsoleHost">
+        /// The IConsoleHost implementation that will be wrapped.
+        /// </param>
+        /// <param name="syncContext">
+        /// The SynchronizationContext which will be used for invoking
+        /// host operations calls on the proper thread.
+        /// </param>
         public SynchronizingConsoleHostWrapper(
             IConsoleHost wrappedConsoleHost,
             SynchronizationContext syncContext)

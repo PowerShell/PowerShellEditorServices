@@ -123,6 +123,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         #region IDisposable Implementation
 
+        /// <summary>
+        /// Disposes of any Runspaces that were created for the
+        /// services used in this session.
+        /// </summary>
         public void Dispose()
         {
             // Dispose all necessary services

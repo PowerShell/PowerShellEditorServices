@@ -13,10 +13,27 @@ namespace Microsoft.PowerShell.EditorServices.Language
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
 
+    /// <summary>
+    /// Provides a high-level service for performing code completion and
+    /// navigation operations on PowerShell scripts.
+    /// </summary>
     public class LanguageService
     {
+        #region Private Fields
+
         private Runspace runspace;
 
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Constructs an instance of the LanguageService class and uses
+        /// the given Runspace to execute language service operations.
+        /// </summary>
+        /// <param name="languageServiceRunspace">
+        /// The Runspace in which language service operations will be executed.
+        /// </param>
         public LanguageService(Runspace languageServiceRunspace)
         {
             Validate.IsNotNull("languageServiceRunspace", languageServiceRunspace);
@@ -24,6 +41,26 @@ namespace Microsoft.PowerShell.EditorServices.Language
             this.runspace = languageServiceRunspace;
         }
 
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Gets completions for a statement contained in the given
+        /// script file at the specified line and column position.
+        /// </summary>
+        /// <param name="scriptFile">
+        /// The script file in which completions will be gathered.
+        /// </param>
+        /// <param name="lineNumber">
+        /// The 1-based line number at which completions will be gathered.
+        /// </param>
+        /// <param name="columnNumber">
+        /// The 1-based column number at which completions will be gathered.
+        /// </param>
+        /// <returns>
+        /// A CommandCompletion instance completions for the identified statement.
+        /// </returns>
         public CommandCompletion GetCompletionsInFile(
             ScriptFile scriptFile,
             int lineNumber,
@@ -47,5 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
 
             return completionSuggestions;
         }
+
+        #endregion
     }
 }

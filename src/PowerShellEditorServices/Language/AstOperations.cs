@@ -16,6 +16,26 @@ namespace Microsoft.PowerShell.EditorServices.Language
     /// </summary>
     public static class AstOperations
     {
+        /// <summary>
+        /// Gets completions for the symbol found in the Ast at 
+        /// the given file offset.
+        /// </summary>
+        /// <param name="scriptAst">
+        /// The Ast which will be traversed to find a completable symbol.
+        /// </param>
+        /// <param name="currentTokens">
+        /// The array of tokens corresponding to the scriptAst parameter.
+        /// </param>
+        /// <param name="fileOffset">
+        /// The 1-based file offset at which a symbol will be located.
+        /// </param>
+        /// <param name="runspace">
+        /// The Runspace to use for gathering completions.
+        /// </param>
+        /// <returns>
+        /// A CommandCompletion instance that contains completions for the
+        /// symbol at the given offset.
+        /// </returns>
         static public CommandCompletion GetCompletions(
             Ast scriptAst, 
             Token[] currentTokens, 

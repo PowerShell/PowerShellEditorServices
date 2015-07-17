@@ -30,6 +30,19 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Constructors
 
+        /// <summary>
+        /// Creates an instance of the ConsoleService class using the
+        /// given IConsoleHost implementation to invoke host operations
+        /// on behalf of the ConsolePSHost.  An InitialSessionState may
+        /// be provided to create the console runspace using a particular
+        /// configuraiton.
+        /// </summary>
+        /// <param name="consoleHost">
+        /// An IConsoleHost implementation which handles host operations.
+        /// </param>
+        /// <param name="initialSessionState">
+        /// An optional InitialSessionState to use in creating the console runspace.
+        /// </param>
         public ConsoleService(
             IConsoleHost consoleHost, 
             InitialSessionState initialSessionState = null)
@@ -56,6 +69,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Public Methods
 
+        /// <summary>
+        /// Executes a command in the console runspace.
+        /// </summary>
+        /// <param name="commandString">The command string to execute.</param>
+        /// <returns>A Task that can be awaited for the command completion.</returns>
         public async Task ExecuteCommand(string commandString)
         {
             PowerShell powerShell = PowerShell.Create();
@@ -101,6 +119,15 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
         }
 
+        /// <summary>
+        /// Sends a user's prompt choice response back to the specified prompt ID.
+        /// </summary>
+        /// <param name="promptId">
+        /// The ID of the prompt to which the user is responding.
+        /// </param>
+        /// <param name="choiceResult">
+        /// The index of the choice that the user selected.
+        /// </param>
         public void ReceiveChoicePromptResult(
             int promptId, 
             int choiceResult)
@@ -109,6 +136,10 @@ namespace Microsoft.PowerShell.EditorServices.Console
             this.consoleHost.PromptForChoiceResult(promptId, choiceResult);
         }
 
+        /// <summary>
+        /// Sends a CTRL+C signal to the console to halt execution of
+        /// the current command.
+        /// </summary>
         public void SendControlC()
         {
             // TODO: Cancel the current pipeline execution
@@ -118,6 +149,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region IDisposable Implementation
 
+        /// <summary>
+        /// Disposes the runspace in use by the ConsoleService.
+        /// </summary>
         public void Dispose()
         {
             if (this.currentRunspace != null)

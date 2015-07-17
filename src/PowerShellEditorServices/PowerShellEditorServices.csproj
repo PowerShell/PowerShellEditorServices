@@ -31,6 +31,8 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <WarningsAsErrors>1591,1573,1572</WarningsAsErrors>
+    <DocumentationFile>bin\Release\Microsoft.PowerShell.EditorServices.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Nito.AsyncEx, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">

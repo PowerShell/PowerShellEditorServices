@@ -47,13 +47,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Prompts the user to make a choice using the provided details.
         /// </summary>
-        /// <param name="caption">
+        /// <param name="promptCaption">
         /// The caption string which will be displayed to the user.
         /// </param>
-        /// <param name="message">
+        /// <param name="promptMessage">
         /// The descriptive message which will be displayed to the user.
         /// </param>
-        /// <param name="choices">
+        /// <param name="choiceDescriptions">
         /// The list of choices from which the user will select.
         /// </param>
         /// <param name="defaultChoice">
@@ -61,14 +61,25 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </param>
         /// <returns>
         /// A Task instance that can be monitored for completion to get
-        /// the user's choice.</returns>
+        /// the user's choice.
+        /// </returns>
         Task<int> PromptForChoice(
             string promptCaption,
             string promptMessage,
             IEnumerable<ChoiceDescription> choiceDescriptions,
             int defaultChoice);
 
-        // TODO: Get rid of this!
+        // TODO: Get rid of this method!  Leaky abstraction.
+
+        /// <summary>
+        /// Sends a user's prompt choice response back to the specified prompt ID.
+        /// </summary>
+        /// <param name="promptId">
+        /// The ID of the prompt to which the user is responding.
+        /// </param>
+        /// <param name="choiceResult">
+        /// The index of the choice that the user selected.
+        /// </param>
         void PromptForChoiceResult(
             int promptId,
             int choiceResult);

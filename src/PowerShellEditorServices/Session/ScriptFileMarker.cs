@@ -14,12 +14,24 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Session
 {
+    /// <summary>
+    /// Defines the message level of a script file marker.
+    /// </summary>
     public enum ScriptFileMarkerLevel
     {
+        /// <summary>
+        /// The marker represents an informational message.
+        /// </summary>
         Information = 0,
 
+        /// <summary>
+        /// The marker represents a warning message.
+        /// </summary>
         Warning,
 
+        /// <summary>
+        /// The marker represents an error message.
+        /// </summary>
         Error
     };
 
@@ -32,10 +44,19 @@ namespace Microsoft.PowerShell.EditorServices.Session
     {
         #region Properties
 
+        /// <summary>
+        /// Gets or sets the marker's message string.
+        /// </summary>
         public string Message { get; set; }
 
+        /// <summary>
+        /// Gets or sets the marker's message level.
+        /// </summary>
         public ScriptFileMarkerLevel Level { get; set; }
 
+        /// <summary>
+        /// Gets or sets the IScriptExtent where the marker should appear.
+        /// </summary>
         public IScriptExtent Extent { get; set; }
 
         #endregion
