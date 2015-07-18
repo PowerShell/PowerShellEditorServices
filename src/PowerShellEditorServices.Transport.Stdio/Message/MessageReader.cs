@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -15,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
 
         private TextReader textReader;
         private bool expectsContentLength;
-        private MessageParser messageParser = new MessageParser();
+        private MessageParser messageParser;
         private char[] buffer = new char[8192];
 
         #endregion
@@ -23,10 +24,15 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
         #region Constructors
 
         public MessageReader(
-            TextReader textReader, 
-            MessageFormat messageFormat)
+            TextReader textReader,
+            MessageFormat messageFormat,
+            MessageTypeResolver messageTypeResolver)
         {
+            Validate.IsNotNull("textReader", textReader);
+            Validate.IsNotNull("messageTypeResolver", messageTypeResolver);
+
             this.textReader = textReader;
+            this.messageParser = new MessageParser(messageTypeResolver);
             this.expectsContentLength =
                 messageFormat == MessageFormat.WithContentLength;
         }
@@ -50,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
                             Constants.ContentLengthString.Length);
 
                     // Attempt to parse the Content-Length integer
-                    if(!int.TryParse(contentLengthIntString, out contentLength))
+                    if (!int.TryParse(contentLengthIntString, out contentLength))
                     {
                         throw new MessageParseException(
                             messageLine,

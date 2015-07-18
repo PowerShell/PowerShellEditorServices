@@ -18,6 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
         internal override string PayloadType
         {
             get { return this.Command; }
+            set { this.Command = value; }
         }
 
         public abstract void ProcessMessage(
@@ -26,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 
         public RequestBase()
         {
-            this.Type = "request";
+            this.Type = MessageType.Request;
         }
 
         protected ResponseBase<TResponseBody> PrepareResponse<TResponseBody>(

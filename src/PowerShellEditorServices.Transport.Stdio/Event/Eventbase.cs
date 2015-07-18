@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Event
 {
-    public abstract class EventBase<TBody> : MessageBase, IEvent
+    public abstract class EventBase<TBody> : MessageBase
     {
         [JsonProperty("event")]
         public string EventType { get; set; }
@@ -18,11 +18,12 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Event
         internal override string PayloadType
         {
             get { return this.EventType; }
+            set { this.EventType = value; }
         }
 
         public EventBase()
         {
-            this.Type = "event";
+            this.Type = MessageType.Event;
         }
     }
 }

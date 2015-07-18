@@ -1,16 +1,18 @@
-﻿using System.Collections.Generic;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+using System.Collections.Generic;
 using System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
 {
+    [MessageTypeName("completions")]
     public class CompletionsResponse : ResponseBase<CompletionEntry[]>
     {
-        public CompletionsResponse()
-        {
-            this.Command = "completions";
-        }
-
-        public CompletionsResponse(CommandCompletion commandCompletion) : this()
+        public static CompletionsResponse Create(CommandCompletion commandCompletion)
         {
             List<CompletionEntry> completionResult = new List<CompletionEntry>();
 
@@ -20,14 +22,17 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
                     new CompletionEntry
                     {
                         Name = completion.CompletionText,
-                        Kind = this.GetCompletionKind(completion.ResultType),
+                        Kind = GetCompletionKind(completion.ResultType),
                     });
             }
 
-            this.Body = completionResult.ToArray();
+            return new CompletionsResponse
+            {
+                Body = completionResult.ToArray()
+            };
         }
 
-        private string GetCompletionKind(CompletionResultType resultType)
+        private static string GetCompletionKind(CompletionResultType resultType)
         {
             switch (resultType)
             {

@@ -8,14 +8,9 @@ using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
-    [MessageType("change")]
+    [MessageTypeName("change")]
     public class ChangeFileRequest : FileRequest<ChangeFileRequestArguments>
     {
-        public ChangeFileRequest()
-        {
-            this.Command = "change";
-        }
-
         public override void ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter)

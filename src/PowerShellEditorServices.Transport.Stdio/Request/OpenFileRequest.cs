@@ -8,17 +8,18 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
+    [MessageTypeName("open")]
     public class OpenFileRequest : RequestBase<FileRequestArguments>
     {
-        public OpenFileRequest()
+        public static OpenFileRequest Create(string filePath)
         {
-            this.Command = "open";
-            this.Arguments = new FileRequestArguments();
-        }
-
-        public OpenFileRequest(string filePath) : this()
-        {
-            this.Arguments.File = filePath;
+            return new OpenFileRequest
+            {
+                Arguments = new FileRequestArguments
+                {
+                    File = filePath
+                }
+            };
         }
 
         public override void ProcessMessage(

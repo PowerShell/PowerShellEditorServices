@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
     /// field for Events.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-    internal class MessageTypeAttribute : Attribute
+    public sealed class MessageTypeNameAttribute : Attribute
     {
         /// <summary>
         /// Gets the message type's name.
@@ -23,11 +23,11 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
         public string MessageTypeName { get; private set; }
 
         /// <summary>
-        /// Creates an instance of the MessageTypeAttribute class with
+        /// Creates an instance of the MessageTypeNameAttribute class with
         /// the given messageTypeName.
         /// </summary>
         /// <param name="messageTypeName">The type name for this message class.</param>
-        public MessageTypeAttribute(string messageTypeName)
+        public MessageTypeNameAttribute(string messageTypeName)
         {
             Validate.IsNotNullOrEmptyString("messageTypeName", messageTypeName);
 

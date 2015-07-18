@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
@@ -101,6 +102,29 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         }
 
         /// <summary>
+        /// Throws ArgumentException if the value is equal to the undesired value. 
+        /// </summary>
+        /// <typeparam name="TValue">The type of value to be validated.</typeparam>
+        /// <param name="parameterName">The name of the parameter being validated.</param>
+        /// <param name="undesiredValue">The value that valueToCheck should not equal.</param>
+        /// <param name="valueToCheck">The value of the parameter being validated.</param>
+        public static void IsNotEqual<TValue>(
+            string parameterName,
+            TValue valueToCheck,
+            TValue undesiredValue)
+        {
+            if (EqualityComparer<TValue>.Default.Equals(valueToCheck, undesiredValue))
+            {
+                throw new ArgumentException(
+                    string.Format(
+                        "The given value '{0}' should not equal '{1}'",
+                        valueToCheck,
+                        undesiredValue),
+                    parameterName);
+            }
+        }
+
+        /// <summary>
         /// Throws ArgumentException if the value is null, an empty string,
         /// or a string containing only whitespace.
         /// </summary>
@@ -111,8 +135,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             if (string.IsNullOrWhiteSpace(valueToCheck))
             {
                 throw new ArgumentException(
-                    parameterName,
-                    "Parameter contains a null, empty, or whitespace string.");
+                    "Parameter contains a null, empty, or whitespace string.",
+                    parameterName);
             }
         }
     }

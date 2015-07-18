@@ -10,17 +10,18 @@ using System.Collections.Generic;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
+    [MessageTypeName("geterr")]
     public class ErrorRequest : RequestBase<ErrorRequestArguments>
     {
-        public ErrorRequest()
+        public static ErrorRequest Create(params string[] filePaths)
         {
-            this.Command = "geterr";
-            this.Arguments = new ErrorRequestArguments();
-        }
-
-        public ErrorRequest(params string[] filePaths) : this()
-        {
-            this.Arguments.Files = filePaths;
+            return new ErrorRequest
+            {
+                Arguments = new ErrorRequestArguments
+                {
+                    Files = filePaths
+                }
+            };
         }
 
         public override void ProcessMessage(
@@ -48,76 +49,15 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                 // Always send syntax and semantic errors.  We want to 
                 // make sure no out-of-date markers are being displayed.
                 messageWriter.WriteMessage(
-                    new DiagnosticEvent("syntaxDiag")
-                    {
-                        Body = new DiagnosticEventBody
-                        {
-                            File = filePath,
-                            Diagnostics = this.GetSyntaxDiagnostics(scriptFile),
-                        }
-                    });
+                    SyntaxDiagnosticEvent.Create(
+                        scriptFile.FilePath,
+                        scriptFile.SyntaxMarkers));
+
                 messageWriter.WriteMessage(
-                    new DiagnosticEvent("semanticDiag")
-                    {
-                        Body = new DiagnosticEventBody
-                        {
-                            File = filePath,
-                            Diagnostics = this.GetSemanticDiagnostics(semanticMarkers)
-                        }
-                    });
+                    SemanticDiagnosticEvent.Create(
+                        scriptFile.FilePath,
+                        semanticMarkers));
             }
-        }
-
-        private Diagnostic[] GetSyntaxDiagnostics(ScriptFile file)
-        {
-            List<Diagnostic> errorList = new List<Diagnostic>();
-
-            foreach (ScriptFileMarker syntaxMarker in file.SyntaxMarkers)
-            {
-                errorList.Add(
-                    new Diagnostic
-                    {
-                        Text = syntaxMarker.Message,
-                        Start = new Location
-                        {
-                            Line = syntaxMarker.Extent.StartLineNumber,
-                            Offset = syntaxMarker.Extent.StartColumnNumber
-                        },
-                        End = new Location
-                        {
-                            Line = syntaxMarker.Extent.EndLineNumber,
-                            Offset = syntaxMarker.Extent.EndColumnNumber
-                        }
-                    });
-            }
-
-            return errorList.ToArray();
-        }
-
-        private Diagnostic[] GetSemanticDiagnostics(IEnumerable<ScriptFileMarker> semanticMarkers)
-        {
-            List<Diagnostic> diagnosticList = new List<Diagnostic>();
-
-            foreach (ScriptFileMarker semanticMarker in semanticMarkers)
-            {
-                diagnosticList.Add(
-                    new Diagnostic
-                    {
-                        Text = semanticMarker.Message,
-                        Start = new Location
-                        {
-                            Line = semanticMarker.Extent.StartLineNumber,
-                            Offset = semanticMarker.Extent.StartColumnNumber
-                        },
-                        End = new Location
-                        {
-                            Line = semanticMarker.Extent.EndLineNumber,
-                            Offset = semanticMarker.Extent.EndColumnNumber
-                        }
-                    });
-            }
-
-            return diagnosticList.ToArray();
         }
     }
 

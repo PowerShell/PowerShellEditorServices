@@ -8,13 +8,9 @@ using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
+    [MessageTypeName("replExecute")]
     public class ReplExecuteRequest : RequestBase<ReplExecuteArgs>
     {
-        public ReplExecuteRequest()
-        {
-            this.Command = "replExecute";
-        }
-
         public override void ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)

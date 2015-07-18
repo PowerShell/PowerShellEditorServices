@@ -11,6 +11,7 @@ using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
 using Nito.AsyncEx;
 using System;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -133,16 +134,22 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio
             System.Console.InputEncoding = Encoding.UTF8;
             System.Console.OutputEncoding = Encoding.UTF8;
 
+            // Find all message types in this assembly
+            MessageTypeResolver messageTypeResolver = new MessageTypeResolver();
+            messageTypeResolver.ScanForMessageTypes(Assembly.GetExecutingAssembly());
+
             // Set up the reader and writer
             MessageReader messageReader = 
                 new MessageReader(
                     System.Console.In, 
-                    MessageFormat.WithoutContentLength);
+                    MessageFormat.WithoutContentLength,
+                    messageTypeResolver);
 
             MessageWriter messageWriter = 
                 new MessageWriter(
                     System.Console.Out, 
-                    MessageFormat.WithContentLength);
+                    MessageFormat.WithContentLength,
+                    messageTypeResolver);
 
             // Set up the console host which will send events
             // through the MessageWriter

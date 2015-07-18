@@ -3,21 +3,43 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+using System.Collections.Generic;
+
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Event
 {
-    public class DiagnosticEvent : EventBase<DiagnosticEventBody>
+    [MessageTypeName("syntaxDiag")]
+    public class SyntaxDiagnosticEvent : EventBase<DiagnosticEventBody>
     {
-        public DiagnosticEvent()
+        public static SyntaxDiagnosticEvent Create(
+            string filePath,
+            ScriptFileMarker[] syntaxMarkers)
         {
-            // Initialize to an identifiable uninitialized value.
-            // Could either be "syntaxDiag" or "semanticDiag"
-            // This should be replaced by the deserialization process.
-            this.EventType = "NOT_SUPPLIED";
+            return new SyntaxDiagnosticEvent
+            {
+                Body =
+                    DiagnosticEventBody.Create(
+                        filePath,
+                        syntaxMarkers)
+            };
         }
+    }
 
-        public DiagnosticEvent(string eventType)
+    [MessageTypeName("semanticDiag")]
+    public class SemanticDiagnosticEvent : EventBase<DiagnosticEventBody>
+    {
+        public static SemanticDiagnosticEvent Create(
+            string filePath,
+            ScriptFileMarker[] semanticMarkers)
         {
-            this.EventType = eventType;
+            return new SemanticDiagnosticEvent
+            {
+                Body =
+                    DiagnosticEventBody.Create(
+                        filePath,
+                        semanticMarkers)
+            };
         }
     }
 
@@ -26,6 +48,39 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Event
         public string File { get; set; }
 
         public Diagnostic[] Diagnostics { get; set; }
+
+        public static DiagnosticEventBody Create(
+            string filePath,
+            ScriptFileMarker[] diagnosticMarkers)
+        {
+            List<Diagnostic> diagnosticList = new List<Diagnostic>();
+
+            foreach (ScriptFileMarker diagnosticMarker in diagnosticMarkers)
+            {
+                diagnosticList.Add(
+                    new Diagnostic
+                    {
+                        Text = diagnosticMarker.Message,
+                        Start = new Location
+                        {
+                            Line = diagnosticMarker.Extent.StartLineNumber,
+                            Offset = diagnosticMarker.Extent.StartColumnNumber
+                        },
+                        End = new Location
+                        {
+                            Line = diagnosticMarker.Extent.EndLineNumber,
+                            Offset = diagnosticMarker.Extent.EndColumnNumber
+                        }
+                    });
+            }
+
+            return
+                new DiagnosticEventBody
+                {
+                    File = filePath,
+                    Diagnostics = diagnosticList.ToArray()
+                };
+        }
     }
 
     public class Location

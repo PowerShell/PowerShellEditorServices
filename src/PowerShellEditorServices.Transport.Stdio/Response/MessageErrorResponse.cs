@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
 {
+    [MessageTypeName("messageHandlingError")]
     public class MessageErrorResponse : ResponseBase<MessageErrorResponseDetails>
     {
         private MessageErrorResponse()
@@ -41,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
                         string.Format(
                             "A message was not able to be parsed by the service: {0}",
                             parseException.OriginalMessageText),
-                    MessageType = "unknown",
+                    MessageType = MessageType.Unknown,
                     PayloadType = "unknown"
                 }
             };
@@ -52,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
     {
         public string ErrorMessage { get; set; }
 
-        public string MessageType { get; set; }
+        public MessageType MessageType { get; set; }
 
         public string PayloadType { get; set; }
     }

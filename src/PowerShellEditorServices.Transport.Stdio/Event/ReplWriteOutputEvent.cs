@@ -4,16 +4,14 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Console;
+using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using System;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Event
 {
+    [MessageTypeName("replWriteOutput")]
     public class ReplWriteOutputEvent : EventBase<ReplWriteOutputEventBody>
     {
-        public ReplWriteOutputEvent()
-        {
-            this.EventType = "replWriteOutput";
-        }
     }
 
     public class ReplWriteOutputEventBody

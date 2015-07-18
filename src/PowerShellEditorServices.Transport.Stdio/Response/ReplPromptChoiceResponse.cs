@@ -8,13 +8,9 @@ using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
 {
+    [MessageTypeName("replPromptChoice")]
     public class ReplPromptChoiceResponse : ResponseBase<ReplPromptChoiceResponseBody>, IMessageProcessor
     {
-        public ReplPromptChoiceResponse()
-        {
-            this.Command = "replPromptChoice";
-        }
-
         public void ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)

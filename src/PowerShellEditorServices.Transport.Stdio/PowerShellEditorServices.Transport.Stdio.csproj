@@ -63,18 +63,19 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Event\DiagnosticEvent.cs" />
     <Compile Include="Event\EventBase.cs" />
-    <Compile Include="Event\IEvent.cs" />
+    <Compile Include="Event\ReplPromptChoiceEvent.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Event\ReplWriteOutputEvent.cs" />
-    <Compile Include="Event\ReplPromptChoiceEvent.cs" />
     <Compile Include="Event\StartedEvent.cs" />
-    <Compile Include="Message\IMessage.cs" />
     <Compile Include="Message\IMessageProcessor.cs" />
     <Compile Include="Message\MessageBase.cs" />
     <Compile Include="Message\MessageFormat.cs" />
     <Compile Include="Message\MessageParseException.cs" />
     <Compile Include="Message\MessageParser.cs" />
     <Compile Include="Message\MessageReader.cs" />
-    <Compile Include="Message\MessageTypeAttribute.cs" />
+    <Compile Include="Message\MessageType.cs" />
+    <Compile Include="Message\MessageTypeNameAttribute.cs" />
     <Compile Include="Message\MessageTypeResolver.cs" />
     <Compile Include="Message\MessageWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

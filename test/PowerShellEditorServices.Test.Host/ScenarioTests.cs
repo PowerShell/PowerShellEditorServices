@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Request;
@@ -46,8 +45,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             this.SendErrorRequest("TestFiles\\SimpleSyntaxError.ps1");
 
             // Wait for the events
-            DiagnosticEvent syntaxEvent = this.WaitForMessage<DiagnosticEvent>();
-            DiagnosticEvent semanticEvent = this.WaitForMessage<DiagnosticEvent>();
+            SyntaxDiagnosticEvent syntaxEvent = this.WaitForMessage<SyntaxDiagnosticEvent>();
+            SemanticDiagnosticEvent semanticEvent = this.WaitForMessage<SemanticDiagnosticEvent>();
 
             // Check for the expected event types
             Assert.Equal("syntaxDiag", syntaxEvent.EventType);
@@ -142,13 +141,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         private void SendOpenFileRequest(string fileName)
         {
             this.MessageWriter.WriteMessage(
-                new OpenFileRequest(fileName));
+                OpenFileRequest.Create(fileName));
         }
 
         private void SendErrorRequest(params string[] fileNames)
         {
             this.MessageWriter.WriteMessage(
-                new ErrorRequest(fileNames));
+                ErrorRequest.Create(fileNames));
         }
 
         private TMessage WaitForMessage<TMessage>() where TMessage : MessageBase

@@ -59,16 +59,22 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 AttachToProcessIfDebugging(this.languageServiceProcess.Id);
             }
 
+            // Load up all of the message types from the transport assembly
+            MessageTypeResolver messageTypeResolver = new MessageTypeResolver();
+            messageTypeResolver.ScanForMessageTypes(typeof(StartedEvent).Assembly);
+
             // Set up the message reader and writer
             this.MessageReader = 
                 new MessageReader(
                     this.languageServiceProcess.StandardOutput,
-                    MessageFormat.WithContentLength);
+                    MessageFormat.WithContentLength,
+                    messageTypeResolver);
 
             this.MessageWriter = 
                 new MessageWriter(
                     this.languageServiceProcess.StandardInput,
-                    MessageFormat.WithoutContentLength);
+                    MessageFormat.WithoutContentLength,
+                    messageTypeResolver);
 
             // Wait for the 'started' event
             MessageBase startedMessage = this.MessageReader.ReadMessage().Result;

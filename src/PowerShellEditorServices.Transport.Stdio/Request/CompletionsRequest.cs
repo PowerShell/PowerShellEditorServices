@@ -10,13 +10,9 @@ using System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
+    [MessageTypeName("completions")]
     public class CompletionsRequest : FileRequest<CompletionsRequestArgs>
     {
-        public CompletionsRequest()
-        {
-            this.Command = "completions";
-        }
-
         public override void ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter)
@@ -31,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 
             messageWriter.WriteMessage(
                 this.PrepareResponse(
-                    new CompletionsResponse(
+                    CompletionsResponse.Create(
                         completions)));
         }
     }

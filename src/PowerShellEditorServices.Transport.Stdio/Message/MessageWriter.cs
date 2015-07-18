@@ -3,11 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
-
+using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json;
 using System.IO;
 using System.Text;
@@ -20,14 +16,22 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
 
         private TextWriter textWriter;
         private bool includeContentLength;
+        private MessageTypeResolver messageTypeResolver;
 
         #endregion
 
         #region Constructors
 
-        public MessageWriter(TextWriter textWriter, MessageFormat messageFormat)
+        public MessageWriter(
+            TextWriter textWriter,
+            MessageFormat messageFormat,
+            MessageTypeResolver messageTypeResolver)
         {
+            Validate.IsNotNull("textWriter", textWriter);
+            Validate.IsNotNull("messageTypeResolver", messageTypeResolver);
+
             this.textWriter = textWriter;
+            this.messageTypeResolver = messageTypeResolver;
             this.includeContentLength =
                 messageFormat == MessageFormat.WithContentLength;
         }
@@ -38,12 +42,25 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
 
         // TODO: Change back to async?
 
-        public void WriteMessage(MessageBase message)
+        public void WriteMessage(MessageBase messageToWrite)
         {
+            Validate.IsNotNull("messageToWrite", messageToWrite);
+
+            string messageTypeName = null;
+            if (!this.messageTypeResolver.TryGetMessageTypeNameByType(
+                    messageToWrite.GetType(),
+                    out messageTypeName))
+            {
+                // TODO: Trace or throw exception?
+            }
+
+            // Insert the message's type name before serializing
+            messageToWrite.PayloadType = messageTypeName;
+
             // Serialize the message
             string serializedMessage = 
                 JsonConvert.SerializeObject(
-                    message, 
+                    messageToWrite,
                     Constants.JsonSerializerSettings);
 
             // Construct the payload string

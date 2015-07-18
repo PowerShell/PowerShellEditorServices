@@ -4,6 +4,7 @@
 //
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
@@ -13,13 +14,25 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio
 {
-    public class Constants
+    public static class Constants
     {
         public const string ContentLengthString = "Content-Length: ";
+        public static readonly JsonSerializerSettings JsonSerializerSettings;
 
-        public static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings
+        static Constants()
         {
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
-        };
+            JsonSerializerSettings = new JsonSerializerSettings();
+
+            // Camel case all object properties
+            JsonSerializerSettings.ContractResolver =
+                new CamelCasePropertyNamesContractResolver();
+
+            // Convert enum values to their string representation with camel casing
+            JsonSerializerSettings.Converters.Add(
+                new StringEnumConverter
+                {
+                    CamelCaseText = true
+                });
+        }
     }
 }

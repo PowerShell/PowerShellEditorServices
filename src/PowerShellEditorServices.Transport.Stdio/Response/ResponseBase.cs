@@ -26,11 +26,12 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
         internal override string PayloadType
         {
             get { return this.Command; }
+            set { this.Command = value; }
         }
 
         public ResponseBase()
         {
-            this.Type = "response";
+            this.Type = MessageType.Response;
         }
     }
 
