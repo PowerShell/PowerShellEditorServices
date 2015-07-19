@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <param name="promptMessage">
         /// The descriptive message which will be displayed to the user.
         /// </param>
-        /// <param name="choiceDescriptions">
+        /// <param name="choices">
         /// The list of choices from which the user will select.
         /// </param>
         /// <param name="defaultChoice">
@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         Task<int> PromptForChoice(
             string promptCaption,
             string promptMessage,
-            IEnumerable<ChoiceDescription> choiceDescriptions,
+            IEnumerable<ChoiceDetails> choices,
             int defaultChoice);
 
         // TODO: Get rid of this method!  Leaky abstraction.
@@ -88,10 +88,10 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// Sends a progress update event to the user.
         /// </summary>
         /// <param name="sourceId">The source ID of the progress event.</param>
-        /// <param name="progressRecord">The </param>
+        /// <param name="progressDetails">The details of the activity's current progress.</param>
         void UpdateProgress(
             long sourceId, 
-            ProgressRecord progressRecord);
+            ProgressDetails progressDetails);
 
         /// <summary>
         /// Notifies the IConsoleHost implementation that the PowerShell

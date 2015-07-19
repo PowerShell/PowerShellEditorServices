@@ -63,13 +63,13 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Event
                         Text = diagnosticMarker.Message,
                         Start = new Location
                         {
-                            Line = diagnosticMarker.Extent.StartLineNumber,
-                            Offset = diagnosticMarker.Extent.StartColumnNumber
+                            Line = diagnosticMarker.ScriptRegion.StartLineNumber,
+                            Offset = diagnosticMarker.ScriptRegion.StartColumnNumber
                         },
                         End = new Location
                         {
-                            Line = diagnosticMarker.Extent.EndLineNumber,
-                            Offset = diagnosticMarker.Extent.EndColumnNumber
+                            Line = diagnosticMarker.ScriptRegion.EndLineNumber,
+                            Offset = diagnosticMarker.ScriptRegion.EndColumnNumber
                         }
                     });
             }

@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// <returns>
         /// A CommandCompletion instance completions for the identified statement.
         /// </returns>
-        public CommandCompletion GetCompletionsInFile(
+        public CompletionResults GetCompletionsInFile(
             ScriptFile scriptFile,
             int lineNumber,
             int columnNumber)
@@ -75,14 +75,12 @@ namespace Microsoft.PowerShell.EditorServices.Language
                     lineNumber,
                     columnNumber);
 
-            CommandCompletion completionSuggestions = 
+            return
                 AstOperations.GetCompletions(
                     scriptFile.ScriptAst,
                     scriptFile.ScriptTokens,
                     fileOffset,
                     this.runspace);
-
-            return completionSuggestions;
         }
 
         #endregion

@@ -10,7 +10,6 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Management.Automation.Host;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -63,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio
         Task<int> IConsoleHost.PromptForChoice(
             string caption, 
             string message, 
-            IEnumerable<ChoiceDescription> choices, 
+            IEnumerable<ChoiceDetails> choices,
             int defaultChoice)
         {
             // Create and store a TaskCompletionSource that will be
@@ -103,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio
 
         void IConsoleHost.UpdateProgress(
             long sourceId, 
-            System.Management.Automation.ProgressRecord progressRecord)
+            ProgressDetails progressDetails)
         {
             // TODO: Implement message for this
         }

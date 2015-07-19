@@ -59,14 +59,17 @@
   <ItemGroup>
     <Compile Include="Analysis\AnalysisOutputWriter.cs" />
     <Compile Include="Analysis\AnalysisService.cs" />
+    <Compile Include="Console\ChoiceDetails.cs" />
     <Compile Include="Console\ConsoleServicePSHost.cs" />
     <Compile Include="Console\ConsoleServicePSHostRawUserInterface.cs" />
     <Compile Include="Console\ConsoleServicePSHostUserInterface.cs" />
     <Compile Include="Console\OutputType.cs" />
+    <Compile Include="Console\ProgressDetails.cs" />
     <Compile Include="Console\SynchronizingConsoleHostWrapper.cs" />
     <Compile Include="Console\IConsoleHost.cs" />
     <Compile Include="IHost.cs" />
     <Compile Include="Language\AstOperations.cs" />
+    <Compile Include="Language\CompletionResults.cs" />
     <Compile Include="Language\LanguageService.cs" />
     <Compile Include="Language\ScriptExtent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -75,6 +78,7 @@
     <Compile Include="Session\ScriptFile.cs" />
     <Compile Include="Session\FileChange.cs" />
     <Compile Include="Session\ScriptFileMarker.cs" />
+    <Compile Include="Session\ScriptRegion.cs" />
     <Compile Include="Utility\Validate.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -3,9 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Newtonsoft.Json;
-using System.Management.Automation;
 using System.Text.RegularExpressions;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
@@ -48,9 +48,8 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
 
     public class CompletionEntryDetails
     {
-        public CompletionEntryDetails(CompletionResult completionResult, string entryName)
+        public CompletionEntryDetails(CompletionDetails completionDetails, string entryName)
         {
-
             Kind = null;
             KindModifiers = null;
             DisplayParts = null;
@@ -58,10 +57,10 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
             DocString = null;
 
             // if the  result type is a command return null 
-            if (!(completionResult.ResultType.Equals(CompletionResultType.Command)))
+            if (!(completionDetails.CompletionType.Equals(CompletionType.Command)))
             {
                 //find matches on square brackets in the the tool tip
-                var matches = Regex.Matches(completionResult.ToolTip, @"^\[(.+)\]");
+                var matches = Regex.Matches(completionDetails.ToolTipText, @"^\[(.+)\]");
                 string strippedEntryName = Regex.Replace(entryName, @"^[$_-]","").Replace("{","").Replace("}","");
 
                 if (matches.Count > 0 && matches[0].Groups.Count > 1)
@@ -69,14 +68,14 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
                     Name = matches[0].Groups[1].Value;
                 }
                 // if there are nobracets and the only content is the completion name
-                else if (completionResult.ToolTip.Equals(strippedEntryName))
+                else if (completionDetails.ToolTipText.Equals(strippedEntryName))
                 {
                     Name = null;
                 }
                 else
                 {
                     Name = null;
-                    DocString = completionResult.ToolTip;
+                    DocString = completionDetails.ToolTipText;
                 }
             }
 

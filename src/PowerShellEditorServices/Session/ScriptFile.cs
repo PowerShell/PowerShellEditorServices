@@ -10,7 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
-using System.Text;
 
 namespace Microsoft.PowerShell.EditorServices.Session
 {
@@ -85,30 +84,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         /// <summary>
         /// Creates a new ScriptFile instance by reading file contents from
-        /// the given file path.
-        /// </summary>
-        /// <param name="filePath">The path at which the script file resides.</param>
-        public ScriptFile(string filePath)
-        {
-            // TODO: Try/catch!
-            this.FilePath = filePath;
-            this.FileLines = new List<string>();
-            using (StreamReader streamReader = new StreamReader(filePath, Encoding.UTF8))
-            {
-                this.ReadFile(streamReader);
-            }
-        }
-
-        /// <summary>
-        /// Creates a new ScriptFile instance by reading file contents from
         /// the given TextReader.
         /// </summary>
-        /// <param name="textReader">A TextReader to use for reading file contents.</param>
-        public ScriptFile(TextReader textReader)
+        /// <param name="filePath">The path at which the script file resides.</param>
+        /// <param name="textReader">The TextReader to use for reading the file's contents.</param>
+        public ScriptFile(string filePath, TextReader textReader)
         {
+            this.FilePath = filePath;
             this.ReadFile(textReader);
         }
-
 
         #endregion
 
@@ -159,8 +143,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
             int currentLineNumber = fileChange.Line;
             for (int changeIndex = 0; changeIndex < changeLines.Length; changeIndex++)
             {
-                // Should we add first or last line fragments?
+                // Since we split the lines above using \n, make sure to
+                // trim the ending \r's off as well.
                 string finalLine = changeLines[changeIndex].TrimEnd('\r');
+
+                // Should we add first or last line fragments?
                 if (changeIndex == 0)
                 {
                     // Append the first line fragment
@@ -223,7 +210,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         {
             this.FileLines = new List<string>();
 
-            // Read the file line by line
+            // Read the file contents line by line
             string fileLine = null;
             do
             {

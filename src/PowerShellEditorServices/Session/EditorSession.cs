@@ -6,9 +6,13 @@
 using Microsoft.PowerShell.EditorServices.Analysis;
 using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Language;
+using Microsoft.PowerShell.EditorServices.Utility;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Text;
 using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Session
@@ -76,26 +80,48 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// Opens a script file with the given file path.
         /// </summary>
         /// <param name="filePath">The file path at which the script resides.</param>
+        /// <exception cref="FileNotFoundException">
+        /// <paramref name="filePath"/> is not found.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="filePath"/> has already been loaded in the session.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="filePath"/> contains a null or empty string.
+        /// </exception>
         public void OpenFile(string filePath)
         {
-            // Only load the file once.
-            // TODO: Error if already loaded?
+            Validate.IsNotNullOrEmptyString("filePath", filePath);
+
+            // Make sure the file isn't already loaded into the session
             if (!this.workspaceFiles.ContainsKey(filePath))
             {
-                // TODO: Try/catch
-                ScriptFile newFile = new ScriptFile(filePath);
-                this.workspaceFiles.Add(filePath, newFile);
+                // This method allows FileNotFoundException to bubble up 
+                // if the file isn't found.
+
+                using (StreamReader streamReader = new StreamReader(filePath, Encoding.UTF8))
+                {
+                    ScriptFile newFile = new ScriptFile(filePath, streamReader);
+                    this.workspaceFiles.Add(filePath, newFile);
+                }
+            }
+            else
+            {
+                throw new ArgumentException(
+                    "The specified file has already been loaded: " + filePath,
+                    "filePath");
             }
         }
 
         /// <summary>
         /// Closes a currently open script file with the given file path.
         /// </summary>
-        /// <param name="file">The file path at which the script resides.</param>
-        public void CloseFile(ScriptFile file)
+        /// <param name="scriptFile">The file path at which the script resides.</param>
+        public void CloseFile(ScriptFile scriptFile)
         {
-            // TODO: Ensure file isn't null
-            this.workspaceFiles.Remove(file.FilePath);
+            Validate.IsNotNull("scriptFile", scriptFile);
+
+            this.workspaceFiles.Remove(scriptFile.FilePath);
         }
 
         /// <summary>

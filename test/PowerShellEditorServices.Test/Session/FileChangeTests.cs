@@ -59,7 +59,6 @@ namespace PSLanguageService.Test
                 });
         }
 
-
         [Fact]
         public void CanApplyMultiLineInsert()
         {
@@ -124,17 +123,19 @@ namespace PSLanguageService.Test
                 });
         }
 
-        private void AssertFileChange(string initialString, string expectedString, FileChange fileChange)
+        private void AssertFileChange(
+            string initialString,
+            string expectedString,
+            FileChange fileChange)
         {
             using (StringReader stringReader = new StringReader(initialString))
             {
-                Microsoft.PowerShell.EditorServices.Session.ScriptFile fileToChange = 
-                    new Microsoft.PowerShell.EditorServices.Session.ScriptFile(stringReader);
-                fileToChange.ApplyChange(fileChange);
+                // Create an in-memory file from the StringReader
+                ScriptFile fileToChange = new ScriptFile("TestFile.ps1", stringReader);
 
-                Assert.Equal(
-                    expectedString,
-                    fileToChange.Contents);
+                // Apply the FileChange and assert the resulting contents
+                fileToChange.ApplyChange(fileChange);
+                Assert.Equal(expectedString, fileToChange.Contents);
             }
         }
     }

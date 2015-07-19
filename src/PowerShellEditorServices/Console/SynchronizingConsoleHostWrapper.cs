@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         Task<int> IConsoleHost.PromptForChoice(
             string promptCaption, 
             string promptMessage, 
-            IEnumerable<ChoiceDescription> choiceDescriptions, 
+            IEnumerable<ChoiceDetails> choices,
             int defaultChoice)
         {
             TaskCompletionSource<int> taskCompletionSource = new TaskCompletionSource<int>();
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                         this.wrappedConsoleHost.PromptForChoice(
                             promptCaption,
                             promptMessage,
-                            choiceDescriptions,
+                            choices,
                             defaultChoice).Result;
 
                     taskCompletionSource.SetResult(choiceResult);
@@ -124,14 +124,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         void IConsoleHost.UpdateProgress(
             long sourceId, 
-            ProgressRecord progressRecord)
+            ProgressDetails progressDetails)
         {
             this.syncContext.Post(
                 (d) =>
                 {
                     this.wrappedConsoleHost.UpdateProgress(
                         sourceId,
-                        progressRecord);
+                        progressDetails);
                 },
                 null);
         }

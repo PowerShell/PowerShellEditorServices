@@ -6,11 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Management.Automation.Language;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Session
 {
@@ -55,9 +51,9 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public ScriptFileMarkerLevel Level { get; set; }
 
         /// <summary>
-        /// Gets or sets the IScriptExtent where the marker should appear.
+        /// Gets or sets the ScriptRegion where the marker should appear.
         /// </summary>
-        public IScriptExtent Extent { get; set; }
+        public ScriptRegion ScriptRegion { get; set; }
 
         #endregion
 
@@ -72,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             {
                 Message = parseError.Message,
                 Level = ScriptFileMarkerLevel.Error,
-                Extent = parseError.Extent
+                ScriptRegion = ScriptRegion.Create(parseError.Extent)
             };
         }
 
@@ -85,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             {
                 Message = diagnosticRecord.Message,
                 Level = GetMarkerLevelFromDiagnosticSeverity(diagnosticRecord.Severity),
-                Extent = diagnosticRecord.Extent,
+                ScriptRegion = ScriptRegion.Create(diagnosticRecord.Extent)
             };
         }
 

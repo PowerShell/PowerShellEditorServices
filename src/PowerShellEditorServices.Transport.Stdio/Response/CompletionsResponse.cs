@@ -3,26 +3,26 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using System.Collections.Generic;
-using System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
 {
     [MessageTypeName("completions")]
     public class CompletionsResponse : ResponseBase<CompletionEntry[]>
     {
-        public static CompletionsResponse Create(CommandCompletion commandCompletion)
+        public static CompletionsResponse Create(CompletionResults completionResults)
         {
             List<CompletionEntry> completionResult = new List<CompletionEntry>();
 
-            foreach (var completion in commandCompletion.CompletionMatches)
+            foreach (var completion in completionResults.Completions)
             {
                 completionResult.Add(
                     new CompletionEntry
                     {
                         Name = completion.CompletionText,
-                        Kind = GetCompletionKind(completion.ResultType),
+                        Kind = GetCompletionKind(completion.CompletionType),
                     });
             }
 
@@ -32,12 +32,12 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
             };
         }
 
-        private static string GetCompletionKind(CompletionResultType resultType)
+        private static string GetCompletionKind(CompletionType completionType)
         {
-            switch (resultType)
+            switch (completionType)
             {
-                case CompletionResultType.Command:
-                case CompletionResultType.Method:
+                case CompletionType.Command:
+                case CompletionType.Method:
                     return "method";
                 default:
                     // TODO: Better default

@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Utility;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
@@ -14,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
     /// <summary>
     /// Provides common operations for the syntax tree of a parsed script.
     /// </summary>
-    public static class AstOperations
+    internal static class AstOperations
     {
         /// <summary>
         /// Gets completions for the symbol found in the Ast at 
@@ -36,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// A CommandCompletion instance that contains completions for the
         /// symbol at the given offset.
         /// </returns>
-        static public CommandCompletion GetCompletions(
+        static public CompletionResults GetCompletions(
             Ast scriptAst, 
             Token[] currentTokens, 
             int fileOffset, 
@@ -73,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                 }
             }
 
-            return commandCompletion;
+            return CompletionResults.Create(commandCompletion);
         }
     }
 }

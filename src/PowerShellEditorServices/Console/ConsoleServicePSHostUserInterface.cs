@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Host;
+using System.Linq;
 using System.Security;
 using System.Threading.Tasks;
 
@@ -65,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     .PromptForChoice(
                         promptCaption,
                         promptMessage,
-                        choiceDescriptions,
+                        choiceDescriptions.Select(ChoiceDetails.Create),
                         defaultChoice);
 
             // This will synchronously block on the async PromptForChoice
@@ -193,7 +194,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             this.consoleHost.UpdateProgress(
                 sourceId,
-                record);
+                ProgressDetails.Create(record));
         }
 
         #endregion

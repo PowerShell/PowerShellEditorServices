@@ -62,7 +62,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             this.outputPerType[outputType] = storedOutputString;
         }
 
-        Task<int> IConsoleHost.PromptForChoice(string caption, string message, IEnumerable<ChoiceDescription> choices, int defaultChoice)
+        Task<int> IConsoleHost.PromptForChoice(
+            string caption,
+            string message,
+            IEnumerable<ChoiceDetails> choices,
+            int defaultChoice)
         {
             var taskCompletionSource = new TaskCompletionSource<int>();
 
@@ -86,7 +90,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             // No need to do anything here, task has already completed.
         }
 
-        void IConsoleHost.UpdateProgress(long sourceId, System.Management.Automation.ProgressRecord progressRecord)
+        void IConsoleHost.UpdateProgress(
+            long sourceId,
+            ProgressDetails progressDetails)
         {
             // TODO: Log progress
         }
