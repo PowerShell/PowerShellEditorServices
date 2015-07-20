@@ -32,6 +32,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{E51470
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Test.Shared", "test\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj", "{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -70,6 +72,10 @@ Global
 		{8ED116F4-9DDF-4C49-AB96-AE462E3D64C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8ED116F4-9DDF-4C49-AB96-AE462E3D64C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8ED116F4-9DDF-4C49-AB96-AE462E3D64C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -83,5 +89,6 @@ Global
 		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 		{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 		{8ED116F4-9DDF-4C49-AB96-AE462E3D64C3} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
+		{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 	EndGlobalSection
 EndGlobal

@@ -5,24 +5,28 @@
 
 using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Session;
-using Microsoft.PowerShell.EditorServices.Test.Utility;
+using Microsoft.PowerShell.EditorServices.Test.Shared.Completion;
+using Microsoft.PowerShell.EditorServices.Test.Shared.Utility;
 using System;
-using System.IO;
-using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
-using System.Reflection;
 using System.Threading;
 using Xunit;
 
-namespace PSLanguageService.Test
+namespace Microsoft.PowerShell.EditorServices.Test.Language
 {
     public class LanguageServiceTests : IDisposable
     {
+        private ResourceFileLoader fileLoader;
         private Runspace languageServiceRunspace;
         private LanguageService languageService;
 
         public LanguageServiceTests()
         {
+            // Load script files from the shared assembly
+            this.fileLoader =
+                new ResourceFileLoader(
+                    typeof(CompleteCommandInFile).Assembly);
+
             this.languageServiceRunspace = RunspaceFactory.CreateRunspace();
             this.languageServiceRunspace.ApartmentState = ApartmentState.STA;
             this.languageServiceRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
@@ -37,32 +41,56 @@ namespace PSLanguageService.Test
         }
 
         [Fact]
-        public void LanguageServiceCompletesFunctionInSameFile()
+        public void LanguageServiceCompletesCommandInFile()
         {
-            //CompletionResults completionResults =
-            //    this.languageService.GetCompletionsInFile(
-            //        this.LoadScript("CompleteFunctionName.ps1"),
+            CompletionResults completionResults =
+                this.GetCompletionResults(
+                    CompleteCommandInFile.SourceDetails);
 
+            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.Equal(
+                CompleteCommandInFile.ExpectedCompletion,
+                completionResults.Completions[0]);
+        }
 
-            Assert.False(true);
+        [Fact(Skip = "This test does not run correctly on AppVeyor, need to investigate.")]
+        public void LanguageServiceCompletesCommandFromModule()
+        {
+            CompletionResults completionResults =
+                this.GetCompletionResults(
+                    CompleteCommandFromModule.SourceDetails);
+
+            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.Equal(
+                CompleteCommandFromModule.ExpectedCompletion,
+                completionResults.Completions[0]);
         }
 
         [Fact]
-        public void LanguageServiceCompletesVariableInSameFile()
+        public void LanguageServiceCompletesVariableInFile()
         {
-            //AstOperations.GetCompletions()
-            Assert.False(true);
+            CompletionResults completionResults =
+                this.GetCompletionResults(
+                    CompleteVariableInFile.SourceDetails);
+
+            Assert.Equal(1, completionResults.Completions.Length);
+            Assert.Equal(
+                CompleteVariableInFile.ExpectedCompletion,
+                completionResults.Completions[0]);
         }
 
-        private ScriptFile LoadScript(string filePath)
+        private CompletionResults GetCompletionResults(ScriptRegion scriptRegion)
         {
-            // Load the file from resources
-            TextReader textReader =
-                ResourceFileLoader.LoadFileFromResource(
-                    filePath);
+            ScriptFile scriptFile =
+                this.fileLoader.LoadFile(
+                    scriptRegion.File);
 
-            // Load the script file and get its syntax tree
-            return new ScriptFile(filePath, textReader);
+            // Run the completions request
+            return
+                this.languageService.GetCompletionsInFile(
+                    scriptFile,
+                    scriptRegion.StartLineNumber,
+                    scriptRegion.StartColumnNumber);
         }
     }
 }

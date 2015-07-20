@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Utility;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
@@ -13,11 +14,19 @@ namespace Microsoft.PowerShell.EditorServices.Language
     /// <summary>
     /// Provides the results of a single code completion request.
     /// </summary>
-    public class CompletionResults
+    public sealed class CompletionResults
     {
-        public int CurrentMatchIndex { get; private set; }
+        #region Properties
 
+        /// <summary>
+        /// Gets the completions that were found during the 
+        /// completion request.
+        /// </summary>
         public CompletionDetails[] Completions { get; private set; }
+
+        #endregion
+
+        #region Constructors
 
         internal static CompletionResults Create(
             CommandCompletion commandCompletion)
@@ -25,9 +34,12 @@ namespace Microsoft.PowerShell.EditorServices.Language
             return new CompletionResults
             {
                 Completions = GetCompletionsArray(commandCompletion),
-                CurrentMatchIndex = commandCompletion.CurrentMatchIndex
             };
         }
+
+        #endregion
+
+        #region Private Methods
 
         private static CompletionDetails[] GetCompletionsArray(
             CommandCompletion commandCompletion)
@@ -38,6 +50,8 @@ namespace Microsoft.PowerShell.EditorServices.Language
 
             return completionList.ToArray();
         }
+
+        #endregion
     }
 
     /// <summary>
@@ -96,8 +110,10 @@ namespace Microsoft.PowerShell.EditorServices.Language
     /// <summary>
     /// Provides the details about a single completion result.
     /// </summary>
-    public class CompletionDetails
+    public sealed class CompletionDetails
     {
+        #region Properties
+
         /// <summary>
         /// Gets the text that will be used to complete the statement
         /// at the requested file offset.
@@ -122,21 +138,89 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// </summary>
         public CompletionType CompletionType { get; private set; }
 
+        #endregion
+
+        #region Constructors
+
         internal static CompletionDetails Create(CompletionResult completionResult)
         {
-            //completionResult.ToolTip;
-            //completionResult.ListItemText;
+            Validate.IsNotNull("completionResult", completionResult);
+
+            // Some tooltips may have newlines or whitespace for unknown reasons
+            string toolTipText = completionResult.ToolTip;
+            if (toolTipText != null)
+            {
+                toolTipText = toolTipText.Trim();
+            }
 
             return new CompletionDetails
             {
                 CompletionText = completionResult.CompletionText,
-                ToolTipText = completionResult.ToolTip,
+                ToolTipText = toolTipText,
                 SymbolTypeName = ExtractSymbolTypeNameFromToolTip(completionResult.ToolTip),
                 CompletionType = 
                     ConvertCompletionResultType(
                         completionResult.ResultType)
             };
         }
+
+        internal static CompletionDetails Create(
+            string completionText,
+            CompletionType completionType,
+            string toolTipText = null,
+            string symbolTypeName = null)
+        {
+            return new CompletionDetails
+            {
+                CompletionText = completionText,
+                CompletionType = completionType,
+                ToolTipText = toolTipText,
+                SymbolTypeName = symbolTypeName
+            };
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Compares two CompletionResults instances for equality.
+        /// </summary>
+        /// <param name="obj">The potential CompletionResults instance to compare.</param>
+        /// <returns>True if the CompletionResults instances have the same details.</returns>
+        public override bool Equals(object obj)
+        {
+            CompletionDetails otherDetails = obj as CompletionDetails;
+            if (otherDetails == null)
+            {
+                return false;
+            }
+
+            return
+                string.Equals(this.CompletionText, otherDetails.CompletionText) &&
+                this.CompletionType == otherDetails.CompletionType &&
+                string.Equals(this.ToolTipText, otherDetails.ToolTipText) &&
+                string.Equals(this.SymbolTypeName, otherDetails.SymbolTypeName);
+        }
+
+        /// <summary>
+        /// Returns the hash code for this CompletionResults instance.
+        /// </summary>
+        /// <returns>The hash code for this CompletionResults instance.</returns>
+        public override int GetHashCode()
+        {
+            return
+                string.Format(
+                    "{0}{1}{2}{3}",
+                    this.CompletionText,
+                    this.CompletionType,
+                    this.ToolTipText,
+                    this.SymbolTypeName).GetHashCode();
+        }
+
+        #endregion
+
+        #region Private Methods
 
         private static CompletionType ConvertCompletionResultType(
             CompletionResultType completionResultType)
@@ -187,5 +271,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
 
             return null;
         }
+
+        #endregion
     }
 }
