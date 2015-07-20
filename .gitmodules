@@ -1,0 +1,4 @@
+[submodule "submodules/PSScriptAnalyzer"]
+	path = submodules/PSScriptAnalyzer
+	url = https://github.com/PowerShell/PSScriptAnalyzer.git
+	branch = development
