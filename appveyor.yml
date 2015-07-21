@@ -1,0 +1,32 @@
+version: 0.1.0.{build}
+os: Unstable
+configuration: Release
+clone_depth: 10
+
+branches:
+  only:
+  - master
+
+assembly_info:
+  patch: true
+  file: '**\AssemblyInfo.*'
+  assembly_version: '0.1.0'		# This version number should always have 0 for the last section
+  assembly_file_version: '{version}'
+  assembly_informational_version: '{version}'
+
+install:
+- git submodule -q update --init
+
+before_build:
+- nuget restore
+
+build:
+  project: PowerShellEditorServices.sln
+  publish_nuget: true
+  verbosity: minimal
+
+test:
+  assemblies:
+  - Microsoft.PowerShell.EditorServices.Test.dll
+  - Microsoft.PowerShell.EditorServices.Test.Host.dll
+  - Microsoft.PowerShell.EditorServices.Test.Transport.Stdio.dll
