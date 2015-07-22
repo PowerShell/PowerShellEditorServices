@@ -3,10 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Newtonsoft.Json;
-using System.Text.RegularExpressions;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
 {
@@ -33,72 +31,5 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
         {
             this.Type = MessageType.Response;
         }
-    }
-
-    public class CompletionEntry
-    {
-        public string Name { get; set; }
-
-        public string Kind { get; set; }
-
-        public string KindModifiers { get; set; }
-
-        public string SortText { get; set; }
-    }
-
-    public class CompletionEntryDetails
-    {
-        public CompletionEntryDetails(CompletionDetails completionDetails, string entryName)
-        {
-            Kind = null;
-            KindModifiers = null;
-            DisplayParts = null;
-            Documentation = null;
-            DocString = null;
-
-            // if the  result type is a command return null 
-            if (!(completionDetails.CompletionType.Equals(CompletionType.Command)))
-            {
-                //find matches on square brackets in the the tool tip
-                var matches = Regex.Matches(completionDetails.ToolTipText, @"^\[(.+)\]");
-                string strippedEntryName = Regex.Replace(entryName, @"^[$_-]","").Replace("{","").Replace("}","");
-
-                if (matches.Count > 0 && matches[0].Groups.Count > 1)
-                {                        
-                    Name = matches[0].Groups[1].Value;
-                }
-                // if there are nobracets and the only content is the completion name
-                else if (completionDetails.ToolTipText.Equals(strippedEntryName))
-                {
-                    Name = null;
-                }
-                else
-                {
-                    Name = null;
-                    DocString = completionDetails.ToolTipText;
-                }
-            }
-
-            else { Name = null; }
-        }
-        public string Name { get; set; }
-
-        public string Kind { get; set; }
-
-        public string KindModifiers { get; set; }
-
-        public SymbolDisplayPart[] DisplayParts { get; set; }
-
-        public SymbolDisplayPart[] Documentation { get; set; }
-
-        public string DocString { get; set; }
-
-    }
-
-    public class SymbolDisplayPart
-    {
-        public string Text { get; set; }
-
-        public string Kind { get; set; }
     }
 }

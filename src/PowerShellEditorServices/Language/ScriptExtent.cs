@@ -4,11 +4,7 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Management.Automation.Language;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Language
 {
@@ -26,7 +22,8 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// </summary>
         public string File
         {
-            get { throw new NotImplementedException(); }
+            get;
+            set;
         }
 
         /// <summary>

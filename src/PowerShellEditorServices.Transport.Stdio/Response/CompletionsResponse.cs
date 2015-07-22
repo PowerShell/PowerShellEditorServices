@@ -45,4 +45,15 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
             }
         }
     }
+    public class CompletionEntry
+    {
+        public string Name { get; set; }
+
+        public string Kind { get; set; }
+
+        public string KindModifiers { get; set; }
+
+        public string SortText { get; set; }
+    }
+
 }

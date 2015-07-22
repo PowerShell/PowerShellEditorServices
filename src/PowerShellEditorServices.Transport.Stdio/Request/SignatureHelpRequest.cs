@@ -10,8 +10,8 @@ using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
-    [MessageTypeName("completions")]
-    public class CompletionsRequest : FileRequest<CompletionsRequestArgs>
+    [MessageTypeName("signatureHelp")]
+    public class SignatureHelpRequest : FileRequest<SignatureHelpRequestArgs>
     {
         public override void ProcessMessage(
             EditorSession editorSession,
@@ -19,20 +19,22 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
         {
             ScriptFile scriptFile = this.GetScriptFile(editorSession);
 
-            CompletionResults completions =
-                editorSession.LanguageService.GetCompletionsInFile(
+            ParameterSetSignatures parameterSetSigs =
+                editorSession.LanguageService.FindParameterSetsInFile(
                     scriptFile,
                     this.Arguments.Line,
                     this.Arguments.Offset);
 
+            SignatureHelpResponse sigHelpResponce = 
+                SignatureHelpResponse.Create(parameterSetSigs);
+
             messageWriter.WriteMessage(
-                this.PrepareResponse(
-                    CompletionsResponse.Create(
-                        completions)));
+              this.PrepareResponse(
+                  sigHelpResponce));
         }
     }
-    public class CompletionsRequestArgs : FileLocationRequestArgs
+
+    public class SignatureHelpRequestArgs : FileLocationRequestArgs
     {
-        public string Prefix { get; set; }
     }
 }

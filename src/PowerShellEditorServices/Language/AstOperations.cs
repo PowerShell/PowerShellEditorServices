@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
@@ -73,6 +74,66 @@ namespace Microsoft.PowerShell.EditorServices.Language
             }
 
             return CompletionResults.Create(commandCompletion);
+        }
+
+        /// <summary>
+        /// Finds the symbol at a given file location 
+        /// </summary>
+        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>SymbolReference of found symbol</returns>
+        static public SymbolReference FindSymbolAtPosition(Ast scriptAst, int lineNumber, int columnNumber)
+        {
+            FindSymbolVisitor symbolVisitor = new FindSymbolVisitor(lineNumber, columnNumber);
+            scriptAst.Visit(symbolVisitor);
+
+            return symbolVisitor.FoundSymbolReference;
+        }
+
+        /// <summary>
+        /// Finds the symbol (always Command type) at a given file location
+        /// </summary>
+        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The column number of the cursor for the given script</param>
+        /// <returns>SymbolReference of found command</returns>
+        static public SymbolReference FindCommandAtPosition(Ast scriptAst, int lineNumber, int columnNumber)
+        {
+            FindCommandVisitor commandVisitor = new FindCommandVisitor(lineNumber, columnNumber);
+            scriptAst.Visit(commandVisitor);
+
+            return commandVisitor.FoundCommandReference;
+        }
+
+        /// <summary>
+        /// Finds all references in a script of the given symbol
+        /// </summary>
+        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <param name="symbolReference">The symbol that we are looking for referneces of</param>
+        /// <returns>A collection of SymbolReference objects that are refrences to the symbolRefrence</returns>
+        static public IEnumerable<SymbolReference> FindReferencesOfSymbol(Ast scriptAst, SymbolReference symbolReference)
+        {
+            // find the symbol evaluators for the node types we are handling
+            FindReferencesVisitor referencesVisitor = new FindReferencesVisitor(symbolReference);
+            scriptAst.Visit(referencesVisitor);
+
+            return referencesVisitor.FoundReferences;
+
+        }
+
+        /// <summary>
+        /// Finds the definition of the symbol 
+        /// </summary>
+        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <param name="symbolReference">The symbol that we are looking for the definition of</param>
+        /// <returns>A SymbolReference of the definition of the symbolReference</returns>
+        static public SymbolReference FindDefinitionOfSymbol(Ast scriptAst, SymbolReference symbolReference)
+        {
+            FindDeclartionVisitor declarationVisitor = new FindDeclartionVisitor(symbolReference);
+            scriptAst.Visit(declarationVisitor);
+
+            return declarationVisitor.FoundDeclartion;
         }
     }
 }

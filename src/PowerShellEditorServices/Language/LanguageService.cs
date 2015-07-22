@@ -22,6 +22,10 @@ namespace Microsoft.PowerShell.EditorServices.Language
         #region Private Fields
 
         private Runspace runspace;
+        private CompletionResults mostRecentCompletions;
+        private int mostRecentRequestLine;
+        private int mostRecentRequestOffest;
+        private string mostRecentRequestFile;
 
         #endregion
 
@@ -75,14 +79,205 @@ namespace Microsoft.PowerShell.EditorServices.Language
                     lineNumber,
                     columnNumber);
 
-            return
+            CompletionResults completionResults =
                 AstOperations.GetCompletions(
                     scriptFile.ScriptAst,
                     scriptFile.ScriptTokens,
                     fileOffset,
                     this.runspace);
+                    
+            // save state of most recent completion
+            mostRecentCompletions = completionResults;
+            mostRecentRequestFile = scriptFile.FilePath;
+            mostRecentRequestLine = lineNumber;
+            mostRecentRequestOffest = columnNumber;
+
+            return completionResults;
         }
 
+        /// <summary>
+        /// Finds command completion details for the script given a file location 
+        /// </summary>
+        /// <param name="file">The details and contents of a open script file</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <param name="entryName">The name of the suggestion that needs details</param>
+        /// <returns>CompletionResult object (contains information about the command completion)</returns>
+        public CompletionDetails GetCompletionDetailsInFile(
+            ScriptFile file,
+            int lineNumber,
+            int columnNumber,
+            string entryName)
+        {
+            if (file.FilePath.Equals(mostRecentRequestFile) &&
+                lineNumber == mostRecentRequestLine &&
+                columnNumber == mostRecentRequestOffest)
+            {
+                CompletionDetails completionResult = 
+                    mostRecentCompletions.Completions.First(
+                        result => result.CompletionText.Equals(entryName));
+                return completionResult;
+            }
+            else { return null; }
+        }
+
+        /// <summary>
+        /// Finds all the references of a symbol in the script given a file location
+        /// </summary>
+        /// <param name="file">The details and contents of a open script file</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>FindReferencesResult</returns>
+        public FindReferencesResult FindReferencesInFile(
+            ScriptFile file,
+            int lineNumber,
+            int columnNumber)
+        {
+            SymbolReference foundSymbol =
+                AstOperations.FindSymbolAtPosition(
+                    file.ScriptAst,
+                    lineNumber,
+                    columnNumber);
+
+            if (foundSymbol != null)
+            {
+                IEnumerable<SymbolReference> symbolReferences =
+                    AstOperations
+                        .FindReferencesOfSymbol(
+                            file.ScriptAst,
+                            foundSymbol)
+                        .Select(
+                            reference =>
+                            {
+                                reference.SourceLine = 
+                                    file.GetLine(reference.ScriptRegion.StartLineNumber);
+                                return reference;
+                            });
+
+                return
+                    new FindReferencesResult
+                    {
+                        SymbolFileOffset = file.GetOffsetAtPosition(lineNumber, columnNumber),
+                        SymbolName = foundSymbol.SymbolName,
+                        FoundReferences = symbolReferences
+                    };
+            }
+            else { return null; }
+        }
+
+        /// <summary>
+        /// Finds the definition of a symbol in the script given a file location
+        /// </summary>
+        /// <param name="file">The details and contents of a open script file</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>GetDefinitionResult</returns>
+        public GetDefinitionResult GetDefinitionInFile(
+            ScriptFile file,
+            int lineNumber,
+            int columnNumber)
+        {
+            SymbolReference foundSymbol =
+                AstOperations.FindSymbolAtPosition(
+                    file.ScriptAst,
+                    lineNumber,
+                    columnNumber);
+
+            if (foundSymbol != null)
+            {
+                SymbolReference foundDefinition =
+                    AstOperations.FindDefinitionOfSymbol(
+                         file.ScriptAst,
+                         foundSymbol);
+
+                return new GetDefinitionResult(foundDefinition);
+            }
+            else { return null; }
+        }
+
+        /// <summary>
+        /// Finds all the occurences of a symbol in the script given a file location
+        /// </summary>
+        /// <param name="file">The details and contents of a open script file</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>FindOccurrencesResult</returns>
+        public FindOccurrencesResult FindOccurrencesInFile(
+            ScriptFile file,
+            int lineNumber,
+            int columnNumber)
+        {
+            SymbolReference foundSymbol =
+                AstOperations.FindSymbolAtPosition(
+                    file.ScriptAst,
+                    lineNumber,
+                    columnNumber);
+            if (foundSymbol != null)
+            {
+                IEnumerable<SymbolReference> symbolOccurrences =
+                    AstOperations
+                        .FindReferencesOfSymbol(
+                            file.ScriptAst,
+                            foundSymbol);
+
+                return
+                    new FindOccurrencesResult
+                    {
+                        FoundOccurrences = symbolOccurrences
+                    };
+            }
+            else { return null; }
+        }
+
+        /// <summary>
+        /// Finds the parameter set hints of a specific command (determined by a given file location)
+        /// </summary>
+        /// <param name="file">The details and contents of a open script file</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>ParameterSetSignatures</returns>
+        public ParameterSetSignatures FindParameterSetsInFile(
+            ScriptFile file,
+            int lineNumber,
+            int columnNumber)
+        {
+            SymbolReference foundSymbol =
+                AstOperations.FindCommandAtPosition(
+                    file.ScriptAst,
+                    lineNumber,
+                    columnNumber);
+
+            if (foundSymbol != null)
+            {
+                if (GetCommandInfo(foundSymbol.SymbolName) != null)
+                {
+                    IEnumerable<CommandParameterSetInfo> commandInfo = 
+                        GetCommandInfo(foundSymbol.SymbolName).ParameterSets;
+                    List<CommandParameterSetInfo> commandInfoSet = 
+                        new List<CommandParameterSetInfo>(commandInfo);
+
+                    return new ParameterSetSignatures(commandInfoSet, foundSymbol);
+                }
+                else { return null; }
+            }
+            else { return null; }
+        }
+        
         #endregion
+
+        private CommandInfo GetCommandInfo(string commandName)
+        {
+            CommandInfo commandInfo = null;
+
+            using (PowerShell powerShell = PowerShell.Create())
+            {
+                powerShell.Runspace = this.runspace;
+                powerShell.AddCommand("Get-Command");
+                powerShell.AddArgument(commandName);
+                commandInfo = powerShell.Invoke<CommandInfo>().FirstOrDefault();
+            }
+
+            return commandInfo;
+        }
     }
 }
