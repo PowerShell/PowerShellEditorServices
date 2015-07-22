@@ -1,5 +1,7 @@
 # PowerShell Editor Services
 
+[![Build status](https://ci.appveyor.com/api/projects/status/85tyhckawwxoiim2/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/powershelleditorservices/branch/master)
+
 PowerShell Editor Services provides common functionality that is needed 
 to enable a consistent and robust PowerShell development experience 
 across multiple editors.
