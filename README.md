@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/85tyhckawwxoiim2/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/powershelleditorservices/branch/master)
+
 # PowerShell Editor Services
 
 PowerShell Editor Services provides common functionality that is needed 
