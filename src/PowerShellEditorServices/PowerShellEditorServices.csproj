@@ -72,6 +72,7 @@
     <Compile Include="Language\CompletionResults.cs" />
     <Compile Include="Language\FindCommandVisitor.cs" />
     <Compile Include="Language\FindDeclartionVisitor.cs" />
+    <Compile Include="Language\FindDotSourcedVisitor.cs" />
     <Compile Include="Language\FindOccurrencesResult.cs" />
     <Compile Include="Language\FindReferencesResult.cs" />
     <Compile Include="Language\FindReferencesVisitor.cs" />

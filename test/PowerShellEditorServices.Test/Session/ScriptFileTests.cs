@@ -123,6 +123,25 @@ namespace PSLanguageService.Test
                 });
         }
 
+        [Fact]
+        public void FindsDotSourcedFiles()
+        {
+            string exampleScriptContents =
+                @". .\athing.ps1"+"\r\n"+
+                @". .\somefile.ps1"+"\r\n" +
+                @". .\somefile.ps1"+"\r\n" +
+                @"Do-Stuff $uri"+"\r\n" +
+                @". simpleps.ps1";
+
+            using (StringReader stringReader = new StringReader(exampleScriptContents))
+            {
+                ScriptFile scriptFile = new ScriptFile("DotSourceTestFile.ps1", stringReader);
+                Assert.Equal(3, scriptFile.ReferencedFiles.Length);
+                System.Console.Write("a" + scriptFile.ReferencedFiles[0]);
+                Assert.Equal(@".\athing.ps1", scriptFile.ReferencedFiles[0]);
+            }
+        }
+
         private void AssertFileChange(
             string initialString,
             string expectedString,

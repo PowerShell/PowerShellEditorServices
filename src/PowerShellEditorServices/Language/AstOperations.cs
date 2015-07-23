@@ -4,6 +4,7 @@
 //
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
@@ -134,6 +135,19 @@ namespace Microsoft.PowerShell.EditorServices.Language
             scriptAst.Visit(declarationVisitor);
 
             return declarationVisitor.FoundDeclartion;
+        }
+
+        /// <summary>
+        /// Finds all files dot sourced in a script
+        /// </summary>
+        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <returns></returns>
+        static public string[] FindDotSourcedIncludes(Ast scriptAst)
+        {
+            FindDotSourcedVisitor dotSourcedVisitor = new FindDotSourcedVisitor();
+            scriptAst.Visit(dotSourcedVisitor);
+
+            return dotSourcedVisitor.DotSourcedFiles.ToArray();
         }
     }
 }

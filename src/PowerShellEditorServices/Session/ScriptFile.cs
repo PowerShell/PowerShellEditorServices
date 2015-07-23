@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -76,6 +77,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public Token[] ScriptTokens
         {
             get { return this.scriptTokens; }
+        }
+
+        /// <summary>
+        /// Gets the array of filepaths dot sourced in this ScriptFile 
+        /// </summary>
+        public string[] ReferencedFiles
+        {
+            get;
+            private set;
         }
 
         #endregion
@@ -224,6 +234,16 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             // Parse the contents to get syntax tree and errors
             this.ParseFileContents();
+            this.FindDotSourcedFiles();
+        }
+
+        /// <summary>
+        /// Finds the dot sourced files in this ScriptFile
+        /// </summary>
+        private void FindDotSourcedFiles()
+        {
+            ReferencedFiles = 
+                AstOperations.FindDotSourcedIncludes(this.ScriptAst);
         }
 
         /// <summary>
