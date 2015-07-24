@@ -27,6 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private Runspace languageRunspace;
         private Dictionary<string, ScriptFile> workspaceFiles = new Dictionary<string, ScriptFile>();
+        private Dictionary<string, ScriptFile> referencedScriptFiles = new Dictionary<string, ScriptFile>();
 
         #endregion
 
@@ -46,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// Gets the ConsoleService instance for this session.
         /// </summary>
         public ConsoleService ConsoleService { get; private set; }
-
+        
         #endregion
 
         #region Public Methods
@@ -145,6 +146,49 @@ namespace Microsoft.PowerShell.EditorServices.Session
             return this.workspaceFiles.Values;
         }
 
+        /// <summary>
+        /// Gets all file references by recursively searching 
+        /// through referenced files in a scriptfile
+        /// </summary>
+        /// <param name="scriptFile">Contains the details and contents of an open script file</param>
+        /// <returns>A scriptfile array where the first file 
+        /// in the array is the "root file" of the search</returns>
+        public ScriptFile[] ExpandReferences(ScriptFile scriptFile)
+        {
+            RecursivelyFindReferences(scriptFile);
+            ScriptFile[] expandedReferences = { scriptFile };
+            if (referencedScriptFiles.Count != 0)
+            {
+                referencedScriptFiles.Values.CopyTo(expandedReferences, 1);
+            }
+            return expandedReferences;
+        }
+
+        #endregion
+
+        #region Private Methods
+        /// <summary>
+        /// Recusrively searches through referencedFiles in scriptFiles
+        /// and builds a Dictonary of the file references
+        /// </summary>
+        /// <param name="scriptFile">Contains the details and contents of an open script file</param>
+        public void RecursivelyFindReferences(ScriptFile scriptFile)
+        {
+            ScriptFile newFile;
+            foreach (string filename in scriptFile.ReferencedFiles)
+            {
+                string filePath = Path.GetFullPath(filename);
+                if (referencedScriptFiles.ContainsKey(filePath))
+                {
+                    using (StreamReader streamReader = new StreamReader(filePath, Encoding.UTF8))
+                    {
+                        newFile = new ScriptFile(filePath, streamReader);
+                        referencedScriptFiles.Add(filePath, newFile);
+                    }
+                    RecursivelyFindReferences(newFile);
+                }
+            }
+        }
         #endregion
 
         #region IDisposable Implementation

@@ -63,7 +63,7 @@
     <Compile Include="Language\LanguageServiceTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Console\ConsoleServiceTests.cs" />
-    <Compile Include="Session\FileChangeTests.cs" />
+    <Compile Include="Session\ScriptFileTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

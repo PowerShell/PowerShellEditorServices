@@ -122,26 +122,47 @@ namespace Microsoft.PowerShell.EditorServices.Language
         }
 
         /// <summary>
-        /// Finds all the references of a symbol in the script given a file location
+        /// Finds the symbol in the script given a file location
+        /// </summary>
+        /// <param name="file">The details and contents of a open script file</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>A SymbolReference of the symbol found at the given location
+        /// or null if there is no symbol at that location 
+        /// </returns>
+        public SymbolReference FindSymbolAtLocation(
+            ScriptFile file,
+            int lineNumber,
+            int columnNumber)
+        {
+            return
+                AstOperations.FindSymbolAtPosition(
+                    file.ScriptAst,
+                    lineNumber,
+                    columnNumber);
+        }
+
+        /// <summary>
+        /// Finds all the references of a symbol
         /// </summary>
         /// <param name="file">The details and contents of a open script file</param>
         /// <param name="lineNumber">The line number of the cursor for the given script</param>
         /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
         /// <returns>FindReferencesResult</returns>
-        public FindReferencesResult FindReferencesInFile(
-            ScriptFile file,
-            int lineNumber,
-            int columnNumber)
-        {
-            SymbolReference foundSymbol =
-                AstOperations.FindSymbolAtPosition(
-                    file.ScriptAst,
-                    lineNumber,
-                    columnNumber);
-
+        public FindReferencesResult FindReferencesOfSymbol(
+            SymbolReference foundSymbol,
+            ScriptFile[] referencedFiles)
+        {                
             if (foundSymbol != null)
             {
-                IEnumerable<SymbolReference> symbolReferences =
+                int symbolOffset = referencedFiles[0].GetOffsetAtPosition(
+                    foundSymbol.ScriptRegion.StartLineNumber,
+                    foundSymbol.ScriptRegion.StartColumnNumber);
+                List<SymbolReference> symbolReferences = new List<SymbolReference>();
+
+                foreach (ScriptFile file in referencedFiles)
+                {
+                    IEnumerable<SymbolReference> symbolReferencesinFile =
                     AstOperations
                         .FindReferencesOfSymbol(
                             file.ScriptAst,
@@ -149,15 +170,17 @@ namespace Microsoft.PowerShell.EditorServices.Language
                         .Select(
                             reference =>
                             {
-                                reference.SourceLine = 
+                                reference.SourceLine =
                                     file.GetLine(reference.ScriptRegion.StartLineNumber);
                                 return reference;
                             });
+                    symbolReferences.AddRange(symbolReferencesinFile);
+                }
 
                 return
                     new FindReferencesResult
                     {
-                        SymbolFileOffset = file.GetOffsetAtPosition(lineNumber, columnNumber),
+                        SymbolFileOffset = symbolOffset,
                         SymbolName = foundSymbol.SymbolName,
                         FoundReferences = symbolReferences
                     };

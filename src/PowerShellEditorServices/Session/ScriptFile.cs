@@ -208,6 +208,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
             return offset;
         }
 
+        /// <summary>
+        /// Finds the dot sourced files in this ScriptFile
+        /// </summary>
+        public void FindDotSourcedFiles()
+        {
+            ReferencedFiles =
+                AstOperations.FindDotSourcedIncludes(this.ScriptAst);
+        }
+
         #endregion
 
         #region Private Methods
@@ -235,15 +244,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
             // Parse the contents to get syntax tree and errors
             this.ParseFileContents();
             this.FindDotSourcedFiles();
-        }
-
-        /// <summary>
-        /// Finds the dot sourced files in this ScriptFile
-        /// </summary>
-        private void FindDotSourcedFiles()
-        {
-            ReferencedFiles = 
-                AstOperations.FindDotSourcedIncludes(this.ScriptAst);
         }
 
         /// <summary>
