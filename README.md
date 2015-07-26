@@ -33,3 +33,8 @@ git submodule init
 git submodule update
 ```
 
+## Contributions Welcome!
+
+We would love to incorporate community contributions into this project.  If you would like to
+contribute code, documentation, tests, or bug reports, please read our [Contribution Guide]
+(docs/contributing.md) to learn more.
