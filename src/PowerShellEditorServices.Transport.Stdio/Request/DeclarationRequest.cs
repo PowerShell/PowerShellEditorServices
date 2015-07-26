@@ -18,12 +18,16 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             MessageWriter messageWriter)
         {
             ScriptFile scriptFile = this.GetScriptFile(editorSession);
-
-            GetDefinitionResult definition =
-                editorSession.LanguageService.GetDefinitionInFile(
+            SymbolReference foundSymbol =
+                editorSession.LanguageService.FindSymbolAtLocation(
                     scriptFile,
                     this.Arguments.Line,
                     this.Arguments.Offset);
+
+            GetDefinitionResult definition =
+                editorSession.LanguageService.GetDefinitionOfSymbol(
+                    foundSymbol,
+                    editorSession.ExpandScriptReferences(scriptFile));
 
             if (definition != null)
             {

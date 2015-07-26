@@ -27,7 +27,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private Runspace languageRunspace;
         private Dictionary<string, ScriptFile> workspaceFiles = new Dictionary<string, ScriptFile>();
-        private Dictionary<string, ScriptFile> referencedScriptFiles = new Dictionary<string, ScriptFile>();
 
         #endregion
 
@@ -90,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <exception cref="ArgumentException">
         /// <paramref name="filePath"/> contains a null or empty string.
         /// </exception>
-        public void OpenFile(string filePath)
+        public ScriptFile OpenFile(string filePath)
         {
             Validate.IsNotNullOrEmptyString("filePath", filePath);
 
@@ -104,6 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 {
                     ScriptFile newFile = new ScriptFile(filePath, streamReader);
                     this.workspaceFiles.Add(filePath, newFile);
+                    return newFile;
                 }
             }
             else
@@ -153,15 +153,18 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <param name="scriptFile">Contains the details and contents of an open script file</param>
         /// <returns>A scriptfile array where the first file 
         /// in the array is the "root file" of the search</returns>
-        public ScriptFile[] ExpandReferences(ScriptFile scriptFile)
+        public ScriptFile[] ExpandScriptReferences(ScriptFile scriptFile)
         {
-            RecursivelyFindReferences(scriptFile);
-            ScriptFile[] expandedReferences = { scriptFile };
+            Dictionary<string, ScriptFile> referencedScriptFiles = new Dictionary<string, ScriptFile>();
+            List<ScriptFile> expandedReferences = new List<ScriptFile>();
+
+            RecursivelyFindReferences(scriptFile, referencedScriptFiles);
+            expandedReferences.Add(scriptFile); // add original file first
             if (referencedScriptFiles.Count != 0)
             {
-                referencedScriptFiles.Values.CopyTo(expandedReferences, 1);
+                expandedReferences.AddRange(referencedScriptFiles.Values);
             }
-            return expandedReferences;
+            return expandedReferences.ToArray();
         }
 
         #endregion
@@ -171,8 +174,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// Recusrively searches through referencedFiles in scriptFiles
         /// and builds a Dictonary of the file references
         /// </summary>
-        /// <param name="scriptFile">Contains the details and contents of an open script file</param>
-        public void RecursivelyFindReferences(ScriptFile scriptFile)
+        /// <param name="scriptFile">Details an contents of "root" script file</param>
+        /// <param name="referencedScriptFiles">A Dictionary of referenced script files</param>
+        private void RecursivelyFindReferences(
+            ScriptFile scriptFile, 
+            Dictionary<string, ScriptFile> referencedScriptFiles)
         {
             ScriptFile newFile;
             foreach (string filename in scriptFile.ReferencedFiles)
@@ -180,12 +186,12 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 string filePath = Path.GetFullPath(filename);
                 if (referencedScriptFiles.ContainsKey(filePath))
                 {
-                    using (StreamReader streamReader = new StreamReader(filePath, Encoding.UTF8))
+                    if (TryGetFile(filePath, out newFile))
                     {
-                        newFile = new ScriptFile(filePath, streamReader);
+                        newFile = OpenFile(filePath);
                         referencedScriptFiles.Add(filePath, newFile);
                     }
-                    RecursivelyFindReferences(newFile);
+                    RecursivelyFindReferences(newFile, referencedScriptFiles);
                 }
             }
         }

@@ -145,9 +145,8 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// <summary>
         /// Finds all the references of a symbol
         /// </summary>
-        /// <param name="file">The details and contents of a open script file</param>
-        /// <param name="lineNumber">The line number of the cursor for the given script</param>
-        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <param name="foundSymbol">The symbol to find all references for</param>
+        /// <param name="referencedFiles">An array of scriptFiles too search for references in</param>
         /// <returns>FindReferencesResult</returns>
         public FindReferencesResult FindReferencesOfSymbol(
             SymbolReference foundSymbol,
@@ -189,30 +188,27 @@ namespace Microsoft.PowerShell.EditorServices.Language
         }
 
         /// <summary>
-        /// Finds the definition of a symbol in the script given a file location
+        /// Finds the definition of a symbol in the script 
         /// </summary>
-        /// <param name="file">The details and contents of a open script file</param>
-        /// <param name="lineNumber">The line number of the cursor for the given script</param>
-        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <param name="foundSymbol">The symbol to find a definition for</param>
+        /// <param name="referencedFiles">An array of scriptFiles too search for the definition in</param>
         /// <returns>GetDefinitionResult</returns>
-        public GetDefinitionResult GetDefinitionInFile(
-            ScriptFile file,
-            int lineNumber,
-            int columnNumber)
+        public GetDefinitionResult GetDefinitionOfSymbol(
+            SymbolReference foundSymbol,
+            ScriptFile[] referencedFiles)
         {
-            SymbolReference foundSymbol =
-                AstOperations.FindSymbolAtPosition(
-                    file.ScriptAst,
-                    lineNumber,
-                    columnNumber);
-
             if (foundSymbol != null)
             {
-                SymbolReference foundDefinition =
-                    AstOperations.FindDefinitionOfSymbol(
-                         file.ScriptAst,
-                         foundSymbol);
-
+                SymbolReference foundDefinition = null;
+                int index = 0;
+                while (foundDefinition == null && index < referencedFiles.Length)
+                {
+                    foundDefinition =
+                        AstOperations.FindDefinitionOfSymbol(
+                            referencedFiles[index].ScriptAst,
+                            foundSymbol);
+                    index++;
+                }
                 return new GetDefinitionResult(foundDefinition);
             }
             else { return null; }
