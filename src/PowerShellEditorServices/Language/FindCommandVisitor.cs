@@ -46,8 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                     this.FoundCommandReference =
                         new SymbolReference(
                             SymbolType.Function,
-                            commandNameAst.Extent,
-                            string.Empty);
+                            commandNameAst.Extent);
 
                     return AstVisitAction.StopVisit;
                 }

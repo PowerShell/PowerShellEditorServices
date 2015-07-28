@@ -62,17 +62,24 @@ namespace Microsoft.PowerShell.EditorServices.Language
         #endregion
 
         /// <summary>
+        /// Gets the Filepath of the symbol
+        /// </summary>
+        public string FilePath { get; internal set; }
+
+        /// <summary>
         /// Constructs and instance of a SymbolReference
         /// </summary>
         /// <param name="symbolType">The higher level type of the symbol</param>
         /// <param name="scriptExtent">The script extent of the symbol</param>
+        /// <param name="filePath">The file path of the symbol</param>
         /// <param name="sourceLine">The line contents of the given symbol (defaults to empty string)</param>
-        public SymbolReference(SymbolType symbolType, IScriptExtent scriptExtent, string sourceLine = "")
+        public SymbolReference(SymbolType symbolType, IScriptExtent scriptExtent, string filePath = "", string sourceLine = "")
         {
             // TODO: Verify params
             this.SymbolType = symbolType;
             this.SymbolName = scriptExtent.Text;
             this.ScriptRegion = ScriptRegion.Create(scriptExtent);
+            this.FilePath = filePath;
             this.SourceLine = sourceLine;
 
             // TODO: Make sure end column number usage is correct

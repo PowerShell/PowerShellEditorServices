@@ -31,8 +31,15 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 
             if (definition != null)
             {
-                DefinitionResponse defResponse = 
-                    DefinitionResponse.Create(definition.FoundDefinition, this.Arguments.File);
+                DefinitionResponse defResponse;
+                if (definition.FoundDefinition != null)
+                {
+                    defResponse = DefinitionResponse.Create(definition.FoundDefinition);
+                }
+                else
+                {
+                    defResponse = DefinitionResponse.Create();
+                }
 
                 messageWriter.WriteMessage(
                     this.PrepareResponse(defResponse));

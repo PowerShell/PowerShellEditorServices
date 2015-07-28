@@ -40,6 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                 Text = functionDefinitionAst.Name,
                 StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
                 StartColumnNumber = startColumnNumber,
+                EndLineNumber = functionDefinitionAst.Extent.StartLineNumber,
                 EndColumnNumber = startColumnNumber + functionDefinitionAst.Name.Length
             };
 
@@ -49,8 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                 this.FoundDeclartion =
                     new SymbolReference(
                         SymbolType.Function,
-                        nameExtent,
-                        string.Empty);
+                        nameExtent);
 
                 return AstVisitAction.StopVisit;
             }
@@ -74,8 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                 this.FoundDeclartion =
                     new SymbolReference(
                         SymbolType.Variable,
-                        variableExpressionAst.Extent,
-                        string.Empty);
+                        variableExpressionAst.Extent);
 
                 return AstVisitAction.StopVisit;
             }

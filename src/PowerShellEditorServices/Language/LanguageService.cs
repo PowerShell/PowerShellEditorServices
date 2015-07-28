@@ -10,8 +10,10 @@ using System.Linq;
 namespace Microsoft.PowerShell.EditorServices.Language
 {
     using Microsoft.PowerShell.EditorServices.Utility;
+    using System.IO;
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
+    using System.Text;
 
     /// <summary>
     /// Provides a high-level service for performing code completion and
@@ -135,11 +137,16 @@ namespace Microsoft.PowerShell.EditorServices.Language
             int lineNumber,
             int columnNumber)
         {
-            return
+            SymbolReference symbolReference =
                 AstOperations.FindSymbolAtPosition(
                     file.ScriptAst,
                     lineNumber,
                     columnNumber);
+            if (symbolReference != null)
+            {
+                symbolReference.FilePath = file.FilePath;
+            }
+            return symbolReference;
         }
 
         /// <summary>
@@ -171,6 +178,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                             {
                                 reference.SourceLine =
                                     file.GetLine(reference.ScriptRegion.StartLineNumber);
+                                reference.FilePath = file.FilePath;
                                 return reference;
                             });
                     symbolReferences.AddRange(symbolReferencesinFile);
@@ -199,16 +207,31 @@ namespace Microsoft.PowerShell.EditorServices.Language
         {
             if (foundSymbol != null)
             {
-                SymbolReference foundDefinition = null;
+                // look through the referenced files until definition is found
+                // or there are no more file to look through
                 int index = 0;
+                SymbolReference foundDefinition = null;
                 while (foundDefinition == null && index < referencedFiles.Length)
                 {
                     foundDefinition =
                         AstOperations.FindDefinitionOfSymbol(
                             referencedFiles[index].ScriptAst,
                             foundSymbol);
+                    if (foundDefinition != null)
+                    {
+                        foundDefinition.FilePath = referencedFiles[index].FilePath;
+                    }
                     index++;
                 }
+
+                // if definition is not found in referenced files 
+                // look for it in the builtin commands
+                if (foundDefinition == null)
+                {
+                    CommandInfo cmdInfo = GetCommandInfo(foundSymbol.SymbolName);
+                    foundDefinition = FindDeclarationForBuiltinCommand(cmdInfo, foundSymbol);
+                }
+
                 return new GetDefinitionResult(foundDefinition);
             }
             else { return null; }
@@ -297,6 +320,70 @@ namespace Microsoft.PowerShell.EditorServices.Language
             }
 
             return commandInfo;
+        }
+
+        private ScriptFile[] GetBuiltinCommandScriptFiles(PSModuleInfo moduleInfo)
+        {
+            if (moduleInfo != null)
+            {
+                string modPath = moduleInfo.Path;
+                List<ScriptFile> scriptFiles = new List<ScriptFile>();
+                ScriptFile newFile;
+
+                if (modPath.EndsWith(@".ps1") || modPath.EndsWith(@".psm1"))
+                {
+                    using (StreamReader streamReader = new StreamReader(modPath, Encoding.UTF8))
+                    {
+                        newFile = new ScriptFile(modPath, streamReader);
+                        scriptFiles.Add(newFile);
+                    }
+                }
+                if (moduleInfo.NestedModules.Count > 0)
+                {
+                    string nestedModPath;
+                    foreach (PSModuleInfo nestedInfo in moduleInfo.NestedModules)
+                    {
+                        nestedModPath = nestedInfo.Path;
+                        if (nestedModPath.EndsWith(@".ps1") || nestedModPath.EndsWith(@".psm1"))
+                        {
+                            using (StreamReader streamReader = new StreamReader(nestedModPath, Encoding.UTF8))
+                            {
+                                newFile = new ScriptFile(nestedModPath, streamReader);
+                                scriptFiles.Add(newFile);
+                            }
+                        }
+                    }
+                }
+                return scriptFiles.ToArray();
+            }
+            return new List<ScriptFile>().ToArray();
+        }
+
+        private SymbolReference FindDeclarationForBuiltinCommand(CommandInfo cmdInfo, SymbolReference foundSymbol)
+        {
+            SymbolReference foundDefinition = null;
+            if (cmdInfo != null)
+            {
+                int index = 0;
+                ScriptFile[] nestedModuleFiles;
+
+                nestedModuleFiles =
+                    GetBuiltinCommandScriptFiles(GetCommandInfo(foundSymbol.SymbolName).Module);
+
+                while (foundDefinition == null && index < nestedModuleFiles.Length)
+                {
+                    foundDefinition =
+                        AstOperations.FindDefinitionOfSymbol(
+                            nestedModuleFiles[index].ScriptAst,
+                            foundSymbol);
+                    if (foundDefinition != null)
+                    {
+                        foundDefinition.FilePath = nestedModuleFiles[index].FilePath;
+                    }
+                    index++;
+                }
+            }
+            return foundDefinition;
         }
     }
 }

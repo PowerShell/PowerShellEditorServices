@@ -38,8 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                 this.FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Function,
-                        commandNameAst.Extent,
-                        string.Empty);
+                        commandNameAst.Extent);
 
                 return AstVisitAction.StopVisit;
             }
@@ -72,8 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                 this.FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Function,
-                        nameExtent,
-                        string.Empty);
+                        nameExtent);
 
                 return AstVisitAction.StopVisit;
             }
@@ -94,8 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                 this.FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Parameter,
-                        commandParameterAst.Extent,
-                        string.Empty);
+                        commandParameterAst.Extent);
                 return AstVisitAction.StopVisit;
             }
             return AstVisitAction.Continue;
@@ -114,8 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                 this.FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Variable,
-                        variableExpressionAst.Extent,
-                        string.Empty);
+                        variableExpressionAst.Extent);
 
                 return AstVisitAction.StopVisit;
             }
