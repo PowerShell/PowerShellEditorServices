@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 {
                     FileName = "Microsoft.PowerShell.EditorServices.Host.exe",
                     Arguments = languageServiceArguments,
-                    CreateNoWindow = false,
+                    CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
