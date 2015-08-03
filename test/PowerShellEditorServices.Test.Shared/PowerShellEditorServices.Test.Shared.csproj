@@ -51,10 +51,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="References\FindsReferencesOnFunction.cs" />
     <Compile Include="References\FindsReferencesOnVariable.cs" />
-    <Compile Include="Utility\ResourceFileLoader.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Completion\CompletionExamples.ps1" />
+    <None Include="Completion\CompletionExamples.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj">
@@ -63,14 +64,14 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="ParameterHints\ParamHints.ps1">
+    <None Include="ParameterHints\ParamHints.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="References\SimpleFile.ps1">
+    <None Include="References\SimpleFile.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
+    </None>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
