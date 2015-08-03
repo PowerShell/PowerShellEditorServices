@@ -42,6 +42,7 @@
     <Compile Include="Completion\CompleteCommandFromModule.cs" />
     <Compile Include="Completion\CompleteCommandInFile.cs" />
     <Compile Include="Completion\CompleteVariableInFile.cs" />
+    <Compile Include="Definition\FindsFunctionDefinitionInDotSourceReference.cs" />
     <Compile Include="Definition\FindsFunctionDefinition.cs" />
     <Compile Include="Definition\FindsVariableDefinition.cs" />
     <Compile Include="Occurrences\FindOccurrencesOnParameter.cs" />
@@ -69,6 +70,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <None Include="References\FileWithReferences.ps1" />
     <None Include="References\SimpleFile.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

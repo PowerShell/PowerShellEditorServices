@@ -120,7 +120,10 @@ namespace Microsoft.PowerShell.EditorServices.Language
                         result => result.CompletionText.Equals(entryName));
                 return completionResult;
             }
-            else { return null; }
+            else
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -146,6 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
             {
                 symbolReference.FilePath = file.FilePath;
             }
+
             return symbolReference;
         }
 
@@ -205,36 +209,34 @@ namespace Microsoft.PowerShell.EditorServices.Language
             SymbolReference foundSymbol,
             ScriptFile[] referencedFiles)
         {
-            if (foundSymbol != null)
+            Validate.IsNotNull("foundSymbol", foundSymbol);
+
+            // look through the referenced files until definition is found
+            // or there are no more file to look through
+            SymbolReference foundDefinition = null;
+            for (int i = 0; i < referencedFiles.Length; i++)
             {
-                // look through the referenced files until definition is found
-                // or there are no more file to look through
-                int index = 0;
-                SymbolReference foundDefinition = null;
-                while (foundDefinition == null && index < referencedFiles.Length)
-                {
-                    foundDefinition =
-                        AstOperations.FindDefinitionOfSymbol(
-                            referencedFiles[index].ScriptAst,
-                            foundSymbol);
-                    if (foundDefinition != null)
-                    {
-                        foundDefinition.FilePath = referencedFiles[index].FilePath;
-                    }
-                    index++;
-                }
+                foundDefinition =
+                    AstOperations.FindDefinitionOfSymbol(
+                        referencedFiles[i].ScriptAst,
+                        foundSymbol);
 
-                // if definition is not found in referenced files 
-                // look for it in the builtin commands
-                if (foundDefinition == null)
+                if (foundDefinition != null)
                 {
-                    CommandInfo cmdInfo = GetCommandInfo(foundSymbol.SymbolName);
-                    foundDefinition = FindDeclarationForBuiltinCommand(cmdInfo, foundSymbol);
+                    foundDefinition.FilePath = referencedFiles[i].FilePath;
+                    break;
                 }
-
-                return new GetDefinitionResult(foundDefinition);
             }
-            else { return null; }
+
+            // if definition is not found in referenced files 
+            // look for it in the builtin commands
+            if (foundDefinition == null)
+            {
+                CommandInfo cmdInfo = GetCommandInfo(foundSymbol.SymbolName);
+                foundDefinition = FindDeclarationForBuiltinCommand(cmdInfo, foundSymbol);
+            }
+
+            return new GetDefinitionResult(foundDefinition);
         }
 
         /// <summary>
@@ -254,6 +256,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                     file.ScriptAst,
                     lineNumber,
                     columnNumber);
+
             if (foundSymbol != null)
             {
                 IEnumerable<SymbolReference> symbolOccurrences =
@@ -268,7 +271,10 @@ namespace Microsoft.PowerShell.EditorServices.Language
                         FoundOccurrences = symbolOccurrences
                     };
             }
-            else { return null; }
+            else
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -300,9 +306,15 @@ namespace Microsoft.PowerShell.EditorServices.Language
 
                     return new ParameterSetSignatures(commandInfoSet, foundSymbol);
                 }
-                else { return null; }
+                else
+                {
+                    return null;
+                }
             }
-            else { return null; }
+            else
+            {
+                return null;
+            }
         }
         
         #endregion
@@ -354,8 +366,10 @@ namespace Microsoft.PowerShell.EditorServices.Language
                         }
                     }
                 }
+
                 return scriptFiles.ToArray();
             }
+
             return new List<ScriptFile>().ToArray();
         }
 
@@ -383,6 +397,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                     index++;
                 }
             }
+
             return foundDefinition;
         }
     }

@@ -144,9 +144,9 @@ namespace Microsoft.PowerShell.EditorServices.Session
                         scriptFile.FilePath,
                         filename);
 
-                if (referencedScriptFiles.ContainsKey(resolvedScriptPath))
+                if (!referencedScriptFiles.ContainsKey(resolvedScriptPath))
                 {
-                    if (TryGetFile(resolvedScriptPath, out newFile))
+                    if (!TryGetFile(resolvedScriptPath, out newFile))
                     {
                         newFile = OpenFile(resolvedScriptPath);
                         referencedScriptFiles.Add(resolvedScriptPath, newFile);

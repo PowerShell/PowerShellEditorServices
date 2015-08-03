@@ -118,6 +118,23 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
+        public void LanguageServiceFindsFunctionDefinitionInDotSourceReference()
+        {
+            GetDefinitionResult definitionResult =
+                this.GetDefinition(
+                    FindsFunctionDefinitionInDotSourceReference.SourceDetails);
+
+            SymbolReference definition = definitionResult.FoundDefinition;
+            Assert.True(
+                definitionResult.FoundDefinition.FilePath.EndsWith(
+                    FindsFunctionDefinition.SourceDetails.File),
+                "Unexpected reference file: " + definitionResult.FoundDefinition.FilePath);
+            Assert.Equal(1, definition.ScriptRegion.StartLineNumber);
+            Assert.Equal(10, definition.ScriptRegion.StartColumnNumber);
+            Assert.Equal("My-Function", definition.SymbolName);
+        }
+
+        [Fact]
         public void LanguageServiceFindsVariableDefinition()
         {
             GetDefinitionResult definitionResult =
@@ -164,7 +181,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     baseSharedScriptPath, 
                     scriptRegion.File);
 
-            return this.workspace.OpenFile(resolvedPath);
+            ScriptFile scriptFile = null;
+            if (!this.workspace.TryGetFile(resolvedPath, out scriptFile))
+            {
+                scriptFile = this.workspace.OpenFile(resolvedPath);
+            }
+
+            return scriptFile;
         }
 
         private CompletionResults GetCompletionResults(ScriptRegion scriptRegion)
