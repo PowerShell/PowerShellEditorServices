@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             {
                 ScriptFile scriptFile = null;
 
-                if (!editorSession.TryGetFile(filePath, out scriptFile))
+                if (!editorSession.Workspace.TryGetFile(filePath, out scriptFile))
                 {
                     // Skip this file and log the file load error
                     // TODO: Trace out the error message

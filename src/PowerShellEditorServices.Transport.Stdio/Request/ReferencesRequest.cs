@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             FindReferencesResult referencesResult =
                 editorSession.LanguageService.FindReferencesOfSymbol(
                     foundSymbol,
-                    editorSession.ExpandScriptReferences(scriptFile));
+                    editorSession.Workspace.ExpandScriptReferences(scriptFile));
 
             ReferencesResponse referencesResponse = 
                 ReferencesResponse.Create(referencesResult, this.Arguments.File);

@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
         {
             ScriptFile scriptFile = null;
 
-            if(!editorSession.TryGetFile(
+            if(!editorSession.Workspace.TryGetFile(
                 this.Arguments.File, 
                 out scriptFile))
             {

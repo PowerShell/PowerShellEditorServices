@@ -26,12 +26,16 @@ namespace Microsoft.PowerShell.EditorServices.Session
         #region Private Fields
 
         private Runspace languageRunspace;
-        private Dictionary<string, ScriptFile> workspaceFiles = new Dictionary<string, ScriptFile>();
 
         #endregion
 
         #region Properties
 
+        /// <summary>
+        /// Gets the Workspace instance for this session.
+        /// </summary>
+        public Workspace Workspace { get; private set; }
+        
         /// <summary>
         /// Gets the LanguageService instance for this session.
         /// </summary>
@@ -46,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// Gets the ConsoleService instance for this session.
         /// </summary>
         public ConsoleService ConsoleService { get; private set; }
-        
+
         #endregion
 
         #region Public Methods
@@ -63,6 +67,9 @@ namespace Microsoft.PowerShell.EditorServices.Session
         {
             InitialSessionState initialSessionState = InitialSessionState.CreateDefault2();
 
+            // Create a workspace to contain open files
+            this.Workspace = new Workspace();
+
             // Create a runspace to share between the language and analysis services
             this.languageRunspace = RunspaceFactory.CreateRunspace(initialSessionState);
             this.languageRunspace.ApartmentState = ApartmentState.STA;
@@ -76,125 +83,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
             this.ConsoleService = new ConsoleService(consoleHost, initialSessionState);
         }
 
-        /// <summary>
-        /// Opens a script file with the given file path.
-        /// </summary>
-        /// <param name="filePath">The file path at which the script resides.</param>
-        /// <exception cref="FileNotFoundException">
-        /// <paramref name="filePath"/> is not found.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        /// <paramref name="filePath"/> has already been loaded in the session.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        /// <paramref name="filePath"/> contains a null or empty string.
-        /// </exception>
-        public ScriptFile OpenFile(string filePath)
-        {
-            Validate.IsNotNullOrEmptyString("filePath", filePath);
-
-            // Make sure the file isn't already loaded into the session
-            if (!this.workspaceFiles.ContainsKey(filePath))
-            {
-                // This method allows FileNotFoundException to bubble up 
-                // if the file isn't found.
-
-                using (StreamReader streamReader = new StreamReader(filePath, Encoding.UTF8))
-                {
-                    ScriptFile newFile = new ScriptFile(filePath, streamReader);
-                    this.workspaceFiles.Add(filePath, newFile);
-                    return newFile;
-                }
-            }
-            else
-            {
-                throw new ArgumentException(
-                    "The specified file has already been loaded: " + filePath,
-                    "filePath");
-            }
-        }
-
-        /// <summary>
-        /// Closes a currently open script file with the given file path.
-        /// </summary>
-        /// <param name="scriptFile">The file path at which the script resides.</param>
-        public void CloseFile(ScriptFile scriptFile)
-        {
-            Validate.IsNotNull("scriptFile", scriptFile);
-
-            this.workspaceFiles.Remove(scriptFile.FilePath);
-        }
-
-        /// <summary>
-        /// Attempts to get a currently open script file with the given file path.
-        /// </summary>
-        /// <param name="filePath">The file path at which the script resides.</param>
-        /// <param name="scriptFile">The output variable in which the ScriptFile will be stored.</param>
-        /// <returns>A ScriptFile instance</returns>
-        public bool TryGetFile(string filePath, out ScriptFile scriptFile)
-        {
-            scriptFile = null;
-            return this.workspaceFiles.TryGetValue(filePath, out scriptFile);
-        }
-
-        /// <summary>
-        /// Gets all open files in the session.
-        /// </summary>
-        /// <returns>A collection of all open ScriptFiles in the session.</returns>
-        public IEnumerable<ScriptFile> GetOpenFiles()
-        {
-            return this.workspaceFiles.Values;
-        }
-
-        /// <summary>
-        /// Gets all file references by recursively searching 
-        /// through referenced files in a scriptfile
-        /// </summary>
-        /// <param name="scriptFile">Contains the details and contents of an open script file</param>
-        /// <returns>A scriptfile array where the first file 
-        /// in the array is the "root file" of the search</returns>
-        public ScriptFile[] ExpandScriptReferences(ScriptFile scriptFile)
-        {
-            Dictionary<string, ScriptFile> referencedScriptFiles = new Dictionary<string, ScriptFile>();
-            List<ScriptFile> expandedReferences = new List<ScriptFile>();
-
-            RecursivelyFindReferences(scriptFile, referencedScriptFiles);
-            expandedReferences.Add(scriptFile); // add original file first
-            if (referencedScriptFiles.Count != 0)
-            {
-                expandedReferences.AddRange(referencedScriptFiles.Values);
-            }
-            return expandedReferences.ToArray();
-        }
-
-        #endregion
-
-        #region Private Methods
-        /// <summary>
-        /// Recusrively searches through referencedFiles in scriptFiles
-        /// and builds a Dictonary of the file references
-        /// </summary>
-        /// <param name="scriptFile">Details an contents of "root" script file</param>
-        /// <param name="referencedScriptFiles">A Dictionary of referenced script files</param>
-        private void RecursivelyFindReferences(
-            ScriptFile scriptFile, 
-            Dictionary<string, ScriptFile> referencedScriptFiles)
-        {
-            ScriptFile newFile;
-            foreach (string filename in scriptFile.ReferencedFiles)
-            {
-                string filePath = Path.GetFullPath(filename);
-                if (referencedScriptFiles.ContainsKey(filePath))
-                {
-                    if (TryGetFile(filePath, out newFile))
-                    {
-                        newFile = OpenFile(filePath);
-                        referencedScriptFiles.Add(filePath, newFile);
-                    }
-                    RecursivelyFindReferences(newFile, referencedScriptFiles);
-                }
-            }
-        }
         #endregion
 
         #region IDisposable Implementation

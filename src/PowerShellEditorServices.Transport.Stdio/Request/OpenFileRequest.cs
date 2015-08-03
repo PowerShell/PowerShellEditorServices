@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             MessageWriter messageWriter)
         {
             // Open the file in the current session
-            editorSession.OpenFile(this.Arguments.File);
+            editorSession.Workspace.OpenFile(this.Arguments.File);
         }
     }
 }

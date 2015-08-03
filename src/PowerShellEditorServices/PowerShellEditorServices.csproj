@@ -89,6 +89,7 @@
     <Compile Include="Session\FileChange.cs" />
     <Compile Include="Session\ScriptFileMarker.cs" />
     <Compile Include="Session\ScriptRegion.cs" />
+    <Compile Include="Session\Workspace.cs" />
     <Compile Include="Utility\Validate.cs" />
   </ItemGroup>
   <ItemGroup>
