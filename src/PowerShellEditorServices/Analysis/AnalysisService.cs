@@ -40,7 +40,10 @@ namespace Microsoft.PowerShell.EditorServices.Analysis
             this.scriptAnalyzer = new ScriptAnalyzer();
             this.scriptAnalyzer.Initialize(
                 analysisRunspace,
-                new AnalysisOutputWriter());
+                new AnalysisOutputWriter(),
+                null,
+                null,
+                new string[] { "DscTestsPresent", "DscExamplesPresent" });
         }
 
         #endregion
