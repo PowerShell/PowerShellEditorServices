@@ -26,8 +26,14 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             EditorSession editorSession,
             MessageWriter messageWriter)
         {
-            // Open the file in the current session
-            editorSession.Workspace.OpenFile(this.Arguments.File);
+            ScriptFile scriptFile = null;
+
+            // Only load the file if it isn't loaded already
+            if (!editorSession.Workspace.TryGetFile(this.Arguments.File, out scriptFile))
+            {
+                // Open the file in the current session
+                editorSession.Workspace.OpenFile(this.Arguments.File);
+            }
         }
     }
 }
