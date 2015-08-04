@@ -149,9 +149,9 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     if (!TryGetFile(resolvedScriptPath, out newFile))
                     {
                         newFile = OpenFile(resolvedScriptPath);
-                        referencedScriptFiles.Add(resolvedScriptPath, newFile);
                     }
 
+                    referencedScriptFiles.Add(resolvedScriptPath, newFile);
                     RecursivelyFindReferences(newFile, referencedScriptFiles);
                 }
             }

@@ -59,6 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
             {
                 Text = functionDefinitionAst.Name,
                 StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
+                EndLineNumber = functionDefinitionAst.Extent.StartLineNumber,
                 StartColumnNumber = startColumnNumber,
                 EndColumnNumber = startColumnNumber + functionDefinitionAst.Name.Length
             };
