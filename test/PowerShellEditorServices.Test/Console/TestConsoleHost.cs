@@ -6,63 +6,19 @@
 using Microsoft.PowerShell.EditorServices.Console;
 using System;
 using System.Collections.Generic;
+using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Threading;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
-    public class TestConsoleHost : IConsoleHost
+    public class TestConsoleHost 
     {
-        private Dictionary<OutputType, string> outputPerType = 
-            new Dictionary<OutputType, string>();
-
-        #region Helper Methods
-
-        public string GetOutputForType(OutputType outputLineType)
-        {
-            string outputString = null;
-
-            this.outputPerType.TryGetValue(outputLineType, out outputString);
-
-            return outputString;
-        }
-
-        #endregion
-
         #region IConsoleHost Implementation
 
-        void IConsoleHost.WriteOutput(
-            string outputString,
-            bool includeNewLine,
-            OutputType outputType,
-            ConsoleColor foregroundColor, 
-            ConsoleColor backgroundColor)
-        {
-            string storedOutputString = null;
-            if (!this.outputPerType.TryGetValue(outputType, out storedOutputString))
-            {
-                this.outputPerType.Add(outputType, null);
-            }
-
-            if (storedOutputString == null)
-            {
-                storedOutputString = outputString;
-            }
-            else
-            {
-                storedOutputString += outputString;
-            }
-
-            if (includeNewLine)
-            {
-                storedOutputString += Environment.NewLine;
-            }
-
-            this.outputPerType[outputType] = storedOutputString;
-        }
-
-        Task<int> IConsoleHost.PromptForChoice(
+        Task<int> PromptForChoice(
             string caption,
             string message,
             IEnumerable<ChoiceDetails> choices,
@@ -85,24 +41,23 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             return taskCompletionSource.Task;
         }
 
-        void IConsoleHost.PromptForChoiceResult(int promptId, int choiceResult)
+        void PromptForChoiceResult(int promptId, int choiceResult)
         {
             // No need to do anything here, task has already completed.
         }
 
-        void IConsoleHost.UpdateProgress(
+        void UpdateProgress(
             long sourceId,
             ProgressDetails progressDetails)
         {
             // TODO: Log progress
         }
 
-        void IConsoleHost.ExitSession(int exitCode)
+        void ExitSession(int exitCode)
         {
             // TODO: Log exit code
         }
 
         #endregion
-
     }
 }

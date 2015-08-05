@@ -13,7 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio
+namespace Microsoft.PowerShell.EditorServices.Host
 {
     public class StdioConsoleHost : IConsoleHost
     {
@@ -37,27 +37,6 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio
         #endregion
 
         #region IConsoleHost Implementation
-
-        void IConsoleHost.WriteOutput(
-            string outputString, 
-            bool includeNewLine,
-            OutputType outputType, 
-            ConsoleColor foregroundColor, 
-            ConsoleColor backgroundColor)
-        {
-            this.messageWriter.WriteMessage(
-                new ReplWriteOutputEvent
-                {
-                    Body = new ReplWriteOutputEventBody
-                    {
-                        LineContents = outputString,
-                        LineType = outputType,
-                        IncludeNewLine = includeNewLine,
-                        ForegroundColor = foregroundColor,
-                        BackgroundColor = backgroundColor
-                    }
-                });
-        }
 
         Task<int> IConsoleHost.PromptForChoice(
             string caption, 
@@ -113,5 +92,9 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio
         }
 
         #endregion
+
+        public void WriteOutput(string outputString, bool includeNewLine = true, OutputType outputType = OutputType.Normal, ConsoleColor foregroundColor = ConsoleColor.White, ConsoleColor backgroundColor = ConsoleColor.Black)
+        {
+        }
     }
 }

@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Session;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
 {
@@ -18,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
         /// </summary>
         /// <param name="editorSession"></param>
         /// <param name="messageWriter"></param>
-        void ProcessMessage(
+        Task ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter);
     }

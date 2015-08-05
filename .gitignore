@@ -44,9 +44,6 @@ ClientBin/
 csx/
 
 # Don't include ScriptAnalyzer binaries
-PowerShellEditorServices/Microsoft.Windows.PowerShell.ScriptAnalyzer.dll
-PowerShellEditorServices/Microsoft.Windows.PowerShell.ScriptAnalyzer.BuiltinRules.dll
-PowerShellEditorServices/PSScriptAnalyzer.psd1
-PowerShellEditorServices/ScriptAnalyzer.format.ps1xml
-PowerShellEditorServices/ScriptAnalyzer.types.ps1xml
+PowerShellEditorServices/**
+
 

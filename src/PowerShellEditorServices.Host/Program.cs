@@ -49,8 +49,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
             // TODO: Select host, console host, and transport based on command line arguments
 
-            IHost host = new StdioHost();
-            host.Start();
+            MessageLoop messageLoop = new MessageLoop();
+            messageLoop.Start();
         }
 
         static void CurrentDomain_UnhandledException(

@@ -5,18 +5,22 @@
 
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+using Nito.AsyncEx;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
     [MessageTypeName("change")]
     public class ChangeFileRequest : FileRequest<ChangeFileRequestArguments>
     {
-        public override void ProcessMessage(
+        public override Task ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter)
         {
             ScriptFile scriptFile = this.GetScriptFile(editorSession);
             scriptFile.ApplyChange(this.Arguments.GetFileChangeDetails());
+
+            return TaskConstants.Completed;
         }
     }
 

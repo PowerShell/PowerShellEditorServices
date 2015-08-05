@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message

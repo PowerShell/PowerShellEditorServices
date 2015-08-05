@@ -7,13 +7,15 @@ using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using Nito.AsyncEx;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
     [MessageTypeName("occurrences")]
     public class OccurrencesRequest : FileRequest<FileLocationRequestArgs>
     {
-        public override void ProcessMessage(
+        public override Task ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter)
         {
@@ -31,6 +33,8 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             messageWriter.WriteMessage(
                 this.PrepareResponse(
                     occurrencesResponce));
+
+            return TaskConstants.Completed;
         }
     }
 }

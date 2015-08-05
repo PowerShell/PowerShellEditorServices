@@ -35,16 +35,16 @@
     <DocumentationFile>bin\Release\Microsoft.PowerShell.EditorServices.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Nito.AsyncEx, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Nito.AsyncEx.3.0.0\lib\net45\Nito.AsyncEx.dll</HintPath>
+    <Reference Include="Nito.AsyncEx, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.3.0.1\lib\net45\Nito.AsyncEx.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Nito.AsyncEx.Concurrent, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Nito.AsyncEx.3.0.0\lib\net45\Nito.AsyncEx.Concurrent.dll</HintPath>
+    <Reference Include="Nito.AsyncEx.Concurrent, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.3.0.1\lib\net45\Nito.AsyncEx.Concurrent.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Nito.AsyncEx.Enlightenment, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Nito.AsyncEx.3.0.0\lib\net45\Nito.AsyncEx.Enlightenment.dll</HintPath>
+    <Reference Include="Nito.AsyncEx.Enlightenment, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.3.0.1\lib\net45\Nito.AsyncEx.Enlightenment.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -59,14 +59,19 @@
   <ItemGroup>
     <Compile Include="Analysis\AnalysisOutputWriter.cs" />
     <Compile Include="Analysis\AnalysisService.cs" />
+    <Compile Include="Console\BreakpointDetails.cs" />
     <Compile Include="Console\ChoiceDetails.cs" />
     <Compile Include="Console\ConsoleServicePSHost.cs" />
     <Compile Include="Console\ConsoleServicePSHostRawUserInterface.cs" />
     <Compile Include="Console\ConsoleServicePSHostUserInterface.cs" />
     <Compile Include="Console\OutputType.cs" />
+    <Compile Include="Console\PowerShellSession.cs" />
     <Compile Include="Console\ProgressDetails.cs" />
+    <Compile Include="Console\StackFrameDetails.cs" />
     <Compile Include="Console\SynchronizingConsoleHostWrapper.cs" />
     <Compile Include="Console\IConsoleHost.cs" />
+    <Compile Include="Console\VariableDetails.cs" />
+    <Compile Include="DebugService.cs" />
     <Compile Include="IHost.cs" />
     <Compile Include="Language\AstOperations.cs" />
     <Compile Include="Language\CompletionResults.cs" />
@@ -81,7 +86,9 @@
     <Compile Include="Language\LanguageService.cs" />
     <Compile Include="Language\ParameterSetSignatures.cs" />
     <Compile Include="Language\ScriptExtent.cs" />
+    <Compile Include="Language\SymbolDetails.cs" />
     <Compile Include="Language\SymbolReference.cs" />
+    <Compile Include="Language\SymbolType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Console\ConsoleService.cs" />
     <Compile Include="Session\EditorSession.cs" />

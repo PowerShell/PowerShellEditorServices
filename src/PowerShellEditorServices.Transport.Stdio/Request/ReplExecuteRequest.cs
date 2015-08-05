@@ -5,18 +5,22 @@
 
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+using Nito.AsyncEx;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
     [MessageTypeName("replExecute")]
     public class ReplExecuteRequest : RequestBase<ReplExecuteArgs>
     {
-        public override void ProcessMessage(
+        public override Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
-            editorSession.ConsoleService.ExecuteCommand(
+            editorSession.PowerShellSession.ExecuteScript(
                 this.Arguments.CommandString);
+
+            return TaskConstants.Completed;
         }
     }
 

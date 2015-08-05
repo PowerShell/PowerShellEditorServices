@@ -5,6 +5,8 @@
 
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+using Nito.AsyncEx;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
@@ -22,12 +24,14 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             };
         }
 
-        public override void ProcessMessage(
+        public override Task ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter)
         {
             // Open the file in the current session
             editorSession.Workspace.GetFile(this.Arguments.File);
+
+            return TaskConstants.Completed;
         }
     }
 }

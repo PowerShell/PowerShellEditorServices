@@ -38,16 +38,16 @@
       <HintPath>..\..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Nito.AsyncEx, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Nito.AsyncEx.3.0.0\lib\net45\Nito.AsyncEx.dll</HintPath>
+    <Reference Include="Nito.AsyncEx, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.3.0.1\lib\net45\Nito.AsyncEx.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Nito.AsyncEx.Concurrent, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Nito.AsyncEx.3.0.0\lib\net45\Nito.AsyncEx.Concurrent.dll</HintPath>
+    <Reference Include="Nito.AsyncEx.Concurrent, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.3.0.1\lib\net45\Nito.AsyncEx.Concurrent.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Nito.AsyncEx.Enlightenment, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Nito.AsyncEx.3.0.0\lib\net45\Nito.AsyncEx.Enlightenment.dll</HintPath>
+    <Reference Include="Nito.AsyncEx.Enlightenment, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.3.0.1\lib\net45\Nito.AsyncEx.Enlightenment.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -62,11 +62,14 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Event\DiagnosticEvent.cs" />
     <Compile Include="Event\EventBase.cs" />
+    <Compile Include="Event\ExitedEvent.cs" />
+    <Compile Include="Event\InitializedEvent.cs" />
     <Compile Include="Event\ReplPromptChoiceEvent.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Event\ReplWriteOutputEvent.cs" />
     <Compile Include="Event\StartedEvent.cs" />
+    <Compile Include="Event\StoppedEvent.cs" />
     <Compile Include="Message\IMessageProcessor.cs" />
     <Compile Include="Message\MessageBase.cs" />
     <Compile Include="Message\MessageFormat.cs" />
@@ -77,31 +80,70 @@
     <Compile Include="Message\MessageTypeNameAttribute.cs" />
     <Compile Include="Message\MessageTypeResolver.cs" />
     <Compile Include="Message\MessageWriter.cs" />
+    <Compile Include="Model\Breakpoint.cs" />
+    <Compile Include="Model\Message.cs" />
+    <Compile Include="Model\Scope.cs" />
+    <Compile Include="Model\Source.cs" />
+    <Compile Include="Model\StackFrame.cs" />
+    <Compile Include="Model\Thread.cs" />
+    <Compile Include="Model\Variable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Request\AttachRequest.cs" />
     <Compile Include="Request\ChangeFileRequest.cs" />
     <Compile Include="Request\CompletionDetailsRequest.cs" />
     <Compile Include="Request\CompletionsRequest.cs" />
+    <Compile Include="Request\ContinueRequest.cs" />
     <Compile Include="Request\DeclarationRequest.cs" />
+    <Compile Include="Request\DisconnectRequest.cs" />
     <Compile Include="Request\ErrorRequest.cs" />
+    <Compile Include="Request\EvaluateRequest.cs" />
     <Compile Include="Request\FileRequest.cs" />
+    <Compile Include="Request\InitializeRequest.cs" />
+    <Compile Include="Request\LaunchRequest.cs" />
+    <Compile Include="Request\NextRequest.cs" />
     <Compile Include="Request\OccurrencesRequest.cs" />
     <Compile Include="Request\OpenFileRequest.cs" />
+    <Compile Include="Request\PauseRequest.cs" />
+    <Compile Include="Request\QuickInfoRequest.cs" />
     <Compile Include="Request\ReferencesRequest.cs" />
     <Compile Include="Request\ReplExecuteRequest.cs" />
     <Compile Include="Request\RequestBase.cs" />
+    <Compile Include="Request\SetBreakpointsRequest.cs" />
+    <Compile Include="Request\SetExceptionBreakpointsRequest.cs" />
+    <Compile Include="Request\SourceRequest.cs" />
+    <Compile Include="Request\StackTraceRequest.cs" />
+    <Compile Include="Request\StepInRequest.cs" />
+    <Compile Include="Request\StepOutRequest.cs" />
+    <Compile Include="Request\ThreadsRequest.cs" />
+    <Compile Include="Request\VariablesRequest.cs" />
+    <Compile Include="Response\AttachResponse.cs" />
     <Compile Include="Response\CompletionDetailsResponse.cs" />
+    <Compile Include="Response\ContinueResponse.cs" />
     <Compile Include="Response\DefinitionResponse.cs" />
+    <Compile Include="Response\DisconnectResponse.cs" />
+    <Compile Include="Response\ErrorResponse.cs" />
+    <Compile Include="Response\EvaluateResponse.cs" />
+    <Compile Include="Response\InitializeResponse.cs" />
+    <Compile Include="Response\LaunchResponse.cs" />
     <Compile Include="Response\LocationResponseElements.cs" />
+    <Compile Include="Response\NextResponse.cs" />
     <Compile Include="Response\OccurrencesResponse.cs" />
+    <Compile Include="Response\QuickInfoResponse.cs" />
     <Compile Include="Response\ReferencesResponse.cs" />
+    <Compile Include="Response\SetBreakpointsResponse.cs" />
+    <Compile Include="Response\SetExceptionBreakpointsResponse.cs" />
     <Compile Include="Response\SignatureHelpResponse.cs" />
     <Compile Include="Request\SignatureHelpRequest.cs" />
     <Compile Include="Response\CompletionsResponse.cs" />
     <Compile Include="Response\MessageErrorResponse.cs" />
     <Compile Include="Response\ReplPromptChoiceResponse.cs" />
     <Compile Include="Response\ResponseBase.cs" />
-    <Compile Include="StdioConsoleHost.cs" />
-    <Compile Include="StdioHost.cs" />
+    <Compile Include="Response\SourceResponse.cs" />
+    <Compile Include="Response\StackTraceResponse.cs" />
+    <Compile Include="Response\StepInResponse.cs" />
+    <Compile Include="Response\StepOutResponse.cs" />
+    <Compile Include="Response\ThreadsResponse.cs" />
+    <Compile Include="Response\VariablesResponse.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

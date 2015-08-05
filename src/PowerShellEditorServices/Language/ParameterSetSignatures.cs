@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// </summary>
         /// <param name="commandInfoSet">Collection of parameter set info</param>
         /// <param name="foundSymbol"> The SymbolReference of the command</param>
-        public ParameterSetSignatures(List<CommandParameterSetInfo> commandInfoSet, SymbolReference foundSymbol)
+        public ParameterSetSignatures(IEnumerable<CommandParameterSetInfo> commandInfoSet, SymbolReference foundSymbol)
         {
             List<ParameterSetSignature> paramSetSignatures = new List<ParameterSetSignature>();
             foreach (CommandParameterSetInfo setInfo in commandInfoSet)

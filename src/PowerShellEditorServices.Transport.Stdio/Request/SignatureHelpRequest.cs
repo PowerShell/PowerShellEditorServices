@@ -7,20 +7,21 @@ using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
     [MessageTypeName("signatureHelp")]
     public class SignatureHelpRequest : FileRequest<SignatureHelpRequestArgs>
     {
-        public override void ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter)
         {
             ScriptFile scriptFile = this.GetScriptFile(editorSession);
 
             ParameterSetSignatures parameterSetSigs =
-                editorSession.LanguageService.FindParameterSetsInFile(
+                await editorSession.LanguageService.FindParameterSetsInFile(
                     scriptFile,
                     this.Arguments.Line,
                     this.Arguments.Offset);

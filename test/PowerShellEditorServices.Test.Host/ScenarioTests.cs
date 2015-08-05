@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class ScenarioTests : IDisposable
     {
-        private LanguageServiceManager languageServiceManager =
+        private LanguageServiceManager languageServiceManager = 
             new LanguageServiceManager();
 
         private MessageReader MessageReader 
@@ -167,6 +167,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         Prefix = ""
                     }
                 });
+
             CompletionsResponse completion = this.WaitForMessage<CompletionsResponse>();
             List<string> entryName = new List<string>();
             entryName.Add("Get-Process");

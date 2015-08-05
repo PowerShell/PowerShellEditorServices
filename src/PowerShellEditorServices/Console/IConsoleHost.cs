@@ -90,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <param name="sourceId">The source ID of the progress event.</param>
         /// <param name="progressDetails">The details of the activity's current progress.</param>
         void UpdateProgress(
-            long sourceId, 
+            long sourceId,
             ProgressDetails progressDetails);
 
         /// <summary>

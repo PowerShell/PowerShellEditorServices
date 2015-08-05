@@ -3,8 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.Windows.PowerShell.ScriptAnalyzer;
+using System;
 using System.Linq;
 using System.Management.Automation.Runspaces;
 using System.Threading;
@@ -16,12 +18,13 @@ namespace Microsoft.PowerShell.EditorServices.Analysis
     /// Provides a high-level service for performing semantic analysis
     /// of PowerShell scripts.
     /// </summary>
-    public class AnalysisService
+    public class AnalysisService : IDisposable
     {
         #region Private Fields
 
-        private Runspace runspace;
+        private Runspace analysisRunspace;
         private ScriptAnalyzer scriptAnalyzer;
+        private PowerShellSession powerShellSession;
 
         #endregion
 
@@ -36,7 +39,8 @@ namespace Microsoft.PowerShell.EditorServices.Analysis
         /// </param>
         public AnalysisService(Runspace analysisRunspace)
         {
-            this.runspace = analysisRunspace;
+            this.analysisRunspace = analysisRunspace;
+
             this.scriptAnalyzer = new ScriptAnalyzer();
             this.scriptAnalyzer.Initialize(
                 analysisRunspace,
@@ -89,5 +93,14 @@ namespace Microsoft.PowerShell.EditorServices.Analysis
         }
 
         #endregion
+
+        public void Dispose()
+        {
+            if (this.analysisRunspace != null)
+            {
+                this.analysisRunspace.Dispose();
+                this.analysisRunspace = null;
+            }
+        }
     }
 }

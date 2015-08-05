@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
         {
             Ast commandNameAst = commandAst.CommandElements[0];
             
-            // Only want commands that are using a trigger character, which requires at least 2 cmd elements
+            // Only want commands that are using a trigger character, which requires at least 2 command elements
             if (!(commandAst.CommandElements.Count > 1))
             {
                 return base.VisitCommand(commandAst);

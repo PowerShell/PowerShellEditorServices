@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
-    internal class LanguageServiceManager
+    public class LanguageServiceManager
     {
         System.Diagnostics.Process languageServiceProcess;
 
