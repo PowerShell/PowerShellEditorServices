@@ -227,19 +227,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <param name="textReader">A TextReader to use for reading file contents.</param>
         private void ReadFile(TextReader textReader)
         {
-            this.FileLines = new List<string>();
+            string fileContents = textReader.ReadToEnd();
 
-            // Read the file contents line by line
-            string fileLine = null;
-            do
-            {
-                fileLine = textReader.ReadLine();
-                if (fileLine != null)
-                {
-                    FileLines.Add(fileLine);
-                }
-            } 
-            while (fileLine != null);
+            // Split the file contents into lines and trim
+            // any carriage returns from the strings.
+            this.FileLines =
+                fileContents
+                    .Split('\n')
+                    .Select(line => line.TrimEnd('\r'))
+                    .ToList();
 
             // Parse the contents to get syntax tree and errors
             this.ParseFileContents();
