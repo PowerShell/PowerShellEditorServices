@@ -23,12 +23,17 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                     scriptFile,
                     this.Arguments.Line,
                     this.Arguments.Offset);
+               
+            GetDefinitionResult definition = null;
+            if (foundSymbol != null)
+            {
+                definition =
+                    editorSession.LanguageService.GetDefinitionOfSymbol(
+                        scriptFile,
+                        foundSymbol,
+                        editorSession.Workspace);
 
-            GetDefinitionResult definition =
-                editorSession.LanguageService.GetDefinitionOfSymbol(
-                    scriptFile,
-                    foundSymbol,
-                    editorSession.Workspace);
+            }
 
             if (definition != null)
             {
@@ -45,6 +50,9 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                 messageWriter.WriteMessage(
                     this.PrepareResponse(defResponse));
             }
+
+            messageWriter.WriteMessage(
+                   this.PrepareResponse(DefinitionResponse.Create()));
         }
     }
 }

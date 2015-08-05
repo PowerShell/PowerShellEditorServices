@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices.Language
@@ -45,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
             };
 
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
-                 nameExtent.Text.Equals(symbolRef.ScriptRegion.Text))
+                 nameExtent.Text.Equals(symbolRef.ScriptRegion.Text, StringComparison.InvariantCultureIgnoreCase))
             {
                 this.FoundDeclartion =
                     new SymbolReference(
@@ -69,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
             if(symbolRef.SymbolType.Equals(SymbolType.Variable) &&
-                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName))
+                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.InvariantCultureIgnoreCase))
             {
                 this.FoundDeclartion =
                     new SymbolReference(

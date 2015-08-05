@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Collections.Generic;
 using System.Management.Automation.Language;
 
@@ -34,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
         {
             Ast commandNameAst = commandAst.CommandElements[0];
             if(symbolRef.SymbolType.Equals(SymbolType.Function) &&
-                commandNameAst.Extent.Text.Equals(symbolRef.ScriptRegion.Text))
+                commandNameAst.Extent.Text.Equals(symbolRef.ScriptRegion.Text, StringComparison.InvariantCultureIgnoreCase))
             {
                 this.FoundReferences.Add(new SymbolReference(
                                         SymbolType.Function,
@@ -65,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
             };
 
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
-                nameExtent.Text.Equals(symbolRef.SymbolName))
+                nameExtent.Text.Equals(symbolRef.SymbolName, StringComparison.InvariantCultureIgnoreCase))
             {
                 this.FoundReferences.Add(new SymbolReference(
                                           SymbolType.Function,
@@ -83,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
         public override AstVisitAction VisitCommandParameter(CommandParameterAst commandParameterAst)
         {
             if (symbolRef.SymbolType.Equals(SymbolType.Parameter) &&
-                commandParameterAst.Extent.Text.Equals(symbolRef.SymbolName))
+                commandParameterAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.InvariantCultureIgnoreCase))
             {
                 this.FoundReferences.Add(new SymbolReference(
                                          SymbolType.Parameter,
@@ -101,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
             if(symbolRef.SymbolType.Equals(SymbolType.Variable) &&
-                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName))
+                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.InvariantCultureIgnoreCase))
             {
                 this.FoundReferences.Add(new SymbolReference(
                                          SymbolType.Variable,
