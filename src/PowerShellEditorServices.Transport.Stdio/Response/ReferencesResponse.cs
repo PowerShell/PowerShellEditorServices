@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
                                 Offset = reference.ScriptRegion.EndColumnNumber
                             },
                             IsWriteAccess = true,
-                            File = thisFile,
+                            File = reference.FilePath,
                             LineText = reference.SourceLine
                         });
                 }
