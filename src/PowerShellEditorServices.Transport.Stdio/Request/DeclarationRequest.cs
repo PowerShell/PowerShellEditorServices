@@ -26,8 +26,9 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 
             GetDefinitionResult definition =
                 editorSession.LanguageService.GetDefinitionOfSymbol(
+                    scriptFile,
                     foundSymbol,
-                    editorSession.Workspace.ExpandScriptReferences(scriptFile));
+                    editorSession.Workspace);
 
             if (definition != null)
             {

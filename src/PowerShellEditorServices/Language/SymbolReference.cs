@@ -59,12 +59,13 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// Gets the contents of the line the given symbol is on
         /// </summary>
         public string SourceLine { get; internal set; }
-        #endregion
 
         /// <summary>
-        /// Gets the Filepath of the symbol
+        /// Gets the path of the file in which the symbol was found.
         /// </summary>
         public string FilePath { get; internal set; }
+
+        #endregion
 
         /// <summary>
         /// Constructs and instance of a SymbolReference

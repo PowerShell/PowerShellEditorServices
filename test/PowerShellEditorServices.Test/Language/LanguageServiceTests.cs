@@ -181,13 +181,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     baseSharedScriptPath, 
                     scriptRegion.File);
 
-            ScriptFile scriptFile = null;
-            if (!this.workspace.TryGetFile(resolvedPath, out scriptFile))
-            {
-                scriptFile = this.workspace.OpenFile(resolvedPath);
-            }
-
-            return scriptFile;
+            return
+                this.workspace.GetFile(
+                    resolvedPath);
         }
 
         private CompletionResults GetCompletionResults(ScriptRegion scriptRegion)
@@ -223,8 +219,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             return
                 this.languageService.GetDefinitionOfSymbol(
+                    scriptFile,
                     symbolReference,
-                    this.workspace.ExpandScriptReferences(scriptFile));
+                    this.workspace);
         }
 
         private FindReferencesResult GetReferences(ScriptRegion scriptRegion)

@@ -22,46 +22,43 @@ namespace Microsoft.PowerShell.EditorServices.Session
         #region Public Methods
 
         /// <summary>
-        /// Opens a script file with the given file path.
+        /// Gets an open file in the workspace.  If the file isn't open but
+        /// exists on the filesystem, load and return it.
         /// </summary>
         /// <param name="filePath">The file path at which the script resides.</param>
         /// <exception cref="FileNotFoundException">
         /// <paramref name="filePath"/> is not found.
         /// </exception>
         /// <exception cref="ArgumentException">
-        /// <paramref name="filePath"/> has already been loaded in the workspace.
-        /// </exception>
-        /// <exception cref="ArgumentException">
         /// <paramref name="filePath"/> contains a null or empty string.
         /// </exception>
-        public ScriptFile OpenFile(string filePath)
+        public ScriptFile GetFile(string filePath)
         {
             Validate.IsNotNullOrEmptyString("filePath", filePath);
 
-            // Resolve the full file path
+            // Resolve the full file path after making sure that slashes
+            // are in the right form
             string resolvedFilePath = 
                 this.ResolveFilePath(
-                    filePath);
+                    filePath.Replace('/', '\\'));
+
+            string keyName = resolvedFilePath.ToLower();
 
             // Make sure the file isn't already loaded into the workspace
-            if (!this.workspaceFiles.ContainsKey(resolvedFilePath))
+            ScriptFile scriptFile = null;
+            if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile))
             {
                 // This method allows FileNotFoundException to bubble up 
                 // if the file isn't found.
 
                 using (StreamReader streamReader = new StreamReader(resolvedFilePath, Encoding.UTF8))
                 {
-                    ScriptFile newFile = new ScriptFile(resolvedFilePath, streamReader);
-                    this.workspaceFiles.Add(resolvedFilePath, newFile);
-                    return newFile;
+                    scriptFile = new ScriptFile(resolvedFilePath, streamReader);
+                    this.workspaceFiles.Add(keyName, scriptFile);
                 }
             }
-            else
-            {
-                throw new ArgumentException(
-                    "The specified file has already been loaded: " + resolvedFilePath,
-                    "filePath");
-            }
+
+            return scriptFile;
         }
 
         /// <summary>
@@ -73,32 +70,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
             Validate.IsNotNull("scriptFile", scriptFile);
 
             this.workspaceFiles.Remove(scriptFile.FilePath);
-        }
-
-        /// <summary>
-        /// Attempts to get a currently open script file with the given file path.
-        /// </summary>
-        /// <param name="filePath">The file path at which the script resides.</param>
-        /// <param name="scriptFile">The output variable in which the ScriptFile will be stored.</param>
-        /// <returns>A ScriptFile instance</returns>
-        public bool TryGetFile(string filePath, out ScriptFile scriptFile)
-        {
-            // Resolve the full file path
-            string resolvedFilePath = 
-                this.ResolveFilePath(
-                    filePath);
-
-            scriptFile = null;
-            return this.workspaceFiles.TryGetValue(resolvedFilePath, out scriptFile);
-        }
-
-        /// <summary>
-        /// Gets all open files in the workspace.
-        /// </summary>
-        /// <returns>A collection of all open ScriptFiles in the workspace.</returns>
-        public IEnumerable<ScriptFile> GetOpenFiles()
-        {
-            return this.workspaceFiles.Values;
         }
 
         /// <summary>
@@ -115,10 +86,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             RecursivelyFindReferences(scriptFile, referencedScriptFiles);
             expandedReferences.Add(scriptFile); // add original file first
-            if (referencedScriptFiles.Count != 0)
+            if (referencedScriptFiles.Count > 0)
             {
                 expandedReferences.AddRange(referencedScriptFiles.Values);
             }
+
             return expandedReferences.ToArray();
         }
 
@@ -136,24 +108,20 @@ namespace Microsoft.PowerShell.EditorServices.Session
             ScriptFile scriptFile, 
             Dictionary<string, ScriptFile> referencedScriptFiles)
         {
-            ScriptFile newFile;
-            foreach (string filename in scriptFile.ReferencedFiles)
+            ScriptFile referencedFile;
+            foreach (string referencedFileName in scriptFile.ReferencedFiles)
             {
                 string resolvedScriptPath =
                     this.ResolveRelativeScriptPath(
                         scriptFile.FilePath,
-                        filename);
+                        referencedFileName);
 
-                if (!referencedScriptFiles.ContainsKey(resolvedScriptPath))
-                {
-                    if (!TryGetFile(resolvedScriptPath, out newFile))
-                    {
-                        newFile = OpenFile(resolvedScriptPath);
-                    }
+                // Get the referenced file
+                referencedFile = this.GetFile(resolvedScriptPath);
+                referencedScriptFiles.Add(resolvedScriptPath, referencedFile);
 
-                    referencedScriptFiles.Add(resolvedScriptPath, newFile);
-                    RecursivelyFindReferences(newFile, referencedScriptFiles);
-                }
+                // Recursively find references on this file`
+                RecursivelyFindReferences(referencedFile, referencedScriptFiles);
             }
         }
 

@@ -33,6 +33,13 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public string FilePath { get; private set; }
 
         /// <summary>
+        /// Gets or sets a boolean that determines whether
+        /// semantic analysis should be enabled for this file.
+        /// For internal use only.
+        /// </summary>
+        internal bool IsAnalysisEnabled { get; set; }
+
+        /// <summary>
         /// Gets a string containing the full contents of the file.
         /// </summary>
         public string Contents 
@@ -101,6 +108,8 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public ScriptFile(string filePath, TextReader textReader)
         {
             this.FilePath = filePath;
+            this.IsAnalysisEnabled = true;
+
             this.ReadFile(textReader);
         }
 

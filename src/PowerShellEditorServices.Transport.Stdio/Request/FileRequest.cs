@@ -13,20 +13,9 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     {
         protected ScriptFile GetScriptFile(EditorSession editorSession)
         {
-            ScriptFile scriptFile = null;
-
-            if(!editorSession.Workspace.TryGetFile(
-                this.Arguments.File, 
-                out scriptFile))
-            {
-                // TODO: Throw an exception that the message loop can create a response out of
-
-                throw new FileNotFoundException(
-                    "A ScriptFile with the following path was not found in the EditorSession: {0}",
+            return 
+                editorSession.Workspace.GetFile(
                     this.Arguments.File);
-            }
-
-            return scriptFile;
         }
     }
 

@@ -10,10 +10,8 @@ using System.Linq;
 namespace Microsoft.PowerShell.EditorServices.Language
 {
     using Microsoft.PowerShell.EditorServices.Utility;
-    using System.IO;
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
-    using System.Text;
 
     /// <summary>
     /// Provides a high-level service for performing code completion and
@@ -185,6 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                                 reference.FilePath = file.FilePath;
                                 return reference;
                             });
+
                     symbolReferences.AddRange(symbolReferencesinFile);
                 }
 
@@ -206,10 +205,17 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// <param name="referencedFiles">An array of scriptFiles too search for the definition in</param>
         /// <returns>GetDefinitionResult</returns>
         public GetDefinitionResult GetDefinitionOfSymbol(
+            ScriptFile sourceFile,
             SymbolReference foundSymbol,
-            ScriptFile[] referencedFiles)
+            Workspace workspace)
         {
+            Validate.IsNotNull("sourceFile", sourceFile);
             Validate.IsNotNull("foundSymbol", foundSymbol);
+            Validate.IsNotNull("workspace", workspace);
+
+            ScriptFile[] referencedFiles =
+                workspace.ExpandScriptReferences(
+                    sourceFile);
 
             // look through the referenced files until definition is found
             // or there are no more file to look through
@@ -233,7 +239,11 @@ namespace Microsoft.PowerShell.EditorServices.Language
             if (foundDefinition == null)
             {
                 CommandInfo cmdInfo = GetCommandInfo(foundSymbol.SymbolName);
-                foundDefinition = FindDeclarationForBuiltinCommand(cmdInfo, foundSymbol);
+                foundDefinition = 
+                    FindDeclarationForBuiltinCommand(
+                        cmdInfo, 
+                        foundSymbol,
+                        workspace);
             }
 
             return new GetDefinitionResult(foundDefinition);
@@ -334,7 +344,9 @@ namespace Microsoft.PowerShell.EditorServices.Language
             return commandInfo;
         }
 
-        private ScriptFile[] GetBuiltinCommandScriptFiles(PSModuleInfo moduleInfo)
+        private ScriptFile[] GetBuiltinCommandScriptFiles(
+            PSModuleInfo moduleInfo,
+            Workspace workspace)
         {
             if (moduleInfo != null)
             {
@@ -344,25 +356,20 @@ namespace Microsoft.PowerShell.EditorServices.Language
 
                 if (modPath.EndsWith(@".ps1") || modPath.EndsWith(@".psm1"))
                 {
-                    using (StreamReader streamReader = new StreamReader(modPath, Encoding.UTF8))
-                    {
-                        newFile = new ScriptFile(modPath, streamReader);
-                        scriptFiles.Add(newFile);
-                    }
+                    newFile = workspace.GetFile(modPath);
+                    newFile.IsAnalysisEnabled = false;
+                    scriptFiles.Add(newFile);
                 }
                 if (moduleInfo.NestedModules.Count > 0)
                 {
-                    string nestedModPath;
                     foreach (PSModuleInfo nestedInfo in moduleInfo.NestedModules)
                     {
-                        nestedModPath = nestedInfo.Path;
+                        string nestedModPath = nestedInfo.Path;
                         if (nestedModPath.EndsWith(@".ps1") || nestedModPath.EndsWith(@".psm1"))
                         {
-                            using (StreamReader streamReader = new StreamReader(nestedModPath, Encoding.UTF8))
-                            {
-                                newFile = new ScriptFile(nestedModPath, streamReader);
-                                scriptFiles.Add(newFile);
-                            }
+                            newFile = workspace.GetFile(nestedModPath);
+                            newFile.IsAnalysisEnabled = false;
+                            scriptFiles.Add(newFile);
                         }
                     }
                 }
@@ -373,7 +380,10 @@ namespace Microsoft.PowerShell.EditorServices.Language
             return new List<ScriptFile>().ToArray();
         }
 
-        private SymbolReference FindDeclarationForBuiltinCommand(CommandInfo cmdInfo, SymbolReference foundSymbol)
+        private SymbolReference FindDeclarationForBuiltinCommand(
+            CommandInfo cmdInfo, 
+            SymbolReference foundSymbol,
+            Workspace workspace)
         {
             SymbolReference foundDefinition = null;
             if (cmdInfo != null)
@@ -382,7 +392,9 @@ namespace Microsoft.PowerShell.EditorServices.Language
                 ScriptFile[] nestedModuleFiles;
 
                 nestedModuleFiles =
-                    GetBuiltinCommandScriptFiles(GetCommandInfo(foundSymbol.SymbolName).Module);
+                    GetBuiltinCommandScriptFiles(
+                        GetCommandInfo(foundSymbol.SymbolName).Module,
+                        workspace);
 
                 while (foundDefinition == null && index < nestedModuleFiles.Length)
                 {
