@@ -84,8 +84,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
             Dictionary<string, ScriptFile> referencedScriptFiles = new Dictionary<string, ScriptFile>();
             List<ScriptFile> expandedReferences = new List<ScriptFile>();
 
+            // add original file so it's not searched for, then find all file references
+            referencedScriptFiles.Add(scriptFile.FilePath, scriptFile); 
             RecursivelyFindReferences(scriptFile, referencedScriptFiles);
-            expandedReferences.Add(scriptFile); // add original file first
+
+            // remove original file from referened file and add it as the first element of the
+            // expanded referenced list to maintain order so the original file is always first in the list
+            referencedScriptFiles.Remove(scriptFile.FilePath);
+            expandedReferences.Add(scriptFile);
+
             if (referencedScriptFiles.Count > 0)
             {
                 expandedReferences.AddRange(referencedScriptFiles.Values);
@@ -116,12 +123,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
                         scriptFile.FilePath,
                         referencedFileName);
 
-                // Get the referenced file
+                // Get the referenced file if it's not already in referencedScriptFiles
                 referencedFile = this.GetFile(resolvedScriptPath);
-                referencedScriptFiles.Add(resolvedScriptPath, referencedFile);
+                if (!referencedScriptFiles.ContainsKey(resolvedScriptPath))
+                {
+                    referencedScriptFiles.Add(resolvedScriptPath, referencedFile);                    
+                    RecursivelyFindReferences(referencedFile, referencedScriptFiles);
+                }
 
-                // Recursively find references on this file`
-                RecursivelyFindReferences(referencedFile, referencedScriptFiles);
+
             }
         }
 

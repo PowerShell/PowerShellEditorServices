@@ -3,9 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
 using System.Collections.Generic;
-using System.IO;
 using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices.Language

@@ -10,3 +10,11 @@ $things
 My-Function $things
 
 Write-Output "Hello World";
+
+Get-ChildItem
+ls
+gci
+dir
+LS
+Write-Host
+Get-ChildItem

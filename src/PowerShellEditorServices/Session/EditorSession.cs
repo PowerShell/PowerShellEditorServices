@@ -6,13 +6,8 @@
 using Microsoft.PowerShell.EditorServices.Analysis;
 using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Language;
-using Microsoft.PowerShell.EditorServices.Utility;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-using System.Text;
 using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Session

@@ -32,6 +32,8 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
+            // Get the start column number of the function name, 
+            // instead of the the start column of 'function' and create new extent for the functionName
             int startColumnNumber =
                 functionDefinitionAst.Extent.Text.IndexOf(
                     functionDefinitionAst.Name) + 1;

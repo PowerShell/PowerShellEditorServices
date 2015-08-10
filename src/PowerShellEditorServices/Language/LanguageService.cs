@@ -10,6 +10,7 @@ using System.Linq;
 namespace Microsoft.PowerShell.EditorServices.Language
 {
     using Microsoft.PowerShell.EditorServices.Utility;
+    using System;
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
 
@@ -26,7 +27,8 @@ namespace Microsoft.PowerShell.EditorServices.Language
         private int mostRecentRequestLine;
         private int mostRecentRequestOffest;
         private string mostRecentRequestFile;
-
+        private Dictionary<String, List<String>> CmdletToAliasDictionary;
+        private Dictionary<String, String> AliasToCmdletDictionary;
         #endregion
 
         #region Constructors
@@ -43,6 +45,9 @@ namespace Microsoft.PowerShell.EditorServices.Language
             Validate.IsNotNull("languageServiceRunspace", languageServiceRunspace);
 
             this.runspace = languageServiceRunspace;
+            this.CmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
+            this.AliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
+            GetAliases();
         }
 
         #endregion
@@ -109,6 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
             int columnNumber,
             string entryName)
         {
+            // Makes sure the most recent completions request was the same line and column as this request
             if (file.FilePath.Equals(mostRecentRequestFile) &&
                 lineNumber == mostRecentRequestLine &&
                 columnNumber == mostRecentRequestOffest)
@@ -174,7 +180,9 @@ namespace Microsoft.PowerShell.EditorServices.Language
                     AstOperations
                         .FindReferencesOfSymbol(
                             file.ScriptAst,
-                            foundSymbol)
+                            foundSymbol,
+                            CmdletToAliasDictionary,
+                            AliasToCmdletDictionary)
                         .Select(
                             reference =>
                             {
@@ -269,11 +277,13 @@ namespace Microsoft.PowerShell.EditorServices.Language
 
             if (foundSymbol != null)
             {
+                // find all references, and indicate that looking for aliases is not needed
                 IEnumerable<SymbolReference> symbolOccurrences =
                     AstOperations
                         .FindReferencesOfSymbol(
                             file.ScriptAst,
-                            foundSymbol);
+                            foundSymbol,
+                            false);
 
                 return
                     new FindOccurrencesResult
@@ -329,6 +339,30 @@ namespace Microsoft.PowerShell.EditorServices.Language
         
         #endregion
 
+        #region Private Fields
+
+        /// <summary>
+        /// Gets all aliases found in the runspace
+        /// </summary>
+        private void GetAliases()
+        {
+            CommandInvocationIntrinsics invokeCommand = runspace.SessionStateProxy.InvokeCommand;
+            IEnumerable<CommandInfo> aliases = invokeCommand.GetCommands("*", CommandTypes.Alias, true);
+            foreach (AliasInfo aliasInfo in aliases)
+            {
+                if (!CmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
+                {
+                    CmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
+                }
+                else
+                {
+                    CmdletToAliasDictionary[aliasInfo.Definition].Add(aliasInfo.Name);
+                }
+
+                AliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
+            }
+        }
+
         private CommandInfo GetCommandInfo(string commandName)
         {
             CommandInfo commandInfo = null;
@@ -348,12 +382,15 @@ namespace Microsoft.PowerShell.EditorServices.Language
             PSModuleInfo moduleInfo,
             Workspace workspace)
         {
+            // if there is module info for this command
             if (moduleInfo != null)
             {
                 string modPath = moduleInfo.Path;
                 List<ScriptFile> scriptFiles = new List<ScriptFile>();
                 ScriptFile newFile;
 
+                // find any files where the moduleInfo's path ends with ps1 or psm1
+                // and add it to allowed script files
                 if (modPath.EndsWith(@".ps1") || modPath.EndsWith(@".psm1"))
                 {
                     newFile = workspace.GetFile(modPath);
@@ -412,5 +449,6 @@ namespace Microsoft.PowerShell.EditorServices.Language
 
             return foundDefinition;
         }
+    #endregion
     }
 }

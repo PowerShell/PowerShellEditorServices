@@ -35,24 +35,14 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 
             }
 
-            if (definition != null)
+            DefinitionResponse defResponse = DefinitionResponse.Create();
+            if (definition != null && definition.FoundDefinition != null)
             {
-                DefinitionResponse defResponse;
-                if (definition.FoundDefinition != null)
-                {
-                    defResponse = DefinitionResponse.Create(definition.FoundDefinition);
-                }
-                else
-                {
-                    defResponse = DefinitionResponse.Create();
-                }
-
-                messageWriter.WriteMessage(
-                    this.PrepareResponse(defResponse));
+                defResponse = DefinitionResponse.Create(definition.FoundDefinition);
             }
 
             messageWriter.WriteMessage(
-                   this.PrepareResponse(DefinitionResponse.Create()));
+                   this.PrepareResponse(defResponse));
         }
     }
 }

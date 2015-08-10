@@ -6,15 +6,16 @@
 using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Completion;
-using System;
-using System.Management.Automation.Runspaces;
-using System.Threading;
-using System.Linq;
-using Xunit;
-using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Definition;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Occurrences;
+using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
+using Microsoft.PowerShell.EditorServices.Test.Shared.References;
+using System;
 using System.IO;
+using System.Linq;
+using System.Management.Automation.Runspaces;
+using System.Threading;
+using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Language
 {
@@ -171,6 +172,50 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.Equal(3, occurrencesResult.FoundOccurrences.Last().ScriptRegion.StartLineNumber);
         }
 
+        [Fact]
+        public void LanguageServiceFindsReferencesOnCommandWithAlias()
+        {
+            FindReferencesResult refsResult =
+                this.GetReferences(
+                    FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
+
+            Assert.Equal(6, refsResult.FoundReferences.Count());
+            Assert.Equal("Get-ChildItem", refsResult.FoundReferences.Last().SymbolName);
+            Assert.Equal("ls", refsResult.FoundReferences.ToArray()[1].SymbolName);
+        }
+
+        [Fact]
+        public void LanguageServiceFindsReferencesOnAlias()
+        {
+            FindReferencesResult refsResult =
+                this.GetReferences(
+                    FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
+
+            Assert.Equal(6, refsResult.FoundReferences.Count());
+            Assert.Equal("Get-ChildItem", refsResult.FoundReferences.Last().SymbolName);
+            Assert.Equal("gci", refsResult.FoundReferences.ToArray()[2].SymbolName);
+            Assert.Equal("LS", refsResult.FoundReferences.ToArray()[4].SymbolName);
+        }
+
+        [Fact]
+        public void LanguageServiceFindsReferencesOnFileWithReferencesFileB()
+        {
+            FindReferencesResult refsResult =
+                this.GetReferences(
+                    FindsReferencesOnFunctionMultiFileDotSourceFileB.SourceDetails);
+
+            Assert.Equal(4, refsResult.FoundReferences.Count());
+        }
+        
+        [Fact]
+        public void LanguageServiceFindsReferencesOnFileWithReferencesFileC()
+        {
+            FindReferencesResult refsResult =
+                this.GetReferences(
+                    FindsReferencesOnFunctionMultiFileDotSourceFileC.SourceDetails);
+            Assert.Equal(4, refsResult.FoundReferences.Count());
+        }
+        
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion)
         {
             const string baseSharedScriptPath = 
