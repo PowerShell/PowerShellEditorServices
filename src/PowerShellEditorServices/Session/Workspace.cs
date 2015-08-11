@@ -123,15 +123,17 @@ namespace Microsoft.PowerShell.EditorServices.Session
                         scriptFile.FilePath,
                         referencedFileName);
 
-                // Get the referenced file if it's not already in referencedScriptFiles
-                referencedFile = this.GetFile(resolvedScriptPath);
-                if (!referencedScriptFiles.ContainsKey(resolvedScriptPath))
+                // make sure file exists before trying to get the file
+                if (File.Exists(resolvedScriptPath))
                 {
-                    referencedScriptFiles.Add(resolvedScriptPath, referencedFile);                    
-                    RecursivelyFindReferences(referencedFile, referencedScriptFiles);
+                    // Get the referenced file if it's not already in referencedScriptFiles
+                    referencedFile = this.GetFile(resolvedScriptPath);
+                    if (!referencedScriptFiles.ContainsKey(resolvedScriptPath))
+                    {
+                        referencedScriptFiles.Add(resolvedScriptPath, referencedFile);
+                        RecursivelyFindReferences(referencedFile, referencedScriptFiles);
+                    }
                 }
-
-
             }
         }
 
