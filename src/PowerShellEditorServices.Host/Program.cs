@@ -16,6 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         [STAThread]
         static void Main(string[] args)
         {
+#if DEBUG
             // In the future, a more robust argument parser will be added here
             bool waitForDebugger =
                 args.Any(
@@ -36,6 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     waitCountdown--;
                 }
             }
+#endif
 
             // TODO: Select host, console host, and transport based on command line arguments
 

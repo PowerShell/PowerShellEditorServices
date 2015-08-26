@@ -11,6 +11,10 @@ using System.Text;
 
 namespace Microsoft.PowerShell.EditorServices.Session
 {
+    /// <summary>
+    /// Manages a "workspace" of script files that are open for a particular
+    /// editing session.  Also helps to navigate references between ScriptFiles.
+    /// </summary>
     public class Workspace
     {
         #region Private Fields

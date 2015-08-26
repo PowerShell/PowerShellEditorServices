@@ -207,11 +207,13 @@ namespace Microsoft.PowerShell.EditorServices.Language
         }
 
         /// <summary>
-        /// Finds the definition of a symbol in the script 
+        /// Finds the definition of a symbol in the script file or any of the
+        /// files that it references.
         /// </summary>
-        /// <param name="foundSymbol">The symbol to find a definition for</param>
-        /// <param name="referencedFiles">An array of scriptFiles too search for the definition in</param>
-        /// <returns>GetDefinitionResult</returns>
+        /// <param name="sourceFile">The initial script file to be searched for the symbol's definition.</param>
+        /// <param name="foundSymbol">The symbol for which a definition will be found.</param>
+        /// <param name="workspace">The Workspace to which the ScriptFile belongs.</param>
+        /// <returns>The resulting GetDefinitionResult for the symbol's definition.</returns>
         public GetDefinitionResult GetDefinitionOfSymbol(
             ScriptFile sourceFile,
             SymbolReference foundSymbol,
