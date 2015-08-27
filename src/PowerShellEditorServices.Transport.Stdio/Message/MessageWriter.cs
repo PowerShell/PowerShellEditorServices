@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.IO;
 using System.Text;
 
@@ -17,6 +18,10 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
         private TextWriter textWriter;
         private bool includeContentLength;
         private MessageTypeResolver messageTypeResolver;
+
+        private JsonSerializer loggingSerializer = 
+            JsonSerializer.Create(
+                Constants.JsonSerializerSettings);
 
         #endregion
 
@@ -57,8 +62,18 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
             // Insert the message's type name before serializing
             messageToWrite.PayloadType = messageTypeName;
 
+            // Log the JSON representation of the message
+            Logger.Write(
+                LogLevel.Verbose,
+                string.Format(
+                    "WRITE MESSAGE:\r\n\r\n{0}",
+                    JsonConvert.SerializeObject(
+                        messageToWrite,
+                        Formatting.Indented,
+                        Constants.JsonSerializerSettings)));
+
             // Serialize the message
-            string serializedMessage = 
+            string serializedMessage =
                 JsonConvert.SerializeObject(
                     messageToWrite,
                     Constants.JsonSerializerSettings);

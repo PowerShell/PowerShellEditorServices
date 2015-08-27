@@ -45,6 +45,13 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
             // Parse the JSON string to a JObject
             JObject messageObject = JObject.Parse(messageJson);
 
+            // Log the message
+            Logger.Write(
+                LogLevel.Verbose,
+                string.Format(
+                    "PARSE MESSAGE:\r\n\r\n{0}",
+                    messageObject.ToString(Formatting.Indented)));
+
             // Get the message type and name from the JSON object
             if (!this.TryGetMessageTypeAndName(
                 messageObject,
