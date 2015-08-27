@@ -64,6 +64,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Console\ConsoleServiceTests.cs" />
     <Compile Include="Session\ScriptFileTests.cs" />
+    <Compile Include="Utility\LoggerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

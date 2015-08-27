@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Transport.Stdio;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -38,11 +39,30 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 }
             }
 #endif
+            // Catch unhandled exceptions for logging purposes
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            // Initialize the logger
+            // TODO: Set the level based on command line parameter
+            Logger.Initialize(minimumLogLevel: LogLevel.Verbose);
+            Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host started!");
 
             // TODO: Select host, console host, and transport based on command line arguments
 
             IHost host = new StdioHost();
             host.Start();
+        }
+
+        static void CurrentDomain_UnhandledException(
+            object sender, 
+            UnhandledExceptionEventArgs e)
+        {
+            // Log the exception
+            Logger.Write(
+                LogLevel.Error,
+                string.Format(
+                    "FATAL UNHANDLED EXCEPTION:\r\n\r\n{0}",
+                    e.ExceptionObject.ToString()));
         }
     }
 }
