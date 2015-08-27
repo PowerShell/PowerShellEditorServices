@@ -40,7 +40,10 @@ namespace Microsoft.PowerShell.EditorServices.Analysis
             this.scriptAnalyzer = new ScriptAnalyzer();
             this.scriptAnalyzer.Initialize(
                 analysisRunspace,
-                new AnalysisOutputWriter());
+                new AnalysisOutputWriter(),
+                null,
+                null,
+                new string[] { "DscTestsPresent", "DscExamplesPresent" });
         }
 
         #endregion
@@ -55,26 +58,34 @@ namespace Microsoft.PowerShell.EditorServices.Analysis
         /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
         public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file)
         {
-            // TODO: This is a temporary fix until we can change how
-            // ScriptAnalyzer invokes their async tasks.
-            Task<ScriptFileMarker[]> analysisTask =
-                Task.Factory.StartNew<ScriptFileMarker[]>(
-                    () =>
-                    {
-                        return 
-                            this.scriptAnalyzer
-                                .AnalyzeSyntaxTree(
-                                    file.ScriptAst,
-                                    file.ScriptTokens,
-                                    file.FilePath)
-                                .Select(ScriptFileMarker.FromDiagnosticRecord)
-                                .ToArray();
-                    },
-                    CancellationToken.None,
-                    TaskCreationOptions.None,
-                    TaskScheduler.Default);
+            if (file.IsAnalysisEnabled)
+            {
+                // TODO: This is a temporary fix until we can change how
+                // ScriptAnalyzer invokes their async tasks.
+                Task<ScriptFileMarker[]> analysisTask =
+                    Task.Factory.StartNew<ScriptFileMarker[]>(
+                        () =>
+                        {
+                            return 
+                                this.scriptAnalyzer
+                                    .AnalyzeSyntaxTree(
+                                        file.ScriptAst,
+                                        file.ScriptTokens,
+                                        file.FilePath)
+                                    .Select(ScriptFileMarker.FromDiagnosticRecord)
+                                    .ToArray();
+                        },
+                        CancellationToken.None,
+                        TaskCreationOptions.None,
+                        TaskScheduler.Default);
 
-            return analysisTask.Result;
+                return analysisTask.Result;
+            }
+            else
+            {
+                // Return an empty marker list
+                return new ScriptFileMarker[0];
+            }
         }
 
         #endregion

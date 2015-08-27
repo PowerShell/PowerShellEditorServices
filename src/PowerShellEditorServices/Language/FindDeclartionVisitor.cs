@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices.Language
@@ -31,6 +32,8 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
+            // Get the start column number of the function name, 
+            // instead of the the start column of 'function' and create new extent for the functionName
             int startColumnNumber =
                 functionDefinitionAst.Extent.Text.IndexOf(
                     functionDefinitionAst.Name) + 1;
@@ -40,17 +43,17 @@ namespace Microsoft.PowerShell.EditorServices.Language
                 Text = functionDefinitionAst.Name,
                 StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
                 StartColumnNumber = startColumnNumber,
+                EndLineNumber = functionDefinitionAst.Extent.StartLineNumber,
                 EndColumnNumber = startColumnNumber + functionDefinitionAst.Name.Length
             };
 
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
-                 nameExtent.Text.Equals(symbolRef.ScriptRegion.Text))
+                 nameExtent.Text.Equals(symbolRef.ScriptRegion.Text, StringComparison.InvariantCultureIgnoreCase))
             {
                 this.FoundDeclartion =
                     new SymbolReference(
                         SymbolType.Function,
-                        nameExtent,
-                        string.Empty);
+                        nameExtent);
 
                 return AstVisitAction.StopVisit;
             }
@@ -69,13 +72,12 @@ namespace Microsoft.PowerShell.EditorServices.Language
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
             if(symbolRef.SymbolType.Equals(SymbolType.Variable) &&
-                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName))
+                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.InvariantCultureIgnoreCase))
             {
                 this.FoundDeclartion =
                     new SymbolReference(
                         SymbolType.Variable,
-                        variableExpressionAst.Extent,
-                        string.Empty);
+                        variableExpressionAst.Extent);
 
                 return AstVisitAction.StopVisit;
             }

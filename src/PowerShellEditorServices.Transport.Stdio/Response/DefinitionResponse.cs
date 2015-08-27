@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
     [MessageTypeName("definition")]
     public class DefinitionResponse : ResponseBase<FileSpan[]>
     {
-        public static DefinitionResponse Create(SymbolReference result, string thisFile)
+        public static DefinitionResponse Create(SymbolReference result)
         {
             if (result != null)
             {
@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
                                 Line = result.ScriptRegion.EndLineNumber,
                                 Offset = result.ScriptRegion.EndColumnNumber
                             },
-                            File = thisFile,
+                            File = result.FilePath
                         });
                 return new DefinitionResponse
                 {
@@ -45,6 +45,13 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
                     Body = null
                 };            
             }
+        }
+        public static DefinitionResponse Create()
+        {
+            return new DefinitionResponse
+            {
+                Body = null
+            };   
         }
     }
 }

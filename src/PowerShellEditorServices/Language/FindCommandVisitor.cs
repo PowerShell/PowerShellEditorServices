@@ -33,6 +33,8 @@ namespace Microsoft.PowerShell.EditorServices.Language
         public override AstVisitAction VisitCommand(CommandAst commandAst)
         {
             Ast commandNameAst = commandAst.CommandElements[0];
+            
+            // Only want commands that are using a trigger character, which requires at least 2 cmd elements
             if (!(commandAst.CommandElements.Count > 1))
             {
                 return base.VisitCommand(commandAst);
@@ -46,8 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                     this.FoundCommandReference =
                         new SymbolReference(
                             SymbolType.Function,
-                            commandNameAst.Extent,
-                            string.Empty);
+                            commandNameAst.Extent);
 
                     return AstVisitAction.StopVisit;
                 }

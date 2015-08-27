@@ -6,7 +6,6 @@ function My-Function ($myInput)
 $things = 4
 
 $things
-
 My-Function $things
 
 Write-Output "Hi";

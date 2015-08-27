@@ -33,14 +33,9 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             // Get the requested files
             foreach (string filePath in this.Arguments.Files)
             {
-                ScriptFile scriptFile = null;
-
-                if (!editorSession.TryGetFile(filePath, out scriptFile))
-                {
-                    // Skip this file and log the file load error
-                    // TODO: Trace out the error message
-                    continue;
-                }
+                ScriptFile scriptFile = 
+                    editorSession.Workspace.GetFile(
+                        filePath);
 
                 var semanticMarkers =
                     editorSession.AnalysisService.GetSemanticMarkers(

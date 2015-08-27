@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -30,6 +31,13 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// Gets the  path at which this file resides.
         /// </summary>
         public string FilePath { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a boolean that determines whether
+        /// semantic analysis should be enabled for this file.
+        /// For internal use only.
+        /// </summary>
+        internal bool IsAnalysisEnabled { get; set; }
 
         /// <summary>
         /// Gets a string containing the full contents of the file.
@@ -78,6 +86,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
             get { return this.scriptTokens; }
         }
 
+        /// <summary>
+        /// Gets the array of filepaths dot sourced in this ScriptFile 
+        /// </summary>
+        public string[] ReferencedFiles
+        {
+            get;
+            private set;
+        }
+
         #endregion
 
         #region Constructors
@@ -91,6 +108,8 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public ScriptFile(string filePath, TextReader textReader)
         {
             this.FilePath = filePath;
+            this.IsAnalysisEnabled = true;
+
             this.ReadFile(textReader);
         }
 
@@ -208,19 +227,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <param name="textReader">A TextReader to use for reading file contents.</param>
         private void ReadFile(TextReader textReader)
         {
-            this.FileLines = new List<string>();
+            string fileContents = textReader.ReadToEnd();
 
-            // Read the file contents line by line
-            string fileLine = null;
-            do
-            {
-                fileLine = textReader.ReadLine();
-                if (fileLine != null)
-                {
-                    FileLines.Add(fileLine);
-                }
-            } 
-            while (fileLine != null);
+            // Split the file contents into lines and trim
+            // any carriage returns from the strings.
+            this.FileLines =
+                fileContents
+                    .Split('\n')
+                    .Select(line => line.TrimEnd('\r'))
+                    .ToList();
 
             // Parse the contents to get syntax tree and errors
             this.ParseFileContents();
@@ -260,6 +275,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 parseErrors
                     .Select(ScriptFileMarker.FromParseError)
                     .ToArray();
+            
+            //Get all dot sourced referenced files and store  them
+            this.ReferencedFiles =
+                AstOperations.FindDotSourcedIncludes(this.ScriptAst);
         }
 
         #endregion

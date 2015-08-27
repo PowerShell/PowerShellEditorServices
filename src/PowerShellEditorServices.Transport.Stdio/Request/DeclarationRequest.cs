@@ -18,21 +18,31 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             MessageWriter messageWriter)
         {
             ScriptFile scriptFile = this.GetScriptFile(editorSession);
-
-            GetDefinitionResult definition =
-                editorSession.LanguageService.GetDefinitionInFile(
+            SymbolReference foundSymbol =
+                editorSession.LanguageService.FindSymbolAtLocation(
                     scriptFile,
                     this.Arguments.Line,
                     this.Arguments.Offset);
-
-            if (definition != null)
+               
+            GetDefinitionResult definition = null;
+            if (foundSymbol != null)
             {
-                DefinitionResponse defResponse = 
-                    DefinitionResponse.Create(definition.FoundDefinition, this.Arguments.File);
+                definition =
+                    editorSession.LanguageService.GetDefinitionOfSymbol(
+                        scriptFile,
+                        foundSymbol,
+                        editorSession.Workspace);
 
-                messageWriter.WriteMessage(
-                    this.PrepareResponse(defResponse));
             }
+
+            DefinitionResponse defResponse = DefinitionResponse.Create();
+            if (definition != null && definition.FoundDefinition != null)
+            {
+                defResponse = DefinitionResponse.Create(definition.FoundDefinition);
+            }
+
+            messageWriter.WriteMessage(
+                   this.PrepareResponse(defResponse));
         }
     }
 }

@@ -10,6 +10,7 @@ using System.Linq;
 namespace Microsoft.PowerShell.EditorServices.Language
 {
     using Microsoft.PowerShell.EditorServices.Utility;
+    using System;
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
 
@@ -26,7 +27,8 @@ namespace Microsoft.PowerShell.EditorServices.Language
         private int mostRecentRequestLine;
         private int mostRecentRequestOffest;
         private string mostRecentRequestFile;
-
+        private Dictionary<String, List<String>> CmdletToAliasDictionary;
+        private Dictionary<String, String> AliasToCmdletDictionary;
         #endregion
 
         #region Constructors
@@ -43,6 +45,9 @@ namespace Microsoft.PowerShell.EditorServices.Language
             Validate.IsNotNull("languageServiceRunspace", languageServiceRunspace);
 
             this.runspace = languageServiceRunspace;
+            this.CmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
+            this.AliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
+            GetAliases();
         }
 
         #endregion
@@ -109,6 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
             int columnNumber,
             string entryName)
         {
+            // Makes sure the most recent completions request was the same line and column as this request
             if (file.FilePath.Equals(mostRecentRequestFile) &&
                 lineNumber == mostRecentRequestLine &&
                 columnNumber == mostRecentRequestOffest)
@@ -118,46 +124,81 @@ namespace Microsoft.PowerShell.EditorServices.Language
                         result => result.CompletionText.Equals(entryName));
                 return completionResult;
             }
-            else { return null; }
+            else
+            {
+                return null;
+            }
         }
 
         /// <summary>
-        /// Finds all the references of a symbol in the script given a file location
+        /// Finds the symbol in the script given a file location
         /// </summary>
         /// <param name="file">The details and contents of a open script file</param>
         /// <param name="lineNumber">The line number of the cursor for the given script</param>
         /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
-        /// <returns>FindReferencesResult</returns>
-        public FindReferencesResult FindReferencesInFile(
+        /// <returns>A SymbolReference of the symbol found at the given location
+        /// or null if there is no symbol at that location 
+        /// </returns>
+        public SymbolReference FindSymbolAtLocation(
             ScriptFile file,
             int lineNumber,
             int columnNumber)
         {
-            SymbolReference foundSymbol =
+            SymbolReference symbolReference =
                 AstOperations.FindSymbolAtPosition(
                     file.ScriptAst,
                     lineNumber,
                     columnNumber);
+            if (symbolReference != null)
+            {
+                symbolReference.FilePath = file.FilePath;
+            }
 
+            return symbolReference;
+        }
+
+        /// <summary>
+        /// Finds all the references of a symbol
+        /// </summary>
+        /// <param name="foundSymbol">The symbol to find all references for</param>
+        /// <param name="referencedFiles">An array of scriptFiles too search for references in</param>
+        /// <returns>FindReferencesResult</returns>
+        public FindReferencesResult FindReferencesOfSymbol(
+            SymbolReference foundSymbol,
+            ScriptFile[] referencedFiles)
+        {                
             if (foundSymbol != null)
             {
-                IEnumerable<SymbolReference> symbolReferences =
+                int symbolOffset = referencedFiles[0].GetOffsetAtPosition(
+                    foundSymbol.ScriptRegion.StartLineNumber,
+                    foundSymbol.ScriptRegion.StartColumnNumber);
+                List<SymbolReference> symbolReferences = new List<SymbolReference>();
+
+                foreach (ScriptFile file in referencedFiles)
+                {
+                    IEnumerable<SymbolReference> symbolReferencesinFile =
                     AstOperations
                         .FindReferencesOfSymbol(
                             file.ScriptAst,
-                            foundSymbol)
+                            foundSymbol,
+                            CmdletToAliasDictionary,
+                            AliasToCmdletDictionary)
                         .Select(
                             reference =>
                             {
-                                reference.SourceLine = 
+                                reference.SourceLine =
                                     file.GetLine(reference.ScriptRegion.StartLineNumber);
+                                reference.FilePath = file.FilePath;
                                 return reference;
                             });
+
+                    symbolReferences.AddRange(symbolReferencesinFile);
+                }
 
                 return
                     new FindReferencesResult
                     {
-                        SymbolFileOffset = file.GetOffsetAtPosition(lineNumber, columnNumber),
+                        SymbolFileOffset = symbolOffset,
                         SymbolName = foundSymbol.SymbolName,
                         FoundReferences = symbolReferences
                     };
@@ -166,33 +207,56 @@ namespace Microsoft.PowerShell.EditorServices.Language
         }
 
         /// <summary>
-        /// Finds the definition of a symbol in the script given a file location
+        /// Finds the definition of a symbol in the script file or any of the
+        /// files that it references.
         /// </summary>
-        /// <param name="file">The details and contents of a open script file</param>
-        /// <param name="lineNumber">The line number of the cursor for the given script</param>
-        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
-        /// <returns>GetDefinitionResult</returns>
-        public GetDefinitionResult GetDefinitionInFile(
-            ScriptFile file,
-            int lineNumber,
-            int columnNumber)
+        /// <param name="sourceFile">The initial script file to be searched for the symbol's definition.</param>
+        /// <param name="foundSymbol">The symbol for which a definition will be found.</param>
+        /// <param name="workspace">The Workspace to which the ScriptFile belongs.</param>
+        /// <returns>The resulting GetDefinitionResult for the symbol's definition.</returns>
+        public GetDefinitionResult GetDefinitionOfSymbol(
+            ScriptFile sourceFile,
+            SymbolReference foundSymbol,
+            Workspace workspace)
         {
-            SymbolReference foundSymbol =
-                AstOperations.FindSymbolAtPosition(
-                    file.ScriptAst,
-                    lineNumber,
-                    columnNumber);
+            Validate.IsNotNull("sourceFile", sourceFile);
+            Validate.IsNotNull("foundSymbol", foundSymbol);
+            Validate.IsNotNull("workspace", workspace);
 
-            if (foundSymbol != null)
+            ScriptFile[] referencedFiles =
+                workspace.ExpandScriptReferences(
+                    sourceFile);
+
+            // look through the referenced files until definition is found
+            // or there are no more file to look through
+            SymbolReference foundDefinition = null;
+            for (int i = 0; i < referencedFiles.Length; i++)
             {
-                SymbolReference foundDefinition =
+                foundDefinition =
                     AstOperations.FindDefinitionOfSymbol(
-                         file.ScriptAst,
-                         foundSymbol);
+                        referencedFiles[i].ScriptAst,
+                        foundSymbol);
 
-                return new GetDefinitionResult(foundDefinition);
+                if (foundDefinition != null)
+                {
+                    foundDefinition.FilePath = referencedFiles[i].FilePath;
+                    break;
+                }
             }
-            else { return null; }
+
+            // if definition is not found in referenced files 
+            // look for it in the builtin commands
+            if (foundDefinition == null)
+            {
+                CommandInfo cmdInfo = GetCommandInfo(foundSymbol.SymbolName);
+                foundDefinition = 
+                    FindDeclarationForBuiltinCommand(
+                        cmdInfo, 
+                        foundSymbol,
+                        workspace);
+            }
+
+            return new GetDefinitionResult(foundDefinition);
         }
 
         /// <summary>
@@ -212,13 +276,16 @@ namespace Microsoft.PowerShell.EditorServices.Language
                     file.ScriptAst,
                     lineNumber,
                     columnNumber);
+
             if (foundSymbol != null)
             {
+                // find all references, and indicate that looking for aliases is not needed
                 IEnumerable<SymbolReference> symbolOccurrences =
                     AstOperations
                         .FindReferencesOfSymbol(
                             file.ScriptAst,
-                            foundSymbol);
+                            foundSymbol,
+                            false);
 
                 return
                     new FindOccurrencesResult
@@ -226,7 +293,10 @@ namespace Microsoft.PowerShell.EditorServices.Language
                         FoundOccurrences = symbolOccurrences
                     };
             }
-            else { return null; }
+            else
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -258,12 +328,42 @@ namespace Microsoft.PowerShell.EditorServices.Language
 
                     return new ParameterSetSignatures(commandInfoSet, foundSymbol);
                 }
-                else { return null; }
+                else
+                {
+                    return null;
+                }
             }
-            else { return null; }
+            else
+            {
+                return null;
+            }
         }
         
         #endregion
+
+        #region Private Fields
+
+        /// <summary>
+        /// Gets all aliases found in the runspace
+        /// </summary>
+        private void GetAliases()
+        {
+            CommandInvocationIntrinsics invokeCommand = runspace.SessionStateProxy.InvokeCommand;
+            IEnumerable<CommandInfo> aliases = invokeCommand.GetCommands("*", CommandTypes.Alias, true);
+            foreach (AliasInfo aliasInfo in aliases)
+            {
+                if (!CmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
+                {
+                    CmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
+                }
+                else
+                {
+                    CmdletToAliasDictionary[aliasInfo.Definition].Add(aliasInfo.Name);
+                }
+
+                AliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
+            }
+        }
 
         private CommandInfo GetCommandInfo(string commandName)
         {
@@ -279,5 +379,78 @@ namespace Microsoft.PowerShell.EditorServices.Language
 
             return commandInfo;
         }
+
+        private ScriptFile[] GetBuiltinCommandScriptFiles(
+            PSModuleInfo moduleInfo,
+            Workspace workspace)
+        {
+            // if there is module info for this command
+            if (moduleInfo != null)
+            {
+                string modPath = moduleInfo.Path;
+                List<ScriptFile> scriptFiles = new List<ScriptFile>();
+                ScriptFile newFile;
+
+                // find any files where the moduleInfo's path ends with ps1 or psm1
+                // and add it to allowed script files
+                if (modPath.EndsWith(@".ps1") || modPath.EndsWith(@".psm1"))
+                {
+                    newFile = workspace.GetFile(modPath);
+                    newFile.IsAnalysisEnabled = false;
+                    scriptFiles.Add(newFile);
+                }
+                if (moduleInfo.NestedModules.Count > 0)
+                {
+                    foreach (PSModuleInfo nestedInfo in moduleInfo.NestedModules)
+                    {
+                        string nestedModPath = nestedInfo.Path;
+                        if (nestedModPath.EndsWith(@".ps1") || nestedModPath.EndsWith(@".psm1"))
+                        {
+                            newFile = workspace.GetFile(nestedModPath);
+                            newFile.IsAnalysisEnabled = false;
+                            scriptFiles.Add(newFile);
+                        }
+                    }
+                }
+
+                return scriptFiles.ToArray();
+            }
+
+            return new List<ScriptFile>().ToArray();
+        }
+
+        private SymbolReference FindDeclarationForBuiltinCommand(
+            CommandInfo cmdInfo, 
+            SymbolReference foundSymbol,
+            Workspace workspace)
+        {
+            SymbolReference foundDefinition = null;
+            if (cmdInfo != null)
+            {
+                int index = 0;
+                ScriptFile[] nestedModuleFiles;
+
+                nestedModuleFiles =
+                    GetBuiltinCommandScriptFiles(
+                        GetCommandInfo(foundSymbol.SymbolName).Module,
+                        workspace);
+
+                while (foundDefinition == null && index < nestedModuleFiles.Length)
+                {
+                    foundDefinition =
+                        AstOperations.FindDefinitionOfSymbol(
+                            nestedModuleFiles[index].ScriptAst,
+                            foundSymbol);
+                    if (foundDefinition != null)
+                    {
+                        foundDefinition.FilePath = nestedModuleFiles[index].FilePath;
+                    }
+                    index++;
+                }
+            }
+
+            return foundDefinition;
+        }
+    #endregion
     }
 }

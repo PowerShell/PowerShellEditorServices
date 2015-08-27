@@ -216,7 +216,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     Arguments = new FileLocationRequestArgs
                     {
                         File = "TestFiles\\FindReferences.ps1",
-                        Line = 9,
+                        Line = 10,
                         Offset = 1,
                     }
                 });
@@ -256,7 +256,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     Arguments = new FileLocationRequestArgs
                     {
                         File = "TestFiles\\FindReferences.ps1",
-                        Line = 10,
+                        Line = 9,
                         Offset = 2,
                     }
                 });
@@ -297,7 +297,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     Arguments = new FileLocationRequestArgs
                     {
                         File = "TestFiles\\FindReferences.ps1",
-                        Line = 12,
+                        Line = 11,
                         Offset = 10,
                     }
                 });
@@ -315,7 +315,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     Arguments = new FileLocationRequestArgs
                     {
                         File = "TestFiles\\FindReferences.ps1",
-                        Line = 10,
+                        Line = 9,
                         Offset = 14,
                     }
                 });
@@ -358,7 +358,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     Arguments = new SignatureHelpRequestArgs
                     {
                         File = "TestFiles\\FindReferences.ps1",
-                        Line = 14,
+                        Line = 13,
                         Offset = 15,
                     }
                 });

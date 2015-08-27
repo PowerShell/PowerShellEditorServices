@@ -42,6 +42,7 @@
     <Compile Include="Completion\CompleteCommandFromModule.cs" />
     <Compile Include="Completion\CompleteCommandInFile.cs" />
     <Compile Include="Completion\CompleteVariableInFile.cs" />
+    <Compile Include="Definition\FindsFunctionDefinitionInDotSourceReference.cs" />
     <Compile Include="Definition\FindsFunctionDefinition.cs" />
     <Compile Include="Definition\FindsVariableDefinition.cs" />
     <Compile Include="Occurrences\FindOccurrencesOnParameter.cs" />
@@ -49,12 +50,15 @@
     <Compile Include="ParameterHints\FindsParameterSetsOnCommand.cs" />
     <Compile Include="ParameterHints\FindsParameterSetsOnCommandWithSpaces.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="References\FindsReferencesOnBuiltInCommandWithAlias.cs" />
     <Compile Include="References\FindsReferencesOnFunction.cs" />
+    <Compile Include="References\FindsReferencesOnFunctionMultiFileDotSource.cs" />
     <Compile Include="References\FindsReferencesOnVariable.cs" />
-    <Compile Include="Utility\ResourceFileLoader.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Completion\CompletionExamples.ps1" />
+    <None Include="Completion\CompletionExamples.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj">
@@ -63,14 +67,18 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="ParameterHints\ParamHints.ps1">
+    <None Include="ParameterHints\ParamHints.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="References\SimpleFile.ps1">
+    <None Include="References\FileWithReferences.ps1" />
+    <None Include="References\ReferenceFileA.ps1" />
+    <None Include="References\ReferenceFileB.ps1" />
+    <None Include="References\ReferenceFileC.ps1" />
+    <None Include="References\SimpleFile.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
+    </None>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

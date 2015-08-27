@@ -16,6 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         [STAThread]
         static void Main(string[] args)
         {
+#if DEBUG
             // In the future, a more robust argument parser will be added here
             bool waitForDebugger =
                 args.Any(
@@ -28,11 +29,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // Should we wait for the debugger before starting?
             if (waitForDebugger)
             {
-                while (!Debugger.IsAttached)
+                // Wait for 15 seconds and then continue
+                int waitCountdown = 15;
+                while (!Debugger.IsAttached && waitCountdown > 0)
                 {
-                    Thread.Sleep(500);
+                    Thread.Sleep(1000);
+                    waitCountdown--;
                 }
             }
+#endif
 
             // TODO: Select host, console host, and transport based on command line arguments
 

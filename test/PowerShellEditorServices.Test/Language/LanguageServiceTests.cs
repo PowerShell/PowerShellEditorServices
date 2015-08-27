@@ -6,31 +6,28 @@
 using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Completion;
-using Microsoft.PowerShell.EditorServices.Test.Shared.Utility;
+using Microsoft.PowerShell.EditorServices.Test.Shared.Definition;
+using Microsoft.PowerShell.EditorServices.Test.Shared.Occurrences;
+using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
+using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using System;
+using System.IO;
+using System.Linq;
 using System.Management.Automation.Runspaces;
 using System.Threading;
-using System.Linq;
 using Xunit;
-using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
-using Microsoft.PowerShell.EditorServices.Test.Shared.Definition;
-using Microsoft.PowerShell.EditorServices.Test.Shared.References;
-using Microsoft.PowerShell.EditorServices.Test.Shared.Occurrences;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Language
 {
     public class LanguageServiceTests : IDisposable
     {
-        private ResourceFileLoader fileLoader;
+        private Workspace workspace;
         private Runspace languageServiceRunspace;
         private LanguageService languageService;
 
         public LanguageServiceTests()
         {
-            // Load script files from the shared assembly
-            this.fileLoader =
-                new ResourceFileLoader(
-                    typeof(CompleteCommandInFile).Assembly);
+            this.workspace = new Workspace();
 
             this.languageServiceRunspace = RunspaceFactory.CreateRunspace();
             this.languageServiceRunspace.ApartmentState = ApartmentState.STA;
@@ -122,6 +119,23 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
+        public void LanguageServiceFindsFunctionDefinitionInDotSourceReference()
+        {
+            GetDefinitionResult definitionResult =
+                this.GetDefinition(
+                    FindsFunctionDefinitionInDotSourceReference.SourceDetails);
+
+            SymbolReference definition = definitionResult.FoundDefinition;
+            Assert.True(
+                definitionResult.FoundDefinition.FilePath.EndsWith(
+                    FindsFunctionDefinition.SourceDetails.File),
+                "Unexpected reference file: " + definitionResult.FoundDefinition.FilePath);
+            Assert.Equal(1, definition.ScriptRegion.StartLineNumber);
+            Assert.Equal(10, definition.ScriptRegion.StartColumnNumber);
+            Assert.Equal("My-Function", definition.SymbolName);
+        }
+
+        [Fact]
         public void LanguageServiceFindsVariableDefinition()
         {
             GetDefinitionResult definitionResult =
@@ -132,30 +146,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.Equal(6, definition.ScriptRegion.StartLineNumber);
             Assert.Equal(1, definition.ScriptRegion.StartColumnNumber);
             Assert.Equal("$things", definition.SymbolName);
-        }
-
-        [Fact]
-        public void LanguageServiceFindsFunctionReferences()
-        {
-            FindReferencesResult referencesResult =
-                this.GetReferences(
-                    FindsReferencesOnFunction.SourceDetails);
-
-            Assert.Equal(3, referencesResult.FoundReferences.Count());
-            Assert.Equal(1, referencesResult.FoundReferences.First().ScriptRegion.StartLineNumber);
-            Assert.Equal(10, referencesResult.FoundReferences.First().ScriptRegion.StartColumnNumber);
-        }
-
-        [Fact]
-        public void LanguageServiceFindsVariableReferences()
-        {
-            FindReferencesResult referencesResult =
-                this.GetReferences(
-                    FindsReferencesOnVariable.SourceDetails);
-
-            Assert.Equal(3, referencesResult.FoundReferences.Count());
-            Assert.Equal(10, referencesResult.FoundReferences.Last().ScriptRegion.StartLineNumber);
-            Assert.Equal(13, referencesResult.FoundReferences.Last().ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
@@ -182,10 +172,64 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.Equal(3, occurrencesResult.FoundOccurrences.Last().ScriptRegion.StartLineNumber);
         }
 
-        private ScriptFile GetScriptFile(ScriptRegion scriptRegion){
-            return this.fileLoader.LoadFile(scriptRegion.File);
+        [Fact]
+        public void LanguageServiceFindsReferencesOnCommandWithAlias()
+        {
+            FindReferencesResult refsResult =
+                this.GetReferences(
+                    FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
+
+            Assert.Equal(6, refsResult.FoundReferences.Count());
+            Assert.Equal("Get-ChildItem", refsResult.FoundReferences.Last().SymbolName);
+            Assert.Equal("ls", refsResult.FoundReferences.ToArray()[1].SymbolName);
         }
 
+        [Fact]
+        public void LanguageServiceFindsReferencesOnAlias()
+        {
+            FindReferencesResult refsResult =
+                this.GetReferences(
+                    FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
+
+            Assert.Equal(6, refsResult.FoundReferences.Count());
+            Assert.Equal("Get-ChildItem", refsResult.FoundReferences.Last().SymbolName);
+            Assert.Equal("gci", refsResult.FoundReferences.ToArray()[2].SymbolName);
+            Assert.Equal("LS", refsResult.FoundReferences.ToArray()[4].SymbolName);
+        }
+
+        [Fact]
+        public void LanguageServiceFindsReferencesOnFileWithReferencesFileB()
+        {
+            FindReferencesResult refsResult =
+                this.GetReferences(
+                    FindsReferencesOnFunctionMultiFileDotSourceFileB.SourceDetails);
+
+            Assert.Equal(4, refsResult.FoundReferences.Count());
+        }
+        
+        [Fact]
+        public void LanguageServiceFindsReferencesOnFileWithReferencesFileC()
+        {
+            FindReferencesResult refsResult =
+                this.GetReferences(
+                    FindsReferencesOnFunctionMultiFileDotSourceFileC.SourceDetails);
+            Assert.Equal(4, refsResult.FoundReferences.Count());
+        }
+        
+        private ScriptFile GetScriptFile(ScriptRegion scriptRegion)
+        {
+            const string baseSharedScriptPath = 
+                @"..\..\..\PowerShellEditorServices.Test.Shared\";
+
+            string resolvedPath =
+                Path.Combine(
+                    baseSharedScriptPath, 
+                    scriptRegion.File);
+
+            return
+                this.workspace.GetFile(
+                    resolvedPath);
+        }
 
         private CompletionResults GetCompletionResults(ScriptRegion scriptRegion)
         {
@@ -208,20 +252,39 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         private GetDefinitionResult GetDefinition(ScriptRegion scriptRegion)
         {
-            return
-                this.languageService.GetDefinitionInFile(
-                    GetScriptFile(scriptRegion),
+            ScriptFile scriptFile = GetScriptFile(scriptRegion);
+
+            SymbolReference symbolReference =
+                this.languageService.FindSymbolAtLocation(
+                    scriptFile,
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);
+
+            Assert.NotNull(symbolReference);
+
+            return
+                this.languageService.GetDefinitionOfSymbol(
+                    scriptFile,
+                    symbolReference,
+                    this.workspace);
         }
 
         private FindReferencesResult GetReferences(ScriptRegion scriptRegion)
         {
-            return
-                this.languageService.FindReferencesInFile(
-                    GetScriptFile(scriptRegion),
+            ScriptFile scriptFile = GetScriptFile(scriptRegion);
+
+            SymbolReference symbolReference =
+                this.languageService.FindSymbolAtLocation(
+                    scriptFile,
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);
+
+            Assert.NotNull(symbolReference);
+
+            return
+                this.languageService.FindReferencesOfSymbol(
+                    symbolReference,
+                    this.workspace.ExpandScriptReferences(scriptFile));
         }
 
         private FindOccurrencesResult GetOccurrences(ScriptRegion scriptRegion)

@@ -3,7 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
@@ -107,19 +109,49 @@ namespace Microsoft.PowerShell.EditorServices.Language
         }
 
         /// <summary>
-        /// Finds all references in a script of the given symbol
+        /// Finds all references (including aliases) in a script for the given symbol
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="symbolReference">The symbol that we are looking for referneces of</param>
-        /// <returns>A collection of SymbolReference objects that are refrences to the symbolRefrence</returns>
-        static public IEnumerable<SymbolReference> FindReferencesOfSymbol(Ast scriptAst, SymbolReference symbolReference)
+        /// <param name="CmdletToAliasDictionary">Dictionary maping cmdlets to aliases for finding alias references</param>
+        /// <param name="AliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
+        /// <returns></returns>
+        static public IEnumerable<SymbolReference> FindReferencesOfSymbol(
+            Ast scriptAst, 
+            SymbolReference symbolReference, 
+            Dictionary<String, List<String>> CmdletToAliasDictionary,
+            Dictionary<String, String> AliasToCmdletDictionary)
         {
             // find the symbol evaluators for the node types we are handling
-            FindReferencesVisitor referencesVisitor = new FindReferencesVisitor(symbolReference);
+            FindReferencesVisitor referencesVisitor = 
+                new FindReferencesVisitor(
+                    symbolReference, 
+                    CmdletToAliasDictionary,
+                    AliasToCmdletDictionary);
             scriptAst.Visit(referencesVisitor);
 
             return referencesVisitor.FoundReferences;
 
+        }
+        /// <summary>
+        /// Finds all references (not including aliases) in a script for the given symbol
+        /// </summary>
+        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <param name="foundSymbol">The symbol that we are looking for referneces of</param>
+        /// <param name="needsAliases">If this reference search needs aliases.
+        /// This should always be false and used for occurence requests</param>
+        /// <returns>A collection of SymbolReference objects that are refrences to the symbolRefrence
+        /// not including aliases</returns>
+        static public IEnumerable<SymbolReference> FindReferencesOfSymbol(
+            ScriptBlockAst scriptAst, 
+            SymbolReference foundSymbol, 
+            bool needsAliases)
+        {
+            FindReferencesVisitor referencesVisitor =
+                new FindReferencesVisitor(foundSymbol);
+            scriptAst.Visit(referencesVisitor);
+
+            return referencesVisitor.FoundReferences;
         }
 
         /// <summary>
@@ -128,12 +160,29 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="symbolReference">The symbol that we are looking for the definition of</param>
         /// <returns>A SymbolReference of the definition of the symbolReference</returns>
-        static public SymbolReference FindDefinitionOfSymbol(Ast scriptAst, SymbolReference symbolReference)
+        static public SymbolReference FindDefinitionOfSymbol(
+            Ast scriptAst,
+            SymbolReference symbolReference)
         {
-            FindDeclartionVisitor declarationVisitor = new FindDeclartionVisitor(symbolReference);
+            FindDeclartionVisitor declarationVisitor = 
+                new FindDeclartionVisitor(
+                    symbolReference);
             scriptAst.Visit(declarationVisitor);
 
             return declarationVisitor.FoundDeclartion;
+        }
+
+        /// <summary>
+        /// Finds all files dot sourced in a script
+        /// </summary>
+        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <returns></returns>
+        static public string[] FindDotSourcedIncludes(Ast scriptAst)
+        {
+            FindDotSourcedVisitor dotSourcedVisitor = new FindDotSourcedVisitor();
+            scriptAst.Visit(dotSourcedVisitor);
+
+            return dotSourcedVisitor.DotSourcedFiles.ToArray();
         }
     }
 }

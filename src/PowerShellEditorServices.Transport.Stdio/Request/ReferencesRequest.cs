@@ -18,12 +18,16 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             MessageWriter messageWriter)
         {
             ScriptFile scriptFile = this.GetScriptFile(editorSession);
-
-            FindReferencesResult referencesResult =
-                editorSession.LanguageService.FindReferencesInFile(
+            SymbolReference foundSymbol =
+                editorSession.LanguageService.FindSymbolAtLocation(
                     scriptFile,
                     this.Arguments.Line,
                     this.Arguments.Offset);
+
+            FindReferencesResult referencesResult =
+                editorSession.LanguageService.FindReferencesOfSymbol(
+                    foundSymbol,
+                    editorSession.Workspace.ExpandScriptReferences(scriptFile));
 
             ReferencesResponse referencesResponse = 
                 ReferencesResponse.Create(referencesResult, this.Arguments.File);
