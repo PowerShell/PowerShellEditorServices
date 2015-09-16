@@ -142,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio
             MessageReader messageReader = 
                 new MessageReader(
                     System.Console.In, 
-                    MessageFormat.WithoutContentLength,
+                    MessageFormat.WithContentLength,
                     messageTypeResolver);
 
             MessageWriter messageWriter = 

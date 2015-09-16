@@ -126,15 +126,16 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                         logFilePath);
             }
 
-            // Open the log file for writing with UTF8 encoding
-            this.textWriter =
-                new StreamWriter(
-                    new FileStream(
-                        logFilePath,
-                        deleteExisting ?
-                            FileMode.Create :
-                            FileMode.Append),
-                    Encoding.UTF8);
+            if (!this.TryOpenLogFile(logFilePath, deleteExisting))
+            {
+                // If the log file couldn't be opened at this location,
+                // try opening it in a more reliable path
+                this.TryOpenLogFile(
+                    Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        Path.GetFileName(logFilePath)),
+                    deleteExisting);
+            }
         }
 
         public void Write(
@@ -144,7 +145,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             string callerSourceFile = null,
             int callerLineNumber = 0)
         {
-            if (logLevel >= this.minimumLogLevel)
+            if (this.textWriter != null &&
+                logLevel >= this.minimumLogLevel)
             {
                 // Print the timestamp and log level
                 this.textWriter.WriteLine(
@@ -174,6 +176,40 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 this.textWriter.Flush();
                 this.textWriter.Dispose();
                 this.textWriter = null;
+            }
+        }
+
+        private bool TryOpenLogFile(
+            string logFilePath, 
+            bool deleteExisting)
+        {
+            try
+            {
+                // Open the log file for writing with UTF8 encoding
+                this.textWriter =
+                    new StreamWriter(
+                        new FileStream(
+                            logFilePath,
+                            deleteExisting ?
+                                FileMode.Create :
+                                FileMode.Append),
+                        Encoding.UTF8);
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                if (e is UnauthorizedAccessException ||
+                    e is IOException)
+                {
+                    // This exception is thrown when we can't open the file
+                    // at the path in logFilePath.  Return false to indicate
+                    // that the log file couldn't be created.
+                    return false;
+                }
+
+                // Unexpected exception, rethrow it
+                throw;
             }
         }
     }
