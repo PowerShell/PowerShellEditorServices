@@ -73,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             this.MessageWriter = 
                 new MessageWriter(
                     this.languageServiceProcess.StandardInput,
-                    MessageFormat.WithoutContentLength,
+                    MessageFormat.WithContentLength,
                     messageTypeResolver);
 
             // Wait for the 'started' event
