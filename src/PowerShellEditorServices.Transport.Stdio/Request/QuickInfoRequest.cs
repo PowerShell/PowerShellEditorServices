@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("quickinfo")]
     public class QuickInfoRequest : FileRequest<FileLocationRequestArgs>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
@@ -49,11 +49,9 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                     }
                 };
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     response));
-
-            return TaskConstants.Completed;
         }
     }
 }

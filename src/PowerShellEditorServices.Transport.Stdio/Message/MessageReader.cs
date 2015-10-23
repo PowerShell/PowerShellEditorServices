@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,27 +16,54 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
     {
         #region Private Fields
 
-        private TextReader textReader;
-        private bool expectsContentLength;
+        public const int DefaultBufferSize = 8192;
+        public const double BufferResizeTrigger = 0.25;
+
+        private const int CR = 0x0D;
+        private const int LF = 0x0A;
+        private static string[] NewLineDelimiters = new string[] { Environment.NewLine }; 
+
+        private Stream inputStream;
         private MessageParser messageParser;
-        private char[] buffer = new char[8192];
+        private Encoding messageEncoding;
+
+        private ReadState readState;
+        private bool needsMoreData = true;
+        private int readOffset;
+        private int bufferEndOffset;
+        private byte[] messageBuffer = new byte[DefaultBufferSize];
+
+        private int expectedContentLength;
+        private Dictionary<string, string> messageHeaders;
+
+        enum ReadState
+        {
+            Headers,
+            Content
+        }
 
         #endregion
 
         #region Constructors
 
         public MessageReader(
-            TextReader textReader,
-            MessageFormat messageFormat,
-            MessageTypeResolver messageTypeResolver)
+            Stream inputStream,
+            MessageTypeResolver messageTypeResolver,
+            Encoding messageEncoding = null)
         {
-            Validate.IsNotNull("textReader", textReader);
+            Validate.IsNotNull("inputStream", inputStream);
             Validate.IsNotNull("messageTypeResolver", messageTypeResolver);
 
-            this.textReader = textReader;
+            this.inputStream = inputStream;
             this.messageParser = new MessageParser(messageTypeResolver);
-            this.expectsContentLength =
-                messageFormat == MessageFormat.WithContentLength;
+
+            this.messageEncoding = messageEncoding;
+            if (messageEncoding == null)
+            {
+                this.messageEncoding = Encoding.UTF8;
+            }
+
+            this.messageBuffer = new byte[DefaultBufferSize];
         }
 
         #endregion
@@ -44,57 +72,166 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
 
         public async Task<MessageBase> ReadMessage()
         {
-            string messageLine = await this.textReader.ReadLineAsync();
+            string messageContent = null;
 
-            // If we're expecting Content-Length lines, check for it
-            if (this.expectsContentLength)
+            // Do we need to read more data or can we process the existing buffer?
+            while (!this.needsMoreData || await this.ReadNextChunk())
             {
-                if (messageLine.StartsWith(Constants.ContentLengthString))
+                // Clear the flag since we should have what we need now
+                this.needsMoreData = false;
+
+                // Do we need to look for message headers?
+                if (this.readState == ReadState.Headers && 
+                    !this.TryReadMessageHeaders())
                 {
-                    int contentLength = -1;
-                    string contentLengthIntString =
-                        messageLine.Substring(
-                            Constants.ContentLengthString.Length);
-
-                    // Attempt to parse the Content-Length integer
-                    if (!int.TryParse(contentLengthIntString, out contentLength))
-                    {
-                        throw new MessageParseException(
-                            messageLine,
-                            "Could not parse integer string provided for Content-Length: {0}",
-                            messageLine);
-                    }
-
-                    // Make sure Content-Length isn't
-                    if (contentLength <= 0)
-                    {
-                        throw new MessageParseException(
-                            messageLine,
-                            "Received invalid Content-Length value of {0}",
-                            contentLength);
-                    }
-
-                    // Skip the next newline
-                    await this.textReader.ReadAsync(this.buffer, 0, Environment.NewLine.Length);
-
-                    // NOTE: At this point, we don't actually use the Content-Length
-                    // count to read the text because the messages coming from the client
-                    // are all on a single line anyway.  We may need to revisit this in
-                    // the future.
-
-                    // Read the message content
-                    messageLine = await this.textReader.ReadLineAsync();
+                    // If we don't have enough data to read headers yet, keep reading
+                    this.needsMoreData = true;
+                    continue;
                 }
-                else
+
+                // Do we need to look for message content?
+                if (this.readState == ReadState.Content && 
+                    !this.TryReadMessageContent(out messageContent))
                 {
-                    throw new MessageParseException(
-                        messageLine,
-                        "Unexpected line found while waiting for Content-Length");
+                    // If we don't have enough data yet to construct the content, keep reading
+                    this.needsMoreData = true;
+                    continue;
                 }
+
+                // We've read a message now, break out of the loop
+                break;
             }
 
             // Return the parsed message
-            return this.messageParser.ParseMessage(messageLine);
+            return this.messageParser.ParseMessage(messageContent);
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private async Task<bool> ReadNextChunk()
+        {
+            // Do we need to resize the buffer?  See if less than 1/4 of the space is left.
+            if (((double)(this.messageBuffer.Length - this.bufferEndOffset) / this.messageBuffer.Length) < 0.25)
+            {
+                // Double the size of the buffer
+                Array.Resize(
+                    ref this.messageBuffer, 
+                    this.messageBuffer.Length * 2);
+            }
+
+            // Read the next chunk into the message buffer
+            int readLength =
+                await this.inputStream.ReadAsync(
+                    this.messageBuffer,
+                    this.bufferEndOffset,
+                    this.messageBuffer.Length - this.bufferEndOffset);
+
+            this.bufferEndOffset += readLength;
+
+            return readLength >= 0;
+        }
+
+        private bool TryReadMessageHeaders()
+        {
+            int scanOffset = this.readOffset;
+
+            // Scan for the final double-newline that marks the
+            // end of the header lines
+            while (scanOffset + 3 < this.bufferEndOffset && 
+                   (this.messageBuffer[scanOffset] != CR || 
+                    this.messageBuffer[scanOffset + 1] != LF || 
+                    this.messageBuffer[scanOffset + 2] != CR || 
+                    this.messageBuffer[scanOffset + 3] != LF))
+            {
+                scanOffset++;
+            }
+
+            // No header or body separator found (e.g CRLFCRLF)
+            if (scanOffset + 3 >= this.bufferEndOffset)
+            {
+                return false;
+            }
+
+            this.messageHeaders = new Dictionary<string, string>();
+
+            var headers = 
+                Encoding.ASCII
+                    .GetString(this.messageBuffer, this.readOffset, scanOffset)
+                    .Split(NewLineDelimiters, StringSplitOptions.RemoveEmptyEntries);
+
+            // Read each header and store it in the dictionary
+            foreach (var header in headers)
+            {
+                int currentLength = header.IndexOf(':');
+                if (currentLength == -1)
+                {
+                    throw new ArgumentException("Message header must separate key and value using :");
+                }
+
+                var key = header.Substring(0, currentLength);
+                var value = header.Substring(currentLength + 1).Trim();
+                this.messageHeaders[key] = value;
+            }
+
+            // Make sure a Content-Length header was present, otherwise it
+            // is a fatal error
+            string contentLengthString = null;
+            if (!this.messageHeaders.TryGetValue("Content-Length", out contentLengthString))
+            {
+                throw new MessageParseException("", "Fatal error: Content-Length header must be provided.");
+            }
+
+            // Parse the content length to an integer
+            if (!int.TryParse(contentLengthString, out this.expectedContentLength))
+            {
+                throw new MessageParseException("", "Fatal error: Content-Length value is not an integer.");
+            }
+
+            // Skip past the headers plus the newline characters
+            this.readOffset += scanOffset + 4;
+
+            // Done reading headers, now read content
+            this.readState = ReadState.Content;
+
+            return true;
+        }
+
+        private bool TryReadMessageContent(out string messageContent)
+        {
+            messageContent = null;
+
+            // Do we have enough bytes to reach the expected length?
+            if ((this.bufferEndOffset - this.readOffset) < this.expectedContentLength)
+            {
+                return false;
+            }
+
+            // Convert the message contents to a string using the specified encoding
+            messageContent = 
+                this.messageEncoding.GetString(
+                    this.messageBuffer,
+                    this.readOffset, 
+                    this.expectedContentLength);
+
+            // Move the remaining bytes to the front of the buffer for the next message
+            var remainingByteCount = this.bufferEndOffset - (this.expectedContentLength + this.readOffset);
+            Buffer.BlockCopy(
+                this.messageBuffer, 
+                this.expectedContentLength + this.readOffset, 
+                this.messageBuffer, 
+                0, 
+                remainingByteCount);
+
+            // Reset the offsets for the next read
+            this.readOffset = 0;
+            this.bufferEndOffset = remainingByteCount;
+
+            // Done reading content, now look for headers
+            this.readState = ReadState.Headers;
+
+            return true;
         }
 
         #endregion

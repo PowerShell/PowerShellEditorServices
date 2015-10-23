@@ -12,6 +12,7 @@ using Microsoft.PowerShell.EditorServices.Transport.Stdio.Model;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
 using Nito.AsyncEx;
 using System;
+using System.IO;
 using System.Management.Automation;
 using System.Reflection;
 using System.Text;
@@ -24,6 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
     {
         #region Private Fields
 
+        private Stream inputStream;
+        private Stream outputStream;
         private IConsoleHost consoleHost;
         private EditorSession editorSession;
         private MessageReader messageReader;
@@ -75,17 +78,19 @@ namespace Microsoft.PowerShell.EditorServices.Host
             MessageTypeResolver messageTypeResolver = new MessageTypeResolver();
             messageTypeResolver.ScanForMessageTypes(typeof(StartedEvent).Assembly);
 
+            // Open the standard input/output streams
+            this.inputStream = System.Console.OpenStandardInput();
+            this.outputStream = System.Console.OpenStandardOutput();
+
             // Set up the reader and writer
             this.messageReader = 
                 new MessageReader(
-                    System.Console.In,
-                    MessageFormat.WithContentLength,
+                    this.inputStream,
                     messageTypeResolver);
 
             this.messageWriter = 
                 new MessageWriter(
-                    System.Console.Out, 
-                    MessageFormat.WithContentLength,
+                    this.outputStream,
                     messageTypeResolver);
 
             // Set up the console host which will send events
@@ -102,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStopped;
 
             // Send a "started" event
-            this.messageWriter.WriteMessage(
+            await this.messageWriter.WriteMessage(
                 new StartedEvent());
 
             // Run the message loop
@@ -120,7 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 {
                     // Write an error response
                     this.messageWriter.WriteMessage(
-                        MessageErrorResponse.CreateParseErrorResponse(e));
+                        MessageErrorResponse.CreateParseErrorResponse(e)).Wait();
 
                     // Continue the loop
                     continue;
@@ -141,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     if (newMessage != null)
                     {
                         // Return an error response to keep the client moving
-                        this.messageWriter.WriteMessage(
+                        await this.messageWriter.WriteMessage(
                             MessageErrorResponse.CreateUnhandledMessageResponse(
                                 newMessage));
                     }
@@ -154,9 +159,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
             }
         }
 
-        void DebugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
+        async void DebugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
         {
-            this.messageWriter.WriteMessage(
+            await this.messageWriter.WriteMessage(
                 new StoppedEvent
                 {
                     Body = new StoppedEventBody
@@ -177,11 +182,11 @@ namespace Microsoft.PowerShell.EditorServices.Host
         {
         }
 
-        void PowerShellSession_OutputWritten(object sender, OutputWrittenEventArgs e)
+        async void PowerShellSession_OutputWritten(object sender, OutputWrittenEventArgs e)
         {
             // TODO: change this to use the OutputEvent!
 
-            this.messageWriter.WriteMessage(
+            await this.messageWriter.WriteMessage(
                 new ReplWriteOutputEvent
                 {
                     Body = new ReplWriteOutputEventBody

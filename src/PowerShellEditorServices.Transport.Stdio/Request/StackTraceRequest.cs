@@ -14,18 +14,16 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("stackTrace")]
     public class StackTraceRequest : RequestBase<StackTraceRequestArguments>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
             StackFrameDetails[] stackFrames =
                 editorSession.DebugService.GetStackFrames();
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     StackTraceResponse.Create(stackFrames)));
-
-            return TaskConstants.Completed;
         }
     }
 

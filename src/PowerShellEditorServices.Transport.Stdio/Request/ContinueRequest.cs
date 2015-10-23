@@ -9,17 +9,15 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("continue")]
     public class ContinueRequest : RequestBase<object>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
             editorSession.DebugService.Continue();
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     new ContinueResponse()));
-
-            return TaskConstants.Completed;
         }
     }
 }

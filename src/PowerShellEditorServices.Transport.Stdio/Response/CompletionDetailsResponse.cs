@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
             Documentation = null;
             DocString = null;
 
-            // if the  result type is a command return null 
+            // if the  result type is a command return null
             if (completionResult != null &&
                 !(completionResult.CompletionType.Equals(CompletionType.Command)))
             {

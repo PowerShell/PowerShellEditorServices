@@ -122,12 +122,12 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 
                 // Always send syntax and semantic errors.  We want to 
                 // make sure no out-of-date markers are being displayed.
-                messageWriter.WriteMessage(
+                await messageWriter.WriteMessage(
                     SyntaxDiagnosticEvent.Create(
                         scriptFile.FilePath,
                         scriptFile.SyntaxMarkers));
 
-                messageWriter.WriteMessage(
+                await messageWriter.WriteMessage(
                     SemanticDiagnosticEvent.Create(
                         scriptFile.FilePath,
                         semanticMarkers));

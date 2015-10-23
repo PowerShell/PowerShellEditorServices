@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                 defResponse = DefinitionResponse.Create(definition.FoundDefinition);
             }
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                    this.PrepareResponse(defResponse));
         }
     }

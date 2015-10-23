@@ -27,6 +27,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             "/waitForDebugger",
                             StringComparison.InvariantCultureIgnoreCase));
 
+            waitForDebugger = true;
+
             // Should we wait for the debugger before starting?
             if (waitForDebugger)
             {

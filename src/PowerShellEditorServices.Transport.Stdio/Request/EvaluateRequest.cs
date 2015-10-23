@@ -10,13 +10,13 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("evaluate")]
     public class EvaluateRequest : RequestBase<EvaluateRequestArguments>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
             // TODO TODO TODO FIX THIS
 
-            //VariableDetails result =
+            //VariableDetails foundHeaders =
             //    editorSession.ConsoleService.EvaluateExpression(
             //        this.Arguments.Expression,
             //        this.Arguments.FrameId);
@@ -24,12 +24,12 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             //string valueString = null;
             //int variableId = 0;
 
-            //if (result != null)
+            //if (foundHeaders != null)
             //{
-            //    valueString = result.ValueString;
+            //    valueString = foundHeaders.ValueString;
             //    variableId =
-            //        result.HasChildren ?
-            //            result.Id : 0;
+            //        foundHeaders.HasChildren ?
+            //            foundHeaders.Id : 0;
             //}
 
             //messageWriter.WriteMessage(
@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             //            }
             //        }));
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     new EvaluateResponse
                     {
@@ -53,8 +53,6 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                             VariablesReference = 0
                         }
                     }));
-
-            return TaskConstants.Completed;
         }
     }
 

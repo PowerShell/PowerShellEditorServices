@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (clearExisting)
             {
-                this.ClearBreakpointsInFile(scriptFile);
+                await this.ClearBreakpointsInFile(scriptFile);
             }
 
             if (lineNumbers.Length > 0)
@@ -174,7 +174,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Private Methods
 
-        private void ClearBreakpointsInFile(ScriptFile scriptFile)
+        private async Task ClearBreakpointsInFile(ScriptFile scriptFile)
         {
             List<Breakpoint> breakpoints = null;
 
@@ -187,7 +187,7 @@ namespace Microsoft.PowerShell.EditorServices
                     psCommand.AddCommand("Remove-PSBreakpoint");
                     psCommand.AddParameter("Breakpoint", breakpoints.ToArray());
 
-                    this.powerShellSession.ExecuteCommand<object>(psCommand);
+                    await this.powerShellSession.ExecuteCommand<object>(psCommand);
                 }
             }
         }

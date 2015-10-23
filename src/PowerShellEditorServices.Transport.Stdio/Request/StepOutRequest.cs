@@ -9,17 +9,15 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("stepOut")]
     public class StepOutRequest : RequestBase<object>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
             editorSession.DebugService.StepOut();
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     new StepOutResponse()));
-
-            return TaskConstants.Completed;
         }
     }
 }

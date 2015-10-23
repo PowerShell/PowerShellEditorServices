@@ -10,11 +10,11 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("threads")]
     public class ThreadsRequest : RequestBase<object>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     new ThreadsResponse
                     {
@@ -31,8 +31,6 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                             }
                         }
                     }));
-
-            return TaskConstants.Completed;
         }
     }
 }

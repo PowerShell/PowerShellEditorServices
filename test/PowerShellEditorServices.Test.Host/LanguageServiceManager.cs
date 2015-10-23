@@ -9,6 +9,7 @@ using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -18,6 +19,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class LanguageServiceManager
     {
+        Stream inputStream;
+        Stream outputStream;
         System.Diagnostics.Process languageServiceProcess;
 
         public MessageReader MessageReader { get; private set; }
@@ -63,17 +66,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             MessageTypeResolver messageTypeResolver = new MessageTypeResolver();
             messageTypeResolver.ScanForMessageTypes(typeof(StartedEvent).Assembly);
 
+            // Open the standard input/output streams
+            this.inputStream = System.Console.OpenStandardInput();
+            this.outputStream = System.Console.OpenStandardOutput();
+
             // Set up the message reader and writer
             this.MessageReader = 
                 new MessageReader(
-                    this.languageServiceProcess.StandardOutput,
-                    MessageFormat.WithContentLength,
+                    this.inputStream,
                     messageTypeResolver);
 
             this.MessageWriter = 
                 new MessageWriter(
-                    this.languageServiceProcess.StandardInput,
-                    MessageFormat.WithContentLength,
+                    this.outputStream,
                     messageTypeResolver);
 
             // Wait for the 'started' event
@@ -83,6 +88,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
         public void Stop()
         {
+            if (this.inputStream != null)
+            {
+                this.inputStream.Dispose();
+                this.inputStream = null;
+            }
+
+            if (this.outputStream != null)
+            {
+                this.outputStream.Dispose();
+                this.outputStream = null;
+            }
+
             if (this.MessageReader != null)
             {
                 this.MessageReader = null;

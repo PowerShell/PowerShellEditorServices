@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             SignatureHelpResponse sigHelpResponce = 
                 SignatureHelpResponse.Create(parameterSetSigs);
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
               this.PrepareResponse(
                   sigHelpResponce));
         }

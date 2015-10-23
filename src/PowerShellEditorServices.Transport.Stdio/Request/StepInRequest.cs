@@ -9,17 +9,15 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("stepIn")]
     public class StepInRequest : RequestBase<object>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
             editorSession.DebugService.StepIn();
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     new StepInResponse()));
-
-            return TaskConstants.Completed;
         }
     }
 }

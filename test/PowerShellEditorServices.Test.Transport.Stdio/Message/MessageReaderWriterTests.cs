@@ -3,18 +3,22 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Test.Transport.Stdio.Message;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
+using Microsoft.PowerShell.EditorServices.Transport.Stdio;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace PSLanguageService.Test
 {
     public class MessageReaderWriterTests
     {
-        const string testEventString = "{\"event\":\"testEvent\",\"body\":null,\"seq\":0,\"type\":\"event\"}\r\n";
-        const string testEventWithContentLengthString = "Content-Length: 56\r\n\r\n" + testEventString;
+        const string TestEventString = "{\"event\":\"testEvent\",\"body\":null,\"seq\":0,\"type\":\"event\"}";
+        const string TestEventFormatString = "{{\"event\":\"testEvent\",\"body\":{{\"someString\":\"{0}\"}},\"seq\":0,\"type\":\"event\"}}";
+        readonly int ExpectedMessageByteCount = Encoding.UTF8.GetByteCount(TestEventString);
 
         private MessageTypeResolver messageTypeResolver;
 
@@ -25,79 +29,152 @@ namespace PSLanguageService.Test
         }
 
         [Fact]
-        public void WritesMessageWithContentLength()
+        public async Task WritesMessage()
         {
-            StringWriter stringWriter = new StringWriter();
+            MemoryStream outputStream = new MemoryStream();
+
             MessageWriter messageWriter = 
                 new MessageWriter(
-                    stringWriter,
-                    MessageFormat.WithContentLength,
+                    outputStream,
                     this.messageTypeResolver);
 
-            messageWriter.WriteMessage(
-                new TestEvent());
+            // Write the message and then roll back the stream to be read
+            await messageWriter.WriteMessage(new TestEvent());
+            outputStream.Seek(0, SeekOrigin.Begin);
 
-            string messageOutput = stringWriter.ToString();
+            string expectedHeaderString =
+                string.Format(
+                    Constants.ContentLengthFormatString,
+                    ExpectedMessageByteCount);
+
+            byte[] buffer = new byte[128];
+            await outputStream.ReadAsync(buffer, 0, expectedHeaderString.Length);
+
             Assert.Equal(
-                testEventWithContentLengthString,
-                messageOutput);
-        }
+                expectedHeaderString,
+                Encoding.ASCII.GetString(buffer, 0, expectedHeaderString.Length));
 
-        [Fact]
-        public void WritesMessageWithoutContentLength()
-        {
-            StringWriter stringWriter = new StringWriter();
-            MessageWriter messageWriter = 
-                new MessageWriter(
-                    stringWriter, 
-                    MessageFormat.WithoutContentLength,
-                    this.messageTypeResolver);
+            // Read the message
+            await outputStream.ReadAsync(buffer, 0, ExpectedMessageByteCount);
 
-            messageWriter.WriteMessage(
-                new TestEvent());
-
-            string messageOutput = stringWriter.ToString();
             Assert.Equal(
-                testEventString,
-                messageOutput);
+                TestEventString,
+                Encoding.UTF8.GetString(buffer, 0, ExpectedMessageByteCount));
+
+            outputStream.Dispose();
         }
 
         [Fact]
-        public void ReadsMessageWithContentLength()
+        public void ReadsMessage()
         {
-            MessageReader messageReader = 
-                this.GetMessageReader(
-                    testEventWithContentLengthString,
-                    MessageFormat.WithContentLength);
-
-            MessageBase messageResult = messageReader.ReadMessage().Result;
-            TestEvent eventResult = Assert.IsType<TestEvent>(messageResult);
-            Assert.Equal("testEvent", eventResult.EventType);
-        }
-
-        [Fact]
-        public void ReadsMessageWithoutContentLength()
-        {
+            MemoryStream inputStream = new MemoryStream();
             MessageReader messageReader =
-                this.GetMessageReader(
-                    testEventString,
-                    MessageFormat.WithoutContentLength);
+                new MessageReader(
+                    inputStream, 
+                    this.messageTypeResolver);
+
+            // Write a message to the stream
+            byte[] messageBuffer = this.GetMessageBytes(TestEventString);
+            inputStream.Write(
+                this.GetMessageBytes(TestEventString),
+                0,
+                messageBuffer.Length);
+
+            inputStream.Flush();
+            inputStream.Seek(0, SeekOrigin.Begin);
 
             MessageBase messageResult = messageReader.ReadMessage().Result;
             TestEvent eventResult = Assert.IsType<TestEvent>(messageResult);
             Assert.Equal("testEvent", eventResult.EventType);
+
+            inputStream.Dispose();
         }
 
-        private MessageReader GetMessageReader(
-            string messageString,
-            MessageFormat messageFormat)
+        [Fact]
+        public void ReadsManyBufferedMessages()
         {
-            return
+            MemoryStream inputStream = new MemoryStream();
+            MessageReader messageReader =
                 new MessageReader(
-                    new StringReader(
-                        messageString),
-                    messageFormat,
+                    inputStream, 
                     this.messageTypeResolver);
+
+            // Get a message to use for writing to the stream
+            byte[] messageBuffer = this.GetMessageBytes(TestEventString);
+
+            // How many messages of this size should we write to overflow the buffer?
+            int overflowMessageCount =
+                (int)Math.Ceiling(
+                    (MessageReader.DefaultBufferSize * 1.5) / messageBuffer.Length);
+
+            // Write the necessary number of messages to the stream
+            for (int i = 0; i < overflowMessageCount; i++)
+            {
+                inputStream.Write(messageBuffer, 0, messageBuffer.Length);
+            }
+
+            inputStream.Flush();
+            inputStream.Seek(0, SeekOrigin.Begin);
+
+            // Read the written messages from the stream
+            for (int i = 0; i < overflowMessageCount; i++)
+            {
+                MessageBase messageResult = messageReader.ReadMessage().Result;
+                TestEvent eventResult = Assert.IsType<TestEvent>(messageResult);
+                Assert.Equal("testEvent", eventResult.EventType);
+            }
+
+            inputStream.Dispose();
+        }
+
+        [Fact]
+        public void ReaderResizesBufferForLargeMessages()
+        {
+            MemoryStream inputStream = new MemoryStream();
+            MessageReader messageReader =
+                new MessageReader(
+                    inputStream, 
+                    this.messageTypeResolver);
+
+            // Get a message with content so large that the buffer will need
+            // to be resized to fit it all.
+            byte[] messageBuffer = 
+                this.GetMessageBytes(
+                    string.Format(
+                        TestEventFormatString,
+                        new String('X', (int)(MessageReader.DefaultBufferSize * 3))));
+
+            inputStream.Write(messageBuffer, 0, messageBuffer.Length);
+            inputStream.Flush();
+            inputStream.Seek(0, SeekOrigin.Begin);
+
+            MessageBase messageResult = messageReader.ReadMessage().Result;
+            TestEvent eventResult = Assert.IsType<TestEvent>(messageResult);
+            Assert.Equal("testEvent", eventResult.EventType);
+
+            inputStream.Dispose();
+        }
+
+        private byte[] GetMessageBytes(string messageString, Encoding encoding = null)
+        {
+            if (encoding == null)
+            {
+                encoding = Encoding.UTF8;
+            }
+
+            byte[] messageBytes = Encoding.UTF8.GetBytes(messageString);
+            byte[] headerBytes = 
+                Encoding.ASCII.GetBytes(
+                    string.Format(
+                        Constants.ContentLengthFormatString,
+                        messageBytes.Length));
+
+            // Copy the bytes into a single buffer
+            byte[] finalBytes = new byte[headerBytes.Length + messageBytes.Length];
+            Buffer.BlockCopy(headerBytes, 0, finalBytes, 0, headerBytes.Length);
+            Buffer.BlockCopy(messageBytes, 0, finalBytes, headerBytes.Length, messageBytes.Length);
+
+            return finalBytes;
         }
     }
 }

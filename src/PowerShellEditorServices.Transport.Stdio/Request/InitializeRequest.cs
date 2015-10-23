@@ -10,20 +10,18 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("initialize")]
     public class InitializeRequest : RequestBase<InitializeRequestArguments>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
             // Send the Initialized event first so that we get breakpoints
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 new InitializedEvent());
 
             // Now send the Initialize response to continue setup
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     new InitializeResponse()));
-
-            return TaskConstants.Completed;
         }
     }
 

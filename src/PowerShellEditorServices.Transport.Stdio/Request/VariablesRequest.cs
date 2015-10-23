@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("variables")]
     public class VariablesRequest : RequestBase<VariablesRequestArguments>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
@@ -18,11 +18,9 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                 editorSession.DebugService.GetVariables(
                     this.Arguments.VariablesReference);
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     VariablesResponse.Create(variables)));
-
-            return TaskConstants.Completed;
         }
     }
 

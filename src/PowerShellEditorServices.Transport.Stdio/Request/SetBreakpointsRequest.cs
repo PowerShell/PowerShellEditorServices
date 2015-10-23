@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                     scriptFile,
                     this.Arguments.Lines);
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     SetBreakpointsResponse.Create(
                         breakpoints)));

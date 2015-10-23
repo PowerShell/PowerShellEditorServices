@@ -12,17 +12,15 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("setExceptionBreakpoints")]
     public class SetExceptionBreakpointsRequest : RequestBase<SetExceptionBreakpointsRequestArguments>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
             // TODO: Add these
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     new SetExceptionBreakpointsResponse()));
-
-            return TaskConstants.Completed;
         }
     }
 

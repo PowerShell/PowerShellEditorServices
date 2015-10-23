@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("launch")]
     public class LaunchRequest : RequestBase<LaunchRequestArguments>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
@@ -20,11 +20,9 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             editorSession.PowerShellSession.ExecuteScript(
                 this.Arguments.Program);
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     new LaunchResponse()));
-
-            return TaskConstants.Completed;
         }
     }
 

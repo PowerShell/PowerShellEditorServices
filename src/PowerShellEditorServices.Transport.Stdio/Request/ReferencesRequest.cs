@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             ReferencesResponse referencesResponse = 
                 ReferencesResponse.Create(referencesResult, this.Arguments.File);
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     referencesResponse));
         }

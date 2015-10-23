@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("completionEntryDetails")]
     public class CompletionDetailsRequest : FileRequest<CompletionDetailsRequestArgs>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter)
         {
@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                 details.Add(
                     new CompletionEntryDetails(completionDetails, this.Arguments.EntryNames[0]
                         ));
-                messageWriter.WriteMessage(
+                await messageWriter.WriteMessage(
                     this.PrepareResponse(
                         new CompletionDetailsResponse
                         {
@@ -44,14 +44,12 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             }
             else
             {
-                messageWriter.WriteMessage(
+                await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     new CompletionDetailsResponse{
                         Body = details.ToArray()
                     }));
             }
-
-            return TaskConstants.Completed;
         }
     }
 

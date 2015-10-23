@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                     this.Arguments.Line,
                     this.Arguments.Offset);
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     CompletionsResponse.Create(
                         completions)));

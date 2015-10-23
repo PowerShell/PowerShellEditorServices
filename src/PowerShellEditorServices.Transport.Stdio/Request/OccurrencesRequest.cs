@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
     [MessageTypeName("occurrences")]
     public class OccurrencesRequest : FileRequest<FileLocationRequestArgs>
     {
-        public override Task ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter)
         {
@@ -30,11 +30,9 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             OccurrencesResponse occurrencesResponce = 
                 OccurrencesResponse.Create(occurrencesResult, this.Arguments.File);
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     occurrencesResponce));
-
-            return TaskConstants.Completed;
         }
     }
 }
