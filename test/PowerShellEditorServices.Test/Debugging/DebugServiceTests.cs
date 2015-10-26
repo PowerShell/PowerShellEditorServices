@@ -2,6 +2,7 @@
 using Microsoft.PowerShell.EditorServices.Session;
 using Nito.AsyncEx;
 using System;
+using System.Linq;
 using System.Management.Automation;
 using System.Threading.Tasks;
 using Xunit;
@@ -155,6 +156,56 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertStateChange(
                 PowerShellSessionState.Ready,
                 PowerShellExecutionResult.Aborted);
+        }
+
+        [Fact]
+        public async Task DebuggerGetsVariables()
+        {
+            ScriptFile variablesFile =
+                this.workspace.GetFile(
+                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
+
+            await this.debugService.SetBreakpoints(
+                variablesFile, 
+                new int[] { 14 });
+
+            // Execute the script and wait for the breakpoint to be hit
+            this.powerShellSession.ExecuteScript(variablesFile.FilePath);
+            await this.AssertDebuggerStopped(variablesFile.FilePath);
+
+            VariableDetails[] variables = 
+                debugService.GetVariables(
+                    VariableDetails.LocalScopeVariableId);
+
+            // TODO: Add checks for correct value strings as well
+
+            var strVar = variables.FirstOrDefault(v => v.Name == "strVar");
+            Assert.NotNull(strVar);
+            Assert.False(strVar.IsExpandable);
+
+            var objVar = variables.FirstOrDefault(v => v.Name == "objVar");
+            Assert.NotNull(objVar);
+            Assert.True(objVar.IsExpandable);
+
+            var objChildren = debugService.GetVariables(objVar.Id);
+            Assert.Equal(2, objChildren.Length);
+
+            var arrVar = variables.FirstOrDefault(v => v.Name == "arrVar");
+            Assert.NotNull(arrVar);
+            Assert.True(arrVar.IsExpandable);
+
+            var arrChildren = debugService.GetVariables(arrVar.Id);
+            Assert.Equal(4, arrChildren.Length);
+
+            var classVar = variables.FirstOrDefault(v => v.Name == "classVar");
+            Assert.NotNull(classVar);
+            Assert.True(classVar.IsExpandable);
+
+            var classChildren = debugService.GetVariables(classVar.Id);
+            Assert.Equal(2, classChildren.Length);
+
+            // Abort execution of the script
+            this.powerShellSession.AbortExecution();
         }
 
         public async Task AssertDebuggerStopped(

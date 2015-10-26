@@ -3,120 +3,107 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
     public class VariableDetails
     {
-        public int Id { get; private set; }
+        #region Fields
+
+        public const int LocalScopeVariableId = 1;
+        public const int GlobalScopeVariableId = 2;
+        public const int FirstVariableId = 10;
+
+        private object valueObject;
+        private VariableDetails[] cachedChildren;
+
+        #endregion
+
+        #region Properties
+
+        public int Id { get; set; }
 
         public string Name { get; private set; }
 
         public string ValueString { get; private set; }
 
-        public VariableDetails[] Children { get; private set; }
+        public bool IsExpandable { get; private set; }
 
-        public bool HasChildren 
+        #endregion
+
+        #region Constructors
+
+        public VariableDetails(PSVariable psVariable)
+            : this(psVariable.Name, psVariable.Value)
         {
-            get
-            {
-                return this.Children != null && this.Children.Length > 0;
-            }
         }
+
+        public VariableDetails(PSPropertyInfo psProperty)
+            : this(psProperty.Name, psProperty.Value)
+        {
+        }
+
+        public VariableDetails(string name, object value)
+        {
+            this.valueObject = value;
+
+            this.IsExpandable = GetIsExpandable(value);
+            this.Name = name;
+            this.ValueString =
+                this.IsExpandable == false ?
+                    GetValueString(value) :
+                    string.Empty;
+        }
+
+        #endregion
 
         #region Public Methods
 
-        public static VariableDetails Create(PSVariable variable)
+        public VariableDetails[] GetChildren()
         {
-            string valueString = null;
+            VariableDetails[] childVariables = null;
 
-            VariableDetails[] children = new VariableDetails[0];
-            try
+            if (this.IsExpandable)
             {
-                children = GetChildren(variable.Value);
+                if (this.cachedChildren == null)
+                {
+                    this.cachedChildren = GetChildren(this.valueObject);
+                }
+
+                return this.cachedChildren;
             }
-            catch (Exception e)
+            else
             {
-                var mess = e.Message;
+                childVariables = new VariableDetails[0];
             }
 
-            if (children.Length == 0)
-            {
-                valueString = GetValueString(variable.Value);
-            }
-
-            return new VariableDetails
-            {
-                Id = variable.Name.GetHashCode(),
-                Name = variable.Name,
-                ValueString = valueString,
-                Children = children
-            };
+            return childVariables;
         }
 
         #endregion
 
         #region Private Methods
 
-        private static VariableDetails Create(DictionaryEntry entry)
+        private static bool GetIsExpandable(object valueObject)
         {
-            return new VariableDetails
-            {
-                Name = GetValueString(entry.Key),
-                ValueString = GetValueString(entry.Value)
-            };
+            Type valueType = 
+                valueObject != null ? 
+                    valueObject.GetType() : 
+                    null;
+
+            return
+                valueObject != null &&
+                !valueType.IsValueType &&
+                !(valueObject is string); // Strings get treated as IEnumerables
         }
 
         private static string GetValueString(object value)
         {
-            if (value != null)
-            {
-                return value.ToString();
-            }
-
-            return null;
-        }
-
-        private static VariableDetails Create(PSPropertyInfo property)
-        {
-            var propertyValue = property.Value;
-            var valuePsObject = propertyValue as PSObject;
-            if (valuePsObject != null && 
-                !(valuePsObject.ImmediateBaseObject is string))
-            {
-                propertyValue = valuePsObject.ImmediateBaseObject;
-            }
-
-            return new VariableDetails
-            {
-                Name = property.Name,
-                ValueString = GetValueString(propertyValue), // TODO: Only one or the other!
-                Children = GetChildren(propertyValue)
-            };
-        }
-
-        private static VariableDetails[] Create(IEnumerable enumerable)
-        {
-            List<VariableDetails> variables = new List<VariableDetails>();
-
-            foreach (var item in enumerable)
-            {
-                try
-                {
-                    DictionaryEntry entry = (DictionaryEntry)item;
-                    variables.Add(
-                        VariableDetails.Create(
-                            entry));
-                }
-                catch(InvalidCastException)
-                {
-
-                }
-            }
-
-            return variables.ToArray();
+            return
+                value != null ?
+                    value.ToString() :
+                    "null";
         }
 
         private static VariableDetails[] GetChildren(object obj)
@@ -124,20 +111,64 @@ namespace Microsoft.PowerShell.EditorServices.Console
             List<VariableDetails> childVariables = new List<VariableDetails>();
 
             PSObject psObject = obj as PSObject;
+            IDictionary dictionary = obj as IDictionary;
+            IEnumerable enumerable = obj as IEnumerable;
+
             if (psObject != null)
             {
                 childVariables.AddRange(
                     psObject
                         .Properties
-                        .Select(p => VariableDetails.Create(p)));
+                        .Select(p => new VariableDetails(p)));
             }
-
-            IEnumerable enumerable = obj as IEnumerable;
-            if (enumerable != null && !(obj is string))
+            else if (dictionary != null)
             {
                 childVariables.AddRange(
-                    VariableDetails.Create(
-                        enumerable));
+                    dictionary
+                        .OfType<DictionaryEntry>()
+                        .Select(e => new VariableDetails(e.Key.ToString(), e.Value)));
+            }
+            else if (enumerable != null && !(obj is string))
+            {
+                int i = 0;
+                foreach (var item in enumerable)
+                {
+                    childVariables.Add(
+                        new VariableDetails(
+                            string.Format("[{0}]", i),
+                            item));
+
+                    i++;
+                }
+            }
+            else if (obj != null)
+            {
+                // Object must be a normal .NET type, pull all of its
+                // properties and their values
+                Type objectType = obj.GetType();
+                var properties = 
+                    objectType.GetProperties(
+                        BindingFlags.Public | BindingFlags.Instance);
+
+                foreach (var property in properties)
+                {
+                    try
+                    {
+                        childVariables.Add(
+                            new VariableDetails(
+                                property.Name,
+                                property.GetValue(obj)));
+                    }
+                    catch (Exception)
+                    {
+                        // Some properties can throw exceptions, add the property
+                        // name and empty string
+                        childVariables.Add(
+                            new VariableDetails(
+                                property.Name,
+                                string.Empty));
+                    }
+                }
             }
 
             return childVariables.ToArray();

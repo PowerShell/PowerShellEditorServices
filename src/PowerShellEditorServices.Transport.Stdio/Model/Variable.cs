@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Model
                 Name = variable.Name,
                 Value = variable.ValueString ?? string.Empty,
                 VariablesReference = 
-                    variable.HasChildren ?
+                    variable.IsExpandable ?
                         variable.Id : 0
             };
         }

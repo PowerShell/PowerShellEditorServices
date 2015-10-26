@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -17,11 +16,13 @@ namespace Microsoft.PowerShell.EditorServices
         private PowerShellSession powerShellSession;
         private ConsoleServicePSHost consoleServicePSHost;
 
+        // TODO: This needs to be managed per nested session
         private Dictionary<string, List<Breakpoint>> breakpointsPerFile = 
             new Dictionary<string, List<Breakpoint>>();
+
+        private int nextVariableId;
+        private List<VariableDetails> currentVariables;
         private StackFrameDetails[] callStackFrames;
-        private VariableDetails[] currentVariables;
-        private Dictionary<int, VariableDetails> variableIndex;
 
         #endregion
 
@@ -58,6 +59,7 @@ namespace Microsoft.PowerShell.EditorServices
                 psCommand.AddCommand("Set-PSBreakpoint");
                 psCommand.AddParameter("Script", scriptFile.FilePath);
                 psCommand.AddParameter("Line", lineNumbers.Length > 0 ? lineNumbers : null);
+
                 resultBreakpoints =
                     await this.powerShellSession.ExecuteCommand<Breakpoint>(
                         psCommand);
@@ -70,7 +72,6 @@ namespace Microsoft.PowerShell.EditorServices
 
             return new BreakpointDetails[0];
         }
-
 
         public void Continue()
         {
@@ -109,25 +110,39 @@ namespace Microsoft.PowerShell.EditorServices
 
         public VariableDetails[] GetVariables(int variableReferenceId)
         {
-            var variables = this.currentVariables;
+            VariableDetails[] childVariables = null;
 
-            if (variableReferenceId != 1)
+            if (variableReferenceId >= VariableDetails.FirstVariableId)
             {
-                VariableDetails variable = null;
-                if (this.variableIndex.TryGetValue(variableReferenceId, out variable))
+                int correctedId =
+                    (variableReferenceId - VariableDetails.FirstVariableId);
+
+                VariableDetails parentVariable = 
+                    this.currentVariables[correctedId];
+
+                if (parentVariable.IsExpandable)
                 {
-                    if (variable.HasChildren)
+                    childVariables = parentVariable.GetChildren();
+
+                    foreach (var child in childVariables)
                     {
-                        variables = variable.Children;
-                    }
-                    else
-                    {
-                        // TODO: Throw error
+                        this.currentVariables.Add(child);
+                        child.Id = this.nextVariableId;
+                        this.nextVariableId++;
                     }
                 }
+                else
+                {
+                    childVariables = new VariableDetails[0];
+                }
+            }
+            else
+            {
+                // TODO: Get variables for the desired scope ID
+                childVariables = this.currentVariables.ToArray();
             }
 
-            return variables;
+            return childVariables;
         }
 
         public VariableDetails EvaluateExpression(string expressionString, int stackFrameId)
@@ -136,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices
             string[] variablePathParts = expressionString.Split('.');
 
             VariableDetails resolvedVariable = null;
-            VariableDetails[] variableList = this.currentVariables;
+            IEnumerable<VariableDetails> variableList = this.currentVariables;
 
             foreach (var variableName in variablePathParts)
             {
@@ -155,10 +170,10 @@ namespace Microsoft.PowerShell.EditorServices
                                 StringComparison.InvariantCultureIgnoreCase));
 
                 if (resolvedVariable != null && 
-                    resolvedVariable.HasChildren)
+                    resolvedVariable.IsExpandable)
                 {
                     // Continue by searching in this variable's children
-                    variableList = resolvedVariable.Children;
+                    variableList = this.GetVariables(resolvedVariable.Id);
                 }
             }
 
@@ -168,6 +183,15 @@ namespace Microsoft.PowerShell.EditorServices
         public StackFrameDetails[] GetStackFrames()
         {
             return this.callStackFrames;
+        }
+
+        public VariableScope[] GetVariableScopes(int stackFrameId)
+        {
+            // TODO: Return different scopes based on PowerShell scoping mechanics
+            return new VariableScope[]
+            {
+                new VariableScope(1, "Locals")
+            };
         }
 
         #endregion
@@ -192,42 +216,38 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private async Task<VariableDetails[]> FetchVariables()
+        private async Task FetchVariables()
         {
-            this.variableIndex = new Dictionary<int, VariableDetails>();
+            this.nextVariableId = VariableDetails.FirstVariableId;
+            this.currentVariables = new List<VariableDetails>();
 
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand("Get-Variable");
+            psCommand.AddParameter("Scope", "Local");
 
             var results = await this.powerShellSession.ExecuteCommand<PSVariable>(psCommand);
 
-            VariableDetails[] variables =
-                results
-                    .Select(VariableDetails.Create)
-                    .ToArray();
-
-            // TODO: Do this more efficiently
-            foreach (var variable in variables)
+            foreach (var variable in results)
             {
-                this.variableIndex.Add(variable.Id, variable);
-            }
+                var details = new VariableDetails(variable);
+                details.Id = this.nextVariableId;
+                this.currentVariables.Add(details);
 
-            return variables;
+                this.nextVariableId++;
+            }
         }
 
-        private async Task<StackFrameDetails[]> FetchStackFrames()
+        private async Task FetchStackFrames()
         {
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand("Get-PSCallStack");
 
             var results = await this.powerShellSession.ExecuteCommand<CallStackFrame>(psCommand);
 
-            StackFrameDetails[] stackFrames =
+            this.callStackFrames =
                 results
                     .Select(StackFrameDetails.Create)
                     .ToArray();
-
-            return stackFrames;
         }
 
         #endregion
@@ -239,8 +259,8 @@ namespace Microsoft.PowerShell.EditorServices
         private async void OnDebuggerStop(object sender, DebuggerStopEventArgs e)
         {
             // Get the call stack and local variables
-            this.callStackFrames = await this.FetchStackFrames();
-            this.currentVariables = await this.FetchVariables();
+            await this.FetchStackFrames();
+            await this.FetchVariables();
 
             // Notify the host that the debugger is stopped
             if (this.DebuggerStopped != null)

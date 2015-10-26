@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.PowerShell.EditorServices.Console;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,5 +20,14 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Model
 //        /** If true, the number of variables in this scope is large or expensive to retrieve. */
 //        expensive: boolean;
         public bool Expensive { get; set; }
+
+        public static Scope Create(VariableScope scope)
+        {
+            return new Scope
+            {
+                Name = scope.Name,
+                VariablesReference = scope.Id
+            };
+        }
     }
 }

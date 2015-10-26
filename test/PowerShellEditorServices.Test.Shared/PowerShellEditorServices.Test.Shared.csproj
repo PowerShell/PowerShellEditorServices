@@ -60,6 +60,7 @@
     <None Include="Completion\CompletionExamples.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Debugging\VariableTest.ps1" />
     <None Include="SymbolDetails\SymbolDetails.ps1" />
   </ItemGroup>
   <ItemGroup>

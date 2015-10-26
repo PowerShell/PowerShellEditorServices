@@ -182,22 +182,22 @@ namespace Microsoft.PowerShell.EditorServices.Host
         {
         }
 
-        async void PowerShellSession_OutputWritten(object sender, OutputWrittenEventArgs e)
+        void PowerShellSession_OutputWritten(object sender, OutputWrittenEventArgs e)
         {
             // TODO: change this to use the OutputEvent!
 
-            await this.messageWriter.WriteMessage(
-                new ReplWriteOutputEvent
-                {
-                    Body = new ReplWriteOutputEventBody
-                    {
-                        LineContents = e.OutputText,
-                        LineType = e.OutputType,
-                        IncludeNewLine = e.IncludeNewLine,
-                        ForegroundColor = e.ForegroundColor,
-                        BackgroundColor = e.BackgroundColor
-                    }
-                });
+            //await this.messageWriter.WriteMessage(
+            //    new ReplWriteOutputEvent
+            //    {
+            //        Body = new ReplWriteOutputEventBody
+            //        {
+            //            LineContents = e.OutputText,
+            //            LineType = e.OutputType,
+            //            IncludeNewLine = e.IncludeNewLine,
+            //            ForegroundColor = e.ForegroundColor,
+            //            BackgroundColor = e.BackgroundColor
+            //        }
+            //    });
         }
 
         #endregion

@@ -107,6 +107,7 @@
     <Compile Include="Request\ReferencesRequest.cs" />
     <Compile Include="Request\ReplExecuteRequest.cs" />
     <Compile Include="Request\RequestBase.cs" />
+    <Compile Include="Request\ScopesRequest.cs" />
     <Compile Include="Request\SetBreakpointsRequest.cs" />
     <Compile Include="Request\SetExceptionBreakpointsRequest.cs" />
     <Compile Include="Request\SourceRequest.cs" />
@@ -129,6 +130,7 @@
     <Compile Include="Response\OccurrencesResponse.cs" />
     <Compile Include="Response\QuickInfoResponse.cs" />
     <Compile Include="Response\ReferencesResponse.cs" />
+    <Compile Include="Response\ScopesResponse.cs" />
     <Compile Include="Response\SetBreakpointsResponse.cs" />
     <Compile Include="Response\SetExceptionBreakpointsResponse.cs" />
     <Compile Include="Response\SignatureHelpResponse.cs" />

@@ -99,6 +99,7 @@
     <Compile Include="Session\Workspace.cs" />
     <Compile Include="Utility\Logger.cs" />
     <Compile Include="Utility\Validate.cs" />
+    <Compile Include="Console\VariableScope.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

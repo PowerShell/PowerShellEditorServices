@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.PowerShell.EditorServices.Console;
+
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Model
 {
     public class StackFrame
@@ -13,8 +14,6 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Model
         public int Line { get; set; }
 
         public int Column { get; set; }
-
-        public Scope[] Scopes { get; set; }
 
         //        /** An identifier for the stack frame. */
         //id: number;
@@ -30,25 +29,18 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Model
         //scopes: Scope[];
 
         public static StackFrame Create(
-            StackFrameDetails stackFrame)
+            StackFrameDetails stackFrame,
+            int id)
         {
             return new StackFrame
             {
-                Id = stackFrame.FunctionName.GetHashCode(),
+                Id = id,
                 Name = stackFrame.FunctionName,
                 Line = stackFrame.LineNumber,
                 Column = stackFrame.ColumnNumber,
                 Source = new Source
                 {
                     Path = stackFrame.ScriptPath
-                },
-                Scopes = new Scope[]
-                {
-                    new Scope
-                    {
-                        Name = "locals",
-                        VariablesReference = 1 // TODO: Use a contextual number
-                    }
                 }
             };
         }

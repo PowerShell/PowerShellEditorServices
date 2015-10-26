@@ -1,6 +1,9 @@
-﻿using Microsoft.PowerShell.EditorServices.Session;
+﻿using Microsoft.PowerShell.EditorServices.Console;
+using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
 using Nito.AsyncEx;
+using System;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
@@ -12,7 +15,23 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
-            // TODO: Do something with this!
+            EventHandler<SessionStateChangedEventArgs> handler = null;
+
+            handler =
+                async (o, e) =>
+                    {
+                        if (e.NewSessionState == Console.PowerShellSessionState.Ready)
+                        {
+                            await messageWriter.WriteMessage(new DisconnectResponse {});
+                            editorSession.PowerShellSession.SessionStateChanged -= handler;
+
+                            // TODO: Find a way to exit more gracefully!
+                            Environment.Exit(0);
+                        }
+                    };
+
+            editorSession.PowerShellSession.SessionStateChanged += handler;
+            editorSession.PowerShellSession.AbortExecution();
 
             return TaskConstants.Completed;
         }
