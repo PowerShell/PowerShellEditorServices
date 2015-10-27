@@ -89,6 +89,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Request\AttachRequest.cs" />
     <Compile Include="Request\ChangeFileRequest.cs" />
+    <Compile Include="Request\CloseFileRequest.cs" />
     <Compile Include="Request\CompletionDetailsRequest.cs" />
     <Compile Include="Request\CompletionsRequest.cs" />
     <Compile Include="Request\ContinueRequest.cs" />

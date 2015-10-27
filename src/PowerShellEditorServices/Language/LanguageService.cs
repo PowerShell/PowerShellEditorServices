@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
                     
             // save state of most recent completion
             mostRecentCompletions = completionResults;
-            mostRecentRequestFile = scriptFile.FilePath;
+            mostRecentRequestFile = scriptFile.Id;
             mostRecentRequestLine = lineNumber;
             mostRecentRequestOffest = columnNumber;
 
@@ -124,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
             string entryName)
         {
             // Makes sure the most recent completions request was the same line and column as this request
-            if (file.FilePath.Equals(mostRecentRequestFile) &&
+            if (file.Id.Equals(mostRecentRequestFile) &&
                 lineNumber == mostRecentRequestLine &&
                 columnNumber == mostRecentRequestOffest)
             {

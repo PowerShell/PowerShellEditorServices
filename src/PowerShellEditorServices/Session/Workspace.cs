@@ -73,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         {
             Validate.IsNotNull("scriptFile", scriptFile);
 
-            this.workspaceFiles.Remove(scriptFile.FilePath);
+            this.workspaceFiles.Remove(scriptFile.Id);
         }
 
         /// <summary>
@@ -89,12 +89,12 @@ namespace Microsoft.PowerShell.EditorServices.Session
             List<ScriptFile> expandedReferences = new List<ScriptFile>();
 
             // add original file so it's not searched for, then find all file references
-            referencedScriptFiles.Add(scriptFile.FilePath, scriptFile); 
+            referencedScriptFiles.Add(scriptFile.Id, scriptFile); 
             RecursivelyFindReferences(scriptFile, referencedScriptFiles);
 
             // remove original file from referened file and add it as the first element of the
             // expanded referenced list to maintain order so the original file is always first in the list
-            referencedScriptFiles.Remove(scriptFile.FilePath);
+            referencedScriptFiles.Remove(scriptFile.Id);
             expandedReferences.Add(scriptFile);
 
             if (referencedScriptFiles.Count > 0)
@@ -132,6 +132,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 {
                     // Get the referenced file if it's not already in referencedScriptFiles
                     referencedFile = this.GetFile(resolvedScriptPath);
+
+                    // Normalize the resolved script path and add it to the
+                    // referenced files list if it isn't there already
+                    resolvedScriptPath = resolvedScriptPath.ToLower();
                     if (!referencedScriptFiles.ContainsKey(resolvedScriptPath))
                     {
                         referencedScriptFiles.Add(resolvedScriptPath, referencedFile);

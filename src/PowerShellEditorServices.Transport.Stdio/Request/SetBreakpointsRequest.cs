@@ -19,7 +19,6 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
-            // TODO: Catch FileNotFoundException
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
                     this.Arguments.Source.Path);

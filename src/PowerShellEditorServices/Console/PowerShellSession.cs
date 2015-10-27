@@ -192,13 +192,16 @@ namespace Microsoft.PowerShell.EditorServices.Console
             if (Thread.CurrentThread.ManagedThreadId != this.pipelineThreadId &&
                 this.pipelineExecutionTask != null)
             {
+                PipelineExecutionRequest<TResult> executionRequest =
+                    new PipelineExecutionRequest<TResult>(
+                        this, psCommand, sendOutputToHost);
+
                 // Send the pipeline execution request to the pipeline thread
                 this.pipelineResultTask = new TaskCompletionSource<IPipelineExecutionRequest>();
-                this.pipelineExecutionTask.SetResult(
-                    new PipelineExecutionRequest<TResult>(
-                        this, psCommand, sendOutputToHost));
+                this.pipelineExecutionTask.SetResult(executionRequest);
 
                 await this.pipelineResultTask.Task;
+                return executionRequest.Results;
             }
             else
             {

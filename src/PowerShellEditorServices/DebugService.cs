@@ -203,7 +203,7 @@ namespace Microsoft.PowerShell.EditorServices
             List<Breakpoint> breakpoints = null;
 
             // Get the list of breakpoints for this file
-            if (this.breakpointsPerFile.TryGetValue(scriptFile.FilePath, out breakpoints))
+            if (this.breakpointsPerFile.TryGetValue(scriptFile.Id, out breakpoints))
             {
                 if (breakpoints.Count > 0)
                 {
@@ -212,6 +212,9 @@ namespace Microsoft.PowerShell.EditorServices
                     psCommand.AddParameter("Breakpoint", breakpoints.ToArray());
 
                     await this.powerShellSession.ExecuteCommand<object>(psCommand);
+
+                    // Clear the existing breakpoints list for the file
+                    breakpoints.Clear();
                 }
             }
         }
@@ -275,12 +278,15 @@ namespace Microsoft.PowerShell.EditorServices
         {
             List<Breakpoint> breakpoints = null;
 
+            // Normalize the script filename for proper indexing
+            string normalizedScriptName = e.Breakpoint.Script.ToLower();
+
             // Get the list of breakpoints for this file
-            if (!this.breakpointsPerFile.TryGetValue(e.Breakpoint.Script, out breakpoints))
+            if (!this.breakpointsPerFile.TryGetValue(normalizedScriptName, out breakpoints))
             {
                 breakpoints = new List<Breakpoint>();
                 this.breakpointsPerFile.Add(
-                    e.Breakpoint.Script,
+                    normalizedScriptName,
                     breakpoints);
             }
 

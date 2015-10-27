@@ -28,7 +28,17 @@ namespace Microsoft.PowerShell.EditorServices.Session
         #region Properties
 
         /// <summary>
-        /// Gets the  path at which this file resides.
+        /// Gets a unique string that identifies this file.  At this time,
+        /// this property returns a normalized version of the value stored
+        /// in the FilePath property.
+        /// </summary>
+        public string Id
+        {
+            get { return this.FilePath.ToLower(); }
+        }
+
+        /// <summary>
+        /// Gets the path at which this file resides.
         /// </summary>
         public string FilePath { get; private set; }
 
