@@ -67,8 +67,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             messageTypeResolver.ScanForMessageTypes(typeof(StartedEvent).Assembly);
 
             // Open the standard input/output streams
-            this.inputStream = System.Console.OpenStandardInput();
-            this.outputStream = System.Console.OpenStandardOutput();
+            this.inputStream = this.languageServiceProcess.StandardOutput.BaseStream;
+            this.outputStream = this.languageServiceProcess.StandardInput.BaseStream;
 
             // Set up the message reader and writer
             this.MessageReader = 

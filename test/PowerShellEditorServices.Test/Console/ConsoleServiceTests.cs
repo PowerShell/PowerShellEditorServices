@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         {
         }
 
-        [Fact]
+        [Fact(Skip = "Choice prompt functionality is currently in transition to a new model.")]
         public async Task ReceivesChoicePrompt()
         {
             string choiceScript =
