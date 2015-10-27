@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Event
                     new Diagnostic
                     {
                         Text = diagnosticMarker.Message,
-                        Severity = (int)diagnosticMarker.Level + 1,
+                        Severity = (int)diagnosticMarker.Level,
                         Start = new Location
                         {
                             Line = diagnosticMarker.ScriptRegion.StartLineNumber,
