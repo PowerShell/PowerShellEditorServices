@@ -70,6 +70,7 @@
     <Compile Include="Event\ReplWriteOutputEvent.cs" />
     <Compile Include="Event\StartedEvent.cs" />
     <Compile Include="Event\StoppedEvent.cs" />
+    <Compile Include="Event\TerminatedEvent.cs" />
     <Compile Include="Message\IMessageProcessor.cs" />
     <Compile Include="Message\MessageBase.cs" />
     <Compile Include="Message\MessageParseException.cs" />

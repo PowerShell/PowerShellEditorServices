@@ -1,7 +1,10 @@
 ﻿using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using Microsoft.PowerShell.EditorServices.Utility;
 using Nito.AsyncEx;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -17,8 +20,17 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             // Execute the given PowerShell script and send the response.
             // Note that we aren't waiting for execution to complete here
             // because the debugger could stop while the script executes.
-            editorSession.PowerShellSession.ExecuteScript(
-                this.Arguments.Program);
+            editorSession.PowerShellSession
+                .ExecuteScriptAtPath(this.Arguments.Program)
+                .ContinueWith(
+                    async (t) =>
+                    {
+                        Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
+
+                        // TODO: Find a way to exit more gracefully!
+                        await messageWriter.WriteMessage(new TerminatedEvent());
+                        Environment.Exit(0);
+                    });
 
             await messageWriter.WriteMessage(
                 this.PrepareResponse(

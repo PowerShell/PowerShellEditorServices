@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             this.ValueString =
                 this.IsExpandable == false ?
                     GetValueString(value) :
-                    string.Empty;
+                    " "; // An empty string isn't enough due to a temporary bug in VS Code.
         }
 
         #endregion

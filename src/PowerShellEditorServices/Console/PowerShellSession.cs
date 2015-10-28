@@ -11,6 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
     using System.Management.Automation;
     using System.Management.Automation.Host;
     using System.Management.Automation.Runspaces;
+    using System.Text;
     using System.Threading;
 
     /// <summary>
@@ -152,6 +153,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
             this.powerShell.InvocationStateChanged += powerShell_InvocationStateChanged;
             this.powerShell.Runspace = this.currentRunspace;
 
+            // TODO: Should this be configurable?
+            this.SetExecutionPolicy(ExecutionPolicy.RemoteSigned);
+
             this.SessionState = PowerShellSessionState.Ready;
         }
 
@@ -192,6 +196,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
             if (Thread.CurrentThread.ManagedThreadId != this.pipelineThreadId &&
                 this.pipelineExecutionTask != null)
             {
+                Logger.Write(LogLevel.Verbose, "Passing command execution to pipeline thread.");
+
                 PipelineExecutionRequest<TResult> executionRequest =
                     new PipelineExecutionRequest<TResult>(
                         this, psCommand, sendOutputToHost);
@@ -205,23 +211,29 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
             else
             {
-                // Instruct PowerShell to send output and errors to the host
-                if (sendOutputToHost)
-                {
-                    psCommand.Commands[0].MergeMyResults(
-                        PipelineResultTypes.Error,
-                        PipelineResultTypes.Output);
-
-                    psCommand.Commands.Add(
-                        this.GetOutputCommand(
-                            endOfStatement: false));
-                }
-
                 try
                 {
+                    // Instruct PowerShell to send output and errors to the host
+                    if (sendOutputToHost)
+                    {
+                        psCommand.Commands[0].MergeMyResults(
+                            PipelineResultTypes.Error,
+                            PipelineResultTypes.Output);
+
+                        psCommand.Commands.Add(
+                            this.GetOutputCommand(
+                                endOfStatement: false));
+                    }
+
                     if (this.currentRunspace.RunspaceAvailability == RunspaceAvailability.AvailableForNestedCommand ||
                         this.debuggerStoppedTask != null)
                     {
+                        Logger.Write(
+                            LogLevel.Verbose, 
+                            string.Format(
+                                "Attempting to execute nested pipeline command(s):\r\n\r\n{0}",
+                                GetStringForPSCommand(psCommand)));
+
                         using (Pipeline pipeline = this.currentRunspace.CreateNestedPipeline())
                         {
                             foreach (var command in psCommand.Commands)
@@ -240,6 +252,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     }
                     else
                     {
+                        Logger.Write(
+                            LogLevel.Verbose, 
+                            string.Format(
+                                "Attempting to execute command(s):\r\n\r\n{0}",
+                                GetStringForPSCommand(psCommand)));
+
                         // Set the runspace
                         var runspaceHandle = await this.GetRunspaceHandle();
                         if (runspaceHandle.Runspace.RunspaceAvailability != RunspaceAvailability.AvailableForNestedCommand)
@@ -264,6 +282,20 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
                         runspaceHandle.Dispose();
 
+                        if (this.powerShell.HadErrors)
+                        {
+                            // TODO: Find a good way to extract errors!
+                            Logger.Write(
+                                LogLevel.Error, 
+                                "Execution completed with errors.");
+                        }
+                        else
+                        {
+                            Logger.Write(
+                                LogLevel.Verbose, 
+                                "Execution completed successfully.");
+                        }
+
                         bool hadErrors = this.powerShell.HadErrors;
                         return taskResult;
                     }
@@ -271,7 +303,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 catch (RuntimeException e)
                 {
                     // TODO: Return an error
-                    string boo = e.Message;
+                    Logger.Write(
+                        LogLevel.Error,
+                        "Exception occurred while attempting to execute command:\r\n\r\n" + e.ToString());
                 }
             }
 
@@ -307,13 +341,16 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         public void AbortExecution()
         {
-            // TODO: Verify this behavior
+            Logger.Write(LogLevel.Verbose, "Execution abort requested...");
+
             this.powerShell.BeginStop(null, null);
             this.ResumeDebugger(DebuggerResumeAction.Stop);
         }
 
         public void BreakExecution()
         {
+            Logger.Write(LogLevel.Verbose, "Debugger break requested...");
+
             this.currentRunspace.Debugger.SetDebuggerStepMode(true);
         }
 
@@ -383,6 +420,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private void OnSessionStateChanged(object sender, SessionStateChangedEventArgs e)
         {
+            Logger.Write(
+                LogLevel.Verbose,
+                string.Format(
+                    "Session state changed --\r\n\r\n    Old state: {0}\r\n    New state: {1}",
+                    this.SessionState.ToString(),
+                    e.NewSessionState.ToString()));
+
             this.SessionState = e.NewSessionState; 
 
             if (this.SessionStateChanged != null)
@@ -472,6 +516,66 @@ namespace Microsoft.PowerShell.EditorServices.Console
             return outputCommand;
         }
 
+        private static string GetStringForPSCommand(PSCommand psCommand)
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            foreach (var command in psCommand.Commands)
+            {
+                stringBuilder.Append("    ");
+                stringBuilder.AppendLine(command.ToString());
+            }
+
+            return stringBuilder.ToString();
+        }
+
+        private void SetExecutionPolicy(ExecutionPolicy desiredExecutionPolicy)
+        {
+            var currentPolicy = ExecutionPolicy.Undefined;
+
+            // Get the current execution policy so that we don't set it higher than it already is 
+            this.powerShell.Commands.AddCommand("Get-ExecutionPolicy");
+
+            var result = this.powerShell.Invoke<ExecutionPolicy>();
+            if (result.Count > 0)
+            {
+                currentPolicy = result.FirstOrDefault();
+            }
+
+            if (desiredExecutionPolicy < currentPolicy || 
+                desiredExecutionPolicy == ExecutionPolicy.Bypass ||
+                currentPolicy == ExecutionPolicy.Undefined)
+            {
+                Logger.Write(
+                    LogLevel.Verbose,
+                    string.Format(
+                        "Setting execution policy:\r\n    Current = ExecutionPolicy.{0}\r\n    Desired = ExecutionPolicy.{1}",
+                        currentPolicy,
+                        desiredExecutionPolicy));
+
+                this.powerShell.Commands.Clear();
+                this.powerShell
+                    .AddCommand("Set-ExecutionPolicy")
+                    .AddParameter("ExecutionPolicy", desiredExecutionPolicy)
+                    .AddParameter("Scope", ExecutionPolicyScope.Process)
+                    .AddParameter("Force");
+
+                this.powerShell.Invoke();
+                this.powerShell.Commands.Clear();
+
+                // TODO: Ensure there were no errors?
+            }
+            else
+            {
+                Logger.Write(
+                    LogLevel.Verbose,
+                    string.Format(
+                        "Current execution policy: ExecutionPolicy.{0}",
+                        currentPolicy));
+
+            }
+        }
+
         #endregion
 
         #region Events
@@ -482,6 +586,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             if (!this.isStopping)
             {
+                Logger.Write(LogLevel.Verbose, "Debugger stopped execution.");
+
                 // Set the task so a result can be set
                 this.debuggerStoppedTask =
                     new TaskCompletionSource<DebuggerResumeAction>();
@@ -499,6 +605,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     this.DebuggerStop(sender, e);
                 }
 
+                Logger.Write(LogLevel.Verbose, "Starting pipeline thread message loop...");
+
                 while (true)
                 {
                     int taskIndex =
@@ -509,16 +617,22 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     if (taskIndex == 0)
                     {
                         e.ResumeAction = this.debuggerStoppedTask.Task.Result;
+                        Logger.Write(LogLevel.Verbose, "Received debugger resume action " + e.ResumeAction.ToString());
+
                         break;
                     }
                     else if (taskIndex == 1)
                     {
+                        Logger.Write(LogLevel.Verbose, "Received pipeline thread execution request.");
+
                         IPipelineExecutionRequest executionRequest =
                             this.pipelineExecutionTask.Task.Result;
 
                         this.pipelineExecutionTask = new TaskCompletionSource<IPipelineExecutionRequest>();
 
                         executionRequest.Execute().Wait();
+
+                        Logger.Write(LogLevel.Verbose, "Pipeline thread execution completed.");
 
                         this.pipelineResultTask.SetResult(executionRequest);
                     }
