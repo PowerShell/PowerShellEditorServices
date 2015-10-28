@@ -31,7 +31,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private EditorSession editorSession;
         private MessageReader messageReader;
         private MessageWriter messageWriter;
-        private SynchronizationContext syncContext;
+        private SynchronizationContext applicationSyncContext;
+        private SynchronizationContext messageLoopSyncContext;
         private AsyncContextThread messageLoopThread;
 
         #endregion
@@ -61,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private async Task StartMessageLoop()
         {
             // Hold on to the current synchronization context
-            this.syncContext = SynchronizationContext.Current;
+            this.applicationSyncContext = SynchronizationContext.Current;
 
             // Start the message listener on another thread
             this.messageLoopThread = new AsyncContextThread(true);
@@ -70,6 +71,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         async Task ListenForMessages()
         {
+            this.messageLoopSyncContext = SynchronizationContext.Current;
+
             // Ensure that the console is using UTF-8 encoding
             System.Console.InputEncoding = Encoding.UTF8;
             System.Console.OutputEncoding = Encoding.UTF8;
@@ -161,21 +164,26 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         async void DebugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
         {
-            await this.messageWriter.WriteMessage(
-                new StoppedEvent
+            // Push the write operation to the correct thread
+            this.messageLoopSyncContext.Post(
+                async (obj) =>
                 {
-                    Body = new StoppedEventBody
-                    {
-                        Source = new Source
+                    await this.messageWriter.WriteMessage(
+                        new StoppedEvent
                         {
-                            Path = e.InvocationInfo.ScriptName,
-                        },
-                        Line = e.InvocationInfo.ScriptLineNumber,
-                        Column = e.InvocationInfo.OffsetInLine,
-                        ThreadId = 1, // TODO: Change this based on context
-                        Reason = "breakpoint" // TODO: Change this based on context
-                    }
-                });
+                            Body = new StoppedEventBody
+                            {
+                                Source = new Source
+                                {
+                                    Path = e.InvocationInfo.ScriptName,
+                                },
+                                Line = e.InvocationInfo.ScriptLineNumber,
+                                Column = e.InvocationInfo.OffsetInLine,
+                                ThreadId = 1, // TODO: Change this based on context
+                                Reason = "breakpoint" // TODO: Change this based on context
+                            }
+                        });
+                }, null);
         }
 
         void PowerShellSession_BreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)

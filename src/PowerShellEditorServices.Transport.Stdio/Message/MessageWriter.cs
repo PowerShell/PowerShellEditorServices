@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Nito.AsyncEx;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,6 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
 
         private Stream outputStream;
         private MessageTypeResolver messageTypeResolver;
+        private AsyncLock writeLock = new AsyncLock();
 
         private JsonSerializer loggingSerializer = 
             JsonSerializer.Create(
@@ -80,10 +82,16 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
                         Constants.ContentLengthFormatString,
                         messageBytes.Length));
 
-            // Send the message
-            await this.outputStream.WriteAsync(headerBytes, 0, headerBytes.Length);
-            await this.outputStream.WriteAsync(messageBytes, 0, messageBytes.Length);
-            await this.outputStream.FlushAsync();
+            // Make sure only one call is writing at a time.  You might be thinking
+            // "Why not use a normal lock?"  We use an AsyncLock here so that the
+            // message loop doesn't get blocked while waiting for I/O to complete.
+            using (await this.writeLock.LockAsync())
+            {
+                // Send the message
+                await this.outputStream.WriteAsync(headerBytes, 0, headerBytes.Length);
+                await this.outputStream.WriteAsync(messageBytes, 0, messageBytes.Length);
+                await this.outputStream.FlushAsync();
+            }
         }
 
         #endregion
