@@ -2,6 +2,7 @@
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using Microsoft.PowerShell.EditorServices.Utility;
 using Nito.AsyncEx;
 using System.Threading.Tasks;
 
@@ -14,6 +15,12 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
+            // TODO: Remove this behavior in the near future --
+            //   Create the debug service log in a separate file
+            //   so that there isn't a conflict with the default 
+            //   log file.
+            Logger.Initialize("DebugService.log", LogLevel.Verbose);
+
             // Send the Initialized event first so that we get breakpoints
             await messageWriter.WriteMessage(
                 new InitializedEvent());
