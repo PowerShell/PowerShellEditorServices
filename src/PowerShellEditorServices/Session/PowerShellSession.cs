@@ -1,4 +1,9 @@
-﻿using Microsoft.PowerShell.EditorServices.Utility;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using Microsoft.PowerShell.EditorServices.Utility;
 using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
@@ -755,3 +760,4 @@ namespace Microsoft.PowerShell.EditorServices
         }
     }
 }
+

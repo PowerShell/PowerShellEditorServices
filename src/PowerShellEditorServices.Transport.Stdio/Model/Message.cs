@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System.Collections.Generic;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Model
 {
@@ -15,3 +20,4 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Model
         public Dictionary<string, string> Variables { get; set; }
     }
 }
+

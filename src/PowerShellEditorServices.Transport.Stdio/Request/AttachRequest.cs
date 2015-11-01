@@ -1,4 +1,9 @@
-﻿using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
@@ -21,3 +26,4 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
         public int Port { get; set; }
     }
 }
+

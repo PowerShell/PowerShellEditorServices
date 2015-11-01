@@ -1,4 +1,9 @@
-﻿using System.Reflection;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -10,7 +15,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("Windows PowerShell Editor Services")]
-[assembly: AssemblyCopyright("© Microsoft Corporation. All rights reserved.")]
+[assembly: AssemblyCopyright("� Microsoft Corporation. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -37,3 +42,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyInformationalVersion("0.0.0.0")]
 
 [assembly: InternalsVisibleTo("Microsoft.PowerShell.EditorServices.Test.Shared")]
+
