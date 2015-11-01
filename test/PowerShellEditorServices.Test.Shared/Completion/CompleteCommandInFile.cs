@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
         public static readonly ScriptRegion SourceDetails = 
             new ScriptRegion
             {
-                File = @"Completion\CompletionExamples.ps1",
+                File = @"Completion\CompletionExamples.psm1",
                 StartLineNumber = 8,
                 StartColumnNumber = 7
             };
