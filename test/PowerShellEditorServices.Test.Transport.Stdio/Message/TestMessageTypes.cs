@@ -3,12 +3,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Request;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
 using System;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Transport.Stdio.Message
 {
@@ -17,11 +17,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Transport.Stdio.Message
     [MessageTypeName("testRequest")]
     internal class TestRequest : RequestBase<TestRequestArguments>
     {
-        public override void ProcessMessage(
+        public override Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(false);
         }
     }
 

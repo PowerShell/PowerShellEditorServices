@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
@@ -11,13 +10,14 @@ using Microsoft.PowerShell.EditorServices.Transport.Stdio.Request;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class ScenarioTests : IDisposable
     {
-        private LanguageServiceManager languageServiceManager =
+        private LanguageServiceManager languageServiceManager = 
             new LanguageServiceManager();
 
         private MessageReader MessageReader 
@@ -41,11 +41,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void ServiceReturnsSyntaxErrors()
+        public async Task ServiceReturnsSyntaxErrors()
         {
             // Send the 'open' and 'geterr' events
-            this.SendOpenFileRequest("TestFiles\\SimpleSyntaxError.ps1");
-            this.SendErrorRequest("TestFiles\\SimpleSyntaxError.ps1");
+            await this.SendOpenFileRequest("TestFiles\\SimpleSyntaxError.ps1");
+            await this.SendErrorRequest("TestFiles\\SimpleSyntaxError.ps1");
 
             // Wait for the events
             SyntaxDiagnosticEvent syntaxEvent = this.WaitForMessage<SyntaxDiagnosticEvent>();
@@ -62,10 +62,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void ServiceCompletesFunctionName()
+        public async Task ServiceCompletesFunctionName()
         {
-            this.SendOpenFileRequest("TestFiles\\CompleteFunctionName.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\CompleteFunctionName.ps1");
+            await this.MessageWriter.WriteMessage(
                 new CompletionsRequest
                 {
                     Arguments = new CompletionsRequestArgs
@@ -85,10 +85,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void CompletesDetailOnVariableSuggestion()
+        public async Task CompletesDetailOnVariableSuggestion()
         {
-            this.SendOpenFileRequest("TestFiles\\CompleteFunctionName.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\CompleteFunctionName.ps1");
+            await this.MessageWriter.WriteMessage(
                 new CompletionsRequest
                 {
                     Arguments = new CompletionsRequestArgs
@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             CompletionsResponse completion = this.WaitForMessage<CompletionsResponse>();
             List<string> entryName = new List<string>();
             entryName.Add("$ConsoleFileName");
-            this.MessageWriter.WriteMessage(
+            await this.MessageWriter.WriteMessage(
                 new CompletionDetailsRequest
                 {
                     Arguments = new CompletionDetailsRequestArgs
@@ -119,10 +119,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void CompletesDetailOnVariableDocSuggestion()
+        public async Task CompletesDetailOnVariableDocSuggestion()
         {
-            this.SendOpenFileRequest("TestFiles\\CompleteFunctionName.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\CompleteFunctionName.ps1");
+            await this.MessageWriter.WriteMessage(
                 new CompletionsRequest
                 {
                     Arguments = new CompletionsRequestArgs
@@ -136,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             CompletionsResponse completion = this.WaitForMessage<CompletionsResponse>();
             List<string> entryName = new List<string>();
             entryName.Add("$HKCU:");
-            this.MessageWriter.WriteMessage(
+            await this.MessageWriter.WriteMessage(
                 new CompletionDetailsRequest
                 {
                     Arguments = new CompletionDetailsRequestArgs
@@ -153,10 +153,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void CompletesDetailOnCommandSuggestion()
+        public async Task CompletesDetailOnCommandSuggestion()
         {
-            this.SendOpenFileRequest("TestFiles\\CompleteFunctionName.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\CompleteFunctionName.ps1");
+            await this.MessageWriter.WriteMessage(
                 new CompletionsRequest
                 {
                     Arguments = new CompletionsRequestArgs
@@ -167,10 +167,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         Prefix = ""
                     }
                 });
+
             CompletionsResponse completion = this.WaitForMessage<CompletionsResponse>();
             List<string> entryName = new List<string>();
             entryName.Add("Get-Process");
-            this.MessageWriter.WriteMessage(
+            await this.MessageWriter.WriteMessage(
                 new CompletionDetailsRequest
                 {
                     Arguments = new CompletionDetailsRequestArgs
@@ -186,10 +187,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void FindsReferencesOfVariable()
+        public async Task FindsReferencesOfVariable()
         {
-            this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
+            await this.MessageWriter.WriteMessage(
                 new ReferencesRequest
                 {
                     Arguments = new FileLocationRequestArgs
@@ -207,10 +208,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void FindsNoReferencesOfEmptyLine()
+        public async Task FindsNoReferencesOfEmptyLine()
         {
-            this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
+            await this.MessageWriter.WriteMessage(
                 new ReferencesRequest
                 {
                     Arguments = new FileLocationRequestArgs
@@ -226,10 +227,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void FindsReferencesOnFunctionDefinition()
+        public async Task FindsReferencesOnFunctionDefinition()
         {
-            this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
+            await this.MessageWriter.WriteMessage(
                 new ReferencesRequest
                 {
                     Arguments = new FileLocationRequestArgs
@@ -247,10 +248,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void FindsReferencesOnCommand()
+        public async Task FindsReferencesOnCommand()
         {
-            this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
+            await this.MessageWriter.WriteMessage(
                 new ReferencesRequest
                 {
                     Arguments = new FileLocationRequestArgs
@@ -268,10 +269,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void FindsDefinitionOfCommand()
+        public async Task FindsDefinitionOfCommand()
         {
-            this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
+            await this.MessageWriter.WriteMessage(
                 new DeclarationRequest
                 {
                     Arguments = new FileLocationRequestArgs
@@ -288,10 +289,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void FindsNoDefinitionOfBuiltinCommand()
+        public async Task FindsNoDefinitionOfBuiltinCommand()
         {
-            this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
+            await this.MessageWriter.WriteMessage(
                 new DeclarationRequest
                 {
                     Arguments = new FileLocationRequestArgs
@@ -306,10 +307,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void FindsDefintionOfVariable()
+        public async Task FindsDefintionOfVariable()
         {
-            this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
+            await this.MessageWriter.WriteMessage(
                 new DeclarationRequest
                 {
                     Arguments = new FileLocationRequestArgs
@@ -319,6 +320,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         Offset = 14,
                     }
                 });
+
             DefinitionResponse definition = this.WaitForMessage<DefinitionResponse>();
             Assert.NotNull(definition);
             Assert.Equal(6, definition.Body[0].Start.Line);
@@ -328,10 +330,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void FindsOccurencesOnFunctionDefinition()
+        public async Task FindsOccurencesOnFunctionDefinition()
         {
-            this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
+            await this.MessageWriter.WriteMessage(
                 new OccurrencesRequest
                 {
                     Arguments = new FileLocationRequestArgs
@@ -349,10 +351,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public void GetsParameterHintsOnCommand()
+        public async Task GetsParameterHintsOnCommand()
         {
-            this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
-            this.MessageWriter.WriteMessage(
+            await this.SendOpenFileRequest("TestFiles\\FindReferences.ps1");
+            await this.MessageWriter.WriteMessage(
                 new SignatureHelpRequest
                 {
                     Arguments = new SignatureHelpRequestArgs
@@ -369,10 +371,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal(sigHelp.Body.ArgumentCount, 1);
         }
 
-        [Fact]
-        public void ServiceExecutesReplCommandAndReceivesOutput()
+        [Fact(Skip = "Console output events are disabled until we migrate to the updated debug protocol.")]
+        public async Task ServiceExecutesReplCommandAndReceivesOutput()
         {
-            this.MessageWriter.WriteMessage(
+            await this.MessageWriter.WriteMessage(
                 new ReplExecuteRequest
                 {
                     Arguments = new ReplExecuteArgs
@@ -385,8 +387,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("3", replWriteLineEvent.Body.LineContents);
         }
 
-        [Fact]
-        public void ServiceExecutesReplCommandAndReceivesChoicePrompt()
+        [Fact(Skip = "Choice prompt functionality is currently in transition to a new model.")]
+        public async Task ServiceExecutesReplCommandAndReceivesChoicePrompt()
         {
             string choiceScript =
                 @"
@@ -398,7 +400,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 $response = $host.ui.PromptForChoice($caption, $message, $choices, 1)
                 $response";
 
-            this.MessageWriter.WriteMessage(
+            await this.MessageWriter.WriteMessage(
                 new ReplExecuteRequest
                 {
                     Arguments = new ReplExecuteArgs
@@ -412,7 +414,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal(1, replPromptChoiceEvent.Body.DefaultChoice);
 
             // Respond to the prompt event
-            this.MessageWriter.WriteMessage(
+            await this.MessageWriter.WriteMessage(
                 new ReplPromptChoiceResponse
                 {
                     Body = new ReplPromptChoiceResponseBody
@@ -426,15 +428,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("0", replWriteLineEvent.Body.LineContents);
         }
 
-        private void SendOpenFileRequest(string fileName)
+        private async Task SendOpenFileRequest(string fileName)
         {
-            this.MessageWriter.WriteMessage(
+            await this.MessageWriter.WriteMessage(
                 OpenFileRequest.Create(fileName));
         }
 
-        private void SendErrorRequest(params string[] fileNames)
+        private async Task SendErrorRequest(params string[] fileNames)
         {
-            this.MessageWriter.WriteMessage(
+            await this.MessageWriter.WriteMessage(
                 ErrorRequest.Create(fileNames));
         }
 

@@ -3,43 +3,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
-    /// <summary>
-    /// A way to define symbols on a higher level
-    /// </summary>
-    public enum SymbolType
-    {
-        /// <summary>
-        /// The symbol type is unknown
-        /// </summary>
-        Unknown = 0,
-        
-        /// <summary>
-        /// The symbol is a vairable
-        /// </summary>
-        Variable,
-        
-        /// <summary>
-        /// The symbol is a function
-        /// </summary>
-        Function,
-        
-        /// <summary>
-        /// The symbol is a parameter
-        /// </summary>
-        Parameter
-    }
-
     /// <summary>
     /// A class that holds the type, name, script extent, and source line of a symbol
     /// </summary>
     public class SymbolReference
     {
         #region Properties
+
         /// <summary>
         /// Gets the symbol's type
         /// </summary>
@@ -84,6 +58,11 @@ namespace Microsoft.PowerShell.EditorServices.Language
             this.SourceLine = sourceLine;
 
             // TODO: Make sure end column number usage is correct
+
+            // Build the display string
+            //this.DisplayString =
+            //    string.Format(
+            //        "{0} {1}")
         }
     }
 }

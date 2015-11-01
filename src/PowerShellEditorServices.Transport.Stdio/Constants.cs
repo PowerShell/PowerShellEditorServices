@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio
 {
     public static class Constants
     {
-        public const string ContentLengthString = "Content-Length: ";
+        public const string ContentLengthFormatString = "Content-Length: {0}\r\n\r\n";
         public static readonly JsonSerializerSettings JsonSerializerSettings;
 
         static Constants()

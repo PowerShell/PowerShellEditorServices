@@ -3,11 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
 using System.Collections.Generic;
 using System.Management.Automation;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// A class for containing the commandName, the command's
@@ -37,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Language
         /// </summary>
         /// <param name="commandInfoSet">Collection of parameter set info</param>
         /// <param name="foundSymbol"> The SymbolReference of the command</param>
-        public ParameterSetSignatures(List<CommandParameterSetInfo> commandInfoSet, SymbolReference foundSymbol)
+        public ParameterSetSignatures(IEnumerable<CommandParameterSetInfo> commandInfoSet, SymbolReference foundSymbol)
         {
             List<ParameterSetSignature> paramSetSignatures = new List<ParameterSetSignature>();
             foreach (CommandParameterSetInfo setInfo in commandInfoSet)

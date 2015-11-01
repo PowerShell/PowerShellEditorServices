@@ -3,29 +3,28 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Language;
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
     [MessageTypeName("completions")]
     public class CompletionsRequest : FileRequest<CompletionsRequestArgs>
     {
-        public override void ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter)
         {
             ScriptFile scriptFile = this.GetScriptFile(editorSession);
 
             CompletionResults completions =
-                editorSession.LanguageService.GetCompletionsInFile(
+                await editorSession.LanguageService.GetCompletionsInFile(
                     scriptFile,
                     this.Arguments.Line,
                     this.Arguments.Offset);
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                 this.PrepareResponse(
                     CompletionsResponse.Create(
                         completions)));

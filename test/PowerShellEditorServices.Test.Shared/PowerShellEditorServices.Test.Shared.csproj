@@ -54,11 +54,14 @@
     <Compile Include="References\FindsReferencesOnFunction.cs" />
     <Compile Include="References\FindsReferencesOnFunctionMultiFileDotSource.cs" />
     <Compile Include="References\FindsReferencesOnVariable.cs" />
+    <Compile Include="SymbolDetails\FindsDetailsForBuiltInCommand.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Completion\CompletionExamples.ps1">
+    <None Include="Completion\CompletionExamples.psm1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Debugging\VariableTest.ps1" />
+    <None Include="SymbolDetails\SymbolDetails.ps1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj">
@@ -67,6 +70,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Debugging\DebugTest.ps1" />
     <None Include="ParameterHints\ParamHints.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

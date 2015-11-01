@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F594E7FD-1E72-4E51-A496-B019C2BA3180}"
 EndProject
@@ -33,6 +33,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{E51470
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Test.Shared", "test\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj", "{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{E2316F5C-A551-4A8D-8103-E42CA6D757E2}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\AddCopyrightHeaders.ps1 = scripts\AddCopyrightHeaders.ps1
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

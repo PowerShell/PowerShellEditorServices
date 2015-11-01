@@ -3,10 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             };
         }
 
-        public override void ProcessMessage(
+        public override Task ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter)
         {
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                         "Exception while cancelling analysis task:\n\n{0}",
                         e.ToString()));
 
-                return;
+                return TaskConstants.Canceled;
             }
 
             // Create a fresh cancellation token and then start the task.
@@ -78,6 +78,8 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                 CancellationToken.None,
                 TaskCreationOptions.None,
                 TaskScheduler.Default);
+
+            return TaskConstants.Completed;
         }
 
         private static async Task DelayThenInvokeDiagnostics(
@@ -119,12 +121,12 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 
                 // Always send syntax and semantic errors.  We want to 
                 // make sure no out-of-date markers are being displayed.
-                messageWriter.WriteMessage(
+                await messageWriter.WriteMessage(
                     SyntaxDiagnosticEvent.Create(
                         scriptFile.FilePath,
                         scriptFile.SyntaxMarkers));
 
-                messageWriter.WriteMessage(
+                await messageWriter.WriteMessage(
                     SemanticDiagnosticEvent.Create(
                         scriptFile.FilePath,
                         semanticMarkers));

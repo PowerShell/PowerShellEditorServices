@@ -6,8 +6,10 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Nito.AsyncEx;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
 {
@@ -15,9 +17,9 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
     {
         #region Private Fields
 
-        private TextWriter textWriter;
-        private bool includeContentLength;
+        private Stream outputStream;
         private MessageTypeResolver messageTypeResolver;
+        private AsyncLock writeLock = new AsyncLock();
 
         private JsonSerializer loggingSerializer = 
             JsonSerializer.Create(
@@ -28,26 +30,21 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
         #region Constructors
 
         public MessageWriter(
-            TextWriter textWriter,
-            MessageFormat messageFormat,
+            Stream outputStream,
             MessageTypeResolver messageTypeResolver)
         {
-            Validate.IsNotNull("textWriter", textWriter);
+            Validate.IsNotNull("outputStream", outputStream);
             Validate.IsNotNull("messageTypeResolver", messageTypeResolver);
 
-            this.textWriter = textWriter;
+            this.outputStream = outputStream;
             this.messageTypeResolver = messageTypeResolver;
-            this.includeContentLength =
-                messageFormat == MessageFormat.WithContentLength;
         }
 
         #endregion
 
         #region Public Methods
 
-        // TODO: Change back to async?
-
-        public void WriteMessage(MessageBase messageToWrite)
+        public async Task WriteMessage(MessageBase messageToWrite)
         {
             Validate.IsNotNull("messageToWrite", messageToWrite);
 
@@ -78,22 +75,23 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
                     messageToWrite,
                     Constants.JsonSerializerSettings);
 
-            // Construct the payload string
-            string payloadString = serializedMessage + "\r\n";
-
-            if (this.includeContentLength)
-            {
-                payloadString = 
+            byte[] messageBytes = Encoding.UTF8.GetBytes(serializedMessage);
+            byte[] headerBytes = 
+                Encoding.ASCII.GetBytes(
                     string.Format(
-                        "{0}{1}\r\n\r\n{2}",
-                        Constants.ContentLengthString,
-                        Encoding.UTF8.GetByteCount(serializedMessage),
-                        payloadString);
-            }
+                        Constants.ContentLengthFormatString,
+                        messageBytes.Length));
 
-            // Send the message
-            this.textWriter.Write(payloadString);
-            this.textWriter.Flush();
+            // Make sure only one call is writing at a time.  You might be thinking
+            // "Why not use a normal lock?"  We use an AsyncLock here so that the
+            // message loop doesn't get blocked while waiting for I/O to complete.
+            using (await this.writeLock.LockAsync())
+            {
+                // Send the message
+                await this.outputStream.WriteAsync(headerBytes, 0, headerBytes.Length);
+                await this.outputStream.WriteAsync(messageBytes, 0, messageBytes.Length);
+                await this.outputStream.FlushAsync();
+            }
         }
 
         #endregion

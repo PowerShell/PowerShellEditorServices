@@ -3,18 +3,18 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Language;
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Completion;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Definition;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Occurrences;
 using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
+using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using System;
 using System.IO;
 using System.Linq;
 using System.Management.Automation.Runspaces;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Language
@@ -22,31 +22,27 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
     public class LanguageServiceTests : IDisposable
     {
         private Workspace workspace;
-        private Runspace languageServiceRunspace;
         private LanguageService languageService;
+        private PowerShellSession powerShellSession;
 
         public LanguageServiceTests()
         {
             this.workspace = new Workspace();
 
-            this.languageServiceRunspace = RunspaceFactory.CreateRunspace();
-            this.languageServiceRunspace.ApartmentState = ApartmentState.STA;
-            this.languageServiceRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
-            this.languageServiceRunspace.Open();
-
-            this.languageService = new LanguageService(this.languageServiceRunspace);
+            this.powerShellSession = new PowerShellSession();
+            this.languageService = new LanguageService(this.powerShellSession);
         }
 
         public void Dispose()
         {
-            this.languageServiceRunspace.Dispose();
+            this.powerShellSession.Dispose();
         }
 
         [Fact]
-        public void LanguageServiceCompletesCommandInFile()
+        public async Task LanguageServiceCompletesCommandInFile()
         {
             CompletionResults completionResults =
-                this.GetCompletionResults(
+                await this.GetCompletionResults(
                     CompleteCommandInFile.SourceDetails);
 
             Assert.NotEqual(0, completionResults.Completions.Length);
@@ -56,10 +52,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact(Skip = "This test does not run correctly on AppVeyor, need to investigate.")]
-        public void LanguageServiceCompletesCommandFromModule()
+        public async Task LanguageServiceCompletesCommandFromModule()
         {
             CompletionResults completionResults =
-                this.GetCompletionResults(
+                await this.GetCompletionResults(
                     CompleteCommandFromModule.SourceDetails);
 
             Assert.NotEqual(0, completionResults.Completions.Length);
@@ -69,10 +65,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void LanguageServiceCompletesVariableInFile()
+        public async Task LanguageServiceCompletesVariableInFile()
         {
             CompletionResults completionResults =
-                this.GetCompletionResults(
+                await this.GetCompletionResults(
                     CompleteVariableInFile.SourceDetails);
 
             Assert.Equal(1, completionResults.Completions.Length);
@@ -82,10 +78,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void LanguageServiceFindsParameterHintsOnCommand()
+        public async Task LanguageServiceFindsParameterHintsOnCommand()
         {
             ParameterSetSignatures paramSignatures =
-                this.GetParamSetSignatures(
+                await this.GetParamSetSignatures(
                     FindsParameterSetsOnCommand.SourceDetails);
 
             Assert.NotNull(paramSignatures);
@@ -94,10 +90,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void LanguageServiceFindsCommandForParamHintsWithSpaces()
+        public async Task LanguageServiceFindsCommandForParamHintsWithSpaces()
         {
             ParameterSetSignatures paramSignatures =
-                this.GetParamSetSignatures(
+                await this.GetParamSetSignatures(
                     FindsParameterSetsOnCommandWithSpaces.SourceDetails);
 
             Assert.NotNull(paramSignatures);
@@ -106,10 +102,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void LanguageServiceFindsFunctionDefinition()
+        public async Task LanguageServiceFindsFunctionDefinition()
         {
             GetDefinitionResult definitionResult =
-                this.GetDefinition(
+                await this.GetDefinition(
                     FindsFunctionDefinition.SourceDetails);
 
             SymbolReference definition = definitionResult.FoundDefinition;
@@ -119,10 +115,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void LanguageServiceFindsFunctionDefinitionInDotSourceReference()
+        public async Task LanguageServiceFindsFunctionDefinitionInDotSourceReference()
         {
             GetDefinitionResult definitionResult =
-                this.GetDefinition(
+                await this.GetDefinition(
                     FindsFunctionDefinitionInDotSourceReference.SourceDetails);
 
             SymbolReference definition = definitionResult.FoundDefinition;
@@ -136,10 +132,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void LanguageServiceFindsVariableDefinition()
+        public async Task LanguageServiceFindsVariableDefinition()
         {
             GetDefinitionResult definitionResult =
-                this.GetDefinition(
+                await this.GetDefinition(
                     FindsVariableDefinition.SourceDetails);
 
             SymbolReference definition = definitionResult.FoundDefinition;
@@ -173,10 +169,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void LanguageServiceFindsReferencesOnCommandWithAlias()
+        public async Task LanguageServiceFindsReferencesOnCommandWithAlias()
         {
             FindReferencesResult refsResult =
-                this.GetReferences(
+                await this.GetReferences(
                     FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
 
             Assert.Equal(6, refsResult.FoundReferences.Count());
@@ -185,10 +181,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void LanguageServiceFindsReferencesOnAlias()
+        public async Task LanguageServiceFindsReferencesOnAlias()
         {
             FindReferencesResult refsResult =
-                this.GetReferences(
+                await this.GetReferences(
                     FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
 
             Assert.Equal(6, refsResult.FoundReferences.Count());
@@ -198,22 +194,35 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void LanguageServiceFindsReferencesOnFileWithReferencesFileB()
+        public async Task LanguageServiceFindsReferencesOnFileWithReferencesFileB()
         {
             FindReferencesResult refsResult =
-                this.GetReferences(
+                await this.GetReferences(
                     FindsReferencesOnFunctionMultiFileDotSourceFileB.SourceDetails);
 
             Assert.Equal(4, refsResult.FoundReferences.Count());
         }
         
         [Fact]
-        public void LanguageServiceFindsReferencesOnFileWithReferencesFileC()
+        public async Task LanguageServiceFindsReferencesOnFileWithReferencesFileC()
         {
             FindReferencesResult refsResult =
-                this.GetReferences(
+                await this.GetReferences(
                     FindsReferencesOnFunctionMultiFileDotSourceFileC.SourceDetails);
             Assert.Equal(4, refsResult.FoundReferences.Count());
+        }
+
+        [Fact]
+        public async Task LanguageServiceFindsDetailsForBuiltInCommand()
+        {
+            SymbolDetails symbolDetails =
+                await this.languageService.FindSymbolDetailsAtLocation(
+                    this.GetScriptFile(FindsDetailsForBuiltInCommand.SourceDetails),
+                    FindsDetailsForBuiltInCommand.SourceDetails.StartLineNumber,
+                    FindsDetailsForBuiltInCommand.SourceDetails.StartColumnNumber);
+
+            Assert.NotNull(symbolDetails.Documentation);
+            Assert.NotEqual("", symbolDetails.Documentation);
         }
         
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion)
@@ -231,26 +240,26 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     resolvedPath);
         }
 
-        private CompletionResults GetCompletionResults(ScriptRegion scriptRegion)
+        private async Task<CompletionResults> GetCompletionResults(ScriptRegion scriptRegion)
         {
             // Run the completions request
             return
-                this.languageService.GetCompletionsInFile(
+                await this.languageService.GetCompletionsInFile(
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);
         }
 
-        private ParameterSetSignatures GetParamSetSignatures(ScriptRegion scriptRegion)
+        private async Task<ParameterSetSignatures> GetParamSetSignatures(ScriptRegion scriptRegion)
         {
             return
-                this.languageService.FindParameterSetsInFile(
+                await this.languageService.FindParameterSetsInFile(
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);
         }
 
-        private GetDefinitionResult GetDefinition(ScriptRegion scriptRegion)
+        private async Task<GetDefinitionResult> GetDefinition(ScriptRegion scriptRegion)
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
@@ -263,13 +272,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.NotNull(symbolReference);
 
             return
-                this.languageService.GetDefinitionOfSymbol(
+                await this.languageService.GetDefinitionOfSymbol(
                     scriptFile,
                     symbolReference,
                     this.workspace);
         }
 
-        private FindReferencesResult GetReferences(ScriptRegion scriptRegion)
+        private async Task<FindReferencesResult> GetReferences(ScriptRegion scriptRegion)
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
@@ -282,7 +291,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.NotNull(symbolReference);
 
             return
-                this.languageService.FindReferencesOfSymbol(
+                await this.languageService.FindReferencesOfSymbol(
                     symbolReference,
                     this.workspace.ExpandScriptReferences(scriptFile));
         }

@@ -3,9 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             set { this.Command = value; }
         }
 
-        public abstract void ProcessMessage(
+        public abstract Task ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter);
 

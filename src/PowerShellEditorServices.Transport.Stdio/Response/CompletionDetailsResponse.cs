@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using System.Text.RegularExpressions;
 
@@ -25,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
             Documentation = null;
             DocString = null;
 
-            // if the  result type is a command return null 
+            // if the  result type is a command return null
             if (completionResult != null &&
                 !(completionResult.CompletionType.Equals(CompletionType.Command)))
             {

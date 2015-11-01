@@ -6,7 +6,7 @@
 using Microsoft.Windows.PowerShell.ScriptAnalyzer;
 using System.Management.Automation;
 
-namespace Microsoft.PowerShell.EditorServices.Analysis
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides an implementation of ScriptAnalyzer's IOutputWriter

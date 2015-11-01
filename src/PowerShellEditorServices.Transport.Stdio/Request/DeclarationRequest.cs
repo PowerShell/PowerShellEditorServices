@@ -3,17 +3,16 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Language;
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
 {
     [MessageTypeName("definition")]
     public class DeclarationRequest : FileRequest<FileLocationRequestArgs>
     {
-        public override void ProcessMessage(
+        public override async Task ProcessMessage(
             EditorSession editorSession,
             MessageWriter messageWriter)
         {
@@ -28,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             if (foundSymbol != null)
             {
                 definition =
-                    editorSession.LanguageService.GetDefinitionOfSymbol(
+                    await editorSession.LanguageService.GetDefinitionOfSymbol(
                         scriptFile,
                         foundSymbol,
                         editorSession.Workspace);
@@ -41,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
                 defResponse = DefinitionResponse.Create(definition.FoundDefinition);
             }
 
-            messageWriter.WriteMessage(
+            await messageWriter.WriteMessage(
                    this.PrepareResponse(defResponse));
         }
     }

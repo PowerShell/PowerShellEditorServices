@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// A class to contain the found references of a symbol.

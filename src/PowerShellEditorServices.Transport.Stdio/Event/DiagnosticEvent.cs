@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using System.Collections.Generic;
 
@@ -61,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Event
                     new Diagnostic
                     {
                         Text = diagnosticMarker.Message,
-                        Severity = (int)diagnosticMarker.Level + 1,
+                        Severity = (int)diagnosticMarker.Level,
                         Start = new Location
                         {
                             Line = diagnosticMarker.ScriptRegion.StartLineNumber,

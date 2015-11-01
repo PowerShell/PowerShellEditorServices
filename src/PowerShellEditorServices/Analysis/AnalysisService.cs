@@ -3,24 +3,24 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.Windows.PowerShell.ScriptAnalyzer;
+using System;
 using System.Linq;
 using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Analysis
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides a high-level service for performing semantic analysis
     /// of PowerShell scripts.
     /// </summary>
-    public class AnalysisService
+    public class AnalysisService : IDisposable
     {
         #region Private Fields
 
-        private Runspace runspace;
+        private Runspace analysisRunspace;
         private ScriptAnalyzer scriptAnalyzer;
 
         #endregion
@@ -28,18 +28,20 @@ namespace Microsoft.PowerShell.EditorServices.Analysis
         #region Constructors
 
         /// <summary>
-        /// Creates an instance of the AnalysisService class with a
-        /// Runspace to use for analysis operations.
+        /// Creates an instance of the AnalysisService class.
         /// </summary>
-        /// <param name="analysisRunspace">
-        /// The Runspace in which analysis operations will be performed.
-        /// </param>
-        public AnalysisService(Runspace analysisRunspace)
+        public AnalysisService()
         {
-            this.runspace = analysisRunspace;
+            // TODO: Share runspace with PowerShellSession?  Probably should always
+            //       run analysis in a local session.
+            this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
+            this.analysisRunspace.ApartmentState = ApartmentState.STA;
+            this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
+            this.analysisRunspace.Open();
+
             this.scriptAnalyzer = new ScriptAnalyzer();
             this.scriptAnalyzer.Initialize(
-                analysisRunspace,
+                this.analysisRunspace,
                 new AnalysisOutputWriter(),
                 null,
                 null,
@@ -85,6 +87,19 @@ namespace Microsoft.PowerShell.EditorServices.Analysis
             {
                 // Return an empty marker list
                 return new ScriptFileMarker[0];
+            }
+        }
+
+        /// <summary>
+        /// Disposes the runspace being used by the analysis service.
+        /// </summary>
+        public void Dispose()
+        {
+            if (this.analysisRunspace != null)
+            {
+                this.analysisRunspace.Close();
+                this.analysisRunspace.Dispose();
+                this.analysisRunspace = null;
             }
         }
 

@@ -3,14 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Analysis;
-using Microsoft.PowerShell.EditorServices.Console;
-using Microsoft.PowerShell.EditorServices.Language;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Threading;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Manages a single session for all editor services.  This 
@@ -18,19 +15,18 @@ namespace Microsoft.PowerShell.EditorServices.Session
     /// </summary>
     public class EditorSession
     {
-        #region Private Fields
-
-        private Runspace languageRunspace;
-
-        #endregion
-
         #region Properties
 
         /// <summary>
         /// Gets the Workspace instance for this session.
         /// </summary>
         public Workspace Workspace { get; private set; }
-        
+
+        /// <summary>
+        /// Gets the PowerShellSession instance for this session.
+        /// </summary>
+        public PowerShellSession PowerShellSession { get; private set; }
+
         /// <summary>
         /// Gets the LanguageService instance for this session.
         /// </summary>
@@ -42,9 +38,9 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public AnalysisService AnalysisService { get; private set; }
 
         /// <summary>
-        /// Gets the ConsoleService instance for this session.
+        /// Gets the DebugService instance for this session.
         /// </summary>
-        public ConsoleService ConsoleService { get; private set; }
+        public DebugService DebugService { get; private set; }
 
         #endregion
 
@@ -60,22 +56,14 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// </param>
         public void StartSession(IConsoleHost consoleHost)
         {
-            InitialSessionState initialSessionState = InitialSessionState.CreateDefault2();
-
             // Create a workspace to contain open files
             this.Workspace = new Workspace();
 
-            // Create a runspace to share between the language and analysis services
-            this.languageRunspace = RunspaceFactory.CreateRunspace(initialSessionState);
-            this.languageRunspace.ApartmentState = ApartmentState.STA;
-            this.languageRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
-            this.languageRunspace.Open();
-            this.languageRunspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
-
             // Initialize all services
-            this.LanguageService = new LanguageService(this.languageRunspace);
-            this.AnalysisService = new AnalysisService(this.languageRunspace);
-            this.ConsoleService = new ConsoleService(consoleHost, initialSessionState);
+            this.PowerShellSession = new PowerShellSession();
+            this.LanguageService = new LanguageService(this.PowerShellSession);
+            this.AnalysisService = new AnalysisService();
+            this.DebugService = new DebugService(this.PowerShellSession);
         }
 
         #endregion
@@ -88,17 +76,16 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// </summary>
         public void Dispose()
         {
-            // Dispose all necessary services
-            if (this.ConsoleService != null)
+            if (this.AnalysisService != null)
             {
-                this.ConsoleService.Dispose();
+                this.AnalysisService.Dispose();
+                this.AnalysisService = null;
             }
 
-            // Dispose all runspaces
-            if (this.languageRunspace != null)
+            if (this.PowerShellSession != null)
             {
-                this.languageRunspace.Dispose();
-                this.languageRunspace = null;
+                this.PowerShellSession.Dispose();
+                this.PowerShellSession = null;
             }
         }
 

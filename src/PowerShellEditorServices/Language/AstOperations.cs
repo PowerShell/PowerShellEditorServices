@@ -11,7 +11,7 @@ using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides common operations for the syntax tree of a parsed script.
