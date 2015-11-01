@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// The vistor used to find the dont sourced files in an AST

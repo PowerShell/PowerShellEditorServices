@@ -1,6 +1,4 @@
 ﻿
-using Microsoft.PowerShell.EditorServices.Console;
-
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Model
 {
     public class StackFrame

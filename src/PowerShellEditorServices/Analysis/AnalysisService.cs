@@ -3,8 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Console;
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.Windows.PowerShell.ScriptAnalyzer;
 using System;
 using System.Linq;
@@ -12,7 +10,7 @@ using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Analysis
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides a high-level service for performing semantic analysis

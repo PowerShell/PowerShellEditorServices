@@ -5,7 +5,7 @@
 
 using System.Linq;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;

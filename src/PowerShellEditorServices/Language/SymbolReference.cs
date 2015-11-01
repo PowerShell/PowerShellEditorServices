@@ -3,10 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// A class that holds the type, name, script extent, and source line of a symbol

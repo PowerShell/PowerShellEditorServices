@@ -9,7 +9,7 @@ using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Console
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides a simplified interface for implementing a PowerShell

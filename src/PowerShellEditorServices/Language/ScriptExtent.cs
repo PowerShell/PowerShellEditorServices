@@ -6,7 +6,7 @@
 using System;
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides a default IScriptExtent implementation

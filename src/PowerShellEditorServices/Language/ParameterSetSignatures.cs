@@ -3,11 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
 using System.Collections.Generic;
 using System.Management.Automation;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// A class for containing the commandName, the command's

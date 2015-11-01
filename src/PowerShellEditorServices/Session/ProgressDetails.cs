@@ -1,6 +1,6 @@
 ﻿using System.Management.Automation;
 
-namespace Microsoft.PowerShell.EditorServices.Console
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides details about the progress of a particular activity.

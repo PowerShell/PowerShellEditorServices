@@ -8,7 +8,7 @@ using Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic;
 using System;
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Defines the message level of a script file marker.

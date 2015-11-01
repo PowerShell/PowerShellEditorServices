@@ -1,6 +1,4 @@
-﻿using Microsoft.PowerShell.EditorServices.Console;
-using Microsoft.PowerShell.EditorServices.Session;
-using Nito.AsyncEx;
+﻿using Nito.AsyncEx;
 using System;
 using System.Linq;
 using System.Management.Automation;

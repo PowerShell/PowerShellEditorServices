@@ -3,18 +3,16 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
-    using Microsoft.PowerShell.EditorServices.Console;
-    using Microsoft.PowerShell.EditorServices.Utility;
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Provides a high-level service for performing code completion and

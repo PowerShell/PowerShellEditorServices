@@ -3,14 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Analysis;
-using Microsoft.PowerShell.EditorServices.Console;
-using Microsoft.PowerShell.EditorServices.Language;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Threading;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Manages a single session for all editor services.  This 

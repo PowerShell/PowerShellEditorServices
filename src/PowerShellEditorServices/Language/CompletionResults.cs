@@ -9,7 +9,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Text.RegularExpressions;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides the results of a single code completion request.

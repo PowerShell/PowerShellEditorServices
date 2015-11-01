@@ -5,7 +5,7 @@
 
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// The vistior used to find the commandAst of a specific location in an AST

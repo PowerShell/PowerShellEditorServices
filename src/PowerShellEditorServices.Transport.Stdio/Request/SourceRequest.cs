@@ -1,5 +1,4 @@
-﻿using Microsoft.PowerShell.EditorServices.Session;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+﻿using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Nito.AsyncEx;
 using System.Threading.Tasks;
 

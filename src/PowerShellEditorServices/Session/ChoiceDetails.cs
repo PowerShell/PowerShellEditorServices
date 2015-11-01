@@ -5,7 +5,7 @@
 
 using System.Management.Automation.Host;
 
-namespace Microsoft.PowerShell.EditorServices.Console
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Contains the details about a choice that should be displayed

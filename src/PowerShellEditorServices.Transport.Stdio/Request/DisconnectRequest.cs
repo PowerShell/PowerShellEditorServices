@@ -1,6 +1,4 @@
-﻿using Microsoft.PowerShell.EditorServices.Console;
-using Microsoft.PowerShell.EditorServices.Session;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+﻿using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
 using Nito.AsyncEx;
 using System;
@@ -20,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             handler =
                 async (o, e) =>
                     {
-                        if (e.NewSessionState == Console.PowerShellSessionState.Ready)
+                        if (e.NewSessionState == PowerShellSessionState.Ready)
                         {
                             await messageWriter.WriteMessage(new DisconnectResponse {});
                             editorSession.PowerShellSession.SessionStateChanged -= handler;

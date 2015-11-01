@@ -1,5 +1,5 @@
 ﻿
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// A way to define symbols on a higher level

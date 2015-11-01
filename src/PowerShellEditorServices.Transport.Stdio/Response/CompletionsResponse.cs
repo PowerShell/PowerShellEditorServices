@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using System.Collections.Generic;
 

@@ -1,6 +1,4 @@
-﻿using Microsoft.PowerShell.EditorServices.Console;
-using Microsoft.PowerShell.EditorServices.Session;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+﻿using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Model;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
 using System.Threading.Tasks;

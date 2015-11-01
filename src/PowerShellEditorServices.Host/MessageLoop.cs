@@ -4,8 +4,6 @@
 //
 
 using Microsoft.PowerShell.EditorServices;
-using Microsoft.PowerShell.EditorServices.Console;
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Model;

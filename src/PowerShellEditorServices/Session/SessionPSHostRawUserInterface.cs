@@ -6,7 +6,7 @@
 using System;
 using System.Management.Automation.Host;
 
-namespace Microsoft.PowerShell.EditorServices.Console
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides an implementation of the PSHostRawUserInterface class

@@ -5,7 +5,7 @@
 
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices.Language
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// The visitor used to find the the symbol at a specfic location in the AST

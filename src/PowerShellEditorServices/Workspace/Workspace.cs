@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Manages a "workspace" of script files that are open for a particular

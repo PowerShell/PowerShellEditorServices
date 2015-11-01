@@ -12,7 +12,7 @@ using System.Linq;
 using System.Security;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Console
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides an implementation of the PSHostUserInterface class

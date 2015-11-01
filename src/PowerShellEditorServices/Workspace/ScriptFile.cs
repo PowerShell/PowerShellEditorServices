@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -12,7 +11,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Contains the details and contents of an open script file.

@@ -1,5 +1,4 @@
-﻿using Microsoft.PowerShell.EditorServices.Session;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+﻿using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request

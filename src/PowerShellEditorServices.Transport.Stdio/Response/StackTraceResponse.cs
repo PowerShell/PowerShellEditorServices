@@ -1,5 +1,4 @@
-﻿using Microsoft.PowerShell.EditorServices.Console;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+﻿using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Microsoft.PowerShell.EditorServices.Transport.Stdio.Model;
 using System.Collections.Generic;
 

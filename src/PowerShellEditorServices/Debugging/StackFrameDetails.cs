@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
 
-namespace Microsoft.PowerShell.EditorServices.Console
+using System.Collections.Generic;
+using System.Management.Automation;
+
+namespace Microsoft.PowerShell.EditorServices
 {
     public class StackFrameDetails
     {

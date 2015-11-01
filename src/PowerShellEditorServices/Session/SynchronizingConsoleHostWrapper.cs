@@ -11,7 +11,7 @@ using System.Management.Automation.Host;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Console
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Wraps an existing IConsoleHost implementation so that all
