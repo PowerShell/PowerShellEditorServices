@@ -59,19 +59,11 @@
   <ItemGroup>
     <Compile Include="Analysis\AnalysisOutputWriter.cs" />
     <Compile Include="Analysis\AnalysisService.cs" />
-    <Compile Include="Console\BreakpointDetails.cs" />
-    <Compile Include="Console\ChoiceDetails.cs" />
-    <Compile Include="Console\ConsoleServicePSHost.cs" />
-    <Compile Include="Console\ConsoleServicePSHostRawUserInterface.cs" />
-    <Compile Include="Console\ConsoleServicePSHostUserInterface.cs" />
-    <Compile Include="Console\OutputType.cs" />
-    <Compile Include="Console\PowerShellSession.cs" />
-    <Compile Include="Console\ProgressDetails.cs" />
-    <Compile Include="Console\StackFrameDetails.cs" />
-    <Compile Include="Console\SynchronizingConsoleHostWrapper.cs" />
-    <Compile Include="Console\IConsoleHost.cs" />
-    <Compile Include="Console\VariableDetails.cs" />
-    <Compile Include="DebugService.cs" />
+    <Compile Include="Debugging\BreakpointDetails.cs" />
+    <Compile Include="Debugging\DebugService.cs" />
+    <Compile Include="Debugging\StackFrameDetails.cs" />
+    <Compile Include="Debugging\VariableDetails.cs" />
+    <Compile Include="Debugging\VariableScope.cs" />
     <Compile Include="IHost.cs" />
     <Compile Include="Language\AstOperations.cs" />
     <Compile Include="Language\CompletionResults.cs" />
@@ -90,16 +82,23 @@
     <Compile Include="Language\SymbolReference.cs" />
     <Compile Include="Language\SymbolType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Console\ConsoleService.cs" />
+    <Compile Include="Session\ChoiceDetails.cs" />
     <Compile Include="Session\EditorSession.cs" />
-    <Compile Include="Session\ScriptFile.cs" />
-    <Compile Include="Session\FileChange.cs" />
-    <Compile Include="Session\ScriptFileMarker.cs" />
-    <Compile Include="Session\ScriptRegion.cs" />
-    <Compile Include="Session\Workspace.cs" />
+    <Compile Include="Session\IConsoleHost.cs" />
+    <Compile Include="Session\OutputType.cs" />
+    <Compile Include="Session\PowerShellSession.cs" />
+    <Compile Include="Session\ProgressDetails.cs" />
+    <Compile Include="Session\SessionPSHost.cs" />
+    <Compile Include="Session\SessionPSHostRawUserInterface.cs" />
+    <Compile Include="Session\SessionPSHostUserInterface.cs" />
+    <Compile Include="Session\SynchronizingConsoleHostWrapper.cs" />
     <Compile Include="Utility\Logger.cs" />
     <Compile Include="Utility\Validate.cs" />
-    <Compile Include="Console\VariableScope.cs" />
+    <Compile Include="Workspace\FileChange.cs" />
+    <Compile Include="Workspace\ScriptFile.cs" />
+    <Compile Include="Workspace\ScriptFileMarker.cs" />
+    <Compile Include="Workspace\ScriptRegion.cs" />
+    <Compile Include="Workspace\Workspace.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -110,6 +109,7 @@
       <Name>ScriptAnalyzerEngine</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

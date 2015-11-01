@@ -14,15 +14,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
     public class ConsoleServiceTests : IDisposable
     {
-        private Workspace workspace;
-        private ScriptFile debugScriptFile;
         private TestConsoleHost consoleHost;
-        private ConsoleService consoleService;
         private PowerShellSession powerShellSession;
 
         public ConsoleServiceTests()
         {
             this.consoleHost = new TestConsoleHost();
+            this.powerShellSession = new PowerShellSession();
         }
 
         public void Dispose()
