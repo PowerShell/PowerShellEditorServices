@@ -12,12 +12,28 @@ using System.Reflection;
 
 namespace Microsoft.PowerShell.EditorServices
 {
+    /// <summary>
+    /// Contains details pertaining to a variable in the current 
+    /// debugging session.
+    /// </summary>
     public class VariableDetails
     {
         #region Fields
 
+        /// <summary>
+        /// Provides a constant for the variable ID of the local variable scope.
+        /// </summary>
         public const int LocalScopeVariableId = 1;
+
+        /// <summary>
+        /// Provides a constant for the variable ID of the global variable scope.
+        /// </summary>
         public const int GlobalScopeVariableId = 2;
+
+        /// <summary>
+        /// Provides a constant that is used as the starting variable ID for all
+        /// variables in a given scope.
+        /// </summary>
         public const int FirstVariableId = 10;
 
         private object valueObject;
@@ -27,28 +43,64 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Properties
 
+        /// <summary>
+        /// Gets the numeric ID of the variable which can be used to refer
+        /// to it in future requests.
+        /// </summary>
         public int Id { get; set; }
 
+        /// <summary>
+        /// Gets the variable's name.
+        /// </summary>
         public string Name { get; private set; }
 
+        /// <summary>
+        /// Gets the string representation of the variable's value.
+        /// If the variable is an expandable object, this string
+        /// will be empty.
+        /// </summary>
         public string ValueString { get; private set; }
 
+        /// <summary>
+        /// Returns true if the variable's value is expandable, meaning
+        /// that it has child properties or its contents can be enumerated.
+        /// </summary>
         public bool IsExpandable { get; private set; }
 
         #endregion
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes an instance of the VariableDetails class from
+        /// the details contained in a PSVariable instance.
+        /// </summary>
+        /// <param name="psVariable">
+        /// The PSVariable instance from which variable details will be obtained.
+        /// </param>
         public VariableDetails(PSVariable psVariable)
             : this(psVariable.Name, psVariable.Value)
         {
         }
 
+        /// <summary>
+        /// Initializes an instance of the VariableDetails class from
+        /// the details contained in a PSPropertyInfo instance.
+        /// </summary>
+        /// <param name="psProperty">
+        /// The PSPropertyInfo instance from which variable details will be obtained.
+        /// </param>
         public VariableDetails(PSPropertyInfo psProperty)
             : this(psProperty.Name, psProperty.Value)
         {
         }
 
+        /// <summary>
+        /// Initializes an instance of the VariableDetails class from
+        /// a given name/value pair.
+        /// </summary>
+        /// <param name="name">The variable's name.</param>
+        /// <param name="value">The variable's value.</param>
         public VariableDetails(string name, object value)
         {
             this.valueObject = value;
@@ -65,6 +117,11 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Public Methods
 
+        /// <summary>
+        /// If this variable instance is expandable, this method returns the
+        /// details of its children.  Otherwise it returns an empty array.
+        /// </summary>
+        /// <returns></returns>
         public VariableDetails[] GetChildren()
         {
             VariableDetails[] childVariables = null;

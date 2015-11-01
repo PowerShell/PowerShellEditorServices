@@ -39,8 +39,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// Constructs an instance of the LanguageService class and uses
         /// the given Runspace to execute language service operations.
         /// </summary>
-        /// <param name="languageServiceRunspace">
-        /// The Runspace in which language service operations will be executed.
+        /// <param name="powerShellSession">
+        /// The PowerShellSession in which language service operations will be executed.
         /// </param>
         public LanguageService(PowerShellSession powerShellSession)
         {
@@ -165,6 +165,13 @@ namespace Microsoft.PowerShell.EditorServices
             return symbolReference;
         }
 
+        /// <summary>
+        /// Finds the details of the symbol at the given script file location.
+        /// </summary>
+        /// <param name="scriptFile">The ScriptFile in which the symbol can be located.</param>
+        /// <param name="lineNumber">The line number at which the symbol can be located.</param>
+        /// <param name="columnNumber">The column number at which the symbol can be located.</param>
+        /// <returns></returns>
         public async Task<SymbolDetails> FindSymbolDetailsAtLocation(
             ScriptFile scriptFile,
             int lineNumber,

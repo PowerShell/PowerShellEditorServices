@@ -86,11 +86,16 @@
     <Compile Include="Session\EditorSession.cs" />
     <Compile Include="Session\IConsoleHost.cs" />
     <Compile Include="Session\OutputType.cs" />
+    <Compile Include="Session\OutputWrittenEventArgs.cs" />
+    <Compile Include="Session\PowerShellExecutionResult.cs" />
     <Compile Include="Session\PowerShellSession.cs" />
+    <Compile Include="Session\PowerShellSessionState.cs" />
     <Compile Include="Session\ProgressDetails.cs" />
+    <Compile Include="Session\RunspaceHandle.cs" />
     <Compile Include="Session\SessionPSHost.cs" />
     <Compile Include="Session\SessionPSHostRawUserInterface.cs" />
     <Compile Include="Session\SessionPSHostUserInterface.cs" />
+    <Compile Include="Session\SessionStateChangedEventArgs.cs" />
     <Compile Include="Session\SynchronizingConsoleHostWrapper.cs" />
     <Compile Include="Utility\Logger.cs" />
     <Compile Include="Utility\Validate.cs" />

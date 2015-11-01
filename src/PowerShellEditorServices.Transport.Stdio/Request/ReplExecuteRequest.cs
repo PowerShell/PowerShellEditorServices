@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
-            editorSession.PowerShellSession.ExecuteScript(
+            editorSession.PowerShellSession.ExecuteScriptString(
                 this.Arguments.CommandString);
 
             return TaskConstants.Completed;

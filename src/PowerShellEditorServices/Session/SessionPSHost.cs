@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// ConsoleService and routes its calls to an IConsoleHost
     /// implementation.
     /// </summary>
-    public class ConsoleServicePSHost : PSHost//, IHostSupportsInteractiveSession
+    internal class ConsoleServicePSHost : PSHost
     {
         #region Private Fields
 
@@ -98,30 +98,6 @@ namespace Microsoft.PowerShell.EditorServices
         public override void SetShouldExit(int exitCode)
         {
             this.consoleHost.ExitSession(exitCode);
-        }
-
-        #endregion
-
-        #region IHostSupportsInteractiveSession Implementation
-
-        public bool IsRunspacePushed
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        public void PopRunspace()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void PushRunspace(System.Management.Automation.Runspaces.Runspace runspace)
-        {
-            throw new NotImplementedException();
-        }
-
-        public System.Management.Automation.Runspaces.Runspace Runspace
-        {
-            get { throw new NotImplementedException(); }
         }
 
         #endregion

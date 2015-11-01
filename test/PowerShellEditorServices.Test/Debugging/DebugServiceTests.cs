@@ -106,8 +106,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 9);
             this.debugService.Continue();
 
-            // Stop script execution early and wait for completion
-            this.debugService.Stop();
+            // Abort script execution early and wait for completion
+            this.debugService.Abort();
             await this.AssertStateChange(
                 PowerShellSessionState.Ready,
                 PowerShellExecutionResult.Aborted);
@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerBreaksWhenRequested()
         {
-            this.powerShellSession.ExecuteScript(
+            this.powerShellSession.ExecuteScriptString(
                 this.debugScriptFile.FilePath);
 
             // Break execution and wait for the debugger to stop
@@ -127,8 +127,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 PowerShellSessionState.Ready,
                 PowerShellExecutionResult.Stopped);
 
-            // Stop execution and wait for the debugger to exit
-            this.debugService.Stop();
+            // Abort execution and wait for the debugger to exit
+            this.debugService.Abort();
             await this.AssertStateChange(
                 PowerShellSessionState.Ready,
                 PowerShellExecutionResult.Aborted);
@@ -137,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerRunsCommandsWhileStopped()
         {
-            this.powerShellSession.ExecuteScript(
+            this.powerShellSession.ExecuteScriptString(
                 this.debugScriptFile.FilePath);
 
             // Break execution and wait for the debugger to stop
@@ -147,10 +147,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 PowerShellExecutionResult.Stopped);
 
             // Try running a command from outside the pipeline thread
-            await this.powerShellSession.ExecuteScript("Get-Command Get-Process");
+            await this.powerShellSession.ExecuteScriptString("Get-Command Get-Process");
 
-            // Stop execution and wait for the debugger to exit
-            this.debugService.Stop();
+            // Abort execution and wait for the debugger to exit
+            this.debugService.Abort();
             await this.AssertStateChange(
                 PowerShellSessionState.Ready,
                 PowerShellExecutionResult.Aborted);
@@ -168,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 new int[] { 14 });
 
             // Execute the script and wait for the breakpoint to be hit
-            this.powerShellSession.ExecuteScript(variablesFile.FilePath);
+            this.powerShellSession.ExecuteScriptString(variablesFile.FilePath);
             await this.AssertDebuggerStopped(variablesFile.FilePath);
 
             VariableDetails[] variables = 

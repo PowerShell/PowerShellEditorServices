@@ -12,12 +12,15 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
+    /// <summary>
+    /// Provides a high-level service for interacting with the
+    /// PowerShell debugger in the context of a PowerShellSession.
+    /// </summary>
     public class DebugService
     {
         #region Fields
 
         private PowerShellSession powerShellSession;
-        private ConsoleServicePSHost consoleServicePSHost;
 
         // TODO: This needs to be managed per nested session
         private Dictionary<string, List<Breakpoint>> breakpointsPerFile = 
@@ -31,6 +34,13 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes a new instance of the DebugService class and uses
+        /// the given PowerShellSession for all future operations.
+        /// </summary>
+        /// <param name="powerShellSession">
+        /// The PowerShellSession to use for all debugging operations.
+        /// </param>
         public DebugService(PowerShellSession powerShellSession)
         {
             Validate.IsNotNull("powerShellSession", powerShellSession);
@@ -44,6 +54,13 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Public Methods
 
+        /// <summary>
+        /// Sets the list of breakpoints for the current debugging session.
+        /// </summary>
+        /// <param name="scriptFile">The ScriptFile in which breakpoints will be set.</param>
+        /// <param name="lineNumbers">The line numbers at which breakpoints will be set.</param>
+        /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
+        /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
         public async Task<BreakpointDetails[]> SetBreakpoints(
             ScriptFile scriptFile, 
             int[] lineNumbers, 
@@ -76,41 +93,68 @@ namespace Microsoft.PowerShell.EditorServices
             return new BreakpointDetails[0];
         }
 
+        /// <summary>
+        /// Sends a "continue" action to the debugger when stopped.
+        /// </summary>
         public void Continue()
         {
             this.powerShellSession.ResumeDebugger(
                 DebuggerResumeAction.Continue);
         }
 
+        /// <summary>
+        /// Sends a "step over" action to the debugger when stopped. 
+        /// </summary>
         public void StepOver()
         {
             this.powerShellSession.ResumeDebugger(
                 DebuggerResumeAction.StepOver);
         }
 
+        /// <summary>
+        /// Sends a "step in" action to the debugger when stopped.
+        /// </summary>
         public void StepIn()
         {
             this.powerShellSession.ResumeDebugger(
                 DebuggerResumeAction.StepInto);
         }
 
+        /// <summary>
+        /// Sends a "step out" action to the debugger when stopped.
+        /// </summary>
         public void StepOut()
         {
             this.powerShellSession.ResumeDebugger(
                 DebuggerResumeAction.StepOut);
         }
 
+        /// <summary>
+        /// Causes the debugger to break execution wherever it currently
+        /// is at the time.  This is equivalent to clicking "Pause" in a 
+        /// debugger UI.
+        /// </summary>
         public void Break()
         {
             // Break execution in the debugger
             this.powerShellSession.BreakExecution();
         }
 
-        public void Stop()
+        /// <summary>
+        /// Aborts execution of the debugger while it is running, even while
+        /// it is stopped.  Equivalent to calling PowerShellSession.AbortExecution.
+        /// </summary>
+        public void Abort()
         {
             this.powerShellSession.AbortExecution();
         }
 
+        /// <summary>
+        /// Gets the list of variables that are children of the scope or variable
+        /// that is identified by the given referenced ID.
+        /// </summary>
+        /// <param name="variableReferenceId"></param>
+        /// <returns>An array of VariableDetails instances which describe the requested variables.</returns>
         public VariableDetails[] GetVariables(int variableReferenceId)
         {
             VariableDetails[] childVariables = null;
@@ -148,6 +192,15 @@ namespace Microsoft.PowerShell.EditorServices
             return childVariables;
         }
 
+        /// <summary>
+        /// Evaluates an expression in the context of the stopped
+        /// debugger.  For now, this just does simple evaluation of
+        /// a variable in the session.  In the future it will execute
+        /// commands in the PowerShellSession.
+        /// </summary>
+        /// <param name="expressionString">The expression string to execute.</param>
+        /// <param name="stackFrameId">The ID of the stack frame in which the expression should be executed.</param>
+        /// <returns>A VariableDetails object containing the result.</returns>
         public VariableDetails EvaluateExpression(string expressionString, int stackFrameId)
         {
             // Break up the variable path
@@ -183,11 +236,24 @@ namespace Microsoft.PowerShell.EditorServices
             return resolvedVariable;
         }
 
+        /// <summary>
+        /// Gets the list of stack frames at the point where the
+        /// debugger sf stopped.
+        /// </summary>
+        /// <returns>
+        /// An array of StackFrameDetails instances that contain the stack trace.
+        /// </returns>
         public StackFrameDetails[] GetStackFrames()
         {
             return this.callStackFrames;
         }
 
+        /// <summary>
+        /// Gets the list of variable scopes for the stack frame that
+        /// is identified by the given ID.
+        /// </summary>
+        /// <param name="stackFrameId">The ID of the stack frame at which variable scopes should be retrieved.</param>
+        /// <returns>The list of VariableScope instances which describe the available variable scopes.</returns>
         public VariableScope[] GetVariableScopes(int stackFrameId)
         {
             // TODO: Return different scopes based on PowerShell scoping mechanics
@@ -260,6 +326,9 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Events
 
+        /// <summary>
+        /// Raised when the debugger stops execution at a breakpoint or when paused.
+        /// </summary>
         public event EventHandler<DebuggerStopEventArgs> DebuggerStopped;
 
         private async void OnDebuggerStop(object sender, DebuggerStopEventArgs e)
@@ -275,6 +344,9 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        /// Raised when a breakpoint is added/removed/updated in the debugger.
+        /// </summary>
         public event EventHandler<BreakpointUpdatedEventArgs> BreakpointUpdated;
 
         private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)

@@ -104,7 +104,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
             // Attach to events from the PowerShell session
             this.editorSession.PowerShellSession.OutputWritten += PowerShellSession_OutputWritten;
-            this.editorSession.PowerShellSession.BreakpointUpdated += PowerShellSession_BreakpointUpdated;
             this.editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStopped;
 
             // Send a "started" event
@@ -182,10 +181,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             }
                         });
                 }, null);
-        }
-
-        void PowerShellSession_BreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)
-        {
         }
 
         void PowerShellSession_OutputWritten(object sender, OutputWrittenEventArgs e)

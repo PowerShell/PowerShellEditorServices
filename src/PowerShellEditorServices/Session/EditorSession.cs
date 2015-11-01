@@ -59,18 +59,10 @@ namespace Microsoft.PowerShell.EditorServices
             // Create a workspace to contain open files
             this.Workspace = new Workspace();
 
-            // Create a runspace to share between the language and analysis services
-            // TODO: Do this somewhere else!
-            Runspace languageRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
-            languageRunspace.ApartmentState = ApartmentState.STA;
-            languageRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
-            languageRunspace.Open();
-            languageRunspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
-
             // Initialize all services
             this.PowerShellSession = new PowerShellSession();
             this.LanguageService = new LanguageService(this.PowerShellSession);
-            this.AnalysisService = new AnalysisService(languageRunspace);
+            this.AnalysisService = new AnalysisService();
             this.DebugService = new DebugService(this.PowerShellSession);
         }
 
@@ -84,14 +76,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void Dispose()
         {
-            // Dispose all necessary services
             if (this.AnalysisService != null)
             {
                 this.AnalysisService.Dispose();
                 this.AnalysisService = null;
             }
 
-            // Dispose all runspaces
             if (this.PowerShellSession != null)
             {
                 this.PowerShellSession.Dispose();

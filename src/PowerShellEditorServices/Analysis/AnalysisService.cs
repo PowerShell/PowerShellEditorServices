@@ -22,26 +22,26 @@ namespace Microsoft.PowerShell.EditorServices
 
         private Runspace analysisRunspace;
         private ScriptAnalyzer scriptAnalyzer;
-        private PowerShellSession powerShellSession;
 
         #endregion
 
         #region Constructors
 
         /// <summary>
-        /// Creates an instance of the AnalysisService class with a
-        /// Runspace to use for analysis operations.
+        /// Creates an instance of the AnalysisService class.
         /// </summary>
-        /// <param name="analysisRunspace">
-        /// The Runspace in which analysis operations will be performed.
-        /// </param>
-        public AnalysisService(Runspace analysisRunspace)
+        public AnalysisService()
         {
-            this.analysisRunspace = analysisRunspace;
+            // TODO: Share runspace with PowerShellSession?  Probably should always
+            //       run analysis in a local session.
+            this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
+            this.analysisRunspace.ApartmentState = ApartmentState.STA;
+            this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
+            this.analysisRunspace.Open();
 
             this.scriptAnalyzer = new ScriptAnalyzer();
             this.scriptAnalyzer.Initialize(
-                analysisRunspace,
+                this.analysisRunspace,
                 new AnalysisOutputWriter(),
                 null,
                 null,
@@ -90,15 +90,19 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        #endregion
-
+        /// <summary>
+        /// Disposes the runspace being used by the analysis service.
+        /// </summary>
         public void Dispose()
         {
             if (this.analysisRunspace != null)
             {
+                this.analysisRunspace.Close();
                 this.analysisRunspace.Dispose();
                 this.analysisRunspace = null;
             }
         }
+
+        #endregion
     }
 }

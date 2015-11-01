@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 $response = $host.ui.PromptForChoice($caption, $message, $choices, 1)
                 $response";
 
-            await this.powerShellSession.ExecuteScript(choiceScript);
+            await this.powerShellSession.ExecuteScriptString(choiceScript);
 
             // TODO: Verify prompt info
 

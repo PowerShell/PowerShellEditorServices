@@ -1,70 +1,18 @@
 ﻿using Microsoft.PowerShell.EditorServices.Utility;
+using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    using Nito.AsyncEx;
     using System.Management.Automation;
     using System.Management.Automation.Host;
     using System.Management.Automation.Runspaces;
-    using System.Text;
-    using System.Threading;
-
-    /// <summary>
-    /// Enumerates the possible states for a PowerShellSession.
-    /// </summary>
-    public enum PowerShellSessionState
-    {
-        /// <summary>
-        /// Indicates an unknown, potentially uninitialized state.
-        /// </summary>
-        Unknown = 0,
-        
-        /// <summary>
-        /// Indicates the state where the session is starting but 
-        /// not yet fully initialized.
-        /// </summary>
-        NotStarted,
-
-        /// <summary>
-        /// Indicates that the session is ready to accept commands
-        /// for execution.
-        /// </summary>
-        Ready,
-        
-        /// <summary>
-        /// Indicates that the session is currently running a command.
-        /// </summary>
-        Running,
-
-        /// <summary>
-        /// Indicates that the session is aborting the current execution.
-        /// </summary>
-        Aborting,
-
-        /// <summary>
-        /// Indicates that the session is already disposed and cannot
-        /// accept further execution requests.
-        /// </summary>
-        Disposed
-    }
-
-    public enum PowerShellExecutionResult
-    {
-        NotFinished,
-
-        Failed,
-
-        Aborted,
-
-        Stopped,
-
-        Completed
-    }
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -82,7 +30,6 @@ namespace Microsoft.PowerShell.EditorServices
         private InitialSessionState initialSessionState;
         private int pipelineThreadId;
 
-        private bool isStopping;
         private TaskCompletionSource<DebuggerResumeAction> debuggerStoppedTask;
         private TaskCompletionSource<IPipelineExecutionRequest> pipelineExecutionTask;
         private TaskCompletionSource<IPipelineExecutionRequest> pipelineResultTask;
@@ -107,6 +54,9 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        /// Gets the current state of the session.
+        /// </summary>
         public PowerShellSessionState SessionState
         {
             get;
@@ -117,6 +67,10 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes a new instance of the PowerShellSession class and
+        /// opens a runspace to be used for the session.
+        /// </summary>
         public PowerShellSession()
         {
             this.initialSessionState = InitialSessionState.CreateDefault2();
@@ -132,6 +86,11 @@ namespace Microsoft.PowerShell.EditorServices
             this.Initialize(runspace);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the PowerShellSession class using
+        /// an existing runspace for the session.
+        /// </summary>
+        /// <param name="initialRunspace"></param>
         public PowerShellSession(Runspace initialRunspace)
         {
             this.Initialize(initialRunspace);
@@ -163,11 +122,12 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Public Methods
 
-        public string GetPromptString()
-        {
-            return "NO PROMPT YET";
-        }
-
+        /// <summary>
+        /// Gets a RunspaceHandle for the session's runspace.  This
+        /// handle is used to gain temporary ownership of the runspace
+        /// so that commands can be executed against it directly.
+        /// </summary>
+        /// <returns>A RunspaceHandle instance that gives access to the session's runspace.</returns>
         public Task<RunspaceHandle> GetRunspaceHandle()
         {
             lock (this.runspaceMutex)
@@ -187,6 +147,19 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        /// Executes a PSCommand against the session's runspace and returns
+        /// a collection of results of the expected type.
+        /// </summary>
+        /// <typeparam name="TResult">The expected result type.</typeparam>
+        /// <param name="psCommand">The PSCommand to be executed.</param>
+        /// <param name="sendOutputToHost">
+        /// If true, causes any output written during command execution to be written to the host.
+        /// </param>
+        /// <returns>
+        /// An awaitable Task which will provide results once the command
+        /// execution completes.
+        /// </returns>
         public async Task<IEnumerable<TResult>> ExecuteCommand<TResult>(
             PSCommand psCommand, 
             bool sendOutputToHost = false)
@@ -313,17 +286,26 @@ namespace Microsoft.PowerShell.EditorServices
             return null;
         }
 
+        /// <summary>
+        /// Executes a PSCommand in the session's runspace without
+        /// expecting to receive any result.
+        /// </summary>
+        /// <param name="psCommand">The PSCommand to be executed.</param>
+        /// <returns>
+        /// An awaitable Task that the caller can use to know when
+        /// execution completes.
+        /// </returns>
         public Task ExecuteCommand(PSCommand psCommand)
         {
             return this.ExecuteCommand<object>(psCommand);
         }
 
         /// <summary>
-        /// Executes a command or script string in the session.
+        /// Executes a script string in the session's runspace.
         /// </summary>
         /// <param name="scriptString">The script string to execute.</param>
         /// <returns>A Task that can be awaited for the script completion.</returns>
-        public async Task ExecuteScript(string scriptString)
+        public async Task ExecuteScriptString(string scriptString)
         {
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript(scriptString);
@@ -331,6 +313,11 @@ namespace Microsoft.PowerShell.EditorServices
             await this.ExecuteCommand<object>(psCommand, true);
         }
 
+        /// <summary>
+        /// Executes a script file at the specified path.
+        /// </summary>
+        /// <param name="scriptPath">The path to the script file to execute.</param>
+        /// <returns>A Task that can be awaited for completion.</returns>
         public async Task ExecuteScriptAtPath(string scriptPath)
         {
             PSCommand command = new PSCommand();
@@ -339,6 +326,10 @@ namespace Microsoft.PowerShell.EditorServices
             await this.ExecuteCommand<object>(command);
         }
 
+        /// <summary>
+        /// Causes the current execution to be aborted no matter what state
+        /// it is currently in.
+        /// </summary>
         public void AbortExecution()
         {
             Logger.Write(LogLevel.Verbose, "Execution abort requested...");
@@ -347,7 +338,12 @@ namespace Microsoft.PowerShell.EditorServices
             this.ResumeDebugger(DebuggerResumeAction.Stop);
         }
 
-        public void BreakExecution()
+        /// <summary>
+        /// Causes the debugger to break execution wherever it currently is.
+        /// This method is internal because the real Break API is provided
+        /// by the DebugService.
+        /// </summary>
+        internal void BreakExecution()
         {
             Logger.Write(LogLevel.Verbose, "Debugger break requested...");
 
@@ -368,16 +364,27 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        /// Disposes the runspace and any other resources being used
+        /// by this PowerShellSession.
+        /// </summary>
         public void Dispose()
         {
-            this.powerShell.InvocationStateChanged -= this.powerShell_InvocationStateChanged;
-            this.powerShell.Dispose();
             this.SessionState = PowerShellSessionState.Disposed;
 
-            if (this.ownsInitialRunspace)
+            if (this.powerShell != null)
+            {
+                this.powerShell.InvocationStateChanged -= this.powerShell_InvocationStateChanged;
+                this.powerShell.Dispose();
+                this.powerShell = null;
+            }
+
+            if (this.ownsInitialRunspace && this.initialRunspace != null)
             {
                 // TODO: Detach from events
+                this.initialRunspace.Close();
                 this.initialRunspace.Dispose();
+                this.initialRunspace = null;
             }
         }
 
@@ -416,6 +423,9 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Events
 
+        /// <summary>
+        /// Raised when the state of the session has changed.
+        /// </summary>
         public event EventHandler<SessionStateChangedEventArgs> SessionStateChanged;
 
         private void OnSessionStateChanged(object sender, SessionStateChangedEventArgs e)
@@ -580,78 +590,75 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Events
 
+        // NOTE: This event is 'internal' because the DebugService provides
+        //       the publicly consumable event.
         internal event EventHandler<DebuggerStopEventArgs> DebuggerStop;
 
         private void OnDebuggerStop(object sender, DebuggerStopEventArgs e)
         {
-            if (!this.isStopping)
+            Logger.Write(LogLevel.Verbose, "Debugger stopped execution.");
+
+            // Set the task so a result can be set
+            this.debuggerStoppedTask =
+                new TaskCompletionSource<DebuggerResumeAction>();
+
+            // Save the pipeline thread ID and create the pipeline execution task
+            this.pipelineThreadId = Thread.CurrentThread.ManagedThreadId;
+            this.pipelineExecutionTask = new TaskCompletionSource<IPipelineExecutionRequest>();
+
+            // Update the session state
+            this.OnSessionStateChanged(this, new SessionStateChangedEventArgs(PowerShellSessionState.Ready, PowerShellExecutionResult.Stopped, null));
+
+            // Raise the event for the debugger service
+            if (this.DebuggerStop != null)
             {
-                Logger.Write(LogLevel.Verbose, "Debugger stopped execution.");
-
-                // Set the task so a result can be set
-                this.debuggerStoppedTask =
-                    new TaskCompletionSource<DebuggerResumeAction>();
-
-                // Save the pipeline thread ID and create the pipeline execution task
-                this.pipelineThreadId = Thread.CurrentThread.ManagedThreadId;
-                this.pipelineExecutionTask = new TaskCompletionSource<IPipelineExecutionRequest>();
-
-                // Update the session state
-                this.OnSessionStateChanged(this, new SessionStateChangedEventArgs(PowerShellSessionState.Ready, PowerShellExecutionResult.Stopped, null));
-
-                // Raise the event for the debugger service
-                if (this.DebuggerStop != null)
-                {
-                    this.DebuggerStop(sender, e);
-                }
-
-                Logger.Write(LogLevel.Verbose, "Starting pipeline thread message loop...");
-
-                while (true)
-                {
-                    int taskIndex =
-                        Task.WaitAny(
-                            this.debuggerStoppedTask.Task,
-                            this.pipelineExecutionTask.Task);
-
-                    if (taskIndex == 0)
-                    {
-                        e.ResumeAction = this.debuggerStoppedTask.Task.Result;
-                        Logger.Write(LogLevel.Verbose, "Received debugger resume action " + e.ResumeAction.ToString());
-
-                        break;
-                    }
-                    else if (taskIndex == 1)
-                    {
-                        Logger.Write(LogLevel.Verbose, "Received pipeline thread execution request.");
-
-                        IPipelineExecutionRequest executionRequest =
-                            this.pipelineExecutionTask.Task.Result;
-
-                        this.pipelineExecutionTask = new TaskCompletionSource<IPipelineExecutionRequest>();
-
-                        executionRequest.Execute().Wait();
-
-                        Logger.Write(LogLevel.Verbose, "Pipeline thread execution completed.");
-
-                        this.pipelineResultTask.SetResult(executionRequest);
-                    }
-                    else
-                    {
-                        // TODO: How to handle this?
-                    }
-                }
-
-                // Clear the task so that it won't be used again
-                this.debuggerStoppedTask = null;
+                this.DebuggerStop(sender, e);
             }
-            else
+
+            Logger.Write(LogLevel.Verbose, "Starting pipeline thread message loop...");
+
+            while (true)
             {
-                e.ResumeAction = DebuggerResumeAction.Stop;
+                int taskIndex =
+                    Task.WaitAny(
+                        this.debuggerStoppedTask.Task,
+                        this.pipelineExecutionTask.Task);
+
+                if (taskIndex == 0)
+                {
+                    e.ResumeAction = this.debuggerStoppedTask.Task.Result;
+                    Logger.Write(LogLevel.Verbose, "Received debugger resume action " + e.ResumeAction.ToString());
+
+                    break;
+                }
+                else if (taskIndex == 1)
+                {
+                    Logger.Write(LogLevel.Verbose, "Received pipeline thread execution request.");
+
+                    IPipelineExecutionRequest executionRequest =
+                        this.pipelineExecutionTask.Task.Result;
+
+                    this.pipelineExecutionTask = new TaskCompletionSource<IPipelineExecutionRequest>();
+
+                    executionRequest.Execute().Wait();
+
+                    Logger.Write(LogLevel.Verbose, "Pipeline thread execution completed.");
+
+                    this.pipelineResultTask.SetResult(executionRequest);
+                }
+                else
+                {
+                    // TODO: How to handle this?
+                }
             }
+
+            // Clear the task so that it won't be used again
+            this.debuggerStoppedTask = null;
         }
 
-        public event EventHandler<BreakpointUpdatedEventArgs> BreakpointUpdated;
+        // NOTE: This event is 'internal' because the DebugService provides
+        //       the publicly consumable event.
+        internal event EventHandler<BreakpointUpdatedEventArgs> BreakpointUpdated;
 
         private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)
         {
@@ -661,6 +668,10 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        /// An event that is raised when textual output of any type is
+        /// written to the session.
+        /// </summary>
         public event EventHandler<OutputWrittenEventArgs> OutputWritten;
 
         #endregion
@@ -709,6 +720,11 @@ namespace Microsoft.PowerShell.EditorServices
             Task Execute();
         }
 
+        /// <summary>
+        /// Contains details relating to a request to execute a
+        /// command on the PowerShell pipeline thread.
+        /// </summary>
+        /// <typeparam name="TResult">The expected result type of the execution.</typeparam>
         private class PipelineExecutionRequest<TResult> : IPipelineExecutionRequest
         {
             PowerShellSession powerShellSession;
@@ -736,65 +752,6 @@ namespace Microsoft.PowerShell.EditorServices
 
                 // TODO: Deal with errors?
             }
-        }
-    }
-
-    public class SessionStateChangedEventArgs
-    {
-        public PowerShellSessionState NewSessionState { get; private set; }
-
-        public PowerShellExecutionResult ExecutionResult { get; private set; }
-
-        public Exception ErrorException { get; private set; }
-
-        public SessionStateChangedEventArgs(
-            PowerShellSessionState newSessionState,
-            PowerShellExecutionResult executionResult,
-            Exception errorException)
-        {
-            this.NewSessionState = newSessionState;
-            this.ExecutionResult = executionResult;
-            this.ErrorException = errorException;
-        }
-    }
-
-    public class OutputWrittenEventArgs
-    {
-        public string OutputText { get; private set; }
-
-        public OutputType OutputType { get; private set; }
-
-        public bool IncludeNewLine { get; private set; }
-
-        public ConsoleColor ForegroundColor { get; private set; }
-
-        public ConsoleColor BackgroundColor { get; private set; }
-
-        public OutputWrittenEventArgs(string outputText, bool includeNewLine, OutputType outputType, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
-        {
-            this.OutputText = outputText;
-            this.IncludeNewLine = includeNewLine;
-            this.OutputType = outputType;
-            this.ForegroundColor = foregroundColor;
-            this.BackgroundColor = backgroundColor;
-        }
-    }
-
-    public class RunspaceHandle : IDisposable
-    {
-        PowerShellSession powerShellSession;
-
-        public Runspace Runspace { get; private set; }
-
-        public RunspaceHandle(Runspace runspace, PowerShellSession powerShellSession)
-        {
-            this.Runspace = runspace;
-            this.powerShellSession = powerShellSession;
-        }
-
-        public void Dispose()
-        {
-            this.powerShellSession.ReleaseRunspaceHandle(this);
         }
     }
 }

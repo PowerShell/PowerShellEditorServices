@@ -55,10 +55,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public async Task CanQueueParallelRunspaceRequests()
         {
             // Concurrently initiate 4 requests in the session
-            this.powerShellSession.ExecuteScript("$x = 100");
+            this.powerShellSession.ExecuteScriptString("$x = 100");
             Task<RunspaceHandle> handleTask = this.powerShellSession.GetRunspaceHandle();
-            this.powerShellSession.ExecuteScript("$x += 200");
-            this.powerShellSession.ExecuteScript("$x = $x / 100");
+            this.powerShellSession.ExecuteScriptString("$x += 200");
+            this.powerShellSession.ExecuteScriptString("$x = $x / 100");
 
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript("$x");
@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task ReceivesNormalOutput()
         {
-            await this.powerShellSession.ExecuteScript(
+            await this.powerShellSession.ExecuteScriptString(
                 string.Format(
                     "\"{0}\"",
                     TestOutputString));
@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task ReceivesErrorOutput()
         {
-            await this.powerShellSession.ExecuteScript(
+            await this.powerShellSession.ExecuteScriptString(
                 string.Format(
                     "Write-Error \"{0}\"",
                     TestOutputString));
@@ -129,9 +129,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             // Since setting VerbosePreference causes other message to
             // be written out when we run our test, run a command preemptively
             // to flush out unwanted verbose messages
-            await this.powerShellSession.ExecuteScript("Write-Verbose \"Preloading\"");
+            await this.powerShellSession.ExecuteScriptString("Write-Verbose \"Preloading\"");
 
-            await this.powerShellSession.ExecuteScript(
+            await this.powerShellSession.ExecuteScriptString(
                 string.Format(
                     "$VerbosePreference = \"Continue\"; Write-Verbose \"{0}\"",
                     TestOutputString));
@@ -147,9 +147,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             // Since setting VerbosePreference causes other message to
             // be written out when we run our test, run a command preemptively
             // to flush out unwanted verbose messages
-            await this.powerShellSession.ExecuteScript("Write-Verbose \"Preloading\"");
+            await this.powerShellSession.ExecuteScriptString("Write-Verbose \"Preloading\"");
 
-            await this.powerShellSession.ExecuteScript(
+            await this.powerShellSession.ExecuteScriptString(
                 string.Format(
                     "$DebugPreference = \"Continue\"; Write-Debug \"{0}\"",
                     TestOutputString));
@@ -162,7 +162,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task ReceivesWarningOutput()
         {
-            await this.powerShellSession.ExecuteScript(
+            await this.powerShellSession.ExecuteScriptString(
                 string.Format(
                     "Write-Warning \"{0}\"",
                     TestOutputString));

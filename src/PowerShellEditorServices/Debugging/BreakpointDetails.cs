@@ -9,10 +9,23 @@ using System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices
 {
+    /// <summary>
+    /// Provides details about a breakpoint that is set in the
+    /// PowerShell debugger.
+    /// </summary>
     public class BreakpointDetails
     {
-        public int LineNumber { get; set; }
+        /// <summary>
+        /// Gets the line number at which the breakpoint is set.
+        /// </summary>
+        public int LineNumber { get; private set; }
 
+        /// <summary>
+        /// Creates an instance of the BreakpointDetails class from a
+        /// PowerShell Breakpoint object.
+        /// </summary>
+        /// <param name="breakpoint">The Breakpoint instance from which details will be taken.</param>
+        /// <returns>A new instance of the BreakpointDetails class.</returns>
         public static BreakpointDetails Create(Breakpoint breakpoint)
         {
             Validate.IsNotNull("breakpoint", breakpoint);
