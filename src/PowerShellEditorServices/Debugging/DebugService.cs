@@ -193,18 +193,17 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Evaluates an expression in the context of the stopped
-        /// debugger.  For now, this just does simple evaluation of
-        /// a variable in the session.  In the future it will execute
-        /// commands in the PowerShellSession.
+        /// Evaluates a variable expression in the context of the stopped
+        /// debugger.  This method decomposes the variable expression to
+        /// walk the cached variable data for the specified stack frame.
         /// </summary>
-        /// <param name="expressionString">The expression string to execute.</param>
-        /// <param name="stackFrameId">The ID of the stack frame in which the expression should be executed.</param>
+        /// <param name="variableExpression">The variable expression string to evaluate.</param>
+        /// <param name="stackFrameId">The ID of the stack frame in which the expression should be evaluated.</param>
         /// <returns>A VariableDetails object containing the result.</returns>
-        public VariableDetails EvaluateExpression(string expressionString, int stackFrameId)
+        public VariableDetails GetVariableFromExpression(string variableExpression, int stackFrameId)
         {
             // Break up the variable path
-            string[] variablePathParts = expressionString.Split('.');
+            string[] variablePathParts = variableExpression.Split('.');
 
             VariableDetails resolvedVariable = null;
             IEnumerable<VariableDetails> variableList = this.currentVariables;
@@ -222,10 +221,10 @@ namespace Microsoft.PowerShell.EditorServices
                         v =>
                             string.Equals(
                                 v.Name,
-                                expressionString,
+                                variableExpression,
                                 StringComparison.InvariantCultureIgnoreCase));
 
-                if (resolvedVariable != null && 
+                if (resolvedVariable != null &&
                     resolvedVariable.IsExpandable)
                 {
                     // Continue by searching in this variable's children
@@ -234,6 +233,29 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return resolvedVariable;
+        }
+
+        /// <summary>
+        /// Evaluates an expression in the context of the stopped
+        /// debugger.  This method will execute the specified expression
+        /// PowerShellSession.
+        /// </summary>
+        /// <param name="expressionString">The expression string to execute.</param>
+        /// <param name="stackFrameId">The ID of the stack frame in which the expression should be executed.</param>
+        /// <returns>A VariableDetails object containing the result.</returns>
+        public async Task<VariableDetails> EvaluateExpression(string expressionString, int stackFrameId)
+        {
+            var results = 
+                await this.powerShellSession.ExecuteScriptString(
+                    expressionString);
+
+            // Since this method should only be getting invoked in the debugger,
+            // we can assume that Out-String will be getting used to format results
+            // of command executions into string output.
+
+            return new VariableDetails(
+                expressionString, 
+                string.Join(Environment.NewLine, results));
         }
 
         /// <summary>

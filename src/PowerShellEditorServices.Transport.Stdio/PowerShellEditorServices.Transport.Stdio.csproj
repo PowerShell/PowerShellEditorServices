@@ -64,6 +64,7 @@
     <Compile Include="Event\EventBase.cs" />
     <Compile Include="Event\ExitedEvent.cs" />
     <Compile Include="Event\InitializedEvent.cs" />
+    <Compile Include="Event\OutputEvent.cs" />
     <Compile Include="Event\ReplPromptChoiceEvent.cs">
       <SubType>Code</SubType>
     </Compile>
