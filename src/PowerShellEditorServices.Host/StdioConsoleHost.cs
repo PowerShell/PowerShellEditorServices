@@ -43,28 +43,30 @@ namespace Microsoft.PowerShell.EditorServices.Host
             IEnumerable<ChoiceDetails> choices,
             int defaultChoice)
         {
-            // Create and store a TaskCompletionSource that will be
-            // used to send the user's response back to the caller
-            this.currentPromptChoiceTask = new TaskCompletionSource<int>();
-            this.currentReplEventSequence++;
+            //// Create and store a TaskCompletionSource that will be
+            //// used to send the user's response back to the caller
+            //this.currentPromptChoiceTask = new TaskCompletionSource<int>();
+            //this.currentReplEventSequence++;
 
-            this.messageWriter.WriteMessage(
-                new ReplPromptChoiceEvent
-                {
-                    Body = new ReplPromptChoiceEventBody
-                    {
-                        Seq = this.currentReplEventSequence,
-                        Caption = caption,
-                        Message = message,
-                        DefaultChoice = defaultChoice,
-                        Choices = 
-                            choices
-                                .Select(ReplPromptChoiceDetails.FromChoiceDescription)
-                                .ToArray()
-                    }
-                });
+            //this.messageWriter.WriteMessage(
+            //    new ReplPromptChoiceEvent
+            //    {
+            //        Body = new ReplPromptChoiceEventBody
+            //        {
+            //            Seq = this.currentReplEventSequence,
+            //            Caption = caption,
+            //            Message = message,
+            //            DefaultChoice = defaultChoice,
+            //            Choices = 
+            //                choices
+            //                    .Select(ReplPromptChoiceDetails.FromChoiceDescription)
+            //                    .ToArray()
+            //        }
+            //    });
 
-            return this.currentPromptChoiceTask.Task;
+            //return this.currentPromptChoiceTask.Task;
+
+            throw new NotImplementedException("This method is currently being refactored and is not available.");
         }
 
         void IConsoleHost.PromptForChoiceResult(

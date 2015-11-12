@@ -391,42 +391,44 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact(Skip = "Choice prompt functionality is currently in transition to a new model.")]
         public async Task ServiceExecutesReplCommandAndReceivesChoicePrompt()
         {
-            string choiceScript =
-                @"
-                $caption = ""Test Choice"";
-                $message = ""Make a selection"";
-                $choiceA = new-Object System.Management.Automation.Host.ChoiceDescription ""&A"",""A"";
-                $choiceB = new-Object System.Management.Automation.Host.ChoiceDescription ""&B"",""B"";
-                $choices = [System.Management.Automation.Host.ChoiceDescription[]]($choiceA,$choiceB);
-                $response = $host.ui.PromptForChoice($caption, $message, $choices, 1)
-                $response";
+            // TODO: This test is removed until a new choice prompt strategy is determined.
 
-            await this.MessageWriter.WriteMessage(
-                new ReplExecuteRequest
-                {
-                    Arguments = new ReplExecuteArgs
-                    {
-                        CommandString = choiceScript
-                    }
-                });
+//            string choiceScript =
+//                @"
+//                $caption = ""Test Choice"";
+//                $message = ""Make a selection"";
+//                $choiceA = new-Object System.Management.Automation.Host.ChoiceDescription ""&A"",""A"";
+//                $choiceB = new-Object System.Management.Automation.Host.ChoiceDescription ""&B"",""B"";
+//                $choices = [System.Management.Automation.Host.ChoiceDescription[]]($choiceA,$choiceB);
+//                $response = $host.ui.PromptForChoice($caption, $message, $choices, 1)
+//                $response";
 
-            // Wait for the choice prompt event and check expected values
-            ReplPromptChoiceEvent replPromptChoiceEvent = this.WaitForMessage<ReplPromptChoiceEvent>();
-            Assert.Equal(1, replPromptChoiceEvent.Body.DefaultChoice);
+//            await this.MessageWriter.WriteMessage(
+//                new ReplExecuteRequest
+//                {
+//                    Arguments = new ReplExecuteArgs
+//                    {
+//                        CommandString = choiceScript
+//                    }
+//                });
 
-            // Respond to the prompt event
-            await this.MessageWriter.WriteMessage(
-                new ReplPromptChoiceResponse
-                {
-                    Body = new ReplPromptChoiceResponseBody
-                    {
-                        Choice = 0
-                    }
-                });
+//            // Wait for the choice prompt event and check expected values
+//            ReplPromptChoiceEvent replPromptChoiceEvent = this.WaitForMessage<ReplPromptChoiceEvent>();
+//            Assert.Equal(1, replPromptChoiceEvent.Body.DefaultChoice);
 
-            // Wait for the selection to appear as output
-            ReplWriteOutputEvent replWriteLineEvent = this.WaitForMessage<ReplWriteOutputEvent>();
-            Assert.Equal("0", replWriteLineEvent.Body.LineContents);
+//            // Respond to the prompt event
+//            await this.MessageWriter.WriteMessage(
+//                new ReplPromptChoiceResponse
+//                {
+//                    Body = new ReplPromptChoiceResponseBody
+//                    {
+//                        Choice = 0
+//                    }
+//                });
+
+//            // Wait for the selection to appear as output
+//            ReplWriteOutputEvent replWriteLineEvent = this.WaitForMessage<ReplWriteOutputEvent>();
+//            Assert.Equal("0", replWriteLineEvent.Body.LineContents);
         }
 
         private async Task SendOpenFileRequest(string fileName)
