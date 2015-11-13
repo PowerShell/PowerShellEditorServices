@@ -3,7 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System;
 using System.Reflection;
 using Xunit;

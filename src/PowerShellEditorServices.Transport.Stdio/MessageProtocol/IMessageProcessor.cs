@@ -5,7 +5,7 @@
 
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
+namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
     /// <summary>
     /// Provides an interface for classes that can process an incoming

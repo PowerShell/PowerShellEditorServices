@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Model
+namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
     public class Message
     {

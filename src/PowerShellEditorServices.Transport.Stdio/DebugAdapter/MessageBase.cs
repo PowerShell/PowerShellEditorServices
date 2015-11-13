@@ -6,7 +6,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
+namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
     /// <summary>
     /// Provides the base class for all message types in the 

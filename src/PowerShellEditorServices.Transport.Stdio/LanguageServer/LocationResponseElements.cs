@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
+namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
     public class TextSpan
     {
@@ -22,5 +22,4 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
 
         public int Offset { get; set; }
     }
-
 }

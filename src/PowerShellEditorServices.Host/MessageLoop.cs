@@ -4,10 +4,8 @@
 //
 
 using Microsoft.PowerShell.EditorServices;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Model;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Nito.AsyncEx;
 using System;
 using System.IO;

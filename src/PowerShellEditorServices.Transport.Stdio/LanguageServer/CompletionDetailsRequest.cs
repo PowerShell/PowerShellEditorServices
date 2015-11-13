@@ -3,13 +3,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Nito.AsyncEx;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
+namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
     [MessageTypeName("completionEntryDetails")]
     public class CompletionDetailsRequest : FileRequest<CompletionDetailsRequestArgs>

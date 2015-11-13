@@ -3,11 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Model;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System.Collections.Generic;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
+namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
     [MessageTypeName("stackTrace")]
     public class StackTraceResponse : ResponseBase<StackTraceResponseBody>

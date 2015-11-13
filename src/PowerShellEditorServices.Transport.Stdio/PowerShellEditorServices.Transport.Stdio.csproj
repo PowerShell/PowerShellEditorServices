@@ -7,7 +7,7 @@
     <ProjectGuid>{F8A0946A-5D25-4651-8079-B8D5776916FB}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.PowerShell.EditorServices.Transport.Stdio</RootNamespace>
+    <RootNamespace>Microsoft.PowerShell.EditorServices.Protocol</RootNamespace>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Transport.Stdio</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -104,7 +104,6 @@
     <Compile Include="DebugAdapter\PauseRequest.cs" />
     <Compile Include="LanguageServer\QuickInfoRequest.cs" />
     <Compile Include="LanguageServer\ReferencesRequest.cs" />
-    <Compile Include="LanguageServer\ReplExecuteRequest.cs" />
     <Compile Include="DebugAdapter\RequestBase.cs" />
     <Compile Include="DebugAdapter\ScopesRequest.cs" />
     <Compile Include="DebugAdapter\SetBreakpointsRequest.cs" />
@@ -134,7 +133,7 @@
     <Compile Include="LanguageServer\SignatureHelpResponse.cs" />
     <Compile Include="LanguageServer\SignatureHelpRequest.cs" />
     <Compile Include="LanguageServer\CompletionsResponse.cs" />
-    <Compile Include="LanguageServer\MessageErrorResponse.cs" />
+    <Compile Include="DebugAdapter\MessageErrorResponse.cs" />
     <Compile Include="DebugAdapter\ResponseBase.cs" />
     <Compile Include="DebugAdapter\SourceResponse.cs" />
     <Compile Include="DebugAdapter\StackTraceResponse.cs" />

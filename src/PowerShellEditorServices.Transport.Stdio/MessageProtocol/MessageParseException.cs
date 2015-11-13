@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
+namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
     public class MessageParseException : Exception
     {

@@ -3,16 +3,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
+namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
     [MessageTypeName("launch")]
     public class LaunchRequest : RequestBase<LaunchRequestArguments>

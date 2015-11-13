@@ -12,7 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio
+namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
     public static class Constants
     {

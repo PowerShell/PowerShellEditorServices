@@ -4,12 +4,13 @@
 //
 
 
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
+namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
     public class MessageParser
     {

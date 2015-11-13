@@ -3,10 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
 using Newtonsoft.Json;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Response
+namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
     public abstract class ResponseBase<TBody> : MessageBase
     {

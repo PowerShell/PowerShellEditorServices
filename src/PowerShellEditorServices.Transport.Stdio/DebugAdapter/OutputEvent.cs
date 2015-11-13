@@ -3,14 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Event
+namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
     [MessageTypeName("output")]
     public class OutputEvent : EventBase<OutputEventBody>

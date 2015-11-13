@@ -3,11 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Request;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

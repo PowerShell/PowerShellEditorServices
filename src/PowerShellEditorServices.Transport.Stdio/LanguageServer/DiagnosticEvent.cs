@@ -3,10 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System.Collections.Generic;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Event
+namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
     [MessageTypeName("syntaxDiag")]
     public class SyntaxDiagnosticEvent : EventBase<DiagnosticEventBody>
@@ -81,13 +82,6 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Event
                     Diagnostics = diagnosticList.ToArray()
                 };
         }
-    }
-
-    public class Location
-    {
-        public int Line { get; set; }
-
-        public int Offset { get; set; }
     }
 
     public class Diagnostic

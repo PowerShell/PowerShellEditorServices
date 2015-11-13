@@ -3,9 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using System.IO;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
+namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
     public abstract class FileRequest<TArguments> : RequestBase<TArguments>
         where TArguments : FileRequestArguments

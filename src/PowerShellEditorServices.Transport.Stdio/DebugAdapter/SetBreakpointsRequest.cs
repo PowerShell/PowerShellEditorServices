@@ -3,12 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Model;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Response;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
+namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
     //    /** SetBreakpoints request; value of command field is "setBreakpoints".
     //        Sets multiple breakpoints for a single source and clears all previous breakpoints in that source.

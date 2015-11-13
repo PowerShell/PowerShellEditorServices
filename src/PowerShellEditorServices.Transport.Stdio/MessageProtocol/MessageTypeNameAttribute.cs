@@ -6,7 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 
-namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Message
+namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
     /// <summary>
     /// Marks a type deriving from MessageBase with a name that is
