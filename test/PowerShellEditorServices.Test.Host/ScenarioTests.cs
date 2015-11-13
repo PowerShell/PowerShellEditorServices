@@ -371,20 +371,21 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal(sigHelp.Body.ArgumentCount, 1);
         }
 
-        [Fact(Skip = "Console output events are disabled until we migrate to the updated debug protocol.")]
+        [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesOutput()
         {
             await this.MessageWriter.WriteMessage(
-                new ReplExecuteRequest
+                new EvaluateRequest
                 {
-                    Arguments = new ReplExecuteArgs
+                    Arguments = new EvaluateRequestArguments
                     {
-                        CommandString = "1 + 2"
+                        Expression = "1 + 2"
                     }
                 });
 
-            ReplWriteOutputEvent replWriteLineEvent = this.WaitForMessage<ReplWriteOutputEvent>();
-            Assert.Equal("3", replWriteLineEvent.Body.LineContents);
+            OutputEvent outputEvent = this.WaitForMessage<OutputEvent>();
+            Assert.Equal("3\r\n", outputEvent.Body.Output);
+            Assert.Equal("stdout", outputEvent.Body.Category);
         }
 
         [Fact(Skip = "Choice prompt functionality is currently in transition to a new model.")]

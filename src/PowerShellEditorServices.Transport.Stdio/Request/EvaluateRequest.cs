@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Transport.Stdio.Request
             MessageWriter messageWriter)
         {
             VariableDetails result =
-                editorSession.DebugService.EvaluateExpression(
+                await editorSession.DebugService.EvaluateExpression(
                     this.Arguments.Expression,
                     this.Arguments.FrameId);
 
