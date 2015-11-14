@@ -310,12 +310,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="scriptString">The script string to execute.</param>
         /// <returns>A Task that can be awaited for the script completion.</returns>
-        public async Task ExecuteScriptString(string scriptString)
+        public async Task<IEnumerable<object>> ExecuteScriptString(string scriptString)
         {
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript(scriptString);
 
-            await this.ExecuteCommand<object>(psCommand, true);
+            return await this.ExecuteCommand<object>(psCommand, true);
         }
 
         /// <summary>
@@ -328,7 +328,7 @@ namespace Microsoft.PowerShell.EditorServices
             PSCommand command = new PSCommand();
             command.AddCommand(scriptPath);
 
-            await this.ExecuteCommand<object>(command);
+            await this.ExecuteCommand<object>(command, true);
         }
 
         /// <summary>

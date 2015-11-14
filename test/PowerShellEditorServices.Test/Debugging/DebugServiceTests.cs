@@ -177,25 +177,25 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // TODO: Add checks for correct value strings as well
 
-            var strVar = variables.FirstOrDefault(v => v.Name == "strVar");
+            var strVar = variables.FirstOrDefault(v => v.Name == "$strVar");
             Assert.NotNull(strVar);
             Assert.False(strVar.IsExpandable);
 
-            var objVar = variables.FirstOrDefault(v => v.Name == "objVar");
+            var objVar = variables.FirstOrDefault(v => v.Name == "$objVar");
             Assert.NotNull(objVar);
             Assert.True(objVar.IsExpandable);
 
             var objChildren = debugService.GetVariables(objVar.Id);
             Assert.Equal(2, objChildren.Length);
 
-            var arrVar = variables.FirstOrDefault(v => v.Name == "arrVar");
+            var arrVar = variables.FirstOrDefault(v => v.Name == "$arrVar");
             Assert.NotNull(arrVar);
             Assert.True(arrVar.IsExpandable);
 
             var arrChildren = debugService.GetVariables(arrVar.Id);
             Assert.Equal(4, arrChildren.Length);
 
-            var classVar = variables.FirstOrDefault(v => v.Name == "classVar");
+            var classVar = variables.FirstOrDefault(v => v.Name == "$classVar");
             Assert.NotNull(classVar);
             Assert.True(classVar.IsExpandable);
 

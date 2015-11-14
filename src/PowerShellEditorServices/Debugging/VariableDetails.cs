@@ -21,6 +21,11 @@ namespace Microsoft.PowerShell.EditorServices
         #region Fields
 
         /// <summary>
+        /// Provides a constant for the dollar sign variable prefix string.
+        /// </summary>
+        public const string DollarPrefix = "$";
+
+        /// <summary>
         /// Provides a constant for the variable ID of the local variable scope.
         /// </summary>
         public const int LocalScopeVariableId = 1;
@@ -79,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// The PSVariable instance from which variable details will be obtained.
         /// </param>
         public VariableDetails(PSVariable psVariable)
-            : this(psVariable.Name, psVariable.Value)
+            : this(DollarPrefix + psVariable.Name, psVariable.Value)
         {
         }
 
@@ -105,8 +110,8 @@ namespace Microsoft.PowerShell.EditorServices
         {
             this.valueObject = value;
 
-            this.IsExpandable = GetIsExpandable(value);
             this.Name = name;
+            this.IsExpandable = GetIsExpandable(value);
             this.ValueString =
                 this.IsExpandable == false ?
                     GetValueString(value) :
