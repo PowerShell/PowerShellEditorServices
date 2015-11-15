@@ -12,19 +12,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     //    /** SetExceptionBreakpoints request; value of command field is "setExceptionBreakpoints".
     //        Enable that the debuggee stops on exceptions with a StoppedEvent (event type 'exception').
     //    */
-    [MessageTypeName("setExceptionBreakpoints")]
-    public class SetExceptionBreakpointsRequest : RequestBase<SetExceptionBreakpointsRequestArguments>
+    public class SetExceptionBreakpointsRequest
     {
-        public override async Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            // TODO: Add these
-
-            await messageWriter.WriteMessage(
-                this.PrepareResponse(
-                    new SetExceptionBreakpointsResponse()));
-        }
+        public static readonly
+            RequestType<SetExceptionBreakpointsRequestArguments, object, object> Type =
+            RequestType<SetExceptionBreakpointsRequestArguments, object, object>.Create("setExceptionBreakpoints");
     }
 
     public class SetExceptionBreakpointsRequestArguments

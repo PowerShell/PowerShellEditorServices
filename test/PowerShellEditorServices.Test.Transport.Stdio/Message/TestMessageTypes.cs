@@ -3,19 +3,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Test.Transport.Stdio.Message
+namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
 {
     #region Request Types
 
-    [MessageTypeName("testRequest")]
-    internal class TestRequest : RequestBase<TestRequestArguments>
+    internal class TestRequest 
     {
-        public override Task ProcessMessage(
+        public Task ProcessMessage(
             EditorSession editorSession, 
             MessageWriter messageWriter)
         {
@@ -32,8 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Transport.Stdio.Message
 
     #region Response Types
 
-    [MessageTypeName("testResponse")]
-    internal class TestResponse : ResponseBase<TestResponseBody>
+    internal class TestResponse
     {
     }
 
@@ -46,8 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Transport.Stdio.Message
 
     #region Event Types
 
-    [MessageTypeName("testEvent")]
-    internal class TestEvent : EventBase<TestEventBody>
+    internal class TestEvent
     {
     }
 

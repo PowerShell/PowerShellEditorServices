@@ -12,19 +12,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     //    /** StepOver request; value of command field is "next".
     //        he request starts the debuggee to run again for one step.
     //        penDebug will respond with a StoppedEvent (event type 'step') after running the step.
-    [MessageTypeName("next")]
-    public class NextRequest : RequestBase<object>
+    public class NextRequest
     {
-        public override async Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            editorSession.DebugService.StepOver();
-
-            await messageWriter.WriteMessage(
-                this.PrepareResponse(
-                    new NextResponse()));
-        }
+        public static readonly
+            RequestType<object, object, object> Type =
+            RequestType<object, object, object>.Create("next");
     }
 }
 

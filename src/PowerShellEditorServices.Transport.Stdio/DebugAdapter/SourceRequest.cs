@@ -4,28 +4,25 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Nito.AsyncEx;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("source")]
-    public class SourceRequest : RequestBase<SourceRequestArguments>
+    public class SourceRequest
     {
-        public override Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            // TODO: What do I return here?
-
-            return TaskConstants.Completed;
-        }
+        public static readonly
+            RequestType<SourceRequestArguments, SourceResponseBody, object> Type =
+            RequestType<SourceRequestArguments, SourceResponseBody, object>.Create("source");
     }
 
     public class SourceRequestArguments
     {
     //        /** The reference to the source. This is the value received in Source.reference. */
         public int SourceReference { get; set; }
+    }
+
+    public class SourceResponseBody
+    {
+        public string Content { get; set; }
     }
 }
 

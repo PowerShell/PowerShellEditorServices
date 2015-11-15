@@ -26,13 +26,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             // Camel case all object properties
             JsonSerializerSettings.ContractResolver =
                 new CamelCasePropertyNamesContractResolver();
-
-            // Convert enum values to their string representation with camel casing
-            JsonSerializerSettings.Converters.Add(
-                new StringEnumConverter
-                {
-                    CamelCaseText = true
-                });
         }
     }
 }

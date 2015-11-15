@@ -4,40 +4,24 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("scopes")]
-    public class ScopesRequest : RequestBase<ScopesRequestArgs>
+    public class ScopesRequest
     {
-        public override async Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            VariableScope[] variableScopes = 
-                editorSession.DebugService.GetVariableScopes(
-                    this.Arguments.FrameId);
-
-            await messageWriter.WriteMessage(
-                this.PrepareResponse(
-                    new ScopesResponse
-                    {
-                        Body = new ScopesResponseBody
-                        {
-                            Scopes = 
-                                variableScopes
-                                    .Select(Scope.Create)
-                                    .ToArray()
-                        }
-                    }));
-        }
+        public static readonly
+            RequestType<ScopesRequestArguments, ScopesResponseBody, object> Type =
+            RequestType<ScopesRequestArguments, ScopesResponseBody, object>.Create("scopes");
     }
 
-    public class ScopesRequestArgs
+    public class ScopesRequestArguments
     {
         public int FrameId { get; set; }
+    }
+
+    public class ScopesResponseBody
+    {
+        public Scope[] Scopes { get; set; }
     }
 }
 

@@ -4,24 +4,14 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Nito.AsyncEx;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("stepIn")]
-    public class StepInRequest : RequestBase<object>
+    public class StepInRequest
     {
-        public override async Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            editorSession.DebugService.StepIn();
-
-            await messageWriter.WriteMessage(
-                this.PrepareResponse(
-                    new StepInResponse()));
-        }
+        public static readonly
+            RequestType<object, object, object> Type =
+            RequestType<object, object, object>.Create("stepIn");
     }
 }
 

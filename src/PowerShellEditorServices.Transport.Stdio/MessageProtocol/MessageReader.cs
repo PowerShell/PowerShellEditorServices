@@ -3,8 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         private static string[] NewLineDelimiters = new string[] { Environment.NewLine }; 
 
         private Stream inputStream;
-        private MessageParser messageParser;
+        private IMessageSerializer messageSerializer;
         private Encoding messageEncoding;
 
         private ReadState readState;
@@ -49,14 +50,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         public MessageReader(
             Stream inputStream,
-            MessageTypeResolver messageTypeResolver,
+            IMessageSerializer messageSerializer,
             Encoding messageEncoding = null)
         {
             Validate.IsNotNull("inputStream", inputStream);
-            Validate.IsNotNull("messageTypeResolver", messageTypeResolver);
+            Validate.IsNotNull("messageSerializer", messageSerializer);
 
             this.inputStream = inputStream;
-            this.messageParser = new MessageParser(messageTypeResolver);
+            this.messageSerializer = messageSerializer;
 
             this.messageEncoding = messageEncoding;
             if (messageEncoding == null)
@@ -71,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Public Methods
 
-        public async Task<MessageBase> ReadMessage()
+        public async Task<Message> ReadMessage()
         {
             string messageContent = null;
 
@@ -103,8 +104,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 break;
             }
 
+            // Get the JObject for the JSON content
+            JObject messageObject = JObject.Parse(messageContent);
+
+            // Load the message
+            Logger.Write(
+                LogLevel.Verbose,
+                string.Format(
+                    "READ MESSAGE:\r\n\r\n{0}",
+                    messageObject.ToString(Formatting.Indented)));
+
             // Return the parsed message
-            return this.messageParser.ParseMessage(messageContent);
+            return this.messageSerializer.DeserializeMessage(messageObject);
         }
 
         #endregion

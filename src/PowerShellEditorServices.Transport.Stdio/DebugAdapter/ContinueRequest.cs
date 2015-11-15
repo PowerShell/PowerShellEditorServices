@@ -4,24 +4,14 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Nito.AsyncEx;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("continue")]
-    public class ContinueRequest : RequestBase<object>
+    public class ContinueRequest
     {
-        public override async Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            editorSession.DebugService.Continue();
-
-            await messageWriter.WriteMessage(
-                this.PrepareResponse(
-                    new ContinueResponse()));
-        }
+        public static readonly
+            RequestType<object, object, object> Type =
+            RequestType<object, object, object>.Create("continue");
     }
 }
 

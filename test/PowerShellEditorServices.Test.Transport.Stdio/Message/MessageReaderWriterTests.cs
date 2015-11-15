@@ -4,28 +4,26 @@
 
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Microsoft.PowerShell.EditorServices.Test.Transport.Stdio.Message;
 using System;
 using System.IO;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace PSLanguageService.Test
+namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
 {
     public class MessageReaderWriterTests
     {
-        const string TestEventString = "{\"event\":\"testEvent\",\"body\":null,\"seq\":0,\"type\":\"event\"}";
+        const string TestEventString = "{\"type\":\"event\",\"event\":\"testEvent\",\"body\":null}";
         const string TestEventFormatString = "{{\"event\":\"testEvent\",\"body\":{{\"someString\":\"{0}\"}},\"seq\":0,\"type\":\"event\"}}";
         readonly int ExpectedMessageByteCount = Encoding.UTF8.GetByteCount(TestEventString);
 
-        private MessageTypeResolver messageTypeResolver;
+        private IMessageSerializer messageSerializer;
 
         public MessageReaderWriterTests()
         {
-            this.messageTypeResolver = new MessageTypeResolver();
-            this.messageTypeResolver.ScanForMessageTypes(Assembly.GetExecutingAssembly());
+            // TODO: Set this!
+            this.messageSerializer = new V8MessageSerializer();
         }
 
         [Fact]
@@ -36,10 +34,11 @@ namespace PSLanguageService.Test
             MessageWriter messageWriter = 
                 new MessageWriter(
                     outputStream,
-                    this.messageTypeResolver);
+                    this.messageSerializer);
 
             // Write the message and then roll back the stream to be read
-            await messageWriter.WriteMessage(new TestEvent());
+            // TODO: This will need to be redone!
+            await messageWriter.WriteMessage(Message.Event("testEvent", null));
             outputStream.Seek(0, SeekOrigin.Begin);
 
             string expectedHeaderString =
@@ -71,7 +70,7 @@ namespace PSLanguageService.Test
             MessageReader messageReader =
                 new MessageReader(
                     inputStream, 
-                    this.messageTypeResolver);
+                    this.messageSerializer);
 
             // Write a message to the stream
             byte[] messageBuffer = this.GetMessageBytes(TestEventString);
@@ -83,9 +82,8 @@ namespace PSLanguageService.Test
             inputStream.Flush();
             inputStream.Seek(0, SeekOrigin.Begin);
 
-            MessageBase messageResult = messageReader.ReadMessage().Result;
-            TestEvent eventResult = Assert.IsType<TestEvent>(messageResult);
-            Assert.Equal("testEvent", eventResult.EventType);
+            Message messageResult = messageReader.ReadMessage().Result;
+            Assert.Equal("testEvent", messageResult.Method);
 
             inputStream.Dispose();
         }
@@ -97,7 +95,7 @@ namespace PSLanguageService.Test
             MessageReader messageReader =
                 new MessageReader(
                     inputStream, 
-                    this.messageTypeResolver);
+                    this.messageSerializer);
 
             // Get a message to use for writing to the stream
             byte[] messageBuffer = this.GetMessageBytes(TestEventString);
@@ -119,9 +117,8 @@ namespace PSLanguageService.Test
             // Read the written messages from the stream
             for (int i = 0; i < overflowMessageCount; i++)
             {
-                MessageBase messageResult = messageReader.ReadMessage().Result;
-                TestEvent eventResult = Assert.IsType<TestEvent>(messageResult);
-                Assert.Equal("testEvent", eventResult.EventType);
+                Message messageResult = messageReader.ReadMessage().Result;
+                Assert.Equal("testEvent", messageResult.Method);
             }
 
             inputStream.Dispose();
@@ -134,7 +131,7 @@ namespace PSLanguageService.Test
             MessageReader messageReader =
                 new MessageReader(
                     inputStream, 
-                    this.messageTypeResolver);
+                    this.messageSerializer);
 
             // Get a message with content so large that the buffer will need
             // to be resized to fit it all.
@@ -148,9 +145,8 @@ namespace PSLanguageService.Test
             inputStream.Flush();
             inputStream.Seek(0, SeekOrigin.Begin);
 
-            MessageBase messageResult = messageReader.ReadMessage().Result;
-            TestEvent eventResult = Assert.IsType<TestEvent>(messageResult);
-            Assert.Equal("testEvent", eventResult.EventType);
+            Message messageResult = messageReader.ReadMessage().Result;
+            Assert.Equal("testEvent", messageResult.Method);
 
             inputStream.Dispose();
         }

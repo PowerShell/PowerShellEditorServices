@@ -9,7 +9,7 @@
     <ProjectGuid>{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.PowerShell.EditorServices.Test.Transport.Stdio</RootNamespace>
+    <RootNamespace>Microsoft.PowerShell.EditorServices.Test.Protocol</RootNamespace>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Test.Transport.Stdio</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -42,6 +42,10 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="xunit.abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
       <HintPath>..\..\packages\xunit.abstractions.2.0.0\lib\net35\xunit.abstractions.dll</HintPath>
       <Private>True</Private>
@@ -60,8 +64,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DebugAdapter\V8MessageSerializerTests.cs" />
+    <Compile Include="LanguageServer\JsonRpcMessageSerializerTests.cs" />
     <Compile Include="Message\MessageReaderWriterTests.cs" />
-    <Compile Include="Message\MessageTypeResolverTests.cs" />
     <Compile Include="Message\TestMessageTypes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

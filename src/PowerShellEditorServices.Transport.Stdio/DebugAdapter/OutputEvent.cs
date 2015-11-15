@@ -7,9 +7,11 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("output")]
-    public class OutputEvent : EventBase<OutputEventBody>
+    public class OutputEvent
     {
+        public static readonly
+            EventType<OutputEventBody> Type =
+            EventType<OutputEventBody>.Create("output");
     }
 
     public class OutputEventBody

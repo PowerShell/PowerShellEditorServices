@@ -66,6 +66,7 @@
     <Compile Include="Debugging\VariableScope.cs" />
     <Compile Include="IHost.cs" />
     <Compile Include="Language\AstOperations.cs" />
+    <Compile Include="Language\CommandHelpers.cs" />
     <Compile Include="Language\CompletionResults.cs" />
     <Compile Include="Language\FindCommandVisitor.cs" />
     <Compile Include="Language\FindDeclartionVisitor.cs" />

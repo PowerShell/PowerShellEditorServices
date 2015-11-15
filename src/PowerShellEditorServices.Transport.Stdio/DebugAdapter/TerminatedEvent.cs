@@ -7,9 +7,11 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("terminated")]
-    public class TerminatedEvent : EventBase<object>
+    public class TerminatedEvent
     {
+        public static readonly
+            EventType<object> Type =
+            EventType<object>.Create("terminated");
     }
 }
 

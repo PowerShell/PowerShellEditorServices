@@ -4,40 +4,15 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Microsoft.PowerShell.EditorServices.Utility;
-using Nito.AsyncEx;
-using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("launch")]
-    public class LaunchRequest : RequestBase<LaunchRequestArguments>
+    public class LaunchRequest
     {
-        public override async Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            // Execute the given PowerShell script and send the response.
-            // Note that we aren't waiting for execution to complete here
-            // because the debugger could stop while the script executes.
-            editorSession.PowerShellSession
-                .ExecuteScriptAtPath(this.Arguments.Program)
-                .ContinueWith(
-                    async (t) =>
-                    {
-                        Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
-
-                        // TODO: Find a way to exit more gracefully!
-                        await messageWriter.WriteMessage(new TerminatedEvent());
-                        Environment.Exit(0);
-                    });
-
-            await messageWriter.WriteMessage(
-                this.PrepareResponse(
-                    new LaunchResponse()));
-        }
+        public static readonly
+            RequestType<LaunchRequestArguments, object, object> Type =
+            RequestType<LaunchRequestArguments, object, object>.Create("launch");
     }
 
     public class LaunchRequestArguments

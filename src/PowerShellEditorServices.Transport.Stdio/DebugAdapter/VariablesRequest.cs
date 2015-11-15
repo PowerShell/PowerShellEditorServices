@@ -4,31 +4,24 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Nito.AsyncEx;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("variables")]
-    public class VariablesRequest : RequestBase<VariablesRequestArguments>
+    public class VariablesRequest
     {
-        public override async Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            VariableDetails[] variables =
-                editorSession.DebugService.GetVariables(
-                    this.Arguments.VariablesReference);
-
-            await messageWriter.WriteMessage(
-                this.PrepareResponse(
-                    VariablesResponse.Create(variables)));
-        }
+        public static readonly
+            RequestType<VariablesRequestArguments, VariablesResponseBody, object> Type =
+            RequestType<VariablesRequestArguments, VariablesResponseBody, object>.Create("variables");
     }
 
     public class VariablesRequestArguments
     {
         public int VariablesReference { get; set; }
+    }
+
+    public class VariablesResponseBody
+    {
+        public Variable[] Variables { get; set; }
     }
 }
 

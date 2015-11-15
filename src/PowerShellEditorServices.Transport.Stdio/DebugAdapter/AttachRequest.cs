@@ -4,19 +4,14 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("attach")]
-    public class AttachRequest : RequestBase<AttachRequestArguments>
+    public class AttachRequest
     {
-        public override Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            throw new System.NotImplementedException();
-        }
+        public static readonly
+            RequestType<AttachRequestArguments, object, object> Type =
+            RequestType<AttachRequestArguments, object, object>.Create("attach");
     }
 
     public class AttachRequestArguments

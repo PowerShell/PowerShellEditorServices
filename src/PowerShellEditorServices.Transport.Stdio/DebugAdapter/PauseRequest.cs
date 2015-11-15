@@ -4,22 +4,14 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Nito.AsyncEx;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("pause")]
-    public class PauseRequest : RequestBase<object>
+    public class PauseRequest
     {
-        public override Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            editorSession.DebugService.Break();
-
-            return TaskConstants.Completed;
-        }
+        public static readonly
+            RequestType<object, object, object> Type =
+            RequestType<object, object, object>.Create("pause");
     }
 }
 

@@ -111,24 +111,19 @@ namespace Microsoft.PowerShell.EditorServices
         /// Finds command completion details for the script given a file location 
         /// </summary>
         /// <param name="file">The details and contents of a open script file</param>
-        /// <param name="lineNumber">The line number of the cursor for the given script</param>
-        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
         /// <param name="entryName">The name of the suggestion that needs details</param>
         /// <returns>CompletionResult object (contains information about the command completion)</returns>
         public CompletionDetails GetCompletionDetailsInFile(
             ScriptFile file,
-            int lineNumber,
-            int columnNumber,
             string entryName)
         {
             // Makes sure the most recent completions request was the same line and column as this request
-            if (file.Id.Equals(mostRecentRequestFile) &&
-                lineNumber == mostRecentRequestLine &&
-                columnNumber == mostRecentRequestOffest)
+            if (file.Id.Equals(mostRecentRequestFile))
             {
                 CompletionDetails completionResult = 
-                    mostRecentCompletions.Completions.First(
+                    mostRecentCompletions.Completions.FirstOrDefault(
                         result => result.CompletionText.Equals(entryName));
+
                 return completionResult;
             }
             else
@@ -298,6 +293,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (foundDefinition == null)
             {
                 CommandInfo cmdInfo = await GetCommandInfo(foundSymbol.SymbolName);
+
                 foundDefinition = 
                     await FindDeclarationForBuiltinCommand(
                         cmdInfo, 
@@ -305,7 +301,9 @@ namespace Microsoft.PowerShell.EditorServices
                         workspace);
             }
 
-            return new GetDefinitionResult(foundDefinition);
+            return foundDefinition != null ?
+                new GetDefinitionResult(foundDefinition) :
+                null;
         }
 
         /// <summary>
@@ -371,8 +369,18 @@ namespace Microsoft.PowerShell.EditorServices
                 CommandInfo commandInfo = await GetCommandInfo(foundSymbol.SymbolName);
                 if (commandInfo != null)
                 {
-                    IEnumerable<CommandParameterSetInfo> commandParamSets = commandInfo.ParameterSets;
-                    return new ParameterSetSignatures(commandParamSets, foundSymbol);
+                    try
+                    {
+                        IEnumerable<CommandParameterSetInfo> commandParamSets = commandInfo.ParameterSets;
+                        return new ParameterSetSignatures(commandParamSets, foundSymbol);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // For some commands there are no paramsets (like applications).  Until
+                        // the valid command types are better understood, catch this exception
+                        // which gets raised when there are no ParameterSets for the command type.
+                        return null;
+                    }
                 }
                 else
                 {
@@ -496,10 +504,12 @@ namespace Microsoft.PowerShell.EditorServices
                         AstOperations.FindDefinitionOfSymbol(
                             nestedModuleFiles[index].ScriptAst,
                             foundSymbol);
+
                     if (foundDefinition != null)
                     {
                         foundDefinition.FilePath = nestedModuleFiles[index].FilePath;
                     }
+
                     index++;
                 }
             }

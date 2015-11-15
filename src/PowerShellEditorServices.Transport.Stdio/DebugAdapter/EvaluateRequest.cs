@@ -4,45 +4,14 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Nito.AsyncEx;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("evaluate")]
-    public class EvaluateRequest : RequestBase<EvaluateRequestArguments>
+    public class EvaluateRequest
     {
-        public override async Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            VariableDetails result =
-                await editorSession.DebugService.EvaluateExpression(
-                    this.Arguments.Expression,
-                    this.Arguments.FrameId);
-
-            string valueString = null;
-            int variableId = 0;
-
-            if (result != null)
-            {
-                valueString = result.ValueString;
-                variableId =
-                    result.IsExpandable ?
-                        result.Id : 0;
-            }
-
-            await messageWriter.WriteMessage(
-                this.PrepareResponse(
-                    new EvaluateResponse
-                    {
-                        Body = new EvaluateResponseBody
-                        {
-                            Result = valueString,
-                            VariablesReference = variableId
-                        }
-                    }));
-        }
+        public static readonly
+            RequestType<EvaluateRequestArguments, EvaluateResponseBody, object> Type =
+            RequestType<EvaluateRequestArguments, EvaluateResponseBody, object>.Create("evaluate");
     }
 
     public class EvaluateRequestArguments
@@ -51,6 +20,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 
     //        /** Evaluate the expression in the context of this stack frame. If not specified, the top most frame is used. */
         public int FrameId { get; set; }
+    }
+
+    public class EvaluateResponseBody
+    {
+        public string Result { get; set; }
+
+//            /** If variablesReference is > 0, the evaluate result is structured and its children can be retrieved by passing variablesReference to the VariablesRequest */
+        public int VariablesReference { get; set; }
     }
 }
 

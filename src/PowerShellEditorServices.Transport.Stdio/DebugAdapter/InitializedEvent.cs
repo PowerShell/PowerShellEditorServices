@@ -7,8 +7,10 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("initialized")]
-    public class InitializedEvent : EventBase<object>
+    public class InitializedEvent
     {
+        public static readonly
+            EventType<object> Type =
+            EventType<object>.Create("initialized");
     }
 }

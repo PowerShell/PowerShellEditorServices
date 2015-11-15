@@ -3,9 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Nito.AsyncEx;
 using System.IO;
 using System.Text;
@@ -18,10 +18,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         #region Private Fields
 
         private Stream outputStream;
-        private MessageTypeResolver messageTypeResolver;
+        private IMessageSerializer messageSerializer;
         private AsyncLock writeLock = new AsyncLock();
 
-        private JsonSerializer loggingSerializer = 
+        private JsonSerializer contentSerializer = 
             JsonSerializer.Create(
                 Constants.JsonSerializerSettings);
 
@@ -31,33 +31,29 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         public MessageWriter(
             Stream outputStream,
-            MessageTypeResolver messageTypeResolver)
+            IMessageSerializer messageSerializer)
         {
             Validate.IsNotNull("outputStream", outputStream);
-            Validate.IsNotNull("messageTypeResolver", messageTypeResolver);
+            Validate.IsNotNull("messageSerializer", messageSerializer);
 
             this.outputStream = outputStream;
-            this.messageTypeResolver = messageTypeResolver;
+            this.messageSerializer = messageSerializer;
         }
 
         #endregion
 
         #region Public Methods
 
-        public async Task WriteMessage(MessageBase messageToWrite)
+        // TODO: This method should be made protected or private
+
+        public async Task WriteMessage(Message messageToWrite)
         {
             Validate.IsNotNull("messageToWrite", messageToWrite);
 
-            string messageTypeName = null;
-            if (!this.messageTypeResolver.TryGetMessageTypeNameByType(
-                    messageToWrite.GetType(),
-                    out messageTypeName))
-            {
-                // TODO: Trace or throw exception?
-            }
-
-            // Insert the message's type name before serializing
-            messageToWrite.PayloadType = messageTypeName;
+            // Serialize the message
+            JObject messageObject =
+                this.messageSerializer.SerializeMessage(
+                    messageToWrite);
 
             // Log the JSON representation of the message
             Logger.Write(
@@ -65,14 +61,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 string.Format(
                     "WRITE MESSAGE:\r\n\r\n{0}",
                     JsonConvert.SerializeObject(
-                        messageToWrite,
+                        messageObject,
                         Formatting.Indented,
                         Constants.JsonSerializerSettings)));
 
-            // Serialize the message
             string serializedMessage =
                 JsonConvert.SerializeObject(
-                    messageToWrite,
+                    messageObject,
                     Constants.JsonSerializerSettings);
 
             byte[] messageBytes = Encoding.UTF8.GetBytes(serializedMessage);
@@ -92,6 +87,53 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 await this.outputStream.WriteAsync(messageBytes, 0, messageBytes.Length);
                 await this.outputStream.FlushAsync();
             }
+        }
+
+        public async Task WriteRequest<TParams, TResult, TError>(
+            RequestType<TParams, TResult, TError> requestType, 
+            TParams requestParams,
+            int requestId)
+        {
+            // Allow null content
+            JToken contentObject =
+                requestParams != null ?
+                    JToken.FromObject(requestParams, contentSerializer) :
+                    null;
+
+            await this.WriteMessage(
+                Message.Request(
+                    requestId.ToString(), 
+                    requestType.TypeName,
+                    contentObject));
+        }
+
+        public async Task WriteResponse<TResult>(TResult resultContent, string method, string requestId)
+        {
+            // Allow null content
+            JToken contentObject =
+                resultContent != null ?
+                    JToken.FromObject(resultContent, contentSerializer) :
+                    null;
+
+            await this.WriteMessage(
+                Message.Response(
+                    requestId,
+                    method,
+                    contentObject));
+        }
+
+        public async Task WriteEvent<TParams>(EventType<TParams> eventType, TParams eventParams)
+        {
+            // Allow null content
+            JToken contentObject =
+                eventParams != null ?
+                    JToken.FromObject(eventParams, contentSerializer) :
+                    null;
+
+            await this.WriteMessage(
+                Message.Event(
+                    eventType.MethodName,
+                    contentObject));
         }
 
         #endregion

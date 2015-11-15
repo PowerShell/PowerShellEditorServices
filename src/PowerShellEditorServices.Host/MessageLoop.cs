@@ -3,14 +3,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
+using Microsoft.PowerShell.EditorServices.Utility;
 using Nito.AsyncEx;
 using System;
 using System.IO;
 using System.Management.Automation;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         private Stream inputStream;
         private Stream outputStream;
+        private bool runDebugAdapter;
         private IConsoleHost consoleHost;
         private EditorSession editorSession;
         private MessageReader messageReader;
@@ -53,6 +54,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         #endregion
 
+        #region Constructors
+
+        public MessageLoop(bool runDebugAdapter)
+        {
+            this.runDebugAdapter = runDebugAdapter;
+        }
+
+        #endregion
+
         #region Private Methods
 
         private async Task StartMessageLoop()
@@ -73,24 +83,44 @@ namespace Microsoft.PowerShell.EditorServices.Host
             System.Console.InputEncoding = Encoding.UTF8;
             System.Console.OutputEncoding = Encoding.UTF8;
 
-            // Find all message types in this assembly
-            MessageTypeResolver messageTypeResolver = new MessageTypeResolver();
-            messageTypeResolver.ScanForMessageTypes(typeof(StartedEvent).Assembly);
-
             // Open the standard input/output streams
             this.inputStream = System.Console.OpenStandardInput();
             this.outputStream = System.Console.OpenStandardOutput();
+
+            IMessageSerializer messageSerializer = null;
+            IMessageProcessor messageProcessor = null;
+
+            // Use a different serializer and message processor based
+            // on whether this instance should host a language server
+            // debug adapter.
+            if (this.runDebugAdapter)
+            {
+                DebugAdapter debugAdapter = new DebugAdapter();
+                debugAdapter.Initialize();
+
+                messageProcessor = debugAdapter;
+                messageSerializer = new V8MessageSerializer();
+            }
+            else
+            {
+                // Set up the LanguageServer
+                LanguageServer languageServer = new LanguageServer();
+                languageServer.Initialize();
+
+                messageProcessor = languageServer;
+                messageSerializer = new JsonRpcMessageSerializer();
+            }
 
             // Set up the reader and writer
             this.messageReader = 
                 new MessageReader(
                     this.inputStream,
-                    messageTypeResolver);
+                    messageSerializer);
 
             this.messageWriter = 
                 new MessageWriter(
                     this.outputStream,
-                    messageTypeResolver);
+                    messageSerializer);
 
             // Set up the console host which will send events
             // through the MessageWriter
@@ -99,20 +129,19 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // Set up the PowerShell session
             this.editorSession = new EditorSession();
             this.editorSession.StartSession(this.consoleHost);
-
-            // Attach to events from the PowerShell session
             this.editorSession.PowerShellSession.OutputWritten += PowerShellSession_OutputWritten;
-            this.editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStopped;
 
-            // Send a "started" event
-            await this.messageWriter.WriteMessage(
-                new StartedEvent());
+            if (this.runDebugAdapter)
+            {
+                // Attach to debugger events from the PowerShell session
+                this.editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStopped;
+            }
 
             // Run the message loop
             bool isRunning = true;
             while (isRunning)
             {
-                MessageBase newMessage = null;
+                Message newMessage = null;
 
                 try
                 {
@@ -121,76 +150,55 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 }
                 catch (MessageParseException e)
                 {
-                    // Write an error response
-                    this.messageWriter.WriteMessage(
-                        MessageErrorResponse.CreateParseErrorResponse(e)).Wait();
+                    // TODO: Write an error response
+
+                    Logger.Write(
+                        LogLevel.Error,
+                        "Could not parse a message that was received:\r\n\r\n" +
+                        e.ToString());
 
                     // Continue the loop
                     continue;
                 }
 
-                // Is the message a request?
-                IMessageProcessor messageProcessor = newMessage as IMessageProcessor;
-                if (messageProcessor != null)
-                {
-                    // Process the message.  The processor will take care
-                    // of writing responses throguh the messageWriter.
-                    await messageProcessor.ProcessMessage(
-                        this.editorSession,
-                        this.messageWriter);
-                }
-                else
-                {
-                    if (newMessage != null)
-                    {
-                        // Return an error response to keep the client moving
-                        await this.messageWriter.WriteMessage(
-                            MessageErrorResponse.CreateUnhandledMessageResponse(
-                                newMessage));
-                    }
-                    else
-                    {
-                        // TODO: Some other problem must have occurred,
-                        // design a message response for this case.
-                    }
-                }
+                // Process the message
+                await messageProcessor.ProcessMessage(
+                    newMessage,
+                    this.editorSession,
+                    this.messageWriter);
             }
         }
 
-        async void DebugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
+        void DebugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
         {
             // Push the write operation to the correct thread
             this.messageLoopSyncContext.Post(
                 async (obj) =>
                 {
-                    await this.messageWriter.WriteMessage(
-                        new StoppedEvent
+                    await this.messageWriter.WriteEvent(
+                        StoppedEvent.Type,
+                        new StoppedEventBody
                         {
-                            Body = new StoppedEventBody
+                            Source = new Source
                             {
-                                Source = new Source
-                                {
-                                    Path = e.InvocationInfo.ScriptName,
-                                },
-                                Line = e.InvocationInfo.ScriptLineNumber,
-                                Column = e.InvocationInfo.OffsetInLine,
-                                ThreadId = 1, // TODO: Change this based on context
-                                Reason = "breakpoint" // TODO: Change this based on context
-                            }
+                                Path = e.InvocationInfo.ScriptName,
+                            },
+                            Line = e.InvocationInfo.ScriptLineNumber,
+                            Column = e.InvocationInfo.OffsetInLine,
+                            ThreadId = 1, // TODO: Change this based on context
+                            Reason = "breakpoint" // TODO: Change this based on context
                         });
                 }, null);
         }
 
         async void PowerShellSession_OutputWritten(object sender, OutputWrittenEventArgs e)
         {
-            await this.messageWriter.WriteMessage(
-                new OutputEvent
+            await this.messageWriter.WriteEvent(
+                OutputEvent.Type,
+                new OutputEventBody
                 {
-                    Body = new OutputEventBody
-                    {
-                        Output = e.OutputText + (e.IncludeNewLine ? "\r\n" : string.Empty),
-                        Category = (e.OutputType == OutputType.Error) ? "stderr" : "stdout"
-                    }
+                    Output = e.OutputText + (e.IncludeNewLine ? "\r\n" : string.Empty),
+                    Category = (e.OutputType == OutputType.Error) ? "stderr" : "stdout"
                 });
         }
 

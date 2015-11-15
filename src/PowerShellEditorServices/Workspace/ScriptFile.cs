@@ -42,6 +42,11 @@ namespace Microsoft.PowerShell.EditorServices
         public string FilePath { get; private set; }
 
         /// <summary>
+        /// Gets the path which the editor client uses to identify this file.
+        /// </summary>
+        public string ClientFilePath { get; private set; }
+
+        /// <summary>
         /// Gets or sets a boolean that determines whether
         /// semantic analysis should be enabled for this file.
         /// For internal use only.
@@ -113,13 +118,30 @@ namespace Microsoft.PowerShell.EditorServices
         /// the given TextReader.
         /// </summary>
         /// <param name="filePath">The path at which the script file resides.</param>
+        /// <param name="clientFilePath">The path which the client uses to identify the file.</param>
         /// <param name="textReader">The TextReader to use for reading the file's contents.</param>
-        public ScriptFile(string filePath, TextReader textReader)
+        public ScriptFile(string filePath, string clientFilePath, TextReader textReader)
         {
             this.FilePath = filePath;
+            this.ClientFilePath = clientFilePath;
             this.IsAnalysisEnabled = true;
 
-            this.ReadFile(textReader);
+            this.SetFileContents(textReader.ReadToEnd());
+        }
+
+        /// <summary>
+        /// Creates a new ScriptFile instance with the specified file contents.
+        /// </summary>
+        /// <param name="filePath">The path at which the script file resides.</param>
+        /// <param name="clientFilePath">The path which the client uses to identify the file.</param>
+        /// <param name="initialBuffer">The initial contents of the script file.</param>
+        public ScriptFile(string filePath, string clientFilePath, string initialBuffer)
+        {
+            this.FilePath = filePath;
+            this.ClientFilePath = clientFilePath;
+            this.IsAnalysisEnabled = true;
+
+            this.SetFileContents(initialBuffer);
         }
 
         #endregion
@@ -230,14 +252,8 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Private Methods
 
-        /// <summary>
-        /// Reads the contents of a file contained in the given TextReader.
-        /// </summary>
-        /// <param name="textReader">A TextReader to use for reading file contents.</param>
-        private void ReadFile(TextReader textReader)
+        private void SetFileContents(string fileContents)
         {
-            string fileContents = textReader.ReadToEnd();
-
             // Split the file contents into lines and trim
             // any carriage returns from the strings.
             this.FileLines =

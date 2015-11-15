@@ -42,6 +42,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
             IEnumerable<ChoiceDetails> choices,
             int defaultChoice)
         {
+            // NOTE: This code is held temporarily until a new model is
+            // found for dealing with interactive prompts.
+
             //// Create and store a TaskCompletionSource that will be
             //// used to send the user's response back to the caller
             //this.currentPromptChoiceTask = new TaskCompletionSource<int>();
@@ -91,10 +94,17 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // TODO: Implement message for this
         }
 
-        #endregion
-
-        public void WriteOutput(string outputString, bool includeNewLine = true, OutputType outputType = OutputType.Normal, ConsoleColor foregroundColor = ConsoleColor.White, ConsoleColor backgroundColor = ConsoleColor.Black)
+        public void WriteOutput(
+            string outputString, 
+            bool includeNewLine = true, 
+            OutputType outputType = OutputType.Normal, 
+            ConsoleColor foregroundColor = ConsoleColor.White, 
+            ConsoleColor backgroundColor = ConsoleColor.Black)
         {
+            // This is taken care of elsewhere now.  This interface will
+            // be refactored out in the near future.
         }
+
+        #endregion
     }
 }

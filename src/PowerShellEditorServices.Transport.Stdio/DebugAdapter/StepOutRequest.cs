@@ -4,24 +4,13 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Nito.AsyncEx;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    [MessageTypeName("stepOut")]
-    public class StepOutRequest : RequestBase<object>
+    public class StepOutRequest
     {
-        public override async Task ProcessMessage(
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            editorSession.DebugService.StepOut();
-
-            await messageWriter.WriteMessage(
-                this.PrepareResponse(
-                    new StepOutResponse()));
-        }
+        public static readonly
+            RequestType<object, object, object> Type =
+            RequestType<object, object, object>.Create("stepOut");
     }
 }
-

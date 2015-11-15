@@ -135,7 +135,7 @@ namespace PSLanguageService.Test
 
             using (StringReader stringReader = new StringReader(exampleScriptContents))
             {
-                ScriptFile scriptFile = new ScriptFile("DotSourceTestFile.ps1", stringReader);
+                ScriptFile scriptFile = new ScriptFile("DotSourceTestFile.ps1", "DotSourceTestFile.ps1", stringReader);
                 Assert.Equal(3, scriptFile.ReferencedFiles.Length);
                 System.Console.Write("a" + scriptFile.ReferencedFiles[0]);
                 Assert.Equal(@".\athing.ps1", scriptFile.ReferencedFiles[0]);
@@ -150,7 +150,7 @@ namespace PSLanguageService.Test
             using (StringReader stringReader = new StringReader(initialString))
             {
                 // Create an in-memory file from the StringReader
-                ScriptFile fileToChange = new ScriptFile("TestFile.ps1", stringReader);
+                ScriptFile fileToChange = new ScriptFile("TestFile.ps1", "TestFile.ps1", stringReader);
 
                 // Apply the FileChange and assert the resulting contents
                 fileToChange.ApplyChange(fileChange);
