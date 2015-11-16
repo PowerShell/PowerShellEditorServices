@@ -55,6 +55,8 @@
     <Compile Include="References\FindsReferencesOnFunctionMultiFileDotSource.cs" />
     <Compile Include="References\FindsReferencesOnVariable.cs" />
     <Compile Include="SymbolDetails\FindsDetailsForBuiltInCommand.cs" />
+    <Compile Include="Symbols\FindSymbolsInMultiSymbolFile.cs" />
+    <Compile Include="Symbols\FindSymbolsInNoSymbolsFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Completion\CompletionExamples.psm1">
@@ -62,6 +64,8 @@
     </None>
     <None Include="Debugging\VariableTest.ps1" />
     <None Include="SymbolDetails\SymbolDetails.ps1" />
+    <None Include="Symbols\MultipleSymbols.ps1" />
+    <None Include="Symbols\NoSymbols.ps1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj">

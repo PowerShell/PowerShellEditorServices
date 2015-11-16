@@ -204,6 +204,32 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Finds all the symbols in a file.
+        /// </summary>
+        /// <param name="scriptFile">The ScriptFile in which the symbol can be located.</param>
+        /// <returns></returns>
+        public FindOccurrencesResult FindSymbolsInFile(ScriptFile scriptFile)
+        {
+            Validate.IsNotNull("scriptFile", scriptFile);
+
+            IEnumerable<SymbolReference> symbolReferencesinFile =
+                AstOperations
+                    .FindSymbolsInDocument(scriptFile.ScriptAst)
+                    .Select(
+                        reference => {
+                            reference.SourceLine =
+                                scriptFile.GetLine(reference.ScriptRegion.StartLineNumber);
+                            reference.FilePath = scriptFile.FilePath;
+                            return reference;
+                        });
+
+            return
+                new FindOccurrencesResult {
+                    FoundOccurrences = symbolReferencesinFile
+                };
+        }
+
+        /// <summary>
         /// Finds all the references of a symbol
         /// </summary>
         /// <param name="foundSymbol">The symbol to find all references for</param>

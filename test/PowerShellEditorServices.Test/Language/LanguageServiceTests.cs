@@ -9,6 +9,7 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.Occurrences;
 using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
+using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
 using System;
 using System.IO;
 using System.Linq;
@@ -224,7 +225,44 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.NotNull(symbolDetails.Documentation);
             Assert.NotEqual("", symbolDetails.Documentation);
         }
-        
+
+        [Fact]
+        public void LanguageServiceFindsSymbolsInFile()
+        {
+            FindOccurrencesResult symbolsResult =
+                this.FindSymbolsInFile(
+                    FindSymbolsInMultiSymbolFile.SourceDetails);
+
+            Assert.Equal(4, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Function).Count());
+            Assert.Equal(3, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Variable).Count());
+            Assert.Equal(1, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Workflow).Count());
+
+            SymbolReference firstFunctionSymbol = symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Function).First();
+            Assert.Equal("AFunction", firstFunctionSymbol.SymbolName);
+            Assert.Equal(7, firstFunctionSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, firstFunctionSymbol.ScriptRegion.StartColumnNumber);
+
+            SymbolReference lastVariableSymbol = symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Variable).Last();
+            Assert.Equal("$Script:ScriptVar2", lastVariableSymbol.SymbolName);
+            Assert.Equal(3, lastVariableSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, lastVariableSymbol.ScriptRegion.StartColumnNumber);
+
+            SymbolReference firstWorkflowSymbol = symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Workflow).First();
+            Assert.Equal("AWorkflow", firstWorkflowSymbol.SymbolName);
+            Assert.Equal(23, firstWorkflowSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, firstWorkflowSymbol.ScriptRegion.StartColumnNumber);
+        }
+
+        [Fact]
+        public void LanguageServiceFindsSymbolsInNoSymbolsFile()
+        {
+            FindOccurrencesResult symbolsResult =
+                this.FindSymbolsInFile(
+                    FindSymbolsInNoSymbolsFile.SourceDetails);
+
+            Assert.Equal(0, symbolsResult.FoundOccurrences.Count());
+        }
+
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion)
         {
             const string baseSharedScriptPath = 
@@ -303,6 +341,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);
+        }
+
+        private FindOccurrencesResult FindSymbolsInFile(ScriptRegion scriptRegion)
+        {
+            return
+                this.languageService.FindSymbolsInFile(
+                    GetScriptFile(scriptRegion));
         }
     }
 }
