@@ -1,4 +1,9 @@
-﻿using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -842,3 +847,4 @@ namespace Microsoft.PowerShell.EditorServices.Host
         #endregion
     }
 }
+

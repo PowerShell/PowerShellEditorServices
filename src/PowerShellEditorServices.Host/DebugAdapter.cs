@@ -1,4 +1,9 @@
-﻿using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
@@ -372,3 +377,4 @@ namespace Microsoft.PowerShell.EditorServices.Host
         #endregion
     }
 }
+

@@ -1,12 +1,26 @@
-﻿using System.Linq;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices
 {
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
 
+    /// <summary>
+    /// Provides utility methods for working with PowerShell commands.
+    /// </summary>
     public class CommandHelpers
     {
+        /// <summary>
+        /// Gets the CommandInfo instance for a command with a particular name.
+        /// </summary>
+        /// <param name="commandName">The name of the command.</param>
+        /// <param name="runspace">The Runspace to use for running Get-Command.</param>
+        /// <returns>A CommandInfo object with details about the specified command.</returns>
         public static CommandInfo GetCommandInfo(
             string commandName, 
             Runspace runspace)
@@ -24,6 +38,12 @@ namespace Microsoft.PowerShell.EditorServices
             return commandInfo;
         }
 
+        /// <summary>
+        /// Gets the command's "Synopsis" documentation section.
+        /// </summary>
+        /// <param name="commandInfo">The CommandInfo instance for the command.</param>
+        /// <param name="runspace">The Runspace to use for getting command documentation.</param>
+        /// <returns></returns>
         public static string GetCommandSynopsis(
             CommandInfo commandInfo, 
             Runspace runspace)
@@ -55,3 +75,4 @@ namespace Microsoft.PowerShell.EditorServices
         }
     }
 }
+

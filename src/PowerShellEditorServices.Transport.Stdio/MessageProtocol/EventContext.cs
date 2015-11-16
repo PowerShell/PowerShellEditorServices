@@ -1,4 +1,9 @@
-﻿using Newtonsoft.Json.Linq;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
@@ -20,3 +25,4 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         }
     }
 }
+

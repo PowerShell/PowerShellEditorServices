@@ -1,4 +1,9 @@
-﻿using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,3 +63,4 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public string[] TriggerCharacters { get; set; }
     }
 }
+
