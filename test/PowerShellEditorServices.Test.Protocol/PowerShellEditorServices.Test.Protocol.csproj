@@ -10,7 +10,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Microsoft.PowerShell.EditorServices.Test.Protocol</RootNamespace>
-    <AssemblyName>Microsoft.PowerShell.EditorServices.Test.Transport.Stdio</AssemblyName>
+    <AssemblyName>Microsoft.PowerShell.EditorServices.Test.Protocol</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>69e9ba79</NuGetPackageImportStamp>
@@ -75,9 +75,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\PowerShellEditorServices.Transport.Stdio\PowerShellEditorServices.Transport.Stdio.csproj">
+    <ProjectReference Include="..\..\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj">
       <Project>{f8a0946a-5d25-4651-8079-b8d5776916fb}</Project>
-      <Name>PowerShellEditorServices.Transport.Stdio</Name>
+      <Name>PowerShellEditorServices.Protocol</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj">
       <Project>{81e8cbcd-6319-49e7-9662-0475bd0791f4}</Project>
