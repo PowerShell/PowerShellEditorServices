@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Diagnostics;
@@ -39,17 +38,36 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 }
             }
 #endif
+
+            bool runDebugAdapter =
+                args.Any(
+                    arg => 
+                        string.Equals(
+                            arg,
+                            "/debugAdapter",
+                            StringComparison.InvariantCultureIgnoreCase));
+
             // Catch unhandled exceptions for logging purposes
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            // Initialize the logger
-            // TODO: Set the level based on command line parameter
-            Logger.Initialize(minimumLogLevel: LogLevel.Verbose);
+            if (runDebugAdapter)
+            {
+                // TODO: Remove this behavior in the near future --
+                //   Create the debug service log in a separate file
+                //   so that there isn't a conflict with the default 
+                //   log file.
+                Logger.Initialize("DebugAdapter.log", LogLevel.Verbose);
+            }
+            else
+            {
+                // Initialize the logger
+                // TODO: Set the level based on command line parameter
+                Logger.Initialize(minimumLogLevel: LogLevel.Verbose);
+            }
+
             Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host started!");
 
-            // TODO: Select host, console host, and transport based on command line arguments
-
-            MessageLoop messageLoop = new MessageLoop();
+            MessageLoop messageLoop = new MessageLoop(runDebugAdapter);
             messageLoop.Start();
         }
 

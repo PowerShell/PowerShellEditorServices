@@ -54,6 +54,22 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public class ParameterSetSignature
     {
+        private static HashSet<string> commonParameterNames =
+            new HashSet<string>
+            {
+                "Verbose",
+                "Debug",
+                "ErrorAction",
+                "WarningAction",
+                "InformationAction",
+                "ErrorVariable",
+                "WarningVariable",
+                "InformationVariable",
+                "OutVariable",
+                "OutBuffer",
+                "PipelineVariable",
+            };
+
         #region Properties
         /// <summary>
         /// Gets the signature text
@@ -75,8 +91,12 @@ namespace Microsoft.PowerShell.EditorServices
             List<ParameterInfo> parameterInfo = new List<ParameterInfo>();
             foreach (CommandParameterInfo commandParameterInfo in commandParamInfoSet.Parameters)
             {
-                parameterInfo.Add(new ParameterInfo(commandParameterInfo));
+                if (!commonParameterNames.Contains(commandParameterInfo.Name))
+                {
+                    parameterInfo.Add(new ParameterInfo(commandParameterInfo));
+                }
             }
+
             SignatureText = commandParamInfoSet.ToString();
             Parameters = parameterInfo.ToArray();
         }
@@ -120,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="parameterInfo">Parameter info of the parameter</param>
         public ParameterInfo(CommandParameterInfo parameterInfo)
         {
-            this.Name = parameterInfo.Name;
+            this.Name = "-" + parameterInfo.Name;
             this.ParameterType = parameterInfo.ParameterType.FullName;
             this.Position = parameterInfo.Position;
             this.IsMandatory = parameterInfo.IsMandatory;

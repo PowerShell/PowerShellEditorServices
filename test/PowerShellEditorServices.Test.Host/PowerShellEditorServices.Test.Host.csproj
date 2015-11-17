@@ -35,6 +35,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -88,9 +92,9 @@
       <Project>{b2f6369a-d737-4afd-8b81-9b094db07da7}</Project>
       <Name>PowerShellEditorServices.Host</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\PowerShellEditorServices.Transport.Stdio\PowerShellEditorServices.Transport.Stdio.csproj">
+    <ProjectReference Include="..\..\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj">
       <Project>{f8a0946a-5d25-4651-8079-b8d5776916fb}</Project>
-      <Name>PowerShellEditorServices.Transport.Stdio</Name>
+      <Name>PowerShellEditorServices.Protocol</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj">
       <Project>{81e8cbcd-6319-49e7-9662-0475bd0791f4}</Project>

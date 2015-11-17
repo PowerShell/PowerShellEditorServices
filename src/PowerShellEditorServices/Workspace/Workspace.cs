@@ -40,12 +40,8 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Validate.IsNotNullOrEmptyString("filePath", filePath);
 
-            // Resolve the full file path after making sure that slashes
-            // are in the right form
-            string resolvedFilePath = 
-                this.ResolveFilePath(
-                    filePath.Replace('/', '\\'));
-
+            // Resolve the full file path 
+            string resolvedFilePath = this.ResolveFilePath(filePath);
             string keyName = resolvedFilePath.ToLower();
 
             // Make sure the file isn't already loaded into the workspace
@@ -57,9 +53,39 @@ namespace Microsoft.PowerShell.EditorServices
 
                 using (StreamReader streamReader = new StreamReader(resolvedFilePath, Encoding.UTF8))
                 {
-                    scriptFile = new ScriptFile(resolvedFilePath, streamReader);
+                    scriptFile = new ScriptFile(resolvedFilePath, filePath, streamReader);
                     this.workspaceFiles.Add(keyName, scriptFile);
                 }
+
+                Logger.Write(LogLevel.Verbose, "Opened file on disk: " + resolvedFilePath);
+            }
+
+            return scriptFile;
+        }
+
+        /// <summary>
+        /// Gets a new ScriptFile instance which is identified by the given file
+        /// path and initially contains the given buffer contents.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="initialBuffer"></param>
+        /// <returns></returns>
+        public ScriptFile GetFileBuffer(string filePath, string initialBuffer)
+        {
+            Validate.IsNotNullOrEmptyString("filePath", filePath);
+
+            // Resolve the full file path 
+            string resolvedFilePath = this.ResolveFilePath(filePath);
+            string keyName = resolvedFilePath.ToLower();
+
+            // Make sure the file isn't already loaded into the workspace
+            ScriptFile scriptFile = null;
+            if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile))
+            {
+                scriptFile = new ScriptFile(resolvedFilePath, filePath, initialBuffer);
+                this.workspaceFiles.Add(keyName, scriptFile);
+
+                Logger.Write(LogLevel.Verbose, "Opened file as in-memory buffer: " + resolvedFilePath);
             }
 
             return scriptFile;
@@ -145,9 +171,22 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private string ResolveFilePath(string scriptPath)
+        private string ResolveFilePath(string filePath)
         {
-            return Path.GetFullPath(scriptPath);
+            if (filePath.StartsWith(@"file://"))
+            {
+                // Client sent the path in URI format, extract the local path and trim
+                // any extraneous slashes
+                Uri fileUri = new Uri(filePath);
+                filePath = fileUri.LocalPath.TrimStart('/');
+            }
+
+            // Some clients send paths with UNIX-style slashes, replace those if necessary
+            filePath = filePath.Replace('/', '\\');
+
+            Logger.Write(LogLevel.Verbose, "Resolved path: " + filePath);
+
+            return Path.GetFullPath(filePath);
         }
 
         private string ResolveRelativeScriptPath(string originalScriptPath, string relativePath)

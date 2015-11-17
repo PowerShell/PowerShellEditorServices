@@ -4,9 +4,8 @@
 //
 
 using EnvDTE;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -62,9 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 AttachToProcessIfDebugging(this.languageServiceProcess.Id);
             }
 
-            // Load up all of the message types from the transport assembly
-            MessageTypeResolver messageTypeResolver = new MessageTypeResolver();
-            messageTypeResolver.ScanForMessageTypes(typeof(StartedEvent).Assembly);
+            IMessageSerializer messageSerializer = new JsonRpcMessageSerializer();
 
             // Open the standard input/output streams
             this.inputStream = this.languageServiceProcess.StandardOutput.BaseStream;
@@ -74,16 +71,23 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             this.MessageReader = 
                 new MessageReader(
                     this.inputStream,
-                    messageTypeResolver);
-
+                    messageSerializer);
             this.MessageWriter = 
                 new MessageWriter(
                     this.outputStream,
-                    messageTypeResolver);
+                    messageSerializer);
 
-            // Wait for the 'started' event
-            MessageBase startedMessage = this.MessageReader.ReadMessage().Result;
-            Assert.IsType<StartedEvent>(startedMessage);
+
+            // Send the 'initialize' request and wait for the response
+            var initializeRequest = new InitializeRequest
+            {
+                RootPath = "",
+                Capabilities = new ClientCapabilities()
+            };
+
+            // TODO: Assert some capability data?
+            this.MessageWriter.WriteRequest(InitializeRequest.Type, initializeRequest, 1).Wait();
+            Message initializeResponse = this.MessageReader.ReadMessage().Result;
         }
 
         public void Stop()
