@@ -597,7 +597,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 symbolReference.SymbolType == SymbolType.Function ||
                 symbolReference.SymbolType == SymbolType.Workflow)
             {
-                name += " {}";
+                name += " { }";
             }
 
             return name;
@@ -632,7 +632,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                                         ContainerName = containerName,
                                         Kind = r.SymbolType == SymbolType.Variable ? SymbolKind.Variable : SymbolKind.Function,
                                         Location = new Location {
-                                            Uri = new Uri(r.FilePath).AbsolutePath,
+                                            Uri = new Uri(r.FilePath).AbsoluteUri,
                                             Range = GetRangeFromScriptRegion(r.ScriptRegion)
                                         },
                                         Name = GetDecoratedSymbolName(r)
@@ -648,7 +648,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         private bool IsQueryMatch(string query, string symbolName)
         {
-            return symbolName.StartsWith(query, StringComparison.OrdinalIgnoreCase);
+            return symbolName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         protected async Task HandleEvaluateRequest(
