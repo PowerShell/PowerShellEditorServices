@@ -10,11 +10,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Windows PowerShell Editor Services - Host Process")]
-[assembly: AssemblyDescription("Provides a process for hosting the Windows PowerShell Editor Services library exposed by a corresponding transport library.")]
+[assembly: AssemblyTitle("PowerShell Editor Services - Host Process")]
+[assembly: AssemblyDescription("Provides a process for hosting the PowerShell Editor Services library exposed by a JSON message protocol.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
-[assembly: AssemblyProduct("Windows PowerShell Editor Services")]
+[assembly: AssemblyProduct("PowerShell Editor Services")]
 [assembly: AssemblyCopyright("© Microsoft Corporation. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
