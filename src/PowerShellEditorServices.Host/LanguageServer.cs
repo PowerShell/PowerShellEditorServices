@@ -100,6 +100,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                         DefinitionProvider = true,
                         ReferencesProvider = true,
                         DocumentHighlightProvider = true,
+                        DocumentSymbolProvider = true,
+                        WorkspaceSymbolProvider = true,
                         HoverProvider = true,
                         CompletionProvider = new CompletionOptions
                         {

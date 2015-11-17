@@ -27,6 +27,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public bool? ReferencesProvider { get; set; }
 
         public bool? DocumentHighlightProvider { get; set; }
+
+        public bool? DocumentSymbolProvider { get; set; }
+
+        public bool? WorkspaceSymbolProvider { get; set; }
     }
 
     /// <summary>
