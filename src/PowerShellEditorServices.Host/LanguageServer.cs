@@ -177,16 +177,16 @@ namespace Microsoft.PowerShell.EditorServices.Host
         }
 
         protected Task HandleDidChangeTextDocumentNotification(
-            DidChangeTextDocumentNotification[] textChangeParams,
+            DidChangeTextDocumentParams textChangeParams,
             EditorSession editorSession,
             EventContext eventContext)
         {
             List<ScriptFile> changedFiles = new List<ScriptFile>();
 
             // A text change notification can batch multiple change requests
-            foreach (var textChange in textChangeParams)
+            foreach (var textChange in textChangeParams.ContentChanges)
             {
-                ScriptFile changedFile = editorSession.Workspace.GetFile(textChange.Uri);
+                ScriptFile changedFile = editorSession.Workspace.GetFile(textChangeParams.Uri);
 
                 changedFile.ApplyChange(
                     GetFileChangeDetails(

@@ -75,6 +75,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public string InsertText { get; set; }
 
         public TextEdit TextEdit { get; set; }
+
+        /// <summary>
+        /// Gets or sets a custom data field that allows the server to mark
+        /// each completion item with an identifier that will help correlate
+        /// the item to the previous completion request during a completion
+        /// resolve request.
+        /// </summary>
+        public object Data { get; set; }
     }
 }
 
