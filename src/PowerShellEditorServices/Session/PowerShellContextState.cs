@@ -6,9 +6,9 @@
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// Enumerates the possible states for a PowerShellSession.
+    /// Enumerates the possible states for a PowerShellContext.
     /// </summary>
-    public enum PowerShellSessionState
+    public enum PowerShellContextState
     {
         /// <summary>
         /// Indicates an unknown, potentially uninitialized state.

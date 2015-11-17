@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public AnalysisService()
         {
-            // TODO: Share runspace with PowerShellSession?  Probably should always
+            // TODO: Share runspace with PowerShellContext?  Probably should always
             //       run analysis in a local session.
             this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
             this.analysisRunspace.ApartmentState = ApartmentState.STA;

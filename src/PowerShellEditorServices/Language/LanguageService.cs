@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices
         #region Private Fields
 
         private bool areAliasesLoaded;
-        private PowerShellSession powerShellSession;
+        private PowerShellContext powerShellContext;
         private CompletionResults mostRecentCompletions;
         private int mostRecentRequestLine;
         private int mostRecentRequestOffest;
@@ -39,14 +39,14 @@ namespace Microsoft.PowerShell.EditorServices
         /// Constructs an instance of the LanguageService class and uses
         /// the given Runspace to execute language service operations.
         /// </summary>
-        /// <param name="powerShellSession">
-        /// The PowerShellSession in which language service operations will be executed.
+        /// <param name="powerShellContext">
+        /// The PowerShellContext in which language service operations will be executed.
         /// </param>
-        public LanguageService(PowerShellSession powerShellSession)
+        public LanguageService(PowerShellContext powerShellContext)
         {
-            Validate.IsNotNull("powerShellSession", powerShellSession);
+            Validate.IsNotNull("powerShellContext", powerShellContext);
 
-            this.powerShellSession = powerShellSession;
+            this.powerShellContext = powerShellContext;
 
             this.CmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
             this.AliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices
                     columnNumber);
 
             RunspaceHandle runspaceHandle =
-                await this.powerShellSession.GetRunspaceHandle();
+                await this.powerShellContext.GetRunspaceHandle();
 
             CompletionResults completionResults =
                 AstOperations.GetCompletions(
@@ -182,7 +182,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (symbolReference != null)
             {
                 RunspaceHandle runspaceHandle =
-                    await this.powerShellSession.GetRunspaceHandle();
+                    await this.powerShellContext.GetRunspaceHandle();
 
                 symbolReference.FilePath = scriptFile.FilePath;
                 symbolDetails = new SymbolDetails(symbolReference, runspaceHandle.Runspace);
@@ -432,7 +432,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (!this.areAliasesLoaded)
             {
-                RunspaceHandle runspaceHandle = await this.powerShellSession.GetRunspaceHandle();
+                RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandle();
 
                 CommandInvocationIntrinsics invokeCommand = runspaceHandle.Runspace.SessionStateProxy.InvokeCommand;
                 IEnumerable<CommandInfo> aliases = invokeCommand.GetCommands("*", CommandTypes.Alias, true);
@@ -463,7 +463,7 @@ namespace Microsoft.PowerShell.EditorServices
             command.AddCommand("Get-Command");
             command.AddArgument(commandName);
 
-            var results = await this.powerShellSession.ExecuteCommand<CommandInfo>(command);
+            var results = await this.powerShellContext.ExecuteCommand<CommandInfo>(command);
             return results.FirstOrDefault();
         }
 

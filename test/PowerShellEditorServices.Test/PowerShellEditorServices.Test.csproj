@@ -75,7 +75,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Console\PowerShellSessionTests.cs" />
+    <Compile Include="Console\PowerShellContextTests.cs" />
     <Compile Include="Console\TestConsoleHost.cs" />
     <Compile Include="Debugging\DebugServiceTests.cs" />
     <Compile Include="Language\LanguageServiceTests.cs" />

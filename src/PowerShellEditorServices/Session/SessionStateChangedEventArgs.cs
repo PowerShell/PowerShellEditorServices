@@ -8,14 +8,14 @@ using System;
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// Provides details about a change in state of a PowerShellSession.
+    /// Provides details about a change in state of a PowerShellContext.
     /// </summary>
     public class SessionStateChangedEventArgs
     {
         /// <summary>
         /// Gets the new state for the session.
         /// </summary>
-        public PowerShellSessionState NewSessionState { get; private set; }
+        public PowerShellContextState NewSessionState { get; private set; }
 
         /// <summary>
         /// Gets the execution result of the operation that caused
@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="executionResult">The result of the operation that caused the state change.</param>
         /// <param name="errorException">An exception that describes the failure, if any.</param>
         public SessionStateChangedEventArgs(
-            PowerShellSessionState newSessionState,
+            PowerShellContextState newSessionState,
             PowerShellExecutionResult executionResult,
             Exception errorException)
         {

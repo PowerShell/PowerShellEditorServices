@@ -366,7 +366,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             if (completionItem.Kind == CompletionItemKind.Function)
             {
                 RunspaceHandle runspaceHandle =
-                    await editorSession.PowerShellSession.GetRunspaceHandle();
+                    await editorSession.powerShellContext.GetRunspaceHandle();
 
                 // Get the documentation for the function
                 CommandInfo commandInfo = 

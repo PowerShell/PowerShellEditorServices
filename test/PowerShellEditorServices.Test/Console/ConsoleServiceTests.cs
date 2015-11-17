@@ -13,12 +13,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
     public class ConsoleServiceTests : IDisposable
     {
         private TestConsoleHost consoleHost;
-        private PowerShellSession powerShellSession;
+        private PowerShellContext powerShellContext;
 
         public ConsoleServiceTests()
         {
             this.consoleHost = new TestConsoleHost();
-            this.powerShellSession = new PowerShellSession();
+            this.powerShellContext = new PowerShellContext();
         }
 
         public void Dispose()
@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 $response = $host.ui.PromptForChoice($caption, $message, $choices, 1)
                 $response";
 
-            await this.powerShellSession.ExecuteScriptString(choiceScript);
+            await this.powerShellContext.ExecuteScriptString(choiceScript);
 
             // TODO: Verify prompt info
 

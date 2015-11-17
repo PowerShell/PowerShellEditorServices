@@ -23,9 +23,9 @@ namespace Microsoft.PowerShell.EditorServices
         public Workspace Workspace { get; private set; }
 
         /// <summary>
-        /// Gets the PowerShellSession instance for this session.
+        /// Gets the PowerShellContext instance for this session.
         /// </summary>
-        public PowerShellSession PowerShellSession { get; private set; }
+        public PowerShellContext powerShellContext { get; private set; }
 
         /// <summary>
         /// Gets the LanguageService instance for this session.
@@ -60,10 +60,10 @@ namespace Microsoft.PowerShell.EditorServices
             this.Workspace = new Workspace();
 
             // Initialize all services
-            this.PowerShellSession = new PowerShellSession();
-            this.LanguageService = new LanguageService(this.PowerShellSession);
+            this.powerShellContext = new PowerShellContext();
+            this.LanguageService = new LanguageService(this.powerShellContext);
             this.AnalysisService = new AnalysisService();
-            this.DebugService = new DebugService(this.PowerShellSession);
+            this.DebugService = new DebugService(this.powerShellContext);
         }
 
         #endregion
@@ -82,10 +82,10 @@ namespace Microsoft.PowerShell.EditorServices
                 this.AnalysisService = null;
             }
 
-            if (this.PowerShellSession != null)
+            if (this.powerShellContext != null)
             {
-                this.PowerShellSession.Dispose();
-                this.PowerShellSession = null;
+                this.powerShellContext.Dispose();
+                this.powerShellContext = null;
             }
         }
 

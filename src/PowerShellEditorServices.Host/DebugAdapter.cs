@@ -101,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // Execute the given PowerShell script and send the response.
             // Note that we aren't waiting for execution to complete here
             // because the debugger could stop while the script executes.
-            editorSession.PowerShellSession
+            editorSession.powerShellContext
                 .ExecuteScriptAtPath(launchParams.Program)
                 .ContinueWith(
                     async (t) =>
@@ -138,18 +138,18 @@ namespace Microsoft.PowerShell.EditorServices.Host
             handler =
                 async (o, e) =>
                 {
-                    if (e.NewSessionState == PowerShellSessionState.Ready)
+                    if (e.NewSessionState == PowerShellContextState.Ready)
                     {
                         await requestContext.SendResult(null);
-                        editorSession.PowerShellSession.SessionStateChanged -= handler;
+                        editorSession.powerShellContext.SessionStateChanged -= handler;
 
                         // TODO: Find a way to exit more gracefully!
                         Environment.Exit(0);
                     }
                 };
 
-            editorSession.PowerShellSession.SessionStateChanged += handler;
-            editorSession.PowerShellSession.AbortExecution();
+            editorSession.powerShellContext.SessionStateChanged += handler;
+            editorSession.powerShellContext.AbortExecution();
 
             return Task.FromResult(true);
         }
