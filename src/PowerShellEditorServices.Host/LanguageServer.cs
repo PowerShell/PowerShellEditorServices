@@ -16,6 +16,7 @@ using System.Management.Automation.Language;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -535,14 +536,71 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             RequestContext<SymbolInformation[], object> requestContext)
         {
-            // TODO: Implement this with Keith's changes.
+            ScriptFile scriptFile =
+                editorSession.Workspace.GetFile(
+                    textDocumentIdentifier.Uri);
 
-            // NOTE SymbolInformation.Location's Start/End Position are
-            // zero-based while the LanguageService APIs are one-based.
-            // Make sure to subtract line/column positions by 1 when creating
-            // the result list.
+            FindOccurrencesResult foundSymbols =
+                editorSession.LanguageService.FindSymbolsInFile(
+                    scriptFile);
 
-            await requestContext.SendResult(new SymbolInformation[0]);
+            SymbolInformation[] symbols = null;
+
+            string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
+
+            if (foundSymbols != null)
+            {
+                symbols =
+                    foundSymbols
+                        .FoundOccurrences
+                        .Select(r => 
+                            {
+                                return new SymbolInformation {
+                                    ContainerName = containerName,
+                                    Kind = GetSymbolKind(r.SymbolType),
+                                    Location = new Location {
+                                        Uri = new Uri(r.FilePath).AbsolutePath,
+                                        Range = GetRangeFromScriptRegion(r.ScriptRegion)
+                                    },
+                                    Name = GetDecoratedSymbolName(r)
+                                };
+                            })
+                        .ToArray();
+            }
+            else
+            {
+                symbols = new SymbolInformation[0];
+            }
+
+            await requestContext.SendResult(symbols);
+        }
+
+        private SymbolKind GetSymbolKind(SymbolType symbolType)
+        {
+            switch (symbolType)
+            {
+                case SymbolType.Configuration:
+                case SymbolType.Function:
+                case SymbolType.Workflow:
+                    return SymbolKind.Function;
+
+                default:
+                    return SymbolKind.Variable;
+            }
+        }
+
+        private string GetDecoratedSymbolName(SymbolReference symbolReference)
+        {
+            string name = symbolReference.SymbolName;
+
+            if (symbolReference.SymbolType == SymbolType.Configuration ||
+                symbolReference.SymbolType == SymbolType.Function ||
+                symbolReference.SymbolType == SymbolType.Workflow)
+            {
+                name += " {}";
+            }
+
+            return name;
         }
 
         protected async Task HandleWorkspaceSymbolRequest(
@@ -550,14 +608,47 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             RequestContext<SymbolInformation[], object> requestContext)
         {
-            // TODO: Implement this with Keith's changes
+            var symbols = new List<SymbolInformation>();
 
-            // NOTE SymbolInformation.Location's Start/End Position are
-            // zero-based while the LanguageService APIs are one-based.
-            // Make sure to subtract line/column positions by 1 when creating
-            // the result list.
+            foreach (ScriptFile scriptFile in editorSession.Workspace.GetOpenedFiles())
+            {
+                FindOccurrencesResult foundSymbols =
+                    editorSession.LanguageService.FindSymbolsInFile(
+                        scriptFile);
 
-            await requestContext.SendResult(new SymbolInformation[0]);
+                // TODO: Need to compute a relative path that is based on common path for all workspace files
+                string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
+
+                if (foundSymbols != null)
+                {
+                    var matchedSymbols =
+                        foundSymbols
+                            .FoundOccurrences
+                            .Where(r => IsQueryMatch(workspaceSymbolParams.Query, r.SymbolName))
+                            .Select(r => 
+                                {
+                                    return new SymbolInformation 
+                                    {
+                                        ContainerName = containerName,
+                                        Kind = r.SymbolType == SymbolType.Variable ? SymbolKind.Variable : SymbolKind.Function,
+                                        Location = new Location {
+                                            Uri = new Uri(r.FilePath).AbsolutePath,
+                                            Range = GetRangeFromScriptRegion(r.ScriptRegion)
+                                        },
+                                        Name = GetDecoratedSymbolName(r)
+                                    };
+                                });
+
+                    symbols.AddRange(matchedSymbols);
+                }
+            }
+
+            await requestContext.SendResult(symbols.ToArray());
+        }
+
+        private bool IsQueryMatch(string query, string symbolName)
+        {
+            return symbolName.StartsWith(query, StringComparison.OrdinalIgnoreCase);
         }
 
         protected async Task HandleEvaluateRequest(
