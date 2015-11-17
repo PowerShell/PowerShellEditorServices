@@ -28,8 +28,17 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// The symbol is a parameter
         /// </summary>
-        Parameter
-    }
+        Parameter,
 
+        /// <summary>
+        /// The symbol is a DSC configuration
+        /// </summary>
+        Configuration,
+
+        /// <summary>
+        /// The symbol is a workflow
+        /// </summary>
+        Workflow,
+    }
 }
 

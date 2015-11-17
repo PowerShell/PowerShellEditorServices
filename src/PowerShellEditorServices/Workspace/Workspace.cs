@@ -91,6 +91,13 @@ namespace Microsoft.PowerShell.EditorServices
             return scriptFile;
         }
 
+        public ScriptFile[] GetOpenedFiles()
+        {
+            var scriptFiles = new ScriptFile[workspaceFiles.Count];
+            workspaceFiles.Values.CopyTo(scriptFiles, 0);
+            return scriptFiles;
+        }
+
         /// <summary>
         /// Closes a currently open script file with the given file path.
         /// </summary>

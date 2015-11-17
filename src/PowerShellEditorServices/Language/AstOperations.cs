@@ -131,8 +131,8 @@ namespace Microsoft.PowerShell.EditorServices
             scriptAst.Visit(referencesVisitor);
 
             return referencesVisitor.FoundReferences;
-
         }
+
         /// <summary>
         /// Finds all references (not including aliases) in a script for the given symbol
         /// </summary>
@@ -170,6 +170,19 @@ namespace Microsoft.PowerShell.EditorServices
             scriptAst.Visit(declarationVisitor);
 
             return declarationVisitor.FoundDeclartion;
+        }
+
+        /// <summary>
+        /// Finds all symbols in a script
+        /// </summary>
+        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <returns>A collection of SymbolReference objects</returns>
+        static public IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst)
+        {
+            FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
+            scriptAst.Visit(findSymbolsVisitor);
+
+            return findSymbolsVisitor.SymbolReferences;
         }
 
         /// <summary>
