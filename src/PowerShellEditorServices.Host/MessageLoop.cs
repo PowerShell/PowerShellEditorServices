@@ -129,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // Set up the PowerShell session
             this.editorSession = new EditorSession();
             this.editorSession.StartSession(this.consoleHost);
-            this.editorSession.PowerShellSession.OutputWritten += PowerShellSession_OutputWritten;
+            this.editorSession.powerShellContext.OutputWritten += powerShellContext_OutputWritten;
 
             if (this.runDebugAdapter)
             {
@@ -191,7 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 }, null);
         }
 
-        async void PowerShellSession_OutputWritten(object sender, OutputWrittenEventArgs e)
+        async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
         {
             await this.messageWriter.WriteEvent(
                 OutputEvent.Type,

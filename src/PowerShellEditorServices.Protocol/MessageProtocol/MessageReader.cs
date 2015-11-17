@@ -142,7 +142,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
             this.bufferEndOffset += readLength;
 
-            return readLength >= 0;
+            if (readLength == 0)
+            {
+                // If ReadAsync returns 0 then it means that the stream was
+                // closed unexpectedly (usually due to the client application
+                // ending suddenly).  For now, just terminate the language
+                // server immediately.
+                // TODO: Provide a more graceful shutdown path
+                throw new EndOfStreamException(
+                    "MessageReader's input stream ended unexpectedly, terminating.");
+            }
+
+            return true;
         }
 
         private bool TryReadMessageHeaders()

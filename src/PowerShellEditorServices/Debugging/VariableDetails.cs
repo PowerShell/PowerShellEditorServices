@@ -181,61 +181,72 @@ namespace Microsoft.PowerShell.EditorServices
             IDictionary dictionary = obj as IDictionary;
             IEnumerable enumerable = obj as IEnumerable;
 
-            if (psObject != null)
+            try
             {
-                childVariables.AddRange(
-                    psObject
-                        .Properties
-                        .Select(p => new VariableDetails(p)));
-            }
-            else if (dictionary != null)
-            {
-                childVariables.AddRange(
-                    dictionary
-                        .OfType<DictionaryEntry>()
-                        .Select(e => new VariableDetails(e.Key.ToString(), e.Value)));
-            }
-            else if (enumerable != null && !(obj is string))
-            {
-                int i = 0;
-                foreach (var item in enumerable)
+                if (psObject != null)
                 {
-                    childVariables.Add(
-                        new VariableDetails(
-                            string.Format("[{0}]", i),
-                            item));
-
-                    i++;
+                    childVariables.AddRange(
+                        psObject
+                            .Properties
+                            .Select(p => new VariableDetails(p)));
                 }
-            }
-            else if (obj != null)
-            {
-                // Object must be a normal .NET type, pull all of its
-                // properties and their values
-                Type objectType = obj.GetType();
-                var properties = 
-                    objectType.GetProperties(
-                        BindingFlags.Public | BindingFlags.Instance);
-
-                foreach (var property in properties)
+                else if (dictionary != null)
                 {
-                    try
+                    childVariables.AddRange(
+                        dictionary
+                            .OfType<DictionaryEntry>()
+                            .Select(e => new VariableDetails(e.Key.ToString(), e.Value)));
+                }
+                else if (enumerable != null && !(obj is string))
+                {
+                    int i = 0;
+                    foreach (var item in enumerable)
                     {
                         childVariables.Add(
                             new VariableDetails(
-                                property.Name,
-                                property.GetValue(obj)));
-                    }
-                    catch (Exception)
-                    {
-                        // Some properties can throw exceptions, add the property
-                        // name and empty string
-                        childVariables.Add(
-                            new VariableDetails(
-                                property.Name,
-                                string.Empty));
+                                string.Format("[{0}]", i),
+                                item));
+
+                        i++;
                     }
                 }
+                else if (obj != null)
+                {
+                    // Object must be a normal .NET type, pull all of its
+                    // properties and their values
+                    Type objectType = obj.GetType();
+                    var properties = 
+                        objectType.GetProperties(
+                            BindingFlags.Public | BindingFlags.Instance);
+
+                    foreach (var property in properties)
+                    {
+                        try
+                        {
+                            childVariables.Add(
+                                new VariableDetails(
+                                    property.Name,
+                                    property.GetValue(obj)));
+                        }
+                        catch (Exception)
+                        {
+                            // Some properties can throw exceptions, add the property
+                            // name and empty string
+                            childVariables.Add(
+                                new VariableDetails(
+                                    property.Name,
+                                    string.Empty));
+                        }
+                    }
+                }
+            }
+            catch (GetValueInvocationException)
+            {
+                // This exception occurs when accessing the value of a
+                // variable causes a script to be executed.  Right now
+                // we aren't loading children on the pipeline thread so
+                // this causes an exception to be raised.  In this case,
+                // just return an empty list of children.
             }
 
             return childVariables.ToArray();

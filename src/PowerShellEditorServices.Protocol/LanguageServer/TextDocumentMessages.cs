@@ -49,12 +49,23 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
             EventType<TextDocumentIdentifier>.Create("textDocument/didClose");
     }
 
-    public class DidChangeTextDocumentNotification : TextDocumentIdentifier
+    public class DidChangeTextDocumentNotification
     {
         public static readonly
-            EventType<DidChangeTextDocumentNotification[]> Type =
-            EventType<DidChangeTextDocumentNotification[]>.Create("textDocument/didChange");
+            EventType<DidChangeTextDocumentParams> Type =
+            EventType<DidChangeTextDocumentParams>.Create("textDocument/didChange");
+    }
 
+    public class DidChangeTextDocumentParams : TextDocumentIdentifier
+    {
+        /// <summary>
+        /// Gets or sets the list of changes to the document content.
+        /// </summary>
+        public TextDocumentChangeEvent[] ContentChanges { get; set; }
+    }
+
+    public class TextDocumentChangeEvent
+    {
         /// <summary>
         /// Gets or sets the Range where the document was changed.  Will
         /// be null if the server's TextDocumentSyncKind is Full.

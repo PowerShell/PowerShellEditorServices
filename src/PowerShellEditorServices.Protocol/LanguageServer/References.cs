@@ -16,10 +16,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 
     public class ReferencesParams : TextDocumentPosition
     {
-        public ReferencesOptions Options { get; set; }
+        public ReferencesContext Context { get; set; }
     }
 
-    public class ReferencesOptions
+    public class ReferencesContext
     {
         public bool IncludeDeclaration { get; set; }
     }

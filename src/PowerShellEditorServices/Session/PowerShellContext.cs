@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// Handles nested PowerShell prompts and also manages execution of 
     /// commands whether inside or outside of the debugger.
     /// </summary>
-    public class PowerShellSession : IDisposable, IConsoleHost
+    public class PowerShellContext : IDisposable, IConsoleHost
     {
         #region Fields
 
@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Gets the current state of the session.
         /// </summary>
-        public PowerShellSessionState SessionState
+        public PowerShellContextState SessionState
         {
             get;
             private set;
@@ -73,10 +73,10 @@ namespace Microsoft.PowerShell.EditorServices
         #region Constructors
 
         /// <summary>
-        /// Initializes a new instance of the PowerShellSession class and
+        /// Initializes a new instance of the PowerShellContext class and
         /// opens a runspace to be used for the session.
         /// </summary>
-        public PowerShellSession()
+        public PowerShellContext()
         {
             this.initialSessionState = InitialSessionState.CreateDefault2();
 
@@ -92,11 +92,11 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Initializes a new instance of the PowerShellSession class using
+        /// Initializes a new instance of the PowerShellContext class using
         /// an existing runspace for the session.
         /// </summary>
         /// <param name="initialRunspace"></param>
-        public PowerShellSession(Runspace initialRunspace)
+        public PowerShellContext(Runspace initialRunspace)
         {
             this.Initialize(initialRunspace);
         }
@@ -105,7 +105,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Validate.IsNotNull("initialRunspace", initialRunspace);
 
-            this.SessionState = PowerShellSessionState.NotStarted;
+            this.SessionState = PowerShellContextState.NotStarted;
 
             this.initialRunspace = initialRunspace;
             this.currentRunspace = initialRunspace;
@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices
             // TODO: Should this be configurable?
             this.SetExecutionPolicy(ExecutionPolicy.RemoteSigned);
 
-            this.SessionState = PowerShellSessionState.Ready;
+            this.SessionState = PowerShellContextState.Ready;
         }
 
         #endregion
@@ -371,11 +371,11 @@ namespace Microsoft.PowerShell.EditorServices
 
         /// <summary>
         /// Disposes the runspace and any other resources being used
-        /// by this PowerShellSession.
+        /// by this PowerShellContext.
         /// </summary>
         public void Dispose()
         {
-            this.SessionState = PowerShellSessionState.Disposed;
+            this.SessionState = PowerShellContextState.Disposed;
 
             if (this.powerShell != null)
             {
@@ -462,48 +462,48 @@ namespace Microsoft.PowerShell.EditorServices
 
         private static SessionStateChangedEventArgs TranslateInvocationStateInfo(PSInvocationStateInfo invocationState)
         {
-            PowerShellSessionState newState = PowerShellSessionState.Unknown;
+            PowerShellContextState newState = PowerShellContextState.Unknown;
             PowerShellExecutionResult executionResult = PowerShellExecutionResult.NotFinished;
 
             switch (invocationState.State)
             {
                 case PSInvocationState.NotStarted:
-                    newState = PowerShellSessionState.NotStarted;
+                    newState = PowerShellContextState.NotStarted;
                     break;
 
                 case PSInvocationState.Failed:
-                    newState = PowerShellSessionState.Ready;
+                    newState = PowerShellContextState.Ready;
                     executionResult = PowerShellExecutionResult.Failed;
                     break;
 
                 case PSInvocationState.Disconnected:
                     // TODO: Any extra work to do in this case?
                     // TODO: Is this a unique state that can be re-connected?
-                    newState = PowerShellSessionState.Disposed;
+                    newState = PowerShellContextState.Disposed;
                     executionResult = PowerShellExecutionResult.Stopped;
                     break;
 
                 case PSInvocationState.Running:
-                    newState = PowerShellSessionState.Running;
+                    newState = PowerShellContextState.Running;
                     break;
 
                 case PSInvocationState.Completed:
-                    newState = PowerShellSessionState.Ready;
+                    newState = PowerShellContextState.Ready;
                     executionResult = PowerShellExecutionResult.Completed;
                     break;
 
                 case PSInvocationState.Stopping:
                     // TODO: Collapse this so that the result shows that execution was aborted
-                    newState = PowerShellSessionState.Aborting;
+                    newState = PowerShellContextState.Aborting;
                     break;
 
                 case PSInvocationState.Stopped:
-                    newState = PowerShellSessionState.Ready;
+                    newState = PowerShellContextState.Ready;
                     executionResult = PowerShellExecutionResult.Aborted;
                     break;
 
                 default:
-                    newState = PowerShellSessionState.Unknown;
+                    newState = PowerShellContextState.Unknown;
                     break;
             }
 
@@ -612,7 +612,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.pipelineExecutionTask = new TaskCompletionSource<IPipelineExecutionRequest>();
 
             // Update the session state
-            this.OnSessionStateChanged(this, new SessionStateChangedEventArgs(PowerShellSessionState.Ready, PowerShellExecutionResult.Stopped, null));
+            this.OnSessionStateChanged(this, new SessionStateChangedEventArgs(PowerShellContextState.Ready, PowerShellExecutionResult.Stopped, null));
 
             // Raise the event for the debugger service
             if (this.DebuggerStop != null)
@@ -732,18 +732,18 @@ namespace Microsoft.PowerShell.EditorServices
         /// <typeparam name="TResult">The expected result type of the execution.</typeparam>
         private class PipelineExecutionRequest<TResult> : IPipelineExecutionRequest
         {
-            PowerShellSession powerShellSession;
+            PowerShellContext powerShellContext;
             PSCommand psCommand;
             bool sendOutputToHost;
 
             public IEnumerable<TResult> Results { get; private set; }
 
             public PipelineExecutionRequest(
-                PowerShellSession powerShellSession,
+                PowerShellContext powerShellContext,
                 PSCommand psCommand,
                 bool sendOutputToHost)
             {
-                this.powerShellSession = powerShellSession;
+                this.powerShellContext = powerShellContext;
                 this.psCommand = psCommand;
                 this.sendOutputToHost = sendOutputToHost;
             }
@@ -751,7 +751,7 @@ namespace Microsoft.PowerShell.EditorServices
             public async Task Execute()
             {
                 this.Results =
-                    await this.powerShellSession.ExecuteCommand<TResult>(
+                    await this.powerShellContext.ExecuteCommand<TResult>(
                         psCommand,
                         sendOutputToHost);
 

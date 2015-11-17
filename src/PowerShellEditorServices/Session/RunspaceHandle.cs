@@ -10,11 +10,11 @@ namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides a handle to the runspace that is managed by
-    /// a PowerShellSession.  The holder of this handle.
+    /// a PowerShellContext.  The holder of this handle.
     /// </summary>
     public class RunspaceHandle : IDisposable
     {
-        private PowerShellSession powerShellSession;
+        private PowerShellContext powerShellContext;
 
         /// <summary>
         /// Gets the runspace that is held by this handle.
@@ -26,22 +26,22 @@ namespace Microsoft.PowerShell.EditorServices
         /// given runspace.
         /// </summary>
         /// <param name="runspace">The runspace instance which is temporarily owned by this handle.</param>
-        /// <param name="powerShellSession">The PowerShellSession instance which manages the runspace.</param>
-        public RunspaceHandle(Runspace runspace, PowerShellSession powerShellSession)
+        /// <param name="powerShellContext">The PowerShellContext instance which manages the runspace.</param>
+        public RunspaceHandle(Runspace runspace, PowerShellContext powerShellContext)
         {
             this.Runspace = runspace;
-            this.powerShellSession = powerShellSession;
+            this.powerShellContext = powerShellContext;
         }
 
         /// <summary>
         /// Disposes the RunspaceHandle once the holder is done using it.
-        /// Causes the handle to be released back to the PowerShellSession.
+        /// Causes the handle to be released back to the PowerShellContext.
         /// </summary>
         public void Dispose()
         {
             // Release the handle and clear the runspace so that
             // no further operations can be performed on it.
-            this.powerShellSession.ReleaseRunspaceHandle(this);
+            this.powerShellContext.ReleaseRunspaceHandle(this);
             this.Runspace = null;
         }
     }

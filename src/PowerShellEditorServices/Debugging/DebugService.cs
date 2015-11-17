@@ -14,13 +14,13 @@ namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides a high-level service for interacting with the
-    /// PowerShell debugger in the context of a PowerShellSession.
+    /// PowerShell debugger in the runspace managed by a PowerShellContext.
     /// </summary>
     public class DebugService
     {
         #region Fields
 
-        private PowerShellSession powerShellSession;
+        private PowerShellContext powerShellContext;
 
         // TODO: This needs to be managed per nested session
         private Dictionary<string, List<Breakpoint>> breakpointsPerFile = 
@@ -36,18 +36,18 @@ namespace Microsoft.PowerShell.EditorServices
 
         /// <summary>
         /// Initializes a new instance of the DebugService class and uses
-        /// the given PowerShellSession for all future operations.
+        /// the given PowerShellContext for all future operations.
         /// </summary>
-        /// <param name="powerShellSession">
-        /// The PowerShellSession to use for all debugging operations.
+        /// <param name="powerShellContext">
+        /// The PowerShellContext to use for all debugging operations.
         /// </param>
-        public DebugService(PowerShellSession powerShellSession)
+        public DebugService(PowerShellContext powerShellContext)
         {
-            Validate.IsNotNull("powerShellSession", powerShellSession);
+            Validate.IsNotNull("powerShellContext", powerShellContext);
 
-            this.powerShellSession = powerShellSession;
-            this.powerShellSession.DebuggerStop += this.OnDebuggerStop;
-            this.powerShellSession.BreakpointUpdated += this.OnBreakpointUpdated;
+            this.powerShellContext = powerShellContext;
+            this.powerShellContext.DebuggerStop += this.OnDebuggerStop;
+            this.powerShellContext.BreakpointUpdated += this.OnBreakpointUpdated;
         }
 
         #endregion
@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices
                 psCommand.AddParameter("Line", lineNumbers.Length > 0 ? lineNumbers : null);
 
                 resultBreakpoints =
-                    await this.powerShellSession.ExecuteCommand<Breakpoint>(
+                    await this.powerShellContext.ExecuteCommand<Breakpoint>(
                         psCommand);
 
                 return
@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void Continue()
         {
-            this.powerShellSession.ResumeDebugger(
+            this.powerShellContext.ResumeDebugger(
                 DebuggerResumeAction.Continue);
         }
 
@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void StepOver()
         {
-            this.powerShellSession.ResumeDebugger(
+            this.powerShellContext.ResumeDebugger(
                 DebuggerResumeAction.StepOver);
         }
 
@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void StepIn()
         {
-            this.powerShellSession.ResumeDebugger(
+            this.powerShellContext.ResumeDebugger(
                 DebuggerResumeAction.StepInto);
         }
 
@@ -125,7 +125,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void StepOut()
         {
-            this.powerShellSession.ResumeDebugger(
+            this.powerShellContext.ResumeDebugger(
                 DebuggerResumeAction.StepOut);
         }
 
@@ -137,16 +137,16 @@ namespace Microsoft.PowerShell.EditorServices
         public void Break()
         {
             // Break execution in the debugger
-            this.powerShellSession.BreakExecution();
+            this.powerShellContext.BreakExecution();
         }
 
         /// <summary>
         /// Aborts execution of the debugger while it is running, even while
-        /// it is stopped.  Equivalent to calling PowerShellSession.AbortExecution.
+        /// it is stopped.  Equivalent to calling PowerShellContext.AbortExecution.
         /// </summary>
         public void Abort()
         {
-            this.powerShellSession.AbortExecution();
+            this.powerShellContext.AbortExecution();
         }
 
         /// <summary>
@@ -238,7 +238,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Evaluates an expression in the context of the stopped
         /// debugger.  This method will execute the specified expression
-        /// PowerShellSession.
+        /// PowerShellContext.
         /// </summary>
         /// <param name="expressionString">The expression string to execute.</param>
         /// <param name="stackFrameId">The ID of the stack frame in which the expression should be executed.</param>
@@ -246,7 +246,7 @@ namespace Microsoft.PowerShell.EditorServices
         public async Task<VariableDetails> EvaluateExpression(string expressionString, int stackFrameId)
         {
             var results = 
-                await this.powerShellSession.ExecuteScriptString(
+                await this.powerShellContext.ExecuteScriptString(
                     expressionString);
 
             // Since this method should only be getting invoked in the debugger,
@@ -302,7 +302,7 @@ namespace Microsoft.PowerShell.EditorServices
                     psCommand.AddCommand("Remove-PSBreakpoint");
                     psCommand.AddParameter("Breakpoint", breakpoints.ToArray());
 
-                    await this.powerShellSession.ExecuteCommand<object>(psCommand);
+                    await this.powerShellContext.ExecuteCommand<object>(psCommand);
 
                     // Clear the existing breakpoints list for the file
                     breakpoints.Clear();
@@ -319,7 +319,7 @@ namespace Microsoft.PowerShell.EditorServices
             psCommand.AddCommand("Get-Variable");
             psCommand.AddParameter("Scope", "Local");
 
-            var results = await this.powerShellSession.ExecuteCommand<PSVariable>(psCommand);
+            var results = await this.powerShellContext.ExecuteCommand<PSVariable>(psCommand);
 
             foreach (var variable in results)
             {
@@ -336,7 +336,7 @@ namespace Microsoft.PowerShell.EditorServices
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand("Get-PSCallStack");
 
-            var results = await this.powerShellSession.ExecuteCommand<CallStackFrame>(psCommand);
+            var results = await this.powerShellContext.ExecuteCommand<CallStackFrame>(psCommand);
 
             this.callStackFrames =
                 results

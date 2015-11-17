@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text;
 
@@ -91,11 +92,13 @@ namespace Microsoft.PowerShell.EditorServices
             return scriptFile;
         }
 
+        /// <summary>
+        /// Gets an array of all opened ScriptFiles in the workspace.
+        /// </summary>
+        /// <returns>An array of all opened ScriptFiles in the workspace.</returns>
         public ScriptFile[] GetOpenedFiles()
         {
-            var scriptFiles = new ScriptFile[workspaceFiles.Count];
-            workspaceFiles.Values.CopyTo(scriptFiles, 0);
-            return scriptFiles;
+            return workspaceFiles.Values.ToArray();
         }
 
         /// <summary>

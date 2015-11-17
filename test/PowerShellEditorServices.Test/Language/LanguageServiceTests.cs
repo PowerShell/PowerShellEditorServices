@@ -24,19 +24,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
     {
         private Workspace workspace;
         private LanguageService languageService;
-        private PowerShellSession powerShellSession;
+        private PowerShellContext powerShellContext;
 
         public LanguageServiceTests()
         {
             this.workspace = new Workspace();
 
-            this.powerShellSession = new PowerShellSession();
-            this.languageService = new LanguageService(this.powerShellSession);
+            this.powerShellContext = new PowerShellContext();
+            this.languageService = new LanguageService(this.powerShellContext);
         }
 
         public void Dispose()
         {
-            this.powerShellSession.Dispose();
+            this.powerShellContext.Dispose();
         }
 
         [Fact]

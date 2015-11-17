@@ -90,8 +90,8 @@
     <Compile Include="Session\OutputType.cs" />
     <Compile Include="Session\OutputWrittenEventArgs.cs" />
     <Compile Include="Session\PowerShellExecutionResult.cs" />
-    <Compile Include="Session\PowerShellSession.cs" />
-    <Compile Include="Session\PowerShellSessionState.cs" />
+    <Compile Include="Session\PowerShellContext.cs" />
+    <Compile Include="Session\PowerShellContextState.cs" />
     <Compile Include="Session\ProgressDetails.cs" />
     <Compile Include="Session\RunspaceHandle.cs" />
     <Compile Include="Session\SessionPSHost.cs" />

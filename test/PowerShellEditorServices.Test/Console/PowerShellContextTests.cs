@@ -3,15 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
-    public class PowerShellSessionTests : IDisposable
+    public class PowerShellContextTests : IDisposable
     {
-        private PowerShellSession powerShellSession;
+        private PowerShellContext powerShellContext;
         private AsyncProducerConsumerQueue<SessionStateChangedEventArgs> stateChangeQueue;
         private Dictionary<OutputType, string> outputPerType = 
             new Dictionary<OutputType, string>();
@@ -21,18 +20,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         private const string DebugTestFilePath =
             @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1";
 
-        public PowerShellSessionTests()
+        public PowerShellContextTests()
         {
-            this.powerShellSession = new PowerShellSession();
-            this.powerShellSession.SessionStateChanged += OnSessionStateChanged;
-            this.powerShellSession.OutputWritten += OnOutputWritten;
+            this.powerShellContext = new PowerShellContext();
+            this.powerShellContext.SessionStateChanged += OnSessionStateChanged;
+            this.powerShellContext.OutputWritten += OnOutputWritten;
             this.stateChangeQueue = new AsyncProducerConsumerQueue<SessionStateChangedEventArgs>();
         }
 
         public void Dispose()
         {
-            this.powerShellSession.Dispose();
-            this.powerShellSession = null;
+            this.powerShellContext.Dispose();
+            this.powerShellContext = null;
         }
 
         [Fact]
@@ -42,10 +41,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             psCommand.AddScript("$a = \"foo\"; $a");
 
             var executeTask =
-                this.powerShellSession.ExecuteCommand<string>(psCommand);
+                this.powerShellContext.ExecuteCommand<string>(psCommand);
 
-            await this.AssertStateChange(PowerShellSessionState.Running);
-            await this.AssertStateChange(PowerShellSessionState.Ready);
+            await this.AssertStateChange(PowerShellContextState.Running);
+            await this.AssertStateChange(PowerShellContextState.Ready);
 
             var result = await executeTask;
             Assert.Equal("foo", result.First());
@@ -55,14 +54,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public async Task CanQueueParallelRunspaceRequests()
         {
             // Concurrently initiate 4 requests in the session
-            this.powerShellSession.ExecuteScriptString("$x = 100");
-            Task<RunspaceHandle> handleTask = this.powerShellSession.GetRunspaceHandle();
-            this.powerShellSession.ExecuteScriptString("$x += 200");
-            this.powerShellSession.ExecuteScriptString("$x = $x / 100");
+            this.powerShellContext.ExecuteScriptString("$x = 100");
+            Task<RunspaceHandle> handleTask = this.powerShellContext.GetRunspaceHandle();
+            this.powerShellContext.ExecuteScriptString("$x += 200");
+            this.powerShellContext.ExecuteScriptString("$x = $x / 100");
 
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript("$x");
-            Task<IEnumerable<int>> resultTask = this.powerShellSession.ExecuteCommand<int>(psCommand);
+            Task<IEnumerable<int>> resultTask = this.powerShellContext.ExecuteCommand<int>(psCommand);
 
             // Wait for the requested runspace handle and then dispose it
             RunspaceHandle handle = await handleTask;
@@ -83,14 +82,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 Task.Run(
                     async () =>
                     {
-                        var unusedTask = this.powerShellSession.ExecuteScriptAtPath(DebugTestFilePath);
+                        var unusedTask = this.powerShellContext.ExecuteScriptAtPath(DebugTestFilePath);
                         await Task.Delay(50);
-                        this.powerShellSession.AbortExecution();
+                        this.powerShellContext.AbortExecution();
                     });
 
-            await this.AssertStateChange(PowerShellSessionState.Running);
-            await this.AssertStateChange(PowerShellSessionState.Aborting);
-            await this.AssertStateChange(PowerShellSessionState.Ready);
+            await this.AssertStateChange(PowerShellContextState.Running);
+            await this.AssertStateChange(PowerShellContextState.Aborting);
+            await this.AssertStateChange(PowerShellContextState.Ready);
 
             await executeTask;
         }
@@ -98,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task ReceivesNormalOutput()
         {
-            await this.powerShellSession.ExecuteScriptString(
+            await this.powerShellContext.ExecuteScriptString(
                 string.Format(
                     "\"{0}\"",
                     TestOutputString));
@@ -111,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task ReceivesErrorOutput()
         {
-            await this.powerShellSession.ExecuteScriptString(
+            await this.powerShellContext.ExecuteScriptString(
                 string.Format(
                     "Write-Error \"{0}\"",
                     TestOutputString));
@@ -129,9 +128,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             // Since setting VerbosePreference causes other message to
             // be written out when we run our test, run a command preemptively
             // to flush out unwanted verbose messages
-            await this.powerShellSession.ExecuteScriptString("Write-Verbose \"Preloading\"");
+            await this.powerShellContext.ExecuteScriptString("Write-Verbose \"Preloading\"");
 
-            await this.powerShellSession.ExecuteScriptString(
+            await this.powerShellContext.ExecuteScriptString(
                 string.Format(
                     "$VerbosePreference = \"Continue\"; Write-Verbose \"{0}\"",
                     TestOutputString));
@@ -147,9 +146,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             // Since setting VerbosePreference causes other message to
             // be written out when we run our test, run a command preemptively
             // to flush out unwanted verbose messages
-            await this.powerShellSession.ExecuteScriptString("Write-Verbose \"Preloading\"");
+            await this.powerShellContext.ExecuteScriptString("Write-Verbose \"Preloading\"");
 
-            await this.powerShellSession.ExecuteScriptString(
+            await this.powerShellContext.ExecuteScriptString(
                 string.Format(
                     "$DebugPreference = \"Continue\"; Write-Debug \"{0}\"",
                     TestOutputString));
@@ -162,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task ReceivesWarningOutput()
         {
-            await this.powerShellSession.ExecuteScriptString(
+            await this.powerShellContext.ExecuteScriptString(
                 string.Format(
                     "Write-Warning \"{0}\"",
                     TestOutputString));
@@ -183,7 +182,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             return outputString;
         }
 
-        private async Task AssertStateChange(PowerShellSessionState expectedState)
+        private async Task AssertStateChange(PowerShellContextState expectedState)
         {
             SessionStateChangedEventArgs newState =
                 await this.stateChangeQueue.DequeueAsync();
