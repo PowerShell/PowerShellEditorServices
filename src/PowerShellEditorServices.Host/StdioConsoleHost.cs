@@ -3,8 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Event;
-using Microsoft.PowerShell.EditorServices.Transport.Stdio.Message;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -43,28 +42,33 @@ namespace Microsoft.PowerShell.EditorServices.Host
             IEnumerable<ChoiceDetails> choices,
             int defaultChoice)
         {
-            // Create and store a TaskCompletionSource that will be
-            // used to send the user's response back to the caller
-            this.currentPromptChoiceTask = new TaskCompletionSource<int>();
-            this.currentReplEventSequence++;
+            // NOTE: This code is held temporarily until a new model is
+            // found for dealing with interactive prompts.
 
-            this.messageWriter.WriteMessage(
-                new ReplPromptChoiceEvent
-                {
-                    Body = new ReplPromptChoiceEventBody
-                    {
-                        Seq = this.currentReplEventSequence,
-                        Caption = caption,
-                        Message = message,
-                        DefaultChoice = defaultChoice,
-                        Choices = 
-                            choices
-                                .Select(ReplPromptChoiceDetails.FromChoiceDescription)
-                                .ToArray()
-                    }
-                });
+            //// Create and store a TaskCompletionSource that will be
+            //// used to send the user's response back to the caller
+            //this.currentPromptChoiceTask = new TaskCompletionSource<int>();
+            //this.currentReplEventSequence++;
 
-            return this.currentPromptChoiceTask.Task;
+            //this.messageWriter.WriteMessage(
+            //    new ReplPromptChoiceEvent
+            //    {
+            //        Body = new ReplPromptChoiceEventBody
+            //        {
+            //            Seq = this.currentReplEventSequence,
+            //            Caption = caption,
+            //            Message = message,
+            //            DefaultChoice = defaultChoice,
+            //            Choices = 
+            //                choices
+            //                    .Select(ReplPromptChoiceDetails.FromChoiceDescription)
+            //                    .ToArray()
+            //        }
+            //    });
+
+            //return this.currentPromptChoiceTask.Task;
+
+            throw new NotImplementedException("This method is currently being refactored and is not available.");
         }
 
         void IConsoleHost.PromptForChoiceResult(
@@ -90,10 +94,17 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // TODO: Implement message for this
         }
 
-        #endregion
-
-        public void WriteOutput(string outputString, bool includeNewLine = true, OutputType outputType = OutputType.Normal, ConsoleColor foregroundColor = ConsoleColor.White, ConsoleColor backgroundColor = ConsoleColor.Black)
+        public void WriteOutput(
+            string outputString, 
+            bool includeNewLine = true, 
+            OutputType outputType = OutputType.Normal, 
+            ConsoleColor foregroundColor = ConsoleColor.White, 
+            ConsoleColor backgroundColor = ConsoleColor.Black)
         {
+            // This is taken care of elsewhere now.  This interface will
+            // be refactored out in the near future.
         }
+
+        #endregion
     }
 }

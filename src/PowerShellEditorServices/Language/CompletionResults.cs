@@ -104,7 +104,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Identifies a completion for a PowerShell language keyword.
         /// </summary>
-        Keyword
+        Keyword,
+
+        /// <summary>
+        /// Identifies a completion for a provider path (like a file system path).
+        /// </summary>
+        Path
     }
 
     /// <summary>
@@ -250,6 +255,10 @@ namespace Microsoft.PowerShell.EditorServices
 
                 case CompletionResultType.Keyword:
                     return CompletionType.Keyword;
+
+                case CompletionResultType.ProviderContainer:
+                case CompletionResultType.ProviderItem:
+                    return CompletionType.Path;
 
                 default:
                     // TODO: Trace the unsupported CompletionResultType

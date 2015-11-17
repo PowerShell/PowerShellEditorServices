@@ -58,6 +58,9 @@
     <Reference Include="System.Management.Automation" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DebugAdapter.cs" />
+    <Compile Include="IMessageProcessor.cs" />
+    <Compile Include="LanguageServer.cs" />
     <Compile Include="MessageLoop.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -65,6 +68,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <Content Include="Microsoft.PowerShell.EditorServices.Host.DebugAdapter.cmd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -76,15 +82,16 @@
       <Project>{c33b6b9d-e61c-45a3-9103-895fd82a5c1e}</Project>
       <Name>ScriptAnalyzerBuiltinRules</Name>
     </ProjectReference>
-    <ProjectReference Include="..\PowerShellEditorServices.Transport.Stdio\PowerShellEditorServices.Transport.Stdio.csproj">
+    <ProjectReference Include="..\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj">
       <Project>{f8a0946a-5d25-4651-8079-b8d5776916fb}</Project>
-      <Name>PowerShellEditorServices.Transport.Stdio</Name>
+      <Name>PowerShellEditorServices.Protocol</Name>
     </ProjectReference>
     <ProjectReference Include="..\PowerShellEditorServices\PowerShellEditorServices.csproj">
       <Project>{81e8cbcd-6319-49e7-9662-0475bd0791f4}</Project>
       <Name>PowerShellEditorServices</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

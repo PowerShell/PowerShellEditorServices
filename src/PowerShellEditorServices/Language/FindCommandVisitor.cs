@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Linq;
 using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -23,38 +24,49 @@ namespace Microsoft.PowerShell.EditorServices
             this.columnNumber = columnNumber;
         }
 
-        /// <summary>
-        /// Checks to see if this command ast is the symbol we are looking for.
-        /// Assumes the commandAst will have two elements to be considered the correct command. 
-        /// </summary>
-        /// <param name="commandAst">A CommandAst object in the script's AST</param>
-        /// <returns>A descion to stop searching if the right commandAst was found, 
-        /// or a decision to continue if it wasn't found</returns>
-        public override AstVisitAction VisitCommand(CommandAst commandAst)
+        public override AstVisitAction VisitPipeline(PipelineAst pipelineAst)
         {
-            Ast commandNameAst = commandAst.CommandElements[0];
-            
-            // Only want commands that are using a trigger character, which requires at least 2 command elements
-            if (!(commandAst.CommandElements.Count > 1))
+            if (this.lineNumber == pipelineAst.Extent.StartLineNumber)
             {
-                return base.VisitCommand(commandAst);
-            }
-            else
-            {
-                Ast secondCommandElementAst = commandAst.CommandElements[1];
-
-                if (this.IsPositionInExtent(commandNameAst.Extent, secondCommandElementAst.Extent))
+                // Which command is the cursor in?
+                foreach (var commandAst in pipelineAst.PipelineElements.OfType<CommandAst>())
                 {
-                    this.FoundCommandReference =
-                        new SymbolReference(
-                            SymbolType.Function,
-                            commandNameAst.Extent);
+                    int trueEndColumnNumber = commandAst.Extent.EndColumnNumber;
+                    string currentLine = commandAst.Extent.StartScriptPosition.Line;
 
-                    return AstVisitAction.StopVisit;
+                    if (currentLine.Length >= trueEndColumnNumber)
+                    {
+                        // Get the text left in the line after the command's extent
+                        string remainingLine = 
+                            currentLine.Substring(
+                                commandAst.Extent.EndColumnNumber);
+
+                        // Calculate the "true" end column number by finding out how many
+                        // whitespace characters are between this command and the next (or
+                        // the end of the line).
+                        // NOTE: +1 is added to trueEndColumnNumber to account for the position
+                        // just after the last character in the command string or script line.
+                        int preTrimLength = remainingLine.Length;
+                        int postTrimLength = remainingLine.TrimStart().Length;
+                        trueEndColumnNumber = 
+                            commandAst.Extent.EndColumnNumber + 
+                            (preTrimLength - postTrimLength) + 1;
+                    }
+
+                    if (commandAst.Extent.StartColumnNumber <= columnNumber &&
+                        trueEndColumnNumber >= columnNumber)
+                    {
+                        this.FoundCommandReference =
+                            new SymbolReference(
+                                SymbolType.Function,
+                                commandAst.CommandElements[0].Extent);
+
+                        return AstVisitAction.StopVisit;
+                    }
                 }
             }
 
-            return base.VisitCommand(commandAst);
+            return base.VisitPipeline(pipelineAst);
         }
 
         /// <summary>

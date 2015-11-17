@@ -18,9 +18,9 @@ namespace Microsoft.PowerShell.EditorServices
         #region Properties
 
         /// <summary>
-        /// Gets the name of the symbol.
+        /// Gets the original symbol reference which was used to gather details.
         /// </summary>
-        public string Name { get; private set; }
+        public SymbolReference SymbolReference { get; private set; }
 
         /// <summary>
         /// Gets the display string for this symbol.
@@ -37,69 +37,36 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Constructors
 
-        internal SymbolDetails()
-        {
-        }
-
         internal SymbolDetails(
             SymbolReference symbolReference, 
             Runspace runspace)
         {
-            this.Name = symbolReference.SymbolName;
+            this.SymbolReference = symbolReference;
 
             // If the symbol is a command, get its documentation
             if (symbolReference.SymbolType == SymbolType.Function)
             {
                 CommandInfo commandInfo =
-                    GetCommandInfo(
+                    CommandHelpers.GetCommandInfo(
                         symbolReference.SymbolName,
                         runspace);
 
                 this.Documentation =
-                    GetCommandSynopsis(
+                    CommandHelpers.GetCommandSynopsis(
                         commandInfo, 
                         runspace);
-            }
-        }
-        private static CommandInfo GetCommandInfo(
-            string commandName, 
-            Runspace runspace)
-        {
-            CommandInfo commandInfo = null;
 
-            using (PowerShell powerShell = PowerShell.Create())
+                this.DisplayString = "function " + symbolReference.SymbolName;
+            }
+            else if (symbolReference.SymbolType == SymbolType.Parameter)
             {
-                powerShell.Runspace = runspace;
-                powerShell.AddCommand("Get-Command");
-                powerShell.AddArgument(commandName);
-                commandInfo = powerShell.Invoke<CommandInfo>().FirstOrDefault();
+                // TODO: Get parameter help
+                this.DisplayString = "(parameter) " + symbolReference.SymbolName;
             }
-
-            return commandInfo;
-        }
-
-        private static string GetCommandSynopsis(
-            CommandInfo commandInfo, 
-            Runspace runspace)
-        {
-            string synopsisString = string.Empty;
-
-            PSObject helpObject = null;
-
-            using (PowerShell powerShell = PowerShell.Create())
+            else if (symbolReference.SymbolType == SymbolType.Variable)
             {
-                powerShell.Runspace = runspace;
-                powerShell.AddCommand("Get-Help");
-                powerShell.AddArgument(commandInfo);
-                helpObject = powerShell.Invoke<PSObject>().FirstOrDefault();
+                this.DisplayString = symbolReference.SymbolName;
             }
-
-            // Extract the synopsis string from the object
-            synopsisString = 
-                (string)helpObject.Properties["synopsis"].Value ?? 
-                string.Empty;
-
-            return synopsisString;
         }
 
         #endregion

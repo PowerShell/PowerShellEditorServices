@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{F8A0946A-5D25-4651-8079-B8D5776916FB}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Microsoft.PowerShell.EditorServices.Protocol</RootNamespace>
+    <AssemblyName>Microsoft.PowerShell.EditorServices.Protocol</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Nito.AsyncEx, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.3.0.1\lib\net45\Nito.AsyncEx.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Nito.AsyncEx.Concurrent, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.3.0.1\lib\net45\Nito.AsyncEx.Concurrent.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Nito.AsyncEx.Enlightenment, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.3.0.1\lib\net45\Nito.AsyncEx.Enlightenment.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DebugAdapter\AttachRequest.cs" />
+    <Compile Include="DebugAdapter\Breakpoint.cs" />
+    <Compile Include="DebugAdapter\ContinueRequest.cs" />
+    <Compile Include="DebugAdapter\DisconnectRequest.cs" />
+    <Compile Include="DebugAdapter\EvaluateRequest.cs" />
+    <Compile Include="DebugAdapter\ExitedEvent.cs" />
+    <Compile Include="DebugAdapter\InitializedEvent.cs" />
+    <Compile Include="DebugAdapter\InitializeRequest.cs" />
+    <Compile Include="DebugAdapter\LaunchRequest.cs" />
+    <Compile Include="DebugAdapter\NextRequest.cs" />
+    <Compile Include="DebugAdapter\OutputEvent.cs" />
+    <Compile Include="DebugAdapter\PauseRequest.cs" />
+    <Compile Include="DebugAdapter\Scope.cs" />
+    <Compile Include="DebugAdapter\ScopesRequest.cs" />
+    <Compile Include="DebugAdapter\SetBreakpointsRequest.cs" />
+    <Compile Include="DebugAdapter\SetExceptionBreakpointsRequest.cs" />
+    <Compile Include="DebugAdapter\Source.cs" />
+    <Compile Include="DebugAdapter\SourceRequest.cs" />
+    <Compile Include="DebugAdapter\StackFrame.cs" />
+    <Compile Include="DebugAdapter\StackTraceRequest.cs" />
+    <Compile Include="DebugAdapter\StartedEvent.cs" />
+    <Compile Include="DebugAdapter\StepInRequest.cs" />
+    <Compile Include="DebugAdapter\StepOutRequest.cs" />
+    <Compile Include="DebugAdapter\StoppedEvent.cs" />
+    <Compile Include="DebugAdapter\TerminatedEvent.cs" />
+    <Compile Include="DebugAdapter\Thread.cs" />
+    <Compile Include="DebugAdapter\ThreadsRequest.cs" />
+    <Compile Include="DebugAdapter\V8MessageSerializer.cs" />
+    <Compile Include="DebugAdapter\Variable.cs" />
+    <Compile Include="DebugAdapter\VariablesRequest.cs" />
+    <Compile Include="LanguageServer\Definition.cs" />
+    <Compile Include="LanguageServer\DocumentHighlight.cs" />
+    <Compile Include="LanguageServer\Hover.cs" />
+    <Compile Include="LanguageServer\SignatureHelp.cs" />
+    <Compile Include="LanguageServer\WorkspaceSymbols.cs" />
+    <Compile Include="MessageProtocol\EventContext.cs" />
+    <Compile Include="MessageProtocol\EventType.cs" />
+    <Compile Include="LanguageServer\ClientCapabilities.cs" />
+    <Compile Include="LanguageServer\CompletionMessages.cs" />
+    <Compile Include="LanguageServer\DiagnosticMessages.cs" />
+    <Compile Include="LanguageServer\JsonRpcMessageSerializer.cs" />
+    <Compile Include="LanguageServer\InitializeMessages.cs" />
+    <Compile Include="LanguageServer\ServerCapabilities.cs" />
+    <Compile Include="LanguageServer\ShutdownMessages.cs" />
+    <Compile Include="LanguageServer\TextDocumentMessages.cs" />
+    <Compile Include="MessageProtocol\Constants.cs" />
+    <Compile Include="MessageProtocol\IMessageSerializer.cs" />
+    <Compile Include="MessageProtocol\Message.cs" />
+    <Compile Include="MessageProtocol\MessageDispatcher.cs" />
+    <Compile Include="MessageProtocol\MessageParseException.cs" />
+    <Compile Include="MessageProtocol\MessageReader.cs" />
+    <Compile Include="MessageProtocol\MessageWriter.cs" />
+    <Compile Include="MessageProtocol\RequestContext.cs" />
+    <Compile Include="MessageProtocol\RequestType.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="LanguageServer\References.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PowerShellEditorServices\PowerShellEditorServices.csproj">
+      <Project>{81e8cbcd-6319-49e7-9662-0475bd0791f4}</Project>
+      <Name>PowerShellEditorServices</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+  </Target>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
