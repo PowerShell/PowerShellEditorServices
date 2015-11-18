@@ -60,15 +60,18 @@ namespace Microsoft.PowerShell.EditorServices
                 helpObject = powerShell.Invoke<PSObject>().FirstOrDefault();
             }
 
-            // Extract the synopsis string from the object
-            synopsisString = 
-                (string)helpObject.Properties["synopsis"].Value ?? 
-                string.Empty;
-
-            // Ignore the placeholder value for this field
-            if (string.Equals(synopsisString, "SHORT DESCRIPTION", System.StringComparison.InvariantCultureIgnoreCase))
+            if (helpObject != null)
             {
-                synopsisString = string.Empty;
+                // Extract the synopsis string from the object
+                synopsisString = 
+                    (string)helpObject.Properties["synopsis"].Value ?? 
+                    string.Empty;
+
+                // Ignore the placeholder value for this field
+                if (string.Equals(synopsisString, "SHORT DESCRIPTION", System.StringComparison.InvariantCultureIgnoreCase))
+                {
+                    synopsisString = string.Empty;
+                }
             }
 
             return synopsisString;
