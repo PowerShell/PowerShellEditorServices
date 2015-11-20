@@ -96,6 +96,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             RequestContext<InitializeResult, InitializeError> requestContext)
         {
+            // Grab the workspace path from the parameters
+            editorSession.Workspace.WorkspacePath = initializeParams.RootPath;
+
             await requestContext.SendResult(
                 new InitializeResult
                 {
