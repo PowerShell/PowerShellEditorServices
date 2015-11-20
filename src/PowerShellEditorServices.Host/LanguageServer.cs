@@ -142,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
             psCommand.AddScript(script);
 
-            var result = await editorSession.PowerShellSession.ExecuteCommand<object>(
+            var result = await editorSession.powerShellContext.ExecuteCommand<object>(
                         psCommand);
 
             await requestContext.SendResult(null);
