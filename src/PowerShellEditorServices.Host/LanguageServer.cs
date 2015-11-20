@@ -427,13 +427,10 @@ namespace Microsoft.PowerShell.EditorServices.Host
                         completionItem.Label,
                         runspaceHandle.Runspace);
 
-                if (commandInfo != null)
-                {
-                    completionItem.Documentation =
-                        CommandHelpers.GetCommandSynopsis(
-                            commandInfo,
-                            runspaceHandle.Runspace);
-                }
+                completionItem.Documentation =
+                    CommandHelpers.GetCommandSynopsis(
+                        commandInfo,
+                        runspaceHandle.Runspace);
 
                 runspaceHandle.Dispose();
             }
