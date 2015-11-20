@@ -147,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
             psCommand.AddScript(script);
 
-            var result = await editorSession.powerShellContext.ExecuteCommand<object>(
+            var result = await editorSession.PowerShellContext.ExecuteCommand<object>(
                         psCommand);
 
             await requestContext.SendResult(null);
@@ -422,7 +422,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             if (completionItem.Kind == CompletionItemKind.Function)
             {
                 RunspaceHandle runspaceHandle =
-                    await editorSession.powerShellContext.GetRunspaceHandle();
+                    await editorSession.PowerShellContext.GetRunspaceHandle();
 
                 // Get the documentation for the function
                 CommandInfo commandInfo =
