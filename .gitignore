@@ -47,3 +47,7 @@ csx/
 PowerShellEditorServices/**
 
 
+PowerShellEditorServices.sln.ide/edb.chk
+PowerShellEditorServices.sln.ide/edbres00001.jrs
+PowerShellEditorServices.sln.ide/storage.ide
+*.jrs
