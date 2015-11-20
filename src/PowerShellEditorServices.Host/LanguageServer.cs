@@ -25,6 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private static CancellationTokenSource existingRequestCancellation;
 
         private MessageDispatcher<EditorSession> messageDispatcher;
+        private LanguageServerSettings currentSettings = new LanguageServerSettings();
 
         public LanguageServer()
         {
@@ -42,6 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.AddEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotification);
             this.AddEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotification);
             this.AddEventHandler(DidChangeTextDocumentNotification.Type, this.HandleDidChangeTextDocumentNotification);
+            this.AddEventHandler(DidChangeConfigurationNotification<SettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
 
             this.AddRequestHandler(DefinitionRequest.Type, this.HandleDefinitionRequest);
             this.AddRequestHandler(ReferencesRequest.Type, this.HandleReferencesRequest);
@@ -224,6 +226,36 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 eventContext);
 
             return Task.FromResult(true);
+        }
+
+        protected async Task HandleDidChangeConfigurationNotification(
+            DidChangeConfigurationParams<SettingsWrapper> configChangeParams,
+            EditorSession editorSession,
+            EventContext eventContext)
+        {
+            bool oldScriptAnalysisEnabled = 
+                this.currentSettings.ScriptAnalysis.Enable.HasValue;
+
+            this.currentSettings.Update(
+                configChangeParams.Settings.Powershell);
+
+            if (oldScriptAnalysisEnabled != this.currentSettings.ScriptAnalysis.Enable)
+            {
+                // If the user just turned off script analysis, send a diagnostics
+                // event to clear the analysis markers that they already have
+                if (!this.currentSettings.ScriptAnalysis.Enable.Value)
+                {
+                    ScriptFileMarker[] emptyAnalysisDiagnostics = new ScriptFileMarker[0];
+
+                    foreach (var scriptFile in editorSession.Workspace.GetOpenedFiles())
+                    {
+                        await PublishScriptDiagnostics(
+                            scriptFile,
+                            emptyAnalysisDiagnostics,
+                            eventContext);
+                    }
+                }
+            }
         }
 
         protected async Task HandleDefinitionRequest(
@@ -744,6 +776,12 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             EventContext eventContext)
         {
+            if (!this.currentSettings.ScriptAnalysis.Enable.Value)
+            {
+                // If the user has disabled script analysis, skip it entirely
+                return TaskConstants.Completed;
+            }
+
             // If there's an existing task, attempt to cancel it
             try
             {
@@ -827,22 +865,34 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
                 var allMarkers = scriptFile.SyntaxMarkers.Concat(semanticMarkers);
 
-                // Always send syntax and semantic errors.  We want to 
-                // make sure no out-of-date markers are being displayed.
-                await eventContext.SendEvent(
-                    PublishDiagnosticsNotification.Type,
-                    new PublishDiagnosticsNotification
-                    {
-                        Uri = scriptFile.ClientFilePath,
-                        Diagnostics =
-                           allMarkers
-                                .Select(GetDiagnosticFromMarker)
-                                .ToArray()
-                    });
-
+                await PublishScriptDiagnostics(
+                    scriptFile,
+                    semanticMarkers,
+                    eventContext);
             }
 
             Logger.Write(LogLevel.Verbose, "Analysis complete.");
+        }
+
+        private async static Task PublishScriptDiagnostics(
+            ScriptFile scriptFile,
+            ScriptFileMarker[] semanticMarkers,
+            EventContext eventContext)
+        {
+            var allMarkers = scriptFile.SyntaxMarkers.Concat(semanticMarkers);
+
+            // Always send syntax and semantic errors.  We want to 
+            // make sure no out-of-date markers are being displayed.
+            await eventContext.SendEvent(
+                PublishDiagnosticsNotification.Type,
+                new PublishDiagnosticsNotification
+                {
+                    Uri = scriptFile.ClientFilePath,
+                    Diagnostics = 
+                       allMarkers 
+                            .Select(GetDiagnosticFromMarker)
+                            .ToArray()
+                });
         }
 
         private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)

@@ -89,6 +89,7 @@
     <Compile Include="DebugAdapter\V8MessageSerializer.cs" />
     <Compile Include="DebugAdapter\Variable.cs" />
     <Compile Include="DebugAdapter\VariablesRequest.cs" />
+    <Compile Include="LanguageServer\Configuration.cs" />
     <Compile Include="LanguageServer\Definition.cs" />
     <Compile Include="LanguageServer\DocumentHighlight.cs" />
     <Compile Include="LanguageServer\Hover.cs" />
