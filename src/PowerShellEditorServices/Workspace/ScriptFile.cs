@@ -54,6 +54,12 @@ namespace Microsoft.PowerShell.EditorServices
         internal bool IsAnalysisEnabled { get; set; }
 
         /// <summary>
+        /// Gets a boolean that determines whether this file is
+        /// in-memory or not (either unsaved or non-file content).
+        /// </summary>
+        public bool IsInMemory { get; private set; }
+
+        /// <summary>
         /// Gets a string containing the full contents of the file.
         /// </summary>
         public string Contents 
@@ -125,6 +131,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.FilePath = filePath;
             this.ClientFilePath = clientFilePath;
             this.IsAnalysisEnabled = true;
+            this.IsInMemory = Workspace.IsPathInMemory(filePath);
 
             this.SetFileContents(textReader.ReadToEnd());
         }

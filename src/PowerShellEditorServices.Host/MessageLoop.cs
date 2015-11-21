@@ -129,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // Set up the PowerShell session
             this.editorSession = new EditorSession();
             this.editorSession.StartSession(this.consoleHost);
-            this.editorSession.powerShellContext.OutputWritten += powerShellContext_OutputWritten;
+            this.editorSession.PowerShellContext.OutputWritten += powerShellContext_OutputWritten;
 
             if (this.runDebugAdapter)
             {

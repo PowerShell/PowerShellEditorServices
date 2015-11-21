@@ -62,6 +62,7 @@
     <Compile Include="DebugAdapter.cs" />
     <Compile Include="IMessageProcessor.cs" />
     <Compile Include="LanguageServer.cs" />
+    <Compile Include="LanguageServerSettings.cs" />
     <Compile Include="MessageLoop.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
