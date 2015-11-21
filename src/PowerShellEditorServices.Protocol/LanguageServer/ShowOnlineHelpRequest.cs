@@ -9,6 +9,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
     public class ShowOnlineHelpRequest
     {
-        public static readonly RequestType<object, object, object> Type = RequestType<object, object, object>.Create("showonlinehelp");
+        public static readonly 
+            RequestType<string, object, object> Type = 
+            RequestType<string, object, object>.Create("powerShell/showOnlineHelp");
     }
 }

@@ -135,20 +135,19 @@ namespace Microsoft.PowerShell.EditorServices.Host
         }
 
         protected async Task HandleShowOnlineHelpRequest(
-            object helpParams,
+            string helpParams,
             EditorSession editorSession,
             RequestContext<object, object> requestContext)
         {
-            var psCommand = new PSCommand();
-
             if (helpParams == null) { helpParams = "get-help"; }
 
-            var script = string.Format("get-help {0} -Online", helpParams);
+            var psCommand = new PSCommand();
+            psCommand.AddCommand("Get-Help");
+            psCommand.AddArgument(helpParams);
+            psCommand.AddParameter("Online");
 
-            psCommand.AddScript(script);
-
-            var result = await editorSession.PowerShellContext.ExecuteCommand<object>(
-                        psCommand);
+            await editorSession.PowerShellContext.ExecuteCommand<object>(
+                    psCommand);
 
             await requestContext.SendResult(null);
         }
