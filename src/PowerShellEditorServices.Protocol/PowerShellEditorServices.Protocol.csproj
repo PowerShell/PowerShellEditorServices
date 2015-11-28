@@ -93,6 +93,8 @@
     <Compile Include="LanguageServer\Definition.cs" />
     <Compile Include="LanguageServer\DocumentHighlight.cs" />
     <Compile Include="LanguageServer\Hover.cs" />
+    <Compile Include="LanguageServer\FindModuleRequest.cs" />
+    <Compile Include="LanguageServer\PSModuleMessage.cs" />
     <Compile Include="LanguageServer\ShowOnlineHelpRequest.cs" />
     <Compile Include="LanguageServer\SignatureHelp.cs" />
     <Compile Include="LanguageServer\WorkspaceSymbols.cs" />
