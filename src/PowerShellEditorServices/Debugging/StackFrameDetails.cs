@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Management.Automation;
+using Microsoft.PowerShell.EditorServices.Debugging;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -35,25 +36,31 @@ namespace Microsoft.PowerShell.EditorServices
         public int ColumnNumber { get; private set; }
 
         /// <summary>
+        /// Gets or sets the VariableContainerDetails that contains the local variables.
+        /// </summary>
+        public VariableContainerDetails LocalVariables { get; private set; }
+
+        /// <summary>
         /// Creates an instance of the StackFrameDetails class from a
         /// CallStackFrame instance provided by the PowerShell engine.
         /// </summary>
         /// <param name="callStackFrame">
         /// The original CallStackFrame instance from which details will be obtained.
         /// </param>
+        /// <param name="localVariables">
+        /// A variable container with all the local variables for this stack frame.
         /// <returns>A new instance of the StackFrameDetails class.</returns>
         static internal StackFrameDetails Create(
-            CallStackFrame callStackFrame)
+            CallStackFrame callStackFrame,
+            VariableContainerDetails localVariables)
         {
-            Dictionary<string, PSVariable> localVariables =
-                callStackFrame.GetFrameVariables();
-
             return new StackFrameDetails
             {
                 ScriptPath = callStackFrame.ScriptName,
                 FunctionName = callStackFrame.FunctionName,
                 LineNumber = callStackFrame.Position.StartLineNumber,
-                ColumnNumber = callStackFrame.Position.StartColumnNumber
+                ColumnNumber = callStackFrame.Position.StartColumnNumber,
+                LocalVariables = localVariables
             };
         }
     }

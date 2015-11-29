@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Debugging;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -27,8 +28,10 @@ namespace Microsoft.PowerShell.EditorServices
             new Dictionary<string, List<Breakpoint>>();
 
         private int nextVariableId;
-        private List<VariableDetails> currentVariables;
-        private StackFrameDetails[] callStackFrames;
+        private List<VariableDetailsBase> variables;
+        private VariableContainerDetails globalScopeVariables;
+        private VariableContainerDetails scriptScopeVariables;
+        private StackFrameDetails[] stackFrameDetails;
 
         #endregion
 
@@ -155,38 +158,28 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="variableReferenceId"></param>
         /// <returns>An array of VariableDetails instances which describe the requested variables.</returns>
-        public VariableDetails[] GetVariables(int variableReferenceId)
+        public VariableDetailsBase[] GetVariables(int variableReferenceId)
         {
-            VariableDetails[] childVariables = null;
+            VariableDetailsBase[] childVariables;
 
-            if (variableReferenceId >= VariableDetails.FirstVariableId)
+            VariableDetailsBase parentVariable = this.variables[variableReferenceId];
+            if (parentVariable.IsExpandable)
             {
-                int correctedId =
-                    (variableReferenceId - VariableDetails.FirstVariableId);
+                childVariables = parentVariable.GetChildren();
 
-                VariableDetails parentVariable = 
-                    this.currentVariables[correctedId];
-
-                if (parentVariable.IsExpandable)
+                foreach (var child in childVariables)
                 {
-                    childVariables = parentVariable.GetChildren();
-
-                    foreach (var child in childVariables)
+                    // Only add child if it hasn't already been added.
+                    if (child.Id < 0)
                     {
-                        this.currentVariables.Add(child);
-                        child.Id = this.nextVariableId;
-                        this.nextVariableId++;
+                        child.Id = this.nextVariableId++;
+                        this.variables.Add(child);
                     }
-                }
-                else
-                {
-                    childVariables = new VariableDetails[0];
                 }
             }
             else
             {
-                // TODO: Get variables for the desired scope ID
-                childVariables = this.currentVariables.ToArray();
+                childVariables = new VariableDetailsBase[0];
             }
 
             return childVariables;
@@ -200,13 +193,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="variableExpression">The variable expression string to evaluate.</param>
         /// <param name="stackFrameId">The ID of the stack frame in which the expression should be evaluated.</param>
         /// <returns>A VariableDetails object containing the result.</returns>
-        public VariableDetails GetVariableFromExpression(string variableExpression, int stackFrameId)
+        public VariableDetailsBase GetVariableFromExpression(string variableExpression, int stackFrameId)
         {
             // Break up the variable path
             string[] variablePathParts = variableExpression.Split('.');
 
-            VariableDetails resolvedVariable = null;
-            IEnumerable<VariableDetails> variableList = this.currentVariables;
+            VariableDetailsBase resolvedVariable = null;
+            IEnumerable<VariableDetailsBase> variableList = this.variables;
 
             foreach (var variableName in variablePathParts)
             {
@@ -267,7 +260,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </returns>
         public StackFrameDetails[] GetStackFrames()
         {
-            return this.callStackFrames;
+            return this.stackFrameDetails;
         }
 
         /// <summary>
@@ -278,10 +271,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>The list of VariableScope instances which describe the available variable scopes.</returns>
         public VariableScope[] GetVariableScopes(int stackFrameId)
         {
-            // TODO: Return different scopes based on PowerShell scoping mechanics
             return new VariableScope[]
             {
-                new VariableScope(1, "Locals")
+                new VariableScope(this.stackFrameDetails[stackFrameId].LocalVariables.Id, "Local"),
+                new VariableScope(this.scriptScopeVariables.Id, "Script"),
+                new VariableScope(this.globalScopeVariables.Id, "Global"),  
             };
         }
 
@@ -310,25 +304,44 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private async Task FetchVariables()
+        private async Task FetchStackFramesAndVariables()
         {
-            this.nextVariableId = VariableDetails.FirstVariableId;
-            this.currentVariables = new List<VariableDetails>();
+            // Avoid using 0 as it indicates a variable node with no children.
+            this.nextVariableId = 1;
+            this.variables = new List<VariableDetailsBase>();
 
+            // Create a dummy variable for index 0, should never see this.
+            this.variables.Add(new VariableDetails("Dummy", null));
+
+            await FetchGlobalAndScriptVariables();
+            await FetchStackFrames();
+
+        }
+
+        private async Task FetchGlobalAndScriptVariables()
+        {
+            this.scriptScopeVariables = await FetchVariableContainer("Script");
+            this.globalScopeVariables = await FetchVariableContainer("Global");
+        }
+
+        private async Task<VariableContainerDetails> FetchVariableContainer(string scope)
+        {
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand("Get-Variable");
-            psCommand.AddParameter("Scope", "Local");
+            psCommand.AddParameter("Scope", scope);
+
+            var variableContainerDetails = new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
+            this.variables.Add(variableContainerDetails);
 
             var results = await this.powerShellContext.ExecuteCommand<PSVariable>(psCommand);
-
-            foreach (var variable in results)
+            foreach (PSVariable variable in results)
             {
-                var details = new VariableDetails(variable);
-                details.Id = this.nextVariableId;
-                this.currentVariables.Add(details);
-
-                this.nextVariableId++;
+                var variableDetails = new VariableDetails(variable) { Id = this.nextVariableId++ };
+                this.variables.Add(variableDetails);
+                variableContainerDetails.Children.Add(variableDetails);
             }
+
+            return variableContainerDetails;
         }
 
         private async Task FetchStackFrames()
@@ -338,10 +351,14 @@ namespace Microsoft.PowerShell.EditorServices
 
             var results = await this.powerShellContext.ExecuteCommand<CallStackFrame>(psCommand);
 
-            this.callStackFrames =
-                results
-                    .Select(StackFrameDetails.Create)
-                    .ToArray();
+            var callStackFrames = results.ToArray();
+            this.stackFrameDetails = new StackFrameDetails[callStackFrames.Length];
+
+            for (int i = 0; i < callStackFrames.Length; i++)
+            {
+                VariableContainerDetails localVariables = await FetchVariableContainer(i.ToString());
+                this.stackFrameDetails[i] = StackFrameDetails.Create(callStackFrames[i], localVariables);
+            }
         }
 
         #endregion
@@ -355,9 +372,8 @@ namespace Microsoft.PowerShell.EditorServices
 
         private async void OnDebuggerStop(object sender, DebuggerStopEventArgs e)
         {
-            // Get the call stack and local variables
-            await this.FetchStackFrames();
-            await this.FetchVariables();
+            // Get call stack and variables.
+            await this.FetchStackFramesAndVariables();
 
             // Notify the host that the debugger is stopped
             if (this.DebuggerStopped != null)

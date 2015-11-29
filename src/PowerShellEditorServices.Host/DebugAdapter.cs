@@ -276,7 +276,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 newStackFrames.Add(
                     StackFrame.Create(
                         stackFrames[i], 
-                        i + 1));
+                        i));
             }
 
             await requestContext.SendResult(
@@ -310,7 +310,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             RequestContext<VariablesResponseBody, object> requestContext)
         {
-            VariableDetails[] variables =
+            VariableDetailsBase[] variables =
                 editorSession.DebugService.GetVariables(
                     variablesParams.VariablesReference);
 

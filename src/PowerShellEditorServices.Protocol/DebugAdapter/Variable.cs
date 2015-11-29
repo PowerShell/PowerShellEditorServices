@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 		// /** If variablesReference is > 0, the variable is structured and its children can be retrieved by passing variablesReference to the VariablesRequest. */
         public int VariablesReference { get; set; }
 
-        public static Variable Create(VariableDetails variable)
+        public static Variable Create(VariableDetailsBase variable)
         {
             return new Variable
             {

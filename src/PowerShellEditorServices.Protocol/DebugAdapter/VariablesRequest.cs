@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Diagnostics;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
@@ -14,6 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
             RequestType<VariablesRequestArguments, VariablesResponseBody, object>.Create("variables");
     }
 
+    [DebuggerDisplay("VariablesReference = {VariablesReference}")]
     public class VariablesRequestArguments
     {
         public int VariablesReference { get; set; }
