@@ -92,6 +92,8 @@
     <Compile Include="LanguageServer\Configuration.cs" />
     <Compile Include="LanguageServer\Definition.cs" />
     <Compile Include="LanguageServer\DocumentHighlight.cs" />
+    <Compile Include="LanguageServer\ExpandAliasRequest.cs" />
+    <Compile Include="LanguageServer\GetInstalledModuleRequest.cs" />
     <Compile Include="LanguageServer\Hover.cs" />
     <Compile Include="LanguageServer\FindModuleRequest.cs" />
     <Compile Include="LanguageServer\PSModuleMessage.cs" />

@@ -58,6 +58,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.AddRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
 
             this.AddRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
+            this.AddRequestHandler(GetInstalledModuleRequest.Type, this.HandleGetInstalledModuleRequest);
+            this.AddRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
 
             this.AddRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
@@ -155,7 +157,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         }
 
         private async Task HandleFindModuleRequest(
-            string helpParams,
+            string param,
             EditorSession editorSession,
             RequestContext<object, object> requestContext)
         {
@@ -176,6 +178,71 @@ namespace Microsoft.PowerShell.EditorServices.Host
             }
 
             await requestContext.SendResult(new PSModuleResponse { ModuleList = moduleList });
+        }
+
+        private async Task HandleGetInstalledModuleRequest(
+            string param,
+            EditorSession editorSession,
+            RequestContext<object, object> requestContext)
+        {
+            var psCommand = new PSCommand();
+            psCommand.AddScript("Get-InstalledModule | Select Name, Description");
+
+            var modules = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(
+                    psCommand);
+
+            var moduleList = new List<PSModuleMessage>();
+
+            if (modules != null)
+            {
+                foreach (dynamic m in modules)
+                {
+                    moduleList.Add(new PSModuleMessage { Name = m.Name, Description = m.Description });
+                }
+            }
+
+            await requestContext.SendResult(new PSModuleResponse { ModuleList = moduleList });
+        }
+
+
+        private async Task HandleExpandAliasRequest(
+            string content,
+            EditorSession editorSession,
+            RequestContext<object, object> requestContext)
+        {
+            var psCommand = new PSCommand();
+            var script = @"
+function Expand-Alias {
+
+    param($targetScript)
+
+    [ref]$errors=$null
+    
+    $tokens = [System.Management.Automation.PsParser]::Tokenize($targetScript, $errors).Where({$_.type -eq 'command'}) | 
+                    Sort Start -Descending
+
+    foreach ($token in  $tokens) {
+        $definition=(Get-Command ('`'+$token.Content) -CommandType Alias -ErrorAction SilentlyContinue).Definition
+
+        if($definition) {        
+            $lhs=$targetScript.Substring(0, $token.Start)
+            $rhs=$targetScript.Substring($token.Start + $token.Length)
+            
+            $targetScript=$lhs + $definition + $rhs
+       }
+    }
+
+    $targetScript
+}
+M
+Expand-Alias @'" + "\r\n" + content + "\r\n'@";
+
+            psCommand.AddScript(script);
+
+            var result = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(
+                    psCommand);
+
+            await requestContext.SendResult(result.First().ToString());
         }
 
         protected Task HandleExitNotification(
