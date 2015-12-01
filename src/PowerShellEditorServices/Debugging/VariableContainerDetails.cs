@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace Microsoft.PowerShell.EditorServices.Debugging
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Container for variables that is not itself a variable per se.  However given how
