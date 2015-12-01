@@ -306,8 +306,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private async Task FetchStackFramesAndVariables()
         {
-            // Avoid using 0 as it indicates a variable node with no children.
-            this.nextVariableId = 1;
+            this.nextVariableId = VariableDetailsBase.FirstVariableId;
             this.variables = new List<VariableDetailsBase>();
 
             // Create a dummy variable for index 0, should never see this.

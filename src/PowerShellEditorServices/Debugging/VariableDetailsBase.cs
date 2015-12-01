@@ -12,7 +12,8 @@ namespace Microsoft.PowerShell.EditorServices
     public abstract class VariableDetailsBase
     {
         /// <summary>
-        /// Provides a constant that is used as the starting variable ID for all
+        /// Provides a constant that is used as the starting variable ID for all.
+        /// Avoid 0 as it indicates a variable node with no children.
         /// variables.
         /// </summary>
         public const int FirstVariableId = 1;
