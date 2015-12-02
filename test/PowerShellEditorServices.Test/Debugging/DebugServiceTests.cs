@@ -171,9 +171,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.powerShellContext.ExecuteScriptString(variablesFile.FilePath);
             await this.AssertDebuggerStopped(variablesFile.FilePath);
 
-            VariableDetails[] variables = 
-                debugService.GetVariables(
-                    VariableDetails.LocalScopeVariableId);
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+
+            VariableDetailsBase[] variables = 
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
 
             // TODO: Add checks for correct value strings as well
 

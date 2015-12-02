@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Management.Automation;
 using System.Reflection;
@@ -16,7 +17,8 @@ namespace Microsoft.PowerShell.EditorServices
     /// Contains details pertaining to a variable in the current 
     /// debugging session.
     /// </summary>
-    public class VariableDetails
+    [DebuggerDisplay("Name = {Name}, Id = {Id}, Value = {ValueString}")]
+    public class VariableDetails : VariableDetailsBase
     {
         #region Fields
 
@@ -25,52 +27,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public const string DollarPrefix = "$";
 
-        /// <summary>
-        /// Provides a constant for the variable ID of the local variable scope.
-        /// </summary>
-        public const int LocalScopeVariableId = 1;
-
-        /// <summary>
-        /// Provides a constant for the variable ID of the global variable scope.
-        /// </summary>
-        public const int GlobalScopeVariableId = 2;
-
-        /// <summary>
-        /// Provides a constant that is used as the starting variable ID for all
-        /// variables in a given scope.
-        /// </summary>
-        public const int FirstVariableId = 10;
-
         private object valueObject;
         private VariableDetails[] cachedChildren;
-
-        #endregion
-
-        #region Properties
-
-        /// <summary>
-        /// Gets the numeric ID of the variable which can be used to refer
-        /// to it in future requests.
-        /// </summary>
-        public int Id { get; set; }
-
-        /// <summary>
-        /// Gets the variable's name.
-        /// </summary>
-        public string Name { get; private set; }
-
-        /// <summary>
-        /// Gets the string representation of the variable's value.
-        /// If the variable is an expandable object, this string
-        /// will be empty.
-        /// </summary>
-        public string ValueString { get; private set; }
-
-        /// <summary>
-        /// Returns true if the variable's value is expandable, meaning
-        /// that it has child properties or its contents can be enumerated.
-        /// </summary>
-        public bool IsExpandable { get; private set; }
 
         #endregion
 
@@ -110,6 +68,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             this.valueObject = value;
 
+            this.Id = -1; // Not been assigned a variable reference id yet
             this.Name = name;
             this.IsExpandable = GetIsExpandable(value);
             this.ValueString =
@@ -127,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// details of its children.  Otherwise it returns an empty array.
         /// </summary>
         /// <returns></returns>
-        public VariableDetails[] GetChildren()
+        public override VariableDetailsBase[] GetChildren()
         {
             VariableDetails[] childVariables = null;
 
