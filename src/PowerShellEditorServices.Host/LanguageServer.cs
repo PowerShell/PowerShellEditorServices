@@ -56,9 +56,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.AddRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
 
             this.AddRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
-
-            this.AddRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
-            this.AddRequestHandler(GetInstalledModuleRequest.Type, this.HandleGetInstalledModuleRequest);
             this.AddRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
 
             this.AddRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
@@ -155,55 +152,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
             await requestContext.SendResult(null);
         }
-
-        private async Task HandleFindModuleRequest(
-            string param,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
-        {
-            var psCommand = new PSCommand();
-            psCommand.AddScript("Find-Module | Select Name, Description");
-
-            var modules = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(
-                    psCommand);
-
-            var moduleList = new List<PSModuleMessage>();
-
-            if (modules != null)
-            {
-                foreach (dynamic m in modules)
-                {
-                    moduleList.Add(new PSModuleMessage { Name = m.Name, Description = m.Description });
-                }
-            }
-
-            await requestContext.SendResult(new PSModuleResponse { ModuleList = moduleList });
-        }
-
-        private async Task HandleGetInstalledModuleRequest(
-            string param,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
-        {
-            var psCommand = new PSCommand();
-            psCommand.AddScript("Get-InstalledModule | Select Name, Description");
-
-            var modules = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(
-                    psCommand);
-
-            var moduleList = new List<PSModuleMessage>();
-
-            if (modules != null)
-            {
-                foreach (dynamic m in modules)
-                {
-                    moduleList.Add(new PSModuleMessage { Name = m.Name, Description = m.Description });
-                }
-            }
-
-            await requestContext.SendResult(new PSModuleResponse { ModuleList = moduleList });
-        }
-
 
         private async Task HandleExpandAliasRequest(
             string content,
