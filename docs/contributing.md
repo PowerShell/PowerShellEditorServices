@@ -9,8 +9,7 @@ Because this project exposes a couple different public APIs, we must be very min
 changes.  Some contributions may not be accepted if they risk introducing breaking changes or if they 
 don't match the goals of the project.  The core maintainer team has the right of final approval over
 any contribution to this project.  However, we are very happy to hear community feedback on any decision 
-so that we can ensure we are solving the right problems in the right way.  Check out our [governance]
-(governance.md) page to learn more about how we run this project.
+so that we can ensure we are solving the right problems in the right way.
 
 ## Ways to Contribute
 
@@ -21,13 +20,12 @@ so that we can ensure we are solving the right problems in the right way.  Check
 - Review the pull requests that others submit to ensure they follow [established guidelines]
   (#pull-request-guidelines)
 - Help others gets started with the project by contributing documentation or hanging out
-  in the Slack chatroom [**TODO: Need to set this up!**]
+  in the #editors room in the [PowerShell community Slack chat](http://slack.poshcode.org).
 
 ## Code Contribution Guidelines
 
 Here's a high level list of guidelines to follow to ensure your code contribution is accepted:
 
-- Make sure your change aligns with project goals
 - Follow established guidelines for coding style and design
 - Follow established guidelines for commit hygiene
 - Write unit tests to validate new features and bug fixes
