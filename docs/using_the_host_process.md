@@ -3,6 +3,10 @@
 The PowerShell Editor Services host process provides an editor-agnostic interface for
 leveraging the core .NET API.
 
+**WARNING: Some of the information in this file is out of date due to recent protocol
+changes.  The general details in the document still apply but the schema of the language service
+message has changed a lot.  This document will be updated soon with the correct details.**
+
 ## Launching the Host Process
 
 From your editor's PowerShell plugin code, launch `Microsoft.PowerShell.EditorServices.Host.exe` 
