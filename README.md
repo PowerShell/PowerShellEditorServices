@@ -8,14 +8,17 @@ across multiple editors.
 
 ## Features
 
-- The Language Service provides code navigation actions (find references, go to definition) and statement completions (IntelliSense)
-- The Analysis Service integrates PowerShell Script Analyzer to provide real-time semantic analysis of scripts
+- The Language Service provides common editor features for the PowerShell language:
+  - Code navigation actions (find references, go to definition)
+  - Statement completions (IntelliSense)
+  - Real-time semantic analysis of scripts using PowerShell Script Analyzer
+  - Basic script evaluation
 - The Debugging Service simplifies interaction with the PowerShell debugger (breakpoints, variables, call stack, etc)
 
 The core Editor Services library is intended to be consumed in any type of host application, whether
 it is a WPF UI, console application, or web service.  A standard console application host is included
-so that you can easily consume Editor Services functionality in any editor using either the included
-standard input/output transport protocol or a transport of your own design.
+so that you can easily consume Editor Services functionality in any editor using the JSON API that it
+exposes.
 
 ## Documentation
 
@@ -26,7 +29,7 @@ Check out the following two pages for information about how to use the API and h
 
 ## Installation
 
-**TODO**: Add information about acquiring packages from NuGet.
+**TODO**: Add information about acquiring packages from NuGet once those are available.
 
 ## Cloning the Code
 
