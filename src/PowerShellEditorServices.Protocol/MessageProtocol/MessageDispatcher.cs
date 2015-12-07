@@ -3,32 +3,110 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Utility;
+using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
-    public class MessageDispatcher<TSession>
+    public class MessageDispatcher
     {
-        private Dictionary<string, Func<Message, TSession, MessageWriter, Task>> requestHandlers =
-            new Dictionary<string, Func<Message, TSession, MessageWriter, Task>>();
+        #region Fields
 
-        private Dictionary<string, Func<Message, TSession, MessageWriter, Task>> eventHandlers =
-            new Dictionary<string, Func<Message, TSession, MessageWriter, Task>>();
+        private MessageReader messageReader;
+        private MessageWriter messageWriter;
+        private AsyncContextThread messageLoopThread;
 
-        public void AddRequestHandler<TParams, TResult, TError>(
-            RequestType<TParams, TResult, TError> requestType,
-            Func<TParams, TSession, RequestContext<TResult, TError>, Task> requestHandler)
+        private Dictionary<string, Func<Message, MessageWriter, Task>> requestHandlers =
+            new Dictionary<string, Func<Message, MessageWriter, Task>>();
+
+        private Dictionary<string, Func<Message, MessageWriter, Task>> eventHandlers =
+            new Dictionary<string, Func<Message, MessageWriter, Task>>();
+
+        private Action<Message> responseHandler;
+
+        #endregion
+
+        #region Properties
+
+        public SynchronizationContext SynchronizationContext { get; private set; }
+
+        public bool InMessageLoopThread
         {
-            // TODO: Error or replace existing handler?
+            get
+            {
+                // We're in the same thread as the message loop if the
+                // current synchronization context equals the one we
+                // know.
+                return SynchronizationContext.Current == this.SynchronizationContext;
+            }
+        }
+
+        #endregion
+
+        #region Constructors
+
+        public MessageDispatcher(
+            MessageReader messageReader,
+            MessageWriter messageWriter)
+        {
+            this.messageReader = messageReader;
+            this.messageWriter = messageWriter;
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        public void Start()
+        {
+            // Start the main message loop thread.  The Task is
+            // not explicitly awaited because it is running on
+            // an independent background thread.
+            this.messageLoopThread = new AsyncContextThread(true);
+            this.messageLoopThread
+                .Factory
+                .Run(this.ListenForMessages)
+                .ContinueWith(this.OnListenTaskCompleted);
+        }
+
+        public void Stop()
+        {
+            // By disposing the thread we cancel all existing work
+            // and cause the thread to be destroyed.
+            this.messageLoopThread.Dispose();
+        }
+
+        public void SetRequestHandler<TParams, TResult>(
+            RequestType<TParams, TResult> requestType,
+            Func<TParams, RequestContext<TResult>, Task> requestHandler)
+        {
+            this.SetRequestHandler(
+                requestType,
+                requestHandler,
+                false);
+        }
+
+        public void SetRequestHandler<TParams, TResult>(
+            RequestType<TParams, TResult> requestType,
+            Func<TParams, RequestContext<TResult>, Task> requestHandler,
+            bool overrideExisting)
+        {
+            if (overrideExisting)
+            {
+                // Remove the existing handler so a new one can be set
+                this.requestHandlers.Remove(requestType.MethodName);
+            }
 
             this.requestHandlers.Add(
-                requestType.TypeName,
-                (requestMessage, session, messageWriter) =>
+                requestType.MethodName,
+                (requestMessage, messageWriter) =>
                 {
                     var requestContext =
-                        new RequestContext<TResult, TError>(
+                        new RequestContext<TResult>(
                             requestMessage,
                             messageWriter);
 
@@ -39,17 +117,34 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                         typedParams = requestMessage.Contents.ToObject<TParams>();
                     }
 
-                    return requestHandler(typedParams, session, requestContext);
+                    return requestHandler(typedParams, requestContext);
                 });
         }
 
-        public void AddEventHandler<TParams>(
+        public void SetEventHandler<TParams>(
             EventType<TParams> eventType,
-            Func<TParams, TSession, EventContext, Task> eventHandler)
+            Func<TParams, EventContext, Task> eventHandler)
         {
+            this.SetEventHandler(
+                eventType,
+                eventHandler,
+                false);
+        }
+
+        public void SetEventHandler<TParams>(
+            EventType<TParams> eventType,
+            Func<TParams, EventContext, Task> eventHandler,
+            bool overrideExisting)
+        {
+            if (overrideExisting)
+            {
+                // Remove the existing handler so a new one can be set
+                this.eventHandlers.Remove(eventType.MethodName);
+            }
+
             this.eventHandlers.Add(
                 eventType.MethodName,
-                (eventMessage, session, messageWriter) =>
+                (eventMessage, messageWriter) =>
                 {
                     var eventContext = new EventContext(messageWriter);
 
@@ -60,33 +155,103 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                         typedParams = eventMessage.Contents.ToObject<TParams>();
                     }
 
-                    return eventHandler(typedParams, session, eventContext);
+                    return eventHandler(typedParams, eventContext);
                 });
         }
 
-        public async Task DispatchMessage(
+        public void SetResponseHandler(Action<Message> responseHandler)
+        {
+            this.responseHandler = responseHandler;
+        }
+
+        public event EventHandler<Exception> UnhandledException;
+
+        protected void OnUnhandledException(Exception unhandledException)
+        {
+            if (this.UnhandledException != null)
+            {
+                this.UnhandledException(this, unhandledException);
+            }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private async Task ListenForMessages()
+        {
+            this.SynchronizationContext = SynchronizationContext.Current;
+
+            // Run the message loop
+            bool isRunning = true;
+            while (isRunning)
+            {
+                Message newMessage = null;
+
+                try
+                {
+                    // Read a message from stdin
+                    newMessage = await this.messageReader.ReadMessage();
+                }
+                catch (MessageParseException e)
+                {
+                    // TODO: Write an error response
+
+                    Logger.Write(
+                        LogLevel.Error,
+                        "Could not parse a message that was received:\r\n\r\n" +
+                        e.ToString());
+
+                    // Continue the loop
+                    continue;
+                }
+                catch (Exception e)
+                {
+                    var b = e.Message;
+                    newMessage = null;
+                }
+
+                // The message could be null if there was an error parsing the
+                // previous message.  In this case, do not try to dispatch it.
+                if (newMessage != null)
+                {
+                    // Process the message
+                    await this.DispatchMessage(
+                        newMessage,
+                        this.messageWriter);
+                }
+            }
+        }
+
+        private async Task DispatchMessage(
             Message messageToDispatch, 
-            TSession sessionContext, 
             MessageWriter messageWriter)
         {
             if (messageToDispatch.MessageType == MessageType.Request)
             {
-                Func<Message, TSession, MessageWriter, Task> requestHandler = null;
+                Func<Message, MessageWriter, Task> requestHandler = null;
                 if (this.requestHandlers.TryGetValue(messageToDispatch.Method, out requestHandler))
                 {
-                    await requestHandler(messageToDispatch, sessionContext, messageWriter);
+                    await requestHandler(messageToDispatch, messageWriter);
                 }
                 else
                 {
                     // TODO: Message not supported error
                 }
             }
+            else if (messageToDispatch.MessageType == MessageType.Response)
+            {
+                if (this.responseHandler != null)
+                {
+                    this.responseHandler(messageToDispatch);
+                }
+            }
             else if (messageToDispatch.MessageType == MessageType.Event)
             {
-                Func<Message, TSession, MessageWriter, Task> eventHandler = null;
+                Func<Message, MessageWriter, Task> eventHandler = null;
                 if (this.eventHandlers.TryGetValue(messageToDispatch.Method, out eventHandler))
                 {
-                    await eventHandler(messageToDispatch, sessionContext, messageWriter);
+                    await eventHandler(messageToDispatch, messageWriter);
                 }
                 else
                 {
@@ -98,6 +263,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 // TODO: Return message not supported
             }
         }
+
+        private void OnListenTaskCompleted(Task listenTask)
+        {
+            if (listenTask.IsFaulted)
+            {
+                this.OnUnhandledException(listenTask.Exception);
+            }
+            else if (listenTask.IsCompleted || listenTask.IsCanceled)
+            {
+                // TODO: Dispose of anything?
+            }
+        }
+
+        #endregion
     }
 }
 

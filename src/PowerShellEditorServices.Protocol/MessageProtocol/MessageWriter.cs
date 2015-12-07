@@ -89,8 +89,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
-        public async Task WriteRequest<TParams, TResult, TError>(
-            RequestType<TParams, TResult, TError> requestType, 
+        public async Task WriteRequest<TParams, TResult>(
+            RequestType<TParams, TResult> requestType, 
             TParams requestParams,
             int requestId)
         {
@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             await this.WriteMessage(
                 Message.Request(
                     requestId.ToString(), 
-                    requestType.TypeName,
+                    requestType.MethodName,
                     contentObject));
         }
 

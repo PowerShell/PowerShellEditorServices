@@ -11,8 +11,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class ScopesRequest
     {
         public static readonly
-            RequestType<ScopesRequestArguments, ScopesResponseBody, object> Type =
-            RequestType<ScopesRequestArguments, ScopesResponseBody, object>.Create("scopes");
+            RequestType<ScopesRequestArguments, ScopesResponseBody> Type =
+            RequestType<ScopesRequestArguments, ScopesResponseBody>.Create("scopes");
     }
 
     [DebuggerDisplay("FrameId = {FrameId}")]

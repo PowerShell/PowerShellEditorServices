@@ -43,15 +43,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DocumentSymbolRequest
     {
         public static readonly
-            RequestType<TextDocumentIdentifier, SymbolInformation[], object> Type =
-            RequestType<TextDocumentIdentifier, SymbolInformation[], object>.Create("textDocument/documentSymbol");
+            RequestType<TextDocumentIdentifier, SymbolInformation[]> Type =
+            RequestType<TextDocumentIdentifier, SymbolInformation[]>.Create("textDocument/documentSymbol");
     }
 
     public class WorkspaceSymbolRequest
     {
         public static readonly
-            RequestType<WorkspaceSymbolParams, SymbolInformation[], object> Type =
-            RequestType<WorkspaceSymbolParams, SymbolInformation[], object>.Create("workspace/symbol");
+            RequestType<WorkspaceSymbolParams, SymbolInformation[]> Type =
+            RequestType<WorkspaceSymbolParams, SymbolInformation[]>.Create("workspace/symbol");
     }
 
     public class WorkspaceSymbolParams

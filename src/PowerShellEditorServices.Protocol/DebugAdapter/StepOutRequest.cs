@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class StepOutRequest
     {
         public static readonly
-            RequestType<object, object, object> Type =
-            RequestType<object, object, object>.Create("stepOut");
+            RequestType<object, object> Type =
+            RequestType<object, object>.Create("stepOut");
     }
 }

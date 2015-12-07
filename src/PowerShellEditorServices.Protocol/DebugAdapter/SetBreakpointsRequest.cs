@@ -15,8 +15,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class SetBreakpointsRequest
     {
         public static readonly
-            RequestType<SetBreakpointsRequestArguments, SetBreakpointsResponseBody, object> Type =
-            RequestType<SetBreakpointsRequestArguments, SetBreakpointsResponseBody, object>.Create("setBreakpoints");
+            RequestType<SetBreakpointsRequestArguments, SetBreakpointsResponseBody> Type =
+            RequestType<SetBreakpointsRequestArguments, SetBreakpointsResponseBody>.Create("setBreakpoints");
     }
 
     public class SetBreakpointsRequestArguments

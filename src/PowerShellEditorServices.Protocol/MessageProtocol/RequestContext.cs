@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
-    public class RequestContext<TResult, TError>
+    public class RequestContext<TResult>
     {
         private Message requestMessage;
         private MessageWriter messageWriter;
@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 eventParams);
         }
 
-        public async Task SendError(TError errorDetails)
+        public async Task SendError(object errorDetails)
         {
             await this.messageWriter.WriteMessage(
                 Message.ResponseError(

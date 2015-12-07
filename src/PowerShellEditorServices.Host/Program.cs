@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Diagnostics;
@@ -67,8 +68,20 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
             Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host started!");
 
-            MessageLoop messageLoop = new MessageLoop(runDebugAdapter);
-            messageLoop.Start();
+            ProtocolServer server = null;
+            if (runDebugAdapter)
+            {
+                server = new DebugAdapter();
+            }
+            else
+            {
+                server = new LanguageServer();
+            }
+
+            server.Start();
+            server.WaitForExit();
+
+            Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host exited normally.");
         }
 
         static void CurrentDomain_UnhandledException(

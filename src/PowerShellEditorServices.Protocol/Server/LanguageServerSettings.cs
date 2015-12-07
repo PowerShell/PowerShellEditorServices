@@ -3,9 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-namespace Microsoft.PowerShell.EditorServices.Host
+namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
-    internal class LanguageServerSettings
+    public class LanguageServerSettings
     {
         public ScriptAnalysisSettings ScriptAnalysis { get; set; }
 
@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         }
     }
 
-    internal class ScriptAnalysisSettings
+    public class ScriptAnalysisSettings
     {
         public bool? Enable { get; set; }
 
@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         }
     }
 
-    internal class SettingsWrapper
+    public class SettingsWrapper
     {
         // NOTE: This property is capitalized as 'Powershell' because the
         // mode name sent from the client is written as 'powershell' and

@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class ThreadsRequest
     {
         public static readonly
-            RequestType<object, ThreadsResponseBody, object> Type =
-            RequestType<object, ThreadsResponseBody, object>.Create("threads");
+            RequestType<object, ThreadsResponseBody> Type =
+            RequestType<object, ThreadsResponseBody>.Create("threads");
     }
 
     public class ThreadsResponseBody
