@@ -20,7 +20,22 @@ namespace Microsoft.PowerShell.EditorServices
     [DebuggerDisplay("Name = {Name}, Id = {Id}, Count = {Children.Count}")]
     public class VariableContainerDetails : VariableDetailsBase
     {
-        private readonly List<VariableDetailsBase> children;
+        /// <summary>
+        /// Provides a constant for the name of the Global scope.
+        /// </summary>
+        public const string GlobalScopeName = "Global";
+
+        /// <summary>
+        /// Provides a constant for the name of the Script scope.
+        /// </summary>
+        public const string ScriptScopeName = "Script";
+
+        /// <summary>
+        /// Provides a constant for the name of the Local scope.
+        /// </summary>
+        public const string LocalScopeName = "Local";
+
+        private readonly Dictionary<string, VariableDetailsBase> children;
 
         /// <summary>
         /// Instantiates an instance of VariableScopeDetails.
@@ -36,13 +51,13 @@ namespace Microsoft.PowerShell.EditorServices
             this.IsExpandable = true;
             this.ValueString = " "; // An empty string isn't enough due to a temporary bug in VS Code.
 
-            this.children = new List<VariableDetailsBase>();
+            this.children = new Dictionary<string, VariableDetailsBase>();
         }
 
         /// <summary>
         /// Gets the collection of child variables.
         /// </summary>
-        public List<VariableDetailsBase> Children
+        public IDictionary<string, VariableDetailsBase> Children
         {
             get { return this.children; }
         }
@@ -53,7 +68,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns></returns>
         public override VariableDetailsBase[] GetChildren()
         {
-            return this.children.ToArray();
+            var variablesArray = new VariableDetailsBase[this.children.Count];
+            this.children.Values.CopyTo(variablesArray, 0);
+            return variablesArray;
         }
     }
 }
