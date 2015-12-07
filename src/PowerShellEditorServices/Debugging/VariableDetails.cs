@@ -113,6 +113,18 @@ namespace Microsoft.PowerShell.EditorServices
 
         private static bool GetIsExpandable(object valueObject)
         {
+            if (valueObject == null) 
+            {
+                return false;
+            }
+
+            // If a PSObject, unwrap it
+            var psobject = valueObject as PSObject;
+            if (psobject != null)
+            {
+                valueObject = psobject.BaseObject;
+            }
+
             Type valueType = 
                 valueObject != null ? 
                     valueObject.GetType() : 
