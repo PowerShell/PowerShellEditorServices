@@ -56,6 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.AddRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
 
             this.AddRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
+            this.AddRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
 
             this.AddRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
@@ -152,6 +153,45 @@ namespace Microsoft.PowerShell.EditorServices.Host
             await requestContext.SendResult(null);
         }
 
+        private async Task HandleExpandAliasRequest(
+            string content,
+            EditorSession editorSession,
+            RequestContext<string, object> requestContext)
+        {
+            var script = @"
+function __Expand-Alias {
+
+    param($targetScript)
+
+    [ref]$errors=$null
+    
+    $tokens = [System.Management.Automation.PsParser]::Tokenize($targetScript, $errors).Where({$_.type -eq 'command'}) | 
+                    Sort Start -Descending
+
+    foreach ($token in  $tokens) {
+        $definition=(Get-Command ('`'+$token.Content) -CommandType Alias -ErrorAction SilentlyContinue).Definition
+
+        if($definition) {        
+            $lhs=$targetScript.Substring(0, $token.Start)
+            $rhs=$targetScript.Substring($token.Start + $token.Length)
+            
+            $targetScript=$lhs + $definition + $rhs
+       }
+    }
+
+    $targetScript
+}";
+            var psCommand = new PSCommand();
+            psCommand.AddScript(script);
+            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+
+            psCommand = new PSCommand();
+            psCommand.AddCommand("__Expand-Alias").AddArgument(content);
+            var result = await editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
+
+            await requestContext.SendResult(result.First().ToString());
+        }
+
         protected Task HandleExitNotification(
             object exitParams,
             EditorSession editorSession,
@@ -235,7 +275,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             EventContext eventContext)
         {
-            bool oldScriptAnalysisEnabled = 
+            bool oldScriptAnalysisEnabled =
                 this.currentSettings.ScriptAnalysis.Enable.HasValue;
 
             this.currentSettings.Update(
@@ -887,8 +927,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 new PublishDiagnosticsNotification
                 {
                     Uri = scriptFile.ClientFilePath,
-                    Diagnostics = 
-                       allMarkers 
+                    Diagnostics =
+                       allMarkers
                             .Select(GetDiagnosticFromMarker)
                             .ToArray()
                 });
