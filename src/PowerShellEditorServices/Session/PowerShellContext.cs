@@ -166,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// execution completes.
         /// </returns>
         public async Task<IEnumerable<TResult>> ExecuteCommand<TResult>(
-            PSCommand psCommand, 
+            PSCommand psCommand,
             bool sendOutputToHost = false)
         {
             // If the debugger is active and the caller isn't on the pipeline 
@@ -207,7 +207,7 @@ namespace Microsoft.PowerShell.EditorServices
                         this.debuggerStoppedTask != null)
                     {
                         Logger.Write(
-                            LogLevel.Verbose, 
+                            LogLevel.Verbose,
                             string.Format(
                                 "Attempting to execute nested pipeline command(s):\r\n\r\n{0}",
                                 GetStringForPSCommand(psCommand)));
@@ -231,7 +231,7 @@ namespace Microsoft.PowerShell.EditorServices
                     else
                     {
                         Logger.Write(
-                            LogLevel.Verbose, 
+                            LogLevel.Verbose,
                             string.Format(
                                 "Attempting to execute command(s):\r\n\r\n{0}",
                                 GetStringForPSCommand(psCommand)));
@@ -262,15 +262,19 @@ namespace Microsoft.PowerShell.EditorServices
 
                         if (this.powerShell.HadErrors)
                         {
-                            // TODO: Find a good way to extract errors!
-                            Logger.Write(
-                                LogLevel.Error, 
-                                "Execution completed with errors.");
+                            string errorMessage = "Execution completed with errors:\r\n\r\n";
+
+                            foreach (var error in this.powerShell.Streams.Error)
+                            {
+                                errorMessage += error.ToString() + "\r\n";
+                            }
+
+                            Logger.Write(LogLevel.Error, errorMessage);
                         }
                         else
                         {
                             Logger.Write(
-                                LogLevel.Verbose, 
+                                LogLevel.Verbose,
                                 "Execution completed successfully.");
                         }
 
@@ -411,7 +415,7 @@ namespace Microsoft.PowerShell.EditorServices
                 if (!this.runspaceWaitQueue.IsEmpty)
                 {
                     this.currentRunspaceHandle = new RunspaceHandle(this.currentRunspace, this);
-                    dequeuedTask = 
+                    dequeuedTask =
                         this.runspaceWaitQueue.Dequeue(
                             this.currentRunspaceHandle);
                 }
@@ -442,7 +446,7 @@ namespace Microsoft.PowerShell.EditorServices
                     this.SessionState.ToString(),
                     e.NewSessionState.ToString()));
 
-            this.SessionState = e.NewSessionState; 
+            this.SessionState = e.NewSessionState;
 
             if (this.SessionStateChanged != null)
             {
@@ -557,7 +561,7 @@ namespace Microsoft.PowerShell.EditorServices
                 currentPolicy = result.FirstOrDefault();
             }
 
-            if (desiredExecutionPolicy < currentPolicy || 
+            if (desiredExecutionPolicy < currentPolicy ||
                 desiredExecutionPolicy == ExecutionPolicy.Bypass ||
                 currentPolicy == ExecutionPolicy.Undefined)
             {

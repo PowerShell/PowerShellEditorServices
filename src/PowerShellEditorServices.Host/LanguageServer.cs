@@ -156,11 +156,10 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private async Task HandleExpandAliasRequest(
             string content,
             EditorSession editorSession,
-            RequestContext<object, object> requestContext)
+            RequestContext<string, object> requestContext)
         {
-            var psCommand = new PSCommand();
             var script = @"
-function Expand-Alias {
+function __Expand-Alias {
 
     param($targetScript)
 
@@ -181,14 +180,14 @@ function Expand-Alias {
     }
 
     $targetScript
-}
-M
-Expand-Alias @'" + "\r\n" + content + "\r\n'@";
-
+}";
+            var psCommand = new PSCommand();
             psCommand.AddScript(script);
+            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
 
-            var result = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(
-                    psCommand);
+            psCommand = new PSCommand();
+            psCommand.AddCommand("__Expand-Alias").AddArgument(content);
+            var result = await editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
 
             await requestContext.SendResult(result.First().ToString());
         }
