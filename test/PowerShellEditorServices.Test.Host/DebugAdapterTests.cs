@@ -7,9 +7,12 @@ using Microsoft.PowerShell.EditorServices.Protocol.Client;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
@@ -21,11 +24,21 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
         public Task InitializeAsync()
         {
+            string testLogPath =
+                Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "logs",
+                    this.GetType().Name,
+                    Guid.NewGuid().ToString().Substring(0, 8) + ".log");
+
+            Console.WriteLine("        Output log at path: {0}", testLogPath);
+
             this.debugAdapterClient =
                 new DebugAdapterClient(
                     new StdioClientChannel(
                         "Microsoft.PowerShell.EditorServices.Host.exe",
-                        "/debugAdapter"));
+                        "/debugAdapter",
+                        "/logPath:\"" + testLogPath + "\""));
 
             return this.debugAdapterClient.Start();
         }

@@ -40,6 +40,19 @@ namespace Microsoft.PowerShell.EditorServices.Host
             }
 #endif
 
+            string logPath = null;
+            string logPathArgument =
+                args.FirstOrDefault(
+                    arg => 
+                        arg.StartsWith(
+                            "/logPath:",
+                            StringComparison.InvariantCultureIgnoreCase));
+
+            if (!string.IsNullOrEmpty(logPathArgument))
+            {
+                logPath = logPathArgument.Substring(9).Trim('"');
+            }
+
             bool runDebugAdapter =
                 args.Any(
                     arg => 
@@ -51,34 +64,29 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // Catch unhandled exceptions for logging purposes
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            if (runDebugAdapter)
-            {
-                // TODO: Remove this behavior in the near future --
-                //   Create the debug service log in a separate file
-                //   so that there isn't a conflict with the default 
-                //   log file.
-                Logger.Initialize("DebugAdapter.log", LogLevel.Verbose);
-            }
-            else
-            {
-                // Initialize the logger
-                // TODO: Set the level based on command line parameter
-                Logger.Initialize(minimumLogLevel: LogLevel.Verbose);
-            }
-
-            Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host started!");
-
             ProtocolServer server = null;
             if (runDebugAdapter)
             {
+                logPath = logPath ?? "DebugAdapter.log";
                 server = new DebugAdapter();
             }
             else
             {
+                logPath = logPath ?? "EditorServices.log";
                 server = new LanguageServer();
             }
 
+            // Start the logger with the specified log path
+            // TODO: Set the level based on command line parameter
+            Logger.Initialize(logPath, LogLevel.Verbose);
+
+            Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host starting...");
+
+            // Start the server
             server.Start();
+            Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host started!");
+
+            // Wait for the server to finish
             server.WaitForExit();
 
             Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host exited normally.");

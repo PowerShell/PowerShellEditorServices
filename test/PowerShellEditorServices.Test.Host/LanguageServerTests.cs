@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
@@ -22,10 +23,20 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
         public Task InitializeAsync()
         {
+            string testLogPath =
+                Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "logs",
+                    this.GetType().Name,
+                    Guid.NewGuid().ToString().Substring(0, 8) + ".log");
+
+            Console.WriteLine("        Output log at path: {0}", testLogPath);
+
             this.languageServiceClient =
                 new LanguageServiceClient(
                     new StdioClientChannel(
-                        "Microsoft.PowerShell.EditorServices.Host.exe"));
+                        "Microsoft.PowerShell.EditorServices.Host.exe",
+                        "/logPath:\"" + testLogPath + "\""));
 
             return this.languageServiceClient.Start();
         }
