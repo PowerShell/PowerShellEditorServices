@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Management.Automation.Host;
 
@@ -80,14 +81,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Coordinates CursorPosition
         {
-            get
-            {
-                throw new System.NotImplementedException();
-            }
-            set
-            {
-                throw new System.NotImplementedException();
-            }
+            get;
+            set;
         }
 
         /// <summary>
@@ -95,14 +90,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override int CursorSize
         {
-            get
-            {
-                throw new System.NotImplementedException();
-            }
-            set
-            {
-                throw new System.NotImplementedException();
-            }
+            get;
+            set;
         }
 
         /// <summary>
@@ -110,14 +99,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Coordinates WindowPosition
         {
-            get
-            {
-                throw new System.NotImplementedException();
-            }
-            set
-            {
-                throw new System.NotImplementedException();
-            }
+            get;
+            set;
         }
 
         /// <summary>
@@ -125,14 +108,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Size WindowSize
         {
-            get
-            {
-                throw new System.NotImplementedException();
-            }
-            set
-            {
-                throw new System.NotImplementedException();
-            }
+            get;
+            set;
         }
 
         /// <summary>
@@ -149,7 +126,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override bool KeyAvailable
         {
-            get { throw new System.NotImplementedException(); }
+            get { return false; }
         }
 
         /// <summary>
@@ -157,7 +134,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Size MaxPhysicalWindowSize
         {
-            get { throw new System.NotImplementedException(); }
+            get { return new Size(80, 20); }
         }
 
         /// <summary>
@@ -165,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Size MaxWindowSize
         {
-            get { throw new System.NotImplementedException(); }
+            get { return new Size(80, 20); }
         }
 
         /// <summary>
@@ -175,6 +152,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A KeyInfo struct with details about the current keypress.</returns>
         public override KeyInfo ReadKey(ReadKeyOptions options)
         {
+            Logger.Write(
+                LogLevel.Warning,
+                "PSHostRawUserInterface.ReadKey was called");
+
             throw new System.NotImplementedException();
         }
 
@@ -183,7 +164,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void FlushInputBuffer()
         {
-            throw new System.NotImplementedException();
+            Logger.Write(
+                LogLevel.Warning,
+                "PSHostRawUserInterface.FlushInputBuffer was called");
         }
 
         /// <summary>
@@ -193,6 +176,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A BufferCell array with the requested buffer contents.</returns>
         public override BufferCell[,] GetBufferContents(Rectangle rectangle)
         {
+            Logger.Write(
+                LogLevel.Warning,
+                "PSHostRawUserInterface.GetBufferContents was called");
+
             throw new System.NotImplementedException();
         }
 
@@ -209,7 +196,9 @@ namespace Microsoft.PowerShell.EditorServices
             Rectangle clip, 
             BufferCell fill)
         {
-            throw new System.NotImplementedException();
+            Logger.Write(
+                LogLevel.Warning,
+                "PSHostRawUserInterface.ScrollBufferContents was called");
         }
 
         /// <summary>
@@ -221,7 +210,9 @@ namespace Microsoft.PowerShell.EditorServices
             Rectangle rectangle, 
             BufferCell fill)
         {
-            throw new System.NotImplementedException();
+            Logger.Write(
+                LogLevel.Warning,
+                "PSHostRawUserInterface.SetBufferContents was called");
         }
 
         /// <summary>
@@ -233,7 +224,9 @@ namespace Microsoft.PowerShell.EditorServices
             Coordinates origin, 
             BufferCell[,] contents)
         {
-            throw new System.NotImplementedException();
+            Logger.Write(
+                LogLevel.Warning,
+                "PSHostRawUserInterface.SetBufferContents was called");
         }
 
         #endregion

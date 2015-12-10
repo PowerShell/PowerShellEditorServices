@@ -20,12 +20,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
     {
         private int messageId = 0;
 
-        private LanguageServiceManager languageServiceManager = 
+        private LanguageServiceManager languageServiceManager =
             new LanguageServiceManager();
 
-        private MessageReader MessageReader 
-        { 
-            get { return this.languageServiceManager.MessageReader; } 
+        private MessageReader MessageReader
+        {
+            get { return this.languageServiceManager.MessageReader; }
         }
 
         private MessageWriter MessageWriter
@@ -109,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("string", consoleFileNameItem.Detail);
         }
 
-        [Fact(Skip="Skipped until variable documentation gathering is added back.")]
+        [Fact(Skip = "Skipped until variable documentation gathering is added back.")]
         public async Task CompletesDetailOnVariableDocSuggestion()
         {
             //await this.SendOpenFileEvent("TestFiles\\CompleteFunctionName.ps1");
@@ -429,51 +429,62 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("stdout", outputEvent.Category);
         }
 
+        [Fact]
+        public async Task ServiceExpandsAliases()
+        {
+            string expandedText =
+                await this.SendRequest(
+                    ExpandAliasRequest.Type,
+                    "gci\r\npwd");
+
+            Assert.Equal("Get-ChildItem\r\nGet-Location", expandedText);
+        }
+
         [Fact]//(Skip = "Choice prompt functionality is currently in transition to a new model.")]
         public async Task ServiceExecutesReplCommandAndReceivesChoicePrompt()
         {
             // TODO: This test is removed until a new choice prompt strategy is determined.
 
-//            string choiceScript =
-//                @"
-//                $caption = ""Test Choice"";
-//                $message = ""Make a selection"";
-//                $choiceA = new-Object System.Management.Automation.Host.ChoiceDescription ""&A"",""A"";
-//                $choiceB = new-Object System.Management.Automation.Host.ChoiceDescription ""&B"",""B"";
-//                $choices = [System.Management.Automation.Host.ChoiceDescription[]]($choiceA,$choiceB);
-//                $response = $host.ui.PromptForChoice($caption, $message, $choices, 1)
-//                $response";
+            //            string choiceScript =
+            //                @"
+            //                $caption = ""Test Choice"";
+            //                $message = ""Make a selection"";
+            //                $choiceA = new-Object System.Management.Automation.Host.ChoiceDescription ""&A"",""A"";
+            //                $choiceB = new-Object System.Management.Automation.Host.ChoiceDescription ""&B"",""B"";
+            //                $choices = [System.Management.Automation.Host.ChoiceDescription[]]($choiceA,$choiceB);
+            //                $response = $host.ui.PromptForChoice($caption, $message, $choices, 1)
+            //                $response";
 
-//            await this.MessageWriter.WriteMessage(
-//                new ReplExecuteRequest
-//                {
-//                    Arguments = new ReplExecuteArgs
-//                    {
-//                        CommandString = choiceScript
-//                    }
-//                });
+            //            await this.MessageWriter.WriteMessage(
+            //                new ReplExecuteRequest
+            //                {
+            //                    Arguments = new ReplExecuteArgs
+            //                    {
+            //                        CommandString = choiceScript
+            //                    }
+            //                });
 
-//            // Wait for the choice prompt event and check expected values
-//            ReplPromptChoiceEvent replPromptChoiceEvent = this.WaitForMessage<ReplPromptChoiceEvent>();
-//            Assert.Equal(1, replPromptChoiceEvent.Body.DefaultChoice);
+            //            // Wait for the choice prompt event and check expected values
+            //            ReplPromptChoiceEvent replPromptChoiceEvent = this.WaitForMessage<ReplPromptChoiceEvent>();
+            //            Assert.Equal(1, replPromptChoiceEvent.Body.DefaultChoice);
 
-//            // Respond to the prompt event
-//            await this.MessageWriter.WriteMessage(
-//                new ReplPromptChoiceResponse
-//                {
-//                    Body = new ReplPromptChoiceResponseBody
-//                    {
-//                        Choice = 0
-//                    }
-//                });
+            //            // Respond to the prompt event
+            //            await this.MessageWriter.WriteMessage(
+            //                new ReplPromptChoiceResponse
+            //                {
+            //                    Body = new ReplPromptChoiceResponseBody
+            //                    {
+            //                        Choice = 0
+            //                    }
+            //                });
 
-//            // Wait for the selection to appear as output
-//            ReplWriteOutputEvent replWriteLineEvent = this.WaitForMessage<ReplWriteOutputEvent>();
-//            Assert.Equal("0", replWriteLineEvent.Body.LineContents);
+            //            // Wait for the selection to appear as output
+            //            ReplWriteOutputEvent replWriteLineEvent = this.WaitForMessage<ReplWriteOutputEvent>();
+            //            Assert.Equal("0", replWriteLineEvent.Body.LineContents);
         }
 
         private async Task<TResult> SendRequest<TParams, TResult, TError>(
-            RequestType<TParams, TResult, TError> requestType, 
+            RequestType<TParams, TResult, TError> requestType,
             TParams requestParams)
         {
             await this.SendRequestWithoutWait(requestType, requestParams);
@@ -491,7 +502,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     this.messageId.ToString(),
                     requestType.TypeName,
                     JToken.FromObject(requestParams)));
-       }
+        }
 
         private async Task SendEvent<TParams>(EventType<TParams> eventType, TParams eventParams)
         {
@@ -506,9 +517,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             string fileContents = string.Join(Environment.NewLine, File.ReadAllLines(filePath));
 
             await this.SendEvent(
-                DidOpenTextDocumentNotification.Type, 
-                new DidOpenTextDocumentNotification() 
-                { 
+                DidOpenTextDocumentNotification.Type,
+                new DidOpenTextDocumentNotification()
+                {
                     Uri = filePath,
                     Text = fileContents
                 });
@@ -535,7 +546,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         private TResult WaitForResponse<TParams, TResult, TError>(
-            RequestType<TParams, TResult, TError> requestType, 
+            RequestType<TParams, TResult, TError> requestType,
             int expectedId)
         {
             // TODO: Integrate timeout!

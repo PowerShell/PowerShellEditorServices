@@ -24,6 +24,15 @@ namespace Microsoft.PowerShell.EditorServices
 
         #endregion
 
+        #region Properties
+
+        /// <summary>
+        /// Gets or sets the root path of the workspace.
+        /// </summary>
+        public string WorkspacePath { get; set; }
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
@@ -155,15 +164,20 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile scriptFile, 
             Dictionary<string, ScriptFile> referencedScriptFiles)
         {
+            // Get the base path of the current script for use in resolving relative paths
+            string baseFilePath = 
+                GetBaseFilePath(
+                    scriptFile.FilePath);
+
             ScriptFile referencedFile;
             foreach (string referencedFileName in scriptFile.ReferencedFiles)
             {
                 string resolvedScriptPath =
                     this.ResolveRelativeScriptPath(
-                        scriptFile.FilePath,
+                        baseFilePath,
                         referencedFileName);
 
-                // make sure file exists before trying to get the file
+                // Make sure file exists before trying to get the file
                 if (File.Exists(resolvedScriptPath))
                 {
                     // Get the referenced file if it's not already in referencedScriptFiles
@@ -183,33 +197,62 @@ namespace Microsoft.PowerShell.EditorServices
 
         private string ResolveFilePath(string filePath)
         {
-            if (filePath.StartsWith(@"file://"))
+            if (!IsPathInMemory(filePath))
             {
-                // Client sent the path in URI format, extract the local path and trim
-                // any extraneous slashes
-                Uri fileUri = new Uri(filePath);
-                filePath = fileUri.LocalPath.TrimStart('/');
-            }
+                if (filePath.StartsWith(@"file://"))
+                {
+                    // Client sent the path in URI format, extract the local path and trim
+                    // any extraneous slashes
+                    Uri fileUri = new Uri(filePath);
+                    filePath = fileUri.LocalPath.TrimStart('/');
+                }
 
-            // Some clients send paths with UNIX-style slashes, replace those if necessary
-            filePath = filePath.Replace('/', '\\');
+                // Some clients send paths with UNIX-style slashes, replace those if necessary
+                filePath = filePath.Replace('/', '\\');
+
+                // Get the absolute file path
+                filePath = Path.GetFullPath(filePath);
+            }
 
             Logger.Write(LogLevel.Verbose, "Resolved path: " + filePath);
 
-            return Path.GetFullPath(filePath);
+            return filePath;
         }
 
-        private string ResolveRelativeScriptPath(string originalScriptPath, string relativePath)
+        internal static bool IsPathInMemory(string filePath)
         {
-            if (!Path.IsPathRooted(originalScriptPath))
+            // When viewing PowerShell files in the Git diff viewer, VS Code
+            // sends the contents of the file at HEAD with a URI that starts
+            // with 'inmemory'.  Untitled files which have been marked of
+            // type PowerShell have a path starting with 'untitled'.
+            return
+                filePath.StartsWith("inmemory") ||
+                filePath.StartsWith("untitled");
+        }
+
+        private string GetBaseFilePath(string filePath)
+        {
+            if (IsPathInMemory(filePath))
+            {
+                // If the file is in memory, use the workspace path
+                return this.WorkspacePath;
+            }
+
+            if (!Path.IsPathRooted(filePath))
             {
                 // TODO: Assert instead?
                 throw new InvalidOperationException(
                     string.Format(
                         "Must provide a full path for originalScriptPath: {0}", 
-                        originalScriptPath));
+                        filePath));
             }
 
+            // Get the directory of the file path
+            return Path.GetDirectoryName(filePath); 
+        }
+
+        private string ResolveRelativeScriptPath(string baseFilePath, string relativePath)
+        {
             if (Path.IsPathRooted(relativePath))
             {
                 return relativePath;
@@ -220,7 +263,7 @@ namespace Microsoft.PowerShell.EditorServices
             string combinedPath =
                 Path.GetFullPath(
                     Path.Combine(
-                        Path.GetDirectoryName(originalScriptPath), 
+                        baseFilePath,
                         relativePath));
 
             return combinedPath;

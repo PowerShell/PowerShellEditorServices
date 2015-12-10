@@ -25,6 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private static CancellationTokenSource existingRequestCancellation;
 
         private MessageDispatcher<EditorSession> messageDispatcher;
+        private LanguageServerSettings currentSettings = new LanguageServerSettings();
 
         public LanguageServer()
         {
@@ -42,6 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.AddEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotification);
             this.AddEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotification);
             this.AddEventHandler(DidChangeTextDocumentNotification.Type, this.HandleDidChangeTextDocumentNotification);
+            this.AddEventHandler(DidChangeConfigurationNotification<SettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
 
             this.AddRequestHandler(DefinitionRequest.Type, this.HandleDefinitionRequest);
             this.AddRequestHandler(ReferencesRequest.Type, this.HandleReferencesRequest);
@@ -52,6 +54,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.AddRequestHandler(HoverRequest.Type, this.HandleHoverRequest);
             this.AddRequestHandler(DocumentSymbolRequest.Type, this.HandleDocumentSymbolRequest);
             this.AddRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
+
+            this.AddRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
+            this.AddRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
 
             this.AddRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
@@ -66,22 +71,22 @@ namespace Microsoft.PowerShell.EditorServices.Host
         }
 
         public void AddEventHandler<TParams>(
-            EventType<TParams> eventType, 
+            EventType<TParams> eventType,
             Func<TParams, EditorSession, EventContext, Task> eventHandler)
         {
             this.messageDispatcher.AddEventHandler(
                 eventType,
                 eventHandler);
         }
-        
+
         public async Task ProcessMessage(
-            Message messageToProcess, 
-            EditorSession editorSession, 
+            Message messageToProcess,
+            EditorSession editorSession,
             MessageWriter messageWriter)
         {
             await this.messageDispatcher.DispatchMessage(
-                messageToProcess, 
-                editorSession, 
+                messageToProcess,
+                editorSession,
                 messageWriter);
         }
 
@@ -92,6 +97,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             RequestContext<InitializeResult, InitializeError> requestContext)
         {
+            // Grab the workspace path from the parameters
+            editorSession.Workspace.WorkspacePath = initializeParams.RootPath;
+
             await requestContext.SendResult(
                 new InitializeResult
                 {
@@ -127,6 +135,63 @@ namespace Microsoft.PowerShell.EditorServices.Host
             return Task.FromResult(true);
         }
 
+        protected async Task HandleShowOnlineHelpRequest(
+            string helpParams,
+            EditorSession editorSession,
+            RequestContext<object, object> requestContext)
+        {
+            if (helpParams == null) { helpParams = "get-help"; }
+
+            var psCommand = new PSCommand();
+            psCommand.AddCommand("Get-Help");
+            psCommand.AddArgument(helpParams);
+            psCommand.AddParameter("Online");
+
+            await editorSession.PowerShellContext.ExecuteCommand<object>(
+                    psCommand);
+
+            await requestContext.SendResult(null);
+        }
+
+        private async Task HandleExpandAliasRequest(
+            string content,
+            EditorSession editorSession,
+            RequestContext<string, object> requestContext)
+        {
+            var script = @"
+function __Expand-Alias {
+
+    param($targetScript)
+
+    [ref]$errors=$null
+    
+    $tokens = [System.Management.Automation.PsParser]::Tokenize($targetScript, $errors).Where({$_.type -eq 'command'}) | 
+                    Sort Start -Descending
+
+    foreach ($token in  $tokens) {
+        $definition=(Get-Command ('`'+$token.Content) -CommandType Alias -ErrorAction SilentlyContinue).Definition
+
+        if($definition) {        
+            $lhs=$targetScript.Substring(0, $token.Start)
+            $rhs=$targetScript.Substring($token.Start + $token.Length)
+            
+            $targetScript=$lhs + $definition + $rhs
+       }
+    }
+
+    $targetScript
+}";
+            var psCommand = new PSCommand();
+            psCommand.AddScript(script);
+            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+
+            psCommand = new PSCommand();
+            psCommand.AddCommand("__Expand-Alias").AddArgument(content);
+            var result = await editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
+
+            await requestContext.SendResult(result.First().ToString());
+        }
+
         protected Task HandleExitNotification(
             object exitParams,
             EditorSession editorSession,
@@ -144,7 +209,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         {
             ScriptFile openedFile =
                 editorSession.Workspace.GetFileBuffer(
-                    openParams.Uri, 
+                    openParams.Uri,
                     openParams.Text);
 
             // TODO: Get all recently edited files in the workspace
@@ -205,12 +270,42 @@ namespace Microsoft.PowerShell.EditorServices.Host
             return Task.FromResult(true);
         }
 
+        protected async Task HandleDidChangeConfigurationNotification(
+            DidChangeConfigurationParams<SettingsWrapper> configChangeParams,
+            EditorSession editorSession,
+            EventContext eventContext)
+        {
+            bool oldScriptAnalysisEnabled =
+                this.currentSettings.ScriptAnalysis.Enable.HasValue;
+
+            this.currentSettings.Update(
+                configChangeParams.Settings.Powershell);
+
+            if (oldScriptAnalysisEnabled != this.currentSettings.ScriptAnalysis.Enable)
+            {
+                // If the user just turned off script analysis, send a diagnostics
+                // event to clear the analysis markers that they already have
+                if (!this.currentSettings.ScriptAnalysis.Enable.Value)
+                {
+                    ScriptFileMarker[] emptyAnalysisDiagnostics = new ScriptFileMarker[0];
+
+                    foreach (var scriptFile in editorSession.Workspace.GetOpenedFiles())
+                    {
+                        await PublishScriptDiagnostics(
+                            scriptFile,
+                            emptyAnalysisDiagnostics,
+                            eventContext);
+                    }
+                }
+            }
+        }
+
         protected async Task HandleDefinitionRequest(
             TextDocumentPosition textDocumentPosition,
             EditorSession editorSession,
             RequestContext<Location[], object> requestContext)
         {
-            ScriptFile scriptFile = 
+            ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
                     textDocumentPosition.Uri);
 
@@ -250,7 +345,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             RequestContext<Location[], object> requestContext)
         {
-            ScriptFile scriptFile = 
+            ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
                     referencesParams.Uri);
 
@@ -298,7 +393,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             int cursorLine = textDocumentPosition.Position.Line + 1;
             int cursorColumn = textDocumentPosition.Position.Character + 1;
 
-            ScriptFile scriptFile = 
+            ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
                     textDocumentPosition.Uri);
 
@@ -309,7 +404,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     cursorColumn);
 
             CompletionItem[] completionItems = null;
-            
+
             if (completionResults != null)
             {
                 // By default, insert the completion at the current location
@@ -344,8 +439,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                         .Completions
                         .Select(
                             c => CreateCompletionItem(
-                                c, 
-                                textDocumentPosition.Position.Line, 
+                                c,
+                                textDocumentPosition.Position.Line,
                                 startEditColumn,
                                 endEditColumn))
                         .ToArray();
@@ -366,21 +461,18 @@ namespace Microsoft.PowerShell.EditorServices.Host
             if (completionItem.Kind == CompletionItemKind.Function)
             {
                 RunspaceHandle runspaceHandle =
-                    await editorSession.powerShellContext.GetRunspaceHandle();
+                    await editorSession.PowerShellContext.GetRunspaceHandle();
 
                 // Get the documentation for the function
-                CommandInfo commandInfo = 
+                CommandInfo commandInfo =
                     CommandHelpers.GetCommandInfo(
-                        completionItem.Label, 
+                        completionItem.Label,
                         runspaceHandle.Runspace);
 
-                if (commandInfo != null)
-                {
-                    completionItem.Documentation =
-                        CommandHelpers.GetCommandSynopsis(
-                            commandInfo,
-                            runspaceHandle.Runspace);
-                }
+                completionItem.Documentation =
+                    CommandHelpers.GetCommandSynopsis(
+                        commandInfo,
+                        runspaceHandle.Runspace);
 
                 runspaceHandle.Dispose();
             }
@@ -394,7 +486,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             RequestContext<SignatureHelp, object> requestContext)
         {
-            ScriptFile scriptFile = 
+            ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
                     textDocumentPosition.Uri);
 
@@ -446,7 +538,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             RequestContext<DocumentHighlight[], object> requestContext)
         {
-            ScriptFile scriptFile = 
+            ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
                     textDocumentPosition.Uri);
 
@@ -486,7 +578,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             RequestContext<Hover, object> requestContext)
         {
-            ScriptFile scriptFile = 
+            ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
                     textDocumentPosition.Uri);
 
@@ -553,12 +645,14 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 symbols =
                     foundSymbols
                         .FoundOccurrences
-                        .Select(r => 
+                        .Select(r =>
                             {
-                                return new SymbolInformation {
+                                return new SymbolInformation
+                                {
                                     ContainerName = containerName,
                                     Kind = GetSymbolKind(r.SymbolType),
-                                    Location = new Location {
+                                    Location = new Location
+                                    {
                                         Uri = new Uri(r.FilePath).AbsolutePath,
                                         Range = GetRangeFromScriptRegion(r.ScriptRegion)
                                     },
@@ -625,13 +719,14 @@ namespace Microsoft.PowerShell.EditorServices.Host
                         foundSymbols
                             .FoundOccurrences
                             .Where(r => IsQueryMatch(workspaceSymbolParams.Query, r.SymbolName))
-                            .Select(r => 
+                            .Select(r =>
                                 {
-                                    return new SymbolInformation 
+                                    return new SymbolInformation
                                     {
                                         ContainerName = containerName,
                                         Kind = r.SymbolType == SymbolType.Variable ? SymbolKind.Variable : SymbolKind.Function,
-                                        Location = new Location {
+                                        Location = new Location
+                                        {
                                             Uri = new Uri(r.FilePath).AbsoluteUri,
                                             Range = GetRangeFromScriptRegion(r.ScriptRegion)
                                         },
@@ -717,9 +812,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         private Task RunScriptDiagnostics(
             ScriptFile[] filesToAnalyze,
-            EditorSession editorSession, 
+            EditorSession editorSession,
             EventContext eventContext)
         {
+            if (!this.currentSettings.ScriptAnalysis.Enable.Value)
+            {
+                // If the user has disabled script analysis, skip it entirely
+                return TaskConstants.Completed;
+            }
+
             // If there's an existing task, attempt to cancel it
             try
             {
@@ -803,22 +904,34 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
                 var allMarkers = scriptFile.SyntaxMarkers.Concat(semanticMarkers);
 
-                // Always send syntax and semantic errors.  We want to 
-                // make sure no out-of-date markers are being displayed.
-                await eventContext.SendEvent(
-                    PublishDiagnosticsNotification.Type,
-                    new PublishDiagnosticsNotification
-                    {
-                        Uri = scriptFile.ClientFilePath,
-                        Diagnostics = 
-                           allMarkers 
-                                .Select(GetDiagnosticFromMarker)
-                                .ToArray()
-                    });
-
+                await PublishScriptDiagnostics(
+                    scriptFile,
+                    semanticMarkers,
+                    eventContext);
             }
 
             Logger.Write(LogLevel.Verbose, "Analysis complete.");
+        }
+
+        private async static Task PublishScriptDiagnostics(
+            ScriptFile scriptFile,
+            ScriptFileMarker[] semanticMarkers,
+            EventContext eventContext)
+        {
+            var allMarkers = scriptFile.SyntaxMarkers.Concat(semanticMarkers);
+
+            // Always send syntax and semantic errors.  We want to 
+            // make sure no out-of-date markers are being displayed.
+            await eventContext.SendEvent(
+                PublishDiagnosticsNotification.Type,
+                new PublishDiagnosticsNotification
+                {
+                    Uri = scriptFile.ClientFilePath,
+                    Diagnostics =
+                       allMarkers
+                            .Select(GetDiagnosticFromMarker)
+                            .ToArray()
+                });
         }
 
         private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
@@ -867,9 +980,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
         }
 
         private static CompletionItem CreateCompletionItem(
-            CompletionDetails completionDetails, 
-            int lineNumber, 
-            int startColumn, 
+            CompletionDetails completionDetails,
+            int lineNumber,
+            int startColumn,
             int endColumn)
         {
             string detailString = null;

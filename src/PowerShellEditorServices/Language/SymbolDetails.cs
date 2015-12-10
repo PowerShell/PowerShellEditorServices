@@ -51,12 +51,29 @@ namespace Microsoft.PowerShell.EditorServices
                         symbolReference.SymbolName,
                         runspace);
 
-                this.Documentation =
-                    CommandHelpers.GetCommandSynopsis(
-                        commandInfo, 
-                        runspace);
+                if (commandInfo != null)
+                {
+                    this.Documentation =
+                        CommandHelpers.GetCommandSynopsis(
+                            commandInfo,
+                            runspace);
 
-                this.DisplayString = "function " + symbolReference.SymbolName;
+                    if (commandInfo.CommandType == CommandTypes.Application)
+                    {
+                        this.DisplayString = "(application) " + symbolReference.SymbolName;
+                    }
+                    else
+                    {
+                        this.DisplayString = "function " + symbolReference.SymbolName;
+                    }
+                }
+                else
+                {
+                    // Command information can't be loaded.  This is likely due to
+                    // the symbol being a function that is defined in a file that
+                    // hasn't been loaded in the runspace yet.
+                    this.DisplayString = "function " + symbolReference.SymbolName;
+                }
             }
             else if (symbolReference.SymbolType == SymbolType.Parameter)
             {

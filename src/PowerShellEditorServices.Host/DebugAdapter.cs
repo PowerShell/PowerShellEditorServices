@@ -101,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // Execute the given PowerShell script and send the response.
             // Note that we aren't waiting for execution to complete here
             // because the debugger could stop while the script executes.
-            editorSession.powerShellContext
+            editorSession.PowerShellContext
                 .ExecuteScriptAtPath(launchParams.Program)
                 .ContinueWith(
                     async (t) =>
@@ -141,15 +141,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     if (e.NewSessionState == PowerShellContextState.Ready)
                     {
                         await requestContext.SendResult(null);
-                        editorSession.powerShellContext.SessionStateChanged -= handler;
+                        editorSession.PowerShellContext.SessionStateChanged -= handler;
 
                         // TODO: Find a way to exit more gracefully!
                         Environment.Exit(0);
                     }
                 };
 
-            editorSession.powerShellContext.SessionStateChanged += handler;
-            editorSession.powerShellContext.AbortExecution();
+            editorSession.PowerShellContext.SessionStateChanged += handler;
+            editorSession.PowerShellContext.AbortExecution();
 
             return Task.FromResult(true);
         }
@@ -276,7 +276,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 newStackFrames.Add(
                     StackFrame.Create(
                         stackFrames[i], 
-                        i + 1));
+                        i));
             }
 
             await requestContext.SendResult(
@@ -310,7 +310,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorSession editorSession,
             RequestContext<VariablesResponseBody, object> requestContext)
         {
-            VariableDetails[] variables =
+            VariableDetailsBase[] variables =
                 editorSession.DebugService.GetVariables(
                     variablesParams.VariablesReference);
 

@@ -52,25 +52,31 @@ namespace Microsoft.PowerShell.EditorServices
 
             PSObject helpObject = null;
 
-            using (PowerShell powerShell = PowerShell.Create())
+            if (commandInfo != null &&
+                (commandInfo.CommandType == CommandTypes.Cmdlet ||
+                 commandInfo.CommandType == CommandTypes.Function ||
+                 commandInfo.CommandType == CommandTypes.Filter))
             {
-                powerShell.Runspace = runspace;
-                powerShell.AddCommand("Get-Help");
-                powerShell.AddArgument(commandInfo);
-                helpObject = powerShell.Invoke<PSObject>().FirstOrDefault();
-            }
-
-            if (helpObject != null)
-            {
-                // Extract the synopsis string from the object
-                synopsisString = 
-                    (string)helpObject.Properties["synopsis"].Value ?? 
-                    string.Empty;
-
-                // Ignore the placeholder value for this field
-                if (string.Equals(synopsisString, "SHORT DESCRIPTION", System.StringComparison.InvariantCultureIgnoreCase))
+                using (PowerShell powerShell = PowerShell.Create())
                 {
-                    synopsisString = string.Empty;
+                    powerShell.Runspace = runspace;
+                    powerShell.AddCommand("Get-Help");
+                    powerShell.AddArgument(commandInfo);
+                    helpObject = powerShell.Invoke<PSObject>().FirstOrDefault();
+                }
+
+                if (helpObject != null)
+                {
+                    // Extract the synopsis string from the object
+                    synopsisString =
+                        (string)helpObject.Properties["synopsis"].Value ??
+                        string.Empty;
+
+                    // Ignore the placeholder value for this field
+                    if (string.Equals(synopsisString, "SHORT DESCRIPTION", System.StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        synopsisString = string.Empty;
+                    }
                 }
             }
 

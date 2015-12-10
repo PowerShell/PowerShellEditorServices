@@ -89,9 +89,12 @@
     <Compile Include="DebugAdapter\V8MessageSerializer.cs" />
     <Compile Include="DebugAdapter\Variable.cs" />
     <Compile Include="DebugAdapter\VariablesRequest.cs" />
+    <Compile Include="LanguageServer\Configuration.cs" />
     <Compile Include="LanguageServer\Definition.cs" />
     <Compile Include="LanguageServer\DocumentHighlight.cs" />
+    <Compile Include="LanguageServer\ExpandAliasRequest.cs" />
     <Compile Include="LanguageServer\Hover.cs" />
+    <Compile Include="LanguageServer\ShowOnlineHelpRequest.cs" />
     <Compile Include="LanguageServer\SignatureHelp.cs" />
     <Compile Include="LanguageServer\WorkspaceSymbols.cs" />
     <Compile Include="MessageProtocol\EventContext.cs" />
