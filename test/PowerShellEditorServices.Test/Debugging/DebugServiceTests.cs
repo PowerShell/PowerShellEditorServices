@@ -61,11 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         void debugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
         {
-            this.runnerContext.Post(
-                (o) =>
-                {
-                    this.debuggerStoppedQueue.Enqueue(e);
-                }, null);
+            this.debuggerStoppedQueue.Enqueue(e);
         }
 
         public void Dispose()
@@ -119,7 +115,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.debugService.Continue();
 
             await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 9);
-            this.debugService.Continue();
 
             // Abort script execution early and wait for completion
             this.debugService.Abort();

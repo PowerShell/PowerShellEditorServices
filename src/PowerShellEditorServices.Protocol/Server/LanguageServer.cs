@@ -70,7 +70,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             Logger.Write(LogLevel.Normal, "Language service is shutting down...");
 
-            this.editorSession.Dispose();
+            if (this.editorSession != null)
+            {
+                this.editorSession.Dispose();
+                this.editorSession = null;
+            }
         }
 
         #region Built-in Message Handlers

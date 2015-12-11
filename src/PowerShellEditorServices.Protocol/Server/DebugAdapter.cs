@@ -56,6 +56,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
 
+        protected override void Shutdown()
+        {
+            Logger.Write(LogLevel.Normal, "Debug adapter is shutting down...");
+
+            if (this.editorSession != null)
+            {
+                this.editorSession.Dispose();
+                this.editorSession = null;
+            }
+        }
+
         #region Built-in Message Handlers
 
         protected async Task HandleLaunchRequest(
