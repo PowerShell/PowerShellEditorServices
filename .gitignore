@@ -24,7 +24,7 @@ lock
 /target
 .corext/gen
 registered_data.ini
-
+.vs/
 
 # quickbuild.exe
 /VersionGeneratingLogs/
