@@ -24,16 +24,36 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public CompletionDetails[] Completions { get; private set; }
 
+        /// <summary>
+        /// Gets the range in the buffer that should be replaced by this
+        /// completion result.
+        /// </summary>
+        public BufferRange ReplacedRange { get; private set; }
+
         #endregion
 
         #region Constructors
 
+        /// <summary>
+        /// Creates an empty CompletionResults instance.
+        /// </summary>
+        public CompletionResults()
+        {
+            this.Completions = new CompletionDetails[0];
+            this.ReplacedRange = new BufferRange();
+        }
+
         internal static CompletionResults Create(
+            ScriptFile scriptFile,
             CommandCompletion commandCompletion)
         {
             return new CompletionResults
             {
                 Completions = GetCompletionsArray(commandCompletion),
+                ReplacedRange = 
+                    scriptFile.GetRangeBetweenOffsets(
+                        commandCompletion.ReplacementIndex,
+                        commandCompletion.ReplacementIndex + commandCompletion.ReplacementLength)
             };
         }
 
