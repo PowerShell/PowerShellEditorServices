@@ -50,6 +50,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="callStackFrame">
         /// The original CallStackFrame instance from which details will be obtained.
         /// </param>
+        /// <param name="autoVariables">
+        /// A variable container with all the filtered, auto variables for this stack frame.
+        /// </param>
         /// <param name="localVariables">
         /// A variable container with all the local variables for this stack frame.
         /// </param>

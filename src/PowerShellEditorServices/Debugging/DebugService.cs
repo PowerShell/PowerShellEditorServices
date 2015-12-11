@@ -3,12 +3,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -323,8 +323,11 @@ namespace Microsoft.PowerShell.EditorServices
         private async Task FetchGlobalAndScriptVariables()
         {
             // Retrieve globals first as script variable retrieval needs to search globals.
-            this.globalScopeVariables = await FetchVariableContainer(VariableContainerDetails.GlobalScopeName, null);
-            this.scriptScopeVariables = await FetchVariableContainer(VariableContainerDetails.ScriptScopeName, null);
+            this.globalScopeVariables = 
+                await FetchVariableContainer(VariableContainerDetails.GlobalScopeName, null);
+
+            this.scriptScopeVariables = 
+                await FetchVariableContainer(VariableContainerDetails.ScriptScopeName, null);
         }
 
         private async Task<VariableContainerDetails> FetchVariableContainer(
@@ -392,7 +395,8 @@ namespace Microsoft.PowerShell.EditorServices
             if (((psvariable.Options | constantAllScope) == constantAllScope) ||
                 ((psvariable.Options | readonlyAllScope) == readonlyAllScope))
             {
-                if (this.globalScopeVariables.Children.ContainsKey(VariableDetails.DollarPrefix + psvariable.Name))
+                string prefixedVariableName = VariableDetails.DollarPrefix + psvariable.Name;
+                if (this.globalScopeVariables.Children.ContainsKey(prefixedVariableName))
                 {
                     return false;
                 }
