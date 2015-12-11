@@ -23,17 +23,22 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Provides a constant for the name of the Global scope.
         /// </summary>
-        public const string GlobalScopeName = "Global";
+        public const string AutoVariablesName = "Auto";
 
         /// <summary>
-        /// Provides a constant for the name of the Script scope.
+        /// Provides a constant for the name of the Global scope.
         /// </summary>
-        public const string ScriptScopeName = "Script";
+        public const string GlobalScopeName = "Global";
 
         /// <summary>
         /// Provides a constant for the name of the Local scope.
         /// </summary>
         public const string LocalScopeName = "Local";
+
+        /// <summary>
+        /// Provides a constant for the name of the Script scope.
+        /// </summary>
+        public const string ScriptScopeName = "Script";
 
         private readonly Dictionary<string, VariableDetailsBase> children;
 

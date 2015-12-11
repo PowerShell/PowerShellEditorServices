@@ -270,9 +270,11 @@ namespace Microsoft.PowerShell.EditorServices
         public VariableScope[] GetVariableScopes(int stackFrameId)
         {
             int localStackFrameVariableId = this.stackFrameDetails[stackFrameId].LocalVariables.Id;
+            int autoVariablesId = this.stackFrameDetails[stackFrameId].AutoVariables.Id;
 
             return new VariableScope[]
             {
+                new VariableScope(autoVariablesId, VariableContainerDetails.AutoVariablesName),
                 new VariableScope(localStackFrameVariableId, VariableContainerDetails.LocalScopeName),
                 new VariableScope(this.scriptScopeVariables.Id, VariableContainerDetails.ScriptScopeName),
                 new VariableScope(this.globalScopeVariables.Id, VariableContainerDetails.GlobalScopeName),  
@@ -321,11 +323,13 @@ namespace Microsoft.PowerShell.EditorServices
         private async Task FetchGlobalAndScriptVariables()
         {
             // Retrieve globals first as script variable retrieval needs to search globals.
-            this.globalScopeVariables = await FetchVariableContainer(VariableContainerDetails.GlobalScopeName);
-            this.scriptScopeVariables = await FetchVariableContainer(VariableContainerDetails.ScriptScopeName);
+            this.globalScopeVariables = await FetchVariableContainer(VariableContainerDetails.GlobalScopeName, null);
+            this.scriptScopeVariables = await FetchVariableContainer(VariableContainerDetails.ScriptScopeName, null);
         }
 
-        private async Task<VariableContainerDetails> FetchVariableContainer(string scope)
+        private async Task<VariableContainerDetails> FetchVariableContainer(
+            string scope, 
+            VariableContainerDetails autoVariables)
         {
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand("Get-Variable");
@@ -335,52 +339,38 @@ namespace Microsoft.PowerShell.EditorServices
                 new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
             this.variables.Add(scopeVariableContainer);
 
-
-            // Add a container node to this variable container that will "hide" the built-in,
-            // automatic variables that we usually aren't interested in. Do this for local and script scope.
-            VariableContainerDetails automaticVariableContainer = null;
-            if (scope != VariableContainerDetails.GlobalScopeName)
-            {
-                automaticVariableContainer = 
-                    new VariableContainerDetails(this.nextVariableId++, "Automatic Variables");
-                this.variables.Add(automaticVariableContainer);
-                scopeVariableContainer.Children.Add(automaticVariableContainer.Name, automaticVariableContainer);
-            }
-
             var results = await this.powerShellContext.ExecuteCommand<PSVariable>(psCommand);
             foreach (PSVariable psvariable in results)
             {
                 var variableDetails = new VariableDetails(psvariable) { Id = this.nextVariableId++ };
                 this.variables.Add(variableDetails);
+                scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
 
-                if ((automaticVariableContainer == null) || ShouldAlwaysDisplayVariable(psvariable, scope))
+                if ((autoVariables != null) && AddToAutoVariables(psvariable, scope))
                 {
-                    scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
-                }
-                else
-                {
-                    automaticVariableContainer.Children.Add(variableDetails.Name, variableDetails);
+                    autoVariables.Children.Add(variableDetails.Name, variableDetails);
                 }
             }
 
             return scopeVariableContainer;
         }
 
-        private bool ShouldAlwaysDisplayVariable(PSVariable psvariable, string scope)
+        private bool AddToAutoVariables(PSVariable psvariable, string scope)
         {
-            ScopedItemOptions constantAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.Constant;
-            ScopedItemOptions readonlyAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.ReadOnly;
-
-            if (scope == VariableContainerDetails.GlobalScopeName)
+            if ((scope == VariableContainerDetails.GlobalScopeName) || 
+                (scope == VariableContainerDetails.ScriptScopeName))
             {
-                // We don't A) have a good way of distinguishing automatic from user created variabbles
-                // and B) globalScopeVariables.Children.ContainsKey() doesn't work for automatic variables
+                // We don't A) have a good way of distinguishing built-in from user created variables
+                // and B) globalScopeVariables.Children.ContainsKey() doesn't work for built-in variables
                 // stored in a child variable container within the globals variable container.
-                return true;
+                return false;
             }
 
+            var constantAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.Constant;
+            var readonlyAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.ReadOnly;
+
             // Some local variables, if they exist, should be displayed by default
-            if(psvariable.GetType().Name == "LocalVariable")
+            if (psvariable.GetType().Name == "LocalVariable")
             {
                 if (psvariable.Name.Equals("_"))
                 {
@@ -428,9 +418,18 @@ namespace Microsoft.PowerShell.EditorServices
 
             for (int i = 0; i < callStackFrames.Length; i++)
             {
-                VariableContainerDetails localVariables = 
-                    await FetchVariableContainer(i.ToString());
-                this.stackFrameDetails[i] = StackFrameDetails.Create(callStackFrames[i], localVariables);
+                VariableContainerDetails autoVariables =
+                    new VariableContainerDetails(
+                        this.nextVariableId++, 
+                        VariableContainerDetails.AutoVariablesName);
+
+                this.variables.Add(autoVariables);
+
+                VariableContainerDetails localVariables =
+                    await FetchVariableContainer(i.ToString(), autoVariables);
+
+                this.stackFrameDetails[i] = 
+                    StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables);
             }
         }
 

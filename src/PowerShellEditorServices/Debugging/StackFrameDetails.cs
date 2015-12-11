@@ -34,6 +34,11 @@ namespace Microsoft.PowerShell.EditorServices
         public int ColumnNumber { get; private set; }
 
         /// <summary>
+        /// Gets or sets the VariableContainerDetails that contains the auto variables.
+        /// </summary>
+        public VariableContainerDetails AutoVariables { get; private set; }
+
+        /// <summary>
         /// Gets or sets the VariableContainerDetails that contains the local variables.
         /// </summary>
         public VariableContainerDetails LocalVariables { get; private set; }
@@ -50,6 +55,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A new instance of the StackFrameDetails class.</returns>
         static internal StackFrameDetails Create(
             CallStackFrame callStackFrame,
+            VariableContainerDetails autoVariables,
             VariableContainerDetails localVariables)
         {
             return new StackFrameDetails
@@ -58,6 +64,7 @@ namespace Microsoft.PowerShell.EditorServices
                 FunctionName = callStackFrame.FunctionName,
                 LineNumber = callStackFrame.Position.StartLineNumber,
                 ColumnNumber = callStackFrame.Position.StartColumnNumber,
+                AutoVariables = autoVariables,
                 LocalVariables = localVariables
             };
         }
