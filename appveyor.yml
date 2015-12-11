@@ -36,5 +36,5 @@ build:
 test:
   assemblies:
   - Microsoft.PowerShell.EditorServices.Test.dll
+  - Microsoft.PowerShell.EditorServices.Test.Protocol.dll
   - Microsoft.PowerShell.EditorServices.Test.Host.dll
-  - Microsoft.PowerShell.EditorServices.Test.Transport.Stdio.dll
