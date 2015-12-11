@@ -52,6 +52,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </param>
         /// <param name="localVariables">
         /// A variable container with all the local variables for this stack frame.
+        /// </param>
         /// <returns>A new instance of the StackFrameDetails class.</returns>
         static internal StackFrameDetails Create(
             CallStackFrame callStackFrame,

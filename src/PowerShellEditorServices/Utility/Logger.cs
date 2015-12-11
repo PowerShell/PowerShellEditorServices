@@ -185,6 +185,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         {
             try
             {
+                // Make sure the log directory exists
+                Directory.CreateDirectory(
+                    Path.GetDirectoryName(
+                        logFilePath));
+
                 // Open the log file for writing with UTF8 encoding
                 this.textWriter =
                     new StreamWriter(

@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class DisconnectRequest 
     {
         public static readonly
-            RequestType<object, object, object> Type =
-            RequestType<object, object, object>.Create("disconnect");
+            RequestType<object, object> Type =
+            RequestType<object, object>.Create("disconnect");
     }
 }
 

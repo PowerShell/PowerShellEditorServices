@@ -3,98 +3,81 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
+using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 
-namespace Microsoft.PowerShell.EditorServices.Host
+namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
-    internal class LanguageServer : IMessageProcessor
+    public class LanguageServer : LanguageServerBase 
     {
         private static CancellationTokenSource existingRequestCancellation;
 
-        private MessageDispatcher<EditorSession> messageDispatcher;
+        private EditorSession editorSession;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
 
-        public LanguageServer()
+        public LanguageServer() : this(new StdioServerChannel())
         {
-            this.messageDispatcher = new MessageDispatcher<EditorSession>();
         }
 
-        public void Initialize()
+        public LanguageServer(ChannelBase serverChannel) : base(serverChannel)
+        {
+            this.editorSession = new EditorSession();
+            this.editorSession.StartSession();
+            this.editorSession.PowerShellContext.OutputWritten += this.powerShellContext_OutputWritten;
+        }
+
+        protected override void Initialize()
         {
             // Register all supported message types
 
-            this.AddRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
-            this.AddRequestHandler(ShutdownRequest.Type, this.HandleShutdownRequest);
-            this.AddEventHandler(ExitNotification.Type, this.HandleExitNotification);
+            this.SetRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
 
-            this.AddEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotification);
-            this.AddEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotification);
-            this.AddEventHandler(DidChangeTextDocumentNotification.Type, this.HandleDidChangeTextDocumentNotification);
-            this.AddEventHandler(DidChangeConfigurationNotification<SettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
+            this.SetEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotification);
+            this.SetEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotification);
+            this.SetEventHandler(DidChangeTextDocumentNotification.Type, this.HandleDidChangeTextDocumentNotification);
+            this.SetEventHandler(DidChangeConfigurationNotification<SettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
 
-            this.AddRequestHandler(DefinitionRequest.Type, this.HandleDefinitionRequest);
-            this.AddRequestHandler(ReferencesRequest.Type, this.HandleReferencesRequest);
-            this.AddRequestHandler(CompletionRequest.Type, this.HandleCompletionRequest);
-            this.AddRequestHandler(CompletionResolveRequest.Type, this.HandleCompletionResolveRequest);
-            this.AddRequestHandler(SignatureHelpRequest.Type, this.HandleSignatureHelpRequest);
-            this.AddRequestHandler(DocumentHighlightRequest.Type, this.HandleDocumentHighlightRequest);
-            this.AddRequestHandler(HoverRequest.Type, this.HandleHoverRequest);
-            this.AddRequestHandler(DocumentSymbolRequest.Type, this.HandleDocumentSymbolRequest);
-            this.AddRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
+            this.SetRequestHandler(DefinitionRequest.Type, this.HandleDefinitionRequest);
+            this.SetRequestHandler(ReferencesRequest.Type, this.HandleReferencesRequest);
+            this.SetRequestHandler(CompletionRequest.Type, this.HandleCompletionRequest);
+            this.SetRequestHandler(CompletionResolveRequest.Type, this.HandleCompletionResolveRequest);
+            this.SetRequestHandler(SignatureHelpRequest.Type, this.HandleSignatureHelpRequest);
+            this.SetRequestHandler(DocumentHighlightRequest.Type, this.HandleDocumentHighlightRequest);
+            this.SetRequestHandler(HoverRequest.Type, this.HandleHoverRequest);
+            this.SetRequestHandler(DocumentSymbolRequest.Type, this.HandleDocumentSymbolRequest);
+            this.SetRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
 
-            this.AddRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
+            this.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
+            this.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
 
-            this.AddRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
+            this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
 
-        public void AddRequestHandler<TParams, TResult, TError>(
-            RequestType<TParams, TResult, TError> requestType,
-            Func<TParams, EditorSession, RequestContext<TResult, TError>, Task> requestHandler)
+        protected override void Shutdown()
         {
-            this.messageDispatcher.AddRequestHandler(
-                requestType,
-                requestHandler);
-        }
+            Logger.Write(LogLevel.Normal, "Language service is shutting down...");
 
-        public void AddEventHandler<TParams>(
-            EventType<TParams> eventType,
-            Func<TParams, EditorSession, EventContext, Task> eventHandler)
-        {
-            this.messageDispatcher.AddEventHandler(
-                eventType,
-                eventHandler);
-        }
-
-        public async Task ProcessMessage(
-            Message messageToProcess,
-            EditorSession editorSession,
-            MessageWriter messageWriter)
-        {
-            await this.messageDispatcher.DispatchMessage(
-                messageToProcess,
-                editorSession,
-                messageWriter);
+            this.editorSession.Dispose();
         }
 
         #region Built-in Message Handlers
 
         protected async Task HandleInitializeRequest(
             InitializeRequest initializeParams,
-            EditorSession editorSession,
-            RequestContext<InitializeResult, InitializeError> requestContext)
+            RequestContext<InitializeResult> requestContext)
         {
             // Grab the workspace path from the parameters
             editorSession.Workspace.WorkspacePath = initializeParams.RootPath;
@@ -124,20 +107,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 });
         }
 
-        protected Task HandleShutdownRequest(
-            object shutdownParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
-        {
-            // TODO: Shut down!
-
-            return Task.FromResult(true);
-        }
-
         protected async Task HandleShowOnlineHelpRequest(
             string helpParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
+            RequestContext<object> requestContext)
         {
             if (helpParams == null) { helpParams = "get-help"; }
 
@@ -152,19 +124,46 @@ namespace Microsoft.PowerShell.EditorServices.Host
             await requestContext.SendResult(null);
         }
 
-        protected Task HandleExitNotification(
-            object exitParams,
-            EditorSession editorSession,
-            EventContext eventContext)
+        private async Task HandleExpandAliasRequest(
+            string content,
+            RequestContext<string> requestContext)
         {
-            // TODO: Shut down!
+            var script = @"
+function __Expand-Alias {
 
-            return Task.FromResult(true);
+    param($targetScript)
+
+    [ref]$errors=$null
+    
+    $tokens = [System.Management.Automation.PsParser]::Tokenize($targetScript, $errors).Where({$_.type -eq 'command'}) | 
+                    Sort Start -Descending
+
+    foreach ($token in  $tokens) {
+        $definition=(Get-Command ('`'+$token.Content) -CommandType Alias -ErrorAction SilentlyContinue).Definition
+
+        if($definition) {        
+            $lhs=$targetScript.Substring(0, $token.Start)
+            $rhs=$targetScript.Substring($token.Start + $token.Length)
+            
+            $targetScript=$lhs + $definition + $rhs
+       }
+    }
+
+    $targetScript
+}";
+            var psCommand = new PSCommand();
+            psCommand.AddScript(script);
+            await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+
+            psCommand = new PSCommand();
+            psCommand.AddCommand("__Expand-Alias").AddArgument(content);
+            var result = await this.editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
+
+            await requestContext.SendResult(result.First().ToString());
         }
 
         protected Task HandleDidOpenTextDocumentNotification(
             DidOpenTextDocumentNotification openParams,
-            EditorSession editorSession,
             EventContext eventContext)
         {
             ScriptFile openedFile =
@@ -185,7 +184,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected Task HandleDidCloseTextDocumentNotification(
             TextDocumentIdentifier closeParams,
-            EditorSession editorSession,
             EventContext eventContext)
         {
             // Find and close the file in the current session
@@ -203,7 +201,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected Task HandleDidChangeTextDocumentNotification(
             DidChangeTextDocumentParams textChangeParams,
-            EditorSession editorSession,
             EventContext eventContext)
         {
             List<ScriptFile> changedFiles = new List<ScriptFile>();
@@ -232,10 +229,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleDidChangeConfigurationNotification(
             DidChangeConfigurationParams<SettingsWrapper> configChangeParams,
-            EditorSession editorSession,
             EventContext eventContext)
         {
-            bool oldScriptAnalysisEnabled = 
+            bool oldScriptAnalysisEnabled =
                 this.currentSettings.ScriptAnalysis.Enable.HasValue;
 
             this.currentSettings.Update(
@@ -262,8 +258,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleDefinitionRequest(
             TextDocumentPosition textDocumentPosition,
-            EditorSession editorSession,
-            RequestContext<Location[], object> requestContext)
+            RequestContext<Location[]> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
@@ -302,8 +297,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleReferencesRequest(
             ReferencesParams referencesParams,
-            EditorSession editorSession,
-            RequestContext<Location[], object> requestContext)
+            RequestContext<Location[]> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
@@ -347,8 +341,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleCompletionRequest(
             TextDocumentPosition textDocumentPosition,
-            EditorSession editorSession,
-            RequestContext<CompletionItem[], object> requestContext)
+            RequestContext<CompletionItem[]> requestContext)
         {
             int cursorLine = textDocumentPosition.Position.Line + 1;
             int cursorColumn = textDocumentPosition.Position.Character + 1;
@@ -415,8 +408,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleCompletionResolveRequest(
             CompletionItem completionItem,
-            EditorSession editorSession,
-            RequestContext<CompletionItem, object> requestContext)
+            RequestContext<CompletionItem> requestContext)
         {
             if (completionItem.Kind == CompletionItemKind.Function)
             {
@@ -443,8 +435,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleSignatureHelpRequest(
             TextDocumentPosition textDocumentPosition,
-            EditorSession editorSession,
-            RequestContext<SignatureHelp, object> requestContext)
+            RequestContext<SignatureHelp> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
@@ -495,8 +486,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleDocumentHighlightRequest(
             TextDocumentPosition textDocumentPosition,
-            EditorSession editorSession,
-            RequestContext<DocumentHighlight[], object> requestContext)
+            RequestContext<DocumentHighlight[]> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
@@ -535,8 +525,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleHoverRequest(
             TextDocumentPosition textDocumentPosition,
-            EditorSession editorSession,
-            RequestContext<Hover, object> requestContext)
+            RequestContext<Hover> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
@@ -585,8 +574,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleDocumentSymbolRequest(
             TextDocumentIdentifier textDocumentIdentifier,
-            EditorSession editorSession,
-            RequestContext<SymbolInformation[], object> requestContext)
+            RequestContext<SymbolInformation[]> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
@@ -659,8 +647,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleWorkspaceSymbolRequest(
             WorkspaceSymbolParams workspaceSymbolParams,
-            EditorSession editorSession,
-            RequestContext<SymbolInformation[], object> requestContext)
+            RequestContext<SymbolInformation[]> requestContext)
         {
             var symbols = new List<SymbolInformation>();
 
@@ -708,8 +695,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleEvaluateRequest(
             DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
-            EditorSession editorSession,
-            RequestContext<DebugAdapterMessages.EvaluateResponseBody, object> requestContext)
+            RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
         {
             VariableDetails result =
                 await editorSession.DebugService.EvaluateExpression(
@@ -732,6 +718,21 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 {
                     Result = valueString,
                     VariablesReference = variableId
+                });
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
+        {
+            await this.SendEvent(
+                DebugAdapterMessages.OutputEvent.Type,
+                new DebugAdapterMessages.OutputEventBody
+                {
+                    Output = e.OutputText + (e.IncludeNewLine ? "\r\n" : string.Empty),
+                    Category = (e.OutputType == OutputType.Error) ? "stderr" : "stdout"
                 });
         }
 
@@ -887,8 +888,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 new PublishDiagnosticsNotification
                 {
                     Uri = scriptFile.ClientFilePath,
-                    Diagnostics = 
-                       allMarkers 
+                    Diagnostics =
+                       allMarkers
                             .Select(GetDiagnosticFromMarker)
                             .ToArray()
                 });

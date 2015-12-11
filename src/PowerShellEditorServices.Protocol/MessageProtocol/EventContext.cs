@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
+    /// <summary>
+    /// Provides context for a received event so that handlers
+    /// can write events back to the channel.
+    /// </summary>
     public class EventContext
     {
         private MessageWriter messageWriter;
@@ -17,7 +21,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             this.messageWriter = messageWriter;
         }
 
-        public async Task SendEvent<TParams>(EventType<TParams> eventType, TParams eventParams)
+        public async Task SendEvent<TParams>(
+            EventType<TParams> eventType, 
+            TParams eventParams)
         {
             await this.messageWriter.WriteEvent(
                 eventType,

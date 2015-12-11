@@ -11,8 +11,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class LaunchRequest
     {
         public static readonly
-            RequestType<LaunchRequestArguments, object, object> Type =
-            RequestType<LaunchRequestArguments, object, object>.Create("launch");
+            RequestType<LaunchRequestArguments, object> Type =
+            RequestType<LaunchRequestArguments, object>.Create("launch");
     }
 
     public class LaunchRequestArguments

@@ -66,7 +66,6 @@
     <Compile Include="Debugging\VariableDetailsBase.cs" />
     <Compile Include="Debugging\VariableScope.cs" />
     <Compile Include="Debugging\VariableContainerDetails.cs" />
-    <Compile Include="IHost.cs" />
     <Compile Include="Language\AstOperations.cs" />
     <Compile Include="Language\CommandHelpers.cs" />
     <Compile Include="Language\CompletionResults.cs" />

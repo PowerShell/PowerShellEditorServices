@@ -3,44 +3,47 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Protocol.Client;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Newtonsoft.Json.Linq;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
-    public class ScenarioTests : IDisposable
+    public class LanguageServerTests : IAsyncLifetime
     {
-        private int messageId = 0;
+        private LanguageServiceClient languageServiceClient;
 
-        private LanguageServiceManager languageServiceManager = 
-            new LanguageServiceManager();
+        public Task InitializeAsync()
+        {
+            string testLogPath =
+                Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "logs",
+                    this.GetType().Name,
+                    Guid.NewGuid().ToString().Substring(0, 8) + ".log");
 
-        private MessageReader MessageReader 
-        { 
-            get { return this.languageServiceManager.MessageReader; } 
+            Console.WriteLine("        Output log at path: {0}", testLogPath);
+
+            this.languageServiceClient =
+                new LanguageServiceClient(
+                    new StdioClientChannel(
+                        "Microsoft.PowerShell.EditorServices.Host.exe",
+                        "/logPath:\"" + testLogPath + "\""));
+
+            return this.languageServiceClient.Start();
         }
 
-        private MessageWriter MessageWriter
+        public Task DisposeAsync()
         {
-            get { return this.languageServiceManager.MessageWriter; }
-        }
-
-        public ScenarioTests()
-        {
-            this.languageServiceManager.Start();
-        }
-
-        public void Dispose()
-        {
-            this.languageServiceManager.Stop();
+            return this.languageServiceClient.Stop();
         }
 
         [Fact]
@@ -50,7 +53,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             await this.SendOpenFileEvent("TestFiles\\SimpleSyntaxError.ps1", false);
 
             // Wait for the diagnostic event
-            PublishDiagnosticsNotification diagnostics = this.WaitForEvent(PublishDiagnosticsNotification.Type);
+            PublishDiagnosticsNotification diagnostics = 
+                await this.WaitForEvent(
+                    PublishDiagnosticsNotification.Type);
 
             // Was there a syntax error?
             Assert.NotEqual(0, diagnostics.Diagnostics.Length);
@@ -109,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("string", consoleFileNameItem.Detail);
         }
 
-        [Fact(Skip="Skipped until variable documentation gathering is added back.")]
+        [Fact(Skip = "Skipped until variable documentation gathering is added back.")]
         public async Task CompletesDetailOnVariableDocSuggestion()
         {
             //await this.SendOpenFileEvent("TestFiles\\CompleteFunctionName.ps1");
@@ -415,18 +420,35 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesOutput()
         {
-            await this.SendRequestWithoutWait(
-                EvaluateRequest.Type,
-                new EvaluateRequestArguments
-                {
-                    Expression = "1 + 2"
-                });
+            Task<OutputEventBody> outputEventTask = 
+                this.WaitForEvent(
+                    OutputEvent.Type);
 
-            OutputEventBody outputEvent = this.WaitForEvent(OutputEvent.Type);
-            this.WaitForResponse(EvaluateRequest.Type, this.messageId);
+            Task<EvaluateResponseBody> evaluateTask =
+                this.SendRequest(
+                    EvaluateRequest.Type,
+                    new EvaluateRequestArguments
+                    {
+                        Expression = "1 + 2"
+                    });
 
+            // Wait for both the evaluate response and the output event
+            await Task.WhenAll(evaluateTask, outputEventTask);
+
+            OutputEventBody outputEvent = outputEventTask.Result;
             Assert.Equal("3\r\n", outputEvent.Output);
             Assert.Equal("stdout", outputEvent.Category);
+        }
+
+        [Fact]
+        public async Task ServiceExpandsAliases()
+        {
+            string expandedText =
+                await this.SendRequest(
+                    ExpandAliasRequest.Type,
+                    "gci\r\npwd");
+
+            Assert.Equal("Get-ChildItem\r\nGet-Location", expandedText);
         }
 
         [Fact]//(Skip = "Choice prompt functionality is currently in transition to a new model.")]
@@ -434,120 +456,105 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         {
             // TODO: This test is removed until a new choice prompt strategy is determined.
 
-//            string choiceScript =
-//                @"
-//                $caption = ""Test Choice"";
-//                $message = ""Make a selection"";
-//                $choiceA = new-Object System.Management.Automation.Host.ChoiceDescription ""&A"",""A"";
-//                $choiceB = new-Object System.Management.Automation.Host.ChoiceDescription ""&B"",""B"";
-//                $choices = [System.Management.Automation.Host.ChoiceDescription[]]($choiceA,$choiceB);
-//                $response = $host.ui.PromptForChoice($caption, $message, $choices, 1)
-//                $response";
+            //            string choiceScript =
+            //                @"
+            //                $caption = ""Test Choice"";
+            //                $message = ""Make a selection"";
+            //                $choiceA = new-Object System.Management.Automation.Host.ChoiceDescription ""&A"",""A"";
+            //                $choiceB = new-Object System.Management.Automation.Host.ChoiceDescription ""&B"",""B"";
+            //                $choices = [System.Management.Automation.Host.ChoiceDescription[]]($choiceA,$choiceB);
+            //                $response = $host.ui.PromptForChoice($caption, $message, $choices, 1)
+            //                $response";
 
-//            await this.MessageWriter.WriteMessage(
-//                new ReplExecuteRequest
-//                {
-//                    Arguments = new ReplExecuteArgs
-//                    {
-//                        CommandString = choiceScript
-//                    }
-//                });
+            //            await this.MessageWriter.WriteMessage(
+            //                new ReplExecuteRequest
+            //                {
+            //                    Arguments = new ReplExecuteArgs
+            //                    {
+            //                        CommandString = choiceScript
+            //                    }
+            //                });
 
-//            // Wait for the choice prompt event and check expected values
-//            ReplPromptChoiceEvent replPromptChoiceEvent = this.WaitForMessage<ReplPromptChoiceEvent>();
-//            Assert.Equal(1, replPromptChoiceEvent.Body.DefaultChoice);
+            //            // Wait for the choice prompt event and check expected values
+            //            ReplPromptChoiceEvent replPromptChoiceEvent = this.WaitForMessage<ReplPromptChoiceEvent>();
+            //            Assert.Equal(1, replPromptChoiceEvent.Body.DefaultChoice);
 
-//            // Respond to the prompt event
-//            await this.MessageWriter.WriteMessage(
-//                new ReplPromptChoiceResponse
-//                {
-//                    Body = new ReplPromptChoiceResponseBody
-//                    {
-//                        Choice = 0
-//                    }
-//                });
+            //            // Respond to the prompt event
+            //            await this.MessageWriter.WriteMessage(
+            //                new ReplPromptChoiceResponse
+            //                {
+            //                    Body = new ReplPromptChoiceResponseBody
+            //                    {
+            //                        Choice = 0
+            //                    }
+            //                });
 
-//            // Wait for the selection to appear as output
-//            ReplWriteOutputEvent replWriteLineEvent = this.WaitForMessage<ReplWriteOutputEvent>();
-//            Assert.Equal("0", replWriteLineEvent.Body.LineContents);
+            //            // Wait for the selection to appear as output
+            //            ReplWriteOutputEvent replWriteLineEvent = this.WaitForMessage<ReplWriteOutputEvent>();
+            //            Assert.Equal("0", replWriteLineEvent.Body.LineContents);
         }
 
-        private async Task<TResult> SendRequest<TParams, TResult, TError>(
-            RequestType<TParams, TResult, TError> requestType, 
+        private Task<TResult> SendRequest<TParams, TResult>(
+            RequestType<TParams, TResult> requestType, 
             TParams requestParams)
         {
-            await this.SendRequestWithoutWait(requestType, requestParams);
-            return this.WaitForResponse(requestType, this.messageId);
+            return 
+                this.languageServiceClient.SendRequest(
+                    requestType, 
+                    requestParams);
         }
 
-        private async Task SendRequestWithoutWait<TParams, TResult, TError>(
-            RequestType<TParams, TResult, TError> requestType,
-            TParams requestParams)
+        private Task SendEvent<TParams>(EventType<TParams> eventType, TParams eventParams)
         {
-            this.messageId++;
-
-            await this.MessageWriter.WriteMessage(
-                Message.Request(
-                    this.messageId.ToString(),
-                    requestType.TypeName,
-                    JToken.FromObject(requestParams)));
-       }
-
-        private async Task SendEvent<TParams>(EventType<TParams> eventType, TParams eventParams)
-        {
-            await this.MessageWriter.WriteMessage(
-                Message.Event(
-                    eventType.MethodName,
-                    JToken.FromObject(eventParams)));
+            return 
+                this.languageServiceClient.SendEvent(
+                    eventType,
+                    eventParams);
         }
 
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)
         {
             string fileContents = string.Join(Environment.NewLine, File.ReadAllLines(filePath));
 
+            // Start the event waiter for diagnostics before sending the
+            // open event to make sure that we catch it
+            Task<PublishDiagnosticsNotification> diagnosticWaitTask = null;
+            if (waitForDiagnostics)
+            {
+                // Wait for the diagnostic event
+                diagnosticWaitTask = 
+                    this.WaitForEvent(
+                        PublishDiagnosticsNotification.Type);
+            }
+
             await this.SendEvent(
-                DidOpenTextDocumentNotification.Type, 
-                new DidOpenTextDocumentNotification() 
-                { 
+                DidOpenTextDocumentNotification.Type,
+                new DidOpenTextDocumentNotification()
+                {
                     Uri = filePath,
                     Text = fileContents
                 });
 
-            if (waitForDiagnostics)
+            if (diagnosticWaitTask != null)
             {
-                // Wait for the diagnostic event
-                this.WaitForEvent(PublishDiagnosticsNotification.Type);
+                await diagnosticWaitTask;
             }
         }
 
-        private TParams WaitForEvent<TParams>(EventType<TParams> eventType)
+        private Task<TParams> WaitForEvent<TParams>(EventType<TParams> eventType)
         {
-            // TODO: Integrate timeout!
-            Message receivedMessage = this.MessageReader.ReadMessage().Result;
+            TaskCompletionSource<TParams> eventTask = new TaskCompletionSource<TParams>();
 
-            Assert.Equal(MessageType.Event, receivedMessage.MessageType);
-            Assert.Equal(eventType.MethodName, receivedMessage.Method);
+            this.languageServiceClient.SetEventHandler(
+                eventType,
+                (p, ctx) =>
+                {
+                    eventTask.SetResult(p);
+                    return Task.FromResult(true);
+                },
+                true);  // Override any existing handler
 
-            return
-                receivedMessage.Contents != null ?
-                    receivedMessage.Contents.ToObject<TParams>() :
-                    default(TParams);
-        }
-
-        private TResult WaitForResponse<TParams, TResult, TError>(
-            RequestType<TParams, TResult, TError> requestType, 
-            int expectedId)
-        {
-            // TODO: Integrate timeout!
-            Message receivedMessage = this.MessageReader.ReadMessage().Result;
-
-            Assert.Equal(MessageType.Response, receivedMessage.MessageType);
-            Assert.Equal(expectedId.ToString(), receivedMessage.Id);
-
-            return
-                receivedMessage.Contents != null ?
-                    receivedMessage.Contents.ToObject<TResult>() :
-                    default(TResult);
+            return eventTask.Task;
         }
     }
 }

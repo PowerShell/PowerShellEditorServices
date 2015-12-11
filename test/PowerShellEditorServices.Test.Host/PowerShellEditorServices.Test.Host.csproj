@@ -64,9 +64,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LanguageServiceManager.cs" />
+    <Compile Include="AttachHelper.cs" />
+    <Compile Include="DebugAdapterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ScenarioTests.cs" />
+    <Compile Include="LanguageServerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
