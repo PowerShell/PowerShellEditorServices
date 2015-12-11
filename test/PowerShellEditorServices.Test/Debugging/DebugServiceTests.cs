@@ -1,9 +1,16 @@
-﻿using Nito.AsyncEx;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using Nito.AsyncEx;
 using System;
 using System.Linq;
 using System.Management.Automation;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 {
@@ -13,6 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         private DebugService debugService;
         private ScriptFile debugScriptFile;
         private PowerShellContext powerShellContext;
+        private SynchronizationContext runnerContext;
 
         private AsyncProducerConsumerQueue<DebuggerStopEventArgs> debuggerStoppedQueue =
             new AsyncProducerConsumerQueue<DebuggerStopEventArgs>();
@@ -34,6 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.debugService = new DebugService(this.powerShellContext);
             this.debugService.DebuggerStopped += debugService_DebuggerStopped;
             this.debugService.BreakpointUpdated += debugService_BreakpointUpdated;
+            this.runnerContext = SynchronizationContext.Current;
         }
 
         void powerShellContext_SessionStateChanged(object sender, SessionStateChangedEventArgs e)
@@ -52,7 +61,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         void debugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
         {
-            this.debuggerStoppedQueue.Enqueue(e);
+            this.runnerContext.Post(
+                (o) =>
+                {
+                    this.debuggerStoppedQueue.Enqueue(e);
+                }, null);
         }
 
         public void Dispose()
@@ -97,32 +110,34 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                     new int[] { 5, 9 });
             await this.AssertStateChange(PowerShellContextState.Ready);
 
-            this.powerShellContext.ExecuteScriptAtPath(
-                this.debugScriptFile.FilePath);
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptAtPath(
+                    this.debugScriptFile.FilePath);
 
             // Wait for a couple breakpoints
             await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 5);
             this.debugService.Continue();
+
             await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 9);
             this.debugService.Continue();
 
             // Abort script execution early and wait for completion
             this.debugService.Abort();
-            await this.AssertStateChange(
-                PowerShellContextState.Ready,
-                PowerShellExecutionResult.Aborted);
+            await executeTask;
         }
 
         [Fact]
         public async Task DebuggerBreaksWhenRequested()
         {
-            this.powerShellContext.ExecuteScriptString(
-                this.debugScriptFile.FilePath);
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptString(
+                    this.debugScriptFile.FilePath);
 
             // Break execution and wait for the debugger to stop
             this.debugService.Break();
-            await this.AssertDebuggerStopped(
-                this.debugScriptFile.FilePath);
+
+            // File path is an empty string when paused while running
+            await this.AssertDebuggerStopped(string.Empty); 
             await this.AssertStateChange(
                 PowerShellContextState.Ready,
                 PowerShellExecutionResult.Stopped);
@@ -137,8 +152,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerRunsCommandsWhileStopped()
         {
-            this.powerShellContext.ExecuteScriptString(
-                this.debugScriptFile.FilePath);
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptString(
+                    this.debugScriptFile.FilePath);
 
             // Break execution and wait for the debugger to stop
             this.debugService.Break();
@@ -168,7 +184,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 new int[] { 14 });
 
             // Execute the script and wait for the breakpoint to be hit
-            this.powerShellContext.ExecuteScriptString(variablesFile.FilePath);
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptString(
+                    variablesFile.FilePath);
+
             await this.AssertDebuggerStopped(variablesFile.FilePath);
 
             StackFrameDetails[] stackFrames = debugService.GetStackFrames();
@@ -211,15 +230,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             string scriptPath,
             int lineNumber = -1)
         {
+            SynchronizationContext syncContext = SynchronizationContext.Current;
+
             DebuggerStopEventArgs eventArgs =
                 await this.debuggerStoppedQueue.DequeueAsync();
 
-            // TODO #22 - Need to re-enable these Asserts once we figure 
-            // out how to make them work correctly
-            //Assert.Equal(scriptPath, eventArgs.InvocationInfo.ScriptName);
+            Assert.Equal(scriptPath, eventArgs.InvocationInfo.ScriptName);
             if (lineNumber > -1)
             {
-                //Assert.Equal(lineNumber, eventArgs.InvocationInfo.ScriptLineNumber);
+                Assert.Equal(lineNumber, eventArgs.InvocationInfo.ScriptLineNumber);
             }
         }
 
@@ -230,9 +249,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             SessionStateChangedEventArgs newState =
                 await this.sessionStateQueue.DequeueAsync();
 
-            // TODO #22
-            //Assert.Equal(expectedState, newState.NewSessionState);
-            //Assert.Equal(expectedResult, newState.ExecutionResult);
+            Assert.Equal(expectedState, newState.NewSessionState);
+            Assert.Equal(expectedResult, newState.ExecutionResult);
         }
     }
 }
+
+

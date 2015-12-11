@@ -11,15 +11,15 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
-    public class RequestType<TParams, TResult, TError>
+    public class RequestType<TParams, TResult>
     {
-        public string TypeName { get; private set; }
+        public string MethodName { get; private set; }
 
-        public static RequestType<TParams, TResult, TError> Create(string typeName)
+        public static RequestType<TParams, TResult> Create(string typeName)
         {
-            return new RequestType<TParams,TResult,TError>()
+            return new RequestType<TParams, TResult>()
             {
-                TypeName = typeName
+                MethodName = typeName
             };
         }
     }

@@ -5,124 +5,88 @@
 
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Management.Automation;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Host
+namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
-    internal class DebugAdapter : IMessageProcessor
+    public class DebugAdapter : DebugAdapterBase
     {
-        private MessageDispatcher<EditorSession> messageDispatcher;
+        private EditorSession editorSession;
 
-        public DebugAdapter()
+        public DebugAdapter() : this(new StdioServerChannel())
         {
-            this.messageDispatcher = new MessageDispatcher<EditorSession>();
         }
 
-        public void Initialize()
+        public DebugAdapter(ChannelBase serverChannel) : base(serverChannel)
+        {
+            this.editorSession = new EditorSession();
+            this.editorSession.StartSession();
+            this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
+        }
+
+        protected override void Initialize()
         {
             // Register all supported message types
 
-            this.AddRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
-            this.AddRequestHandler(LaunchRequest.Type, this.HandleLaunchRequest);
-            this.AddRequestHandler(AttachRequest.Type, this.HandleAttachRequest);
-            this.AddRequestHandler(DisconnectRequest.Type, this.HandleDisconnectRequest);
+            this.SetRequestHandler(LaunchRequest.Type, this.HandleLaunchRequest);
+            this.SetRequestHandler(AttachRequest.Type, this.HandleAttachRequest);
+            this.SetRequestHandler(DisconnectRequest.Type, this.HandleDisconnectRequest);
 
-            this.AddRequestHandler(SetBreakpointsRequest.Type, this.HandleSetBreakpointsRequest);
-            this.AddRequestHandler(SetExceptionBreakpointsRequest.Type, this.HandleSetExceptionBreakpointsRequest);
+            this.SetRequestHandler(SetBreakpointsRequest.Type, this.HandleSetBreakpointsRequest);
+            this.SetRequestHandler(SetExceptionBreakpointsRequest.Type, this.HandleSetExceptionBreakpointsRequest);
 
-            this.AddRequestHandler(ContinueRequest.Type, this.HandleContinueRequest);
-            this.AddRequestHandler(NextRequest.Type, this.HandleNextRequest);
-            this.AddRequestHandler(StepInRequest.Type, this.HandleStepInRequest);
-            this.AddRequestHandler(StepOutRequest.Type, this.HandleStepOutRequest);
-            this.AddRequestHandler(PauseRequest.Type, this.HandlePauseRequest);
+            this.SetRequestHandler(ContinueRequest.Type, this.HandleContinueRequest);
+            this.SetRequestHandler(NextRequest.Type, this.HandleNextRequest);
+            this.SetRequestHandler(StepInRequest.Type, this.HandleStepInRequest);
+            this.SetRequestHandler(StepOutRequest.Type, this.HandleStepOutRequest);
+            this.SetRequestHandler(PauseRequest.Type, this.HandlePauseRequest);
 
-            this.AddRequestHandler(ThreadsRequest.Type, this.HandleThreadsRequest);
-            this.AddRequestHandler(StackTraceRequest.Type, this.HandleStackTraceRequest);
-            this.AddRequestHandler(ScopesRequest.Type, this.HandleScopesRequest);
-            this.AddRequestHandler(VariablesRequest.Type, this.HandleVariablesRequest);
-            this.AddRequestHandler(SourceRequest.Type, this.HandleSourceRequest);
-            this.AddRequestHandler(EvaluateRequest.Type, this.HandleEvaluateRequest);
-        }
-
-        public void AddRequestHandler<TParams, TResult, TError>(
-            RequestType<TParams, TResult, TError> requestType,
-            Func<TParams, EditorSession, RequestContext<TResult, TError>, Task> requestHandler)
-        {
-            this.messageDispatcher.AddRequestHandler(
-                requestType,
-                requestHandler);
-        }
-
-        public void AddEventHandler<TParams>(
-            EventType<TParams> eventType, 
-            Func<TParams, EditorSession, EventContext, Task> eventHandler)
-        {
-            this.messageDispatcher.AddEventHandler(
-                eventType,
-                eventHandler);
-        }
-        
-        public async Task ProcessMessage(
-            Message messageToProcess, 
-            EditorSession editorSession, 
-            MessageWriter messageWriter)
-        {
-            await this.messageDispatcher.DispatchMessage(
-                messageToProcess, 
-                editorSession, 
-                messageWriter);
+            this.SetRequestHandler(ThreadsRequest.Type, this.HandleThreadsRequest);
+            this.SetRequestHandler(StackTraceRequest.Type, this.HandleStackTraceRequest);
+            this.SetRequestHandler(ScopesRequest.Type, this.HandleScopesRequest);
+            this.SetRequestHandler(VariablesRequest.Type, this.HandleVariablesRequest);
+            this.SetRequestHandler(SourceRequest.Type, this.HandleSourceRequest);
+            this.SetRequestHandler(EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
 
         #region Built-in Message Handlers
 
-        protected async Task HandleInitializeRequest(
-            InitializeRequestArguments initializeParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
-        {
-            // Send the Initialized event first so that we get breakpoints
-            await requestContext.SendEvent(
-                InitializedEvent.Type,
-                null);
-
-            // Now send the Initialize response to continue setup
-            await requestContext.SendResult(new object());
-        }
-
         protected async Task HandleLaunchRequest(
             LaunchRequestArguments launchParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
+            RequestContext<object> requestContext)
         {
             // Execute the given PowerShell script and send the response.
             // Note that we aren't waiting for execution to complete here
             // because the debugger could stop while the script executes.
-            editorSession.PowerShellContext
-                .ExecuteScriptAtPath(launchParams.Program)
-                .ContinueWith(
-                    async (t) =>
-                    {
-                        Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
+            Task executeTask =
+                editorSession.PowerShellContext
+                    .ExecuteScriptAtPath(launchParams.Program)
+                    .ContinueWith(
+                        async (t) =>
+                        {
+                            Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
 
-                        await requestContext.SendEvent(
-                            TerminatedEvent.Type,
-                            null);
+                            await requestContext.SendEvent(
+                                TerminatedEvent.Type,
+                                null);
 
-                        // TODO: Find a way to exit more gracefully!
-                        Environment.Exit(0);
-                    });
+                            // Stop the server
+                            this.Stop();
+                        });
 
             await requestContext.SendResult(null);
         }
 
         protected Task HandleAttachRequest(
             AttachRequestArguments attachParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
+            RequestContext<object> requestContext)
         {
             // TODO: Implement this once we support attaching to processes
             throw new NotImplementedException();
@@ -130,8 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected Task HandleDisconnectRequest(
             object disconnectParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
+            RequestContext<object> requestContext)
         {
             EventHandler<SessionStateChangedEventArgs> handler = null;
 
@@ -143,8 +106,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                         await requestContext.SendResult(null);
                         editorSession.PowerShellContext.SessionStateChanged -= handler;
 
-                        // TODO: Find a way to exit more gracefully!
-                        Environment.Exit(0);
+                        // Stop the server
+                        this.Stop();
                     }
                 };
 
@@ -156,8 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleSetBreakpointsRequest(
             SetBreakpointsRequestArguments setBreakpointsParams,
-            EditorSession editorSession,
-            RequestContext<SetBreakpointsResponseBody, object> requestContext)
+            RequestContext<SetBreakpointsResponseBody> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
@@ -173,15 +135,14 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 {
                     Breakpoints =
                         breakpoints
-                            .Select(Breakpoint.Create)
+                            .Select(Protocol.DebugAdapter.Breakpoint.Create)
                             .ToArray()
                 });
         }
 
         protected async Task HandleSetExceptionBreakpointsRequest(
             SetExceptionBreakpointsRequestArguments setExceptionBreakpointsParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
+            RequestContext<object> requestContext)
         {
             // TODO: Handle this appropriately
 
@@ -190,8 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleContinueRequest(
             object continueParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
+            RequestContext<object> requestContext)
         {
             editorSession.DebugService.Continue();
 
@@ -200,8 +160,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleNextRequest(
             object nextParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
+            RequestContext<object> requestContext)
         {
             editorSession.DebugService.StepOver();
 
@@ -210,8 +169,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected Task HandlePauseRequest(
             object pauseParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
+            RequestContext<object> requestContext)
         {
             editorSession.DebugService.Break();
 
@@ -221,8 +179,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleStepInRequest(
             object stepInParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
+            RequestContext<object> requestContext)
         {
             editorSession.DebugService.StepIn();
 
@@ -231,8 +188,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleStepOutRequest(
             object stepOutParams,
-            EditorSession editorSession,
-            RequestContext<object, object> requestContext)
+            RequestContext<object> requestContext)
         {
             editorSession.DebugService.StepOut();
 
@@ -241,8 +197,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleThreadsRequest(
             object threadsParams,
-            EditorSession editorSession,
-            RequestContext<ThreadsResponseBody, object> requestContext)
+            RequestContext<ThreadsResponseBody> requestContext)
         {
             await requestContext.SendResult(
                 new ThreadsResponseBody
@@ -261,8 +216,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleStackTraceRequest(
             StackTraceRequestArguments stackTraceParams,
-            EditorSession editorSession,
-            RequestContext<StackTraceResponseBody, object> requestContext)
+            RequestContext<StackTraceResponseBody> requestContext)
         {
             StackFrameDetails[] stackFrames =
                 editorSession.DebugService.GetStackFrames();
@@ -288,8 +242,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleScopesRequest(
             ScopesRequestArguments scopesParams,
-            EditorSession editorSession,
-            RequestContext<ScopesResponseBody, object> requestContext)
+            RequestContext<ScopesResponseBody> requestContext)
         {
             VariableScope[] variableScopes =
                 editorSession.DebugService.GetVariableScopes(
@@ -307,8 +260,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleVariablesRequest(
             VariablesRequestArguments variablesParams,
-            EditorSession editorSession,
-            RequestContext<VariablesResponseBody, object> requestContext)
+            RequestContext<VariablesResponseBody> requestContext)
         {
             VariableDetailsBase[] variables =
                 editorSession.DebugService.GetVariables(
@@ -336,8 +288,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected Task HandleSourceRequest(
             SourceRequestArguments sourceParams,
-            EditorSession editorSession,
-            RequestContext<SourceResponseBody, object> requestContext)
+            RequestContext<SourceResponseBody> requestContext)
         {
             // TODO: Implement this message.  For now, doesn't seem to
             // be a problem that it's missing.
@@ -347,8 +298,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         protected async Task HandleEvaluateRequest(
             EvaluateRequestArguments evaluateParams,
-            EditorSession editorSession,
-            RequestContext<EvaluateResponseBody, object> requestContext)
+            RequestContext<EvaluateResponseBody> requestContext)
         {
             VariableDetails result =
                 await editorSession.DebugService.EvaluateExpression(
@@ -371,6 +321,27 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 {
                     Result = valueString,
                     VariablesReference = variableId
+                });
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        async void DebugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
+        {
+            await this.SendEvent(
+                StoppedEvent.Type,
+                new StoppedEventBody
+                {
+                    Source = new Source
+                    {
+                        Path = e.InvocationInfo.ScriptName,
+                    },
+                    Line = e.InvocationInfo.ScriptLineNumber,
+                    Column = e.InvocationInfo.OffsetInLine,
+                    ThreadId = 1, // TODO: Change this based on context
+                    Reason = "breakpoint" // TODO: Change this based on context
                 });
         }
 

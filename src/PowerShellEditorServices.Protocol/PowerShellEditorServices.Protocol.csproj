@@ -57,11 +57,16 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Management.Automation" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client\ProtocolClient.cs" />
     <Compile Include="DebugAdapter\AttachRequest.cs" />
     <Compile Include="DebugAdapter\Breakpoint.cs" />
     <Compile Include="DebugAdapter\ContinueRequest.cs" />
+    <Compile Include="Server\DebugAdapter.cs" />
+    <Compile Include="Server\DebugAdapterBase.cs" />
+    <Compile Include="Client\DebugAdapterClientBase.cs" />
     <Compile Include="DebugAdapter\DisconnectRequest.cs" />
     <Compile Include="DebugAdapter\EvaluateRequest.cs" />
     <Compile Include="DebugAdapter\ExitedEvent.cs" />
@@ -86,7 +91,8 @@
     <Compile Include="DebugAdapter\TerminatedEvent.cs" />
     <Compile Include="DebugAdapter\Thread.cs" />
     <Compile Include="DebugAdapter\ThreadsRequest.cs" />
-    <Compile Include="DebugAdapter\V8MessageSerializer.cs" />
+    <Compile Include="Client\LanguageServiceClient.cs" />
+    <Compile Include="MessageProtocol\Serializers\V8MessageSerializer.cs" />
     <Compile Include="DebugAdapter\Variable.cs" />
     <Compile Include="DebugAdapter\VariablesRequest.cs" />
     <Compile Include="LanguageServer\Configuration.cs" />
@@ -94,30 +100,39 @@
     <Compile Include="LanguageServer\DocumentHighlight.cs" />
     <Compile Include="LanguageServer\ExpandAliasRequest.cs" />
     <Compile Include="LanguageServer\Hover.cs" />
+    <Compile Include="Client\LanguageClientBase.cs" />
+    <Compile Include="Server\LanguageServer.cs" />
+    <Compile Include="Server\LanguageServerBase.cs" />
     <Compile Include="LanguageServer\ShowOnlineHelpRequest.cs" />
     <Compile Include="LanguageServer\SignatureHelp.cs" />
     <Compile Include="LanguageServer\WorkspaceSymbols.cs" />
+    <Compile Include="MessageProtocol\Channel\StdioClientChannel.cs" />
     <Compile Include="MessageProtocol\EventContext.cs" />
     <Compile Include="MessageProtocol\EventType.cs" />
     <Compile Include="LanguageServer\ClientCapabilities.cs" />
-    <Compile Include="LanguageServer\CompletionMessages.cs" />
-    <Compile Include="LanguageServer\DiagnosticMessages.cs" />
-    <Compile Include="LanguageServer\JsonRpcMessageSerializer.cs" />
-    <Compile Include="LanguageServer\InitializeMessages.cs" />
+    <Compile Include="LanguageServer\Completion.cs" />
+    <Compile Include="LanguageServer\Diagnostics.cs" />
+    <Compile Include="MessageProtocol\Serializers\JsonRpcMessageSerializer.cs" />
+    <Compile Include="LanguageServer\Initialize.cs" />
     <Compile Include="LanguageServer\ServerCapabilities.cs" />
-    <Compile Include="LanguageServer\ShutdownMessages.cs" />
-    <Compile Include="LanguageServer\TextDocumentMessages.cs" />
+    <Compile Include="LanguageServer\Shutdown.cs" />
+    <Compile Include="LanguageServer\TextDocument.cs" />
     <Compile Include="MessageProtocol\Constants.cs" />
     <Compile Include="MessageProtocol\IMessageSerializer.cs" />
     <Compile Include="MessageProtocol\Message.cs" />
     <Compile Include="MessageProtocol\MessageDispatcher.cs" />
     <Compile Include="MessageProtocol\MessageParseException.cs" />
+    <Compile Include="MessageProtocol\MessageProtocolType.cs" />
     <Compile Include="MessageProtocol\MessageReader.cs" />
     <Compile Include="MessageProtocol\MessageWriter.cs" />
     <Compile Include="MessageProtocol\RequestContext.cs" />
     <Compile Include="MessageProtocol\RequestType.cs" />
+    <Compile Include="MessageProtocol\Channel\ChannelBase.cs" />
+    <Compile Include="MessageProtocol\Channel\StdioServerChannel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="LanguageServer\References.cs" />
+    <Compile Include="Server\LanguageServerSettings.cs" />
+    <Compile Include="Server\ProtocolServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

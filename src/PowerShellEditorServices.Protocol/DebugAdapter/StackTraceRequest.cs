@@ -11,8 +11,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class StackTraceRequest
     {
         public static readonly
-            RequestType<StackTraceRequestArguments, StackTraceResponseBody, object> Type =
-            RequestType<StackTraceRequestArguments, StackTraceResponseBody, object>.Create("stackTrace");
+            RequestType<StackTraceRequestArguments, StackTraceResponseBody> Type =
+            RequestType<StackTraceRequestArguments, StackTraceResponseBody>.Create("stackTrace");
     }
 
     [DebuggerDisplay("ThreadId = {ThreadId}, Levels = {Levels}")]

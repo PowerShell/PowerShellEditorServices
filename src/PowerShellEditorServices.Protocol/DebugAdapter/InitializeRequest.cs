@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class InitializeRequest
     {
         public static readonly
-            RequestType<InitializeRequestArguments, object, object> Type =
-            RequestType<InitializeRequestArguments, object, object>.Create("initialize");
+            RequestType<InitializeRequestArguments, object> Type =
+            RequestType<InitializeRequestArguments, object>.Create("initialize");
     }
 
     public class InitializeRequestArguments

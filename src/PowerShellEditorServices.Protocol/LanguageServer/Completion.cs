@@ -15,15 +15,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class CompletionRequest
     {
         public static readonly
-            RequestType<TextDocumentPosition, CompletionItem[], object> Type =
-            RequestType<TextDocumentPosition, CompletionItem[], object>.Create("textDocument/completion");
+            RequestType<TextDocumentPosition, CompletionItem[]> Type =
+            RequestType<TextDocumentPosition, CompletionItem[]>.Create("textDocument/completion");
     }
 
     public class CompletionResolveRequest
     {
         public static readonly
-            RequestType<CompletionItem, CompletionItem, object> Type =
-            RequestType<CompletionItem, CompletionItem, object>.Create("completionItem/resolve");
+            RequestType<CompletionItem, CompletionItem> Type =
+            RequestType<CompletionItem, CompletionItem>.Create("completionItem/resolve");
     }
 
     public enum CompletionItemKind

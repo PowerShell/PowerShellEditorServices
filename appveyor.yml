@@ -7,6 +7,14 @@ branches:
   only:
   - master
 
+# NOTE: If you need to debug a problem with the AppVeyor build, uncomment the
+#       following two lines and push them to your PR branch.  Once the next
+#       build starts you will see RDP connection details written out to the
+#       build console.  **DON'T FORGET TO REMOVE THIS COMMIT BEFORE MERGING!**
+
+#init:
+#- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 assembly_info:
   patch: true
   file: '**\AssemblyInfo.*'
