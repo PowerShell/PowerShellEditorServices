@@ -3,12 +3,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -165,7 +165,6 @@ namespace Microsoft.PowerShell.EditorServices
             if (parentVariable.IsExpandable)
             {
                 childVariables = parentVariable.GetChildren();
-
                 foreach (var child in childVariables)
                 {
                     // Only add child if it hasn't already been added.
@@ -270,11 +269,15 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>The list of VariableScope instances which describe the available variable scopes.</returns>
         public VariableScope[] GetVariableScopes(int stackFrameId)
         {
+            int localStackFrameVariableId = this.stackFrameDetails[stackFrameId].LocalVariables.Id;
+            int autoVariablesId = this.stackFrameDetails[stackFrameId].AutoVariables.Id;
+
             return new VariableScope[]
             {
-                new VariableScope(this.stackFrameDetails[stackFrameId].LocalVariables.Id, "Local"),
-                new VariableScope(this.scriptScopeVariables.Id, "Script"),
-                new VariableScope(this.globalScopeVariables.Id, "Global"),  
+                new VariableScope(autoVariablesId, VariableContainerDetails.AutoVariablesName),
+                new VariableScope(localStackFrameVariableId, VariableContainerDetails.LocalScopeName),
+                new VariableScope(this.scriptScopeVariables.Id, VariableContainerDetails.ScriptScopeName),
+                new VariableScope(this.globalScopeVariables.Id, VariableContainerDetails.GlobalScopeName),  
             };
         }
 
@@ -311,35 +314,100 @@ namespace Microsoft.PowerShell.EditorServices
             // Create a dummy variable for index 0, should never see this.
             this.variables.Add(new VariableDetails("Dummy", null));
 
+            // Must retrieve global/script variales before stack frame variables
+            // as we check stack frame variables against globals.
             await FetchGlobalAndScriptVariables();
             await FetchStackFrames();
-
         }
 
         private async Task FetchGlobalAndScriptVariables()
         {
-            this.scriptScopeVariables = await FetchVariableContainer("Script");
-            this.globalScopeVariables = await FetchVariableContainer("Global");
+            // Retrieve globals first as script variable retrieval needs to search globals.
+            this.globalScopeVariables = 
+                await FetchVariableContainer(VariableContainerDetails.GlobalScopeName, null);
+
+            this.scriptScopeVariables = 
+                await FetchVariableContainer(VariableContainerDetails.ScriptScopeName, null);
         }
 
-        private async Task<VariableContainerDetails> FetchVariableContainer(string scope)
+        private async Task<VariableContainerDetails> FetchVariableContainer(
+            string scope, 
+            VariableContainerDetails autoVariables)
         {
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand("Get-Variable");
             psCommand.AddParameter("Scope", scope);
 
-            var variableContainerDetails = new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
-            this.variables.Add(variableContainerDetails);
+            var scopeVariableContainer = 
+                new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
+            this.variables.Add(scopeVariableContainer);
 
             var results = await this.powerShellContext.ExecuteCommand<PSVariable>(psCommand);
-            foreach (PSVariable variable in results)
+            foreach (PSVariable psvariable in results)
             {
-                var variableDetails = new VariableDetails(variable) { Id = this.nextVariableId++ };
+                var variableDetails = new VariableDetails(psvariable) { Id = this.nextVariableId++ };
                 this.variables.Add(variableDetails);
-                variableContainerDetails.Children.Add(variableDetails);
+                scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
+
+                if ((autoVariables != null) && AddToAutoVariables(psvariable, scope))
+                {
+                    autoVariables.Children.Add(variableDetails.Name, variableDetails);
+                }
             }
 
-            return variableContainerDetails;
+            return scopeVariableContainer;
+        }
+
+        private bool AddToAutoVariables(PSVariable psvariable, string scope)
+        {
+            if ((scope == VariableContainerDetails.GlobalScopeName) || 
+                (scope == VariableContainerDetails.ScriptScopeName))
+            {
+                // We don't A) have a good way of distinguishing built-in from user created variables
+                // and B) globalScopeVariables.Children.ContainsKey() doesn't work for built-in variables
+                // stored in a child variable container within the globals variable container.
+                return false;
+            }
+
+            var constantAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.Constant;
+            var readonlyAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.ReadOnly;
+
+            // Some local variables, if they exist, should be displayed by default
+            if (psvariable.GetType().Name == "LocalVariable")
+            {
+                if (psvariable.Name.Equals("_"))
+                {
+                    return true;
+                }
+                else if (psvariable.Name.Equals("args", StringComparison.OrdinalIgnoreCase))
+                {
+                    var array = psvariable.Value as Array;
+                    return array != null ? array.Length > 0 : false;
+                }
+
+                return false;
+            }
+            else if (psvariable.GetType() != typeof(PSVariable))
+            {
+                return false;
+            }
+
+            if (((psvariable.Options | constantAllScope) == constantAllScope) ||
+                ((psvariable.Options | readonlyAllScope) == readonlyAllScope))
+            {
+                string prefixedVariableName = VariableDetails.DollarPrefix + psvariable.Name;
+                if (this.globalScopeVariables.Children.ContainsKey(prefixedVariableName))
+                {
+                    return false;
+                }
+            }
+
+            if ((psvariable.Value != null) && (psvariable.Value.GetType() == typeof(PSDebugContext)))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private async Task FetchStackFrames()
@@ -354,8 +422,18 @@ namespace Microsoft.PowerShell.EditorServices
 
             for (int i = 0; i < callStackFrames.Length; i++)
             {
-                VariableContainerDetails localVariables = await FetchVariableContainer(i.ToString());
-                this.stackFrameDetails[i] = StackFrameDetails.Create(callStackFrames[i], localVariables);
+                VariableContainerDetails autoVariables =
+                    new VariableContainerDetails(
+                        this.nextVariableId++, 
+                        VariableContainerDetails.AutoVariablesName);
+
+                this.variables.Add(autoVariables);
+
+                VariableContainerDetails localVariables =
+                    await FetchVariableContainer(i.ToString(), autoVariables);
+
+                this.stackFrameDetails[i] = 
+                    StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables);
             }
         }
 
