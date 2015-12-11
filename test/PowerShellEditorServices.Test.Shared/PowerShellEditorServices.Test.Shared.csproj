@@ -39,8 +39,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Completion\CompleteAttributeValue.cs" />
     <Compile Include="Completion\CompleteCommandFromModule.cs" />
     <Compile Include="Completion\CompleteCommandInFile.cs" />
+    <Compile Include="Completion\CompleteFilePath.cs" />
     <Compile Include="Completion\CompleteVariableInFile.cs" />
     <Compile Include="Definition\FindsFunctionDefinitionInDotSourceReference.cs" />
     <Compile Include="Definition\FindsFunctionDefinition.cs" />

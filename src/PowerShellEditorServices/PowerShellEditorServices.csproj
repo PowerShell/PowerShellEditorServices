@@ -102,7 +102,9 @@
     <Compile Include="Session\SynchronizingConsoleHostWrapper.cs" />
     <Compile Include="Utility\Logger.cs" />
     <Compile Include="Utility\Validate.cs" />
+    <Compile Include="Workspace\BufferRange.cs" />
     <Compile Include="Workspace\FileChange.cs" />
+    <Compile Include="Workspace\BufferPosition.cs" />
     <Compile Include="Workspace\ScriptFile.cs" />
     <Compile Include="Workspace\ScriptFileMarker.cs" />
     <Compile Include="Workspace\ScriptRegion.cs" />

@@ -38,10 +38,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// A CommandCompletion instance that contains completions for the
         /// symbol at the given offset.
         /// </returns>
-        static public CompletionResults GetCompletions(
+        static public CommandCompletion GetCompletions(
             Ast scriptAst, 
             Token[] currentTokens, 
-            int fileOffset, 
+            int fileOffset,
             Runspace runspace)
         {
             var type = scriptAst.Extent.StartScriptPosition.GetType();
@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
             }
 
-            return CompletionResults.Create(commandCompletion);
+            return commandCompletion;
         }
 
         /// <summary>
