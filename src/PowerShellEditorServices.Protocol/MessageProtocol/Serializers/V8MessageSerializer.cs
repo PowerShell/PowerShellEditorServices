@@ -8,8 +8,11 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 
-namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
+namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers
 {
+    /// <summary>
+    /// Serializes messages in the V8 format.  Used primarily for debug adapters.
+    /// </summary>
     public class V8MessageSerializer : IMessageSerializer
     {
         public JObject SerializeMessage(Message message)

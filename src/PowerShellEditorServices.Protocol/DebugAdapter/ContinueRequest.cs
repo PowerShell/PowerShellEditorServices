@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class ContinueRequest
     {
         public static readonly
-            RequestType<object, object, object> Type =
-            RequestType<object, object, object>.Create("continue");
+            RequestType<object, object> Type =
+            RequestType<object, object>.Create("continue");
     }
 }
 

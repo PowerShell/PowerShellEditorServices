@@ -11,24 +11,30 @@ $copyrightHeaderString =
 //
 '@
 
-$srcPath = Resolve-Path $PSScriptRoot\..\src
-Push-Location $srcPath
+$global:updateCount = 0;
 
-$updateCount = 0;
-$allSourceFiles = Get-ChildItem $srcPath -Recurse -Filter *.cs | ?{ $_.FullName -notmatch "\\obj\\?" }
-
-foreach ($sourceFile in $allSourceFiles)
+function Add-CopyrightHeaders($basePath)
 {
-	$fileContent = (Get-Content $sourceFile.FullName -Raw).TrimStart()
+	Push-Location $basePath
+	$allSourceFiles = Get-ChildItem $basePath -Recurse -Filter *.cs | ?{ $_.FullName -notmatch "\\obj\\?" }
 
-	if ($fileContent.StartsWith($copyrightHeaderString) -eq $false)
+	foreach ($sourceFile in $allSourceFiles)
 	{
-		# Add the copyright header to the file
-		Set-Content $sourceFile.FullName ($copyrightHeaderString + "`r`n`r`n" + $fileContent)
-		Write-Output ("Updated {0}" -f (Resolve-Path $sourceFile.FullName -Relative))
+		$fileContent = (Get-Content $sourceFile.FullName -Raw).TrimStart()
+
+		if ($fileContent.StartsWith($copyrightHeaderString) -eq $false)
+		{
+			# Add the copyright header to the file
+			Set-Content $sourceFile.FullName ($copyrightHeaderString + "`r`n`r`n" + $fileContent)
+			Write-Output ("Updated {0}" -f (Resolve-Path $sourceFile.FullName -Relative))
+			$global:updateCount++
+		}
 	}
+
+	Pop-Location
 }
 
-Write-Output "`r`nDone, $updateCount files updated."
+Add-CopyrightHeaders(Resolve-Path $PSScriptRoot\..\src)
+Add-CopyrightHeaders(Resolve-Path $PSScriptRoot\..\test)
 
-Pop-Location
+Write-Output "`r`nDone, $global:updateCount file(s) updated."

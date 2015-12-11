@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class ExpandAliasRequest
     {
         public static readonly
-            RequestType<string, string, object> Type =
-            RequestType<string, string, object>.Create("powerShell/expandAlias");
+            RequestType<string, string> Type =
+            RequestType<string, string>.Create("powerShell/expandAlias");
     }
 }

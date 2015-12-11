@@ -24,8 +24,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DocumentHighlightRequest
     {
         public static readonly
-            RequestType<TextDocumentPosition, DocumentHighlight[], object> Type =
-            RequestType<TextDocumentPosition, DocumentHighlight[], object>.Create("textDocument/documentHighlight");
+            RequestType<TextDocumentPosition, DocumentHighlight[]> Type =
+            RequestType<TextDocumentPosition, DocumentHighlight[]>.Create("textDocument/documentHighlight");
     }
 }
 

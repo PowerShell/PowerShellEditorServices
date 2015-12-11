@@ -1,5 +1,4 @@
-﻿Boo-Bah -Doo
-Get-Process -bla
+﻿Get-Process -bla
 
 $i = 1
 

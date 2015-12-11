@@ -50,11 +50,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Starts the session using the provided IConsoleHost implementation
         /// for the ConsoleService.
         /// </summary>
-        /// <param name="consoleHost">
-        /// An IConsoleHost implementation which is used to interact with the
-        /// host's user interface.
-        /// </param>
-        public void StartSession(IConsoleHost consoleHost)
+        public void StartSession()
         {
             // Create a workspace to contain open files
             this.Workspace = new Workspace();

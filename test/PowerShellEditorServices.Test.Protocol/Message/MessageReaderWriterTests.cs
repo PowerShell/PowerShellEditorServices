@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+//
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers;
 using System;
 using System.IO;
 using System.Text;
@@ -22,7 +23,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
 
         public MessageReaderWriterTests()
         {
-            // TODO: Set this!
             this.messageSerializer = new V8MessageSerializer();
         }
 
@@ -174,3 +174,4 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
         }
     }
 }
+

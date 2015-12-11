@@ -341,10 +341,24 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void AbortExecution()
         {
-            Logger.Write(LogLevel.Verbose, "Execution abort requested...");
+            if (this.SessionState != PowerShellContextState.Aborting)
+            {
+                Logger.Write(LogLevel.Verbose, "Execution abort requested...");
 
-            this.powerShell.BeginStop(null, null);
-            this.ResumeDebugger(DebuggerResumeAction.Stop);
+                this.powerShell.BeginStop(null, null);
+                this.SessionState = PowerShellContextState.Aborting;
+
+                if (this.IsDebuggerStopped)
+                {
+                    this.ResumeDebugger(DebuggerResumeAction.Stop);
+                }
+            }
+            else
+            {
+                Logger.Write(
+                    LogLevel.Verbose,
+                    "Execution abort requested while already aborting");
+            }
         }
 
         /// <summary>
@@ -379,6 +393,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void Dispose()
         {
+            // Do we need to abort a running execution?
+            if (this.SessionState == PowerShellContextState.Running ||
+                this.IsDebuggerStopped)
+            {
+                this.AbortExecution();
+            }
+
             this.SessionState = PowerShellContextState.Disposed;
 
             if (this.powerShell != null)
@@ -616,7 +637,12 @@ namespace Microsoft.PowerShell.EditorServices
             this.pipelineExecutionTask = new TaskCompletionSource<IPipelineExecutionRequest>();
 
             // Update the session state
-            this.OnSessionStateChanged(this, new SessionStateChangedEventArgs(PowerShellContextState.Ready, PowerShellExecutionResult.Stopped, null));
+            this.OnSessionStateChanged(
+                this,
+                new SessionStateChangedEventArgs(
+                    PowerShellContextState.Ready,
+                    PowerShellExecutionResult.Stopped,
+                    null));
 
             // Raise the event for the debugger service
             if (this.DebuggerStop != null)

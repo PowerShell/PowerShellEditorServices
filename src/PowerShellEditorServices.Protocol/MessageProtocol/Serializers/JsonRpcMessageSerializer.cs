@@ -8,8 +8,12 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 
-namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
+namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers
 {
+    /// <summary>
+    /// Serializes messages in the JSON RPC format.  Used primarily
+    /// for language servers.
+    /// </summary>
     public class JsonRpcMessageSerializer : IMessageSerializer
     {
         public JObject SerializeMessage(Message message)
