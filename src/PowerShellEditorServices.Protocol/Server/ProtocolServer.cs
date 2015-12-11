@@ -110,20 +110,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 this.serverChannel.MessageDispatcher.SynchronizationContext.Post(
                     async (obj) =>
                     {
-                        await this.serverChannel.MessageWriter.WriteMessage(
-                            Message.Event(
-                                eventType.MethodName,
-                                JToken.FromObject(eventParams)));
+                        await this.serverChannel.MessageWriter.WriteEvent(
+                            eventType,
+                            eventParams);
                     }, null);
 
                 return Task.FromResult(true);
             }
             else
             {
-                return this.serverChannel.MessageWriter.WriteMessage(
-                    Message.Event(
-                        eventType.MethodName,
-                        JToken.FromObject(eventParams)));
+                return this.serverChannel.MessageWriter.WriteEvent(
+                    eventType,
+                    eventParams);
             }
         }
 
