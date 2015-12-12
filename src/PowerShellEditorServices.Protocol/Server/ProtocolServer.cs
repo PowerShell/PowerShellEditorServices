@@ -63,12 +63,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             if (this.isStarted)
             {
+                // Make sure no future calls try to stop the server during shutdown
+                this.isStarted = false;
+
                 // Stop the implementation first
                 this.OnStop();
 
                 this.serverChannel.Stop();
                 this.serverExitedTask.SetResult(true);
-                this.isStarted = false;
             }
         }
 

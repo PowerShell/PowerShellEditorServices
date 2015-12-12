@@ -62,9 +62,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serialize
                 // Message is a Request or Response
                 string messageId = token.ToString();
 
-                if (messageJson.TryGetValue("params", out token))
+                if (messageJson.TryGetValue("result", out token))
                 {
-                    JToken messageParams = token;
+                    return Message.Response(messageId, null, token);
+                }
+                else if (messageJson.TryGetValue("error", out token))
+                {
+                    return Message.ResponseError(messageId, null, token);
+                }
+                else
+                {
+                    JToken messageParams = null;
+                    messageJson.TryGetValue("params", out messageParams);
 
                     if (!messageJson.TryGetValue("method", out token))
                     {
@@ -73,40 +82,21 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serialize
 
                     return Message.Request(messageId, token.ToString(), messageParams);
                 }
-                else if(messageJson.TryGetValue("result", out token))
-                {
-                    return Message.Response(messageId, null, token);
-                }
-                else if(messageJson.TryGetValue("error", out token))
-                {
-                    return Message.ResponseError(messageId, null, token);
-                }
-                else
-                {
-                    return Message.Unknown();
-                }
             }
             else
             {
                 // Messages without an id are events
-                if (messageJson.TryGetValue("params", out token))
-                {
-                    JToken messageParams = token;
+                JToken messageParams = token;
+                messageJson.TryGetValue("params", out messageParams);
 
-                    if (!messageJson.TryGetValue("method", out token))
-                    {
-                        // TODO: Throw parse error
-                    }
-
-                    return Message.Event(token.ToString(), messageParams);
-                }
-                else
+                if (!messageJson.TryGetValue("method", out token))
                 {
-                    return Message.Unknown();
+                    // TODO: Throw parse error
                 }
+
+                return Message.Event(token.ToString(), messageParams);
             }
         }
     }
-
 }
 
