@@ -71,10 +71,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.Id = -1; // Not been assigned a variable reference id yet
             this.Name = name;
             this.IsExpandable = GetIsExpandable(value);
-            this.ValueString =
-                this.IsExpandable == false ?
-                    GetValueString(value) :
-                    " "; // An empty string isn't enough due to a temporary bug in VS Code.
+            this.ValueString = GetValueString(value, this.IsExpandable);
         }
 
         #endregion
@@ -136,12 +133,82 @@ namespace Microsoft.PowerShell.EditorServices
                 !(valueObject is string); // Strings get treated as IEnumerables
         }
 
-        private static string GetValueString(object value)
+        private static string GetValueString(object value, bool isExpandable)
         {
-            return
-                value != null ?
-                    value.ToString() :
-                    "null";
+            string valueString;
+
+            if (value == null)
+            {
+                valueString = "null";
+            }
+            else if (isExpandable)
+            {
+                Type objType = value.GetType(); 
+
+                // Get the "value" for an expandable object.  This will either
+                // be the short type name or the ToString() response if ToString()
+                // responds with something other than the type name.
+                if (value.ToString().Equals(objType.FullName))
+                {
+                    string shortTypeName = objType.Name;
+
+                    // For arrays and ICollection, display the number of contained items.
+                    if (value is Array)
+                    {
+                        var arr = value as Array;
+                        if (arr.Rank == 1)
+                        {
+                            shortTypeName = InsertDimensionSize(shortTypeName, arr.Length);
+                        }
+                    }
+                    else if (value is ICollection)
+                    {
+                        var collection = (ICollection)value;
+                        shortTypeName = InsertDimensionSize(shortTypeName, collection.Count);
+                    }
+
+                    valueString = "[" + shortTypeName + "]";
+                }
+                else
+                {
+                    valueString = value.ToString();
+                }
+            }
+            else
+            {
+                if (value.GetType() == typeof(string))
+                {
+                    valueString = "\"" + value + "\"";
+                }
+                else
+                {
+                    valueString = value.ToString();
+                }
+            }
+
+            return valueString;
+        }
+
+        private static string InsertDimensionSize(string value, int dimensionSize)
+        {
+            string result = value;
+
+            int indexLastRBracket = value.LastIndexOf("]");
+            if (indexLastRBracket > 0)
+            {
+                result =
+                    value.Substring(0, indexLastRBracket) +
+                    dimensionSize +
+                    value.Substring(indexLastRBracket);
+            }
+            else
+            {
+                // Types like ArrayList don't use [] in type name so
+                // display value like so -  [ArrayList: 5]
+                result = value + ": " + dimensionSize;
+            }
+
+            return result;
         }
 
         private static VariableDetails[] GetChildren(object obj)
