@@ -129,7 +129,9 @@ namespace Microsoft.PowerShell.EditorServices
 
             return
                 valueObject != null &&
-                !valueType.IsValueType &&
+                !valueType.IsPrimitive &&
+                !(valueObject is decimal) &&
+                !(valueObject is UnableToRetrievePropertyMessage) &&
                 !(valueObject is string); // Strings get treated as IEnumerables
         }
 
@@ -143,13 +145,23 @@ namespace Microsoft.PowerShell.EditorServices
             }
             else if (isExpandable)
             {
-                Type objType = value.GetType(); 
+                Type objType = value.GetType();
 
-                // Get the "value" for an expandable object.  This will either
-                // be the short type name or the ToString() response if ToString()
-                // responds with something other than the type name.
-                if (value.ToString().Equals(objType.FullName))
+                // Get the "value" for an expandable object.  
+                if (value is DictionaryEntry)
                 {
+                    // For DictionaryEntry - display the key/value as the value.
+                    var entry = (DictionaryEntry)value;
+                    valueString =
+                        string.Format(
+                            "[{0}, {1}]",
+                            entry.Key,
+                            GetValueString(entry.Value, GetIsExpandable(entry.Value)));
+                }
+                else if (value.ToString().Equals(objType.ToString()))
+                {
+                    // If the ToString() matches the type name, then display the type 
+                    // name in PowerShell format.
                     string shortTypeName = objType.Name;
 
                     // For arrays and ICollection, display the number of contained items.
@@ -176,7 +188,8 @@ namespace Microsoft.PowerShell.EditorServices
             }
             else
             {
-                if (value.GetType() == typeof(string))
+                // ToString() output is not the typename, so display that as this object's value
+                if (value is string)
                 {
                     valueString = "\"" + value + "\"";
                 }
@@ -215,6 +228,11 @@ namespace Microsoft.PowerShell.EditorServices
         {
             List<VariableDetails> childVariables = new List<VariableDetails>();
 
+            if (obj == null)
+            {
+                return childVariables.ToArray();
+            }
+
             PSObject psObject = obj as PSObject;
             IDictionary dictionary = obj as IDictionary;
             IEnumerable enumerable = obj as IEnumerable;
@@ -223,59 +241,55 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (psObject != null)
                 {
+                    // PowerShell wrapped objects can have extra ETS properties so let's use
+                    // PowerShell's infrastructure to get those properties.
                     childVariables.AddRange(
                         psObject
                             .Properties
                             .Select(p => new VariableDetails(p)));
                 }
-                else if (dictionary != null)
+                else 
                 {
-                    childVariables.AddRange(
-                        dictionary
-                            .OfType<DictionaryEntry>()
-                            .Select(e => new VariableDetails(e.Key.ToString(), e.Value)));
-                }
-                else if (enumerable != null && !(obj is string))
-                {
-                    int i = 0;
-                    foreach (var item in enumerable)
-                    {
-                        childVariables.Add(
-                            new VariableDetails(
-                                string.Format("[{0}]", i),
-                                item));
-
-                        i++;
-                    }
-                }
-                else if (obj != null)
-                {
-                    // Object must be a normal .NET type, pull all of its
-                    // properties and their values
-                    Type objectType = obj.GetType();
-                    var properties = 
-                        objectType.GetProperties(
-                            BindingFlags.Public | BindingFlags.Instance);
-
-                    foreach (var property in properties)
-                    {
-                        try
+                    // We're in the realm of regular, unwrapped .NET objects
+                    if (dictionary != null)
+                    { 
+                        // Buckle up kids, this is a bit weird.  We could not use the LINQ
+                        // operator OfType<DictionaryEntry>.  Even though R# will squiggle the
+                        // "foreach" keyword below and offer to convert to a LINQ-expression - DON'T DO IT!
+                        // The reason is that LINQ extension methods work with objects of type
+                        // IEnumerable.  Objects of type Dictionary<,>, respond to iteration via
+                        // IEnumerable by returning KeyValuePair<,> objects.  Unfortunately non-generic 
+                        // dictionaries like HashTable return DictionaryEntry objects.
+                        // It turns out that iteration via C#'s foreach loop, operates on the variable's
+                        // type which in this case is IDictionary.  IDictionary was designed to always
+                        // return DictionaryEntry objects upon iteration and the Dictionary<,> implementation
+                        // honors that when the object is reintepreted as an IDictionary object.
+                        // FYI, a test case for this is to open $PSBoundParameters when debugging a
+                        // function that defines parameters and has been passed parameters.  
+                        // If you open the $PSBoundParameters variable node in this scenario and see nothing, 
+                        // this code is broken.
+                        int i = 0;
+                        foreach (DictionaryEntry entry in dictionary)
                         {
                             childVariables.Add(
                                 new VariableDetails(
-                                    property.Name,
-                                    property.GetValue(obj)));
-                        }
-                        catch (Exception)
-                        {
-                            // Some properties can throw exceptions, add the property
-                            // name and empty string
-                            childVariables.Add(
-                                new VariableDetails(
-                                    property.Name,
-                                    string.Empty));
+                                    "[" + i++ + "]",
+                                    entry));
                         }
                     }
+                    else if (enumerable != null && !(obj is string))
+                    {
+                        int i = 0;
+                        foreach (var item in enumerable)
+                        {
+                            childVariables.Add(
+                                new VariableDetails(
+                                    "[" + i++ + "]",
+                                    item));
+                        }
+                    }
+
+                    AddDotNetProperties(obj, childVariables);
                 }
             }
             catch (GetValueInvocationException)
@@ -290,6 +304,61 @@ namespace Microsoft.PowerShell.EditorServices
             return childVariables.ToArray();
         }
 
+        private static void AddDotNetProperties(object obj, List<VariableDetails> childVariables)
+        {
+            Type objectType = obj.GetType();
+            var properties =
+                objectType.GetProperties(
+                    BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var property in properties)
+            {
+                // Don't display indexer properties, it causes an exception anyway.
+                if (property.GetIndexParameters().Length > 0)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    childVariables.Add(
+                        new VariableDetails(
+                            property.Name,
+                            property.GetValue(obj)));
+                }
+                catch (Exception ex)
+                {
+                    // Some properties can throw exceptions, add the property
+                    // name and info about the error.
+                    if (ex.GetType() == typeof (TargetInvocationException))
+                    {
+                        ex = ex.InnerException;
+                    }
+
+                    childVariables.Add(
+                        new VariableDetails(
+                            property.Name,
+                            new UnableToRetrievePropertyMessage(
+                                "Error retrieving property - " + ex.GetType().Name)));
+                }
+            }
+        }
+
         #endregion
+
+        private struct UnableToRetrievePropertyMessage
+        {
+            public UnableToRetrievePropertyMessage(string message)
+            {
+                this.Message = message;
+            }
+
+            public string Message { get; }
+
+            public override string ToString()
+            {
+                return "<" + Message + ">";
+            }
+        }
     }
 }

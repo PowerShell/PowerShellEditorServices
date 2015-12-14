@@ -201,14 +201,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(objVar.IsExpandable);
 
             var objChildren = debugService.GetVariables(objVar.Id);
-            Assert.Equal(2, objChildren.Length);
+            Assert.Equal(9, objChildren.Length);
 
             var arrVar = variables.FirstOrDefault(v => v.Name == "$arrVar");
             Assert.NotNull(arrVar);
             Assert.True(arrVar.IsExpandable);
 
             var arrChildren = debugService.GetVariables(arrVar.Id);
-            Assert.Equal(4, arrChildren.Length);
+            Assert.Equal(11, arrChildren.Length);
 
             var classVar = variables.FirstOrDefault(v => v.Name == "$classVar");
             Assert.NotNull(classVar);
