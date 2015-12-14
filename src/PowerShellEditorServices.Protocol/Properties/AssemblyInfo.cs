@@ -10,8 +10,8 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PowerShell Editor Services - Standard I/O Transport")]
-[assembly: AssemblyDescription("Provides standard I/O transport for the PowerShell Editor Services host process.")]
+[assembly: AssemblyTitle("PowerShell Editor Services Host Protocol Library")]
+[assembly: AssemblyDescription("Provides message types and client/server APIs for the PowerShell Editor Services JSON protocol.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("PowerShell Editor Services")]
