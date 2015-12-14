@@ -3,14 +3,14 @@
   <metadata>
     <id>$id$</id>
     <version>$version$</version>
-    <title>Windows PowerShell Editor Services Library</title>
+    <title>PowerShell Editor Services</title>
     <authors>$author$</authors>
     <owners>$author$</owners>
     <licenseUrl>https://raw.githubusercontent.com/PowerShell/PowerShellEditorServices/master/LICENSE</licenseUrl>
-    <projectUrl>http://github.com/PowerShell/PowerShellEditorServices</projectUrl>
+    <projectUrl>https://github.com/PowerShell/PowerShellEditorServices</projectUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>$description$</description>
-    <copyright>© Microsoft Corporation. All rights reserved.</copyright>
-    <tags>Microsoft Windows PowerShell editor</tags>
+    <copyright>Â© Microsoft Corporation. All rights reserved.</copyright>
+    <tags>PowerShell editor development language debugging</tags>
   </metadata>
 </package>
