@@ -130,6 +130,7 @@ namespace Microsoft.PowerShell.EditorServices
             return
                 valueObject != null &&
                 !valueType.IsPrimitive &&
+                !(valueObject is decimal) &&
                 !(valueObject is UnableToRetrievePropertyMessage) &&
                 !(valueObject is string); // Strings get treated as IEnumerables
         }
