@@ -9,6 +9,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -61,6 +62,23 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             "/debugAdapter",
                             StringComparison.InvariantCultureIgnoreCase));
 
+            string websocketPortString =
+                args.FirstOrDefault(
+                    arg =>
+                        arg.StartsWith(
+                            "/websockets:",
+                            StringComparison.InvariantCultureIgnoreCase));
+
+            int websocketPort = -1;
+            if (!string.IsNullOrEmpty(websocketPortString))
+            {
+                websocketPortString = websocketPortString.Split(':')[1].Trim('"');
+                if (!int.TryParse(websocketPortString, out websocketPort))
+                {
+                    websocketPort = -1;
+                }
+            }
+
             // Catch unhandled exceptions for logging purposes
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
@@ -73,7 +91,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
             else
             {
                 logPath = logPath ?? "EditorServices.log";
-                server = new LanguageServer();
+
+                if (websocketPort != -1)
+                {
+                    server = new LanguageServer(new WebsocketServerChannel(websocketPort));
+                }
+                else
+                {
+                    server = new LanguageServer();
+                }
             }
 
             // Start the logger with the specified log path
@@ -81,6 +107,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
             Logger.Initialize(logPath, LogLevel.Verbose);
 
             Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host starting...");
+
+            Logger.Write(LogLevel.Normal, "WebsocketPort:" + websocketPort);
 
             // Start the server
             server.Start();

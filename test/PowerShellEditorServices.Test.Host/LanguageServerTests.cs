@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
+    [Collection("MyCollection")]
     public class LanguageServerTests : IAsyncLifetime
     {
         private LanguageServiceClient languageServiceClient;
@@ -34,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             this.languageServiceClient =
                 new LanguageServiceClient(
-                    new StdioClientChannel(
+                    new WebsocketClientChannel(
                         "Microsoft.PowerShell.EditorServices.Host.exe",
                         "/logPath:\"" + testLogPath + "\""));
 
