@@ -23,6 +23,21 @@ namespace Microsoft.PowerShell.EditorServices
         private Runspace analysisRunspace;
         private ScriptAnalyzer scriptAnalyzer;
 
+        /// <summary>
+        /// Defines the list of Script Analyzer rules to include by default.
+        /// In the future, a default rule set from Script Analyzer may be used.
+        /// </summary>
+        private static readonly string[] IncludedRules = new string[]
+        {
+            "PSUseApprovedVerbs",
+            "PSReservedCmdletChar",
+            "PSReservedParams",
+            "PSShouldProcess",
+            "PSMissingModuleManifestField",
+            "PSAvoidDefaultValueSwitchParameter",
+            "PSUseDeclaredVarsMoreThanAssigments"
+        };
+
         #endregion
 
         #region Constructors
@@ -32,8 +47,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public AnalysisService()
         {
-            // TODO: Share runspace with PowerShellContext?  Probably should always
-            //       run analysis in a local session.
             this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
             this.analysisRunspace.ApartmentState = ApartmentState.STA;
             this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
@@ -44,8 +57,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.analysisRunspace,
                 new AnalysisOutputWriter(),
                 null,
-                null,
-                new string[] { "DscTestsPresent", "DscExamplesPresent" });
+                IncludedRules);
         }
 
         #endregion

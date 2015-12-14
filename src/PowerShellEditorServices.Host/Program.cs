@@ -17,29 +17,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
         [STAThread]
         static void Main(string[] args)
         {
-#if DEBUG
-            // In the future, a more robust argument parser will be added here
-            bool waitForDebugger =
-                args.Any(
-                    arg => 
-                        string.Equals(
-                            arg,
-                            "/waitForDebugger",
-                            StringComparison.InvariantCultureIgnoreCase));
-
-            // Should we wait for the debugger before starting?
-            if (waitForDebugger)
-            {
-                // Wait for 15 seconds and then continue
-                int waitCountdown = 15;
-                while (!Debugger.IsAttached && waitCountdown > 0)
-                {
-                    Thread.Sleep(1000);
-                    waitCountdown--;
-                }
-            }
-#endif
-
             string logPath = null;
             string logPathArgument =
                 args.FirstOrDefault(
@@ -79,6 +56,43 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // Start the logger with the specified log path
             // TODO: Set the level based on command line parameter
             Logger.Initialize(logPath, LogLevel.Verbose);
+
+#if DEBUG
+            bool waitForDebugger =
+                args.Any(
+                    arg => 
+                        string.Equals(
+                            arg,
+                            "/waitForDebugger",
+                            StringComparison.InvariantCultureIgnoreCase));
+
+            // Should we wait for the debugger before starting?
+            if (waitForDebugger)
+            {
+                Logger.Write(LogLevel.Normal, "Waiting for debugger to attach before continuing...");
+
+                // Wait for 15 seconds and then continue
+                int waitCountdown = 15;
+                while (!Debugger.IsAttached && waitCountdown > 0)
+                {
+                    Thread.Sleep(1000);
+                    waitCountdown--;
+                }
+
+                if (Debugger.IsAttached)
+                {
+                    Logger.Write(
+                        LogLevel.Normal,
+                        "Debugger attached, continuing startup sequence");
+                }
+                else if (waitCountdown == 0)
+                {
+                    Logger.Write(
+                        LogLevel.Normal,
+                        "Timed out while waiting for debugger to attach, continuing startup sequence");
+                }
+            }
+#endif
 
             Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host starting...");
 
