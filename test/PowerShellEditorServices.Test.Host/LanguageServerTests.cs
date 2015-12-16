@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             this.languageServiceClient =
                 new LanguageServiceClient(
-                    new WebsocketClientChannel(
+                    new StdioClientChannel(
                         "Microsoft.PowerShell.EditorServices.Host.exe",
                         "/logPath:\"" + testLogPath + "\""));
 
