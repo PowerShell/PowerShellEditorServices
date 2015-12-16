@@ -1,7 +1,11 @@
-version: 0.2.0.{build}
+version: '$(core_version).{build}'
 os: Unstable
 configuration: Release
 clone_depth: 10
+
+environment:
+  core_version: '0.3.0'
+  prerelease_name: '-beta'
 
 branches:
   only:
@@ -18,9 +22,9 @@ branches:
 assembly_info:
   patch: true
   file: '**\AssemblyInfo.*'
-  assembly_version: '0.2.0'		# This version number should always have 0 for the last section
+  assembly_version: '{version}'
   assembly_file_version: '{version}'
-  assembly_informational_version: '{version}'
+  assembly_informational_version: '$(core_version)$(prerelease_name)+{build}'
 
 install:
 - git submodule -q update --init

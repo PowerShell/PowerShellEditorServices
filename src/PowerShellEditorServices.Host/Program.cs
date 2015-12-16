@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -9,7 +9,6 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -18,29 +17,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
         [STAThread]
         static void Main(string[] args)
         {
-#if DEBUG
-            // In the future, a more robust argument parser will be added here
-            bool waitForDebugger =
-                args.Any(
-                    arg => 
-                        string.Equals(
-                            arg,
-                            "/waitForDebugger",
-                            StringComparison.InvariantCultureIgnoreCase));
-
-            // Should we wait for the debugger before starting?
-            if (waitForDebugger)
-            {
-                // Wait for 15 seconds and then continue
-                int waitCountdown = 15;
-                while (!Debugger.IsAttached && waitCountdown > 0)
-                {
-                    Thread.Sleep(1000);
-                    waitCountdown--;
-                }
-            }
-#endif
-
             string logPath = null;
             string logPathArgument =
                 args.FirstOrDefault(
@@ -62,23 +38,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             "/debugAdapter",
                             StringComparison.InvariantCultureIgnoreCase));
 
-            string websocketPortString =
-                args.FirstOrDefault(
-                    arg =>
-                        arg.StartsWith(
-                            "/websockets:",
-                            StringComparison.InvariantCultureIgnoreCase));
-
-            int websocketPort = -1;
-            if (!string.IsNullOrEmpty(websocketPortString))
-            {
-                websocketPortString = websocketPortString.Split(':')[1].Trim('"');
-                if (!int.TryParse(websocketPortString, out websocketPort))
-                {
-                    websocketPort = -1;
-                }
-            }
-
             // Catch unhandled exceptions for logging purposes
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
@@ -98,9 +57,44 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // TODO: Set the level based on command line parameter
             Logger.Initialize(logPath, LogLevel.Verbose);
 
-            Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host starting...");
+#if DEBUG
+            bool waitForDebugger =
+                args.Any(
+                    arg => 
+                        string.Equals(
+                            arg,
+                            "/waitForDebugger",
+                            StringComparison.InvariantCultureIgnoreCase));
 
-            Logger.Write(LogLevel.Normal, "WebsocketPort:" + websocketPort);
+            // Should we wait for the debugger before starting?
+            if (waitForDebugger)
+            {
+                Logger.Write(LogLevel.Normal, "Waiting for debugger to attach before continuing...");
+
+                // Wait for 15 seconds and then continue
+                int waitCountdown = 15;
+                while (!Debugger.IsAttached && waitCountdown > 0)
+                {
+                    Thread.Sleep(1000);
+                    waitCountdown--;
+                }
+
+                if (Debugger.IsAttached)
+                {
+                    Logger.Write(
+                        LogLevel.Normal,
+                        "Debugger attached, continuing startup sequence");
+                }
+                else if (waitCountdown == 0)
+                {
+                    Logger.Write(
+                        LogLevel.Normal,
+                        "Timed out while waiting for debugger to attach, continuing startup sequence");
+                }
+            }
+#endif
+
+            Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host starting...");
 
             // Start the server
             server.Start();

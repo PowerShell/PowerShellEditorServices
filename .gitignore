@@ -11,7 +11,7 @@ App_Data
 TestResults
 [Tt]humbs.db
 buildd.*
-build/cxtcache/
+release/
 *.log
 *.bak
 packages
