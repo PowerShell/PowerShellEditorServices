@@ -1,18 +1,10 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
-using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Owin.Hosting;
 using Microsoft.PowerShell.EditorServices.Utility;
-using Microsoft.Practices.ServiceLocation;
-using Nito.AsyncEx;
 using Owin;
 using Owin.WebSocket;
 using Owin.WebSocket.Extensions;
@@ -22,10 +14,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     public class WebsocketServerChannel : ChannelBase
     {
         private readonly WebSocketStreamReaderWriter socketStreamReaderWriter;
+        private readonly MemoryStream inStream;
+
+        public WebSocketMessageDispatcher WebSocketMessageDispatcher { get; private set; }
 
         public WebsocketServerChannel(WebSocketStreamReaderWriter socket)
         {
             socketStreamReaderWriter = socket;
+            inStream = new MemoryStream();
         }
 
         protected override void Initialize(IMessageSerializer messageSerializer)
@@ -33,13 +29,24 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             // Set up the reader and writer
             this.MessageReader =
                 new MessageReader(
-                    this.socketStreamReaderWriter.InStream,
+                    this.inStream,
                     messageSerializer);
 
             this.MessageWriter =
                 new MessageWriter(
-                    this.socketStreamReaderWriter.OutStream,
+                    new WebSocketStream(socketStreamReaderWriter), 
                     messageSerializer);
+
+            WebSocketMessageDispatcher = new WebSocketMessageDispatcher(MessageReader, MessageWriter);
+            this.MessageDispatcher = WebSocketMessageDispatcher;
+        }
+
+        public async Task Dispatch(ArraySegment<byte> message)
+        {
+            inStream.SetLength(0);
+            await inStream.WriteAsync(message.ToArray(), 0, message.Count);
+            inStream.Position = 0;
+            await WebSocketMessageDispatcher.DispatchMessage();
         }
 
         protected override void Shutdown()
@@ -51,15 +58,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     public class WebSocketStream : MemoryStream
     {
         private readonly WebSocketConnection _connection;
-        private AsyncAutoResetEvent bufferLock = new AsyncAutoResetEvent(); 
-        private AsyncReaderWriterLock asyncReaderWriterLock = new AsyncReaderWriterLock();
-
-        private ConcurrentQueue<byte> byteQueue;
 
         public WebSocketStream(WebSocketConnection connection)
         {
             _connection = connection;
-            byteQueue = new ConcurrentQueue<byte>();
         }
 
         public override async Task FlushAsync(CancellationToken cancellationToken)
@@ -67,90 +69,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             await _connection.SendBinary(new ArraySegment<byte>(ToArray()), true);
             SetLength(0);
         }
-
-        public override async Task<int> ReadAsync(byte[] outBuffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            Logger.Write(LogLevel.Verbose, "ReadAsync...");
-            int readCount = 0;
-            try
-            {
-                await bufferLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-                Logger.Write(LogLevel.Verbose,
-                    string.Format("Offset: {0} Count: {1} Queue Length: {2}", offset, count, byteQueue.Count));
-
-                using (var releaser = await asyncReaderWriterLock.ReaderLockAsync().ConfigureAwait(false))
-                {
-                    for (int i = offset; i < count; i++)
-                    {
-                        byte b;
-                        if (!byteQueue.TryDequeue(out b))
-                        {
-                            Logger.Write(LogLevel.Verbose, string.Format("Queue is empty: {0}", byteQueue.IsEmpty));
-                            break;
-                        }
-
-                        outBuffer[i] = b;
-                        readCount++;
-                    }
-                }
-
-                Logger.Write(LogLevel.Verbose, string.Format("Read count: {0}", readCount));
-            }
-            catch (Exception ex)
-            {
-                Logger.Write(LogLevel.Error, ex.Message);
-            }
-            return readCount;
-        }
-
-        public async Task BufferData(byte[] data)
-        {
-            Logger.Write(LogLevel.Verbose, string.Format("Buffering data: {0}", data.Length));
-
-            using (var releaser = await asyncReaderWriterLock.WriterLockAsync().ConfigureAwait(false))
-            {
-                foreach (var b in data)
-                    byteQueue.Enqueue(b);       
-            }
-
-            bufferLock.Set();
-        }
     }
 
     [WebSocketRoute("/ws")]
     public class WebSocketStreamReaderWriter : WebSocketConnection
     {
-        public Guid ConnectionId = Guid.NewGuid();
-        public WebSocketStream InStream { get; private set; }
-        public WebSocketStream OutStream { get; private set; }
-
+        private WebsocketServerChannel _channel;
         private Server.LanguageServer languageServer;
 
-        public WebSocketStreamReaderWriter()
+        public override void OnOpen()
         {
-            Logger.Write(LogLevel.Verbose, "New websocket connection");
-            InStream = new WebSocketStream(this);
-            OutStream = new WebSocketStream(this);
+            _channel = new WebsocketServerChannel(this);
+            languageServer = new Server.LanguageServer(_channel);
+            languageServer.Start();
         }
 
         public override async Task OnMessageReceived(ArraySegment<byte> message, WebSocketMessageType type)
         {
             Logger.Write(LogLevel.Verbose, string.Format("Message of {0} bytes received...", message.Count));
-
-            try
-            {
-                await InStream.BufferData(message.ToArray());
-                if (languageServer == null)
-                {
-                    languageServer = new Server.LanguageServer(new WebsocketServerChannel(this));
-                    languageServer.Start();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-            }
+            await _channel.Dispatch(message);
         }
 
         public override Task OnOpenAsync()
@@ -178,19 +115,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     {
         public void Configuration(IAppBuilder app)
         {
-            Logger.Initialize(Path.Combine(AssemblyDirectory, "Server.log"));
             app.MapWebSocketRoute<WebSocketStreamReaderWriter>();
         }
+    }
 
-        public static string AssemblyDirectory
+    public class WebSocketMessageDispatcher : MessageDispatcher
+    {
+        public WebSocketMessageDispatcher(MessageReader messageReader, MessageWriter messageWriter) : base(messageReader, messageWriter)
         {
-            get
-            {
-                string codeBase = Assembly.GetExecutingAssembly().CodeBase;
-                UriBuilder uri = new UriBuilder(codeBase);
-                string path = Uri.UnescapeDataString(uri.Path);
-                return Path.GetDirectoryName(path);
-            }
+        }
+
+        public async Task DispatchMessage()
+        {
+            var message = await this.messageReader.ReadMessage();
+            await base.DispatchMessage(message, this.messageWriter);
         }
     }
 }

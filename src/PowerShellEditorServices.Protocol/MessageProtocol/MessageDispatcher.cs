@@ -16,8 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     {
         #region Fields
 
-        private MessageReader messageReader;
-        private MessageWriter messageWriter;
+        
         private AsyncContextThread messageLoopThread;
 
         private Dictionary<string, Func<Message, MessageWriter, Task>> requestHandlers =
@@ -45,11 +44,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
-        #endregion
+        protected MessageReader messageReader { get; private set; }
+        protected MessageWriter messageWriter { get; private set; }
 
-        #region Constructors
+    #endregion
 
-        public MessageDispatcher(
+    #region Constructors
+
+    public MessageDispatcher(
             MessageReader messageReader,
             MessageWriter messageWriter)
         {
@@ -223,7 +225,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
-        private async Task DispatchMessage(
+        protected async Task DispatchMessage(
             Message messageToDispatch, 
             MessageWriter messageWriter)
         {

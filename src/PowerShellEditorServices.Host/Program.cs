@@ -91,15 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             else
             {
                 logPath = logPath ?? "EditorServices.log";
-
-                if (websocketPort != -1)
-                {
-                    server = new LanguageServer(new WebsocketServerChannel(websocketPort));
-                }
-                else
-                {
-                    server = new LanguageServer();
-                }
+                server = new LanguageServer();
             }
 
             // Start the logger with the specified log path
