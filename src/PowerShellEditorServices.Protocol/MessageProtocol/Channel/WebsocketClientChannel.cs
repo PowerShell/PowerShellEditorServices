@@ -8,10 +8,12 @@ using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
+    /// <summary>
+    /// Implementation of <see cref="ChannelBase"/> that enables WebSocket communication.
+    /// </summary>
     public class WebsocketClientChannel : ChannelBase
     {
         private readonly string serverUrl;
-
         private ClientWebSocket socket;
         private ClientWebSocketStream inputStream;
         private ClientWebSocketStream outputStream;
@@ -76,18 +78,42 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             {
                 this.MessageWriter = null;
             }
+
+            if (this.socket != null)
+            {
+                socket.Dispose();
+            }
         }
     }
 
-    public class ClientWebSocketStream : MemoryStream
+    /// <summary>
+    /// Extension of <see cref="MemoryStream"/> that sends data to a WebSocket during FlushAsync 
+    /// and reads during WriteAsync.
+    /// </summary>
+    internal class ClientWebSocketStream : MemoryStream
     {
         private readonly ClientWebSocket socket;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <remarks>
+        /// It is expected that the socket is in an Open state. 
+        /// </remarks>
+        /// <param name="socket"></param>
         public ClientWebSocketStream(ClientWebSocket socket)
         {
             this.socket = socket;
         }
 
+        /// <summary>
+        /// Reads from the WebSocket. 
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             if (socket.State != WebSocketState.Open)
@@ -110,6 +136,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             return result.Count;
         }
 
+        /// <summary>
+        /// Sends the data in the stream to the buffer and clears the stream.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
             await socket.SendAsync(new ArraySegment<byte>(ToArray()), WebSocketMessageType.Binary, true, cancellationToken);
