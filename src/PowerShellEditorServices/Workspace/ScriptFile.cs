@@ -255,6 +255,81 @@ namespace Microsoft.PowerShell.EditorServices
             return offset;
         }
 
+        /// <summary>
+        /// Calculates the 1-based line and column number position based
+        /// on the given buffer offset.
+        /// </summary>
+        /// <param name="bufferOffset">The buffer offset to convert.</param>
+        /// <returns>A new BufferPosition containing the position of the offset.</returns>
+        public BufferPosition GetPositionAtOffset(int bufferOffset)
+        {
+            BufferRange bufferRange = 
+                GetRangeBetweenOffsets(
+                    bufferOffset, bufferOffset);
+
+            return bufferRange.Start;
+        }
+
+        /// <summary>
+        /// Calculates the 1-based line and column number range based on
+        /// the given start and end buffer offsets.
+        /// </summary>
+        /// <param name="startOffset">The start offset of the range.</param>
+        /// <param name="endOffset">The end offset of the range.</param>
+        /// <returns>A new BufferRange containing the positions in the offset range.</returns>
+        public BufferRange GetRangeBetweenOffsets(int startOffset, int endOffset)
+        {
+            bool foundStart = false;
+            int currentOffset = 0;
+            int searchedOffset = startOffset;
+
+            BufferPosition startPosition = new BufferPosition();
+            BufferPosition endPosition = startPosition;
+
+            int line = 0;
+            while (line < this.FileLines.Count)
+            {
+                if (searchedOffset <= currentOffset + this.FileLines[line].Length)
+                {
+                    int column = searchedOffset - currentOffset;
+
+                    // Have we already found the start position?
+                    if (foundStart)
+                    {
+                        // Assign the end position and end the search
+                        endPosition = new BufferPosition(line + 1, column + 1);
+                        break;
+                    }
+                    else
+                    {
+                        startPosition = new BufferPosition(line + 1, column + 1);
+
+                        // Do we only need to find the start position?
+                        if (startOffset == endOffset)
+                        {
+                            endPosition = startPosition;
+                            break;
+                        }
+                        else
+                        {
+                            // Since the end offset can be on the same line,
+                            // skip the line increment and continue searching
+                            // for the end position
+                            foundStart = true;
+                            searchedOffset = endOffset;
+                            continue;
+                        }
+                    }
+                }
+
+                // Increase the current offset and include newline length
+                currentOffset += this.FileLines[line].Length + Environment.NewLine.Length;
+                line++;
+            }
+
+            return new BufferRange(startPosition, endPosition);
+        }
+
         #endregion
 
         #region Private Methods

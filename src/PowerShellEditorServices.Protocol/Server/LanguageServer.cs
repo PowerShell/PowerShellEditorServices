@@ -70,7 +70,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             Logger.Write(LogLevel.Normal, "Language service is shutting down...");
 
-            this.editorSession.Dispose();
+            if (this.editorSession != null)
+            {
+                this.editorSession.Dispose();
+                this.editorSession = null;
+            }
         }
 
         #region Built-in Message Handlers
@@ -364,38 +368,13 @@ function __Expand-Alias {
                 int startEditColumn = textDocumentPosition.Position.Character;
                 int endEditColumn = textDocumentPosition.Position.Character;
 
-                // Find the extents of the token under the cursor
-                var completedToken =
-                    scriptFile
-                        .ScriptAst
-                        .FindAll(
-                            ast =>
-                            {
-                                return
-                                    !(ast is PipelineAst) &&
-                                    ast.Extent.StartLineNumber == cursorLine &&
-                                    ast.Extent.StartColumnNumber <= cursorColumn &&
-                                    ast.Extent.EndColumnNumber >= cursorColumn;
-                            },
-                            true)
-                        .LastOrDefault();   // The most relevant AST will be the last
-
-                if (completedToken != null)
-                {
-                    // The edit should replace the token that was found at the cursor position
-                    startEditColumn = completedToken.Extent.StartColumnNumber - 1;
-                    endEditColumn = completedToken.Extent.EndColumnNumber - 1;
-                }
-
                 completionItems =
                     completionResults
                         .Completions
                         .Select(
                             c => CreateCompletionItem(
                                 c,
-                                textDocumentPosition.Position.Line,
-                                startEditColumn,
-                                endEditColumn))
+                                completionResults.ReplacedRange))
                         .ToArray();
             }
             else
@@ -942,9 +921,7 @@ function __Expand-Alias {
 
         private static CompletionItem CreateCompletionItem(
             CompletionDetails completionDetails,
-            int lineNumber,
-            int startColumn,
-            int endColumn)
+            BufferRange completionRange)
         {
             string detailString = null;
 
@@ -971,13 +948,13 @@ function __Expand-Alias {
                     {
                         Start = new Position
                         {
-                            Line = lineNumber,
-                            Character = startColumn
+                            Line = completionRange.Start.Line - 1,
+                            Character = completionRange.Start.Column - 1
                         },
                         End = new Position
                         {
-                            Line = lineNumber,
-                            Character = endColumn
+                            Line = completionRange.End.Line - 1,
+                            Character = completionRange.End.Column - 1
                         }
                     }
                 }

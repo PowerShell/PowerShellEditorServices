@@ -11,3 +11,9 @@ $testVar
 
 Import-Module PowerShellGet
 Install-Mo
+
+function Test-Completion {
+    param([Parameter(Mandatory, Value)])
+}
+
+Get-ChildItem c:\Program

@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices
             RunspaceHandle runspaceHandle =
                 await this.powerShellContext.GetRunspaceHandle();
 
-            CompletionResults completionResults =
+            CommandCompletion commandCompletion =
                 AstOperations.GetCompletions(
                     scriptFile.ScriptAst,
                     scriptFile.ScriptTokens,
@@ -97,14 +97,26 @@ namespace Microsoft.PowerShell.EditorServices
                     runspaceHandle.Runspace);
 
             runspaceHandle.Dispose();
-                    
-            // save state of most recent completion
-            mostRecentCompletions = completionResults;
-            mostRecentRequestFile = scriptFile.Id;
-            mostRecentRequestLine = lineNumber;
-            mostRecentRequestOffest = columnNumber;
 
-            return completionResults;
+            if (commandCompletion != null)
+            {
+                CompletionResults completionResults =
+                    CompletionResults.Create(
+                        scriptFile,
+                        commandCompletion);
+
+                // save state of most recent completion
+                mostRecentCompletions = completionResults;
+                mostRecentRequestFile = scriptFile.Id;
+                mostRecentRequestLine = lineNumber;
+                mostRecentRequestOffest = columnNumber;
+
+                return completionResults;
+            }
+            else
+            {
+                return new CompletionResults();
+            }
         }
 
         /// <summary>

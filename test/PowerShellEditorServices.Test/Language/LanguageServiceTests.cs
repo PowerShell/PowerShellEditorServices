@@ -79,6 +79,32 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
+        public async Task LanguageServiceCompletesAttributeValue()
+        {
+            CompletionResults completionResults =
+                await this.GetCompletionResults(
+                    CompleteAttributeValue.SourceDetails);
+
+            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.Equal(
+                CompleteAttributeValue.ExpectedRange,
+                completionResults.ReplacedRange);
+        }
+
+        [Fact]
+        public async Task LanguageServiceCompletesFilePath()
+        {
+            CompletionResults completionResults =
+                await this.GetCompletionResults(
+                    CompleteFilePath.SourceDetails);
+
+            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.Equal(
+                CompleteFilePath.ExpectedRange,
+                completionResults.ReplacedRange);
+        }
+
+        [Fact]
         public async Task LanguageServiceFindsParameterHintsOnCommand()
         {
             ParameterSetSignatures paramSignatures =
