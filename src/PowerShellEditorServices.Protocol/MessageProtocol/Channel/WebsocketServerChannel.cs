@@ -4,28 +4,30 @@ using System.Linq;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Utility;
-using Owin;
+using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Owin.WebSocket;
-using Owin.WebSocket.Extensions;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
-    public class WebsocketServerChannel : ChannelBase
+    /// <summary>
+    /// Implementation of <see cref="ChannelBase"/> that implements the streams necessary for 
+    /// communicating via OWIN WebSockets. 
+    /// </summary>
+    public class WebSocketServerChannel : ChannelBase
     {
-        private readonly WebSocketStreamReaderWriter socketStreamReaderWriter;
-        private readonly MemoryStream inStream;
+        private readonly WebSocketConnection socketConnection;
+        private MemoryStream inStream;
+        private WebSocketMessageDispatcher webSocketMessageDispatcher;
 
-        public WebSocketMessageDispatcher WebSocketMessageDispatcher { get; private set; }
-
-        public WebsocketServerChannel(WebSocketStreamReaderWriter socket)
+        public WebSocketServerChannel(WebSocketConnection socket)
         {
-            socketStreamReaderWriter = socket;
-            inStream = new MemoryStream();
+            socketConnection = socket;
         }
 
         protected override void Initialize(IMessageSerializer messageSerializer)
         {
+            inStream = new MemoryStream();
+
             // Set up the reader and writer
             this.MessageReader =
                 new MessageReader(
@@ -34,28 +36,47 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
             this.MessageWriter =
                 new MessageWriter(
-                    new WebSocketStream(socketStreamReaderWriter), 
+                    new WebSocketStream(socketConnection), 
                     messageSerializer);
 
-            WebSocketMessageDispatcher = new WebSocketMessageDispatcher(MessageReader, MessageWriter);
-            this.MessageDispatcher = WebSocketMessageDispatcher;
+            webSocketMessageDispatcher = new WebSocketMessageDispatcher(MessageReader, MessageWriter);
+            this.MessageDispatcher = webSocketMessageDispatcher;
         }
 
+        /// <summary>
+        /// Dispatches data received during calls to OnMessageReceived in the <see cref="WebSocketConnection"/> class.
+        /// </summary>
+        /// <remarks>
+        /// This method calls an overriden version of the <see cref="MessageDispatcher"/> that dispatches messages on 
+        /// demand rather than running on a background thread. 
+        /// </remarks>
+        /// <param name="message"></param>
+        /// <returns></returns>
         public async Task Dispatch(ArraySegment<byte> message)
         {
+            //Clear our stream 
             inStream.SetLength(0);
+
+            //Write data and dispatch to handlers
             await inStream.WriteAsync(message.ToArray(), 0, message.Count);
             inStream.Position = 0;
-            await WebSocketMessageDispatcher.DispatchMessage();
+            await webSocketMessageDispatcher.DispatchMessage();
         }
 
         protected override void Shutdown()
         {
-            this.socketStreamReaderWriter.Close(WebSocketCloseStatus.NormalClosure, "Server shutting down");
+            this.socketConnection.Close(WebSocketCloseStatus.NormalClosure, "Server shutting down");
         }
     }
 
-    public class WebSocketStream : MemoryStream
+    /// <summary>
+    /// Overriden <see cref="MemoryStream"/> that sends data through a <see cref="WebSocketConnection"/> during the FlushAsync call. 
+    /// </summary>
+    /// <remarks>
+    /// FlushAsync will send data via the SendBinary method of the <see cref="WebSocketConnection"/> class. The memory streams length will
+    /// then be set to 0 to reset the stream for additional data to be written. 
+    /// </remarks>
+    internal class WebSocketStream : MemoryStream
     {
         private readonly WebSocketConnection _connection;
 
@@ -66,65 +87,80 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
+            //Send to client socket and reset stream
             await _connection.SendBinary(new ArraySegment<byte>(ToArray()), true);
             SetLength(0);
         }
     }
 
-    [WebSocketRoute("/ws")]
-    public class WebSocketStreamReaderWriter : WebSocketConnection
+    /// <summary>
+    /// Base class for WebSocket connections that expose editor services.
+    /// </summary>
+    public abstract class EditorServiceWebSocketConnection : WebSocketConnection
     {
-        private WebsocketServerChannel _channel;
-        private Server.LanguageServer languageServer;
+        protected EditorServiceWebSocketConnection() 
+        {
+            Channel = new WebSocketServerChannel(this);
+        }
+
+        protected ProtocolServer Server { get; set; }
+
+        protected WebSocketServerChannel Channel { get; private set; }
 
         public override void OnOpen()
         {
-            _channel = new WebsocketServerChannel(this);
-            languageServer = new Server.LanguageServer(_channel);
-            languageServer.Start();
+            Server.Start();
         }
 
         public override async Task OnMessageReceived(ArraySegment<byte> message, WebSocketMessageType type)
         {
-            Logger.Write(LogLevel.Verbose, string.Format("Message of {0} bytes received...", message.Count));
-            await _channel.Dispatch(message);
-        }
-
-        public override Task OnOpenAsync()
-        {
-            Logger.Write(LogLevel.Normal, "Opening WebSocket");
-            return base.OnOpenAsync();
+            await Channel.Dispatch(message);
         }
 
         public override Task OnCloseAsync(WebSocketCloseStatus? closeStatus, string closeStatusDescription)
         {
-            Logger.Write(LogLevel.Normal, "Closing websocket");
+            Server.Stop();
 
             return base.OnCloseAsync(closeStatus, closeStatusDescription);
         }
-
-        public override void OnReceiveError(Exception error)
-        {
-            Logger.Write(LogLevel.Error, "Error on web socket: " + error.Message);
-
-            base.OnReceiveError(error);
-        }
     }
 
-    public class Startup
+    /// <summary>
+    /// Web socket connections that expose the <see cref="Server.LanguageServer"/>.
+    /// </summary>
+    public class LanguageServerWebSocketConnection : EditorServiceWebSocketConnection
     {
-        public void Configuration(IAppBuilder app)
+        public LanguageServerWebSocketConnection()
         {
-            app.MapWebSocketRoute<WebSocketStreamReaderWriter>();
+            Server = new Server.LanguageServer(Channel);
         }
     }
 
-    public class WebSocketMessageDispatcher : MessageDispatcher
+    /// <summary>
+    /// Web socket connections that expose the <see cref="Server.DebugAdapter"/>.
+    /// </summary>
+    public class DebugAdapterWebSocketConnection : EditorServiceWebSocketConnection
+    {
+        public DebugAdapterWebSocketConnection()
+        {
+            Server = new Server.DebugAdapter(Channel);
+        }
+    }
+
+    /// <summary>
+    /// Overrides the default behavior of the <see cref="MessageDispatcher"/> class to dispatch messages
+    /// on command rather than on a background thread. 
+    /// </summary>
+    internal class WebSocketMessageDispatcher : MessageDispatcher
     {
         public WebSocketMessageDispatcher(MessageReader messageReader, MessageWriter messageWriter) : base(messageReader, messageWriter)
         {
         }
 
+        /// <summary>
+        /// Reads and dispatches a message to the configured handlers.
+        /// </summary>
+        /// <returns></returns>
         public async Task DispatchMessage()
         {
             var message = await this.messageReader.ReadMessage();
