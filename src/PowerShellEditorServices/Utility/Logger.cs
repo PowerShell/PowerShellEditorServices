@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -96,6 +97,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = 0)
         {
+            Console.WriteLine(logMessage);
+            Debug.WriteLine(logMessage);
             if (logWriter != null)
             {
                 logWriter.Write(

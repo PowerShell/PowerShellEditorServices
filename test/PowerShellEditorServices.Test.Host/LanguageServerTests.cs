@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
+    [Collection("MyCollection")]
     public class LanguageServerTests : IAsyncLifetime
     {
         private LanguageServiceClient languageServiceClient;
