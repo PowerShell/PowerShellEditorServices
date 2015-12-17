@@ -3,11 +3,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Utility;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Management.Automation;
 using System.Text.RegularExpressions;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -135,6 +136,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// Provides the details about a single completion result.
     /// </summary>
+    [DebuggerDisplay("CompletionType = {CompletionType.ToString()}, CompletionText = {CompletionText}")]
     public sealed class CompletionDetails
     {
         #region Properties

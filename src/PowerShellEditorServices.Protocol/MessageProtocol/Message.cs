@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
@@ -21,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     /// <summary>
     /// Provides common details for protocol messages of any format.
     /// </summary>
+    [DebuggerDisplay("MessageType = {MessageType.ToString()}, Method = {Method}, Id = {Id}")]
     public class Message
     {
         /// <summary>

@@ -3,16 +3,16 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System.Linq;
+using System.Diagnostics;
+using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    using System.Management.Automation;
-    using System.Management.Automation.Runspaces;
-
     /// <summary>
     /// Provides detailed information for a given symbol.
     /// </summary>
+    [DebuggerDisplay("SymbolReference = {SymbolReference.SymbolType}/{SymbolReference.SymbolName}, DisplayString = {DisplayString}")]
     public class SymbolDetails
     {
         #region Properties

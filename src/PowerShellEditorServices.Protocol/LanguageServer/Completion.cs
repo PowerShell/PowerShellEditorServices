@@ -3,12 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Diagnostics;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
@@ -48,6 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
             Reference = 18
     }
 
+    [DebuggerDisplay("NewText = {NewText}, Range = {Range.Start.Line}:{Range.Start.Character} - {Range.End.Line}:{Range.End.Character}")]
     public class TextEdit 
     {
         public Range Range { get; set; }
@@ -55,6 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public string NewText { get; set; }
     }
 
+    [DebuggerDisplay("Kind = {Kind.ToString()}, Label = {Label}, Detail = {Detail}")]
     public class CompletionItem
     {
         public string Label { get; set; }
