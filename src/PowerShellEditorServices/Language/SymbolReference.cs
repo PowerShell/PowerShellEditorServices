@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Diagnostics;
 using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -10,6 +11,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// A class that holds the type, name, script extent, and source line of a symbol
     /// </summary>
+    [DebuggerDisplay("SymbolType = {SymbolType}, SymbolName = {SymbolName}")]
     public class SymbolReference
     {
         #region Properties

@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Diagnostics;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
@@ -10,6 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     /// <summary>
     /// Defines a base parameter class for identifying a text document.
     /// </summary>
+    [DebuggerDisplay("TextDocumentIdentifier = {Uri}")]
     public class TextDocumentIdentifier
     {
         /// <summary>
@@ -22,6 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     /// <summary>
     /// Defines a position in a text document.
     /// </summary>
+    [DebuggerDisplay("TextDocumentPosition = {Position.Line}:{Position.Character}")]
     public class TextDocumentPosition : TextDocumentIdentifier
     {
         /// <summary>
@@ -85,6 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public string Text { get; set; }
     }
 
+    [DebuggerDisplay("Position = {Line}:{Character}")]
     public class Position
     {
         /// <summary>
@@ -98,6 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public int Character { get; set; }
     }
 
+    [DebuggerDisplay("Start = {Start.Line}:{Start.Character}, End = {End.Line}:{End.Character}")]
     public struct Range
     {
         /// <summary>
@@ -111,6 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public Position End { get; set; }
     }
 
+    [DebuggerDisplay("Range = {Range.Start.Line}:{Range.Start.Character} - {Range.End.Line}:{Range.End.Character}, Uri = {Uri}")]
     public class Location
     {
         /// <summary>
