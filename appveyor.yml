@@ -4,7 +4,7 @@ configuration: Release
 clone_depth: 10
 
 environment:
-  core_version: '0.3.0'
+  core_version: '0.3.1'
   prerelease_name: '-beta'
 
 branches:

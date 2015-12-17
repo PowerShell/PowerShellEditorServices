@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         Path = DebugScriptPath
                     },
-                    Lines = new int[] { 5, 9 }
+                    Lines = new int[] { 5, 7 }
                 });
 
             Task<StoppedEventBody> breakEventTask = this.WaitForEvent(StoppedEvent.Type);
@@ -74,7 +74,24 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             await this.SendRequest(ContinueRequest.Type, new object());
             stoppedDetails = await breakEventTask;
             Assert.Equal(DebugScriptPath, stoppedDetails.Source.Path);
-            Assert.Equal(9, stoppedDetails.Line);
+            Assert.Equal(7, stoppedDetails.Line);
+
+            // Abort script execution
+            Task terminatedEvent = this.WaitForEvent(TerminatedEvent.Type);
+            await this.SendRequest(DisconnectRequest.Type, new object());
+            await terminatedEvent;
+        }
+
+        [Fact]
+        public async Task DebugAdapterReceivesOutputEvents()
+        {
+            Task<OutputEventBody> outputEventTask = this.WaitForEvent(OutputEvent.Type);
+            await this.LaunchScript(DebugScriptPath);
+
+            // Wait for an output event
+            OutputEventBody outputDetails = await outputEventTask;
+            Assert.Equal("Output 1", outputDetails.Output);
+            Assert.Equal("stdout", outputDetails.Category);
 
             // Abort script execution
             Task terminatedEvent = this.WaitForEvent(TerminatedEvent.Type);
@@ -113,7 +130,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 eventType,
                 (p, ctx) =>
                 {
-                    eventTask.SetResult(p);
+                    if (!eventTask.Task.IsCompleted)
+                    {
+                        eventTask.SetResult(p);
+                    }
+
                     return Task.FromResult(true);
                 },
                 true);  // Override any existing handler
