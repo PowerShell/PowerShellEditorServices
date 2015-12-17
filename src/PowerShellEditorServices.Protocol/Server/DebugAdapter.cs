@@ -29,6 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession = new EditorSession();
             this.editorSession.StartSession();
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
+            this.editorSession.PowerShellContext.OutputWritten += this.powerShellContext_OutputWritten;
         }
 
         protected override void Initialize()
@@ -353,6 +354,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     Column = e.InvocationInfo.OffsetInLine,
                     ThreadId = 1, // TODO: Change this based on context
                     Reason = "breakpoint" // TODO: Change this based on context
+                });
+        }
+
+        async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
+        {
+            await this.SendEvent(
+                OutputEvent.Type,
+                new OutputEventBody
+                {
+                    Output = e.OutputText + (e.IncludeNewLine ? "\r\n" : string.Empty),
+                    Category = (e.OutputType == OutputType.Error) ? "stderr" : "stdout"
                 });
         }
 

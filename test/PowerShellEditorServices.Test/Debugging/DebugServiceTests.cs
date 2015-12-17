@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             BreakpointDetails[] breakpoints =
                 await this.debugService.SetBreakpoints(
                     this.debugScriptFile, 
-                    new int[] { 5, 9 });
+                    new int[] { 5, 7 });
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             Task executeTask =
@@ -114,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 5);
             this.debugService.Continue();
 
-            await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 9);
+            await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 7);
 
             // Abort script execution early and wait for completion
             this.debugService.Abort();
