@@ -208,6 +208,8 @@ namespace Microsoft.PowerShell.EditorServices
             PSCommand psCommand,
             bool sendOutputToHost = false)
         {
+            RunspaceHandle runspaceHandle = null;
+
             // If the debugger is active and the caller isn't on the pipeline 
             // thread, send the command over to that thread to be executed.
             if (Thread.CurrentThread.ManagedThreadId != this.pipelineThreadId &&
@@ -276,7 +278,7 @@ namespace Microsoft.PowerShell.EditorServices
                                 GetStringForPSCommand(psCommand)));
 
                         // Set the runspace
-                        var runspaceHandle = await this.GetRunspaceHandle();
+                        runspaceHandle = await this.GetRunspaceHandle();
                         if (runspaceHandle.Runspace.RunspaceAvailability != RunspaceAvailability.AvailableForNestedCommand)
                         {
                             this.powerShell.Runspace = runspaceHandle.Runspace;
@@ -298,6 +300,7 @@ namespace Microsoft.PowerShell.EditorServices
                             );
 
                         runspaceHandle.Dispose();
+                        runspaceHandle = null;
 
                         if (this.powerShell.HadErrors)
                         {
@@ -329,6 +332,13 @@ namespace Microsoft.PowerShell.EditorServices
 
                     // Write the error to the host
                     this.WriteExceptionToHost(e);
+                }
+                finally
+                {
+                    if (runspaceHandle != null)
+                    {
+                        runspaceHandle.Dispose();
+                    }
                 }
             }
 
