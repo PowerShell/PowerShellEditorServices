@@ -6,6 +6,8 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using Nito.AsyncEx;
 using System;
+using System.Collections;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -15,7 +17,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    using System.Collections;
     using System.Management.Automation;
     using System.Management.Automation.Host;
     using System.Management.Automation.Runspaces;
@@ -322,10 +323,12 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 catch (RuntimeException e)
                 {
-                    // TODO: Return an error
                     Logger.Write(
                         LogLevel.Error,
-                        "Exception occurred while attempting to execute command:\r\n\r\n" + e.ToString());
+                        "Runtime exception occurred while executing command:\r\n\r\n" + e.ToString());
+
+                    // Write the error to the host
+                    this.WriteExceptionToHost(e);
                 }
             }
 
@@ -521,6 +524,75 @@ namespace Microsoft.PowerShell.EditorServices
         #endregion
 
         #region Private Methods
+
+        private void WriteExceptionToHost(Exception e)
+        {
+            const string ExceptionFormat =
+                "{0}\r\n{1}\r\n    + CategoryInfo          : {2}\r\n    + FullyQualifiedErrorId : {3}";
+
+            IContainsErrorRecord containsErrorRecord = e as IContainsErrorRecord;
+
+            if (containsErrorRecord == null || 
+                containsErrorRecord.ErrorRecord == null)
+            {
+                this.WriteError(e.Message, null, 0, 0);
+                return;
+            }
+
+            ErrorRecord errorRecord = containsErrorRecord.ErrorRecord;
+            if (errorRecord.InvocationInfo == null)
+            {
+                this.WriteError(errorRecord.ToString(), String.Empty, 0, 0);
+                return;
+            }
+
+            string errorRecordString = errorRecord.ToString();
+            if ((errorRecord.InvocationInfo.PositionMessage != null) &&
+                errorRecordString.IndexOf(errorRecord.InvocationInfo.PositionMessage, StringComparison.Ordinal) != -1)
+            {
+                this.WriteError(errorRecordString);
+                return;
+            }
+
+            string message = 
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    ExceptionFormat,
+                    errorRecord.ToString(),
+                    errorRecord.InvocationInfo.PositionMessage,
+                    errorRecord.CategoryInfo,
+                    errorRecord.FullyQualifiedErrorId);
+
+            this.WriteError(message);
+        }
+
+        private void WriteError(
+            string errorMessage,
+            string filePath,
+            int lineNumber,
+            int columnNumber)
+        {
+            const string ErrorLocationFormat = "At {0}:{1} char:{2}";
+
+            this.WriteError(
+                errorMessage +
+                Environment.NewLine +
+                string.Format(
+                    ErrorLocationFormat,
+                    String.IsNullOrEmpty(filePath) ? "line" : filePath,
+                    lineNumber,
+                    columnNumber));
+        }
+
+        private void WriteError(string errorMessage)
+        {
+            ((IConsoleHost)this).WriteOutput(
+                errorMessage,
+                true,
+                OutputType.Error,
+                ConsoleColor.Red,
+                ConsoleColor.Black);
+        }
 
         void powerShell_InvocationStateChanged(object sender, PSInvocationStateChangedEventArgs e)
         {
