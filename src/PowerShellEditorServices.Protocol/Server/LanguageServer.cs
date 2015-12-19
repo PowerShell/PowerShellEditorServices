@@ -676,27 +676,17 @@ function __Expand-Alias {
             DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
             RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
         {
-            VariableDetails result =
-                await editorSession.DebugService.EvaluateExpression(
-                    evaluateParams.Expression,
-                    evaluateParams.FrameId);
+            var results = 
+                await this.editorSession.PowerShellContext.ExecuteScriptString(
+                    evaluateParams.Expression);
 
-            string valueString = null;
-            int variableId = 0;
-
-            if (result != null)
-            {
-                valueString = result.ValueString;
-                variableId =
-                    result.IsExpandable ?
-                        result.Id : 0;
-            }
-
+            // Return an empty result since the result value is irrelevant
+            // for this request in the LanguageServer
             await requestContext.SendResult(
                 new DebugAdapterMessages.EvaluateResponseBody
                 {
-                    Result = valueString,
-                    VariablesReference = variableId
+                    Result = "",
+                    VariablesReference = 0
                 });
         }
 
