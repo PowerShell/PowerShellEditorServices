@@ -130,9 +130,10 @@ namespace Microsoft.PowerShell.EditorServices
             return
                 valueObject != null &&
                 !valueType.IsPrimitive &&
+                !valueType.IsEnum && // Enums don't have any properties
+                !(valueObject is string) && // Strings get treated as IEnumerables
                 !(valueObject is decimal) &&
-                !(valueObject is UnableToRetrievePropertyMessage) &&
-                !(valueObject is string); // Strings get treated as IEnumerables
+                !(valueObject is UnableToRetrievePropertyMessage);
         }
 
         private static string GetValueString(object value, bool isExpandable)
