@@ -43,7 +43,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Ho
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Channel.WebSocket", "src\PowerShellEditorServices.Channel.WebSocket\PowerShellEditorServices.Channel.WebSocket.csproj", "{A6663F64-3C3D-461F-8A05-0CC4CA7A9945}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Channel.WebSocket.Test", "test\PowerShellEditorServices.Channel.WebSocket.Test\PowerShellEditorServices.Channel.WebSocket.Test.csproj", "{9D98120C-9601-4678-AD50-EF2808DABAC9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Test.Channel.WebSocket", "test\PowerShellEditorServices.Test.Channel.WebSocket\PowerShellEditorServices.Test.Channel.WebSocket.csproj", "{9D98120C-9601-4678-AD50-EF2808DABAC9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
