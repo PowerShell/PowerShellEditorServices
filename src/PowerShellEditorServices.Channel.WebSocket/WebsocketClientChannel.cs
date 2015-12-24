@@ -8,7 +8,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace PowerShellEditorServices.Channel.WebSocket
+namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
 {
     /// <summary>
     /// Implementation of <see cref="ChannelBase"/> that enables WebSocket communication.
