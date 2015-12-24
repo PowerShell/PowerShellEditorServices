@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F594E7FD-1E72-4E51-A496-B019C2BA3180}"
 EndProject
@@ -38,6 +38,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Protocol", "src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj", "{F8A0946A-5D25-4651-8079-B8D5776916FB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Test.Protocol", "test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj", "{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Channel.WebSocket", "src\PowerShellEditorServices.Channel.WebSocket\PowerShellEditorServices.Channel.WebSocket.csproj", "{A6663F64-3C3D-461F-8A05-0CC4CA7A9945}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Test.Channel.WebSocket", "test\PowerShellEditorServices.Test.Channel.WebSocket\PowerShellEditorServices.Test.Channel.WebSocket.csproj", "{9D98120C-9601-4678-AD50-EF2808DABAC9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,6 +85,14 @@ Global
 		{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6663F64-3C3D-461F-8A05-0CC4CA7A9945}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6663F64-3C3D-461F-8A05-0CC4CA7A9945}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6663F64-3C3D-461F-8A05-0CC4CA7A9945}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6663F64-3C3D-461F-8A05-0CC4CA7A9945}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D98120C-9601-4678-AD50-EF2808DABAC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D98120C-9601-4678-AD50-EF2808DABAC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D98120C-9601-4678-AD50-EF2808DABAC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D98120C-9601-4678-AD50-EF2808DABAC9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -95,5 +107,7 @@ Global
 		{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 		{F8A0946A-5D25-4651-8079-B8D5776916FB} = {F594E7FD-1E72-4E51-A496-B019C2BA3180}
 		{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
+		{A6663F64-3C3D-461F-8A05-0CC4CA7A9945} = {F594E7FD-1E72-4E51-A496-B019C2BA3180}
+		{9D98120C-9601-4678-AD50-EF2808DABAC9} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 	EndGlobalSection
 EndGlobal

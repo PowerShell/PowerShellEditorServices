@@ -16,8 +16,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     {
         #region Fields
 
-        private MessageReader messageReader;
-        private MessageWriter messageWriter;
         private AsyncContextThread messageLoopThread;
 
         private Dictionary<string, Func<Message, MessageWriter, Task>> requestHandlers =
@@ -45,6 +43,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
+        protected MessageReader MessageReader { get; private set; }
+        protected MessageWriter MessageWriter { get; private set; }
+
+
         #endregion
 
         #region Constructors
@@ -53,8 +55,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             MessageReader messageReader,
             MessageWriter messageWriter)
         {
-            this.messageReader = messageReader;
-            this.messageWriter = messageWriter;
+            this.MessageReader = messageReader;
+            this.MessageWriter = messageWriter;
         }
 
         #endregion
@@ -191,7 +193,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 try
                 {
                     // Read a message from stdin
-                    newMessage = await this.messageReader.ReadMessage();
+                    newMessage = await this.MessageReader.ReadMessage();
                 }
                 catch (MessageParseException e)
                 {
@@ -218,12 +220,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     // Process the message
                     await this.DispatchMessage(
                         newMessage,
-                        this.messageWriter);
+                        this.MessageWriter);
                 }
             }
         }
 
-        private async Task DispatchMessage(
+        protected async Task DispatchMessage(
             Message messageToDispatch, 
             MessageWriter messageWriter)
         {
