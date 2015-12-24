@@ -7,8 +7,8 @@
     <ProjectGuid>{9D98120C-9601-4678-AD50-EF2808DABAC9}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PowerShellEditorServices.Channel.WebSocket.Test</RootNamespace>
-    <AssemblyName>PowerShellEditorServices.Channel.WebSocket.Test</AssemblyName>
+    <RootNamespace>Microsoft.PowerShell.EditorServices.Channel.WebSocket.Test</RootNamespace>
+    <AssemblyName>Microsoft.PowerShell.EditorServices.Channel.WebSocket.Test</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

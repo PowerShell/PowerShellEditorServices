@@ -8,7 +8,7 @@ using Owin;
 using Owin.WebSocket.Extensions;
 using Xunit;
 
-namespace PowerShellEditorServices.Channel.WebSocket.Test
+namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket.Test
 {
     public class WebSocketChannelTest : IAsyncLifetime
     {

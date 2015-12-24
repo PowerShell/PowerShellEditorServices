@@ -9,7 +9,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Owin.WebSocket;
 
-namespace PowerShellEditorServices.Channel.WebSocket
+namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
 {
     /// <summary>
     /// Implementation of <see cref="ChannelBase"/> that implements the streams necessary for 
