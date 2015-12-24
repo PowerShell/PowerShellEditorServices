@@ -168,6 +168,38 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         }
 
         [Fact]
+        public async Task DebuggerVariableStringDisplaysCorrectly()
+        {
+            ScriptFile variablesFile =
+                this.workspace.GetFile(
+                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
+
+            await this.debugService.SetBreakpoints(
+                variablesFile,
+                new int[] { 18 });
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptString(
+                    variablesFile.FilePath);
+
+            await this.AssertDebuggerStopped(variablesFile.FilePath);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            var var = variables.FirstOrDefault(v => v.Name == "$strVar");
+            Assert.NotNull(var);
+            Assert.Equal("\"Hello\"", var.ValueString);
+            Assert.False(var.IsExpandable);
+
+            // Abort execution of the script
+            this.powerShellContext.AbortExecution();
+        }
+
+        [Fact]
         public async Task DebuggerGetsVariables()
         {
             ScriptFile variablesFile =
@@ -196,7 +228,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.NotNull(strVar);
             Assert.False(strVar.IsExpandable);
 
-            var objVar = variables.FirstOrDefault(v => v.Name == "$objVar");
+            var objVar = variables.FirstOrDefault(v => v.Name == "$assocArrVar");
             Assert.NotNull(objVar);
             Assert.True(objVar.IsExpandable);
 
@@ -216,6 +248,192 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             var classChildren = debugService.GetVariables(classVar.Id);
             Assert.Equal(2, classChildren.Length);
+
+            // Abort execution of the script
+            this.powerShellContext.AbortExecution();
+        }
+
+        [Fact]
+        public async Task DebuggerVariableEnumDisplaysCorrectly()
+        {
+            ScriptFile variablesFile =
+                this.workspace.GetFile(
+                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
+
+            await this.debugService.SetBreakpoints(
+                variablesFile,
+                new int[] { 18 });
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptString(
+                    variablesFile.FilePath);
+
+            await this.AssertDebuggerStopped(variablesFile.FilePath);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            var var = variables.FirstOrDefault(v => v.Name == "$enumVar");
+            Assert.NotNull(var);
+            Assert.Equal("Continue", var.ValueString);
+            Assert.False(var.IsExpandable);
+
+            // Abort execution of the script
+            this.powerShellContext.AbortExecution();
+        }
+
+        [Fact]
+        public async Task DebuggerVariableHashtableDisplaysCorrectly()
+        {
+            ScriptFile variablesFile =
+                this.workspace.GetFile(
+                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
+
+            await this.debugService.SetBreakpoints(
+                variablesFile,
+                new int[] { 18 });
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptString(
+                    variablesFile.FilePath);
+
+            await this.AssertDebuggerStopped(variablesFile.FilePath);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            var var = variables.FirstOrDefault(v => v.Name == "$assocArrVar");
+            Assert.NotNull(var);
+            Assert.Equal("[Hashtable: 2]", var.ValueString);
+            Assert.True(var.IsExpandable);
+
+            var childVars = debugService.GetVariables(var.Id);
+            Assert.Equal(9, childVars.Length);
+            Assert.Equal("[0]", childVars[0].Name);
+            Assert.Equal("[secondChild, 42]", childVars[0].ValueString);
+            Assert.Equal("[1]", childVars[1].Name);
+            Assert.Equal("[firstChild, \"Child\"]", childVars[1].ValueString);
+
+            // Abort execution of the script
+            this.powerShellContext.AbortExecution();
+        }
+
+        [Fact]
+        public async Task DebuggerVariablePSObjectDisplaysCorrectly()
+        {
+            ScriptFile variablesFile =
+                this.workspace.GetFile(
+                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
+
+            await this.debugService.SetBreakpoints(
+                variablesFile,
+                new int[] { 18 });
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptString(
+                    variablesFile.FilePath);
+
+            await this.AssertDebuggerStopped(variablesFile.FilePath);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            var var = variables.FirstOrDefault(v => v.Name == "$psObjVar");
+            Assert.NotNull(var);
+            Assert.Equal("@{Age=75; Name=John}", var.ValueString);
+            Assert.True(var.IsExpandable);
+
+            var childVars = debugService.GetVariables(var.Id);
+            Assert.Equal(2, childVars.Length);
+            Assert.Equal("Age", childVars[0].Name);
+            Assert.Equal("75", childVars[0].ValueString);
+            Assert.Equal("Name", childVars[1].Name);
+            Assert.Equal("\"John\"", childVars[1].ValueString);
+
+            // Abort execution of the script
+            this.powerShellContext.AbortExecution();
+        }
+
+        [Fact]
+        public async Task DebuggerVariablePSCustomObjectDisplaysCorrectly()
+        {
+            ScriptFile variablesFile =
+                this.workspace.GetFile(
+                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
+
+            await this.debugService.SetBreakpoints(
+                variablesFile,
+                new int[] { 18 });
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptString(
+                    variablesFile.FilePath);
+
+            await this.AssertDebuggerStopped(variablesFile.FilePath);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            var var = variables.FirstOrDefault(v => v.Name == "$psCustomObjVar");
+            Assert.NotNull(var);
+            Assert.Equal("@{Name=Paul; Age=73}", var.ValueString);
+            Assert.True(var.IsExpandable);
+
+            var childVars = debugService.GetVariables(var.Id);
+            Assert.Equal(2, childVars.Length);
+            Assert.Equal("Name", childVars[0].Name);
+            Assert.Equal("\"Paul\"", childVars[0].ValueString);
+            Assert.Equal("Age", childVars[1].Name);
+            Assert.Equal("73", childVars[1].ValueString);
+
+            // Abort execution of the script
+            this.powerShellContext.AbortExecution();
+        }
+
+        // Verifies fix for issue #86, $proc = Get-Process foo displays just the
+        // ETS property set and not all process properties.
+        [Fact]
+        public async Task DebuggerVariableProcessObjDisplaysCorrectly()
+        {
+            ScriptFile variablesFile =
+                this.workspace.GetFile(
+                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
+
+            await this.debugService.SetBreakpoints(
+                variablesFile,
+                new int[] { 18 });
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptString(
+                    variablesFile.FilePath);
+
+            await this.AssertDebuggerStopped(variablesFile.FilePath);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            var var = variables.FirstOrDefault(v => v.Name == "$procVar");
+            Assert.NotNull(var);
+            Assert.Equal("System.Diagnostics.Process (System)", var.ValueString);
+            Assert.True(var.IsExpandable);
+
+            var childVars = debugService.GetVariables(var.Id);
+            Assert.Equal(52, childVars.Length);
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
