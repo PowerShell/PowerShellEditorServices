@@ -46,6 +46,7 @@ function Install-BuildPackage($packageName, $extension) {
 Install-BuildPackage "Microsoft.PowerShell.EditorServices" "dll"
 Install-BuildPackage "Microsoft.PowerShell.EditorServices.Protocol" "dll"
 Install-BuildPackage "Microsoft.PowerShell.EditorServices.Host" "exe"
+Install-BuildPackage "Microsoft.PowerShell.EditorServices.Host.x86" "exe"
 
 # Open the BinariesToSign folder
 & start $binariesToSignPath
