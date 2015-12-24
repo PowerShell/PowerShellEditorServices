@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         /// handlers for requests, responses, and events that are
         /// transmitted through the channel.
         /// </summary>
-        public MessageDispatcher MessageDispatcher { get; private set; }
+        public MessageDispatcher MessageDispatcher { get; protected set; }
 
         /// <summary>
         /// Starts the channel and initializes the MessageDispatcher.
@@ -50,12 +50,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
             this.Initialize(messageSerializer);
 
-            this.MessageDispatcher =
-                new MessageDispatcher(
-                    this.MessageReader,
-                    this.MessageWriter);
+            if (this.MessageDispatcher == null)
+            {
+                this.MessageDispatcher =
+                    new MessageDispatcher(
+                        this.MessageReader,
+                        this.MessageWriter);
 
-            this.MessageDispatcher.Start();
+                this.MessageDispatcher.Start();
+            }
         }
         
         /// <summary>
