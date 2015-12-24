@@ -234,16 +234,14 @@ namespace Microsoft.PowerShell.EditorServices
                 return childVariables.ToArray();
             }
 
-            PSObject psObject = obj as PSObject;
-            IDictionary dictionary = obj as IDictionary;
-            IEnumerable enumerable = obj as IEnumerable;
-
             try
             {
-                if (psObject != null)
+                PSObject psObject = obj as PSObject;
+
+                if ((psObject != null) && 
+                    (psObject.TypeNames[0] == typeof(PSCustomObject).ToString()))
                 {
-                    // PowerShell wrapped objects can have extra ETS properties so let's use
-                    // PowerShell's infrastructure to get those properties.
+                    // PowerShell PSCustomObject's properties are completely defined by the ETS type system.
                     childVariables.AddRange(
                         psObject
                             .Properties
@@ -251,6 +249,15 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 else 
                 {
+                    // If a PSObject other than a PSCustomObject, unwrap it.
+                    if (psObject != null)
+                    {
+                        obj = psObject.BaseObject;
+                    }
+
+                    IDictionary dictionary = obj as IDictionary;
+                    IEnumerable enumerable = obj as IEnumerable;
+
                     // We're in the realm of regular, unwrapped .NET objects
                     if (dictionary != null)
                     { 
