@@ -377,8 +377,30 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="scriptString">The script string to execute.</param>
         /// <returns>A Task that can be awaited for the script completion.</returns>
-        public async Task<IEnumerable<object>> ExecuteScriptString(string scriptString)
+        public Task<IEnumerable<object>> ExecuteScriptString(
+            string scriptString)
         {
+            return this.ExecuteScriptString(scriptString, false);
+        }
+
+        /// <summary>
+        /// Executes a script string in the session's runspace.
+        /// </summary>
+        /// <param name="scriptString">The script string to execute.</param>
+        /// <param name="writeInputToHost">If true, causes the script string to be written to the host.</param>
+        /// <returns>A Task that can be awaited for the script completion.</returns>
+        public async Task<IEnumerable<object>> ExecuteScriptString(
+            string scriptString,
+            bool writeInputToHost)
+        {
+            if (writeInputToHost)
+            {
+                ((IConsoleHost)this).WriteOutput(
+                    scriptString + Environment.NewLine,
+                    true,
+                    OutputType.Normal);
+            }
+
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript(scriptString);
 
@@ -546,6 +568,14 @@ namespace Microsoft.PowerShell.EditorServices
         #endregion
 
         #region Private Methods
+
+        private void WriteOutput(string outputString, bool includeNewLine)
+        {
+            ((IConsoleHost)this).WriteOutput(
+                outputString,
+                includeNewLine,
+                OutputType.Normal);
+        }
 
         private void WriteExceptionToHost(Exception e)
         {
@@ -867,6 +897,9 @@ namespace Microsoft.PowerShell.EditorServices
 
                 if (taskIndex == 0)
                 {
+                    // Write a new output line before continuing
+                    this.WriteOutput("", true);
+
                     e.ResumeAction = this.debuggerStoppedTask.Task.Result;
                     Logger.Write(LogLevel.Verbose, "Received debugger resume action " + e.ResumeAction.ToString());
 

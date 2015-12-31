@@ -678,7 +678,8 @@ function __Expand-Alias {
         {
             var results = 
                 await this.editorSession.PowerShellContext.ExecuteScriptString(
-                    evaluateParams.Expression);
+                    evaluateParams.Expression,
+                    true);
 
             // Return an empty result since the result value is irrelevant
             // for this request in the LanguageServer

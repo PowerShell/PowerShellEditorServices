@@ -238,15 +238,21 @@ namespace Microsoft.PowerShell.EditorServices
         {
             var results = 
                 await this.powerShellContext.ExecuteScriptString(
-                    expressionString);
+                    expressionString,
+                    false);
 
             // Since this method should only be getting invoked in the debugger,
             // we can assume that Out-String will be getting used to format results
-            // of command executions into string output.
+            // of command executions into string output.  However, if null is returned
+            // then pass null through so that no output gets displayed.
+            string outputString =
+                results != null ?
+                    string.Join(Environment.NewLine, results) :
+                    null;
 
             return new VariableDetails(
-                expressionString, 
-                string.Join(Environment.NewLine, results));
+                expressionString,
+                outputString);
         }
 
         /// <summary>
