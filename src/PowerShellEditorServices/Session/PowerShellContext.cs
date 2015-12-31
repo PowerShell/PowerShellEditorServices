@@ -208,7 +208,9 @@ namespace Microsoft.PowerShell.EditorServices
             PSCommand psCommand,
             bool sendOutputToHost = false)
         {
+            Pipeline nestedPipeline = null;
             RunspaceHandle runspaceHandle = null;
+            IEnumerable<TResult> executionResult = null;
 
             // If the debugger is active and the caller isn't on the pipeline 
             // thread, send the command over to that thread to be executed.
@@ -253,21 +255,17 @@ namespace Microsoft.PowerShell.EditorServices
                                 "Attempting to execute nested pipeline command(s):\r\n\r\n{0}",
                                 GetStringForPSCommand(psCommand)));
 
-                        using (Pipeline pipeline = this.currentRunspace.CreateNestedPipeline())
+                        nestedPipeline = this.currentRunspace.CreateNestedPipeline();
+                        foreach (var command in psCommand.Commands)
                         {
-                            foreach (var command in psCommand.Commands)
-                            {
-                                pipeline.Commands.Add(command);
-                            }
-
-                            IEnumerable<TResult> result =
-                                pipeline
-                                    .Invoke()
-                                    .Select(pso => pso.BaseObject)
-                                    .Cast<TResult>();
-
-                            return result;
+                            nestedPipeline.Commands.Add(command);
                         }
+
+                        executionResult =
+                            nestedPipeline
+                                .Invoke()
+                                .Select(pso => pso.BaseObject)
+                                .Cast<TResult>();
                     }
                     else
                     {
@@ -286,7 +284,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                         // Invoke the pipeline on a background thread
                         // TODO: Use built-in async invocation!
-                        var taskResult =
+                        executionResult =
                             await Task.Factory.StartNew<IEnumerable<TResult>>(
                                 () =>
                                 {
@@ -294,13 +292,10 @@ namespace Microsoft.PowerShell.EditorServices
                                     Collection<TResult> result = this.powerShell.Invoke<TResult>();
                                     return result;
                                 },
-                                    CancellationToken.None, // Might need a cancellation token
-                                    TaskCreationOptions.None,
-                                    TaskScheduler.Default
+                                CancellationToken.None, // Might need a cancellation token
+                                TaskCreationOptions.None,
+                                TaskScheduler.Default
                             );
-
-                        runspaceHandle.Dispose();
-                        runspaceHandle = null;
 
                         if (this.powerShell.HadErrors)
                         {
@@ -320,8 +315,7 @@ namespace Microsoft.PowerShell.EditorServices
                                 "Execution completed successfully.");
                         }
 
-                        bool hadErrors = this.powerShell.HadErrors;
-                        return taskResult;
+                        return executionResult;
                     }
                 }
                 catch (RuntimeException e)
@@ -335,15 +329,33 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 finally
                 {
+                    // Get the new prompt before releasing the runspace handle
+                    if (sendOutputToHost)
+                    {
+                        // Write the prompt
+                        if (runspaceHandle != null)
+                        {
+                            this.WritePromptWithRunspace(runspaceHandle.Runspace);
+                        }
+                        else if (nestedPipeline != null)
+                        {
+                            this.WritePromptWithNestedPipeline();
+                        }
+                    }
+
+                    // Dispose of the execution context
                     if (runspaceHandle != null)
                     {
                         runspaceHandle.Dispose();
                     }
+                    else if(nestedPipeline != null)
+                    {
+                        nestedPipeline.Dispose();
+                    }
                 }
             }
 
-            // TODO: Better result
-            return null;
+            return executionResult;
         }
 
         /// <summary>
@@ -741,6 +753,72 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        private void WritePromptToHost(Func<PSCommand, string> invokeAction)
+        {
+            string promptString = null;
+
+            try
+            {
+                promptString = 
+                    invokeAction(
+                        new PSCommand().AddCommand("prompt"));
+            }
+            catch(RuntimeException e)
+            {
+                Logger.Write(
+                    LogLevel.Verbose,
+                    "Runtime exception occurred while executing prompt command:\r\n\r\n" + e.ToString());
+            }
+            finally
+            {
+                promptString = promptString ?? "PS >";
+            }
+
+            this.WriteOutput(
+                Environment.NewLine,
+                false);
+
+            // Write the prompt string
+            this.WriteOutput(
+                promptString,
+                false);
+        }
+
+        private void WritePromptWithRunspace(Runspace runspace)
+        {
+            this.WritePromptToHost(
+                command =>
+                {
+                    this.powerShell.Commands = command;
+
+                    return
+                        this.powerShell
+                            .Invoke<string>()
+                            .FirstOrDefault();
+                });
+        }
+
+        private void WritePromptWithNestedPipeline()
+        {
+            using (var pipeline = this.currentRunspace.CreateNestedPipeline())
+            {
+                this.WritePromptToHost(
+                    command =>
+                    {
+                        pipeline.Commands.Clear();
+                        pipeline.Commands.Add(command.Commands[0]);
+
+                        return
+                            pipeline
+                                .Invoke()
+                                .Select(pso => pso.BaseObject)
+                                .Cast<string>()
+                                .FirstOrDefault();
+                    });
+
+            }
+        }
+
         #endregion
 
         #region Events
@@ -768,6 +846,9 @@ namespace Microsoft.PowerShell.EditorServices
                     PowerShellContextState.Ready,
                     PowerShellExecutionResult.Stopped,
                     null));
+
+            // Write out the debugger prompt
+            this.WritePromptWithNestedPipeline();
 
             // Raise the event for the debugger service
             if (this.DebuggerStop != null)

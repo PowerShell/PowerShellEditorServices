@@ -8,18 +8,22 @@ using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Nito.AsyncEx;
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class LanguageServerTests : IAsyncLifetime
     {
         private LanguageServiceClient languageServiceClient;
+
+        private ConcurrentDictionary<string, AsyncProducerConsumerQueue<object>> eventQueuePerType =
+            new ConcurrentDictionary<string, AsyncProducerConsumerQueue<object>>();
 
         public Task InitializeAsync()
         {
@@ -420,11 +424,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesOutput()
         {
-            Task<OutputEventBody> outputEventTask = 
-                this.WaitForEvent(
-                    OutputEvent.Type);
+            this.QueueEventsForType(OutputEvent.Type);
 
-            Task<EvaluateResponseBody> evaluateTask =
+            await 
                 this.SendRequest(
                     EvaluateRequest.Type,
                     new EvaluateRequestArguments
@@ -432,10 +434,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         Expression = "1 + 2"
                     });
 
-            // Wait for both the evaluate response and the output event
-            await Task.WhenAll(evaluateTask, outputEventTask);
+            OutputEventBody outputEvent = await this.WaitForEvent(OutputEvent.Type);
+            Assert.Equal("1 + 2\r\n\r\n", outputEvent.Output);
+            Assert.Equal("stdout", outputEvent.Category);
 
-            OutputEventBody outputEvent = outputEventTask.Result;
+            outputEvent = await this.WaitForEvent(OutputEvent.Type);
             Assert.Equal("3\r\n", outputEvent.Output);
             Assert.Equal("stdout", outputEvent.Category);
         }
@@ -451,7 +454,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("Get-ChildItem\r\nGet-Location", expandedText);
         }
 
-        [Fact]//(Skip = "Choice prompt functionality is currently in transition to a new model.")]
+        [Fact(Skip = "Choice prompt functionality is currently in transition to a new model.")]
         public async Task ServiceExecutesReplCommandAndReceivesChoicePrompt()
         {
             // TODO: This test is removed until a new choice prompt strategy is determined.
@@ -541,20 +544,49 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             }
         }
 
-        private Task<TParams> WaitForEvent<TParams>(EventType<TParams> eventType)
+        private void QueueEventsForType<TParams>(EventType<TParams> eventType)
         {
-            TaskCompletionSource<TParams> eventTask = new TaskCompletionSource<TParams>();
+            var eventQueue =
+                this.eventQueuePerType.AddOrUpdate(
+                    eventType.MethodName,
+                    new AsyncProducerConsumerQueue<object>(),
+                    (key, queue) => queue);
 
             this.languageServiceClient.SetEventHandler(
                 eventType,
                 (p, ctx) =>
                 {
-                    eventTask.SetResult(p);
-                    return Task.FromResult(true);
-                },
-                true);  // Override any existing handler
+                    return eventQueue.EnqueueAsync(p);   
+                });
+        }
 
-            return eventTask.Task;
+        private Task<TParams> WaitForEvent<TParams>(EventType<TParams> eventType)
+        {
+            // Use the event queue if one has been registered
+            AsyncProducerConsumerQueue<object> eventQueue = null;
+            if (this.eventQueuePerType.TryGetValue(eventType.MethodName, out eventQueue))
+            {
+                return 
+                    eventQueue
+                        .DequeueAsync()
+                        .ContinueWith<TParams>(
+                            task => (TParams)task.Result);
+            }
+            else
+            {
+                TaskCompletionSource<TParams> eventTask = new TaskCompletionSource<TParams>();
+
+                this.languageServiceClient.SetEventHandler(
+                    eventType,
+                    (p, ctx) =>
+                    {
+                        eventTask.SetResult(p);
+                        return Task.FromResult(true);
+                    },
+                    true);  // Override any existing handler
+
+                return eventTask.Task;
+            }
         }
     }
 }
