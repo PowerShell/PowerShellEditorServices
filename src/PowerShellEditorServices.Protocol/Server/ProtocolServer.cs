@@ -70,7 +70,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 this.OnStop();
 
                 this.serverChannel.Stop();
-                this.serverExitedTask.SetResult(true);
+                if (this.serverExitedTask != null)
+                    this.serverExitedTask.SetResult(true);
             }
         }
 

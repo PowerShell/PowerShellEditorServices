@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private Workspace workspace;
         private LanguageService languageService;
         private PowerShellContext powerShellContext;
-        private DirectoryInfo packageDirectory;
+       
 
         public LanguageServiceTests()
         {
@@ -41,11 +41,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         public void Dispose()
         {
             this.powerShellContext.Dispose();
-
-            if (packageDirectory != null && packageDirectory.Exists)
-            {
-                packageDirectory.Delete(true);
-            }
         }
 
         [Fact]
@@ -298,95 +293,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.Equal(0, symbolsResult.FoundOccurrences.Count());
         }
 
-        [Theory]
-        [InlineData("3")]
-        [InlineData("4")]
-        [InlineData("5")]
-        public void CompilesWithPowerShellVersion(string version)
-        {
-            var assemblyPath = InstallPackage(string.Format("Microsoft.PowerShell.{0}.ReferenceAssemblies", version), "1.0.0");
-            var projectPath = @"..\..\..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj";
-            FileInfo fi = new FileInfo(projectPath);
-            var projectVersion = Path.Combine(fi.DirectoryName, version + ".PowerShellEditorServices.csproj");
-
-            var doc = XDocument.Load(projectPath);
-            var references = doc.Root.Descendants().Where(m => m.Name.LocalName == "Reference");
-            var reference = references.First(m => m.Attribute("Include").Value.StartsWith("System.Management.Automation"));
-            var hintPath = reference.Descendants().First(m => m.Name.LocalName == "HintPath");
-            hintPath.Value = assemblyPath;
-
-            doc.Save(projectVersion);
-
-            try
-            {
-                Compile(projectVersion, version);
-            }
-            finally
-            {
-                File.Delete(projectVersion);
-            }
-        }
-
-        private void Compile(string project, string version)
-        {
-            string msbuild;
-            using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0"))
-            {
-                var root = key.GetValue("MSBuildToolsPath") as string;
-                msbuild = Path.Combine(root, "MSBuild.exe");
-            }
-
-            FileInfo fi = new FileInfo(project);
-
-            var p = new Process();
-            p.StartInfo.FileName = msbuild;
-            p.StartInfo.Arguments = string.Format(@" {0} /p:Configuration=Debug /t:Build /fileLogger /flp1:logfile=errors.txt;errorsonly  /p:SolutionDir={1} /p:SolutionName=PowerShellEditorServices /p:DefineConstants=PowerShellv{2}", project, fi.Directory.Parent.Parent.FullName, version);
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.CreateNoWindow = true;
-            p.Start();
-            p.WaitForExit(60000);
-            if (!p.HasExited)
-            {
-                p.Kill();
-                throw new Exception("Compilation didn't complete in 60 seconds.");
-            }
-
-            if (p.ExitCode != 0)
-            {
-                var errors = File.ReadAllText("errors.txt");
-                throw new Exception(errors);
-            }
-        }
-
-        public string InstallPackage(string packageName, string packageVersion)
-        {
-            var packageDir = Path.Combine(Path.GetTempPath(), "PowerShellPackages");
-            packageDirectory = new DirectoryInfo(packageDir);
-            packageDirectory.Create();
-
-            var nuget = Path.Combine(Environment.CurrentDirectory, "NuGet.exe");
-            ProcessStartInfo si = new ProcessStartInfo();
-
-            var p = new Process();
-            p.StartInfo.FileName = nuget;
-            p.StartInfo.Arguments = string.Format("install {0} -o {1} -Version {2}", packageName, packageDir, packageVersion);
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.RedirectStandardError = true;
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.CreateNoWindow = true;
-            p.Start();
-            p.WaitForExit(10000);
-            if (!p.HasExited)
-            {
-                p.Kill();
-                throw new Exception("Failed to download PowerShell NuGet packages required for this test.");
-            }
-
-            var packageFolder = packageName + "." + packageVersion;
-
-            var assemblyPath = Path.Combine(packageDir, packageFolder);
-            return Path.Combine(assemblyPath, @"lib\net4\System.Management.Automation.dll");
-        }
 
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion)
         {

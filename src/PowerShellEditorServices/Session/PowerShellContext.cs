@@ -129,13 +129,7 @@ namespace Microsoft.PowerShell.EditorServices
             // TODO: Should this be configurable?
             this.SetExecutionPolicy(ExecutionPolicy.RemoteSigned);
 
-            var psVersionTable = this.currentRunspace.SessionStateProxy.GetVariable("PSVersionTable") as Hashtable;
-            if (psVersionTable != null)
-            {
-                Version version;
-                Version.TryParse(psVersionTable["PSVersion"] as string, out version);
-                PowerShellVersion = version;
-            }
+            PowerShellVersion = GetPowerShellVersion();
 
 #if !PowerShellv3
             if (PowerShellVersion > new Version(3,0))
@@ -145,6 +139,26 @@ namespace Microsoft.PowerShell.EditorServices
 #endif
 
             this.SessionState = PowerShellContextState.Ready;
+        }
+
+        private Version GetPowerShellVersion()
+        {
+            try
+            {
+                var psVersionTable = this.currentRunspace.SessionStateProxy.GetVariable("PSVersionTable") as Hashtable;
+                if (psVersionTable != null)
+                {
+                    var version = psVersionTable["PSVersion"] as Version;
+                    if (version == null) return new Version(5, 0);
+                    return version;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Write(LogLevel.Warning, "Failed to look up PowerShell version. Defaulting to version 5. " + ex.Message);
+            }
+
+            return new Version(5, 0);
         }
 
         #endregion

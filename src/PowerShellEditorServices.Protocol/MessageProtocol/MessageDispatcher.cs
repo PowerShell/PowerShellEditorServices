@@ -79,7 +79,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         {
             // By disposing the thread we cancel all existing work
             // and cause the thread to be destroyed.
-            this.messageLoopThread.Dispose();
+            if (this.messageLoopThread != null)
+                this.messageLoopThread.Dispose();
         }
 
         public void SetRequestHandler<TParams, TResult>(
