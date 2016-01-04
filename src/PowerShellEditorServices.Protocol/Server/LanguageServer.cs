@@ -679,6 +679,7 @@ function __Expand-Alias {
             var results = 
                 await this.editorSession.PowerShellContext.ExecuteScriptString(
                     evaluateParams.Expression,
+                    true,
                     true);
 
             // Return an empty result since the result value is irrelevant

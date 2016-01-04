@@ -380,7 +380,7 @@ namespace Microsoft.PowerShell.EditorServices
         public Task<IEnumerable<object>> ExecuteScriptString(
             string scriptString)
         {
-            return this.ExecuteScriptString(scriptString, false);
+            return this.ExecuteScriptString(scriptString, false, true);
         }
 
         /// <summary>
@@ -388,10 +388,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="scriptString">The script string to execute.</param>
         /// <param name="writeInputToHost">If true, causes the script string to be written to the host.</param>
+        /// <param name="writeOutputToHost">If true, causes the script output to be written to the host.</param>
         /// <returns>A Task that can be awaited for the script completion.</returns>
         public async Task<IEnumerable<object>> ExecuteScriptString(
             string scriptString,
-            bool writeInputToHost)
+            bool writeInputToHost,
+            bool writeOutputToHost)
         {
             if (writeInputToHost)
             {
@@ -404,7 +406,7 @@ namespace Microsoft.PowerShell.EditorServices
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript(scriptString);
 
-            return await this.ExecuteCommand<object>(psCommand, true);
+            return await this.ExecuteCommand<object>(psCommand, writeOutputToHost);
         }
 
         /// <summary>
