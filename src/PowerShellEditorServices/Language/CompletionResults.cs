@@ -275,8 +275,10 @@ namespace Microsoft.PowerShell.EditorServices
                 case CompletionResultType.Type:
                     return CompletionType.Type;
 
+#if !PowerShellv3
                 case CompletionResultType.Keyword:
                     return CompletionType.Keyword;
+#endif
 
                 case CompletionResultType.ProviderContainer:
                 case CompletionResultType.ProviderItem:

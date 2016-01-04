@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
+    using System.Collections;
     using System.Management.Automation;
     using System.Management.Automation.Host;
     using System.Management.Automation.Runspaces;
@@ -68,6 +69,14 @@ namespace Microsoft.PowerShell.EditorServices
             private set;
         }
 
+        /// <summary>
+        /// PowerShell Version of the current runspace.
+        /// </summary>
+        public Version PowerShellVersion
+        {
+            get; private set;
+        }
+
         #endregion
 
         #region Constructors
@@ -109,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.initialRunspace = initialRunspace;
             this.currentRunspace = initialRunspace;
-            this.currentRunspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
+
             this.currentRunspace.Debugger.BreakpointUpdated += OnBreakpointUpdated;
             this.currentRunspace.Debugger.DebuggerStop += OnDebuggerStop;
 
@@ -120,7 +129,36 @@ namespace Microsoft.PowerShell.EditorServices
             // TODO: Should this be configurable?
             this.SetExecutionPolicy(ExecutionPolicy.RemoteSigned);
 
+            PowerShellVersion = GetPowerShellVersion();
+
+#if !PowerShellv3
+            if (PowerShellVersion > new Version(3,0))
+            {
+                this.currentRunspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
+            }
+#endif
+
             this.SessionState = PowerShellContextState.Ready;
+        }
+
+        private Version GetPowerShellVersion()
+        {
+            try
+            {
+                var psVersionTable = this.currentRunspace.SessionStateProxy.GetVariable("PSVersionTable") as Hashtable;
+                if (psVersionTable != null)
+                {
+                    var version = psVersionTable["PSVersion"] as Version;
+                    if (version == null) return new Version(5, 0);
+                    return version;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Write(LogLevel.Warning, "Failed to look up PowerShell version. Defaulting to version 5. " + ex.Message);
+            }
+
+            return new Version(5, 0);
         }
 
         #endregion
@@ -370,7 +408,12 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Logger.Write(LogLevel.Verbose, "Debugger break requested...");
 
-            this.currentRunspace.Debugger.SetDebuggerStepMode(true);
+#if PowerShellv5
+            if (PowerShellVersion >= new Version(5, 0))
+            {
+                this.currentRunspace.Debugger.SetDebuggerStepMode(true);
+            }
+#endif
         }
 
         internal void ResumeDebugger(DebuggerResumeAction resumeAction)
@@ -568,7 +611,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             return stringBuilder.ToString();
         }
-
+        
         private void SetExecutionPolicy(ExecutionPolicy desiredExecutionPolicy)
         {
             var currentPolicy = ExecutionPolicy.Undefined;

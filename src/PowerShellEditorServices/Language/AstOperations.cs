@@ -176,13 +176,22 @@ namespace Microsoft.PowerShell.EditorServices
         /// Finds all symbols in a script
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <param name="powerShellVersion">The PowerShell version the Ast was generated from</param>
         /// <returns>A collection of SymbolReference objects</returns>
-        static public IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst)
+        static public IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst, Version powerShellVersion)
         {
-            FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
-            scriptAst.Visit(findSymbolsVisitor);
-
-            return findSymbolsVisitor.SymbolReferences;
+            if (powerShellVersion >= new Version(5,0))
+            {
+                FindSymbolsVisitor2 findSymbolsVisitor = new FindSymbolsVisitor2();
+                scriptAst.Visit(findSymbolsVisitor);
+                return findSymbolsVisitor.SymbolReferences;
+            }
+            else
+            {
+                FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
+                scriptAst.Visit(findSymbolsVisitor);
+                return findSymbolsVisitor.SymbolReferences;
+            }
         }
 
         /// <summary>

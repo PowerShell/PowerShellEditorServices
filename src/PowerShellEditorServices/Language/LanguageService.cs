@@ -221,7 +221,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             IEnumerable<SymbolReference> symbolReferencesinFile =
                 AstOperations
-                    .FindSymbolsInDocument(scriptFile.ScriptAst)
+                    .FindSymbolsInDocument(scriptFile.ScriptAst, this.powerShellContext.PowerShellVersion)
                     .Select(
                         reference => {
                             reference.SourceLine =
