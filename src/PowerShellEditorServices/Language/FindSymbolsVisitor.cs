@@ -11,11 +11,10 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// The visitor used to find all the symbols (function and class defs) in the AST.
     /// </summary>
-#if PowerShellv5
-    internal class FindSymbolsVisitor : AstVisitor2
-#else
+    /// <remarks>
+    /// Requires PowerShell v3 or higher
+    /// </remarks>
     internal class FindSymbolsVisitor : AstVisitor
-#endif
     {
         public List<SymbolReference> SymbolReferences { get; private set; }
 
@@ -72,29 +71,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             return AstVisitAction.Continue;
         }
-
-#if PowerShell5
-        public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst)
-        {
-            IScriptExtent nameExtent = new ScriptExtent()
-            {
-                Text = configurationDefinitionAst.InstanceName.Extent.Text,
-                StartLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
-                EndLineNumber = configurationDefinitionAst.Extent.EndLineNumber,
-                StartColumnNumber = configurationDefinitionAst.Extent.StartColumnNumber,
-                EndColumnNumber = configurationDefinitionAst.Extent.EndColumnNumber
-            };
-
-            this.SymbolReferences.Add(
-                new SymbolReference(
-                    SymbolType.Configuration,
-                    nameExtent));
-
-            return AstVisitAction.Continue;
-        }
-#endif
-
-
+        
         private bool IsAssignedAtScriptScope(VariableExpressionAst variableExpressionAst)
         {
             Ast parent = variableExpressionAst.Parent;

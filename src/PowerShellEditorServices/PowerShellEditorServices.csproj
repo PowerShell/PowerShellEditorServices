@@ -52,7 +52,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Management.Automation"/>
+    <Reference Include="System.Management.Automation" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -79,6 +79,7 @@
     <Compile Include="Language\FindReferencesResult.cs" />
     <Compile Include="Language\FindReferencesVisitor.cs" />
     <Compile Include="Language\FindSymbolsVisitor.cs" />
+    <Compile Include="Language\FindSymbolsVisitor2.cs" />
     <Compile Include="Language\FindSymbolVisitor.cs" />
     <Compile Include="Language\GetDefinitionResult.cs" />
     <Compile Include="Language\LanguageService.cs" />

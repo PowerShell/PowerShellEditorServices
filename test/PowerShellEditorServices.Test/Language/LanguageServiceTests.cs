@@ -266,6 +266,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.Equal(4, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Function).Count());
             Assert.Equal(3, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Variable).Count());
             Assert.Equal(1, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Workflow).Count());
+            Assert.Equal(1, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Configuration).Count());
 
             SymbolReference firstFunctionSymbol = symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Function).First();
             Assert.Equal("AFunction", firstFunctionSymbol.SymbolName);
@@ -281,6 +282,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.Equal("AWorkflow", firstWorkflowSymbol.SymbolName);
             Assert.Equal(23, firstWorkflowSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(1, firstWorkflowSymbol.ScriptRegion.StartColumnNumber);
+
+            SymbolReference firstConfigurationSymbol = symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Configuration).First();
+            Assert.Equal("AConfiguration", firstConfigurationSymbol.SymbolName);
+            Assert.Equal(25, firstConfigurationSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, firstConfigurationSymbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]

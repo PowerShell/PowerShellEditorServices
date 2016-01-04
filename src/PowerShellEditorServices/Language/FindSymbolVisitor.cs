@@ -10,11 +10,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// The visitor used to find the the symbol at a specfic location in the AST
     /// </summary>
-#if PowerShellv5
-    internal class FindSymbolVisitor : AstVisitor2
-#else
     internal class FindSymbolVisitor : AstVisitor
-#endif
     {
         private int lineNumber;
         private int columnNumber;
