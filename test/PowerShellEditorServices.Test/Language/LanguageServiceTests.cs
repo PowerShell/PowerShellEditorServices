@@ -319,7 +319,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             try
             {
-                Compile(projectVersion);
+                Compile(projectVersion, version);
             }
             finally
             {
@@ -327,7 +327,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             }
         }
 
-        private void Compile(string project)
+        private void Compile(string project, string version)
         {
             string msbuild;
             using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0"))
@@ -340,7 +340,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             var p = new Process();
             p.StartInfo.FileName = msbuild;
-            p.StartInfo.Arguments = string.Format(@" {0} /p:Configuration=Debug /t:Build /fileLogger /flp1:logfile=errors.txt;errorsonly  /p:SolutionDir={1} /p:SolutionName=PowerShellEditorServices", project, fi.Directory.Parent.Parent.FullName);
+            p.StartInfo.Arguments = string.Format(@" {0} /p:Configuration=Debug /t:Build /fileLogger /flp1:logfile=errors.txt;errorsonly  /p:SolutionDir={1} /p:SolutionName=PowerShellEditorServices /p:DefineConstants=PowerShellv{2}", project, fi.Directory.Parent.Parent.FullName, version);
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.CreateNoWindow = true;
             p.Start();
