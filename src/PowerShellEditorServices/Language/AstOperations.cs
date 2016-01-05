@@ -180,18 +180,24 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A collection of SymbolReference objects</returns>
         static public IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst, Version powerShellVersion)
         {
+            IEnumerable<SymbolReference> symbolReferences = null;
+
             if (powerShellVersion >= new Version(5,0))
             {
+#if PowerShellv5
                 FindSymbolsVisitor2 findSymbolsVisitor = new FindSymbolsVisitor2();
                 scriptAst.Visit(findSymbolsVisitor);
-                return findSymbolsVisitor.SymbolReferences;
+                symbolReferences = findSymbolsVisitor.SymbolReferences;
+#endif
             }
             else
             {
                 FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
                 scriptAst.Visit(findSymbolsVisitor);
-                return findSymbolsVisitor.SymbolReferences;
+                symbolReferences = findSymbolsVisitor.SymbolReferences;
             }
+
+            return symbolReferences;
         }
 
         /// <summary>

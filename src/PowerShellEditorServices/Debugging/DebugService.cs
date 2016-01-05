@@ -233,20 +233,38 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="expressionString">The expression string to execute.</param>
         /// <param name="stackFrameId">The ID of the stack frame in which the expression should be executed.</param>
+        /// <param name="writeResultAsOutput">
+        /// If true, writes the expression result as host output rather than returning the results.
+        /// In this case, the return value of this function will be null.</param>
         /// <returns>A VariableDetails object containing the result.</returns>
-        public async Task<VariableDetails> EvaluateExpression(string expressionString, int stackFrameId)
+        public async Task<VariableDetails> EvaluateExpression(
+            string expressionString,
+            int stackFrameId,
+            bool writeResultAsOutput)
         {
             var results = 
                 await this.powerShellContext.ExecuteScriptString(
-                    expressionString);
+                    expressionString,
+                    false,
+                    writeResultAsOutput);
 
             // Since this method should only be getting invoked in the debugger,
             // we can assume that Out-String will be getting used to format results
-            // of command executions into string output.
+            // of command executions into string output.  However, if null is returned
+            // then return null so that no output gets displayed.
+            string outputString =
+                results != null ?
+                    string.Join(Environment.NewLine, results) :
+                    null;
 
-            return new VariableDetails(
-                expressionString, 
-                string.Join(Environment.NewLine, results));
+            // If we've written the result as output, don't return a
+            // VariableDetails instance.
+            return
+                writeResultAsOutput ?
+                    null :
+                    new VariableDetails(
+                        expressionString,
+                        outputString);
         }
 
         /// <summary>

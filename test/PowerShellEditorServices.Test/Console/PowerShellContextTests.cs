@@ -107,9 +107,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     "\"{0}\"",
                     TestOutputString));
 
+            // Prompt strings are returned as normal output, ignore the prompt
+            string[] normalOutputLines =
+                this.GetOutputForType(OutputType.Normal)
+                    .Split(
+                        new string[] { Environment.NewLine },
+                        StringSplitOptions.None);
+
+            // The output should be 3 lines: the expected string,
+            // an empty line, and the prompt string.
+            Assert.Equal(3, normalOutputLines.Length);
             Assert.Equal(
-                TestOutputString + Environment.NewLine, 
-                this.GetOutputForType(OutputType.Normal));
+                TestOutputString,
+                normalOutputLines[0]);
         }
 
         [Fact]

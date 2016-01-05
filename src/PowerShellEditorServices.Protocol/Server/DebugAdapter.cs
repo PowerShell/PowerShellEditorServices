@@ -312,10 +312,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             EvaluateRequestArguments evaluateParams,
             RequestContext<EvaluateResponseBody> requestContext)
         {
+            bool isFromRepl =
+                string.Equals(
+                    evaluateParams.Context,
+                    "repl",
+                    StringComparison.InvariantCultureIgnoreCase);
+
             VariableDetails result =
                 await editorSession.DebugService.EvaluateExpression(
                     evaluateParams.Expression,
-                    evaluateParams.FrameId);
+                    evaluateParams.FrameId,
+                    isFromRepl);
 
             string valueString = null;
             int variableId = 0;
