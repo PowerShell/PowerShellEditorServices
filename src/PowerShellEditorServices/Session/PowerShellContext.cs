@@ -130,7 +130,15 @@ namespace Microsoft.PowerShell.EditorServices
             // TODO: Should this be configurable?
             this.SetExecutionPolicy(ExecutionPolicy.RemoteSigned);
 
-            PowerShellVersion = GetPowerShellVersion();
+            // Get the PowerShell runtime version
+            this.PowerShellVersion = GetPowerShellVersion();
+
+            // Write out the PowerShell version for tracking purposes
+            Logger.Write(
+                LogLevel.Normal,
+                string.Format(
+                    "PowerShell runtime version: {0}",
+                    this.PowerShellVersion));
 
 #if !PowerShellv3
             if (PowerShellVersion > new Version(3,0))

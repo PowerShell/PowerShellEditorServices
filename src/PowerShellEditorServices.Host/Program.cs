@@ -94,7 +94,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
             }
 #endif
 
-            Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host starting...");
+            FileVersionInfo fileVersionInfo =
+                FileVersionInfo.GetVersionInfo(
+                    System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+            Logger.Write(
+                LogLevel.Normal,
+                string.Format(
+                    "PowerShell Editor Services Host v{0} starting...",
+                    fileVersionInfo.FileVersion));
 
             // Start the server
             server.Start();
