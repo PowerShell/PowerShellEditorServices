@@ -208,7 +208,6 @@ namespace Microsoft.PowerShell.EditorServices
             PSCommand psCommand,
             bool sendOutputToHost = false)
         {
-            Pipeline nestedPipeline = null;
             RunspaceHandle runspaceHandle = null;
             IEnumerable<TResult> executionResult = null;
 
@@ -255,17 +254,10 @@ namespace Microsoft.PowerShell.EditorServices
                                 "Attempting to execute nested pipeline command(s):\r\n\r\n{0}",
                                 GetStringForPSCommand(psCommand)));
 
-                        nestedPipeline = this.currentRunspace.CreateNestedPipeline();
-                        foreach (var command in psCommand.Commands)
-                        {
-                            nestedPipeline.Commands.Add(command);
-                        }
-
                         executionResult =
-                            nestedPipeline
-                                .Invoke()
-                                .Select(pso => pso.BaseObject)
-                                .Cast<TResult>();
+                            this.ExecuteCommandInDebugger<TResult>(
+                                psCommand,
+                                sendOutputToHost);
                     }
                     else
                     {
@@ -337,7 +329,7 @@ namespace Microsoft.PowerShell.EditorServices
                         {
                             this.WritePromptWithRunspace(runspaceHandle.Runspace);
                         }
-                        else if (nestedPipeline != null)
+                        else
                         {
                             this.WritePromptWithNestedPipeline();
                         }
@@ -347,10 +339,6 @@ namespace Microsoft.PowerShell.EditorServices
                     if (runspaceHandle != null)
                     {
                         runspaceHandle.Dispose();
-                    }
-                    else if(nestedPipeline != null)
-                    {
-                        nestedPipeline.Dispose();
                     }
                 }
             }
@@ -570,6 +558,73 @@ namespace Microsoft.PowerShell.EditorServices
         #endregion
 
         #region Private Methods
+
+        private IEnumerable<TResult> ExecuteCommandInDebugger<TResult>(PSCommand psCommand, bool sendOutputToHost)
+        {
+            IEnumerable<TResult> executionResult = null;
+
+            if (PowerShellVersion >= new Version(4, 0))
+            {
+#if PowerShellv4 || PowerShellv5
+                PSDataCollection<PSObject> outputCollection = new PSDataCollection<PSObject>();
+
+                if (sendOutputToHost)
+                {
+                    outputCollection.DataAdded +=
+                        (obj, e) =>
+                        {
+                            for (int i = e.Index; i < outputCollection.Count; i++)
+                            {
+                                this.WriteOutput(outputCollection[i].ToString(), true);
+                            }
+                        };
+                }
+
+                DebuggerCommandResults commandResults =
+                    this.currentRunspace.Debugger.ProcessCommand(
+                        psCommand,
+                        outputCollection);
+
+                // If the command was a debugger action, run it
+                if (commandResults.ResumeAction.HasValue)
+                {
+                    this.ResumeDebugger(commandResults.ResumeAction.Value);
+                }
+
+                executionResult =
+                    outputCollection
+                        .Select(pso => pso.BaseObject)
+                        .Cast<TResult>();
+#endif
+            }
+            else
+            {
+                using (var nestedPipeline = this.currentRunspace.CreateNestedPipeline())
+                {
+                    foreach (var command in psCommand.Commands)
+                    {
+                        nestedPipeline.Commands.Add(command);
+                    }
+
+                    executionResult =
+                        nestedPipeline
+                            .Invoke()
+                            .Select(pso => pso.BaseObject)
+                            .Cast<TResult>();
+                }
+
+                // Write the output to the host if necessary
+                if (sendOutputToHost)
+                {
+                    foreach (var line in executionResult)
+                    {
+                        this.WriteOutput(line.ToString(), true);
+                    }
+                }
+            }
+
+            return executionResult;
+        }
 
         private void WriteOutput(string outputString, bool includeNewLine)
         {
@@ -847,10 +902,9 @@ namespace Microsoft.PowerShell.EditorServices
                                 .Cast<string>()
                                 .FirstOrDefault();
                     });
-
             }
         }
-
+        
         #endregion
 
         #region Events
