@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System.Collections.Generic;
 using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -70,3 +75,4 @@ namespace Microsoft.PowerShell.EditorServices
     }
 #endif
 }
+
