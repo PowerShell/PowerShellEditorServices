@@ -16,7 +16,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [InlineData("5")]
         public void CompilesWithPowerShellVersion(string version)
         {
-            var assemblyPath = string.Format(@"..\..\..\..\packages\Microsoft.PowerShell.{0}.ReferenceAssemblies.1.0.0\lib\net4\System.Management.Automation.dll", version);
+            var assemblyPath = 
+                Path.GetFullPath(
+                    string.Format(
+                        @"..\..\..\..\packages\Microsoft.PowerShell.{0}.ReferenceAssemblies.1.0.0\lib\net4\System.Management.Automation.dll", 
+                        version));
+
             var projectPath = @"..\..\..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj";
             FileInfo fi = new FileInfo(projectPath);
             var projectVersion = Path.Combine(fi.DirectoryName, version + ".PowerShellEditorServices.csproj");
