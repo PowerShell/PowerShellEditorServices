@@ -208,13 +208,17 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="sendOutputToHost">
         /// If true, causes any output written during command execution to be written to the host.
         /// </param>
+        /// <param name="sendErrorToHost">
+        /// If true, causes any errors encountered during command execution to be written to the host.
+        /// </param>
         /// <returns>
         /// An awaitable Task which will provide results once the command
         /// execution completes.
         /// </returns>
         public async Task<IEnumerable<TResult>> ExecuteCommand<TResult>(
             PSCommand psCommand,
-            bool sendOutputToHost = false)
+            bool sendOutputToHost = false,
+            bool sendErrorToHost = true)
         {
             RunspaceHandle runspaceHandle = null;
             IEnumerable<TResult> executionResult = null;
@@ -324,8 +328,11 @@ namespace Microsoft.PowerShell.EditorServices
                         LogLevel.Error,
                         "Runtime exception occurred while executing command:\r\n\r\n" + e.ToString());
 
-                    // Write the error to the host
-                    this.WriteExceptionToHost(e);
+                    if (sendErrorToHost)
+                    {
+                        // Write the error to the host
+                        this.WriteExceptionToHost(e);
+                    }
                 }
                 finally
                 {
