@@ -360,16 +360,19 @@ namespace Microsoft.PowerShell.EditorServices
                 new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
             this.variables.Add(scopeVariableContainer);
 
-            var results = await this.powerShellContext.ExecuteCommand<PSVariable>(psCommand);
-            foreach (PSVariable psvariable in results)
+            var results = await this.powerShellContext.ExecuteCommand<PSVariable>(psCommand, sendErrorToHost: false);
+            if (results != null)
             {
-                var variableDetails = new VariableDetails(psvariable) { Id = this.nextVariableId++ };
-                this.variables.Add(variableDetails);
-                scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
-
-                if ((autoVariables != null) && AddToAutoVariables(psvariable, scope))
+                foreach (PSVariable psvariable in results)
                 {
-                    autoVariables.Children.Add(variableDetails.Name, variableDetails);
+                    var variableDetails = new VariableDetails(psvariable) {Id = this.nextVariableId++};
+                    this.variables.Add(variableDetails);
+                    scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
+
+                    if ((autoVariables != null) && AddToAutoVariables(psvariable, scope))
+                    {
+                        autoVariables.Children.Add(variableDetails.Name, variableDetails);
+                    }
                 }
             }
 
