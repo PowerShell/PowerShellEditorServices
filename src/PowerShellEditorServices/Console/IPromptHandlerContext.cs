@@ -19,6 +19,15 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A new ChoicePromptHandler instance.
         /// </returns>
         ChoicePromptHandler GetChoicePromptHandler();
+
+        /// <summary>
+        /// Creates a new InputPromptHandler instance so that
+        /// the caller can display an input prompt to the user.
+        /// </summary>
+        /// <returns>
+        /// A new InputPromptHandler instance.
+        /// </returns>
+        InputPromptHandler GetInputPromptHandler();
     }
 }
 

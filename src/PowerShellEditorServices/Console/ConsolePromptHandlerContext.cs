@@ -50,6 +50,18 @@ namespace Microsoft.PowerShell.EditorServices.Console
             return new ConsoleChoicePromptHandler(this.consoleHost);
         }
 
+        /// <summary>
+        /// Creates a new InputPromptHandler instance so that
+        /// the caller can display an input prompt to the user.
+        /// </summary>
+        /// <returns>
+        /// A new InputPromptHandler instance.
+        /// </returns>
+        public InputPromptHandler GetInputPromptHandler()
+        {
+            return new ConsoleInputPromptHandler(this.consoleHost);
+        }
+
         #endregion
     }
 }

@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 
@@ -20,6 +21,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public ChoicePromptHandler GetChoicePromptHandler()
         {
             return new ProtocolChoicePromptHandler(this.eventWriter);
+        }
+
+        public InputPromptHandler GetInputPromptHandler()
+        {
+            throw new NotImplementedException();
         }
     }
 

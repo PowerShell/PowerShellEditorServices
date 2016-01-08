@@ -59,11 +59,59 @@ namespace Microsoft.PowerShell.EditorServices
         #region PSHostUserInterface Implementation
 
         public override Dictionary<string, PSObject> Prompt(
-            string caption,
-            string message,
-            Collection<FieldDescription> descriptions)
+            string promptCaption,
+            string promptMessage,
+            Collection<FieldDescription> fieldDescriptions)
         {
-            throw new NotImplementedException();
+            if (this.consoleHost != null)
+            {
+                FieldDetails[] fields =
+                    fieldDescriptions
+                        .Select(FieldDetails.Create)
+                        .ToArray();
+
+                Task<Dictionary<string, object>> promptTask =
+                    this.consoleHost
+                        .GetInputPromptHandler()
+                        .PromptForInput(
+                            promptCaption,
+                            promptMessage,
+                            fields);
+
+                // This will synchronously block on the async PromptForInput
+                // method which gets run on another thread
+                promptTask.Wait();
+
+                if (promptTask.IsFaulted)
+                {
+                    // Rethrow the exception
+                    throw new Exception(
+                        "PromptForInput failed, check inner exception for details", 
+                        promptTask.Exception);
+                }
+                else if (promptTask.IsCanceled)
+                {
+                    // Stop the pipeline if the prompt was cancelled
+                    throw new PipelineStoppedException();
+                }
+
+                // Convert all values to PSObjects
+                var psObjectDict = new Dictionary<string, PSObject>();
+                foreach (var keyValuePair in promptTask.Result)
+                {
+                    psObjectDict.Add(
+                        keyValuePair.Key,
+                        PSObject.AsPSObject(keyValuePair.Value));
+                }
+
+                // Return the result
+                return psObjectDict;
+            }
+            else
+            {
+                // Notify the caller that there's no implementation
+                throw new NotImplementedException();
+            }
         }
 
         public override int PromptForChoice(
@@ -89,26 +137,24 @@ namespace Microsoft.PowerShell.EditorServices
                             defaultChoice);
 
                 // This will synchronously block on the async PromptForChoice
-                // method (which ultimately gets run on another thread) and
-                // then returns the result of the method.
-                int choiceResult = promptTask.Result;
+                // method which gets run on another thread
+                promptTask.Wait();
 
-                // Check for errors
-                if (promptTask.Status == TaskStatus.Faulted)
+                if (promptTask.IsFaulted)
                 {
                     // Rethrow the exception
                     throw new Exception(
                         "PromptForChoice failed, check inner exception for details", 
                         promptTask.Exception);
                 }
-                else if (promptTask.Result == -1)
+                else if (promptTask.IsCanceled)
                 {
                     // Stop the pipeline if the prompt was cancelled
                     throw new PipelineStoppedException();
                 }
 
                 // Return the result
-                return choiceResult;
+                return promptTask.Result;
             }
             else
             {
@@ -144,7 +190,37 @@ namespace Microsoft.PowerShell.EditorServices
 
         public override string ReadLine()
         {
-            throw new NotImplementedException();
+            if (this.consoleHost != null)
+            {
+                Task<string> promptTask =
+                    this.consoleHost
+                        .GetInputPromptHandler()
+                        .PromptForInput();
+
+                // This will synchronously block on the async PromptForInput
+                // method which gets run on another thread
+                promptTask.Wait();
+
+                if (promptTask.IsFaulted)
+                {
+                    // Rethrow the exception
+                    throw new Exception(
+                        "ReadLine failed, check inner exception for details",
+                        promptTask.Exception);
+                }
+                else if (promptTask.IsCanceled)
+                {
+                    // Stop the pipeline if the prompt was cancelled
+                    throw new PipelineStoppedException();
+                }
+
+                return promptTask.Result;
+            }
+            else
+            {
+                // Notify the caller that there's no implementation
+                throw new NotImplementedException();
+            }
         }
 
         public override SecureString ReadLineAsSecureString()

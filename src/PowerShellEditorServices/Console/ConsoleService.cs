@@ -87,6 +87,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             if (this.activePromptHandler != null)
             {
+                if (echoToConsole)
+                {
+                    this.WriteOutput(inputString, true);
+                }
+
                 if (this.activePromptHandler.HandleResponse(inputString))
                 {
                     // If the prompt handler is finished, clear it for
@@ -195,6 +200,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             return this.GetPromptHandler(
                 factory => factory.GetChoicePromptHandler());
+        }
+
+        InputPromptHandler IConsoleHost.GetInputPromptHandler()
+        {
+            return this.GetPromptHandler(
+                factory => factory.GetInputPromptHandler());
         }
 
         private TPromptHandler GetPromptHandler<TPromptHandler>(

@@ -48,6 +48,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
         ChoicePromptHandler GetChoicePromptHandler();
 
         /// <summary>
+        /// Creates an InputPrompt handle to use for displaying input
+        /// prompts to the user.
+        /// </summary>
+        /// <returns>A new InputPromptHandler instance.</returns>
+        InputPromptHandler GetInputPromptHandler();
+
+        /// <summary>
         /// Sends a progress update event to the user.
         /// </summary>
         /// <param name="sourceId">The source ID of the progress event.</param>

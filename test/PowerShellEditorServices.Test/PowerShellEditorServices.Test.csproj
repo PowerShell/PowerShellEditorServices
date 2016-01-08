@@ -63,6 +63,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Console\InputPromptHandlerTests.cs" />
     <Compile Include="Session\PowerShellContextTests.cs" />
     <Compile Include="Debugging\DebugServiceTests.cs" />
     <Compile Include="Language\LanguageServiceTests.cs" />

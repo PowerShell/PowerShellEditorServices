@@ -147,8 +147,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         public void CancelPrompt()
         {
-            // Setting the result to -1 will cause the prompt to be cancelled
-            this.promptTask.SetResult(-1);
+            // Cancel the prompt task
+            this.promptTask.TrySetCanceled();
         }
 
         #endregion
