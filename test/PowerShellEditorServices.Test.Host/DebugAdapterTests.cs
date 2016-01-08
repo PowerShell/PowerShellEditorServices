@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8) + ".log");
 
-            Console.WriteLine("        Output log at path: {0}", testLogPath);
+            System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
             this.debugAdapterClient =
                 new DebugAdapterClient(

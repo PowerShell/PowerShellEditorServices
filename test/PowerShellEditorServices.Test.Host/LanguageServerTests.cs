@@ -8,6 +8,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 using Nito.AsyncEx;
 using System;
 using System.Collections.Concurrent;
@@ -34,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8) + ".log");
 
-            Console.WriteLine("        Output log at path: {0}", testLogPath);
+            System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
             this.languageServiceClient =
                 new LanguageServiceClient(
@@ -454,47 +455,52 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("Get-ChildItem\r\nGet-Location", expandedText);
         }
 
-        [Fact(Skip = "Choice prompt functionality is currently in transition to a new model.")]
+        [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesChoicePrompt()
         {
-            // TODO: This test is removed until a new choice prompt strategy is determined.
+            string choiceScript =
+                @"
+                $caption = ""Test Choice"";
+                $message = ""Make a selection"";
+                $choiceA = New-Object System.Management.Automation.Host.ChoiceDescription ""&Apple"",""Help for Apple"";
+                $choiceB = New-Object System.Management.Automation.Host.ChoiceDescription ""Banana"",""Help for Banana"";
+                $choices = [System.Management.Automation.Host.ChoiceDescription[]]($choiceA,$choiceB);
+                $host.ui.PromptForChoice($caption, $message, $choices, 1)";
 
-            //            string choiceScript =
-            //                @"
-            //                $caption = ""Test Choice"";
-            //                $message = ""Make a selection"";
-            //                $choiceA = new-Object System.Management.Automation.Host.ChoiceDescription ""&A"",""A"";
-            //                $choiceB = new-Object System.Management.Automation.Host.ChoiceDescription ""&B"",""B"";
-            //                $choices = [System.Management.Automation.Host.ChoiceDescription[]]($choiceA,$choiceB);
-            //                $response = $host.ui.PromptForChoice($caption, $message, $choices, 1)
-            //                $response";
+            Task<ShowChoicePromptNotification> choicePromptTask =
+                this.WaitForEvent(ShowChoicePromptNotification.Type);
 
-            //            await this.MessageWriter.WriteMessage(
-            //                new ReplExecuteRequest
-            //                {
-            //                    Arguments = new ReplExecuteArgs
-            //                    {
-            //                        CommandString = choiceScript
-            //                    }
-            //                });
+            // Execute the script but don't await the task yet because
+            // the choice prompt will block execution from completing
+            Task<EvaluateResponseBody> evaluateTask =
+                this.SendRequest(
+                    EvaluateRequest.Type,
+                    new EvaluateRequestArguments
+                    {
+                        Expression = choiceScript,
+                        Context = "repl"
+                    });
 
-            //            // Wait for the choice prompt event and check expected values
-            //            ReplPromptChoiceEvent replPromptChoiceEvent = this.WaitForMessage<ReplPromptChoiceEvent>();
-            //            Assert.Equal(1, replPromptChoiceEvent.Body.DefaultChoice);
+            // Wait for the choice prompt event and check expected values
+            ShowChoicePromptNotification showChoicePromptEvent = await choicePromptTask;
 
-            //            // Respond to the prompt event
-            //            await this.MessageWriter.WriteMessage(
-            //                new ReplPromptChoiceResponse
-            //                {
-            //                    Body = new ReplPromptChoiceResponseBody
-            //                    {
-            //                        Choice = 0
-            //                    }
-            //                });
+            Assert.Equal(1, showChoicePromptEvent.DefaultChoice);
 
-            //            // Wait for the selection to appear as output
-            //            ReplWriteOutputEvent replWriteLineEvent = this.WaitForMessage<ReplWriteOutputEvent>();
-            //            Assert.Equal("0", replWriteLineEvent.Body.LineContents);
+            // Prepare to receive script output
+            Task<OutputEventBody> outputTask = this.WaitForEvent(OutputEvent.Type);
+
+            // Respond to the prompt event
+            await this.SendEvent(
+                CompleteChoicePromptNotification.Type,
+                new CompleteChoicePromptNotification
+                {
+                    ChosenItem = "a"
+                });
+
+            // Wait for the selection to appear as output
+            await evaluateTask;
+            OutputEventBody choiceOutput = await outputTask;
+            Assert.Equal("0\r\n", choiceOutput.Output);
         }
 
         private Task<TResult> SendRequest<TParams, TResult>(
@@ -580,7 +586,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     eventType,
                     (p, ctx) =>
                     {
-                        eventTask.SetResult(p);
+                        if (!eventTask.Task.IsCompleted)
+                        {
+                            eventTask.SetResult(p);
+                        }
+
                         return Task.FromResult(true);
                     },
                     true);  // Override any existing handler

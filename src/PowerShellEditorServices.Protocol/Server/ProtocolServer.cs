@@ -5,7 +5,6 @@
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -110,15 +109,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             if (!this.serverChannel.MessageDispatcher.InMessageLoopThread)
             {
+                TaskCompletionSource<bool> writeTask = new TaskCompletionSource<bool>();
+
                 this.serverChannel.MessageDispatcher.SynchronizationContext.Post(
                     async (obj) =>
                     {
                         await this.serverChannel.MessageWriter.WriteEvent(
                             eventType,
                             eventParams);
+
+                        writeTask.SetResult(true);
                     }, null);
 
-                return Task.FromResult(true);
+                return writeTask.Task;
             }
             else
             {

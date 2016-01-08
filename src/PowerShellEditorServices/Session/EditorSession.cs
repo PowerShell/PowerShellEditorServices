@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Console;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Threading;
@@ -42,6 +43,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public DebugService DebugService { get; private set; }
 
+        /// <summary>
+        /// Gets the ConsoleService instance for this session.
+        /// </summary>
+        public ConsoleService ConsoleService { get; private set; }
+
         #endregion
 
         #region Public Methods
@@ -60,6 +66,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.LanguageService = new LanguageService(this.PowerShellContext);
             this.AnalysisService = new AnalysisService();
             this.DebugService = new DebugService(this.PowerShellContext);
+            this.ConsoleService = new ConsoleService(this.PowerShellContext);
         }
 
         #endregion

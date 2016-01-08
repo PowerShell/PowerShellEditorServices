@@ -75,13 +75,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Console\PowerShellContextTests.cs" />
-    <Compile Include="Console\TestConsoleHost.cs" />
+    <Compile Include="Session\PowerShellContextTests.cs" />
     <Compile Include="Debugging\DebugServiceTests.cs" />
     <Compile Include="Language\LanguageServiceTests.cs" />
     <Compile Include="Language\PowerShellVersionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Console\ConsoleServiceTests.cs" />
+    <Compile Include="Console\ChoicePromptHandlerTests.cs" />
     <Compile Include="Session\ScriptFileTests.cs" />
     <Compile Include="Utility\LoggerTests.cs" />
   </ItemGroup>

@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Nito.AsyncEx;
 using System;
@@ -13,7 +14,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
-using System.Management.Automation.Language;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,7 +21,7 @@ using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugA
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
-    public class LanguageServer : LanguageServerBase 
+    public class LanguageServer : LanguageServerBase, IEventWriter
     {
         private static CancellationTokenSource existingRequestCancellation;
 
@@ -36,7 +36,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             this.editorSession = new EditorSession();
             this.editorSession.StartSession();
-            this.editorSession.PowerShellContext.OutputWritten += this.powerShellContext_OutputWritten;
+            this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
+
+            // Always send console prompts through the UI in the language service
+            // TODO: This will change later once we have a general REPL available
+            // in VS Code.
+            this.editorSession.ConsoleService.PushPromptHandlerContext(
+                new ProtocolPromptHandlerContext(this));
         }
 
         protected override void Initialize()
@@ -62,6 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
             this.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
+            this.SetEventHandler(CompleteChoicePromptNotification.Type, this.HandleCompleteChoicePromptNotification);
 
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
@@ -164,6 +171,25 @@ function __Expand-Alias {
             var result = await this.editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
 
             await requestContext.SendResult(result.First().ToString());
+        }
+
+        protected Task HandleCompleteChoicePromptNotification(
+            CompleteChoicePromptNotification completeChoicePromptParams,
+            EventContext eventContext)
+        {
+            if (!completeChoicePromptParams.PromptCancelled)
+            {
+                this.editorSession.ConsoleService.ReceiveInputString(
+                    completeChoicePromptParams.ChosenItem,
+                    false);
+            }
+            else
+            {
+                // Cancel the current prompt
+                this.editorSession.ConsoleService.SendControlC();
+            }
+
+            return Task.FromResult(true);
         }
 
         protected Task HandleDidOpenTextDocumentNotification(
@@ -676,11 +702,15 @@ function __Expand-Alias {
             DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
             RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
         {
-            var results = 
-                await this.editorSession.PowerShellContext.ExecuteScriptString(
+            // We don't await the result of the execution here because we want
+            // to be able to receive further messages while the current script
+            // is executing.  This important in cases where the pipeline thread
+            // gets blocked by something in the script like a prompt to the user.
+            var executeTask =
+                this.editorSession.PowerShellContext.ExecuteScriptString(
                     evaluateParams.Expression,
                     true,
-                    true);
+                    true).ConfigureAwait(false);
 
             // Return an empty result since the result value is irrelevant
             // for this request in the LanguageServer

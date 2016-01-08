@@ -11,6 +11,7 @@ using System.Management.Automation.Host;
 using System.Linq;
 using System.Security;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Console;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -28,19 +29,29 @@ namespace Microsoft.PowerShell.EditorServices
 
         #endregion
 
+        #region Properties
+
+        internal IConsoleHost ConsoleHost
+        {
+            get { return this.consoleHost; }
+            set
+            {
+                this.consoleHost = value;
+                this.rawUserInterface.ConsoleHost = value;
+            }
+        }
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
         /// Creates a new instance of the ConsoleServicePSHostUserInterface
         /// class with the given IConsoleHost implementation.
         /// </summary>
-        /// <param name="consoleHost">
-        /// The IConsoleHost that will be used to perform host actions for this class.
-        /// </param>
-        public ConsoleServicePSHostUserInterface(IConsoleHost consoleHost)
+        public ConsoleServicePSHostUserInterface()
         {
-            this.consoleHost = consoleHost;
-            this.rawUserInterface = new ConsoleServicePSHostRawUserInterface(consoleHost);
+            this.rawUserInterface = new ConsoleServicePSHostRawUserInterface();
         }
 
         #endregion
@@ -48,8 +59,8 @@ namespace Microsoft.PowerShell.EditorServices
         #region PSHostUserInterface Implementation
 
         public override Dictionary<string, PSObject> Prompt(
-            string caption, 
-            string message, 
+            string caption,
+            string message,
             Collection<FieldDescription> descriptions)
         {
             throw new NotImplementedException();
@@ -61,30 +72,49 @@ namespace Microsoft.PowerShell.EditorServices
             Collection<ChoiceDescription> choiceDescriptions, 
             int defaultChoice)
         {
-            Task<int> promptTask =
-                this.consoleHost
-                    .PromptForChoice(
-                        promptCaption,
-                        promptMessage,
-                        choiceDescriptions.Select(ChoiceDetails.Create),
-                        defaultChoice);
-
-            // This will synchronously block on the async PromptForChoice
-            // method (which ultimately gets run on another thread) and
-            // then returns the result of the method.
-            int choiceResult = promptTask.Result;
-
-            // Check for errors
-            if (promptTask.Status == TaskStatus.Faulted)
+            if (this.consoleHost != null)
             {
-                // Rethrow the exception
-                throw new Exception(
-                    "PromptForChoice failed, check inner exception for details", 
-                    promptTask.Exception);
-            }
+                ChoiceDetails[] choices =
+                    choiceDescriptions
+                        .Select(ChoiceDetails.Create)
+                        .ToArray();
 
-            // Return the result
-            return choiceResult;
+                Task<int> promptTask =
+                    this.consoleHost
+                        .GetChoicePromptHandler()
+                        .PromptForChoice(
+                            promptCaption,
+                            promptMessage,
+                            choices,
+                            defaultChoice);
+
+                // This will synchronously block on the async PromptForChoice
+                // method (which ultimately gets run on another thread) and
+                // then returns the result of the method.
+                int choiceResult = promptTask.Result;
+
+                // Check for errors
+                if (promptTask.Status == TaskStatus.Faulted)
+                {
+                    // Rethrow the exception
+                    throw new Exception(
+                        "PromptForChoice failed, check inner exception for details", 
+                        promptTask.Exception);
+                }
+                else if (promptTask.Result == -1)
+                {
+                    // Stop the pipeline if the prompt was cancelled
+                    throw new PipelineStoppedException();
+                }
+
+                // Return the result
+                return choiceResult;
+            }
+            else
+            {
+                // Notify the caller that there's no implementation
+                throw new NotImplementedException();
+            }
         }
 
         public override PSCredential PromptForCredential(
@@ -127,74 +157,98 @@ namespace Microsoft.PowerShell.EditorServices
             ConsoleColor backgroundColor, 
             string value)
         {
-            this.consoleHost.WriteOutput(
-                value,
-                false,
-                OutputType.Normal,
-                foregroundColor, 
-                backgroundColor);
+            if (this.consoleHost != null)
+            {
+                this.consoleHost.WriteOutput(
+                    value,
+                    false,
+                    OutputType.Normal,
+                    foregroundColor,
+                    backgroundColor);
+            }
         }
 
         public override void Write(string value)
         {
-            this.consoleHost.WriteOutput(
-                value,
-                false,
-                OutputType.Normal,
-                this.rawUserInterface.ForegroundColor,
-                this.rawUserInterface.BackgroundColor);
+            if (this.consoleHost != null)
+            {
+                this.consoleHost.WriteOutput(
+                    value,
+                    false,
+                    OutputType.Normal,
+                    this.rawUserInterface.ForegroundColor,
+                    this.rawUserInterface.BackgroundColor);
+            }
         }
 
         public override void WriteLine(string value)
         {
-            this.consoleHost.WriteOutput(
-                value,
-                true,
-                OutputType.Normal,
-                this.rawUserInterface.ForegroundColor,
-                this.rawUserInterface.BackgroundColor);
+            if (this.consoleHost != null)
+            {
+                this.consoleHost.WriteOutput(
+                    value,
+                    true,
+                    OutputType.Normal,
+                    this.rawUserInterface.ForegroundColor,
+                    this.rawUserInterface.BackgroundColor);
+            }
         }
 
         public override void WriteDebugLine(string message)
         {
-            this.consoleHost.WriteOutput(
-                message, 
-                true,
-                OutputType.Debug);
+            if (this.consoleHost != null)
+            {
+                this.consoleHost.WriteOutput(
+                    message,
+                    true,
+                    OutputType.Debug);
+            }
         }
 
         public override void WriteVerboseLine(string message)
         {
-            this.consoleHost.WriteOutput(
-                message,
-                true,
-                OutputType.Verbose);
+            if (this.consoleHost != null)
+            {
+                this.consoleHost.WriteOutput(
+                    message,
+                    true,
+                    OutputType.Verbose);
+            }
         }
 
         public override void WriteWarningLine(string message)
         {
-            this.consoleHost.WriteOutput(
-                message, 
-                true,
-                OutputType.Warning);
+            if (this.consoleHost != null)
+            {
+                this.consoleHost.WriteOutput(
+                    message,
+                    true,
+                    OutputType.Warning);
+            }
         }
 
         public override void WriteErrorLine(string value)
         {
-            this.consoleHost.WriteOutput(
-                value, 
-                true,
-                OutputType.Error,
-                ConsoleColor.Red);
+            if (this.consoleHost != null)
+            {
+                this.consoleHost.WriteOutput(
+                    value, 
+                    true,
+                    OutputType.Error,
+                    ConsoleColor.Red);
+            }
         }
 
         public override void WriteProgress(
             long sourceId, 
             ProgressRecord record)
         {
-            this.consoleHost.UpdateProgress(
-                sourceId,
-                ProgressDetails.Create(record));
+            if (this.consoleHost != null)
+            {
+                this.consoleHost.UpdateProgress(
+                    sourceId,
+                    ProgressDetails.Create(record));
+            }
         }
 
         #endregion
