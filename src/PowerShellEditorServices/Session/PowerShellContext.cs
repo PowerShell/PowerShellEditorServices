@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Nito.AsyncEx;
 using System;
@@ -17,9 +18,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    using Microsoft.PowerShell.EditorServices.Console;
     using System.Management.Automation;
-    using System.Management.Automation.Host;
     using System.Management.Automation.Runspaces;
 
     /// <summary>
@@ -567,9 +566,10 @@ namespace Microsoft.PowerShell.EditorServices
             Logger.Write(
                 LogLevel.Verbose,
                 string.Format(
-                    "Session state changed --\r\n\r\n    Old state: {0}\r\n    New state: {1}",
+                    "Session state changed --\r\n\r\n    Old state: {0}\r\n    New state: {1}\r\n    Result: {2}",
                     this.SessionState.ToString(),
-                    e.NewSessionState.ToString()));
+                    e.NewSessionState.ToString(),
+                    e.ExecutionResult));
 
             this.SessionState = e.NewSessionState;
 

@@ -76,8 +76,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             // Abort script execution
             Task terminatedEvent = this.WaitForEvent(TerminatedEvent.Type);
-            await this.SendRequest(DisconnectRequest.Type, new object());
-            await terminatedEvent;
+            await 
+                Task.WhenAll(
+                    this.SendRequest(DisconnectRequest.Type, new object()),
+                    terminatedEvent);
         }
 
         [Fact]
@@ -93,8 +95,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             // Abort script execution
             Task terminatedEvent = this.WaitForEvent(TerminatedEvent.Type);
-            await this.SendRequest(DisconnectRequest.Type, new object());
-            await terminatedEvent;
+            await
+                Task.WhenAll(
+                    this.SendRequest(DisconnectRequest.Type, new object()),
+                    terminatedEvent);
         }
 
         private Task LaunchScript(string scriptPath)
