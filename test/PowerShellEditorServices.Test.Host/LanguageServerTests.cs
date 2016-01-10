@@ -82,6 +82,21 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
+        public async Task ServiceReturnsNoErrorsForUsingRelativeModulePaths()
+        {
+            // Send the 'didOpen' event
+            await this.SendOpenFileEvent("TestFiles\\Module.psm1", false);
+
+            // Wait for the diagnostic event
+            PublishDiagnosticsNotification diagnostics = 
+                await this.WaitForEvent(
+                    PublishDiagnosticsNotification.Type);
+
+            // Was there a syntax error?
+            Assert.Equal(0, diagnostics.Diagnostics.Length);
+        }
+
+        [Fact]
         public async Task ServiceCompletesFunctionName()
         {
             await this.SendOpenFileEvent("TestFiles\\CompleteFunctionName.ps1");

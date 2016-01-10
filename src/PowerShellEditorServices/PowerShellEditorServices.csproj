@@ -13,9 +13,16 @@
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
-    <DefineConstants Condition=" '$(PowerShellVersion)' == 'v3'">PowerShellv3</DefineConstants>
-    <DefineConstants Condition=" '$(PowerShellVersion)' == 'v4'">PowerShellv4</DefineConstants>
-    <DefineConstants Condition=" '$(PowerShellVersion)' == '' Or '$(PowerShellVersion)' == 'v5'">PowerShellv5</DefineConstants>
+    <DefineConstants Condition="'$(PowerShellVersion)' == 'v3'">$(DefineConstants);PowerShellv3</DefineConstants>
+    <DefineConstants Condition="'$(PowerShellVersion)' == 'v4'">$(DefineConstants);PowerShellv4</DefineConstants>
+    <!-- NOTE: -->
+    <!-- For PowerShell v5 there are some differences between the APIs released with -->
+    <!-- Windows 10 RTM and Windows 10 Update 1, thus we need to distinguish between -->
+    <!-- the two in our code.  v5r1 indicates Win 10 RTM (10240) and v5r2 indicates  -->
+    <!-- Win10 Update 1 (10586).  The PowerShellv5 constant will be defined for both -->
+    <!-- of these versions for anything that should work against both APIs.          -->
+    <DefineConstants Condition="'$(PowerShellVersion)' == 'v5r1'">$(DefineConstants);PowerShellv5r1;PowerShellv5</DefineConstants>
+    <DefineConstants Condition="'$(PowerShellVersion)' == 'v5r2' Or '$(PowerShellVersion)' == ''">$(DefineConstants);PowerShellv5r2;PowerShellv5</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

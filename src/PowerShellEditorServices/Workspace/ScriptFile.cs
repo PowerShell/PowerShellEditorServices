@@ -21,6 +21,7 @@ namespace Microsoft.PowerShell.EditorServices
         #region Private Fields
 
         private Token[] scriptTokens;
+        private Version powerShellVersion;
 
         #endregion
 
@@ -126,12 +127,18 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="filePath">The path at which the script file resides.</param>
         /// <param name="clientFilePath">The path which the client uses to identify the file.</param>
         /// <param name="textReader">The TextReader to use for reading the file's contents.</param>
-        public ScriptFile(string filePath, string clientFilePath, TextReader textReader)
+        /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
+        public ScriptFile(
+            string filePath,
+            string clientFilePath,
+            TextReader textReader,
+            Version powerShellVersion)
         {
             this.FilePath = filePath;
             this.ClientFilePath = clientFilePath;
             this.IsAnalysisEnabled = true;
             this.IsInMemory = Workspace.IsPathInMemory(filePath);
+            this.powerShellVersion = powerShellVersion;
 
             this.SetFileContents(textReader.ReadToEnd());
         }
@@ -142,11 +149,17 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="filePath">The path at which the script file resides.</param>
         /// <param name="clientFilePath">The path which the client uses to identify the file.</param>
         /// <param name="initialBuffer">The initial contents of the script file.</param>
-        public ScriptFile(string filePath, string clientFilePath, string initialBuffer)
+        /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
+        public ScriptFile(
+            string filePath,
+            string clientFilePath,
+            string initialBuffer,
+            Version powerShellVersion)
         {
             this.FilePath = filePath;
             this.ClientFilePath = clientFilePath;
             this.IsAnalysisEnabled = true;
+            this.powerShellVersion = powerShellVersion;
 
             this.SetFileContents(initialBuffer);
         }
@@ -358,15 +371,39 @@ namespace Microsoft.PowerShell.EditorServices
 
             try
             {
+#if PowerShellv5r2
+                // This overload appeared with Windows 10 Update 1
+                if (this.powerShellVersion.Major >= 5 &&
+                    this.powerShellVersion.Build >= 10586)
+                {
+                    // Include the file path so that module relative
+                    // paths are evaluated correctly
+                    this.ScriptAst =
+                        Parser.ParseInput(
+                            this.Contents,
+                            this.FilePath,
+                            out this.scriptTokens,
+                            out parseErrors);
+                }
+                else
+                {
+                    this.ScriptAst =
+                        Parser.ParseInput(
+                            this.Contents,
+                            out this.scriptTokens,
+                            out parseErrors);
+                }
+#else
                 this.ScriptAst =
                     Parser.ParseInput(
-                        this.Contents, 
-                        out this.scriptTokens, 
+                        this.Contents,
+                        out this.scriptTokens,
                         out parseErrors);
+#endif
             }
             catch (RuntimeException ex)
             {
-                var parseError = 
+                var parseError =
                     new ParseError(
                         null,
                         ex.ErrorRecord.FullyQualifiedErrorId, 
@@ -388,6 +425,6 @@ namespace Microsoft.PowerShell.EditorServices
                 AstOperations.FindDotSourcedIncludes(this.ScriptAst);
         }
 
-        #endregion
+#endregion
     }
 }

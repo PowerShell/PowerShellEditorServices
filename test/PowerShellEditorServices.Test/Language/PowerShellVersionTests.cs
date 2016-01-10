@@ -16,10 +16,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
     public class PowerShellVersionTests 
     {
         [Theory]
-        [InlineData("3")]
-        [InlineData("4")]
-        [InlineData("5")]
-        public void CompilesWithPowerShellVersion(string version)
+        [InlineData("3", "4")]
+        [InlineData("4", "4")]
+        [InlineData("5", "5r1")]
+        public void CompilesWithPowerShellVersion(string version, string versionSuffix)
         {
             var assemblyPath = 
                 Path.GetFullPath(
@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             try
             {
-                Compile(projectVersion, version);
+                Compile(projectVersion, version, versionSuffix);
             }
             finally
             {
@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             }
         }
 
-        private void Compile(string project, string version)
+        private void Compile(string project, string version, string versionSuffix)
         {
             string msbuild;
             using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0"))
