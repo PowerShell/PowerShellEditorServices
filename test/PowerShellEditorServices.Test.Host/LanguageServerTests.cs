@@ -6,12 +6,9 @@
 using Microsoft.PowerShell.EditorServices.Protocol.Client;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Protocol.Messages;
-using Nito.AsyncEx;
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,12 +16,9 @@ using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
-    public class LanguageServerTests : IAsyncLifetime
+    public class LanguageServerTests : ServerTestsBase, IAsyncLifetime
     {
         private LanguageServiceClient languageServiceClient;
-
-        private ConcurrentDictionary<string, AsyncProducerConsumerQueue<object>> eventQueuePerType =
-            new ConcurrentDictionary<string, AsyncProducerConsumerQueue<object>>();
 
         public Task InitializeAsync()
         {
@@ -37,6 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
+            this.protocolClient =
             this.languageServiceClient =
                 new LanguageServiceClient(
                     new StdioClientChannel(
@@ -503,24 +498,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("0\r\n", choiceOutput.Output);
         }
 
-        private Task<TResult> SendRequest<TParams, TResult>(
-            RequestType<TParams, TResult> requestType, 
-            TParams requestParams)
-        {
-            return 
-                this.languageServiceClient.SendRequest(
-                    requestType, 
-                    requestParams);
-        }
-
-        private Task SendEvent<TParams>(EventType<TParams> eventType, TParams eventParams)
-        {
-            return 
-                this.languageServiceClient.SendEvent(
-                    eventType,
-                    eventParams);
-        }
-
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)
         {
             string fileContents = string.Join(Environment.NewLine, File.ReadAllLines(filePath));
@@ -547,55 +524,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             if (diagnosticWaitTask != null)
             {
                 await diagnosticWaitTask;
-            }
-        }
-
-        private void QueueEventsForType<TParams>(EventType<TParams> eventType)
-        {
-            var eventQueue =
-                this.eventQueuePerType.AddOrUpdate(
-                    eventType.MethodName,
-                    new AsyncProducerConsumerQueue<object>(),
-                    (key, queue) => queue);
-
-            this.languageServiceClient.SetEventHandler(
-                eventType,
-                (p, ctx) =>
-                {
-                    return eventQueue.EnqueueAsync(p);   
-                });
-        }
-
-        private Task<TParams> WaitForEvent<TParams>(EventType<TParams> eventType)
-        {
-            // Use the event queue if one has been registered
-            AsyncProducerConsumerQueue<object> eventQueue = null;
-            if (this.eventQueuePerType.TryGetValue(eventType.MethodName, out eventQueue))
-            {
-                return 
-                    eventQueue
-                        .DequeueAsync()
-                        .ContinueWith<TParams>(
-                            task => (TParams)task.Result);
-            }
-            else
-            {
-                TaskCompletionSource<TParams> eventTask = new TaskCompletionSource<TParams>();
-
-                this.languageServiceClient.SetEventHandler(
-                    eventType,
-                    (p, ctx) =>
-                    {
-                        if (!eventTask.Task.IsCompleted)
-                        {
-                            eventTask.SetResult(p);
-                        }
-
-                        return Task.FromResult(true);
-                    },
-                    true);  // Override any existing handler
-
-                return eventTask.Task;
             }
         }
     }
