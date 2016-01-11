@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession = new EditorSession();
             this.editorSession.StartSession();
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
-            this.editorSession.PowerShellContext.OutputWritten += this.powerShellContext_OutputWritten;
+            this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
         }
 
         protected override void Initialize()
@@ -312,27 +312,37 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             EvaluateRequestArguments evaluateParams,
             RequestContext<EvaluateResponseBody> requestContext)
         {
+            string valueString = null;
+            int variableId = 0;
+
             bool isFromRepl =
                 string.Equals(
                     evaluateParams.Context,
                     "repl",
                     StringComparison.InvariantCultureIgnoreCase);
 
-            VariableDetails result =
-                await editorSession.DebugService.EvaluateExpression(
-                    evaluateParams.Expression,
-                    evaluateParams.FrameId,
-                    isFromRepl);
-
-            string valueString = null;
-            int variableId = 0;
-
-            if (result != null)
+            if (isFromRepl)
             {
-                valueString = result.ValueString;
-                variableId =
-                    result.IsExpandable ?
-                        result.Id : 0;
+                // Send the input through the console service
+                editorSession.ConsoleService.ReceiveInputString(
+                    evaluateParams.Expression,
+                    false);
+            }
+            else
+            {
+                VariableDetails result =
+                    await editorSession.DebugService.EvaluateExpression(
+                        evaluateParams.Expression,
+                        evaluateParams.FrameId,
+                        isFromRepl);
+
+                if (result != null)
+                {
+                    valueString = result.ValueString;
+                    variableId =
+                        result.IsExpandable ?
+                            result.Id : 0;
+                }
             }
 
             await requestContext.SendResult(

@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Nito.AsyncEx;
 using System;
@@ -18,7 +19,6 @@ using System.Threading.Tasks;
 namespace Microsoft.PowerShell.EditorServices
 {
     using System.Management.Automation;
-    using System.Management.Automation.Host;
     using System.Management.Automation.Runspaces;
 
     /// <summary>
@@ -26,14 +26,16 @@ namespace Microsoft.PowerShell.EditorServices
     /// Handles nested PowerShell prompts and also manages execution of 
     /// commands whether inside or outside of the debugger.
     /// </summary>
-    public class PowerShellContext : IDisposable, IConsoleHost
+    public class PowerShellContext : IDisposable
     {
         #region Fields
 
         private PowerShell powerShell;
+        private IConsoleHost consoleHost;
         private bool ownsInitialRunspace;
         private Runspace initialRunspace;
         private Runspace currentRunspace;
+        private ConsoleServicePSHost psHost;
         private InitialSessionState initialSessionState;
         private int pipelineThreadId;
 
@@ -78,6 +80,20 @@ namespace Microsoft.PowerShell.EditorServices
             get; private set;
         }
 
+        /// <summary>
+        /// Gets or sets an IConsoleHost implementation for use in
+        /// writing output to the console.
+        /// </summary>
+        internal IConsoleHost ConsoleHost
+        {
+            get { return this.consoleHost; }
+            set
+            {
+                this.consoleHost = value;
+                this.psHost.ConsoleHost = value;
+            }
+        }
+
         #endregion
 
         #region Constructors
@@ -88,9 +104,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public PowerShellContext()
         {
+            this.psHost = new ConsoleServicePSHost();
             this.initialSessionState = InitialSessionState.CreateDefault2();
 
-            PSHost psHost = new ConsoleServicePSHost(this);
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, this.initialSessionState);
             runspace.ApartmentState = ApartmentState.STA;
             runspace.ThreadOptions = PSThreadOptions.ReuseThread;
@@ -400,10 +416,9 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (writeInputToHost)
             {
-                ((IConsoleHost)this).WriteOutput(
+                this.WriteOutput(
                     scriptString + Environment.NewLine,
-                    true,
-                    OutputType.Normal);
+                    true);
             }
 
             PSCommand psCommand = new PSCommand();
@@ -558,9 +573,10 @@ namespace Microsoft.PowerShell.EditorServices
             Logger.Write(
                 LogLevel.Verbose,
                 string.Format(
-                    "Session state changed --\r\n\r\n    Old state: {0}\r\n    New state: {1}",
+                    "Session state changed --\r\n\r\n    Old state: {0}\r\n    New state: {1}\r\n    Result: {2}",
                     this.SessionState.ToString(),
-                    e.NewSessionState.ToString()));
+                    e.NewSessionState.ToString(),
+                    e.ExecutionResult));
 
             this.SessionState = e.NewSessionState;
 
@@ -643,10 +659,13 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void WriteOutput(string outputString, bool includeNewLine)
         {
-            ((IConsoleHost)this).WriteOutput(
-                outputString,
-                includeNewLine,
-                OutputType.Normal);
+            if (this.ConsoleHost != null)
+            {
+                this.ConsoleHost.WriteOutput(
+                    outputString,
+                    includeNewLine,
+                    OutputType.Normal);
+            }
         }
 
         private void WriteExceptionToHost(Exception e)
@@ -710,12 +729,15 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void WriteError(string errorMessage)
         {
-            ((IConsoleHost)this).WriteOutput(
-                errorMessage,
-                true,
-                OutputType.Error,
-                ConsoleColor.Red,
-                ConsoleColor.Black);
+            if (this.ConsoleHost != null)
+            {
+                this.ConsoleHost.WriteOutput(
+                    errorMessage,
+                    true,
+                    OutputType.Error,
+                    ConsoleColor.Red,
+                    ConsoleColor.Black);
+            }
         }
 
         void powerShell_InvocationStateChanged(object sender, PSInvocationStateChangedEventArgs e)
@@ -1013,52 +1035,9 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        /// <summary>
-        /// An event that is raised when textual output of any type is
-        /// written to the session.
-        /// </summary>
-        public event EventHandler<OutputWrittenEventArgs> OutputWritten;
-
         #endregion
 
-        #region IConsoleHost Implementation
-
-        void IConsoleHost.WriteOutput(string outputString, bool includeNewLine, OutputType outputType, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
-        {
-            if (this.OutputWritten != null)
-            {
-                this.OutputWritten(
-                    this,
-                    new OutputWrittenEventArgs(
-                        outputString,
-                        includeNewLine,
-                        outputType,
-                        foregroundColor,
-                        backgroundColor));
-            }
-        }
-
-        Task<int> IConsoleHost.PromptForChoice(string promptCaption, string promptMessage, IEnumerable<ChoiceDetails> choices, int defaultChoice)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IConsoleHost.PromptForChoiceResult(int promptId, int choiceResult)
-        {
-            //throw new NotImplementedException();
-        }
-
-        void IConsoleHost.UpdateProgress(long sourceId, ProgressDetails progressDetails)
-        {
-            //throw new NotImplementedException();
-        }
-
-        void IConsoleHost.ExitSession(int exitCode)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
+        #region Nested Classes
 
         private interface IPipelineExecutionRequest
         {
@@ -1098,6 +1077,8 @@ namespace Microsoft.PowerShell.EditorServices
                 // TODO: Deal with errors?
             }
         }
+
+        #endregion
     }
 }
 

@@ -6,11 +6,9 @@
 using Microsoft.PowerShell.EditorServices.Protocol.Client;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
-using Nito.AsyncEx;
+using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,12 +16,9 @@ using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
-    public class LanguageServerTests : IAsyncLifetime
+    public class LanguageServerTests : ServerTestsBase, IAsyncLifetime
     {
         private LanguageServiceClient languageServiceClient;
-
-        private ConcurrentDictionary<string, AsyncProducerConsumerQueue<object>> eventQueuePerType =
-            new ConcurrentDictionary<string, AsyncProducerConsumerQueue<object>>();
 
         public Task InitializeAsync()
         {
@@ -34,8 +29,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8) + ".log");
 
-            Console.WriteLine("        Output log at path: {0}", testLogPath);
+            System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
+            this.protocolClient =
             this.languageServiceClient =
                 new LanguageServiceClient(
                     new StdioClientChannel(
@@ -454,65 +450,52 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("Get-ChildItem\r\nGet-Location", expandedText);
         }
 
-        [Fact(Skip = "Choice prompt functionality is currently in transition to a new model.")]
+        [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesChoicePrompt()
         {
-            // TODO: This test is removed until a new choice prompt strategy is determined.
+            string choiceScript =
+                @"
+                $caption = ""Test Choice"";
+                $message = ""Make a selection"";
+                $choiceA = New-Object System.Management.Automation.Host.ChoiceDescription ""&Apple"",""Help for Apple"";
+                $choiceB = New-Object System.Management.Automation.Host.ChoiceDescription ""Banana"",""Help for Banana"";
+                $choices = [System.Management.Automation.Host.ChoiceDescription[]]($choiceA,$choiceB);
+                $host.ui.PromptForChoice($caption, $message, $choices, 1)";
 
-            //            string choiceScript =
-            //                @"
-            //                $caption = ""Test Choice"";
-            //                $message = ""Make a selection"";
-            //                $choiceA = new-Object System.Management.Automation.Host.ChoiceDescription ""&A"",""A"";
-            //                $choiceB = new-Object System.Management.Automation.Host.ChoiceDescription ""&B"",""B"";
-            //                $choices = [System.Management.Automation.Host.ChoiceDescription[]]($choiceA,$choiceB);
-            //                $response = $host.ui.PromptForChoice($caption, $message, $choices, 1)
-            //                $response";
+            Task<ShowChoicePromptNotification> choicePromptTask =
+                this.WaitForEvent(ShowChoicePromptNotification.Type);
 
-            //            await this.MessageWriter.WriteMessage(
-            //                new ReplExecuteRequest
-            //                {
-            //                    Arguments = new ReplExecuteArgs
-            //                    {
-            //                        CommandString = choiceScript
-            //                    }
-            //                });
+            // Execute the script but don't await the task yet because
+            // the choice prompt will block execution from completing
+            Task<EvaluateResponseBody> evaluateTask =
+                this.SendRequest(
+                    EvaluateRequest.Type,
+                    new EvaluateRequestArguments
+                    {
+                        Expression = choiceScript,
+                        Context = "repl"
+                    });
 
-            //            // Wait for the choice prompt event and check expected values
-            //            ReplPromptChoiceEvent replPromptChoiceEvent = this.WaitForMessage<ReplPromptChoiceEvent>();
-            //            Assert.Equal(1, replPromptChoiceEvent.Body.DefaultChoice);
+            // Wait for the choice prompt event and check expected values
+            ShowChoicePromptNotification showChoicePromptEvent = await choicePromptTask;
 
-            //            // Respond to the prompt event
-            //            await this.MessageWriter.WriteMessage(
-            //                new ReplPromptChoiceResponse
-            //                {
-            //                    Body = new ReplPromptChoiceResponseBody
-            //                    {
-            //                        Choice = 0
-            //                    }
-            //                });
+            Assert.Equal(1, showChoicePromptEvent.DefaultChoice);
 
-            //            // Wait for the selection to appear as output
-            //            ReplWriteOutputEvent replWriteLineEvent = this.WaitForMessage<ReplWriteOutputEvent>();
-            //            Assert.Equal("0", replWriteLineEvent.Body.LineContents);
-        }
+            // Prepare to receive script output
+            Task<OutputEventBody> outputTask = this.WaitForEvent(OutputEvent.Type);
 
-        private Task<TResult> SendRequest<TParams, TResult>(
-            RequestType<TParams, TResult> requestType, 
-            TParams requestParams)
-        {
-            return 
-                this.languageServiceClient.SendRequest(
-                    requestType, 
-                    requestParams);
-        }
+            // Respond to the prompt event
+            await this.SendEvent(
+                CompleteChoicePromptNotification.Type,
+                new CompleteChoicePromptNotification
+                {
+                    ChosenItem = "a"
+                });
 
-        private Task SendEvent<TParams>(EventType<TParams> eventType, TParams eventParams)
-        {
-            return 
-                this.languageServiceClient.SendEvent(
-                    eventType,
-                    eventParams);
+            // Wait for the selection to appear as output
+            await evaluateTask;
+            OutputEventBody choiceOutput = await outputTask;
+            Assert.Equal("0\r\n", choiceOutput.Output);
         }
 
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)
@@ -541,51 +524,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             if (diagnosticWaitTask != null)
             {
                 await diagnosticWaitTask;
-            }
-        }
-
-        private void QueueEventsForType<TParams>(EventType<TParams> eventType)
-        {
-            var eventQueue =
-                this.eventQueuePerType.AddOrUpdate(
-                    eventType.MethodName,
-                    new AsyncProducerConsumerQueue<object>(),
-                    (key, queue) => queue);
-
-            this.languageServiceClient.SetEventHandler(
-                eventType,
-                (p, ctx) =>
-                {
-                    return eventQueue.EnqueueAsync(p);   
-                });
-        }
-
-        private Task<TParams> WaitForEvent<TParams>(EventType<TParams> eventType)
-        {
-            // Use the event queue if one has been registered
-            AsyncProducerConsumerQueue<object> eventQueue = null;
-            if (this.eventQueuePerType.TryGetValue(eventType.MethodName, out eventQueue))
-            {
-                return 
-                    eventQueue
-                        .DequeueAsync()
-                        .ContinueWith<TParams>(
-                            task => (TParams)task.Result);
-            }
-            else
-            {
-                TaskCompletionSource<TParams> eventTask = new TaskCompletionSource<TParams>();
-
-                this.languageServiceClient.SetEventHandler(
-                    eventType,
-                    (p, ctx) =>
-                    {
-                        eventTask.SetResult(p);
-                        return Task.FromResult(true);
-                    },
-                    true);  // Override any existing handler
-
-                return eventTask.Task;
             }
         }
     }

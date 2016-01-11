@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Console;
 using System;
 using System.Management.Automation.Host;
 
@@ -23,18 +24,28 @@ namespace Microsoft.PowerShell.EditorServices
 
         #endregion
 
+        #region Properties
+
+        internal IConsoleHost ConsoleHost
+        {
+            get { return this.consoleHost; }
+            set
+            {
+                this.consoleHost = value;
+                this.hostUserInterface.ConsoleHost = value;
+            }
+        }
+
+        #endregion
+
         #region Constructors
         /// <summary>
         /// Creates a new instance of the ConsoleServicePSHost class
         /// with the given IConsoleHost implementation.
         /// </summary>
-        /// <param name="consoleHost">
-        /// The IConsoleHost that will be used to perform host actions for this class.
-        /// </param>
-        public ConsoleServicePSHost(IConsoleHost consoleHost)
+        public ConsoleServicePSHost()
         {
-            this.consoleHost = consoleHost;
-            this.hostUserInterface = new ConsoleServicePSHostUserInterface(consoleHost);
+            this.hostUserInterface = new ConsoleServicePSHostUserInterface();
         }
 
         #endregion
@@ -97,7 +108,10 @@ namespace Microsoft.PowerShell.EditorServices
 
         public override void SetShouldExit(int exitCode)
         {
-            this.consoleHost.ExitSession(exitCode);
+            if (this.consoleHost != null)
+            {
+                this.consoleHost.ExitSession(exitCode);
+            }
         }
 
         #endregion

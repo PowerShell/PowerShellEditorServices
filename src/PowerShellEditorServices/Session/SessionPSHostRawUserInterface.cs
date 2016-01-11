@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Management.Automation.Host;
@@ -18,8 +19,17 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private IConsoleHost consoleHost;
         private Size currentBufferSize = new Size(80, 100);
+
+        #endregion
+
+        #region Properties
+
+        internal IConsoleHost ConsoleHost
+        {
+            get;
+            set;
+        }
 
         #endregion
 
@@ -29,12 +39,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates a new instance of the ConsoleServicePSHostRawUserInterface
         /// class with the given IConsoleHost implementation.
         /// </summary>
-        /// <param name="consoleHost">
-        /// The IConsoleHost that will be used to perform host actions for this class.
-        /// </param>
-        public ConsoleServicePSHostRawUserInterface(IConsoleHost consoleHost)
+        public ConsoleServicePSHostRawUserInterface()
         {
-            this.consoleHost = consoleHost;
             this.ForegroundColor = ConsoleColor.White;
             this.BackgroundColor = ConsoleColor.Black;
         }

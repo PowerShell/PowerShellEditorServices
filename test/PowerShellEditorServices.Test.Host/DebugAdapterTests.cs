@@ -5,18 +5,15 @@
 
 using Microsoft.PowerShell.EditorServices.Protocol.Client;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
-    public class DebugAdapterTests : IAsyncLifetime
+    public class DebugAdapterTests : ServerTestsBase, IAsyncLifetime
     {
         private DebugAdapterClient debugAdapterClient;
         private string DebugScriptPath = 
@@ -31,8 +28,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8) + ".log");
 
-            Console.WriteLine("        Output log at path: {0}", testLogPath);
+            System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
+            this.protocolClient =
             this.debugAdapterClient =
                 new DebugAdapterClient(
                     new StdioClientChannel(
@@ -78,8 +76,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             // Abort script execution
             Task terminatedEvent = this.WaitForEvent(TerminatedEvent.Type);
-            await this.SendRequest(DisconnectRequest.Type, new object());
-            await terminatedEvent;
+            await 
+                Task.WhenAll(
+                    this.SendRequest(DisconnectRequest.Type, new object()),
+                    terminatedEvent);
         }
 
         [Fact]
@@ -95,51 +95,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             // Abort script execution
             Task terminatedEvent = this.WaitForEvent(TerminatedEvent.Type);
-            await this.SendRequest(DisconnectRequest.Type, new object());
-            await terminatedEvent;
+            await
+                Task.WhenAll(
+                    this.SendRequest(DisconnectRequest.Type, new object()),
+                    terminatedEvent);
         }
 
         private Task LaunchScript(string scriptPath)
         {
             return this.debugAdapterClient.LaunchScript(scriptPath);
-        }
-
-        private Task<TResult> SendRequest<TParams, TResult>(
-            RequestType<TParams, TResult> requestType, 
-            TParams requestParams)
-        {
-            return 
-                this.debugAdapterClient.SendRequest(
-                    requestType, 
-                    requestParams);
-        }
-
-        private Task SendEvent<TParams>(EventType<TParams> eventType, TParams eventParams)
-        {
-            return 
-                this.debugAdapterClient.SendEvent(
-                    eventType,
-                    eventParams);
-        }
-
-        private Task<TParams> WaitForEvent<TParams>(EventType<TParams> eventType)
-        {
-            TaskCompletionSource<TParams> eventTask = new TaskCompletionSource<TParams>();
-
-            this.debugAdapterClient.SetEventHandler(
-                eventType,
-                (p, ctx) =>
-                {
-                    if (!eventTask.Task.IsCompleted)
-                    {
-                        eventTask.SetResult(p);
-                    }
-
-                    return Task.FromResult(true);
-                },
-                true);  // Override any existing handler
-
-            return eventTask.Task;
         }
     }
 }

@@ -62,6 +62,12 @@
   <ItemGroup>
     <Compile Include="Analysis\AnalysisOutputWriter.cs" />
     <Compile Include="Analysis\AnalysisService.cs" />
+    <Compile Include="Console\ChoicePromptHandler.cs" />
+    <Compile Include="Console\ConsoleChoicePromptHandler.cs" />
+    <Compile Include="Console\ConsolePromptHandlerContext.cs" />
+    <Compile Include="Console\ConsoleService.cs" />
+    <Compile Include="Console\IPromptHandler.cs" />
+    <Compile Include="Console\IPromptHandlerContext.cs" />
     <Compile Include="Debugging\BreakpointDetails.cs" />
     <Compile Include="Debugging\DebugService.cs" />
     <Compile Include="Debugging\StackFrameDetails.cs" />
@@ -89,9 +95,9 @@
     <Compile Include="Language\SymbolReference.cs" />
     <Compile Include="Language\SymbolType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Session\ChoiceDetails.cs" />
+    <Compile Include="Console\ChoiceDetails.cs" />
     <Compile Include="Session\EditorSession.cs" />
-    <Compile Include="Session\IConsoleHost.cs" />
+    <Compile Include="Console\IConsoleHost.cs" />
     <Compile Include="Session\OutputType.cs" />
     <Compile Include="Session\OutputWrittenEventArgs.cs" />
     <Compile Include="Session\PowerShellExecutionResult.cs" />
@@ -103,7 +109,6 @@
     <Compile Include="Session\SessionPSHostRawUserInterface.cs" />
     <Compile Include="Session\SessionPSHostUserInterface.cs" />
     <Compile Include="Session\SessionStateChangedEventArgs.cs" />
-    <Compile Include="Session\SynchronizingConsoleHostWrapper.cs" />
     <Compile Include="Utility\Logger.cs" />
     <Compile Include="Utility\Validate.cs" />
     <Compile Include="Workspace\BufferRange.cs" />

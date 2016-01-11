@@ -64,6 +64,7 @@
     <Compile Include="DebugAdapter\AttachRequest.cs" />
     <Compile Include="DebugAdapter\Breakpoint.cs" />
     <Compile Include="DebugAdapter\ContinueRequest.cs" />
+    <Compile Include="Messages\PromptEvents.cs" />
     <Compile Include="Server\DebugAdapter.cs" />
     <Compile Include="Server\DebugAdapterBase.cs" />
     <Compile Include="Client\DebugAdapterClientBase.cs" />
@@ -101,6 +102,7 @@
     <Compile Include="LanguageServer\ExpandAliasRequest.cs" />
     <Compile Include="LanguageServer\Hover.cs" />
     <Compile Include="Client\LanguageClientBase.cs" />
+    <Compile Include="Server\IEventWriter.cs" />
     <Compile Include="Server\LanguageServer.cs" />
     <Compile Include="Server\LanguageServerBase.cs" />
     <Compile Include="LanguageServer\ShowOnlineHelpRequest.cs" />
@@ -132,6 +134,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="LanguageServer\References.cs" />
     <Compile Include="Server\LanguageServerSettings.cs" />
+    <Compile Include="Server\PromptHandlers.cs" />
     <Compile Include="Server\ProtocolServer.cs" />
   </ItemGroup>
   <ItemGroup>
