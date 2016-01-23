@@ -737,7 +737,7 @@ function __Expand-Alias {
             return symbolName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        protected async Task HandleEvaluateRequest(
+        protected Task HandleEvaluateRequest(
             DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
             RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
         {
@@ -749,16 +749,25 @@ function __Expand-Alias {
                 this.editorSession.PowerShellContext.ExecuteScriptString(
                     evaluateParams.Expression,
                     true,
-                    true).ConfigureAwait(false);
+                    true);
 
-            // Return an empty result since the result value is irrelevant
-            // for this request in the LanguageServer
-            await requestContext.SendResult(
-                new DebugAdapterMessages.EvaluateResponseBody
+            // Return the execution result after the task completes so that the
+            // caller knows when command execution completed.
+            executeTask.ContinueWith(
+                (task) =>
                 {
-                    Result = "",
-                    VariablesReference = 0
+                    // Return an empty result since the result value is irrelevant
+                    // for this request in the LanguageServer
+                    return
+                        requestContext.SendResult(
+                            new DebugAdapterMessages.EvaluateResponseBody
+                            {
+                                Result = "",
+                                VariablesReference = 0
+                            });
                 });
+
+            return Task.FromResult(true);
         }
 
         #endregion
