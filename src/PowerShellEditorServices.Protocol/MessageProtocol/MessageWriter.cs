@@ -6,7 +6,6 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Nito.AsyncEx;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;

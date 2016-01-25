@@ -4,7 +4,6 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Utility;
-using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -25,6 +24,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             new Dictionary<string, Func<Message, MessageWriter, Task>>();
 
         private Action<Message> responseHandler;
+
+        private CancellationTokenSource messageLoopCancellationToken =
+            new CancellationTokenSource();
 
         #endregion
 
@@ -65,22 +67,24 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         public void Start()
         {
+
             // Start the main message loop thread.  The Task is
             // not explicitly awaited because it is running on
             // an independent background thread.
-            this.messageLoopThread = new AsyncContextThread(true);
+            this.messageLoopThread = new AsyncContextThread("Message Dispatcher");
             this.messageLoopThread
-                .Factory
-                .Run(this.ListenForMessages)
+                .Run(() => this.ListenForMessages(this.messageLoopCancellationToken.Token))
                 .ContinueWith(this.OnListenTaskCompleted);
         }
 
         public void Stop()
         {
-            // By disposing the thread we cancel all existing work
-            // and cause the thread to be destroyed.
+            // Stop the message loop thread
             if (this.messageLoopThread != null)
-                this.messageLoopThread.Dispose();
+            {
+                this.messageLoopCancellationToken.Cancel();
+                this.messageLoopThread.Stop();
+            }
         }
 
         public void SetRequestHandler<TParams, TResult>(
@@ -181,13 +185,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Private Methods
 
-        private async Task ListenForMessages()
+        private async Task ListenForMessages(CancellationToken cancellationToken)
         {
             this.SynchronizationContext = SynchronizationContext.Current;
 
             // Run the message loop
             bool isRunning = true;
-            while (isRunning)
+            while (isRunning && !cancellationToken.IsCancellationRequested)
             {
                 Message newMessage = null;
 

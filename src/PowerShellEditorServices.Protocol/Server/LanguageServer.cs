@@ -8,7 +8,6 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 using Microsoft.PowerShell.EditorServices.Utility;
-using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -780,7 +779,7 @@ function __Expand-Alias {
             if (!this.currentSettings.ScriptAnalysis.Enable.Value)
             {
                 // If the user has disabled script analysis, skip it entirely
-                return TaskConstants.Completed;
+                return Task.FromResult(true);
             }
 
             // If there's an existing task, attempt to cancel it
@@ -806,7 +805,9 @@ function __Expand-Alias {
                         "Exception while cancelling analysis task:\n\n{0}",
                         e.ToString()));
 
-                return TaskConstants.Canceled;
+                TaskCompletionSource<bool> cancelTask = new TaskCompletionSource<bool>();
+                cancelTask.SetCanceled();
+                return cancelTask.Task;
             }
 
             // Create a fresh cancellation token and then start the task.
@@ -826,7 +827,7 @@ function __Expand-Alias {
                 TaskCreationOptions.None,
                 TaskScheduler.Default);
 
-            return TaskConstants.Completed;
+            return Task.FromResult(true);
         }
 
         private static async Task DelayThenInvokeDiagnostics(

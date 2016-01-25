@@ -5,7 +5,6 @@
 
 using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Utility;
-using Nito.AsyncEx;
 using System;
 using System.Collections;
 using System.Globalization;
@@ -44,8 +43,7 @@ namespace Microsoft.PowerShell.EditorServices
         private TaskCompletionSource<IPipelineExecutionRequest> pipelineResultTask;
 
         private object runspaceMutex = new object();
-        private RunspaceHandle currentRunspaceHandle;
-        private IAsyncWaitQueue<RunspaceHandle> runspaceWaitQueue = new DefaultAsyncWaitQueue<RunspaceHandle>();
+        private AsyncQueue<RunspaceHandle> runspaceWaitQueue = new AsyncQueue<RunspaceHandle>();
 
         #endregion
 
@@ -115,6 +113,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.ownsInitialRunspace = true;
 
             this.Initialize(runspace);
+
         }
 
         /// <summary>
@@ -164,6 +163,10 @@ namespace Microsoft.PowerShell.EditorServices
 #endif
 
             this.SessionState = PowerShellContextState.Ready;
+
+            // Now that the runspace is ready, enqueue it for first use
+            RunspaceHandle runspaceHandle = new RunspaceHandle(this.currentRunspace, this);
+            this.runspaceWaitQueue.EnqueueAsync(runspaceHandle).Wait();
         }
 
         private Version GetPowerShellVersion()
@@ -198,21 +201,19 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A RunspaceHandle instance that gives access to the session's runspace.</returns>
         public Task<RunspaceHandle> GetRunspaceHandle()
         {
-            lock (this.runspaceMutex)
-            {
-                if (this.currentRunspaceHandle == null)
-                {
-                    this.currentRunspaceHandle = new RunspaceHandle(this.currentRunspace, this);
-                    TaskCompletionSource<RunspaceHandle> tcs = new TaskCompletionSource<RunspaceHandle>();
-                    tcs.SetResult(this.currentRunspaceHandle);
-                    return tcs.Task;
-                }
-                else
-                {
-                    // TODO: Use CancellationToken?
-                    return this.runspaceWaitQueue.Enqueue();
-                }
-            }
+            return this.GetRunspaceHandle(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Gets a RunspaceHandle for the session's runspace.  This
+        /// handle is used to gain temporary ownership of the runspace
+        /// so that commands can be executed against it directly.
+        /// </summary>
+        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the request.</param>
+        /// <returns>A RunspaceHandle instance that gives access to the session's runspace.</returns>
+        public Task<RunspaceHandle> GetRunspaceHandle(CancellationToken cancellationToken)
+        {
+            return this.runspaceWaitQueue.DequeueAsync(cancellationToken);
         }
 
         /// <summary>
@@ -532,30 +533,17 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Validate.IsNotNull("runspaceHandle", runspaceHandle);
 
-            IDisposable dequeuedTask = null;
-
-            lock (this.runspaceMutex)
+            if (this.runspaceWaitQueue.IsEmpty)
             {
-                if (runspaceHandle != this.currentRunspaceHandle)
-                {
-                    throw new InvalidOperationException("Released runspace handle was not the current handle.");
-                }
-
-                this.currentRunspaceHandle = null;
-
-                if (!this.runspaceWaitQueue.IsEmpty)
-                {
-                    this.currentRunspaceHandle = new RunspaceHandle(this.currentRunspace, this);
-                    dequeuedTask =
-                        this.runspaceWaitQueue.Dequeue(
-                            this.currentRunspaceHandle);
-                }
+                var newRunspaceHandle = new RunspaceHandle(this.currentRunspace, this);
+                this.runspaceWaitQueue.EnqueueAsync(newRunspaceHandle).Wait();
             }
-
-            // If a queued task was dequeued, call Dispose to cause it to be executed.
-            if (dequeuedTask != null)
+            else
             {
-                dequeuedTask.Dispose();
+                // Write the situation to the log since this shouldn't happen
+                Logger.Write(
+                    LogLevel.Error,
+                    "The PowerShellContext.runspaceWaitQueue has more than one item");
             }
         }
 
