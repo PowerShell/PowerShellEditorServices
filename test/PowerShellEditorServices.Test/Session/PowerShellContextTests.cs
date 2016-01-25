@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Nito.AsyncEx;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
     public class PowerShellContextTests : IDisposable
     {
         private PowerShellContext powerShellContext;
-        private AsyncProducerConsumerQueue<SessionStateChangedEventArgs> stateChangeQueue;
+        private AsyncQueue<SessionStateChangedEventArgs> stateChangeQueue;
 
         private const string DebugTestFilePath =
             @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1";
@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         {
             this.powerShellContext = new PowerShellContext();
             this.powerShellContext.SessionStateChanged += OnSessionStateChanged;
-            this.stateChangeQueue = new AsyncProducerConsumerQueue<SessionStateChangedEventArgs>();
+            this.stateChangeQueue = new AsyncQueue<SessionStateChangedEventArgs>();
         }
 
         public void Dispose()
@@ -106,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         private void OnSessionStateChanged(object sender, SessionStateChangedEventArgs e)
         {
-            this.stateChangeQueue.Enqueue(e);
+            this.stateChangeQueue.EnqueueAsync(e).Wait();
         }
 
         #endregion

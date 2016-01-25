@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Nito.AsyncEx;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Linq;
 using System.Management.Automation;
@@ -22,10 +22,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         private PowerShellContext powerShellContext;
         private SynchronizationContext runnerContext;
 
-        private AsyncProducerConsumerQueue<DebuggerStopEventArgs> debuggerStoppedQueue =
-            new AsyncProducerConsumerQueue<DebuggerStopEventArgs>();
-        private AsyncProducerConsumerQueue<SessionStateChangedEventArgs> sessionStateQueue =
-            new AsyncProducerConsumerQueue<SessionStateChangedEventArgs>();
+        private AsyncQueue<DebuggerStopEventArgs> debuggerStoppedQueue =
+            new AsyncQueue<DebuggerStopEventArgs>();
+        private AsyncQueue<SessionStateChangedEventArgs> sessionStateQueue =
+            new AsyncQueue<SessionStateChangedEventArgs>();
 
         public DebugServiceTests()
         {
@@ -45,12 +45,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.runnerContext = SynchronizationContext.Current;
         }
 
-        void powerShellContext_SessionStateChanged(object sender, SessionStateChangedEventArgs e)
+        async void powerShellContext_SessionStateChanged(object sender, SessionStateChangedEventArgs e)
         {
             // Skip all transitions except those back to 'Ready'
             if (e.NewSessionState == PowerShellContextState.Ready)
             {
-                this.sessionStateQueue.Enqueue(e);
+                await this.sessionStateQueue.EnqueueAsync(e);
             }
         }
 
@@ -59,9 +59,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // TODO: Needed?
         }
 
-        void debugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
+        async void debugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
         {
-            this.debuggerStoppedQueue.Enqueue(e);
+            await this.debuggerStoppedQueue.EnqueueAsync(e);
         }
 
         public void Dispose()

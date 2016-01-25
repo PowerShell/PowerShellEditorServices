@@ -1,6 +1,11 @@
-﻿using Microsoft.PowerShell.EditorServices.Protocol.Client;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using Microsoft.PowerShell.EditorServices.Protocol.Client;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Nito.AsyncEx;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
@@ -11,8 +16,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
     {
         protected ProtocolClient protocolClient;
 
-        private ConcurrentDictionary<string, AsyncProducerConsumerQueue<object>> eventQueuePerType =
-            new ConcurrentDictionary<string, AsyncProducerConsumerQueue<object>>();
+        private ConcurrentDictionary<string, AsyncQueue<object>> eventQueuePerType =
+            new ConcurrentDictionary<string, AsyncQueue<object>>();
 
         protected Task<TResult> SendRequest<TParams, TResult>(
             RequestType<TParams, TResult> requestType, 
@@ -37,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             var eventQueue =
                 this.eventQueuePerType.AddOrUpdate(
                     eventType.MethodName,
-                    new AsyncProducerConsumerQueue<object>(),
+                    new AsyncQueue<object>(),
                     (key, queue) => queue);
 
             this.protocolClient.SetEventHandler(
@@ -55,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Task<TParams> eventTask = null;
 
             // Use the event queue if one has been registered
-            AsyncProducerConsumerQueue<object> eventQueue = null;
+            AsyncQueue<object> eventQueue = null;
             if (this.eventQueuePerType.TryGetValue(eventType.MethodName, out eventQueue))
             {
                 eventTask =
@@ -101,3 +106,4 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
     }
 }
+
