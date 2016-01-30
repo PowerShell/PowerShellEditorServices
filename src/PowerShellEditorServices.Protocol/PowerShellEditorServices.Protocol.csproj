@@ -52,6 +52,8 @@
     <Compile Include="DebugAdapter\AttachRequest.cs" />
     <Compile Include="DebugAdapter\Breakpoint.cs" />
     <Compile Include="DebugAdapter\ContinueRequest.cs" />
+    <Compile Include="LanguageServer\FindModuleRequest.cs" />
+    <Compile Include="LanguageServer\InstallModuleRequest.cs" />
     <Compile Include="Messages\PromptEvents.cs" />
     <Compile Include="Server\DebugAdapter.cs" />
     <Compile Include="Server\DebugAdapterBase.cs" />
