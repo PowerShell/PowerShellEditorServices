@@ -67,6 +67,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
             this.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
+
+            this.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
+            this.SetRequestHandler(InstallModuleRequest.Type, this.HandleInstallModuleRequest);
+
             this.SetEventHandler(CompleteChoicePromptNotification.Type, this.HandleCompleteChoicePromptNotification);
 
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
@@ -128,11 +132,27 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             psCommand.AddArgument(helpParams);
             psCommand.AddParameter("Online");
 
-            await editorSession.PowerShellContext.ExecuteCommand<object>(
-                    psCommand);
+            await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
 
             await requestContext.SendResult(null);
         }
+
+        private async Task HandleInstallModuleRequest(
+            string moduleName,
+            RequestContext<object> requestContext
+        )
+        {
+            var script = string.Format("Install-Module -Name {0} -Scope CurrentUser", moduleName);
+
+            var executeTask =
+               editorSession.PowerShellContext.ExecuteScriptString(
+                   script,
+                   true,
+                   true).ConfigureAwait(false);
+
+            await requestContext.SendResult(null);
+        }
+
 
         private async Task HandleExpandAliasRequest(
             string content,
@@ -170,6 +190,28 @@ function __Expand-Alias {
             var result = await this.editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
 
             await requestContext.SendResult(result.First().ToString());
+        }
+
+        private async Task HandleFindModuleRequest(
+            object param,
+            RequestContext<object> requestContext)
+        {
+            var psCommand = new PSCommand();
+            psCommand.AddScript("Find-Module | Select Name, Description");
+
+            var modules = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+
+            var moduleList = new List<PSModuleMessage>();
+
+            if (modules != null)
+            {
+                foreach (dynamic m in modules)
+                {
+                    moduleList.Add(new PSModuleMessage { Name = m.Name, Description = m.Description });
+                }
+            }
+
+            await requestContext.SendResult(moduleList);
         }
 
         protected Task HandleCompleteChoicePromptNotification(
