@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -74,6 +76,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetEventHandler(CompleteChoicePromptNotification.Type, this.HandleCompleteChoicePromptNotification);
 
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
+
+            this.SetRequestHandler(ConvertToCSharpClassRequest.Type, this.HandleConvertToCSharpClassRequest);
+            this.SetRequestHandler(ConvertToPowerShellClassRequest.Type, this.HandleConvertToPowerShellClassRequest);
         }
 
         protected override void Shutdown()
@@ -190,6 +195,54 @@ function __Expand-Alias {
             var result = await this.editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
 
             await requestContext.SendResult(result.First().ToString());
+        }
+
+        private async Task HandleConvertToCSharpClassRequest(
+            string text,
+            RequestContext<string> requestContext)
+        {
+            var sb = await ConvertToClass(text, "csharp");
+
+            await requestContext.SendResult(sb.ToString());
+        }
+
+        private async Task HandleConvertToPowerShellClassRequest(
+            string text,
+            RequestContext<string> requestContext)
+        {
+            var sb = await ConvertToClass(text, "powershell");
+
+            await requestContext.SendResult(sb.ToString());
+        }
+
+        private async Task<StringBuilder> ConvertToClass(string text, string codeGen)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var reader = new StreamReader(assembly.GetManifestResourceStream("Microsoft.PowerShell.EditorServices.Protocol.Server.ConvertToClass.psm1"));
+            var script = reader.ReadToEnd();
+
+            reader.Close();
+
+            var psCommand = new PSCommand();
+            psCommand.AddScript(script);
+            await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+
+            psCommand = new PSCommand();
+            psCommand
+                .AddCommand("ConvertTo-Class")
+                .AddArgument(text)
+                .AddParameter("CodeGen", codeGen);
+
+            var result = await this.editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
+
+            var sb = new StringBuilder();
+
+            foreach (var item in result)
+            {
+                sb.AppendLine(item);
+            }
+
+            return sb;
         }
 
         private async Task HandleFindModuleRequest(
