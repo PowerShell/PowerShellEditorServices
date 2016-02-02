@@ -994,10 +994,10 @@ function __Expand-Alias {
                 // Look for type encoded in the tooltip for parameters and variables.
                 // Display PowerShell type names in [] to be consistent with PowerShell syntax
                 // and now the debugger displays type names.
-                var matches = Regex.Matches(completionDetails.ToolTipText, @"^\[(.+)\]");
+                var matches = Regex.Matches(completionDetails.ToolTipText, @"^(\[.+\])");
                 if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
                 {
-                    detailString = "[" + matches[0].Groups[1].Value + "]";
+                    detailString = matches[0].Groups[1].Value;
                 }
 
                 // PowerShell returns ListItemText for parameters & variables that is not prefixed
