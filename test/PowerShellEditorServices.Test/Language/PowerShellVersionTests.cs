@@ -58,13 +58,23 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             }
 
             FileInfo fi = new FileInfo(project);
+            string solutionDir = fi.Directory.Parent.Parent.FullName;
             var outPath = Path.GetTempPath();
 
             var p = new Process();
             p.StartInfo.FileName = msbuild;
-            p.StartInfo.Arguments = string.Format(@" {0} /p:Configuration=Debug /t:Build /fileLogger /flp1:logfile=errors.txt;errorsonly  /p:SolutionDir={1} /p:SolutionName=PowerShellEditorServices /p:DefineConstants=PowerShellv{2} /p:OutDir={3}", project, fi.Directory.Parent.Parent.FullName, version, outPath);
+            p.StartInfo.Arguments = string.Format(@" {0} /p:Configuration=Debug /t:Build /fileLogger " + 
+                                                  @"/flp1:logfile=errors.txt;errorsonly  /p:SolutionDir={1} " + 
+                                                  @"/p:SolutionName=PowerShellEditorServices " + 
+                                                  @"/p:DefineConstants=PowerShellv{2} /p:OutDir={3}", 
+                                                  project, solutionDir, version, outPath);
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.CreateNoWindow = true;
+
+            // On my system, the parent process (VS I guess), defines an environment variable - PLATFORM=X64 - 
+            // which breaks the build of the versioned C# project files. Removing it fixes the issue.
+            p.StartInfo.EnvironmentVariables.Remove("Platform");
+
             p.Start();
             p.WaitForExit(60000);
             if (!p.HasExited)
