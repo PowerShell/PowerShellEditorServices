@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         c => c.Label == "$ConsoleFileName");
 
             Assert.NotNull(consoleFileNameItem);
-            Assert.Equal("string", consoleFileNameItem.Detail);
+            Assert.Equal("[string]", consoleFileNameItem.Detail);
         }
 
         [Fact(Skip = "Skipped until variable documentation gathering is added back.")]

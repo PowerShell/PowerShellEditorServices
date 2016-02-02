@@ -108,6 +108,11 @@ namespace Microsoft.PowerShell.EditorServices
         ParameterValue,
 
         /// <summary>
+        /// Identifies a completion for a .NET property.
+        /// </summary>
+        Property,
+
+        /// <summary>
         /// Identifies a completion for a variable name.
         /// </summary>
         Variable,
@@ -148,6 +153,11 @@ namespace Microsoft.PowerShell.EditorServices
         public string CompletionText { get; private set; }
 
         /// <summary>
+        /// Gets the text that should be dispayed in a drop-down completion list.
+        /// </summary>
+        public string ListItemText { get; private set; }
+
+        /// <summary>
         /// Gets the text that can be used to display a tooltip for
         /// the statement at the requested file offset.
         /// </summary>
@@ -183,6 +193,7 @@ namespace Microsoft.PowerShell.EditorServices
             return new CompletionDetails
             {
                 CompletionText = completionResult.CompletionText,
+                ListItemText = completionResult.ListItemText,
                 ToolTipText = toolTipText,
                 SymbolTypeName = ExtractSymbolTypeNameFromToolTip(completionResult.ToolTip),
                 CompletionType = 
@@ -195,12 +206,14 @@ namespace Microsoft.PowerShell.EditorServices
             string completionText,
             CompletionType completionType,
             string toolTipText = null,
-            string symbolTypeName = null)
+            string symbolTypeName = null,
+            string listItemText = null)
         {
             return new CompletionDetails
             {
                 CompletionText = completionText,
                 CompletionType = completionType,
+                ListItemText = listItemText,
                 ToolTipText = toolTipText,
                 SymbolTypeName = symbolTypeName
             };
@@ -238,9 +251,10 @@ namespace Microsoft.PowerShell.EditorServices
         {
             return
                 string.Format(
-                    "{0}{1}{2}{3}",
+                    "{0}{1}{2}{3}{4}",
                     this.CompletionText,
                     this.CompletionType,
+                    this.ListItemText,
                     this.ToolTipText,
                     this.SymbolTypeName).GetHashCode();
         }
@@ -265,6 +279,9 @@ namespace Microsoft.PowerShell.EditorServices
 
                 case CompletionResultType.ParameterValue:
                     return CompletionType.ParameterValue;
+
+                case CompletionResultType.Property:
+                    return CompletionType.Property;
 
                 case CompletionResultType.Variable:
                     return CompletionType.Variable;

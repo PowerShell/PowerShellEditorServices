@@ -431,10 +431,6 @@ function __Expand-Alias {
 
             if (completionResults != null)
             {
-                // By default, insert the completion at the current location
-                int startEditColumn = textDocumentPosition.Position.Character;
-                int endEditColumn = textDocumentPosition.Position.Character;
-
                 completionItems =
                     completionResults
                         .Completions
@@ -918,7 +914,7 @@ function __Expand-Alias {
             Logger.Write(LogLevel.Verbose, "Analysis complete.");
         }
 
-        private async static Task PublishScriptDiagnostics(
+        private static async Task PublishScriptDiagnostics(
             ScriptFile scriptFile,
             ScriptFileMarker[] semanticMarkers,
             EventContext eventContext)
@@ -989,23 +985,59 @@ function __Expand-Alias {
             BufferRange completionRange)
         {
             string detailString = null;
+            string documentationString = null;
+            string labelString = completionDetails.ListItemText;
 
-            if (completionDetails.CompletionType == CompletionType.Variable)
+            if ((completionDetails.CompletionType == CompletionType.Variable) ||
+                (completionDetails.CompletionType == CompletionType.ParameterName))
             {
-                // Look for variable type encoded in the tooltip
+                // Look for type encoded in the tooltip for parameters and variables.
+                // Display PowerShell type names in [] to be consistent with PowerShell syntax
+                // and now the debugger displays type names.
                 var matches = Regex.Matches(completionDetails.ToolTipText, @"^\[(.+)\]");
-
-                if (matches.Count > 0 && matches[0].Groups.Count > 1)
+                if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
                 {
-                    detailString = matches[0].Groups[1].Value;
+                    detailString = "[" + matches[0].Groups[1].Value + "]";
+                }
+
+                // PowerShell returns ListItemText for parameters & variables that is not prefixed
+                // and it needs to be or the completion will not appear for these CompletionTypes.
+                string prefix = (completionDetails.CompletionType == CompletionType.Variable) ? "$" : "-";
+                labelString = prefix + completionDetails.ListItemText;
+            }
+            else if ((completionDetails.CompletionType == CompletionType.Method) ||
+                     (completionDetails.CompletionType == CompletionType.Property))
+            {
+                // We have a raw signature for .NET members, heck let's display it.  It's
+                // better than nothing.
+                documentationString = completionDetails.ToolTipText;
+            }
+            else if (completionDetails.CompletionType == CompletionType.Command)
+            {
+                // For Commands, let's extract the resolved command or the path for an exe
+                // from the ToolTipText - if there is any ToolTipText.
+                if (completionDetails.ToolTipText != null)
+                {
+                    // Don't display ToolTipText if it is the same as the ListItemText.
+                    // Reject command syntax ToolTipText - it's too much to display as a detailString.
+                    if (!completionDetails.ListItemText.Equals(
+                            completionDetails.ToolTipText,
+                            StringComparison.OrdinalIgnoreCase) &&
+                        !Regex.IsMatch(completionDetails.ToolTipText, 
+                            @"^\s*" + completionDetails.ListItemText + @"\s+\["))
+                    {
+                        detailString = completionDetails.ToolTipText;
+                    }
                 }
             }
 
             return new CompletionItem
             {
-                Label = completionDetails.CompletionText,
+                InsertText = completionDetails.CompletionText,
+                Label = labelString,
                 Kind = MapCompletionKind(completionDetails.CompletionType),
                 Detail = detailString,
+                Documentation = documentationString,
                 TextEdit = new TextEdit
                 {
                     NewText = completionDetails.CompletionText,
