@@ -431,13 +431,15 @@ function __Expand-Alias {
 
             if (completionResults != null)
             {
+                int sortIndex = 1;
                 completionItems =
                     completionResults
                         .Completions
                         .Select(
                             c => CreateCompletionItem(
                                 c,
-                                completionResults.ReplacedRange))
+                                completionResults.ReplacedRange,
+                                sortIndex++))
                         .ToArray();
             }
             else
@@ -982,7 +984,8 @@ function __Expand-Alias {
 
         private static CompletionItem CreateCompletionItem(
             CompletionDetails completionDetails,
-            BufferRange completionRange)
+            BufferRange completionRange,
+            int sortIndex)
         {
             string detailString = null;
             string documentationString = null;
@@ -1031,6 +1034,18 @@ function __Expand-Alias {
                 }
             }
 
+            // We want a special "sort order" for parameters that is not lexicographical.
+            // Fortunately, PowerShell returns parameters in the preferred sort order by
+            // default (with common params at the end). We just need to make sure the default
+            // order also be the lexicographical order which we do by prefixig the ListItemText
+            // with a leading 0's four digit index.  This would not sort correctly for a list
+            // > 999 parameters but surely we won't have so many items in the "parameter name" 
+            // completion list. Technically we don't need the ListItemText at all but it may come
+            // in handy during debug.
+            var sortText = (completionDetails.CompletionType == CompletionType.ParameterName)
+                  ? string.Format("{0:D3}{1}", sortIndex, completionDetails.ListItemText)
+                  : null;
+
             return new CompletionItem
             {
                 InsertText = completionDetails.CompletionText,
@@ -1038,6 +1053,7 @@ function __Expand-Alias {
                 Kind = MapCompletionKind(completionDetails.CompletionType),
                 Detail = detailString,
                 Documentation = documentationString,
+                SortText = sortText,
                 TextEdit = new TextEdit
                 {
                     NewText = completionDetails.CompletionText,
