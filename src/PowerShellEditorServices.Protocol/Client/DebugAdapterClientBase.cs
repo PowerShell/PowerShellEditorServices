@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 {
-    public class DebugAdapterClient : ProtocolClient
+    public class DebugAdapterClient : ProtocolEndpoint
     {
         public DebugAdapterClient(ChannelBase clientChannel)
             : base(clientChannel, MessageProtocolType.DebugAdapter)

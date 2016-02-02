@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
     /// <summary>
     /// Provides a base implementation for language server clients.
     /// </summary>
-    public abstract class LanguageClientBase : ProtocolClient
+    public abstract class LanguageClientBase : ProtocolEndpoint
     {
         /// <summary>
         /// Initializes an instance of the language client using the

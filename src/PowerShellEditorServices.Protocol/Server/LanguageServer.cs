@@ -20,7 +20,7 @@ using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugA
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
-    public class LanguageServer : LanguageServerBase, IEventWriter
+    public class LanguageServer : LanguageServerBase
     {
         private static CancellationTokenSource existingRequestCancellation;
 
@@ -41,7 +41,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // TODO: This will change later once we have a general REPL available
             // in VS Code.
             this.editorSession.ConsoleService.PushPromptHandlerContext(
-                new ProtocolPromptHandlerContext(this));
+                new ProtocolPromptHandlerContext(
+                    this,
+                    this.editorSession.ConsoleService));
         }
 
         protected override void Initialize()

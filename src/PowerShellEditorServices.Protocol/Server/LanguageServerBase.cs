@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
-    public abstract class LanguageServerBase : ProtocolServer
+    public abstract class LanguageServerBase : ProtocolEndpoint
     {
         private bool isStarted;
         private ChannelBase serverChannel;
@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.serverChannel = serverChannel;
         }
 
-        protected override void OnStart()
+        protected override Task OnStart()
         {
             // Register handlers for server lifetime messages
             this.SetRequestHandler(ShutdownRequest.Type, this.HandleShutdownRequest);
@@ -30,11 +30,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // Initialize the implementation class
             this.Initialize();
+
+            return Task.FromResult(true);
         }
 
-        protected override void OnStop()
+        protected override Task OnStop()
         {
             this.Shutdown();
+
+            return Task.FromResult(true);
         }
 
         /// <summary>
