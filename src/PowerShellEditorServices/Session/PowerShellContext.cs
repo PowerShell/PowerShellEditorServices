@@ -435,8 +435,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task ExecuteScriptAtPath(string scriptPath)
         {
+            // If we don't escape wildcard characters in the script path, the script can
+            // fail to execute if say the script name was foo][.ps1.
+            // Related to issue #123.
+            string escapedScriptPath = DebugService.EscapeWilcardsInPath(scriptPath);
+
             PSCommand command = new PSCommand();
-            command.AddCommand(scriptPath);
+            command.AddCommand(escapedScriptPath);
 
             await this.ExecuteCommand<object>(command, true);
         }
