@@ -57,16 +57,6 @@ namespace Microsoft.PowerShell.EditorServices
         #region Public Methods
 
         /// <summary>
-        /// Returns the passed in path with the [ and ] wildcard characters escaped.
-        /// </summary>
-        /// <param name="path">The path to process.</param>
-        /// <returns>The path with [ and ] escaped.</returns>
-        public static string EscapeWilcardsInPath(string path)
-        {
-            return path.Replace("[", "`[").Replace("]", "`]");
-        }
-
-        /// <summary>
         /// Sets the list of breakpoints for the current debugging session.
         /// </summary>
         /// <param name="scriptFile">The ScriptFile in which breakpoints will be set.</param>
@@ -89,7 +79,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
                 // quoted and have those wildcard chars escaped.
-                string escapedScriptPath = EscapeWilcardsInPath(scriptFile.FilePath);
+                string escapedScriptPath = PowerShellContext.EscapeWildcardsInPath(scriptFile.FilePath);
 
                 PSCommand psCommand = new PSCommand();
                 psCommand.AddCommand("Set-PSBreakpoint");
