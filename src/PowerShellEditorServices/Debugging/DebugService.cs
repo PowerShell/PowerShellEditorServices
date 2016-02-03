@@ -77,9 +77,13 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (lineNumbers.Length > 0)
             {
+                // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
+                // quoted and have those wildcard chars escaped.
+                string escapedScriptPath = PowerShellContext.EscapeWildcardsInPath(scriptFile.FilePath);
+
                 PSCommand psCommand = new PSCommand();
                 psCommand.AddCommand("Set-PSBreakpoint");
-                psCommand.AddParameter("Script", scriptFile.FilePath);
+                psCommand.AddParameter("Script", escapedScriptPath);
                 psCommand.AddParameter("Line", lineNumbers.Length > 0 ? lineNumbers : null);
 
                 resultBreakpoints =

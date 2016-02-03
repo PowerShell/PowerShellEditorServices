@@ -435,8 +435,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task ExecuteScriptAtPath(string scriptPath)
         {
+            // If we don't escape wildcard characters in the script path, the script can
+            // fail to execute if say the script name was foo][.ps1.
+            // Related to issue #123.
+            string escapedScriptPath = EscapeWildcardsInPath(scriptPath);
+
             PSCommand command = new PSCommand();
-            command.AddCommand(scriptPath);
+            command.AddCommand(escapedScriptPath);
 
             await this.ExecuteCommand<object>(command, true);
         }
@@ -545,6 +550,16 @@ namespace Microsoft.PowerShell.EditorServices
                     LogLevel.Error,
                     "The PowerShellContext.runspaceWaitQueue has more than one item");
             }
+        }
+
+        /// <summary>
+        /// Returns the passed in path with the [ and ] wildcard characters escaped.
+        /// </summary>
+        /// <param name="path">The path to process.</param>
+        /// <returns>The path with [ and ] escaped.</returns>
+        internal static string EscapeWildcardsInPath(string path)
+        {
+            return path.Replace("[", "`[").Replace("]", "`]");
         }
 
         #endregion
