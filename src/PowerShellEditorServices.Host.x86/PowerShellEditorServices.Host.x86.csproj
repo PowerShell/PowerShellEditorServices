@@ -53,7 +53,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Microsoft.PowerShell.EditorServices.Host.DebugAdapter.cmd">
+    <Content Include="Microsoft.PowerShell.EditorServices.Host.DebugAdapter.x86.cmd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="..\PowerShellEditorServices.Host\App.config">
