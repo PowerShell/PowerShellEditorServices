@@ -12,11 +12,17 @@
     <description>$description$</description>
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
     <tags>PowerShell editor development language debugging</tags>
-    <dependencies> 
+    <dependencies>
       <group>
         <dependency id="Microsoft.PowerShell.EditorServices" version="$version$" />
-        <dependency id="Microsoft.PowerShell.EditorServices.Protocol" version="$version$" />      
+        <dependency id="Microsoft.PowerShell.EditorServices.Protocol" version="$version$" />
       </group>
-    </dependencies>      
-  </metadata>  
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin\$configuration$\$id$.exe" target="lib\net45\" />
+    <file src="bin\$configuration$\$id$.DebugAdapter.cmd" target="content\" />
+    <file src="..\PowerShellEditorServices.Host.x86\bin\$configuration$\$id$.x86.exe" target="lib\net45\" />
+    <file src="..\PowerShellEditorServices.Host.x86\bin\$configuration$\$id$.DebugAdapter.x86.cmd" target="content\" />
+  </files>
 </package>
