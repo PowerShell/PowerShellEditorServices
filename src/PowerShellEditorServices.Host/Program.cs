@@ -18,6 +18,28 @@ namespace Microsoft.PowerShell.EditorServices.Host
         [STAThread]
         static void Main(string[] args)
         {
+#if DEBUG
+            bool waitForDebugger =
+                args.Any(
+                    arg => 
+                        string.Equals(
+                            arg,
+                            "/waitForDebugger",
+                            StringComparison.InvariantCultureIgnoreCase));
+
+            // Should we wait for the debugger before starting?
+            if (waitForDebugger)
+            {
+                // Wait for 25 seconds and then continue
+                int waitCountdown = 25;
+                while (!Debugger.IsAttached && waitCountdown > 0)
+                {
+                    Thread.Sleep(1000);
+                    waitCountdown--;
+                }
+            }
+#endif
+
             string logPath = null;
             string logPathArgument =
                 args.FirstOrDefault(
@@ -29,6 +51,23 @@ namespace Microsoft.PowerShell.EditorServices.Host
             if (!string.IsNullOrEmpty(logPathArgument))
             {
                 logPath = logPathArgument.Substring(9).Trim('"');
+            }
+
+            LogLevel logLevel = LogLevel.Normal;
+            string logLevelArgument =
+                args.FirstOrDefault(
+                    arg => 
+                        arg.StartsWith(
+                            "/logLevel:",
+                            StringComparison.InvariantCultureIgnoreCase));
+
+            if (!string.IsNullOrEmpty(logLevelArgument))
+            {
+                // Attempt to parse the log level
+                Enum.TryParse<LogLevel>(
+                    logLevelArgument.Substring(10).Trim('"'),
+                    true,
+                    out logLevel);
             }
 
             bool runDebugAdapter =
@@ -54,46 +93,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 server = new LanguageServer();
             }
 
-            // Start the logger with the specified log path
-            // TODO: Set the level based on command line parameter
-            Logger.Initialize(logPath, LogLevel.Verbose);
-
-#if DEBUG
-            bool waitForDebugger =
-                args.Any(
-                    arg => 
-                        string.Equals(
-                            arg,
-                            "/waitForDebugger",
-                            StringComparison.InvariantCultureIgnoreCase));
-
-            // Should we wait for the debugger before starting?
-            if (waitForDebugger)
-            {
-                Logger.Write(LogLevel.Normal, "Waiting for debugger to attach before continuing...");
-
-                // Wait for 15 seconds and then continue
-                int waitCountdown = 15;
-                while (!Debugger.IsAttached && waitCountdown > 0)
-                {
-                    Thread.Sleep(1000);
-                    waitCountdown--;
-                }
-
-                if (Debugger.IsAttached)
-                {
-                    Logger.Write(
-                        LogLevel.Normal,
-                        "Debugger attached, continuing startup sequence");
-                }
-                else if (waitCountdown == 0)
-                {
-                    Logger.Write(
-                        LogLevel.Normal,
-                        "Timed out while waiting for debugger to attach, continuing startup sequence");
-                }
-            }
-#endif
+            // Start the logger with the specified log path and level
+            Logger.Initialize(logPath, logLevel);
 
             FileVersionInfo fileVersionInfo =
                 FileVersionInfo.GetVersionInfo(
