@@ -103,8 +103,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
             Logger.Write(
                 LogLevel.Normal,
                 string.Format(
-                    "PowerShell Editor Services Host v{0} starting...",
-                    fileVersionInfo.FileVersion));
+                    "PowerShell Editor Services Host v{0} starting (pid {1})...",
+                    fileVersionInfo.FileVersion,
+                    Process.GetCurrentProcess().Id));
 
             // Start the server
             server.Start().Wait();
