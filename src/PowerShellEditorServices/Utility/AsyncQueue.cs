@@ -73,18 +73,24 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         {
             using (await queueLock.LockAsync())
             {
-                if (this.requestQueue.Count > 0)
+                TaskCompletionSource<T> requestTaskSource = null;
+
+                // Are any requests waiting?
+                while (this.requestQueue.Count > 0)
                 {
-                    // There are requests waiting, immediately dispatch the item
-                    TaskCompletionSource<T> requestTaskSource = this.requestQueue.Dequeue();
-                    requestTaskSource.SetResult(item);
+                    // Is the next request cancelled already?
+                    requestTaskSource = this.requestQueue.Dequeue();
+                    if (!requestTaskSource.Task.IsCanceled)
+                    {
+                        // Dispatch the item
+                        requestTaskSource.SetResult(item);
+                        return;
+                    }
                 }
-                else
-                {
-                    // No requests waiting, queue the item for a later request
-                    this.itemQueue.Enqueue(item);
-                    this.IsEmpty = false;
-                }
+                               
+                // No more requests waiting, queue the item for a later request
+                this.itemQueue.Enqueue(item);
+                this.IsEmpty = false;
             }
         }
 
