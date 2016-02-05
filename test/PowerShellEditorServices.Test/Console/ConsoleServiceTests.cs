@@ -79,9 +79,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                         new string[] { Environment.NewLine },
                         StringSplitOptions.None);
 
-            // The output should be 3 lines: the expected string,
-            // an empty line, and the prompt string.
-            Assert.Equal(3, normalOutputLines.Length);
+            // The output should be 4 lines: the expected string, an
+            // empty line, the prompt string, and another empty line.
+            Assert.Equal(4, normalOutputLines.Length);
             Assert.Equal(
                 TestOutputString,
                 normalOutputLines[0]);

@@ -905,10 +905,15 @@ namespace Microsoft.PowerShell.EditorServices
                 Environment.NewLine,
                 false);
 
+            // Trim the '>' off the end of the prompt string to reduce
+            // user confusion about where they can type.
+            // TODO: Eventually put this behind a setting, #133
+            promptString = promptString.TrimEnd(' ', '>', '\r', '\n');
+
             // Write the prompt string
             this.WriteOutput(
                 promptString,
-                false);
+                true);
         }
 
         private void WritePromptWithRunspace(Runspace runspace)
@@ -974,7 +979,8 @@ namespace Microsoft.PowerShell.EditorServices
                     null));
 
             // Write out the debugger prompt
-            this.WritePromptWithNestedPipeline();
+            // TODO: Eventually re-enable this and put it behind a setting, #133
+            //this.WritePromptWithNestedPipeline();
 
             // Raise the event for the debugger service
             if (this.DebuggerStop != null)
