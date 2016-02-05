@@ -11,31 +11,41 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Protocol.Client
+namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
-    public class ProtocolClient
+    /// <summary>
+    /// Provides behavior for a client or server endpoint that
+    /// communicates using the specified protocol.
+    /// </summary>
+    public class ProtocolEndpoint : IMessageSender
     {
         private bool isStarted;
         private int currentMessageId;
-        private ChannelBase clientChannel;
+        private ChannelBase protocolChannel;
         private MessageProtocolType messageProtocolType;
+        private TaskCompletionSource<bool> endpointExitedTask;
         private SynchronizationContext originalSynchronizationContext;
 
         private Dictionary<string, TaskCompletionSource<Message>> pendingRequests =
             new Dictionary<string, TaskCompletionSource<Message>>();
 
         /// <summary>
-        /// Initializes an instance of the protocol client using the
+        /// Initializes an instance of the protocol server using the
         /// specified channel for communication.
         /// </summary>
-        /// <param name="clientChannel">The channel to use for communication with the server.</param>
-        /// <param name="messageProtocolType">The type of message protocol used by the server.</param>
-        public ProtocolClient(
-            ChannelBase clientChannel,
+        /// <param name="protocolChannel">
+        /// The channel to use for communication with the connected endpoint.
+        /// </param>
+        /// <param name="messageProtocolType">
+        /// The type of message protocol used by the endpoint.
+        /// </param>
+        public ProtocolEndpoint(
+            ChannelBase protocolChannel,
             MessageProtocolType messageProtocolType)
         {
-            this.clientChannel = clientChannel;
+            this.protocolChannel = protocolChannel;
             this.messageProtocolType = messageProtocolType;
+            this.originalSynchronizationContext = SynchronizationContext.Current;
         }
 
         /// <summary>
@@ -46,34 +56,49 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         {
             if (!this.isStarted)
             {
-                // Start the provided client channel
-                this.clientChannel.Start(this.messageProtocolType);
+                // Start the provided protocol channel
+                this.protocolChannel.Start(this.messageProtocolType);
 
                 // Set the handler for any message responses that come back
-                this.clientChannel.MessageDispatcher.SetResponseHandler(this.HandleResponse);
+                this.protocolChannel.MessageDispatcher.SetResponseHandler(this.HandleResponse);
 
                 // Listen for unhandled exceptions from the dispatcher
-                this.clientChannel.MessageDispatcher.UnhandledException += MessageDispatcher_UnhandledException;
+                this.protocolChannel.MessageDispatcher.UnhandledException += MessageDispatcher_UnhandledException;
 
-                // Notify implementation about client start
+                // Notify implementation about endpoint start
                 await this.OnStart();
 
-                // Client is now started
+                // Endpoint is now started
                 this.isStarted = true;
             }
+        }
+
+        public void WaitForExit()
+        {
+            this.endpointExitedTask = new TaskCompletionSource<bool>();
+            this.endpointExitedTask.Task.Wait();
         }
 
         public async Task Stop()
         {
             if (this.isStarted)
             {
+                // Make sure no future calls try to stop the endpoint during shutdown
+                this.isStarted = false;
+
                 // Stop the implementation first
                 await this.OnStop();
+                this.protocolChannel.Stop();
 
-                this.clientChannel.Stop();
-                this.isStarted = false;
+                // Notify anyone waiting for exit
+                if (this.endpointExitedTask != null)
+                {
+                    this.endpointExitedTask.SetResult(true);
+                }
             }
         }
+
+        #region Message Sending
 
         /// <summary>
         /// Sends a request to the server
@@ -107,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
                     responseTask);
             }
 
-            await this.clientChannel.MessageWriter.WriteRequest<TParams, TResult>(
+            await this.protocolChannel.MessageWriter.WriteRequest<TParams, TResult>(
                 requestType, 
                 requestParams, 
                 this.currentMessageId);
@@ -128,19 +153,64 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
             }
         }
 
-        public async Task SendEvent<TParams>(EventType<TParams> eventType, TParams eventParams)
+        /// <summary>
+        /// Sends an event to the channel's endpoint.
+        /// </summary>
+        /// <typeparam name="TParams">The event parameter type.</typeparam>
+        /// <param name="eventType">The type of event being sent.</param>
+        /// <param name="eventParams">The event parameters being sent.</param>
+        /// <returns>A Task that tracks completion of the send operation.</returns>
+        public Task SendEvent<TParams>(
+            EventType<TParams> eventType,
+            TParams eventParams)
         {
-            await this.clientChannel.MessageWriter.WriteMessage(
-                Message.Event(
-                    eventType.MethodName,
-                    JToken.FromObject(eventParams)));
+            // Some events could be raised from a different thread.
+            // To ensure that messages are written serially, dispatch
+            // dispatch the SendEvent call to the message loop thread.
+
+            if (!this.protocolChannel.MessageDispatcher.InMessageLoopThread)
+            {
+                TaskCompletionSource<bool> writeTask = new TaskCompletionSource<bool>();
+
+                this.protocolChannel.MessageDispatcher.SynchronizationContext.Post(
+                    async (obj) =>
+                    {
+                        await this.protocolChannel.MessageWriter.WriteEvent(
+                            eventType,
+                            eventParams);
+
+                        writeTask.SetResult(true);
+                    }, null);
+
+                return writeTask.Task;
+            }
+            else
+            {
+                return this.protocolChannel.MessageWriter.WriteEvent(
+                    eventType,
+                    eventParams);
+            }
         }
+
+        #endregion
+
+        #region Message Handling
+
+        public void SetRequestHandler<TParams, TResult>(
+            RequestType<TParams, TResult> requestType,
+            Func<TParams, RequestContext<TResult>, Task> requestHandler)
+        {
+            this.protocolChannel.MessageDispatcher.SetRequestHandler(
+                requestType,
+                requestHandler);
+        }
+
 
         public void SetEventHandler<TParams>(
             EventType<TParams> eventType,
             Func<TParams, EventContext, Task> eventHandler)
         {
-            this.clientChannel.MessageDispatcher.SetEventHandler(
+            this.protocolChannel.MessageDispatcher.SetEventHandler(
                 eventType,
                 eventHandler,
                 false);
@@ -151,18 +221,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
             Func<TParams, EventContext, Task> eventHandler,
             bool overrideExisting)
         {
-            this.clientChannel.MessageDispatcher.SetEventHandler(
+            this.protocolChannel.MessageDispatcher.SetEventHandler(
                 eventType,
                 eventHandler,
                 overrideExisting);
-        }
-
-        private void MessageDispatcher_UnhandledException(object sender, Exception e)
-        {
-            if (this.originalSynchronizationContext != null)
-            {
-                this.originalSynchronizationContext.Post(o => { throw e; }, null);
-            }
         }
 
         private void HandleResponse(Message responseMessage)
@@ -176,6 +238,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
             }
         }
 
+        #endregion
+
+        #region Subclass Lifetime Methods
+
         protected virtual Task OnStart()
         {
             return Task.FromResult(true);
@@ -185,6 +251,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         {
             return Task.FromResult(true);
         }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void MessageDispatcher_UnhandledException(object sender, Exception e)
+        {
+            if (this.endpointExitedTask != null)
+            {
+                this.endpointExitedTask.SetException(e);
+            }
+
+            else if (this.originalSynchronizationContext != null)
+            {
+                this.originalSynchronizationContext.Post(o => { throw e; }, null);
+            }
+        }
+
+        #endregion
     }
 }
 

@@ -324,7 +324,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             if (isFromRepl)
             {
                 // Send the input through the console service
-                editorSession.ConsoleService.ReceiveInputString(
+                editorSession.ConsoleService.ExecuteCommand(
                     evaluateParams.Expression,
                     false);
             }

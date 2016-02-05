@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices
 {
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
-
+    using System.Threading;
     /// <summary>
     /// Provides a high-level service for performing code completion and
     /// navigation operations on PowerShell scripts.
@@ -30,6 +30,8 @@ namespace Microsoft.PowerShell.EditorServices
         private string mostRecentRequestFile;
         private Dictionary<String, List<String>> CmdletToAliasDictionary;
         private Dictionary<String, String> AliasToCmdletDictionary;
+
+        const int DefaultWaitTimeoutMilliseconds = 5000;
 
         #endregion
 
@@ -87,7 +89,8 @@ namespace Microsoft.PowerShell.EditorServices
                     columnNumber);
 
             RunspaceHandle runspaceHandle =
-                await this.powerShellContext.GetRunspaceHandle();
+                await this.powerShellContext.GetRunspaceHandle(
+                    new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
 
             CommandCompletion commandCompletion =
                 AstOperations.GetCompletions(
@@ -193,8 +196,10 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (symbolReference != null)
             {
+                // Request a runspace handle with a short timeout
                 RunspaceHandle runspaceHandle =
-                    await this.powerShellContext.GetRunspaceHandle();
+                    await this.powerShellContext.GetRunspaceHandle(
+                        new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
 
                 symbolReference.FilePath = scriptFile.FilePath;
                 symbolDetails = new SymbolDetails(symbolReference, runspaceHandle.Runspace);
@@ -431,8 +436,6 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        //public SymbolDetails GetSymbolDetails()
-        
         #endregion
 
         #region Private Fields
@@ -444,28 +447,37 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (!this.areAliasesLoaded)
             {
-                RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandle();
-
-                CommandInvocationIntrinsics invokeCommand = runspaceHandle.Runspace.SessionStateProxy.InvokeCommand;
-                IEnumerable<CommandInfo> aliases = invokeCommand.GetCommands("*", CommandTypes.Alias, true);
-
-                runspaceHandle.Dispose();
-
-                foreach (AliasInfo aliasInfo in aliases)
+                try
                 {
-                    if (!CmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
+                    RunspaceHandle runspaceHandle =
+                        await this.powerShellContext.GetRunspaceHandle(
+                            new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
+
+                    CommandInvocationIntrinsics invokeCommand = runspaceHandle.Runspace.SessionStateProxy.InvokeCommand;
+                    IEnumerable<CommandInfo> aliases = invokeCommand.GetCommands("*", CommandTypes.Alias, true);
+
+                    runspaceHandle.Dispose();
+
+                    foreach (AliasInfo aliasInfo in aliases)
                     {
-                        CmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
-                    }
-                    else
-                    {
-                        CmdletToAliasDictionary[aliasInfo.Definition].Add(aliasInfo.Name);
+                        if (!CmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
+                        {
+                            CmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
+                        }
+                        else
+                        {
+                            CmdletToAliasDictionary[aliasInfo.Definition].Add(aliasInfo.Name);
+                        }
+
+                        AliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
                     }
 
-                    AliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
+                    this.areAliasesLoaded = true;
                 }
-
-                this.areAliasesLoaded = true;
+                catch (TaskCanceledException)
+                {
+                    // The wait for a RunspaceHandle has timed out, skip aliases for now
+                }
             }
         }
 

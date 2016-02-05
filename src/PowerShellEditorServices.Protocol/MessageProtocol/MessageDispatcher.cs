@@ -234,12 +234,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             Message messageToDispatch, 
             MessageWriter messageWriter)
         {
+            Task handlerToAwait = null;
+
             if (messageToDispatch.MessageType == MessageType.Request)
             {
                 Func<Message, MessageWriter, Task> requestHandler = null;
                 if (this.requestHandlers.TryGetValue(messageToDispatch.Method, out requestHandler))
                 {
-                    await requestHandler(messageToDispatch, messageWriter);
+                    handlerToAwait = requestHandler(messageToDispatch, messageWriter);
                 }
                 else
                 {
@@ -258,7 +260,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 Func<Message, MessageWriter, Task> eventHandler = null;
                 if (this.eventHandlers.TryGetValue(messageToDispatch.Method, out eventHandler))
                 {
-                    await eventHandler(messageToDispatch, messageWriter);
+                    handlerToAwait = eventHandler(messageToDispatch, messageWriter);
                 }
                 else
                 {
@@ -268,6 +270,28 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             else
             {
                 // TODO: Return message not supported
+            }
+
+            if (handlerToAwait != null)
+            {
+                try
+                {
+                    await handlerToAwait;
+                }
+                catch (TaskCanceledException)
+                {
+                    // Some tasks may be cancelled due to legitimate
+                    // timeouts so don't let those exceptions go higher.
+                }
+                catch (AggregateException e)
+                {
+                    if (!(e.InnerExceptions[0] is TaskCanceledException))
+                    {
+                        // Cancelled tasks aren't a problem, so rethrow
+                        // anything that isn't a TaskCanceledException
+                        throw e;
+                    }
+                }
             }
         }
 

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
-    public abstract class DebugAdapterBase : ProtocolServer
+    public abstract class DebugAdapterBase : ProtocolEndpoint
     {
         public DebugAdapterBase(ChannelBase serverChannel)
             : base (serverChannel, MessageProtocolType.DebugAdapter)
@@ -32,18 +32,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // No default implementation yet.
         }
 
-        protected override void OnStart()
+        protected override Task OnStart()
         {
             // Register handlers for server lifetime messages
             this.SetRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
 
             // Initialize the implementation class
             this.Initialize();
+
+            return Task.FromResult(true);
         }
 
-        protected override void OnStop()
+        protected override Task OnStop()
         {
             this.Shutdown();
+
+            return Task.FromResult(true);
         }
 
         private async Task HandleInitializeRequest(

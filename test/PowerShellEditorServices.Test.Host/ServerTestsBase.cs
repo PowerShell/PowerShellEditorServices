@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Protocol.Client;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
@@ -14,9 +13,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class ServerTestsBase
     {
-        protected ProtocolClient protocolClient;
+        protected ProtocolEndpoint protocolClient;
 
         private ConcurrentDictionary<string, AsyncQueue<object>> eventQueuePerType =
+            new ConcurrentDictionary<string, AsyncQueue<object>>();
+
+        private ConcurrentDictionary<string, AsyncQueue<object>> requestQueuePerType =
             new ConcurrentDictionary<string, AsyncQueue<object>>();
 
         protected Task<TResult> SendRequest<TParams, TResult>(
@@ -103,6 +105,59 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             }
 
             return await eventTask;
+        }
+
+        protected async Task<Tuple<TParams, RequestContext<TResponse>>> WaitForRequest<TParams, TResponse>(
+            RequestType<TParams, TResponse> requestType,
+            int timeoutMilliseconds = 5000)
+        {
+            Task<Tuple<TParams, RequestContext<TResponse>>> requestTask = null;
+
+            // Use the request queue if one has been registered
+            AsyncQueue<object> requestQueue = null;
+            if (this.requestQueuePerType.TryGetValue(requestType.MethodName, out requestQueue))
+            {
+                requestTask =
+                    requestQueue
+                        .DequeueAsync()
+                        .ContinueWith(
+                            task => (Tuple<TParams, RequestContext<TResponse>>)task.Result);
+            }
+            else
+            {
+                var requestTaskSource =
+                    new TaskCompletionSource<Tuple<TParams, RequestContext<TResponse>>>();
+
+                this.protocolClient.SetRequestHandler(
+                    requestType,
+                    (p, ctx) =>
+                    {
+                        if (!requestTaskSource.Task.IsCompleted)
+                        {
+                            requestTaskSource.SetResult(
+                                new Tuple<TParams, RequestContext<TResponse>>(p, ctx));
+                        }
+
+                        return Task.FromResult(true);
+                    });
+
+                requestTask = requestTaskSource.Task;
+            }
+
+            await 
+                Task.WhenAny(
+                    requestTask,
+                    Task.Delay(timeoutMilliseconds));
+
+            if (!requestTask.IsCompleted)
+            {
+                throw new TimeoutException(
+                    string.Format(
+                        "Timed out waiting for '{0}' request!",
+                        requestType.MethodName));
+            }
+
+            return await requestTask;
         }
     }
 }

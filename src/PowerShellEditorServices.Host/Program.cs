@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
@@ -41,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // Catch unhandled exceptions for logging purposes
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            ProtocolServer server = null;
+            ProtocolEndpoint server = null;
             if (runDebugAdapter)
             {
                 logPath = logPath ?? "DebugAdapter.log";
@@ -105,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     fileVersionInfo.FileVersion));
 
             // Start the server
-            server.Start();
+            server.Start().Wait();
             Logger.Write(LogLevel.Normal, "PowerShell Editor Services Host started!");
 
             // Wait for the server to finish

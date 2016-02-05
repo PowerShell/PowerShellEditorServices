@@ -56,6 +56,26 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             Assert.Equal(0, expectedItems.Except(outputItems).Count());
         }
 
+        [Fact]
+        public async Task AsyncQueueSkipsCancelledTasks()
+        {
+            AsyncQueue<int> inputQueue = new AsyncQueue<int>();
+
+            // Queue up a couple of tasks to wait for input
+            CancellationTokenSource cancellationSource = new CancellationTokenSource();
+            Task<int> taskOne = inputQueue.DequeueAsync(cancellationSource.Token);
+            Task<int> taskTwo = inputQueue.DequeueAsync();
+
+            // Cancel the first task and then enqueue a number
+            cancellationSource.Cancel();
+            await inputQueue.EnqueueAsync(1);
+
+            // Did the second task get the number?
+            Assert.Equal(TaskStatus.Canceled, taskOne.Status);
+            Assert.Equal(TaskStatus.RanToCompletion, taskTwo.Status);
+            Assert.Equal(1, taskTwo.Result);
+        }
+
         private async Task ConsumeItems(
             AsyncQueue<int> inputQueue,
             ConcurrentBag<int> outputItems,

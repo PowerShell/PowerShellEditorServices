@@ -12,6 +12,7 @@ using System.Linq;
 using System.Security;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Console;
+using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -59,11 +60,50 @@ namespace Microsoft.PowerShell.EditorServices
         #region PSHostUserInterface Implementation
 
         public override Dictionary<string, PSObject> Prompt(
-            string caption,
-            string message,
-            Collection<FieldDescription> descriptions)
+            string promptCaption,
+            string promptMessage,
+            Collection<FieldDescription> fieldDescriptions)
         {
-            throw new NotImplementedException();
+            if (this.consoleHost != null)
+            {
+                FieldDetails[] fields =
+                    fieldDescriptions
+                        .Select(FieldDetails.Create)
+                        .ToArray();
+
+                CancellationTokenSource cancellationToken = new CancellationTokenSource();
+                Task<Dictionary<string, object>> promptTask =
+                    this.consoleHost
+                        .GetInputPromptHandler()
+                        .PromptForInput(
+                            promptCaption,
+                            promptMessage,
+                            fields,
+                            cancellationToken.Token);
+
+                // Run the prompt task and wait for it to return
+                this.WaitForPromptCompletion(
+                    promptTask,
+                    "Prompt",
+                    cancellationToken);
+
+                // Convert all values to PSObjects
+                var psObjectDict = new Dictionary<string, PSObject>();
+                foreach (var keyValuePair in promptTask.Result)
+                {
+                    psObjectDict.Add(
+                        keyValuePair.Key,
+                        PSObject.AsPSObject(keyValuePair.Value));
+                }
+
+                // Return the result
+                return psObjectDict;
+            }
+            else
+            {
+                // Notify the caller that there's no implementation
+                throw new NotImplementedException();
+            }
         }
 
         public override int PromptForChoice(
@@ -79,6 +119,7 @@ namespace Microsoft.PowerShell.EditorServices
                         .Select(ChoiceDetails.Create)
                         .ToArray();
 
+                CancellationTokenSource cancellationToken = new CancellationTokenSource();
                 Task<int> promptTask =
                     this.consoleHost
                         .GetChoicePromptHandler()
@@ -86,29 +127,17 @@ namespace Microsoft.PowerShell.EditorServices
                             promptCaption,
                             promptMessage,
                             choices,
-                            defaultChoice);
+                            defaultChoice,
+                            cancellationToken.Token);
 
-                // This will synchronously block on the async PromptForChoice
-                // method (which ultimately gets run on another thread) and
-                // then returns the result of the method.
-                int choiceResult = promptTask.Result;
-
-                // Check for errors
-                if (promptTask.Status == TaskStatus.Faulted)
-                {
-                    // Rethrow the exception
-                    throw new Exception(
-                        "PromptForChoice failed, check inner exception for details", 
-                        promptTask.Exception);
-                }
-                else if (promptTask.Result == -1)
-                {
-                    // Stop the pipeline if the prompt was cancelled
-                    throw new PipelineStoppedException();
-                }
+                // Run the prompt task and wait for it to return
+                this.WaitForPromptCompletion(
+                    promptTask,
+                    "PromptForChoice",
+                    cancellationToken);
 
                 // Return the result
-                return choiceResult;
+                return promptTask.Result;
             }
             else
             {
@@ -144,7 +173,27 @@ namespace Microsoft.PowerShell.EditorServices
 
         public override string ReadLine()
         {
-            throw new NotImplementedException();
+            if (this.consoleHost != null)
+            {
+                CancellationTokenSource cancellationToken = new CancellationTokenSource();
+                Task<string> promptTask =
+                    this.consoleHost
+                        .GetInputPromptHandler()
+                        .PromptForInput(cancellationToken.Token);
+
+                // Run the prompt task and wait for it to return
+                this.WaitForPromptCompletion(
+                    promptTask,
+                    "ReadLine",
+                    cancellationToken);
+
+                return promptTask.Result;
+            }
+            else
+            {
+                // Notify the caller that there's no implementation
+                throw new NotImplementedException();
+            }
         }
 
         public override SecureString ReadLineAsSecureString()
@@ -248,6 +297,52 @@ namespace Microsoft.PowerShell.EditorServices
                 this.consoleHost.UpdateProgress(
                     sourceId,
                     ProgressDetails.Create(record));
+            }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void WaitForPromptCompletion<TResult>(
+            Task<TResult> promptTask,
+            string promptFunctionName,
+            CancellationTokenSource cancellationToken)
+        {
+            try
+            {
+                // This will synchronously block on the prompt task
+                // method which gets run on another thread.  Use a
+                // 30 second timeout so that everything doesn't get
+                // backed up if the user doesn't respond.
+                promptTask.Wait(15000);
+
+                if (promptTask.Status == TaskStatus.WaitingForActivation)
+                {
+                    // The Wait() call has timed out, cancel the prompt
+                    cancellationToken.Cancel();
+
+                    this.consoleHost.WriteOutput("\r\nPrompt has been cancelled due to a timeout.\r\n");
+                    throw new PipelineStoppedException();
+                }
+            }
+            catch (AggregateException e)
+            {
+                // Was the task cancelled?
+                if (e.InnerExceptions[0] is TaskCanceledException)
+                {
+                    // Stop the pipeline if the prompt was cancelled
+                    throw new PipelineStoppedException();
+                }
+                else
+                {
+                    // Rethrow the exception
+                    throw new Exception(
+                        string.Format(
+                            "{0} failed, check inner exception for details",
+                            promptFunctionName),
+                        e.InnerException);
+                }
             }
         }
 

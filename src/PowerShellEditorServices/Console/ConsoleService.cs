@@ -6,7 +6,6 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -20,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private PowerShellContext powerShellContext;
 
-        private IPromptHandler activePromptHandler;
+        private PromptHandler activePromptHandler;
         private Stack<IPromptHandlerContext> promptHandlerContextStack =
             new Stack<IPromptHandlerContext>();
 
@@ -76,17 +75,22 @@ namespace Microsoft.PowerShell.EditorServices.Console
         #region Public Methods
 
         /// <summary>
-        /// Called when an input string is received from the user.
+        /// Called when a command string is received from the user.
         /// If a prompt is currently active, the prompt handler is
         /// asked to handle the string.  Otherwise the string is
         /// executed in the PowerShellContext.
         /// </summary>
         /// <param name="inputString">The input string to evaluate.</param>
         /// <param name="echoToConsole">If true, the input will be echoed to the console.</param>
-        public void ReceiveInputString(string inputString, bool echoToConsole)
+        public void ExecuteCommand(string inputString, bool echoToConsole)
         {
             if (this.activePromptHandler != null)
             {
+                if (echoToConsole)
+                {
+                    this.WriteOutput(inputString, true);
+                }
+
                 if (this.activePromptHandler.HandleResponse(inputString))
                 {
                     // If the prompt handler is finished, clear it for
@@ -105,6 +109,25 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             true)
                         .ConfigureAwait(false);
             }
+        }
+
+        /// <summary>
+        /// Provides a direct path for a caller that just wants to provide
+        /// user response to a prompt without executing a command if there
+        /// is no active prompt.
+        /// </summary>
+        /// <param name="promptResponse">The user's response to the active prompt.</param>
+        /// <param name="echoToConsole">If true, the input will be echoed to the console.</param>
+        /// <returns>True if there was a prompt, false otherwise.</returns>
+        public bool ReceivePromptResponse(string promptResponse, bool echoToConsole)
+        {
+            if (this.activePromptHandler != null)
+            {
+                this.ExecuteCommand(promptResponse, echoToConsole);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -188,7 +211,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         void IConsoleHost.ExitSession(int exitCode)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         ChoicePromptHandler IConsoleHost.GetChoicePromptHandler()
@@ -197,9 +220,15 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 factory => factory.GetChoicePromptHandler());
         }
 
+        InputPromptHandler IConsoleHost.GetInputPromptHandler()
+        {
+            return this.GetPromptHandler(
+                factory => factory.GetInputPromptHandler());
+        }
+
         private TPromptHandler GetPromptHandler<TPromptHandler>(
             Func<IPromptHandlerContext, TPromptHandler> factoryInvoker)
-                where TPromptHandler : IPromptHandler
+                where TPromptHandler : PromptHandler
         {
             if (this.activePromptHandler != null)
             {
@@ -214,8 +243,20 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             TPromptHandler promptHandler = factoryInvoker(promptHandlerContext);
             this.activePromptHandler = promptHandler;
+            this.activePromptHandler.PromptCancelled += activePromptHandler_PromptCancelled;
 
             return promptHandler;
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void activePromptHandler_PromptCancelled(object sender, EventArgs e)
+        {
+            // Clean up the existing prompt
+            this.activePromptHandler.PromptCancelled -= activePromptHandler_PromptCancelled;
+            this.activePromptHandler = null;
         }
 
         #endregion

@@ -110,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
             Channel = new WebSocketServerChannel(this);
         }
 
-        protected ProtocolServer Server { get; set; }
+        protected ProtocolEndpoint Server { get; set; }
 
         protected WebSocketServerChannel Channel { get; private set; }
 
