@@ -168,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             await promptTask;
 
             // Respond to the prompt and wait for the prompt to complete
-            this.consoleService.ReceiveInputString("apple", false);
+            this.consoleService.ExecuteCommand("apple", false);
             await executeTask;
 
             string[] outputLines =
@@ -233,8 +233,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             await promptTask;
 
             // Respond to the prompt and wait for the help prompt to appear
-            this.consoleService.ReceiveInputString("?", false);
-            this.consoleService.ReceiveInputString("A", false);
+            this.consoleService.ExecuteCommand("?", false);
+            this.consoleService.ExecuteCommand("A", false);
             await executeTask;
 
             string[] outputLines =
@@ -265,10 +265,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             await promptTask;
 
             // Respond to the prompt and wait for execution to complete
-            this.consoleService.ReceiveInputString("John", true);
-            this.consoleService.ReceiveInputString("40", true);
-            this.consoleService.ReceiveInputString("Windows PowerShell In Action", true);
-            this.consoleService.ReceiveInputString("", false);
+            this.consoleService.ExecuteCommand("John", true);
+            this.consoleService.ExecuteCommand("40", true);
+            this.consoleService.ExecuteCommand("Windows PowerShell In Action", true);
+            this.consoleService.ExecuteCommand("", false);
             await executeTask;
 
             string[] outputLines =
@@ -329,7 +329,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             await promptTask;
 
             // Respond to the prompt and wait for execution to complete
-            this.consoleService.ReceiveInputString("John", true);
+            this.consoleService.ExecuteCommand("John", true);
             await executeTask;
 
             string[] outputLines =
@@ -375,7 +375,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             await promptTask;
 
             // Respond to the prompt and wait for execution to complete
-            this.consoleService.ReceiveInputString("John", true);
+            this.consoleService.ExecuteCommand("John", true);
             await executeTask;
 
             string[] outputLines =

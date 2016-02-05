@@ -75,14 +75,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
         #region Public Methods
 
         /// <summary>
-        /// Called when an input string is received from the user.
+        /// Called when a command string is received from the user.
         /// If a prompt is currently active, the prompt handler is
         /// asked to handle the string.  Otherwise the string is
         /// executed in the PowerShellContext.
         /// </summary>
         /// <param name="inputString">The input string to evaluate.</param>
         /// <param name="echoToConsole">If true, the input will be echoed to the console.</param>
-        public void ReceiveInputString(string inputString, bool echoToConsole)
+        public void ExecuteCommand(string inputString, bool echoToConsole)
         {
             if (this.activePromptHandler != null)
             {
@@ -109,6 +109,25 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             true)
                         .ConfigureAwait(false);
             }
+        }
+
+        /// <summary>
+        /// Provides a direct path for a caller that just wants to provide
+        /// user response to a prompt without executing a command if there
+        /// is no active prompt.
+        /// </summary>
+        /// <param name="promptResponse">The user's response to the active prompt.</param>
+        /// <param name="echoToConsole">If true, the input will be echoed to the console.</param>
+        /// <returns>True if there was a prompt, false otherwise.</returns>
+        public bool ReceivePromptResponse(string promptResponse, bool echoToConsole)
+        {
+            if (this.activePromptHandler != null)
+            {
+                this.ExecuteCommand(promptResponse, echoToConsole);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
