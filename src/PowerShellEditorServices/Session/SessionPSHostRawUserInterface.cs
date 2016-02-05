@@ -19,7 +19,10 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private Size currentBufferSize = new Size(80, 100);
+        private const int DefaultConsoleHeight = 100;
+        private const int DefaultConsoleWidth = 120;
+
+        private Size currentBufferSize = new Size(DefaultConsoleWidth, DefaultConsoleHeight);
 
         #endregion
 
@@ -140,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Size MaxPhysicalWindowSize
         {
-            get { return new Size(80, 20); }
+            get { return new Size(DefaultConsoleWidth, DefaultConsoleHeight); }
         }
 
         /// <summary>
@@ -148,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Size MaxWindowSize
         {
-            get { return new Size(80, 20); }
+            get { return new Size(DefaultConsoleWidth, DefaultConsoleHeight); }
         }
 
         /// <summary>
