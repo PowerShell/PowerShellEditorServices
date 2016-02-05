@@ -7,11 +7,11 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Messages
 {
-    public class ShowChoicePromptNotification
+    public class ShowChoicePromptRequest
     {
         public static readonly
-            EventType<ShowChoicePromptNotification> Type =
-            EventType<ShowChoicePromptNotification>.Create("powerShell/showChoicePrompt");
+            RequestType<ShowChoicePromptRequest, ShowChoicePromptResponse> Type =
+            RequestType<ShowChoicePromptRequest, ShowChoicePromptResponse>.Create("powerShell/showChoicePrompt");
 
         public string Caption { get; set; }
 
@@ -22,15 +22,35 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Messages
         public int DefaultChoice { get; set; }
     }
 
-    public class CompleteChoicePromptNotification
+    public class ShowChoicePromptResponse
     {
-        public static readonly
-            EventType<CompleteChoicePromptNotification> Type =
-            EventType<CompleteChoicePromptNotification>.Create("powerShell/completeChoicePrompt");
-
         public bool PromptCancelled { get; set; }
 
         public string ChosenItem { get; set; }
+    }
+
+    public class ShowInputPromptRequest
+    {
+        public static readonly
+            RequestType<ShowInputPromptRequest, ShowInputPromptResponse> Type =
+            RequestType<ShowInputPromptRequest, ShowInputPromptResponse>.Create("powerShell/showInputPrompt");
+
+        /// <summary>
+        /// Gets or sets the name of the field.
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the descriptive label for the field.
+        /// </summary>
+        public string Label { get; set; }
+    }
+
+    public class ShowInputPromptResponse
+    {
+        public bool PromptCancelled { get; set; }
+
+        public string ResponseText { get; set; }
     }
 }
 

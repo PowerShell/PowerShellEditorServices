@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Protocol.Client;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 using System;
@@ -462,8 +463,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 $choices = [System.Management.Automation.Host.ChoiceDescription[]]($choiceA,$choiceB);
                 $host.ui.PromptForChoice($caption, $message, $choices, 1)";
 
-            Task<ShowChoicePromptNotification> choicePromptTask =
-                this.WaitForEvent(ShowChoicePromptNotification.Type);
+            Task<Tuple<ShowChoicePromptRequest, RequestContext<ShowChoicePromptResponse>>> choicePromptTask =
+                this.WaitForRequest(ShowChoicePromptRequest.Type);
 
             // Execute the script but don't await the task yet because
             // the choice prompt will block execution from completing
@@ -476,18 +477,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         Context = "repl"
                     });
 
-            // Wait for the choice prompt event and check expected values
-            ShowChoicePromptNotification showChoicePromptEvent = await choicePromptTask;
+            // Wait for the choice prompt request and check expected values
+            Tuple<ShowChoicePromptRequest, RequestContext<ShowChoicePromptResponse>> requestResponseContext = await choicePromptTask;
+            ShowChoicePromptRequest showChoicePromptRequest = requestResponseContext.Item1;
+            RequestContext<ShowChoicePromptResponse> requestContext = requestResponseContext.Item2;
 
-            Assert.Equal(1, showChoicePromptEvent.DefaultChoice);
+            Assert.Equal(1, showChoicePromptRequest.DefaultChoice);
 
             // Prepare to receive script output
             Task<OutputEventBody> outputTask = this.WaitForEvent(OutputEvent.Type);
 
-            // Respond to the prompt event
-            await this.SendEvent(
-                CompleteChoicePromptNotification.Type,
-                new CompleteChoicePromptNotification
+            // Respond to the prompt request
+            await requestContext.SendResult(
+                new ShowChoicePromptResponse
                 {
                     ChosenItem = "a"
                 });
@@ -496,6 +498,68 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             await evaluateTask;
             OutputEventBody choiceOutput = await outputTask;
             Assert.Equal("0\r\n", choiceOutput.Output);
+        }
+
+        [Fact]
+        public async Task ServiceExecutesReplCommandAndReceivesInputPrompt()
+        {
+            // Prepare to receive script output
+            this.QueueEventsForType(OutputEvent.Type);
+
+            string promptScript =
+                @"
+                $NameField = New-Object System.Management.Automation.Host.FieldDescription ""Name""
+                $NameField.SetParameterType([System.String])
+                $fields = [System.Management.Automation.Host.FieldDescription[]]($NameField)
+                $host.ui.Prompt($null, $null, $fields)";
+
+            Task<Tuple<ShowInputPromptRequest, RequestContext<ShowInputPromptResponse>>> inputPromptTask =
+                this.WaitForRequest(ShowInputPromptRequest.Type);
+
+            // Execute the script but don't await the task yet because
+            // the choice prompt will block execution from completing
+            Task<EvaluateResponseBody> evaluateTask =
+                this.SendRequest(
+                    EvaluateRequest.Type,
+                    new EvaluateRequestArguments
+                    {
+                        Expression = promptScript,
+                        Context = "repl"
+                    });
+            
+            // Wait for the input prompt request and check expected values
+            Tuple<ShowInputPromptRequest, RequestContext<ShowInputPromptResponse>> requestResponseContext = await inputPromptTask;
+            ShowInputPromptRequest showInputPromptRequest = requestResponseContext.Item1;
+            RequestContext<ShowInputPromptResponse> requestContext = requestResponseContext.Item2;
+
+            Assert.Equal("Name", showInputPromptRequest.Name);
+
+            // Respond to the prompt request
+            await requestContext.SendResult(
+                new ShowInputPromptResponse
+                {
+                    ResponseText = "John"
+                });
+
+            // Wait for the selection to appear as output
+            await evaluateTask;
+            
+            // The first output event will be the script to be executed, skip it
+            OutputEventBody promptOutput = await this.WaitForEvent(OutputEvent.Type);
+
+            // Verify output
+            promptOutput = await this.WaitForEvent(OutputEvent.Type);
+            Assert.Equal("Name: ", promptOutput.Output);
+            promptOutput = await this.WaitForEvent(OutputEvent.Type);
+            Assert.Equal("John\r\n", promptOutput.Output);
+            promptOutput = await this.WaitForEvent(OutputEvent.Type);
+            Assert.Equal("\r\n", promptOutput.Output);
+            promptOutput = await this.WaitForEvent(OutputEvent.Type);
+            Assert.Equal("Key  Value\r\n", promptOutput.Output);
+            promptOutput = await this.WaitForEvent(OutputEvent.Type);
+            Assert.Equal("---  -----\r\n", promptOutput.Output);
+            promptOutput = await this.WaitForEvent(OutputEvent.Type);
+            Assert.Equal("Name John \r\n", promptOutput.Output);
         }
 
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)

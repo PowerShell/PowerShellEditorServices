@@ -73,8 +73,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
             this.SetRequestHandler(InstallModuleRequest.Type, this.HandleInstallModuleRequest);
 
-            this.SetEventHandler(CompleteChoicePromptNotification.Type, this.HandleCompleteChoicePromptNotification);
-
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
 
@@ -214,25 +212,6 @@ function __Expand-Alias {
             }
 
             await requestContext.SendResult(moduleList);
-        }
-
-        protected Task HandleCompleteChoicePromptNotification(
-            CompleteChoicePromptNotification completeChoicePromptParams,
-            EventContext eventContext)
-        {
-            if (!completeChoicePromptParams.PromptCancelled)
-            {
-                this.editorSession.ConsoleService.ReceiveInputString(
-                    completeChoicePromptParams.ChosenItem,
-                    false);
-            }
-            else
-            {
-                // Cancel the current prompt
-                this.editorSession.ConsoleService.SendControlC();
-            }
-
-            return Task.FromResult(true);
         }
 
         protected Task HandleDidOpenTextDocumentNotification(
