@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Console;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -32,7 +33,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     "Test prompt",
                     "Message is irrelevant",
                     Choices,
-                    DefautlChoice);
+                    DefautlChoice,
+                    CancellationToken.None);
 
             choicePromptHandler.HandleResponse("apple");
 
@@ -50,7 +52,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     "Test prompt",
                     "Message is irrelevant",
                     Choices,
-                    DefautlChoice);
+                    DefautlChoice,
+                    CancellationToken.None);
 
             // Try adding whitespace to ensure it works
             choicePromptHandler.HandleResponse(" N  ");
@@ -71,7 +74,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     "Test prompt",
                     "Message is irrelevant",
                     Choices,
-                    DefautlChoice);
+                    DefautlChoice,
+                    CancellationToken.None);
 
             // Choice is invalid, should reprompt
             choicePromptHandler.HandleResponse("INVALID");

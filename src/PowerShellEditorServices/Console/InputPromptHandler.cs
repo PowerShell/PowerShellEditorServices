@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Management.Automation;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Console
@@ -18,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
     /// that present the user a set of fields for which values
     /// should be entered.
     /// </summary>
-    public abstract class InputPromptHandler : IPromptHandler
+    public abstract class InputPromptHandler : PromptHandler
     {
         #region Private Fields
 
@@ -51,13 +52,15 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's input.
         /// </returns>
-        public Task<string> PromptForInput()
+        public Task<string> PromptForInput(
+            CancellationToken cancellationToken)
         {
             Task<Dictionary<string, object>> innerTask =
                 this.PromptForInput(
                     null,
                     null,
-                    new FieldDetails[] { new FieldDetails("", "", typeof(string), false, "") });
+                    new FieldDetails[] { new FieldDetails("", "", typeof(string), false, "") },
+                    cancellationToken);
 
             return 
                 innerTask.ContinueWith<string>(
@@ -66,6 +69,10 @@ namespace Microsoft.PowerShell.EditorServices.Console
                         if (task.IsFaulted)
                         {
                             throw task.Exception;
+                        }
+                        else if (task.IsCanceled)
+                        {
+                            throw new TaskCanceledException(task);
                         }
                         
                         // Return the value of the sole field
@@ -86,6 +93,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// An array of FieldDetails items to be displayed which prompt the
         /// user for input of a specific type.
         /// </param>
+        /// <param name="cancellationToken">
+        /// A CancellationToken that can be used to cancel the prompt.
+        /// </param>
         /// <returns>
         /// A Task instance that can be monitored for completion to get
         /// the user's input.
@@ -93,9 +103,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
         public Task<Dictionary<string, object>> PromptForInput(
             string promptCaption,
             string promptMessage,
-            FieldDetails[] fields)
+            FieldDetails[] fields,
+            CancellationToken cancellationToken)
         {
             this.promptTask = new TaskCompletionSource<Dictionary<string, object>>();
+
+            // Cancel the TaskCompletionSource if the caller cancels the task
+            cancellationToken.Register(this.CancelPrompt, true);
 
             this.Fields = fields;
 
@@ -113,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// True if the prompt is complete, false if the prompt is 
         /// still waiting for a valid response.
         /// </returns>
-        public bool HandleResponse(string responseString)
+        public override bool HandleResponse(string responseString)
         {
             if (this.currentField == null)
             {
@@ -188,7 +202,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Called when the active prompt should be cancelled.
         /// </summary>
-        public void CancelPrompt()
+        protected override void OnPromptCancelled()
         {
             // Cancel the prompt task
             this.promptTask.TrySetCanceled();

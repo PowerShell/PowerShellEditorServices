@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 using System;
+using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
@@ -39,7 +40,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 inputPromptHandler.PromptForInput(
                     "Test Prompt",
                     "Message is irrelevant",
-                    Fields);
+                    Fields,
+                    CancellationToken.None);
 
             Assert.Equal(NameField, inputPromptHandler.LastField.Name);
             inputPromptHandler.HandleResponse(NameValue);
@@ -73,7 +75,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     new FieldDetails[]
                     {
                         new FieldDetails("Numbers", "Numbers", typeof(int[]), false, null)
-                    });
+                    },
+                    CancellationToken.None);
 
             Assert.Equal("Numbers[0]", inputPromptHandler.LastField.Name);
             inputPromptHandler.HandleResponse("1");
@@ -93,7 +96,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 inputPromptHandler.PromptForInput(
                     "Test Prompt",
                     "Message is irrelevant",
-                    Fields);
+                    Fields,
+                    CancellationToken.None);
 
             Assert.Equal(NameField, inputPromptHandler.LastField.Name);
             inputPromptHandler.HandleResponse(NameValue);

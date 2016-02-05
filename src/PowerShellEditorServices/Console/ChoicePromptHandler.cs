@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Console
@@ -32,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
     /// that present the user a set of options from which a selection
     /// should be made.
     /// </summary>
-    public abstract class ChoicePromptHandler : IPromptHandler
+    public abstract class ChoicePromptHandler : PromptHandler
     {
         #region Private Fields
 
@@ -82,6 +83,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <param name="defaultChoice">
         /// The default choice to highlight for the user.
         /// </param>
+        /// <param name="cancellationToken">
+        /// A CancellationToken that can be used to cancel the prompt.
+        /// </param>
         /// <returns>
         /// A Task instance that can be monitored for completion to get
         /// the user's choice.
@@ -90,7 +94,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
             string promptCaption,
             string promptMessage,
             ChoiceDetails[] choices,
-            int defaultChoice)
+            int defaultChoice,
+            CancellationToken cancellationToken)
         {
             // TODO: Guard against multiple calls
 
@@ -99,6 +104,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
             this.Choices = choices;
             this.DefaultChoice = defaultChoice;
             this.promptTask = new TaskCompletionSource<int>();
+
+            // Cancel the TaskCompletionSource if the caller cancels the task
+            cancellationToken.Register(this.CancelPrompt, true);
 
             // Show the prompt to the user
             this.ShowPrompt(PromptStyle.Full);
@@ -114,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// True if the prompt is complete, false if the prompt is 
         /// still waiting for a valid response.
         /// </returns>
-        public virtual bool HandleResponse(string responseString)
+        public override bool HandleResponse(string responseString)
         {
             int choiceIndex = -1;
 
@@ -145,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Called when the active prompt should be cancelled.
         /// </summary>
-        public void CancelPrompt()
+        protected override void OnPromptCancelled()
         {
             // Cancel the prompt task
             this.promptTask.TrySetCanceled();

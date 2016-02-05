@@ -57,8 +57,8 @@
     <Compile Include="Console\ConsoleService.cs" />
     <Compile Include="Console\FieldDetails.cs" />
     <Compile Include="Console\InputPromptHandler.cs" />
-    <Compile Include="Console\IPromptHandler.cs" />
     <Compile Include="Console\IPromptHandlerContext.cs" />
+    <Compile Include="Console\PromptHandler.cs" />
     <Compile Include="Debugging\BreakpointDetails.cs" />
     <Compile Include="Debugging\DebugService.cs" />
     <Compile Include="Debugging\StackFrameDetails.cs" />

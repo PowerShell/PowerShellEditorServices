@@ -6,7 +6,6 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -20,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private PowerShellContext powerShellContext;
 
-        private IPromptHandler activePromptHandler;
+        private PromptHandler activePromptHandler;
         private Stack<IPromptHandlerContext> promptHandlerContextStack =
             new Stack<IPromptHandlerContext>();
 
@@ -193,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         void IConsoleHost.ExitSession(int exitCode)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         ChoicePromptHandler IConsoleHost.GetChoicePromptHandler()
@@ -210,7 +209,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private TPromptHandler GetPromptHandler<TPromptHandler>(
             Func<IPromptHandlerContext, TPromptHandler> factoryInvoker)
-                where TPromptHandler : IPromptHandler
+                where TPromptHandler : PromptHandler
         {
             if (this.activePromptHandler != null)
             {
@@ -225,8 +224,20 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             TPromptHandler promptHandler = factoryInvoker(promptHandlerContext);
             this.activePromptHandler = promptHandler;
+            this.activePromptHandler.PromptCancelled += activePromptHandler_PromptCancelled;
 
             return promptHandler;
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void activePromptHandler_PromptCancelled(object sender, EventArgs e)
+        {
+            // Clean up the existing prompt
+            this.activePromptHandler.PromptCancelled -= activePromptHandler_PromptCancelled;
+            this.activePromptHandler = null;
         }
 
         #endregion
