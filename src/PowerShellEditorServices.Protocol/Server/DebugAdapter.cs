@@ -6,7 +6,6 @@
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
-using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -19,6 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     public class DebugAdapter : DebugAdapterBase
     {
         private EditorSession editorSession;
+        private OutputDebouncer outputDebouncer;
 
         public DebugAdapter() : this(new StdioServerChannel())
         {
@@ -30,6 +30,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession.StartSession();
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
+
+            // Set up the output debouncer to throttle output event writes
+            this.outputDebouncer = new OutputDebouncer(this);
         }
 
         protected override void Initialize()
@@ -59,6 +62,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         protected override void Shutdown()
         {
+            // Make sure remaining output is flushed before exiting
+            this.outputDebouncer.Flush().Wait();
+
             Logger.Write(LogLevel.Normal, "Debug adapter is shutting down...");
 
             if (this.editorSession != null)
@@ -359,6 +365,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         async void DebugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
         {
+            // Flush pending output before sending the event
+            await this.outputDebouncer.Flush();
+
             await this.SendEvent(
                 StoppedEvent.Type,
                 new StoppedEventBody
@@ -376,13 +385,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
         {
-            await this.SendEvent(
-                OutputEvent.Type,
-                new OutputEventBody
-                {
-                    Output = e.OutputText + (e.IncludeNewLine ? "\r\n" : string.Empty),
-                    Category = (e.OutputType == OutputType.Error) ? "stderr" : "stdout"
-                });
+            // Queue the output for writing
+            await this.outputDebouncer.Invoke(e);
         }
 
         #endregion

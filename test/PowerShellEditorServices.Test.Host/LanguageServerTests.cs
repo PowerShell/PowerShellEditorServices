@@ -37,7 +37,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 new LanguageServiceClient(
                     new StdioClientChannel(
                         "Microsoft.PowerShell.EditorServices.Host.exe",
-                        "/logPath:\"" + testLogPath + "\""));
+                        "/logPath:\"" + testLogPath + "\"",
+                        "/logLevel:Verbose"));
 
             return this.languageServiceClient.Start();
         }
@@ -421,7 +422,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesOutput()
         {
-            this.QueueEventsForType(OutputEvent.Type);
+            OutputReader outputReader = new OutputReader(this.protocolClient);
 
             await 
                 this.SendRequest(
@@ -431,13 +432,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         Expression = "1 + 2"
                     });
 
-            OutputEventBody outputEvent = await this.WaitForEvent(OutputEvent.Type);
-            Assert.Equal("1 + 2\r\n\r\n", outputEvent.Output);
-            Assert.Equal("stdout", outputEvent.Category);
-
-            outputEvent = await this.WaitForEvent(OutputEvent.Type);
-            Assert.Equal("3\r\n", outputEvent.Output);
-            Assert.Equal("stdout", outputEvent.Category);
+            Assert.Equal("1 + 2", await outputReader.ReadLine());
+            await outputReader.ReadLine(); // Skip the empty line
+            Assert.Equal("3", await outputReader.ReadLine());
         }
 
         [Fact]
@@ -454,6 +451,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesChoicePrompt()
         {
+            OutputReader outputReader = new OutputReader(this.protocolClient);
+
             string choiceScript =
                 @"
                 $caption = ""Test Choice"";
@@ -484,9 +483,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             Assert.Equal(1, showChoicePromptRequest.DefaultChoice);
 
-            // Prepare to receive script output
-            Task<OutputEventBody> outputTask = this.WaitForEvent(OutputEvent.Type);
-
             // Respond to the prompt request
             await requestContext.SendResult(
                 new ShowChoicePromptResponse
@@ -494,17 +490,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     ChosenItem = "a"
                 });
 
+            // Skip the initial script lines (6 script lines plus 3 blank lines)
+            await outputReader.ReadLines(9);
+
             // Wait for the selection to appear as output
             await evaluateTask;
-            OutputEventBody choiceOutput = await outputTask;
-            Assert.Equal("0\r\n", choiceOutput.Output);
+            Assert.Equal("0", await outputReader.ReadLine());
         }
 
         [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesInputPrompt()
         {
-            // Prepare to receive script output
-            this.QueueEventsForType(OutputEvent.Type);
+            OutputReader outputReader = new OutputReader(this.protocolClient);
 
             string promptScript =
                 @"
@@ -541,25 +538,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     ResponseText = "John"
                 });
 
-            // Wait for the selection to appear as output
-            await evaluateTask;
+            // Skip the initial script lines (4 script lines plus 3 blank lines)
+            await outputReader.ReadLines(7);
             
-            // The first output event will be the script to be executed, skip it
-            OutputEventBody promptOutput = await this.WaitForEvent(OutputEvent.Type);
-
             // Verify output
-            promptOutput = await this.WaitForEvent(OutputEvent.Type);
-            Assert.Equal("Name: ", promptOutput.Output);
-            promptOutput = await this.WaitForEvent(OutputEvent.Type);
-            Assert.Equal("John\r\n", promptOutput.Output);
-            promptOutput = await this.WaitForEvent(OutputEvent.Type);
-            Assert.Equal("\r\n", promptOutput.Output);
-            promptOutput = await this.WaitForEvent(OutputEvent.Type);
-            Assert.Equal("Key  Value\r\n", promptOutput.Output);
-            promptOutput = await this.WaitForEvent(OutputEvent.Type);
-            Assert.Equal("---  -----\r\n", promptOutput.Output);
-            promptOutput = await this.WaitForEvent(OutputEvent.Type);
-            Assert.Equal("Name John \r\n", promptOutput.Output);
+            string[] outputLines = await outputReader.ReadLines(5);
+            Assert.Equal("Name: John", outputLines[0]);
+            Assert.Equal("", outputLines[1]);
+            Assert.Equal("Key  Value", outputLines[2]);
+            Assert.Equal("---  -----", outputLines[3]);
+            Assert.Equal("Name John ", outputLines[4]);
         }
 
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)

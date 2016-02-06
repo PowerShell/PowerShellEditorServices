@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="AttachHelper.cs" />
     <Compile Include="DebugAdapterTests.cs" />
+    <Compile Include="OutputReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="LanguageServerTests.cs" />
     <Compile Include="ServerTestsBase.cs" />

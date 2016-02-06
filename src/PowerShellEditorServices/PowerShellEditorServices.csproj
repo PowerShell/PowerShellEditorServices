@@ -101,6 +101,7 @@
     <Compile Include="Session\SessionPSHostUserInterface.cs" />
     <Compile Include="Session\SessionStateChangedEventArgs.cs" />
     <Compile Include="Utility\AsyncContextThread.cs" />
+    <Compile Include="Utility\AsyncDebouncer.cs" />
     <Compile Include="Utility\AsyncLock.cs" />
     <Compile Include="Utility\AsyncQueue.cs" />
     <Compile Include="Utility\AsyncContext.cs" />

@@ -72,6 +72,7 @@
     <Compile Include="Console\ConsoleServiceTests.cs" />
     <Compile Include="Console\ChoicePromptHandlerTests.cs" />
     <Compile Include="Session\ScriptFileTests.cs" />
+    <Compile Include="Utility\AsyncDebouncerTests.cs" />
     <Compile Include="Utility\AsyncLockTests.cs" />
     <Compile Include="Utility\AsyncQueueTests.cs" />
     <Compile Include="Utility\LoggerTests.cs" />
