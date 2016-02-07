@@ -69,6 +69,7 @@
     <Compile Include="Message\MessageReaderWriterTests.cs" />
     <Compile Include="Message\TestMessageTypes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Server\OutputDebouncerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

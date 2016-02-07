@@ -36,7 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     new StdioClientChannel(
                         "Microsoft.PowerShell.EditorServices.Host.exe",
                         "/debugAdapter",
-                        "/logPath:\"" + testLogPath + "\""));
+                        "/logPath:\"" + testLogPath + "\"",
+                        "/logLevel:Verbose"));
 
             return this.debugAdapterClient.Start();
         }
@@ -85,13 +86,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task DebugAdapterReceivesOutputEvents()
         {
-            Task<OutputEventBody> outputEventTask = this.WaitForEvent(OutputEvent.Type);
+            OutputReader outputReader = new OutputReader(this.debugAdapterClient);
+
             await this.LaunchScript(DebugScriptPath);
 
-            // Wait for an output event
-            OutputEventBody outputDetails = await outputEventTask;
-            Assert.Equal("Output 1", outputDetails.Output);
-            Assert.Equal("stdout", outputDetails.Category);
+            // Make sure we're getting output from the script
+            Assert.Equal("Output 1", await outputReader.ReadLine());
 
             // Abort script execution
             Task terminatedEvent = this.WaitForEvent(TerminatedEvent.Type);

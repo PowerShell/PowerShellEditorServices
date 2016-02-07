@@ -25,6 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private static CancellationTokenSource existingRequestCancellation;
 
         private EditorSession editorSession;
+        private OutputDebouncer outputDebouncer;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
 
         public LanguageServer() : this(new StdioServerChannel())
@@ -44,6 +45,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 new ProtocolPromptHandlerContext(
                     this,
                     this.editorSession.ConsoleService));
+
+            // Set up the output debouncer to throttle output event writes
+            this.outputDebouncer = new OutputDebouncer(this);
         }
 
         protected override void Initialize()
@@ -78,6 +82,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         protected override void Shutdown()
         {
+            // Make sure remaining output is flushed before exiting
+            this.outputDebouncer.Flush().Wait();
+
             Logger.Write(LogLevel.Normal, "Language service is shutting down...");
 
             if (this.editorSession != null)
@@ -757,13 +764,8 @@ function __Expand-Alias {
 
         async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
         {
-            await this.SendEvent(
-                DebugAdapterMessages.OutputEvent.Type,
-                new DebugAdapterMessages.OutputEventBody
-                {
-                    Output = e.OutputText + (e.IncludeNewLine ? "\r\n" : string.Empty),
-                    Category = (e.OutputType == OutputType.Error) ? "stderr" : "stdout"
-                });
+            // Queue the output for writing
+            await this.outputDebouncer.Invoke(e);
         }
 
         #endregion

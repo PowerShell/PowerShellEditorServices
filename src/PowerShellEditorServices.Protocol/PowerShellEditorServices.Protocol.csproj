@@ -124,6 +124,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="LanguageServer\References.cs" />
     <Compile Include="Server\LanguageServerSettings.cs" />
+    <Compile Include="Server\OutputDebouncer.cs" />
     <Compile Include="Server\PromptHandlers.cs" />
   </ItemGroup>
   <ItemGroup>

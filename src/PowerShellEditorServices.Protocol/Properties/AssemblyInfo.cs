@@ -41,3 +41,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("0.0.0.0")]
 [assembly: AssemblyInformationalVersion("0.0.0.0")]
 
+[assembly: InternalsVisibleTo("Microsoft.PowerShell.EditorServices.Test.Protocol")]
