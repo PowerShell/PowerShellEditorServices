@@ -5,12 +5,12 @@
 
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 {
@@ -67,6 +67,76 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         public void Dispose()
         {
             this.powerShellContext.Dispose();
+        }
+
+        public static IEnumerable<object[]> DebuggerAcceptsScriptArgsTestData
+        {
+            get
+            {
+                var data = new[]
+                {
+                    new[] { new []{ "Foo -Param2 @('Bar','Baz') -Force Extra1" }},
+                    new[] { new []{ "Foo", "-Param2", "@('Bar','Baz')", "-Force", "Extra1" }},
+                };
+
+                return data;
+            }
+        }
+
+        [Theory]
+        [MemberData("DebuggerAcceptsScriptArgsTestData")]
+        public async Task DebuggerAcceptsScriptArgs(string[] args)
+        {
+            ScriptFile debugWithParamsFile =
+                this.workspace.GetFile(
+                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugWithParamsTest.ps1");
+
+            await this.debugService.SetBreakpoints(
+                debugWithParamsFile,
+                new int[] { 3 });
+
+            string arguments = string.Join(" ", args);
+
+            // Execute the script and wait for the breakpoint to be hit
+            this.powerShellContext.ExecuteScriptAtPath(
+                debugWithParamsFile.FilePath, arguments);
+
+            await this.AssertDebuggerStopped(debugWithParamsFile.FilePath);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            var var = variables.FirstOrDefault(v => v.Name == "$Param1");
+            Assert.NotNull(var);
+            Assert.Equal("\"Foo\"", var.ValueString);
+            Assert.False(var.IsExpandable);
+
+            var = variables.FirstOrDefault(v => v.Name == "$Param2");
+            Assert.NotNull(var);
+            Assert.True(var.IsExpandable);
+            
+            var childVars = debugService.GetVariables(var.Id);
+            Assert.Equal(9, childVars.Length);
+            Assert.Equal("\"Bar\"", childVars[0].ValueString);
+            Assert.Equal("\"Baz\"", childVars[1].ValueString);
+
+            var = variables.FirstOrDefault(v => v.Name == "$Force");
+            Assert.NotNull(var);
+            Assert.Equal("True", var.ValueString);
+            Assert.True(var.IsExpandable);
+
+            var = variables.FirstOrDefault(v => v.Name == "$args");
+            Assert.NotNull(var);
+            Assert.True(var.IsExpandable);
+
+            childVars = debugService.GetVariables(var.Id);
+            Assert.Equal(8, childVars.Length);
+            Assert.Equal("\"Extra1\"", childVars[0].ValueString);
+
+            // Abort execution of the script
+            this.powerShellContext.AbortExecution();
         }
 
         [Fact]

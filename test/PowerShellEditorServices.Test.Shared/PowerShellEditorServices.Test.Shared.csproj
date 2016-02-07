@@ -64,6 +64,7 @@
     <None Include="Completion\CompletionExamples.psm1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Debugging\DebugWithParamsTest.ps1" />
     <None Include="Debugging\VariableTest.ps1" />
     <None Include="SymbolDetails\SymbolDetails.ps1" />
     <None Include="Symbols\MultipleSymbols.ps1" />
