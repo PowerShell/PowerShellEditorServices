@@ -33,10 +33,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public string RuntimeExecutable { get; set; }
 
     //        /** Optional arguments passed to the runtime executable. */
-        public string[] RuntimeArguments { get; set; }
+        public string[] RuntimeArgs { get; set; }
 
     //        /** Optional environment variables to pass to the debuggee. The string valued properties of the 'environmentVariables' are used as key/value pairs. */
-        public Dictionary<string, string> EnvironmentVariables { get; set; }
+        public Dictionary<string, string> Env { get; set; }
     }
 }
 

@@ -82,29 +82,26 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             setWorkingDirCommand.AddCommand(@"Microsoft.PowerShell.Management\Set-Location")
                 .AddParameter("LiteralPath", workingDir);
 
+            await editorSession.PowerShellContext.ExecuteCommand(setWorkingDirCommand);
+
+            Logger.Write(LogLevel.Verbose, "Working dir set to '" + workingDir + "'");
+
             // Execute the given PowerShell script and send the response.
             // Note that we aren't waiting for execution to complete here
             // because the debugger could stop while the script executes.
             Task executeTask =
                 editorSession.PowerShellContext
-                    .ExecuteCommand(setWorkingDirCommand)
+                    .ExecuteScriptAtPath(launchParams.Program)
                     .ContinueWith(
-                        (t1) => {
-                            Logger.Write(LogLevel.Verbose, "Working dir set to '" + workingDir + "'");
+                        async (t) => {
+                            Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
 
-                            editorSession.PowerShellContext
-                            .ExecuteScriptAtPath(launchParams.Program)
-                            .ContinueWith(
-                                async (t2) => {
-                                    Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
+                            await requestContext.SendEvent(
+                                TerminatedEvent.Type,
+                                null);
 
-                                    await requestContext.SendEvent(
-                                        TerminatedEvent.Type,
-                                        null);
-
-                                    // Stop the server
-                                    this.Stop();
-                                });
+                            // Stop the server
+                            this.Stop();
                         });
 
             await requestContext.SendResult(null);
