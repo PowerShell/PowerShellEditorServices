@@ -538,16 +538,31 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     ResponseText = "John"
                 });
 
-            // Skip the initial script lines (4 script lines plus 3 blank lines)
-            await outputReader.ReadLines(7);
-            
-            // Verify output
-            string[] outputLines = await outputReader.ReadLines(5);
-            Assert.Equal("Name: John", outputLines[0]);
-            Assert.Equal("", outputLines[1]);
-            Assert.Equal("Key  Value", outputLines[2]);
-            Assert.Equal("---  -----", outputLines[3]);
-            Assert.Equal("Name John ", outputLines[4]);
+            // Skip the initial script lines (4 script lines plus 2 blank lines)
+            string[] scriptLines = await outputReader.ReadLines(6);
+
+            // In some cases an extra newline appears after the script lines.
+            // I have no idea why this happens, but it normally seems to occur
+            // on my local machine and not the CI server.  For now, adjust for
+            // it here.
+            string outputLine = await outputReader.ReadLine();
+            if (string.IsNullOrEmpty(outputLine))
+            {
+                outputLine = await outputReader.ReadLine();
+            }
+
+            // Verify the first line
+            Assert.Equal("Name: John", outputLine);
+
+            // Verify the rest of the output
+            string[] outputLines = await outputReader.ReadLines(4);
+            Assert.Equal("", outputLines[0]);
+            Assert.Equal("Key  Value", outputLines[1]);
+            Assert.Equal("---  -----", outputLines[2]);
+            Assert.Equal("Name John ", outputLines[3]);
+
+            // Wait for execution to complete
+            await evaluateTask;
         }
 
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)

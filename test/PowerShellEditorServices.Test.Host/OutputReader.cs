@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -20,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         private AsyncQueue<OutputEventBody> outputQueue = new AsyncQueue<OutputEventBody>();
 
         private string currentOutputCategory;
-        private Queue<string> bufferedOutput = new Queue<string>();
+        private Queue<Tuple<string, bool>> bufferedOutput = new Queue<Tuple<string, bool>>();
 
         public OutputReader(ProtocolEndpoint protocolClient)
         {
@@ -31,34 +32,80 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
         public async Task<string> ReadLine(string expectedOutputCategory = "stdout")
         {
-            if (this.bufferedOutput.Count > 0)
+            try
             {
-                Assert.Equal(expectedOutputCategory, this.currentOutputCategory);
+                bool lineHasNewLine = false;
+                string[] outputLines = null;
+                string nextOutputString = string.Empty;
 
-                return this.bufferedOutput.Dequeue();
-            }
+                // Wait no longer than 7 seconds for output to come back
+                CancellationTokenSource cancellationSource = new CancellationTokenSource(7000);
 
-            // Execution reaches this point if a buffered line wasn't available
-            OutputEventBody nextOutputEvent = await this.outputQueue.DequeueAsync();
-
-            Assert.Equal(expectedOutputCategory, nextOutputEvent.Category);
-            this.currentOutputCategory = nextOutputEvent.Category;
-
-            string[] outputLines = 
-                nextOutputEvent.Output.Split(
-                    new string[] { "\n", "\r\n" },
-                    StringSplitOptions.None);
-
-            // Buffer remaining lines
-            if (outputLines.Length > 1)
-            {
-                for (int i = 1; i < outputLines.Length; i++)
+                // Any lines in the buffer?
+                if (this.bufferedOutput.Count > 0)
                 {
-                    this.bufferedOutput.Enqueue(outputLines[i]);
-                }
-            }
+                    Assert.Equal(expectedOutputCategory, this.currentOutputCategory);
 
-            return outputLines[0];
+                    // Return the first buffered line
+                    var lineTuple = this.bufferedOutput.Dequeue();
+                    nextOutputString = lineTuple.Item1;
+                    lineHasNewLine = lineTuple.Item2;
+                }
+
+                // Loop until we get a full line of output
+                while (!lineHasNewLine)
+                {
+                    // Execution reaches this point if a buffered line wasn't available
+                    Task<OutputEventBody> outputTask =
+                        this.outputQueue.DequeueAsync(
+                            cancellationSource.Token);
+                    OutputEventBody nextOutputEvent = await outputTask;
+
+                    // Verify that the output is of the expected type
+                    Assert.Equal(expectedOutputCategory, nextOutputEvent.Category);
+                    this.currentOutputCategory = nextOutputEvent.Category;
+
+                    // Split up the output into multiple lines
+                    outputLines = 
+                        nextOutputEvent.Output.Split(
+                            new string[] { "\n", "\r\n" },
+                            StringSplitOptions.None);
+
+                    // Add the first bit of output to the existing string
+                    nextOutputString += outputLines[0];
+
+                    // Have we found a newline now?
+                    lineHasNewLine =
+                        outputLines.Length > 1 ||
+                        nextOutputEvent.Output.EndsWith("\n");
+
+                    // Buffer any remaining lines for future reads
+                    if (outputLines.Length > 1)
+                    {
+                        for (int i = 1; i < outputLines.Length; i++)
+                        {
+                            this.bufferedOutput.Enqueue(
+                                new Tuple<string, bool>(
+                                    outputLines[i],
+
+                                    // The line has a newline if it's not the last segment or
+                                    // if the current output string ends with a newline
+                                    i < outputLines.Length - 1 ||
+                                    nextOutputEvent.Output.EndsWith("\n")));
+                        }
+                    }
+
+                    // At this point, the state of lineHasNewLine will determine
+                    // whether the loop continues to wait for another output
+                    // event that completes the current line.
+                }
+
+                return nextOutputString;
+            }
+            catch (TaskCanceledException)
+            {
+                throw new TimeoutException("Timed out waiting for an input line.");
+            }
         }
 
         public async Task<string[]> ReadLines(int lineCount, string expectedOutputCategory = "stdout")
