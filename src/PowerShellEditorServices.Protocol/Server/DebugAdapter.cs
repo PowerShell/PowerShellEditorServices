@@ -74,10 +74,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             LaunchRequestArguments launchParams,
             RequestContext<object> requestContext)
         {
-            // Set the working directory for the PowerShell runspace to something reasonable
-            // such as the cwd passed in via launch.json. And in case that is null, use the
-            // folder or the script to be executed.
-            string workingDir = launchParams.Cwd ?? Path.GetDirectoryName(launchParams.Program);
+            // Set the working directory for the PowerShell runspace to the cwd passed in via launch.json. 
+            // In case that is null, use the the folder of the script to be executed.  If the resulting 
+            // working dir path is a file path then extract the directory and use that.
+            string workingDir = launchParams.Cwd ?? launchParams.Program;
+            try
+            {
+                if ((File.GetAttributes(workingDir) & FileAttributes.Directory) != FileAttributes.Directory)
+                {
+                    workingDir = Path.GetDirectoryName(workingDir);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Write(LogLevel.Error, "cwd path is bad: " + ex.Message);
+            }
+
             var setWorkingDirCommand = new PSCommand();
             setWorkingDirCommand.AddCommand(@"Microsoft.PowerShell.Management\Set-Location")
                 .AddParameter("LiteralPath", workingDir);
