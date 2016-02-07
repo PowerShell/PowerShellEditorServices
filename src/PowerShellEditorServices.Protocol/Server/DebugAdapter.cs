@@ -97,14 +97,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             await editorSession.PowerShellContext.ExecuteCommand(setWorkingDirCommand);
 
-            Logger.Write(LogLevel.Verbose, "Working dir set to '" + workingDir + "'");
+            Logger.Write(LogLevel.Verbose, "Working dir set to: " + workingDir);
+
+            // Prepare arguments to the script - if specified
+            string arguments = null;
+            if ((launchParams.Args != null) && (launchParams.Args.Length > 0))
+            {
+                arguments = string.Join(" ", launchParams.Args);
+                Logger.Write(LogLevel.Verbose, "Script arguments are: " + arguments);
+            }
 
             // Execute the given PowerShell script and send the response.
             // Note that we aren't waiting for execution to complete here
             // because the debugger could stop while the script executes.
             Task executeTask =
                 editorSession.PowerShellContext
-                    .ExecuteScriptAtPath(launchParams.Program)
+                    .ExecuteScriptAtPath(launchParams.Program, arguments)
                     .ContinueWith(
                         async (t) => {
                             Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
