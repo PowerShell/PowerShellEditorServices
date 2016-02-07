@@ -88,6 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             catch (Exception ex)
             {
                 Logger.Write(LogLevel.Error, "cwd path is bad: " + ex.Message);
+                workingDir = Environment.CurrentDirectory;
             }
 
             var setWorkingDirCommand = new PSCommand();
