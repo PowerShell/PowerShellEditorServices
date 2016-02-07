@@ -6,10 +6,10 @@
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
-using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading.Tasks;
@@ -74,23 +74,37 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             LaunchRequestArguments launchParams,
             RequestContext<object> requestContext)
         {
+            // Set the working directory for the PowerShell runspace to something reasonable
+            // such as the cwd passed in via launch.json. And in case that is null, use the
+            // folder or the script to be executed.
+            string workingDir = launchParams.Cwd ?? Path.GetDirectoryName(launchParams.Program);
+            var setWorkingDirCommand = new PSCommand();
+            setWorkingDirCommand.AddCommand(@"Microsoft.PowerShell.Management\Set-Location")
+                .AddParameter("LiteralPath", workingDir);
+
             // Execute the given PowerShell script and send the response.
             // Note that we aren't waiting for execution to complete here
             // because the debugger could stop while the script executes.
             Task executeTask =
                 editorSession.PowerShellContext
-                    .ExecuteScriptAtPath(launchParams.Program)
+                    .ExecuteCommand(setWorkingDirCommand)
                     .ContinueWith(
-                        async (t) =>
-                        {
-                            Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
+                        (t1) => {
+                            Logger.Write(LogLevel.Verbose, "Working dir set to '" + workingDir + "'");
 
-                            await requestContext.SendEvent(
-                                TerminatedEvent.Type,
-                                null);
+                            editorSession.PowerShellContext
+                            .ExecuteScriptAtPath(launchParams.Program)
+                            .ContinueWith(
+                                async (t2) => {
+                                    Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
 
-                            // Stop the server
-                            this.Stop();
+                                    await requestContext.SendEvent(
+                                        TerminatedEvent.Type,
+                                        null);
+
+                                    // Stop the server
+                                    this.Stop();
+                                });
                         });
 
             await requestContext.SendResult(null);

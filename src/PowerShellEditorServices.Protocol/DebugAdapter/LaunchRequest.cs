@@ -24,10 +24,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public bool StopOnEntry { get; set; }
 
     //        /** Optional arguments passed to the debuggee. */
-        public string[] Arguments { get; set; }
+        public string[] Args { get; set; }
 
     //        /** Launch the debuggee in this working directory (specified as an absolute path). If omitted the debuggee is lauched in its own directory. */
-        public string WorkingDirectory { get; set; }
+        public string Cwd { get; set; }
 
     //        /** Absolute path to the runtime executable to be used. Default is the runtime executable on the PATH. */
         public string RuntimeExecutable { get; set; }
