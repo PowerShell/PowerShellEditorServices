@@ -15,17 +15,20 @@ mkdir $finalPackagePath -Force | Out-Null
 $binaries = Get-ChildItem $binariesToSignPath
 foreach ($binaryPath in $binaries) {
 	$signature = Get-AuthenticodeSignature $binaryPath.FullName
-	
+
 	# TODO: More validation here?
 	if ($signature.Status -eq "NotSigned" -and $FailIfNotSigned) {
 		Write-Error "Binary file is not authenticode signed: $binaryPath" -ErrorAction Stop
 	}
-	
-	# Copy the file back where it belongs
+
+	# Get the package name for the binary and account for 32-bit exe
 	$packageName = [System.IO.Path]::GetFileNameWithoutExtension($binaryPath)
+    $packageName = $packageName.TrimEnd(".x86")
+
+    # Copy the binary back to its package path
 	$packagePath = "$unpackedPackagesPath\$packageName"
 	cp $binaryPath.FullName -Destination "$packagePath\lib\net45\" -Force
-	
+
 	# Repackage the nupkg with NuGet
 	Push-Location $finalPackagePath
 	& $nugetPath pack "$packagePath\$packageName.nuspec"
