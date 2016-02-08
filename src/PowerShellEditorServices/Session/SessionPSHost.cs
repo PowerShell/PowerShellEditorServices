@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Console;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Management.Automation.Host;
 
@@ -65,8 +66,10 @@ namespace Microsoft.PowerShell.EditorServices
 
         public override Version Version
         {
-            // TODO: Pull this from the host application
-            get { return new Version("0.1.0"); }
+            get
+            {
+                return this.GetType().Assembly.GetName().Version;
+            }
         }
 
         // TODO: Pull these from IConsoleHost
@@ -88,22 +91,22 @@ namespace Microsoft.PowerShell.EditorServices
 
         public override void EnterNestedPrompt()
         {
-            throw new NotImplementedException();
+            Logger.Write(LogLevel.Verbose, "EnterNestedPrompt() called.");
         }
 
         public override void ExitNestedPrompt()
         {
-            throw new NotImplementedException();
+            Logger.Write(LogLevel.Verbose, "ExitNestedPrompt() called.");
         }
 
         public override void NotifyBeginApplication()
         {
-            throw new NotImplementedException();
+            Logger.Write(LogLevel.Verbose, "NotifyBeginApplication() called.");
         }
 
         public override void NotifyEndApplication()
         {
-            throw new NotImplementedException();
+            Logger.Write(LogLevel.Verbose, "NotifyEndApplication() called.");
         }
 
         public override void SetShouldExit(int exitCode)
