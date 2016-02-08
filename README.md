@@ -2,8 +2,8 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/85tyhckawwxoiim2/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/powershelleditorservices/branch/master)
 
-PowerShell Editor Services provides common functionality that is needed 
-to enable a consistent and robust PowerShell development experience 
+PowerShell Editor Services provides common functionality that is needed
+to enable a consistent and robust PowerShell development experience
 across multiple editors.
 
 ## Features
@@ -51,3 +51,12 @@ git submodule update
 We would love to incorporate community contributions into this project.  If you would like to
 contribute code, documentation, tests, or bug reports, please read our [Contribution Guide]
 (docs/contributing.md) to learn more.
+
+## Maintainers
+
+- [David Wilson](https://github.com/daviwil) - [@daviwil](http://twitter.com/daviwil)
+- [Keith Hill](https://github.com/rkeithhill) - [@r_keith_hill](http://twitter.com/r_keith_hill)
+
+## License
+
+This project is [licensed under the MIT License](LICENSE.txt).
