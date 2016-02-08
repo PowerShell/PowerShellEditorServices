@@ -8,7 +8,6 @@ $unpackedPackagesPath = [System.IO.Path]::GetFullPath("$releasePath\UnpackedPack
 mkdir $releasePath -Force | Out-Null
 
 # Install prerequisite packages
-#Install-Package -Name "Nito.AsyncEx" -RequiredVersion "3.0.1" -Source "nuget.org" -ProviderName "NuGet" -Destination $buildPath -Force
 #Install-Package -Name "Newtonsoft.Json" -RequiredVersion "7.0.1" -Source "nuget.org" -ProviderName "NuGet" -Destination $buildPath -Force
 
 if ($buildVersion -eq $null) {
@@ -20,25 +19,30 @@ if ($buildVersion -eq $null) {
         Write-Output "Latest build version on master is $buildVersion`r`n"
     }
     else {
-        Write-Error "PowerShellEditorServices build $buildVersion was not successful!" -ErrorAction "Stop"                
+        Write-Error "PowerShellEditorServices build $buildVersion was not successful!" -ErrorAction "Stop"
     }
 }
 
 function Install-BuildPackage($packageName, $extension) {
 	$uri = "https://ci.appveyor.com/nuget/powershelleditorservices/api/v2/package/{0}/{1}" -f $packageName.ToLower(), $buildVersion
 	Write-Verbose "Fetching from URI: $uri"
-	
+
 	# Download the package and extract it
 	$zipPath = "$releasePath\$packageName.zip"
 	$packageContentPath = "$unpackedPackagesPath\$packageName"
 	Invoke-WebRequest $uri -OutFile $zipPath -ErrorAction "Stop"
 	Expand-Archive $zipPath -DestinationPath $packageContentPath -Force -ErrorAction "Stop"
 	Remove-Item $zipPath -ErrorAction "Stop"
-	
+
 	# Copy the binary to the binary signing folder
 	mkdir $binariesToSignPath -Force | Out-Null
 	cp "$packageContentPath\lib\net45\$packageName.$extension" -Force -Destination $binariesToSignPath
-	
+
+    # Don't forget the x86 exe
+    if ($extension -eq "exe") {
+        cp "$packageContentPath\lib\net45\$packageName.x86.$extension" -Force -Destination $binariesToSignPath
+    }
+
 	Write-Output "Extracted package $packageName ($buildVersion)"
 }
 
@@ -46,7 +50,6 @@ function Install-BuildPackage($packageName, $extension) {
 Install-BuildPackage "Microsoft.PowerShell.EditorServices" "dll"
 Install-BuildPackage "Microsoft.PowerShell.EditorServices.Protocol" "dll"
 Install-BuildPackage "Microsoft.PowerShell.EditorServices.Host" "exe"
-Install-BuildPackage "Microsoft.PowerShell.EditorServices.Host.x86" "exe"
 
 # Open the BinariesToSign folder
 & start $binariesToSignPath
