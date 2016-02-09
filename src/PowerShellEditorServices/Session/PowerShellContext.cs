@@ -19,6 +19,7 @@ namespace Microsoft.PowerShell.EditorServices
 {
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
+    using System.Reflection;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -114,6 +115,23 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.Initialize(runspace);
 
+            // Use reflection to execute ConsoleVisibility.AlwaysCaptureApplicationIO = true;
+            Type consoleVisibilityType =
+                Type.GetType(
+                    "System.Management.Automation.ConsoleVisibility, System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35");
+
+            if (consoleVisibilityType != null)
+            {
+                PropertyInfo propertyInfo =
+                    consoleVisibilityType.GetProperty(
+                        "AlwaysCaptureApplicationIO",
+                        BindingFlags.Static | BindingFlags.Public);
+
+                if (propertyInfo != null)
+                {
+                    propertyInfo.SetValue(null, true);
+                }
+            }
         }
 
         /// <summary>
