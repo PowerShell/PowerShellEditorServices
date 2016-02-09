@@ -565,6 +565,30 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             await evaluateTask;
         }
 
+        [Fact]
+        public async Task ServiceExecutesNativeCommandAndReceivesCommand()
+        {
+            OutputReader outputReader = new OutputReader(this.protocolClient);
+
+            // Execute the script but don't await the task yet because
+            // the choice prompt will block execution from completing
+            Task<EvaluateResponseBody> evaluateTask =
+                this.SendRequest(
+                    EvaluateRequest.Type,
+                    new EvaluateRequestArguments
+                    {
+                        Expression = "cmd.exe /c 'echo Test Output'",
+                        Context = "repl"
+                    });
+
+            // Skip the command line and the following newline
+            await outputReader.ReadLines(2);
+
+            // Wait for the selection to appear as output
+            await evaluateTask;
+            Assert.Equal("Test Output", await outputReader.ReadLine());
+        }
+
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)
         {
             string fileContents = string.Join(Environment.NewLine, File.ReadAllLines(filePath));
