@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## 0.4.1
+### Tuesday, February 9, 2016
+
+- Fixed #147: Running native console apps causes their stdout to be written in the Host
+
 ## 0.4.0
 ### Monday, February 8, 2016
 
