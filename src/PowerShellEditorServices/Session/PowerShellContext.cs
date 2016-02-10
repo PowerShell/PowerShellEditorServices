@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -584,14 +585,31 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>The path with [ and ] escaped.</returns>
         internal static string EscapePath(string path, bool escapeSpaces)
         {
-            string escapedPath = path.Replace("[", "`[").Replace("]", "`]");
+            string escapedPath = Regex.Replace(path, @"(?<!`)\[", "`[");
+            escapedPath = Regex.Replace(escapedPath, @"(?<!`)\]", "`]");
 
             if (escapeSpaces)
             {
-                escapedPath = escapedPath.Replace(" ", "` ");
+                escapedPath = Regex.Replace(escapedPath, @"(?<!`) ", "` ");
             }
 
             return escapedPath;
+        }
+
+        /// <summary>
+        /// Unescapes any escaped [, ] or space characters. Typically use this before calling a
+        /// .NET API that doesn't understand PowerShell escaped chars.
+        /// </summary>
+        /// <param name="path">The path to unescape.</param>
+        /// <returns>The path with the ` character before [, ] and spaces removed.</returns>
+        internal static string UnescapePath(string path)
+        {
+            if (!path.Contains("`"))
+            {
+                return path;
+            }
+
+            return Regex.Replace(path, @"`(?=[ \[\]])", "");
         }
 
         #endregion
