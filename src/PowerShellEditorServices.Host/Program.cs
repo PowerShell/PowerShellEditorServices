@@ -27,15 +27,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             "/waitForDebugger",
                             StringComparison.InvariantCultureIgnoreCase));
 
-            // Should we wait for the debugger before starting?
             if (waitForDebugger)
             {
-                // Wait for 25 seconds and then continue
-                int waitCountdown = 25;
-                while (!Debugger.IsAttached && waitCountdown > 0)
+                if (Debugger.IsAttached)
                 {
-                    Thread.Sleep(1000);
-                    waitCountdown--;
+                    Debugger.Break();
+                }
+                else
+                {
+                    Debugger.Launch();
                 }
             }
 #endif
