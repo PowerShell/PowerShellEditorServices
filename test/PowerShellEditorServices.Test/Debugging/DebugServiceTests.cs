@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         {
             ScriptFile debugWithParamsFile =
                 this.workspace.GetFile(
-                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugWithParamsTest.ps1");
+                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\Debug With Params [Test].ps1");
 
             await this.debugService.SetBreakpoints(
                 debugWithParamsFile,

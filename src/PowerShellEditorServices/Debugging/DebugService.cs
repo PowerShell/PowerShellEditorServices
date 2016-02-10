@@ -79,7 +79,8 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
                 // quoted and have those wildcard chars escaped.
-                string escapedScriptPath = PowerShellContext.EscapeWildcardsInPath(scriptFile.FilePath);
+                string escapedScriptPath = 
+                    PowerShellContext.EscapePath(scriptFile.FilePath, escapeSpaces: false);
 
                 PSCommand psCommand = new PSCommand();
                 psCommand.AddCommand("Set-PSBreakpoint");

@@ -457,7 +457,7 @@ namespace Microsoft.PowerShell.EditorServices
             // If we don't escape wildcard characters in the script path, the script can
             // fail to execute if say the script name was foo][.ps1.
             // Related to issue #123.
-            string escapedScriptPath = EscapeWildcardsInPath(scriptPath);
+            string escapedScriptPath = EscapePath(scriptPath, escapeSpaces: true);
 
             if (arguments != null)
             {
@@ -577,13 +577,21 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Returns the passed in path with the [ and ] wildcard characters escaped.
+        /// Returns the passed in path with the [ and ] characters escaped. Escaping spaces is optional.
         /// </summary>
         /// <param name="path">The path to process.</param>
+        /// <param name="escapeSpaces">Specify True to escape spaces in the path, otherwise False.</param>
         /// <returns>The path with [ and ] escaped.</returns>
-        internal static string EscapeWildcardsInPath(string path)
+        internal static string EscapePath(string path, bool escapeSpaces)
         {
-            return path.Replace("[", "`[").Replace("]", "`]");
+            string escapedPath = path.Replace("[", "`[").Replace("]", "`]");
+
+            if (escapeSpaces)
+            {
+                escapedPath = escapedPath.Replace(" ", "` ");
+            }
+
+            return escapedPath;
         }
 
         #endregion
