@@ -578,12 +578,22 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Sets the current working directory of the powershell context.  The path should be
+        /// unescaped before calling this method.
+        /// </summary>
+        /// <param name="path"></param>
+        public void SetWorkingDirectory(string path)
+        {
+            this.currentRunspace.SessionStateProxy.Path.SetLocation(path);
+        }
+
+        /// <summary>
         /// Returns the passed in path with the [ and ] characters escaped. Escaping spaces is optional.
         /// </summary>
         /// <param name="path">The path to process.</param>
         /// <param name="escapeSpaces">Specify True to escape spaces in the path, otherwise False.</param>
         /// <returns>The path with [ and ] escaped.</returns>
-        internal static string EscapePath(string path, bool escapeSpaces)
+        public static string EscapePath(string path, bool escapeSpaces)
         {
             string escapedPath = Regex.Replace(path, @"(?<!`)\[", "`[");
             escapedPath = Regex.Replace(escapedPath, @"(?<!`)\]", "`]");
@@ -602,7 +612,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="path">The path to unescape.</param>
         /// <returns>The path with the ` character before [, ] and spaces removed.</returns>
-        internal static string UnescapePath(string path)
+        public static string UnescapePath(string path)
         {
             if (!path.Contains("`"))
             {
