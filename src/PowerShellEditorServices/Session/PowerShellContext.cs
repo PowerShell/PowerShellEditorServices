@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -457,7 +458,7 @@ namespace Microsoft.PowerShell.EditorServices
             // If we don't escape wildcard characters in the script path, the script can
             // fail to execute if say the script name was foo][.ps1.
             // Related to issue #123.
-            string escapedScriptPath = EscapeWildcardsInPath(scriptPath);
+            string escapedScriptPath = EscapePath(scriptPath, escapeSpaces: true);
 
             if (arguments != null)
             {
@@ -577,13 +578,48 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Returns the passed in path with the [ and ] wildcard characters escaped.
+        /// Sets the current working directory of the powershell context.  The path should be
+        /// unescaped before calling this method.
+        /// </summary>
+        /// <param name="path"></param>
+        public void SetWorkingDirectory(string path)
+        {
+            this.currentRunspace.SessionStateProxy.Path.SetLocation(path);
+        }
+
+        /// <summary>
+        /// Returns the passed in path with the [ and ] characters escaped. Escaping spaces is optional.
         /// </summary>
         /// <param name="path">The path to process.</param>
+        /// <param name="escapeSpaces">Specify True to escape spaces in the path, otherwise False.</param>
         /// <returns>The path with [ and ] escaped.</returns>
-        internal static string EscapeWildcardsInPath(string path)
+        public static string EscapePath(string path, bool escapeSpaces)
         {
-            return path.Replace("[", "`[").Replace("]", "`]");
+            string escapedPath = Regex.Replace(path, @"(?<!`)\[", "`[");
+            escapedPath = Regex.Replace(escapedPath, @"(?<!`)\]", "`]");
+
+            if (escapeSpaces)
+            {
+                escapedPath = Regex.Replace(escapedPath, @"(?<!`) ", "` ");
+            }
+
+            return escapedPath;
+        }
+
+        /// <summary>
+        /// Unescapes any escaped [, ] or space characters. Typically use this before calling a
+        /// .NET API that doesn't understand PowerShell escaped chars.
+        /// </summary>
+        /// <param name="path">The path to unescape.</param>
+        /// <returns>The path with the ` character before [, ] and spaces removed.</returns>
+        public static string UnescapePath(string path)
+        {
+            if (!path.Contains("`"))
+            {
+                return path;
+            }
+
+            return Regex.Replace(path, @"`(?=[ \[\]])", "");
         }
 
         #endregion

@@ -85,6 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // In case that is null, use the the folder of the script to be executed.  If the resulting 
             // working dir path is a file path then extract the directory and use that.
             string workingDir = launchParams.Cwd ?? launchParams.Program;
+            workingDir = PowerShellContext.UnescapePath(workingDir);
             try
             {
                 if ((File.GetAttributes(workingDir) & FileAttributes.Directory) != FileAttributes.Directory)
@@ -94,16 +95,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
             catch (Exception ex)
             {
-                Logger.Write(LogLevel.Error, "cwd path is bad: " + ex.Message);
+                Logger.Write(LogLevel.Error, "cwd path is invalid: " + ex.Message);
                 workingDir = Environment.CurrentDirectory;
             }
 
-            var setWorkingDirCommand = new PSCommand();
-            setWorkingDirCommand.AddCommand(@"Microsoft.PowerShell.Management\Set-Location")
-                .AddParameter("LiteralPath", workingDir);
-
-            await editorSession.PowerShellContext.ExecuteCommand(setWorkingDirCommand);
-
+            editorSession.PowerShellContext.SetWorkingDirectory(workingDir);
             Logger.Write(LogLevel.Verbose, "Working dir set to: " + workingDir);
 
             // Prepare arguments to the script - if specified
