@@ -14,6 +14,11 @@ across multiple editors.
   - Real-time semantic analysis of scripts using PowerShell Script Analyzer
   - Basic script evaluation
 - The Debugging Service simplifies interaction with the PowerShell debugger (breakpoints, variables, call stack, etc)
+- The Console Service provides a simplified interactive console interface which implements a rich PSHost implementation:
+  - Interactive command execution support, including basic use of native console applications
+  - Choice prompt support
+  - Input prompt support
+  - Get-Credential support (coming soon)
 
 The core Editor Services library is intended to be consumed in any type of host application, whether
 it is a WPF UI, console application, or web service.  A standard console application host is included
@@ -27,9 +32,11 @@ Check out the following two pages for information about how to use the API and h
 - **[Using the .NET API](docs/using_the_dotnet_api.md)** - Read this if you want to use the API in your .NET application
 - **[Using the Host Process](docs/using_the_host_process.md)** - Read this if you want to use the API in a non-.NET application such as a code editor
 
+You can also read our plans for future feature development by looking at the **[Development Roadmap](https://github.com/PowerShell/PowerShellEditorServices/wiki/Development-Roadmap)**.
+
 ## Installation
 
-**TODO**: Add information about acquiring packages from NuGet once those are available.
+**TODO**: Add information about acquiring packages from NuGet and npm once those are available.
 
 ## Cloning the Code
 
