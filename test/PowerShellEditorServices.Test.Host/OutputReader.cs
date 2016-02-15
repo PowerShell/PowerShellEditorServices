@@ -89,9 +89,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                                     outputLines[i],
 
                                     // The line has a newline if it's not the last segment or
-                                    // if the current output string ends with a newline
+                                    // if the last segment is not an empty string and the
+                                    // complete output string ends with a newline
                                     i < outputLines.Length - 1 ||
-                                    nextOutputEvent.Output.EndsWith("\n")));
+                                    (outputLines[outputLines.Length - 1].Length > 0 &&
+                                     nextOutputEvent.Output.EndsWith("\n"))));
                         }
                     }
 
