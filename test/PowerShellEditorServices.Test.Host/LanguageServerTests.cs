@@ -490,8 +490,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     ChosenItem = "a"
                 });
 
-            // Skip the initial script lines (6 script lines plus 3 blank lines)
-            await outputReader.ReadLines(9);
+            // Skip the initial script lines (6 script lines plus 2 blank lines)
+            string[] outputLines = await outputReader.ReadLines(8);
 
             // Wait for the selection to appear as output
             await evaluateTask;
@@ -541,18 +541,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             // Skip the initial script lines (4 script lines plus 2 blank lines)
             string[] scriptLines = await outputReader.ReadLines(6);
 
-            // In some cases an extra newline appears after the script lines.
-            // I have no idea why this happens, but it normally seems to occur
-            // on my local machine and not the CI server.  For now, adjust for
-            // it here.
-            string outputLine = await outputReader.ReadLine();
-            if (string.IsNullOrEmpty(outputLine))
-            {
-                outputLine = await outputReader.ReadLine();
-            }
-
             // Verify the first line
-            Assert.Equal("Name: John", outputLine);
+            Assert.Equal("Name: John", await outputReader.ReadLine());
 
             // Verify the rest of the output
             string[] outputLines = await outputReader.ReadLines(4);
