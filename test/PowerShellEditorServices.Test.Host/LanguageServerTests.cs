@@ -66,6 +66,22 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
+        public async Task ServiceReturnsSemanticMarkers()
+        {
+            // Send the 'didOpen' event
+            await this.SendOpenFileEvent("TestFiles\\SimpleSemanticError.ps1", false);
+
+            // Wait for the diagnostic event
+            PublishDiagnosticsNotification diagnostics = 
+                await this.WaitForEvent(
+                    PublishDiagnosticsNotification.Type);
+
+            // Was there a semantic error?
+            Assert.NotEqual(0, diagnostics.Diagnostics.Length);
+            Assert.Contains("unapproved", diagnostics.Diagnostics[0].Message);
+        }
+
+        [Fact]
         public async Task ServiceCompletesFunctionName()
         {
             await this.SendOpenFileEvent("TestFiles\\CompleteFunctionName.ps1");

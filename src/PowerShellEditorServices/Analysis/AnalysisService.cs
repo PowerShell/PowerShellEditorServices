@@ -3,8 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Utility;
 using Microsoft.Windows.PowerShell.ScriptAnalyzer;
 using System;
+using System.IO;
 using System.Linq;
 using System.Management.Automation.Runspaces;
 using System.Threading;
@@ -47,17 +49,30 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public AnalysisService()
         {
-            this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
-            this.analysisRunspace.ApartmentState = ApartmentState.STA;
-            this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
-            this.analysisRunspace.Open();
+            try
+            {
+                // Attempt to create a ScriptAnalyzer instance first
+                // just in case the assembly can't be found and we
+                // can skip creating an extra runspace.
+                this.scriptAnalyzer = new ScriptAnalyzer();
 
-            this.scriptAnalyzer = new ScriptAnalyzer();
-            this.scriptAnalyzer.Initialize(
-                this.analysisRunspace,
-                new AnalysisOutputWriter(),
-                null,
-                IncludedRules);
+                this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
+                this.analysisRunspace.ApartmentState = ApartmentState.STA;
+                this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
+                this.analysisRunspace.Open();
+
+                this.scriptAnalyzer.Initialize(
+                    this.analysisRunspace,
+                    new AnalysisOutputWriter(),
+                    includeRuleNames: IncludedRules,
+                    includeDefaultRules: true);
+            }
+            catch (FileNotFoundException)
+            {
+                Logger.Write(
+                    LogLevel.Warning,
+                    "Script Analyzer binaries not found, AnalysisService will be disabled.");
+            }
         }
 
         #endregion
@@ -72,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
         public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file)
         {
-            if (file.IsAnalysisEnabled)
+            if (this.scriptAnalyzer != null && file.IsAnalysisEnabled)
             {
                 // TODO: This is a temporary fix until we can change how
                 // ScriptAnalyzer invokes their async tasks.
