@@ -80,10 +80,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
 
-        protected override void Shutdown()
+        protected override async Task Shutdown()
         {
             // Make sure remaining output is flushed before exiting
-            this.outputDebouncer.Flush().Wait();
+            await this.outputDebouncer.Flush();
 
             Logger.Write(LogLevel.Normal, "Language service is shutting down...");
 

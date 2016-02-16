@@ -34,11 +34,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             return Task.FromResult(true);
         }
 
-        protected override Task OnStop()
+        protected override async Task OnStop()
         {
-            this.Shutdown();
-
-            return Task.FromResult(true);
+            await this.Shutdown();
         }
 
         /// <summary>
@@ -49,37 +47,37 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         /// <summary>
         /// Can be overridden by the subclass to provide shutdown
-        /// logic before the server exits.
+        /// logic before the server exits.  Subclasses do not need
+        /// to invoke or return the value of the base implementation.
         /// </summary>
-        protected virtual void Shutdown()
+        protected virtual Task Shutdown()
         {
             // No default implementation yet.
+            return Task.FromResult(true);
         }
 
-        private Task HandleShutdownRequest(
+        private async Task HandleShutdownRequest(
             object shutdownParams,
             RequestContext<object> requestContext)
         {
             // Allow the implementor to shut down gracefully
-            this.Shutdown();
+            await this.Shutdown();
 
-            return requestContext.SendResult(new object());
+            await requestContext.SendResult(new object());
         }
 
-        private Task HandleExitNotification(
+        private async Task HandleExitNotification(
             object exitParams,
             EventContext eventContext)
         {
             // Stop the server channel
-            this.Stop();
+            await this.Stop();
 
             // Notify any waiter that the server has exited
             if (this.serverExitedTask != null)
             {
                 this.serverExitedTask.SetResult(true);
             }
-
-            return Task.FromResult(true);
         }
     }
 }
