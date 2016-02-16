@@ -64,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             return new StackFrameDetails
             {
-                ScriptPath = callStackFrame.ScriptName,
+                ScriptPath = callStackFrame.ScriptName ?? "<No File>",
                 FunctionName = callStackFrame.FunctionName,
                 LineNumber = callStackFrame.Position.StartLineNumber,
                 ColumnNumber = callStackFrame.Position.StartColumnNumber,
