@@ -1,5 +1,13 @@
 # PowerShell Editor Services Release History
 
+## 0.4.2
+### Wednesday, February 17, 2016
+
+- Fixed #127: Update to PSScriptAnalyzer 1.4.0
+- Fixed #149: Scripts fail to launch in the debugger if working directory path contains spaces
+- Fixed #153: Script Analyzer integration is not working in 0.4.1 release
+- Fixed #159: LanguageServer.Shutdown method hangs while waiting for remaining buffered output to flush
+
 ## 0.4.1
 ### Tuesday, February 9, 2016
 
