@@ -4,6 +4,8 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Console;
+using Microsoft.PowerShell.EditorServices.Utility;
+using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Threading;
@@ -64,9 +66,21 @@ namespace Microsoft.PowerShell.EditorServices
             // Initialize all services
             this.PowerShellContext = new PowerShellContext();
             this.LanguageService = new LanguageService(this.PowerShellContext);
-            this.AnalysisService = new AnalysisService();
             this.DebugService = new DebugService(this.PowerShellContext);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
+
+            // AnalysisService will throw FileNotFoundException if
+            // Script Analyzer binaries are not included.
+            try
+            {
+                this.AnalysisService = new AnalysisService();
+            }
+            catch (FileNotFoundException)
+            {
+                Logger.Write(
+                    LogLevel.Warning,
+                    "Script Analyzer binaries not found, AnalysisService will be disabled.");
+            }
         }
 
         #endregion
