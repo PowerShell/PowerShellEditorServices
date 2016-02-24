@@ -891,11 +891,23 @@ function __Expand-Alias {
             // Get the requested files
             foreach (ScriptFile scriptFile in filesToAnalyze)
             {
-                Logger.Write(LogLevel.Verbose, "Analyzing script file: " + scriptFile.FilePath);
+                ScriptFileMarker[] semanticMarkers = null;
+                if (editorSession.AnalysisService != null)
+                {
+                    Logger.Write(LogLevel.Verbose, "Analyzing script file: " + scriptFile.FilePath);
 
-                var semanticMarkers =
-                    editorSession.AnalysisService.GetSemanticMarkers(
-                        scriptFile);
+                    semanticMarkers =
+                        editorSession.AnalysisService.GetSemanticMarkers(
+                            scriptFile);
+
+                    Logger.Write(LogLevel.Verbose, "Analysis complete.");
+                }
+                else
+                {
+                    // Semantic markers aren't available if the AnalysisService
+                    // isn't available
+                    semanticMarkers = new ScriptFileMarker[0];
+                }
 
                 var allMarkers = scriptFile.SyntaxMarkers.Concat(semanticMarkers);
 
@@ -904,8 +916,6 @@ function __Expand-Alias {
                     semanticMarkers,
                     eventContext);
             }
-
-            Logger.Write(LogLevel.Verbose, "Analysis complete.");
         }
 
         private static async Task PublishScriptDiagnostics(
