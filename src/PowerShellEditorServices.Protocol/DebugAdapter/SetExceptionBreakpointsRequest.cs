@@ -7,9 +7,10 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    //    /** SetExceptionBreakpoints request; value of command field is "setExceptionBreakpoints".
-    //        Enable that the debuggee stops on exceptions with a StoppedEvent (event type 'exception').
-    //    */
+    /// <summary>
+    /// SetExceptionBreakpoints request; value of command field is "setExceptionBreakpoints".
+    /// Enable that the debuggee stops on exceptions with a StoppedEvent (event type 'exception').
+    /// </summary>
     public class SetExceptionBreakpointsRequest
     {
         public static readonly
@@ -17,14 +18,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
             RequestType<SetExceptionBreakpointsRequestArguments, object>.Create("setExceptionBreakpoints");
     }
 
+    /// <summary>
+    /// Arguments for "setExceptionBreakpoints" request.
+    /// </summary>
     public class SetExceptionBreakpointsRequestArguments
     {
-    //    /** Arguments for "setExceptionBreakpoints" request. */
-    //    export interface SetExceptionBreakpointsArguments {
-    //        /** Names of enabled exception breakpoints. */
-    //        filters: string[];
-    //    }
+        /// <summary>
+        /// Gets or sets the names of enabled exception breakpoints.
+        /// </summary>
         public string[] Filters { get; set; }
     }
 }
-

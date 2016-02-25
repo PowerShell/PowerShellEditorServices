@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class InitializeRequest
     {
         public static readonly
-            RequestType<InitializeRequestArguments, object> Type =
-            RequestType<InitializeRequestArguments, object>.Create("initialize");
+            RequestType<InitializeRequestArguments, InitializeResponseBody> Type =
+            RequestType<InitializeRequestArguments, InitializeResponseBody>.Create("initialize");
     }
 
     public class InitializeRequestArguments
@@ -25,5 +25,37 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public bool SourceMaps { get; set; }
 
         public string GeneratedCodeDirectory { get; set; }
+    }
+
+    public class InitializeResponseBody
+    {
+        /// <summary>
+        /// Gets or sets a boolean value that determines whether the debug adapter 
+        /// supports the configurationDoneRequest.
+        /// </summary>
+        public bool SupportsConfigurationDoneRequest { get; set; }
+
+        /// <summary>
+        /// Gets or sets a boolean value that determines whether the debug adapter 
+        /// supports functionBreakpoints.
+        /// </summary>
+        public bool SupportsFunctionBreakpoints { get; set; }
+
+        /// <summary>
+        /// Gets or sets a boolean value that determines whether the debug adapter 
+        /// supports conditionalBreakpoints.
+        /// </summary>
+        public bool SupportsConditionalBreakpoints { get; set; }
+
+        /// <summary>
+        /// Gets or sets a boolean value that determines whether the debug adapter 
+        /// supports a (side effect free) evaluate request for data hovers.
+        /// </summary>
+        public bool SupportsEvaluateForHovers { get; set; }
+
+        /// <summary>
+        /// Gets or sets the available filters for the setExceptionBreakpoints request.
+        /// </summary>
+        public object ExceptionBreakpointFilters { get; set; }
     }
 }

@@ -20,7 +20,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     {
         public int ThreadId { get; private set; }
 
-    //        /** The maximum number of frames to return. If levels is not specified or 0, all frames are returned. */
+        /// <summary>
+        /// Gets the maximum number of frames to return. If levels is not specified or 0, all frames are returned.
+        /// </summary>
         public int Levels { get; private set; }
     }
 

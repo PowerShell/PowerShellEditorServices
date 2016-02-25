@@ -16,7 +16,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 
     public class SourceRequestArguments
     {
-    //        /** The reference to the source. This is the value received in Source.reference. */
+        /// <summary>
+        /// Gets or sets the reference to the source. This is the value received in Source.reference.
+        /// </summary>
         public int SourceReference { get; set; }
     }
 
@@ -25,4 +27,3 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public string Content { get; set; }
     }
 }
-
