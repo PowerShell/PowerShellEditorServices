@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private async Task HandleInitializeRequest(
             object shutdownParams,
-            RequestContext<object> requestContext)
+            RequestContext<InitializeResponseBody> requestContext)
         {
             // Send the Initialized event first so that we get breakpoints
             await requestContext.SendEvent(
@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 null);
 
             // Now send the Initialize response to continue setup
-            await requestContext.SendResult(new object());
+            await requestContext.SendResult(new InitializeResponseBody());
         }
     }
 }
