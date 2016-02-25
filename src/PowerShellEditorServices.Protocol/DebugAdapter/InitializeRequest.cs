@@ -52,10 +52,5 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         /// supports a (side effect free) evaluate request for data hovers.
         /// </summary>
         public bool SupportsEvaluateForHovers { get; set; }
-
-        /// <summary>
-        /// Gets or sets the available filters for the setExceptionBreakpoints request.
-        /// </summary>
-        public object ExceptionBreakpointFilters { get; set; }
     }
 }
