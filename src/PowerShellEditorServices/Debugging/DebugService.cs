@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Language;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Utility;
 
@@ -57,47 +58,130 @@ namespace Microsoft.PowerShell.EditorServices
         #region Public Methods
 
         /// <summary>
-        /// Sets the list of breakpoints for the current debugging session.
+        /// Sets the list of line breakpoints for the current debugging session.
         /// </summary>
         /// <param name="scriptFile">The ScriptFile in which breakpoints will be set.</param>
-        /// <param name="lineNumbers">The line numbers at which breakpoints will be set.</param>
+        /// <param name="breakpoints">BreakpointDetails for each breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<BreakpointDetails[]> SetBreakpoints(
+        public async Task<BreakpointDetails[]> SetLineBreakpoints(
             ScriptFile scriptFile, 
-            int[] lineNumbers, 
+            BreakpointDetails[] breakpoints, 
             bool clearExisting = true)
         {
-            IEnumerable<Breakpoint> resultBreakpoints = null;
+            var resultBreakpointDetails = new List<BreakpointDetails>();
 
             if (clearExisting)
             {
                 await this.ClearBreakpointsInFile(scriptFile);
             }
 
-            if (lineNumbers.Length > 0)
+            if (breakpoints.Length > 0)
             {
                 // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
                 // quoted and have those wildcard chars escaped.
                 string escapedScriptPath = 
                     PowerShellContext.EscapePath(scriptFile.FilePath, escapeSpaces: false);
 
-                PSCommand psCommand = new PSCommand();
-                psCommand.AddCommand("Set-PSBreakpoint");
-                psCommand.AddParameter("Script", escapedScriptPath);
-                psCommand.AddParameter("Line", lineNumbers.Length > 0 ? lineNumbers : null);
-
-                resultBreakpoints =
-                    await this.powerShellContext.ExecuteCommand<Breakpoint>(
-                        psCommand);
-
-                return
-                    resultBreakpoints
-                        .Select(BreakpointDetails.Create)
+                // Line breakpoints with no condition and no column number are the most common, 
+                // so let's optimize for that case by making a single call to Set-PSBreakpoint 
+                // with all the lines to set a breakpoint on.
+                int[] lineOnlyBreakpoints =
+                    breakpoints.Where(b => (b.ColumnNumber == null) && (b.Condition == null))
+                        .Select(b => b.LineNumber)
                         .ToArray();
+
+                if (lineOnlyBreakpoints.Length > 0)
+                {
+                    PSCommand psCommand = new PSCommand();
+                    psCommand.AddCommand("Set-PSBreakpoint");
+                    psCommand.AddParameter("Script", escapedScriptPath);
+                    psCommand.AddParameter("Line", lineOnlyBreakpoints);
+
+                    var configuredBreakpoints =
+                        await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
+
+                    resultBreakpointDetails.AddRange(
+                        configuredBreakpoints.Select(BreakpointDetails.Create));
+                }
+
+                // Process the rest of the breakpoints
+                var advancedLineBreakpoints =
+                    breakpoints.Where(b => (b.ColumnNumber != null) || (b.Condition != null))
+                        .ToArray();
+
+                foreach (BreakpointDetails breakpoint in advancedLineBreakpoints)
+                {
+                    PSCommand psCommand = new PSCommand();
+                    psCommand.AddCommand("Set-PSBreakpoint");
+                    psCommand.AddParameter("Script", escapedScriptPath);
+                    psCommand.AddParameter("Line", breakpoint.LineNumber);
+
+                    // Check if the user has specified the column number for the breakpoint.
+                    if (breakpoint.ColumnNumber.HasValue)
+                    {
+                        // It bums me out that PowerShell will silently ignore a breakpoint
+                        // where either the line or the column is invalid.  I'd rather have an
+                        // error message I could rely back to the client.
+                        psCommand.AddParameter("Column", breakpoint.ColumnNumber.Value);
+                    }
+
+                    // Check if this is a "conditional" line breakpoint.
+                    if (breakpoint.Condition != null)
+                    {
+                        try
+                        {
+                            ScriptBlock actionScriptBlock = ScriptBlock.Create(breakpoint.Condition);
+
+                            // Check for simple, common errors that ScriptBlock parsing will not catch 
+                            // e.g. $i == 3 and $i > 3
+                            string message;
+                            if (!ValidateBreakpointConditionAst(actionScriptBlock.Ast, out message))
+                            {
+                                breakpoint.Verified = false;
+                                breakpoint.Message = message;
+                                resultBreakpointDetails.Add(breakpoint);
+                                continue;
+                            }
+
+                            // Check for "advanced" condition syntax i.e. if the user has specified
+                            // a "break" or  "continue" statement anywhere in their scriptblock,
+                            // pass their scriptblock through to the Action parameter as-is.
+                            Ast breakOrContinueStatementAst =
+                                actionScriptBlock.Ast.Find(
+                                    ast => (ast is BreakStatementAst || ast is ContinueStatementAst), true);
+
+                            // If this isn't advanced syntax then the conditions string should be a simple
+                            // expression that needs to be wrapped in a "if" test that conditionally executes
+                            // a break statement.
+                            if (breakOrContinueStatementAst == null)
+                            {
+                                string wrappedCondition = $"if ({breakpoint.Condition}) {{ break }}";
+                                actionScriptBlock = ScriptBlock.Create(wrappedCondition);
+                            }
+
+                            psCommand.AddParameter("Action", actionScriptBlock);
+                        }
+                        catch (ParseException ex)
+                        {
+                            // Failed to create conditional breakpoint likely because the user provided an 
+                            // invalid PowerShell expression. Let the user know why.
+                            breakpoint.Verified = false;
+                            breakpoint.Message = ExtractAndScrubParseExceptionMessage(ex, breakpoint.Condition);
+                            resultBreakpointDetails.Add(breakpoint);
+                            continue;
+                        }
+                    }
+
+                    IEnumerable<Breakpoint> configuredBreakpoints =
+                        await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
+
+                    resultBreakpointDetails.AddRange(
+                        configuredBreakpoints.Select(BreakpointDetails.Create));
+                }
             }
 
-            return new BreakpointDetails[0];
+            return resultBreakpointDetails.ToArray();
         }
 
         /// <summary>
@@ -461,6 +545,85 @@ namespace Microsoft.PowerShell.EditorServices
                 this.stackFrameDetails[i] = 
                     StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables);
             }
+        }
+
+        private bool ValidateBreakpointConditionAst(Ast conditionAst, out string message)
+        {
+            message = string.Empty;
+
+            // We are only inspecting a few simple scenarios in the EndBlock only.
+            ScriptBlockAst scriptBlockAst = conditionAst as ScriptBlockAst;
+            if ((scriptBlockAst != null) && 
+                (scriptBlockAst.BeginBlock == null) && 
+                (scriptBlockAst.ProcessBlock == null) && 
+                (scriptBlockAst.EndBlock != null) && 
+                (scriptBlockAst.EndBlock.Statements.Count == 1))
+            {
+                StatementAst statementAst = scriptBlockAst.EndBlock.Statements[0];
+                string condition = statementAst.Extent.Text;
+
+                if (statementAst is AssignmentStatementAst)
+                {
+                    message = FormatInvalidBreakpointConditionMessage(condition, "Use '-eq' instead of '=='.");
+                    return false;
+                }
+
+                PipelineAst pipelineAst = statementAst as PipelineAst;
+                if ((pipelineAst != null) && (pipelineAst.PipelineElements.Count == 1) &&
+                    (pipelineAst.PipelineElements[0].Redirections.Count > 0))
+                {
+                    message = FormatInvalidBreakpointConditionMessage(condition, "Use '-gt' instead of '>'.");
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private string ExtractAndScrubParseExceptionMessage(ParseException parseException, string condition)
+        {
+            string[] messageLines = parseException.Message.Split('\n');
+
+            // Skip first line - it is a location indicator "At line:1 char: 4"
+            for (int i = 1; i < messageLines.Length; i++)
+            {
+                string line = messageLines[i];
+                if (line.StartsWith("+"))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    // Note '==' and '>" do not generate parse errors
+                    if (line.Contains("'!='"))
+                    {
+                        line += " Use operator '-ne' instead of '!='.";
+                    }
+                    else if (line.Contains("'<'") && condition.Contains("<="))
+                    {
+                        line += " Use operator '-le' instead of '<='.";
+                    }
+                    else if (line.Contains("'<'"))
+                    {
+                        line += " Use operator '-lt' instead of '<'.";
+                    }
+                    else if (condition.Contains(">="))
+                    {
+                        line += " Use operator '-ge' instead of '>='.";
+                    }
+
+                    return FormatInvalidBreakpointConditionMessage(condition, line);
+                }
+            }
+
+            // If the message format isn't in a form we expect, just return the whole message.
+            return FormatInvalidBreakpointConditionMessage(condition, parseException.Message);
+        }
+
+        private string FormatInvalidBreakpointConditionMessage(string condition, string message)
+        {
+            return $"'{condition}' is not a valid PowerShell expression. {message}";
         }
 
         #endregion

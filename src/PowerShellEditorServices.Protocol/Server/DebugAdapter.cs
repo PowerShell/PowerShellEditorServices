@@ -172,10 +172,21 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 editorSession.Workspace.GetFile(
                     setBreakpointsParams.Source.Path);
 
+            var breakpointDetails = new BreakpointDetails[setBreakpointsParams.Breakpoints.Length];
+            for (int i = 0; i < breakpointDetails.Length; i++)
+            {
+                SourceBreakpoint srcBreakpoint = setBreakpointsParams.Breakpoints[i];
+                breakpointDetails[i] = BreakpointDetails.Create(
+                    scriptFile.FilePath, 
+                    srcBreakpoint.Line, 
+                    srcBreakpoint.Column, 
+                    srcBreakpoint.Condition);
+            }
+
             BreakpointDetails[] breakpoints =
-                await editorSession.DebugService.SetBreakpoints(
+                await editorSession.DebugService.SetLineBreakpoints(
                     scriptFile,
-                    setBreakpointsParams.Lines);
+                    breakpointDetails);
 
             await requestContext.SendResult(
                 new SetBreakpointsResponseBody
