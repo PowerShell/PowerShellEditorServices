@@ -60,7 +60,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 null);
 
             // Now send the Initialize response to continue setup
-            await requestContext.SendResult(new InitializeResponseBody());
+            await requestContext.SendResult(
+                new InitializeResponseBody
+                {
+                    SupportsConditionalBreakpoints = true,
+                });
         }
     }
 }

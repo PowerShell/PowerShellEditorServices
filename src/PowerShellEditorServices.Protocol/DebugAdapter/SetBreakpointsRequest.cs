@@ -7,11 +7,12 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    //    /** SetBreakpoints request; value of command field is "setBreakpoints".
-    //        Sets multiple breakpoints for a single source and clears all previous breakpoints in that source.
-    //        To clear all breakpoint for a source, specify an empty array.
-    //        When a breakpoint is hit, a StoppedEvent (event type 'breakpoint') is generated.
-    //    */
+    /// <summary>
+    /// SetBreakpoints request; value of command field is "setBreakpoints".
+    /// Sets multiple breakpoints for a single source and clears all previous breakpoints in that source.
+    /// To clear all breakpoint for a source, specify an empty array.
+    /// When a breakpoint is hit, a StoppedEvent (event type 'breakpoint') is generated.
+    /// </summary>
     public class SetBreakpointsRequest
     {
         public static readonly
@@ -23,7 +24,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     {
         public Source Source { get; set; }
 
-        public int[] Lines { get; set; }
+        public SourceBreakpoint[] Breakpoints { get; set; }
+    }
+
+    public class SourceBreakpoint
+    {
+        public int Line { get; set; }
+
+        public int? Column { get; set; }
+
+        public string Condition { get; set; }
     }
 
     public class SetBreakpointsResponseBody
@@ -31,4 +41,3 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public Breakpoint[] Breakpoints { get; set; }
     }
 }
-

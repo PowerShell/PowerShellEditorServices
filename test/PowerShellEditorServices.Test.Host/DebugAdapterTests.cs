@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public async Task DebugAdapterStopsOnBreakpoints()
+        public async Task DebugAdapterStopsOnLineBreakpoints()
         {
             await this.SendRequest(
                 SetBreakpointsRequest.Type,
@@ -58,7 +58,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         Path = DebugScriptPath
                     },
-                    Lines = new int[] { 5, 7 }
+                    Breakpoints = new []
+                    {
+                        new SourceBreakpoint { Line = 5 },
+                        new SourceBreakpoint { Line = 7 }
+                    }
                 });
 
             Task<StoppedEventBody> breakEventTask = this.WaitForEvent(StoppedEvent.Type);
