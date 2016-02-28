@@ -133,6 +133,17 @@ namespace Microsoft.PowerShell.EditorServices
                         {
                             ScriptBlock actionScriptBlock = ScriptBlock.Create(breakpoint.Condition);
 
+                            // Check for simple, common errors that ScriptBlock parsing will not catch 
+                            // e.g. $i == 3 and $i > 3
+                            string message;
+                            if (!ValidateBreakpointConditionAst(actionScriptBlock.Ast, out message))
+                            {
+                                breakpoint.Verified = false;
+                                breakpoint.Message = message;
+                                resultBreakpointDetails.Add(breakpoint);
+                                continue;
+                            }
+
                             // Check for "advanced" condition syntax i.e. if the user has specified
                             // a "break" or  "continue" statement anywhere in their scriptblock,
                             // pass their scriptblock through to the Action parameter as-is.
@@ -156,7 +167,7 @@ namespace Microsoft.PowerShell.EditorServices
                             // Failed to create conditional breakpoint likely because the user provided an 
                             // invalid PowerShell expression. Let the user know why.
                             breakpoint.Verified = false;
-                            breakpoint.Message = ex.Message;
+                            breakpoint.Message = ExtractAndScrubParseExceptionMessage(ex, breakpoint.Condition);
                             resultBreakpointDetails.Add(breakpoint);
                             continue;
                         }
@@ -534,6 +545,85 @@ namespace Microsoft.PowerShell.EditorServices
                 this.stackFrameDetails[i] = 
                     StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables);
             }
+        }
+
+        private bool ValidateBreakpointConditionAst(Ast conditionAst, out string message)
+        {
+            message = string.Empty;
+
+            // We are only inspecting a few simple scenarios in the EndBlock only.
+            ScriptBlockAst scriptBlockAst = conditionAst as ScriptBlockAst;
+            if ((scriptBlockAst != null) && 
+                (scriptBlockAst.BeginBlock == null) && 
+                (scriptBlockAst.ProcessBlock == null) && 
+                (scriptBlockAst.EndBlock != null) && 
+                (scriptBlockAst.EndBlock.Statements.Count == 1))
+            {
+                StatementAst statementAst = scriptBlockAst.EndBlock.Statements[0];
+                string condition = statementAst.Extent.Text;
+
+                if (statementAst is AssignmentStatementAst)
+                {
+                    message = FormatInvalidBreakpointConditionMessage(condition, "Use '-eq' instead of '=='.");
+                    return false;
+                }
+
+                PipelineAst pipelineAst = statementAst as PipelineAst;
+                if ((pipelineAst != null) && (pipelineAst.PipelineElements.Count == 1) &&
+                    (pipelineAst.PipelineElements[0].Redirections.Count > 0))
+                {
+                    message = FormatInvalidBreakpointConditionMessage(condition, "Use '-gt' instead of '>'.");
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private string ExtractAndScrubParseExceptionMessage(ParseException parseException, string condition)
+        {
+            string[] messageLines = parseException.Message.Split('\n');
+
+            // Skip first line - it is a location indicator "At line:1 char: 4"
+            for (int i = 1; i < messageLines.Length; i++)
+            {
+                string line = messageLines[i];
+                if (line.StartsWith("+"))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    // Note '==' and '>" do not generate parse errors
+                    if (line.Contains("'!='"))
+                    {
+                        line += " Use operator '-ne' instead of '!='.";
+                    }
+                    else if (line.Contains("'<'") && condition.Contains("<="))
+                    {
+                        line += " Use operator '-le' instead of '<='.";
+                    }
+                    else if (line.Contains("'<'"))
+                    {
+                        line += " Use operator '-lt' instead of '<'.";
+                    }
+                    else if (condition.Contains(">="))
+                    {
+                        line += " Use operator '-ge' instead of '>='.";
+                    }
+
+                    return FormatInvalidBreakpointConditionMessage(condition, line);
+                }
+            }
+
+            // If the message format isn't in a form we expect, just return the whole message.
+            return FormatInvalidBreakpointConditionMessage(condition, parseException.Message);
+        }
+
+        private string FormatInvalidBreakpointConditionMessage(string condition, string message)
+        {
+            return $"'{condition}' is not a valid PowerShell expression. {message}";
         }
 
         #endregion

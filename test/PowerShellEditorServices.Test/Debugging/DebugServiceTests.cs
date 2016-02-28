@@ -280,6 +280,28 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         }
 
         [Fact]
+        public async Task DebuggerFindsParseableButInvalidSimpleBreakpointConditions()
+        {
+            BreakpointDetails[] breakpoints =
+                await this.debugService.SetLineBreakpoints(
+                    this.debugScriptFile,
+                    new[] {
+                        BreakpointDetails.Create("", 5, column: null, condition: "$i == 100"),
+                        BreakpointDetails.Create("", 7, column: null, condition: "$i > 100")
+                    });
+
+            Assert.Equal(2, breakpoints.Length);
+            Assert.Equal(5, breakpoints[0].LineNumber);
+            Assert.False(breakpoints[0].Verified);
+            Assert.Contains("Use '-eq' instead of '=='", breakpoints[0].Message);
+
+            Assert.Equal(7, breakpoints[1].LineNumber);
+            Assert.False(breakpoints[1].Verified);
+            Assert.NotNull(breakpoints[1].Message);
+            Assert.Contains("Use '-gt' instead of '>'", breakpoints[1].Message);
+        }
+
+        [Fact]
         public async Task DebuggerBreaksWhenRequested()
         {
             Task executeTask =
