@@ -20,6 +20,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private EditorSession editorSession;
         private OutputDebouncer outputDebouncer;
+        private string scriptPathToLaunch;
+        private string arguments;
 
         public DebugAdapter() : this(new StdioServerChannel())
         {
@@ -42,10 +44,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.SetRequestHandler(LaunchRequest.Type, this.HandleLaunchRequest);
             this.SetRequestHandler(AttachRequest.Type, this.HandleAttachRequest);
+            this.SetRequestHandler(ConfigurationDoneRequest.Type, this.HandleConfigurationDoneRequest);
             this.SetRequestHandler(DisconnectRequest.Type, this.HandleDisconnectRequest);
 
             this.SetRequestHandler(SetBreakpointsRequest.Type, this.HandleSetBreakpointsRequest);
             this.SetRequestHandler(SetExceptionBreakpointsRequest.Type, this.HandleSetExceptionBreakpointsRequest);
+            this.SetRequestHandler(SetFunctionBreakpointsRequest.Type, this.HandleSetFunctionBreakpointsRequest);
 
             this.SetRequestHandler(ContinueRequest.Type, this.HandleContinueRequest);
             this.SetRequestHandler(NextRequest.Type, this.HandleNextRequest);
@@ -110,12 +114,35 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 Logger.Write(LogLevel.Verbose, "Script arguments are: " + arguments);
             }
 
+            // NOTE: We don't actually launch the script in response to this
+            // request.  We wait until we receive the configurationDone request
+            // to actually launch the script under the debugger.  This gives
+            // us and VSCode a chance to finish configuring all the types of
+            // breakpoints.
+            this.scriptPathToLaunch = launchParams.Program;
+            this.arguments = arguments;
+
+            await requestContext.SendResult(null);
+        }
+
+        protected Task HandleAttachRequest(
+            AttachRequestArguments attachParams,
+            RequestContext<object> requestContext)
+        {
+            // TODO: Implement this once we support attaching to processes
+            throw new NotImplementedException();
+        }
+
+        protected async Task HandleConfigurationDoneRequest(
+            object args,
+            RequestContext<object> requestContext)
+        {
             // Execute the given PowerShell script and send the response.
             // Note that we aren't waiting for execution to complete here
             // because the debugger could stop while the script executes.
             Task executeTask =
                 editorSession.PowerShellContext
-                    .ExecuteScriptAtPath(launchParams.Program, arguments)
+                    .ExecuteScriptAtPath(this.scriptPathToLaunch, this.arguments)
                     .ContinueWith(
                         async (t) => {
                             Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
@@ -129,14 +156,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         });
 
             await requestContext.SendResult(null);
-        }
-
-        protected Task HandleAttachRequest(
-            AttachRequestArguments attachParams,
-            RequestContext<object> requestContext)
-        {
-            // TODO: Implement this once we support attaching to processes
-            throw new NotImplementedException();
         }
 
         protected Task HandleDisconnectRequest(
@@ -191,6 +210,32 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await requestContext.SendResult(
                 new SetBreakpointsResponseBody
                 {
+                    Breakpoints =
+                        breakpoints
+                            .Select(Protocol.DebugAdapter.Breakpoint.Create)
+                            .ToArray()
+                });
+        }
+
+        protected async Task HandleSetFunctionBreakpointsRequest(
+            SetFunctionBreakpointsRequestArguments setBreakpointsParams,
+            RequestContext<SetBreakpointsResponseBody> requestContext)
+        {
+            var breakpointDetails = new FunctionBreakpointDetails[setBreakpointsParams.Breakpoints.Length];
+            for (int i = 0; i < breakpointDetails.Length; i++)
+            {
+                FunctionBreakpoint funcBreakpoint = setBreakpointsParams.Breakpoints[i];
+                breakpointDetails[i] = FunctionBreakpointDetails.Create(
+                    funcBreakpoint.Name,
+                    funcBreakpoint.Condition);
+            }
+
+            FunctionBreakpointDetails[] breakpoints =
+                await editorSession.DebugService.SetCommandBreakpoints(
+                    breakpointDetails);
+
+            await requestContext.SendResult(
+                new SetBreakpointsResponseBody {
                     Breakpoints =
                         breakpoints
                             .Select(Protocol.DebugAdapter.Breakpoint.Create)

@@ -8,3 +8,5 @@ while ($i -le 500000)
 }
 
 Write-Host "Done!"
+Get-Date
+Get-Host

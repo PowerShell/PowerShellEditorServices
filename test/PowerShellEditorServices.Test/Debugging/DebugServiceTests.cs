@@ -148,7 +148,81 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         }
 
         [Fact]
-        public async Task DebuggerSetsAndClearsBreakpoints()
+        public async Task DebuggerSetsAndClearsFunctionBreakpoints()
+        {
+            FunctionBreakpointDetails[] breakpoints =
+                await this.debugService.SetCommandBreakpoints(
+                    new[] {
+                        FunctionBreakpointDetails.Create("Write-Host"),
+                        FunctionBreakpointDetails.Create("Get-Date")
+                    });
+
+            Assert.Equal(2, breakpoints.Length);
+            Assert.Equal("Write-Host", breakpoints[0].Name);
+            Assert.Equal("Get-Date", breakpoints[1].Name);
+
+            breakpoints =
+                await this.debugService.SetCommandBreakpoints(
+                    new[] { FunctionBreakpointDetails.Create("Get-Host") });
+
+            Assert.Equal(1, breakpoints.Length);
+            Assert.Equal("Get-Host", breakpoints[0].Name);
+
+            breakpoints =
+                await this.debugService.SetCommandBreakpoints(
+                    new FunctionBreakpointDetails[] {});
+
+            Assert.Equal(0, breakpoints.Length);
+        }
+
+        [Fact]
+        public async Task DebuggerStopsOnFunctionBreakpoints()
+        {
+            FunctionBreakpointDetails[] breakpoints =
+                await this.debugService.SetCommandBreakpoints(
+                    new[] {
+                        FunctionBreakpointDetails.Create("Write-Host")
+                    });
+
+            await this.AssertStateChange(PowerShellContextState.Ready);
+
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptAtPath(
+                    this.debugScriptFile.FilePath);
+
+            // Wait for function breakpoint to hit
+            await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 6);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            // Verify the function breakpoint broke at Write-Host and $i is 1
+            var i = variables.FirstOrDefault(v => v.Name == "$i");
+            Assert.NotNull(i);
+            Assert.False(i.IsExpandable);
+            Assert.Equal("1", i.ValueString);
+
+            // The function breakpoint should fire the next time through the loop.
+            this.debugService.Continue();
+            await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 6);
+
+            stackFrames = debugService.GetStackFrames();
+            variables = debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            // Verify the function breakpoint broke at Write-Host and $i is 1
+            i = variables.FirstOrDefault(v => v.Name == "$i");
+            Assert.NotNull(i);
+            Assert.False(i.IsExpandable);
+            Assert.Equal("2", i.ValueString);
+
+            // Abort script execution early and wait for completion
+            this.debugService.Abort();
+            await executeTask;
+        }
+
+        [Fact]
+        public async Task DebuggerSetsAndClearsLineBreakpoints()
         {
             BreakpointDetails[] breakpoints =
                 await this.debugService.SetLineBreakpoints(

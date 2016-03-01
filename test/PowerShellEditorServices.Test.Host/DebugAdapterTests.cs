@@ -105,9 +105,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     terminatedEvent);
         }
 
-        private Task LaunchScript(string scriptPath)
+        private async Task LaunchScript(string scriptPath)
         {
-            return this.debugAdapterClient.LaunchScript(scriptPath);
+            await this.debugAdapterClient.LaunchScript(scriptPath);
+            await this.SendRequest(ConfigurationDoneRequest.Type, null);
         }
     }
 }
