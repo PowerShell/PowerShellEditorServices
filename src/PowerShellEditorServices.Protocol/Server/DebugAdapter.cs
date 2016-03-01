@@ -231,7 +231,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
 
             FunctionBreakpointDetails[] breakpoints =
-                await editorSession.DebugService.SetFunctionBreakpoints(
+                await editorSession.DebugService.SetCommandBreakpoints(
                     breakpointDetails);
 
             await requestContext.SendResult(

@@ -119,6 +119,8 @@ namespace Microsoft.PowerShell.EditorServices
                     IEnumerable<Breakpoint> configuredBreakpoints =
                         await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
 
+                    // The order in which the breakpoints are returned is significant to the 
+                    // VSCode client and should match the order in which they are passed in.
                     resultBreakpointDetails.AddRange(
                         configuredBreakpoints.Select(BreakpointDetails.Create));
                 }
@@ -128,12 +130,12 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Sets the list of line breakpoints for the current debugging session.
+        /// Sets the list of command breakpoints for the current debugging session. 
         /// </summary>
-        /// <param name="breakpoints">BreakpointDetails for each breakpoint that will be set.</param>
-        /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
+        /// <param name="breakpoints">BreakpointDetails for each command breakpoint that will be set.</param>
+        /// <param name="clearExisting">If true, causes all existing function breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<FunctionBreakpointDetails[]> SetFunctionBreakpoints(
+        public async Task<FunctionBreakpointDetails[]> SetCommandBreakpoints(
             FunctionBreakpointDetails[] breakpoints,
             bool clearExisting = true)
         {
@@ -171,6 +173,8 @@ namespace Microsoft.PowerShell.EditorServices
                     IEnumerable<Breakpoint> configuredBreakpoints =
                         await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
 
+                    // The order in which the breakpoints are returned is significant to the 
+                    // VSCode client and should match the order in which they are passed in.
                     resultBreakpointDetails.AddRange(
                         configuredBreakpoints.Select(FunctionBreakpointDetails.Create));
                 }

@@ -151,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         public async Task DebuggerSetsAndClearsFunctionBreakpoints()
         {
             FunctionBreakpointDetails[] breakpoints =
-                await this.debugService.SetFunctionBreakpoints(
+                await this.debugService.SetCommandBreakpoints(
                     new[] {
                         FunctionBreakpointDetails.Create("Write-Host"),
                         FunctionBreakpointDetails.Create("Get-Date")
@@ -162,14 +162,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("Get-Date", breakpoints[1].Name);
 
             breakpoints =
-                await this.debugService.SetFunctionBreakpoints(
+                await this.debugService.SetCommandBreakpoints(
                     new[] { FunctionBreakpointDetails.Create("Get-Host") });
 
             Assert.Equal(1, breakpoints.Length);
             Assert.Equal("Get-Host", breakpoints[0].Name);
 
             breakpoints =
-                await this.debugService.SetFunctionBreakpoints(
+                await this.debugService.SetCommandBreakpoints(
                     new FunctionBreakpointDetails[] {});
 
             Assert.Equal(0, breakpoints.Length);
@@ -179,7 +179,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         public async Task DebuggerStopsOnFunctionBreakpoints()
         {
             FunctionBreakpointDetails[] breakpoints =
-                await this.debugService.SetFunctionBreakpoints(
+                await this.debugService.SetCommandBreakpoints(
                     new[] {
                         FunctionBreakpointDetails.Create("Write-Host")
                     });
