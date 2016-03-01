@@ -60,7 +60,9 @@
     <Compile Include="Console\IPromptHandlerContext.cs" />
     <Compile Include="Console\PromptHandler.cs" />
     <Compile Include="Debugging\BreakpointDetails.cs" />
+    <Compile Include="Debugging\BreakpointDetailsBase.cs" />
     <Compile Include="Debugging\DebugService.cs" />
+    <Compile Include="Debugging\FunctionBreakpointDetails.cs" />
     <Compile Include="Debugging\StackFrameDetails.cs" />
     <Compile Include="Debugging\VariableDetails.cs" />
     <Compile Include="Debugging\VariableDetailsBase.cs" />

@@ -13,20 +13,8 @@ namespace Microsoft.PowerShell.EditorServices
     /// Provides details about a breakpoint that is set in the
     /// PowerShell debugger.
     /// </summary>
-    public class BreakpointDetails
+    public class BreakpointDetails : BreakpointDetailsBase
     {
-        /// <summary>
-        /// Gets or sets a boolean indicator that if true, breakpoint could be set 
-        /// (but not necessarily at the desired location).  
-        /// </summary>
-        public bool Verified { get; set; }
-
-        /// <summary>
-        /// Gets or set an optional message about the state of the breakpoint. This is shown to the user 
-        /// and can be used to explain why a breakpoint could not be verified.
-        /// </summary>
-        public string Message { get; set; }
-
         /// <summary>
         /// Gets the source where the breakpoint is located.  Used only for debug purposes.
         /// </summary>
@@ -41,11 +29,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the column number at which the breakpoint is set. If null, the default of 1 is used.
         /// </summary>
         public int? ColumnNumber { get; private set; }
-
-        /// <summary>
-        /// Gets the breakpoint condition string.
-        /// </summary>
-        public string Condition { get; private set; }
 
         private BreakpointDetails()
         {
@@ -91,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (lineBreakpoint == null)
             {
                 throw new ArgumentException(
-                    "Expected breakpoint type:" + breakpoint.GetType().Name);
+                    "Unexpected breakpoint type: " + breakpoint.GetType().Name);
             }
 
             var breakpointDetails = new BreakpointDetails

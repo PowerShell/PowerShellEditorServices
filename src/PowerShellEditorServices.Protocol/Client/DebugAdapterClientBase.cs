@@ -17,14 +17,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         {
         }
 
-        public Task LaunchScript(string scriptFilePath)
+        public async Task LaunchScript(string scriptFilePath)
         {
-            return this.SendRequest(
+            await this.SendRequest(
                 LaunchRequest.Type,
-                new LaunchRequestArguments
-                {
+                new LaunchRequestArguments {
                     Program = scriptFilePath
                 });
+
+            await this.SendRequest(ConfigurationDoneRequest.Type, null);
         }
 
         protected override async Task OnStart()

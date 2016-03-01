@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 
         public string Source { get; set; }
 
-        public int Line { get; set; }
+        public int? Line { get; set; }
 
         public int? Column { get; set; }
 
@@ -39,6 +39,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
                 Source = breakpointDetails.Source,
                 Line = breakpointDetails.LineNumber,
                 Column = breakpointDetails.ColumnNumber
+            };
+        }
+
+        public static Breakpoint Create(
+            FunctionBreakpointDetails breakpointDetails)
+        {
+            return new Breakpoint {
+                Verified = breakpointDetails.Verified,
+                Message = breakpointDetails.Message
             };
         }
     }

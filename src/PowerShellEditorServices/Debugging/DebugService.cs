@@ -122,55 +122,25 @@ namespace Microsoft.PowerShell.EditorServices
                     {
                         // It bums me out that PowerShell will silently ignore a breakpoint
                         // where either the line or the column is invalid.  I'd rather have an
-                        // error message I could rely back to the client.
+                        // error or warning message I could relay back to the client.
                         psCommand.AddParameter("Column", breakpoint.ColumnNumber.Value);
                     }
 
                     // Check if this is a "conditional" line breakpoint.
                     if (breakpoint.Condition != null)
                     {
-                        try
+                        ScriptBlock actionScriptBlock =
+                            GetBreakpointActionScriptBlock(breakpoint);
+
+                        // If there was a problem with the condition string, 
+                        // move onto the next breakpoint.
+                        if (actionScriptBlock == null)
                         {
-                            ScriptBlock actionScriptBlock = ScriptBlock.Create(breakpoint.Condition);
-
-                            // Check for simple, common errors that ScriptBlock parsing will not catch 
-                            // e.g. $i == 3 and $i > 3
-                            string message;
-                            if (!ValidateBreakpointConditionAst(actionScriptBlock.Ast, out message))
-                            {
-                                breakpoint.Verified = false;
-                                breakpoint.Message = message;
-                                resultBreakpointDetails.Add(breakpoint);
-                                continue;
-                            }
-
-                            // Check for "advanced" condition syntax i.e. if the user has specified
-                            // a "break" or  "continue" statement anywhere in their scriptblock,
-                            // pass their scriptblock through to the Action parameter as-is.
-                            Ast breakOrContinueStatementAst =
-                                actionScriptBlock.Ast.Find(
-                                    ast => (ast is BreakStatementAst || ast is ContinueStatementAst), true);
-
-                            // If this isn't advanced syntax then the conditions string should be a simple
-                            // expression that needs to be wrapped in a "if" test that conditionally executes
-                            // a break statement.
-                            if (breakOrContinueStatementAst == null)
-                            {
-                                string wrappedCondition = $"if ({breakpoint.Condition}) {{ break }}";
-                                actionScriptBlock = ScriptBlock.Create(wrappedCondition);
-                            }
-
-                            psCommand.AddParameter("Action", actionScriptBlock);
-                        }
-                        catch (ParseException ex)
-                        {
-                            // Failed to create conditional breakpoint likely because the user provided an 
-                            // invalid PowerShell expression. Let the user know why.
-                            breakpoint.Verified = false;
-                            breakpoint.Message = ExtractAndScrubParseExceptionMessage(ex, breakpoint.Condition);
                             resultBreakpointDetails.Add(breakpoint);
                             continue;
                         }
+
+                        psCommand.AddParameter("Action", actionScriptBlock);
                     }
 
                     IEnumerable<Breakpoint> configuredBreakpoints =
@@ -178,6 +148,85 @@ namespace Microsoft.PowerShell.EditorServices
 
                     resultBreakpointDetails.AddRange(
                         configuredBreakpoints.Select(BreakpointDetails.Create));
+                }
+            }
+
+            return resultBreakpointDetails.ToArray();
+        }
+
+        /// <summary>
+        /// Sets the list of line breakpoints for the current debugging session.
+        /// </summary>
+        /// <param name="scriptFile">The ScriptFile in which breakpoints will be set.</param>
+        /// <param name="breakpoints">BreakpointDetails for each breakpoint that will be set.</param>
+        /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
+        /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
+        public async Task<FunctionBreakpointDetails[]> SetFunctionBreakpoints(
+            FunctionBreakpointDetails[] breakpoints,
+            bool clearExisting = true)
+        {
+            var resultBreakpointDetails = new List<FunctionBreakpointDetails>();
+
+            if (clearExisting)
+            {
+                await this.ClearCommandBreakpoints();
+            }
+
+            if (breakpoints.Length > 0)
+            {
+                // Line function breakpoints with no condition are the most common, 
+                // so let's optimize for that case by making a single call to Set-PSBreakpoint 
+                // with all the command names to set a breakpoint on.
+                string[] commandOnlyBreakpoints =
+                    breakpoints.Where(b => (b.Condition == null))
+                        .Select(b => b.Name)
+                        .ToArray();
+
+                if (commandOnlyBreakpoints.Length > 0)
+                {
+                    PSCommand psCommand = new PSCommand();
+                    psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint");
+                    psCommand.AddParameter("Command", commandOnlyBreakpoints);
+
+                    var configuredBreakpoints =
+                        await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
+
+                    resultBreakpointDetails.AddRange(
+                        configuredBreakpoints.Select(FunctionBreakpointDetails.Create));
+                }
+
+                // Process the rest of the breakpoints
+                var advancedCommandBreakpoints =
+                    breakpoints.Where(b => (b.Condition != null))
+                        .ToArray();
+
+                foreach (FunctionBreakpointDetails breakpoint in advancedCommandBreakpoints)
+                {
+                    PSCommand psCommand = new PSCommand();
+                    psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint");
+                    psCommand.AddParameter("Command", breakpoint.Name);
+
+                    // Check if this is a "conditional" line breakpoint.
+                    if (breakpoint.Condition != null)
+                    {
+                        ScriptBlock actionScriptBlock = GetBreakpointActionScriptBlock(breakpoint);
+
+                        // If there was a problem with the condition string, 
+                        // move onto the next breakpoint.
+                        if (actionScriptBlock == null)
+                        {
+                            resultBreakpointDetails.Add(breakpoint);
+                            continue;
+                        }
+
+                        psCommand.AddParameter("Action", actionScriptBlock);
+                    }
+
+                    IEnumerable<Breakpoint> configuredBreakpoints =
+                        await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
+
+                    resultBreakpointDetails.AddRange(
+                        configuredBreakpoints.Select(FunctionBreakpointDetails.Create));
                 }
             }
 
@@ -402,7 +451,7 @@ namespace Microsoft.PowerShell.EditorServices
                 if (breakpoints.Count > 0)
                 {
                     PSCommand psCommand = new PSCommand();
-                    psCommand.AddCommand("Remove-PSBreakpoint");
+                    psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
                     psCommand.AddParameter("Breakpoint", breakpoints.ToArray());
 
                     await this.powerShellContext.ExecuteCommand<object>(psCommand);
@@ -411,6 +460,16 @@ namespace Microsoft.PowerShell.EditorServices
                     breakpoints.Clear();
                 }
             }
+        }
+
+        private async Task ClearCommandBreakpoints()
+        {
+            PSCommand psCommand = new PSCommand();
+            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
+            psCommand.AddParameter("Type", "Command");
+            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
+
+            await this.powerShellContext.ExecuteCommand<object>(psCommand);
         }
 
         private async Task FetchStackFramesAndVariables()
@@ -547,6 +606,59 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        /// Inspects the condition, putting in the appropriate scriptblock template 
+        /// "if (expression) { break }".  If errors are found in the condition, the 
+        /// breakpoint passed in is updated to set Verified to false and an error
+        /// message is put into the breakpoint.Message property.
+        /// </summary>
+        /// <param name="breakpoint"></param>
+        /// <returns></returns>
+        private ScriptBlock GetBreakpointActionScriptBlock(
+            BreakpointDetailsBase breakpoint)
+        {
+            try
+            {
+                ScriptBlock actionScriptBlock = ScriptBlock.Create(breakpoint.Condition);
+
+                // Check for simple, common errors that ScriptBlock parsing will not catch 
+                // e.g. $i == 3 and $i > 3
+                string message;
+                if (!ValidateBreakpointConditionAst(actionScriptBlock.Ast, out message))
+                {
+                    breakpoint.Verified = false;
+                    breakpoint.Message = message;
+                    return null;
+                }
+
+                // Check for "advanced" condition syntax i.e. if the user has specified
+                // a "break" or  "continue" statement anywhere in their scriptblock,
+                // pass their scriptblock through to the Action parameter as-is.
+                Ast breakOrContinueStatementAst =
+                    actionScriptBlock.Ast.Find(
+                        ast => (ast is BreakStatementAst || ast is ContinueStatementAst), true);
+
+                // If this isn't advanced syntax then the conditions string should be a simple
+                // expression that needs to be wrapped in a "if" test that conditionally executes
+                // a break statement.
+                if (breakOrContinueStatementAst == null)
+                {
+                    string wrappedCondition = $"if ({breakpoint.Condition}) {{ break }}";
+                    actionScriptBlock = ScriptBlock.Create(wrappedCondition);
+                }
+
+                return actionScriptBlock;
+            }
+            catch (ParseException ex)
+            {
+                // Failed to create conditional breakpoint likely because the user provided an 
+                // invalid PowerShell expression. Let the user know why.
+                breakpoint.Verified = false;
+                breakpoint.Message = ExtractAndScrubParseExceptionMessage(ex, breakpoint.Condition);
+                return null;
+            }
+        }
+
         private bool ValidateBreakpointConditionAst(Ast conditionAst, out string message)
         {
             message = string.Empty;
@@ -654,38 +766,44 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)
         {
-            List<Breakpoint> breakpoints = null;
+            // This event callback also gets called when a CommandBreakpoint is modified.
+            // Only execute the following code for LineBreakpoint so we can keep track
+            // of which line breakpoints exist per script file.  We use this later when
+            // we need to clear all breakpoints in a script file.  We do not need to do
+            // this for CommandBreakpoint, as those span all script files.
+            LineBreakpoint lineBreakpoint = e.Breakpoint as LineBreakpoint;
+            if (lineBreakpoint != null)
+            {
+                List<Breakpoint> breakpoints;
 
-            // Normalize the script filename for proper indexing
-            string normalizedScriptName = e.Breakpoint.Script.ToLower();
+                // Normalize the script filename for proper indexing
+                string normalizedScriptName = lineBreakpoint.Script.ToLower();
 
-            // Get the list of breakpoints for this file
-            if (!this.breakpointsPerFile.TryGetValue(normalizedScriptName, out breakpoints))
-            {
-                breakpoints = new List<Breakpoint>();
-                this.breakpointsPerFile.Add(
-                    normalizedScriptName,
-                    breakpoints);
+                // Get the list of breakpoints for this file
+                if (!this.breakpointsPerFile.TryGetValue(normalizedScriptName, out breakpoints))
+                {
+                    breakpoints = new List<Breakpoint>();
+                    this.breakpointsPerFile.Add(
+                        normalizedScriptName,
+                        breakpoints);
+                }
+
+                // Add or remove the breakpoint based on the update type
+                if (e.UpdateType == BreakpointUpdateType.Set)
+                {
+                    breakpoints.Add(e.Breakpoint);
+                }
+                else if (e.UpdateType == BreakpointUpdateType.Removed)
+                {
+                    breakpoints.Remove(e.Breakpoint);
+                }
+                else
+                {
+                    // TODO: Do I need to switch out instances for updated breakpoints?
+                }
             }
 
-            // Add or remove the breakpoint based on the update type
-            if (e.UpdateType == BreakpointUpdateType.Set)
-            {
-                breakpoints.Add(e.Breakpoint);
-            }
-            else if(e.UpdateType == BreakpointUpdateType.Removed)
-            {
-                breakpoints.Remove(e.Breakpoint);
-            }
-            else
-            {
-                // TODO: Do I need to switch out instances for updated breakpoints?
-            }
-
-            if (this.BreakpointUpdated != null)
-            {
-                this.BreakpointUpdated(sender, e);
-            }
+            this.BreakpointUpdated?.Invoke(sender, e);
         }
 
         #endregion
