@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## 0.4.3
+### Monday, February 29, 2016
+
+- Fixed #166: PowerShell Editor Services should be usable without PSScriptAnalyzer binaries
+
 ## 0.4.2
 ### Wednesday, February 17, 2016
 
