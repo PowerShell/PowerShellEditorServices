@@ -152,7 +152,7 @@ namespace Microsoft.PowerShell.EditorServices
                     psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint");
                     psCommand.AddParameter("Command", breakpoint.Name);
 
-                    // Check if this is a "conditional" line breakpoint.
+                    // Check if this is a "conditional" command breakpoint.
                     if (breakpoint.Condition != null)
                     {
                         ScriptBlock actionScriptBlock = GetBreakpointActionScriptBlock(breakpoint);
