@@ -130,7 +130,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Sets the list of line breakpoints for the current debugging session.
         /// </summary>
-        /// <param name="scriptFile">The ScriptFile in which breakpoints will be set.</param>
         /// <param name="breakpoints">BreakpointDetails for each breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>

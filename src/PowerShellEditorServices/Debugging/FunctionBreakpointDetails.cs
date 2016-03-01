@@ -28,10 +28,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates an instance of the BreakpointDetails class from the individual
         /// pieces of breakpoint information provided by the client.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="line"></param>
-        /// <param name="column"></param>
-        /// <param name="condition"></param>
+        /// <param name="name">The name of the function or command to break on.</param>
+        /// <param name="condition">Condition string that would be applied to the breakpoint Action parameter.</param>
         /// <returns></returns>
         public static FunctionBreakpointDetails Create(
             string name,
