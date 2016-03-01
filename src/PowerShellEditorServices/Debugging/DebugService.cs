@@ -83,34 +83,7 @@ namespace Microsoft.PowerShell.EditorServices
                 string escapedScriptPath = 
                     PowerShellContext.EscapePath(scriptFile.FilePath, escapeSpaces: false);
 
-                // Line breakpoints with no condition and no column number are the most common, 
-                // so let's optimize for that case by making a single call to Set-PSBreakpoint 
-                // with all the lines to set a breakpoint on.
-                int[] lineOnlyBreakpoints =
-                    breakpoints.Where(b => (b.ColumnNumber == null) && (b.Condition == null))
-                        .Select(b => b.LineNumber)
-                        .ToArray();
-
-                if (lineOnlyBreakpoints.Length > 0)
-                {
-                    PSCommand psCommand = new PSCommand();
-                    psCommand.AddCommand("Set-PSBreakpoint");
-                    psCommand.AddParameter("Script", escapedScriptPath);
-                    psCommand.AddParameter("Line", lineOnlyBreakpoints);
-
-                    var configuredBreakpoints =
-                        await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
-
-                    resultBreakpointDetails.AddRange(
-                        configuredBreakpoints.Select(BreakpointDetails.Create));
-                }
-
-                // Process the rest of the breakpoints
-                var advancedLineBreakpoints =
-                    breakpoints.Where(b => (b.ColumnNumber != null) || (b.Condition != null))
-                        .ToArray();
-
-                foreach (BreakpointDetails breakpoint in advancedLineBreakpoints)
+                foreach (BreakpointDetails breakpoint in breakpoints)
                 {
                     PSCommand psCommand = new PSCommand();
                     psCommand.AddCommand("Set-PSBreakpoint");
@@ -174,33 +147,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (breakpoints.Length > 0)
             {
-                // Line function breakpoints with no condition are the most common, 
-                // so let's optimize for that case by making a single call to Set-PSBreakpoint 
-                // with all the command names to set a breakpoint on.
-                string[] commandOnlyBreakpoints =
-                    breakpoints.Where(b => (b.Condition == null))
-                        .Select(b => b.Name)
-                        .ToArray();
-
-                if (commandOnlyBreakpoints.Length > 0)
-                {
-                    PSCommand psCommand = new PSCommand();
-                    psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint");
-                    psCommand.AddParameter("Command", commandOnlyBreakpoints);
-
-                    var configuredBreakpoints =
-                        await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
-
-                    resultBreakpointDetails.AddRange(
-                        configuredBreakpoints.Select(FunctionBreakpointDetails.Create));
-                }
-
-                // Process the rest of the breakpoints
-                var advancedCommandBreakpoints =
-                    breakpoints.Where(b => (b.Condition != null))
-                        .ToArray();
-
-                foreach (FunctionBreakpointDetails breakpoint in advancedCommandBreakpoints)
+                foreach (FunctionBreakpointDetails breakpoint in breakpoints)
                 {
                     PSCommand psCommand = new PSCommand();
                     psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint");
