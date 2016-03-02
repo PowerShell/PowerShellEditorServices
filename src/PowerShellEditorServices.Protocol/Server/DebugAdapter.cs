@@ -20,6 +20,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private EditorSession editorSession;
         private OutputDebouncer outputDebouncer;
+        private object syncLock = new object();
+        private bool isConfigurationDoneRequestComplete;
+        private bool isLaunchRequestComplete;
         private string scriptPathToLaunch;
         private string arguments;
 
@@ -65,6 +68,23 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
 
+        protected Task LaunchScript(RequestContext<object> requestContext)
+        {
+            return editorSession.PowerShellContext
+                    .ExecuteScriptAtPath(this.scriptPathToLaunch, this.arguments)
+                    .ContinueWith(
+                        async (t) => {
+                            Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
+
+                            await requestContext.SendEvent(
+                                TerminatedEvent.Type,
+                                null);
+
+                            // Stop the server
+                            this.Stop();
+                        });
+        }
+
         protected override void Shutdown()
         {
             // Make sure remaining output is flushed before exiting
@@ -80,6 +100,31 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
 
         #region Built-in Message Handlers
+
+        protected async Task HandleConfigurationDoneRequest(
+            object args,
+            RequestContext<object> requestContext)
+        {
+            // Ensure that only the second message between launch and
+            // configurationDone - actually launches the script.
+            lock (syncLock)
+            {
+                if (!this.isLaunchRequestComplete)
+                {
+                    this.isConfigurationDoneRequestComplete = true;
+                }    
+            }
+
+            // The order of debug protocol messages apparently isn't as guaranteed as we might like.
+            // Need to be able to handle the case where we get configurationDone after launch request
+            // and vice-versa.
+            if (this.isLaunchRequestComplete)
+            {
+                this.LaunchScript(requestContext);
+            }
+
+            await requestContext.SendResult(null);
+        }
 
         protected async Task HandleLaunchRequest(
             LaunchRequestArguments launchParams,
@@ -114,13 +159,31 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 Logger.Write(LogLevel.Verbose, "Script arguments are: " + arguments);
             }
 
-            // NOTE: We don't actually launch the script in response to this
-            // request.  We wait until we receive the configurationDone request
-            // to actually launch the script under the debugger.  This gives
-            // us and VSCode a chance to finish configuring all the types of
-            // breakpoints.
+            // We may not actually launch the script in response to this
+            // request unless it comes after the configurationDone request. 
+            // If the launch request comes first, then stash the launch
+            // params so that the subsequent configurationDone request can
+            // launch the script. 
             this.scriptPathToLaunch = launchParams.Program;
             this.arguments = arguments;
+
+            // Ensure that only the second message between launch and
+            // configurationDone - actually launches the script.
+            lock (syncLock)
+            {
+                if (!this.isConfigurationDoneRequestComplete)
+                {
+                    this.isLaunchRequestComplete = true;
+                }
+            }
+
+            // The order of debug protocol messages apparently isn't as guaranteed as we might like.
+            // Need to be able to handle the case where we get configurationDone after launch request
+            // and vice-versa.
+            if (this.isConfigurationDoneRequestComplete)
+            {
+                this.LaunchScript(requestContext);
+            }
 
             await requestContext.SendResult(null);
         }
@@ -131,31 +194,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             // TODO: Implement this once we support attaching to processes
             throw new NotImplementedException();
-        }
-
-        protected async Task HandleConfigurationDoneRequest(
-            object args,
-            RequestContext<object> requestContext)
-        {
-            // Execute the given PowerShell script and send the response.
-            // Note that we aren't waiting for execution to complete here
-            // because the debugger could stop while the script executes.
-            Task executeTask =
-                editorSession.PowerShellContext
-                    .ExecuteScriptAtPath(this.scriptPathToLaunch, this.arguments)
-                    .ContinueWith(
-                        async (t) => {
-                            Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
-
-                            await requestContext.SendEvent(
-                                TerminatedEvent.Type,
-                                null);
-
-                            // Stop the server
-                            this.Stop();
-                        });
-
-            await requestContext.SendResult(null);
         }
 
         protected Task HandleDisconnectRequest(
