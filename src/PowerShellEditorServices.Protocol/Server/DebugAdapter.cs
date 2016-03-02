@@ -20,7 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private EditorSession editorSession;
         private OutputDebouncer outputDebouncer;
-        private object syncLock = new object();
         private bool isConfigurationDoneRequestComplete;
         private bool isLaunchRequestComplete;
         private string scriptPathToLaunch;
@@ -105,16 +104,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object args,
             RequestContext<object> requestContext)
         {
-            // Ensure that only the second message between launch and
-            // configurationDone requests, actually launches the script.
-            lock (syncLock)
-            {
-                if (!this.isLaunchRequestComplete)
-                {
-                    this.isConfigurationDoneRequestComplete = true;
-                }    
-            }
-
             // The order of debug protocol messages apparently isn't as guaranteed as we might like.
             // Need to be able to handle the case where we get the configurationDone request after the 
             // launch request.
@@ -122,6 +111,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             {
                 this.LaunchScript(requestContext);
             }
+
+            this.isConfigurationDoneRequestComplete = true;
 
             await requestContext.SendResult(null);
         }
@@ -167,16 +158,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.scriptPathToLaunch = launchParams.Program;
             this.arguments = arguments;
 
-            // Ensure that only the second message between launch and
-            // configurationDone requests, actually launches the script.
-            lock (syncLock)
-            {
-                if (!this.isConfigurationDoneRequestComplete)
-                {
-                    this.isLaunchRequestComplete = true;
-                }
-            }
-
             // The order of debug protocol messages apparently isn't as guaranteed as we might like.
             // Need to be able to handle the case where we get the launch request after the 
             // configurationDone request.
@@ -184,6 +165,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             {
                 this.LaunchScript(requestContext);
             }
+
+            this.isLaunchRequestComplete = true;
 
             await requestContext.SendResult(null);
         }
