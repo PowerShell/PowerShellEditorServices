@@ -106,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<object> requestContext)
         {
             // Ensure that only the second message between launch and
-            // configurationDone - actually launches the script.
+            // configurationDone requests, actually launches the script.
             lock (syncLock)
             {
                 if (!this.isLaunchRequestComplete)
@@ -116,8 +116,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
 
             // The order of debug protocol messages apparently isn't as guaranteed as we might like.
-            // Need to be able to handle the case where we get configurationDone after launch request
-            // and vice-versa.
+            // Need to be able to handle the case where we get the configurationDone request after the 
+            // launch request.
             if (this.isLaunchRequestComplete)
             {
                 this.LaunchScript(requestContext);
@@ -162,13 +162,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // We may not actually launch the script in response to this
             // request unless it comes after the configurationDone request. 
             // If the launch request comes first, then stash the launch
-            // params so that the subsequent configurationDone request can
-            // launch the script. 
+            // params so that the subsequent configurationDone request handler 
+            // can launch the script. 
             this.scriptPathToLaunch = launchParams.Program;
             this.arguments = arguments;
 
             // Ensure that only the second message between launch and
-            // configurationDone - actually launches the script.
+            // configurationDone requests, actually launches the script.
             lock (syncLock)
             {
                 if (!this.isConfigurationDoneRequestComplete)
@@ -178,8 +178,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
 
             // The order of debug protocol messages apparently isn't as guaranteed as we might like.
-            // Need to be able to handle the case where we get configurationDone after launch request
-            // and vice-versa.
+            // Need to be able to handle the case where we get the launch request after the 
+            // configurationDone request.
             if (this.isConfigurationDoneRequestComplete)
             {
                 this.LaunchScript(requestContext);
