@@ -474,6 +474,21 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Flush pending output before sending the event
             await this.outputDebouncer.Flush();
 
+            // Provide the reason for why the debugger has stopped script execution.
+            // See https://github.com/Microsoft/vscode/issues/3648
+            // The reason is displayed in the breakpoints viewlet.  Some recommended reasons are: 
+            // "step", "breakpoint", "function breakpoint", "exception" and "pause".
+            // We don't support exception breakpoints and for "pause", we can't distinguish 
+            // between stepping and the user pressing the pause/break button in the debug toolbar.
+            string debuggerStoppedReason = "step";
+            if (e.Breakpoints.Count > 0)
+            {
+                debuggerStoppedReason =
+                    e.Breakpoints[0] is CommandBreakpoint
+                        ? "function breakpoint"
+                        : "breakpoint";
+            }
+
             await this.SendEvent(
                 StoppedEvent.Type,
                 new StoppedEventBody
@@ -485,7 +500,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     Line = e.InvocationInfo.ScriptLineNumber,
                     Column = e.InvocationInfo.OffsetInLine,
                     ThreadId = 1, // TODO: Change this based on context
-                    Reason = "breakpoint" // TODO: Change this based on context
+                    Reason = debuggerStoppedReason
                 });
         }
 
