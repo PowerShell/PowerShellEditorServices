@@ -150,11 +150,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerSetsAndClearsFunctionBreakpoints()
         {
-            FunctionBreakpointDetails[] breakpoints =
+            CommandBreakpointDetails[] breakpoints =
                 await this.debugService.SetCommandBreakpoints(
                     new[] {
-                        FunctionBreakpointDetails.Create("Write-Host"),
-                        FunctionBreakpointDetails.Create("Get-Date")
+                        CommandBreakpointDetails.Create("Write-Host"),
+                        CommandBreakpointDetails.Create("Get-Date")
                     });
 
             Assert.Equal(2, breakpoints.Length);
@@ -163,14 +163,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             breakpoints =
                 await this.debugService.SetCommandBreakpoints(
-                    new[] { FunctionBreakpointDetails.Create("Get-Host") });
+                    new[] { CommandBreakpointDetails.Create("Get-Host") });
 
             Assert.Equal(1, breakpoints.Length);
             Assert.Equal("Get-Host", breakpoints[0].Name);
 
             breakpoints =
                 await this.debugService.SetCommandBreakpoints(
-                    new FunctionBreakpointDetails[] {});
+                    new CommandBreakpointDetails[] {});
 
             Assert.Equal(0, breakpoints.Length);
         }
@@ -178,10 +178,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerStopsOnFunctionBreakpoints()
         {
-            FunctionBreakpointDetails[] breakpoints =
+            CommandBreakpointDetails[] breakpoints =
                 await this.debugService.SetCommandBreakpoints(
                     new[] {
-                        FunctionBreakpointDetails.Create("Write-Host")
+                        CommandBreakpointDetails.Create("Write-Host")
                     });
 
             await this.AssertStateChange(PowerShellContextState.Ready);

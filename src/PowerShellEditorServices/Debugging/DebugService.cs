@@ -132,14 +132,14 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Sets the list of command breakpoints for the current debugging session. 
         /// </summary>
-        /// <param name="breakpoints">BreakpointDetails for each command breakpoint that will be set.</param>
+        /// <param name="breakpoints">CommandBreakpointDetails for each command breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing function breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<FunctionBreakpointDetails[]> SetCommandBreakpoints(
-            FunctionBreakpointDetails[] breakpoints,
+        public async Task<CommandBreakpointDetails[]> SetCommandBreakpoints(
+            CommandBreakpointDetails[] breakpoints,
             bool clearExisting = true)
         {
-            var resultBreakpointDetails = new List<FunctionBreakpointDetails>();
+            var resultBreakpointDetails = new List<CommandBreakpointDetails>();
 
             if (clearExisting)
             {
@@ -148,7 +148,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (breakpoints.Length > 0)
             {
-                foreach (FunctionBreakpointDetails breakpoint in breakpoints)
+                foreach (CommandBreakpointDetails breakpoint in breakpoints)
                 {
                     PSCommand psCommand = new PSCommand();
                     psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint");
@@ -176,7 +176,7 @@ namespace Microsoft.PowerShell.EditorServices
                     // The order in which the breakpoints are returned is significant to the 
                     // VSCode client and should match the order in which they are passed in.
                     resultBreakpointDetails.AddRange(
-                        configuredBreakpoints.Select(FunctionBreakpointDetails.Create));
+                        configuredBreakpoints.Select(CommandBreakpointDetails.Create));
                 }
             }
 
