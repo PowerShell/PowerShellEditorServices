@@ -10,8 +10,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// Provides details about a command breakpoint that is set in the
-    /// PowerShell debugger.
+    /// Provides details about a command breakpoint that is set in the PowerShell debugger.
     /// </summary>
     public class CommandBreakpointDetails : BreakpointDetailsBase
     {
