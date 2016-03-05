@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         }
 
         public static Breakpoint Create(
-            FunctionBreakpointDetails breakpointDetails)
+            CommandBreakpointDetails breakpointDetails)
         {
             return new Breakpoint {
                 Verified = breakpointDetails.Verified,

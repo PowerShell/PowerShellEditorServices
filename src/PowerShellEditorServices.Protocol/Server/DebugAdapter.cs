@@ -242,16 +242,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             SetFunctionBreakpointsRequestArguments setBreakpointsParams,
             RequestContext<SetBreakpointsResponseBody> requestContext)
         {
-            var breakpointDetails = new FunctionBreakpointDetails[setBreakpointsParams.Breakpoints.Length];
+            var breakpointDetails = new CommandBreakpointDetails[setBreakpointsParams.Breakpoints.Length];
             for (int i = 0; i < breakpointDetails.Length; i++)
             {
                 FunctionBreakpoint funcBreakpoint = setBreakpointsParams.Breakpoints[i];
-                breakpointDetails[i] = FunctionBreakpointDetails.Create(
+                breakpointDetails[i] = CommandBreakpointDetails.Create(
                     funcBreakpoint.Name,
                     funcBreakpoint.Condition);
             }
 
-            FunctionBreakpointDetails[] breakpoints =
+            CommandBreakpointDetails[] breakpoints =
                 await editorSession.DebugService.SetCommandBreakpoints(
                     breakpointDetails);
 
