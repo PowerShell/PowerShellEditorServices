@@ -1,5 +1,5 @@
 version: '$(core_version).{build}'
-os: Unstable
+os: WMF 5
 configuration: Release
 clone_depth: 10
 
