@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Host;
+using System.Security;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -89,7 +90,17 @@ namespace Microsoft.PowerShell.EditorServices.Console
             this.IsMandatory = isMandatory;
             this.DefaultValue = defaultValue;
 
-            if (typeof(IList).IsAssignableFrom(fieldType))
+            if (typeof(SecureString) == fieldType)
+            {
+                throw new NotSupportedException(
+                    "Input fields of type 'SecureString' are currently not supported.");
+            }
+            else if (typeof(PSCredential) == fieldType)
+            {
+                throw new NotSupportedException(
+                    "Input fields of type 'PSCredential' are currently not supported.");
+            }
+            else if (typeof(IList).IsAssignableFrom(fieldType))
             {
                 this.IsCollection = true;
                 this.ElementType = typeof(object);

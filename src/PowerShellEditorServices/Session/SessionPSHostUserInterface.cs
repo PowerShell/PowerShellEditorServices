@@ -154,7 +154,8 @@ namespace Microsoft.PowerShell.EditorServices
             PSCredentialTypes allowedCredentialTypes, 
             PSCredentialUIOptions options)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException(
+                "'Get-Credential' is not yet supported.");
         }
 
         public override PSCredential PromptForCredential(
@@ -163,7 +164,13 @@ namespace Microsoft.PowerShell.EditorServices
             string userName, 
             string targetName)
         {
-            throw new NotImplementedException();
+            return this.PromptForCredential(
+                caption,
+                message,
+                userName,
+                targetName,
+                PSCredentialTypes.Default,
+                PSCredentialUIOptions.Default);
         }
 
         public override PSHostRawUserInterface RawUI
@@ -198,7 +205,8 @@ namespace Microsoft.PowerShell.EditorServices
 
         public override SecureString ReadLineAsSecureString()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException(
+                "'Read-Host -AsSecureString' is not yet supported.");
         }
 
         public override void Write(
