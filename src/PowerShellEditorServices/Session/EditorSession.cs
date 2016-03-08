@@ -60,9 +60,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void StartSession()
         {
-            // Create a workspace to contain open files
-            this.Workspace = new Workspace();
-
             // Initialize all services
             this.PowerShellContext = new PowerShellContext();
             this.LanguageService = new LanguageService(this.PowerShellContext);
@@ -81,6 +78,9 @@ namespace Microsoft.PowerShell.EditorServices
                     LogLevel.Warning,
                     "Script Analyzer binaries not found, AnalysisService will be disabled.");
             }
+
+            // Create a workspace to contain open files
+            this.Workspace = new Workspace(this.PowerShellContext.PowerShellVersion);
         }
 
         #endregion

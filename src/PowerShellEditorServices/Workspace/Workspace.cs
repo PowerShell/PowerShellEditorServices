@@ -20,6 +20,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
+        private Version powerShellVersion;
         private Dictionary<string, ScriptFile> workspaceFiles = new Dictionary<string, ScriptFile>();
 
         #endregion
@@ -30,6 +31,19 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets or sets the root path of the workspace.
         /// </summary>
         public string WorkspacePath { get; set; }
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Creates a new instance of the Workspace class.
+        /// </summary>
+        /// <param name="powerShellVersion">The version of PowerShell for which scripts will be parsed.</param>
+        public Workspace(Version powerShellVersion)
+        {
+            this.powerShellVersion = powerShellVersion;
+        }
 
         #endregion
 
@@ -63,7 +77,13 @@ namespace Microsoft.PowerShell.EditorServices
 
                 using (StreamReader streamReader = new StreamReader(resolvedFilePath, Encoding.UTF8))
                 {
-                    scriptFile = new ScriptFile(resolvedFilePath, filePath, streamReader);
+                    scriptFile = 
+                        new ScriptFile(
+                            resolvedFilePath,
+                            filePath,
+                            streamReader,
+                            this.powerShellVersion);
+
                     this.workspaceFiles.Add(keyName, scriptFile);
                 }
 
@@ -92,7 +112,13 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile scriptFile = null;
             if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile))
             {
-                scriptFile = new ScriptFile(resolvedFilePath, filePath, initialBuffer);
+                scriptFile = 
+                    new ScriptFile(
+                        resolvedFilePath,
+                        filePath,
+                        initialBuffer,
+                        this.powerShellVersion);
+
                 this.workspaceFiles.Add(keyName, scriptFile);
 
                 Logger.Write(LogLevel.Verbose, "Opened file as in-memory buffer: " + resolvedFilePath);

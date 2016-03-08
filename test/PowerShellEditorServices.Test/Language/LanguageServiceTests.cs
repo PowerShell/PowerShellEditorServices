@@ -32,9 +32,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         public LanguageServiceTests()
         {
-            this.workspace = new Workspace();
-
             this.powerShellContext = new PowerShellContext();
+            this.workspace = new Workspace(this.powerShellContext.PowerShellVersion);
             this.languageService = new LanguageService(this.powerShellContext);
         }
 
