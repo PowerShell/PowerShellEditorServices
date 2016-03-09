@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
+    using Session;
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
     using System.Reflection;
@@ -38,6 +39,7 @@ namespace Microsoft.PowerShell.EditorServices
         private Runspace currentRunspace;
         private ConsoleServicePSHost psHost;
         private InitialSessionState initialSessionState;
+        private IVersionSpecificOperations versionSpecificOperations;
         private int pipelineThreadId;
 
         private TaskCompletionSource<DebuggerResumeAction> debuggerStoppedTask;
@@ -174,12 +176,28 @@ namespace Microsoft.PowerShell.EditorServices
                     "PowerShell runtime version: {0}",
                     this.PowerShellVersion));
 
-#if !PowerShellv3
-            if (PowerShellVersion > new Version(3,0))
+            if (PowerShellVersion >= new Version(5,0))
             {
-                this.currentRunspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
+                this.versionSpecificOperations = new PowerShell5Operations();
             }
-#endif
+            else if (PowerShellVersion.Major == 4)
+            {
+                this.versionSpecificOperations = new PowerShell4Operations();
+            }
+            else if (PowerShellVersion.Major == 3)
+            {
+                this.versionSpecificOperations = new PowerShell3Operations();
+            }
+            else
+            {
+                throw new NotSupportedException(
+                    "This computer has an unsupported version of PowerShell installed: " +
+                    PowerShellVersion.ToString());
+            }
+
+            // Configure the runspace's debugger
+            this.versionSpecificOperations.ConfigureDebugger(
+                this.currentRunspace);
 
             this.SessionState = PowerShellContextState.Ready;
 
@@ -510,12 +528,9 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Logger.Write(LogLevel.Verbose, "Debugger break requested...");
 
-#if PowerShellv5
-            if (PowerShellVersion >= new Version(5, 0))
-            {
-                this.currentRunspace.Debugger.SetDebuggerStepMode(true);
-            }
-#endif
+            // Pause the debugger
+            this.versionSpecificOperations.PauseDebugger(
+                this.currentRunspace);
         }
 
         internal void ResumeDebugger(DebuggerResumeAction resumeAction)
@@ -659,72 +674,14 @@ namespace Microsoft.PowerShell.EditorServices
 
         private IEnumerable<TResult> ExecuteCommandInDebugger<TResult>(PSCommand psCommand, bool sendOutputToHost)
         {
-            IEnumerable<TResult> executionResult = null;
-
-            if (PowerShellVersion >= new Version(4, 0))
-            {
-#if PowerShellv4 || PowerShellv5
-                PSDataCollection<PSObject> outputCollection = new PSDataCollection<PSObject>();
-
-                if (sendOutputToHost)
-                {
-                    outputCollection.DataAdded +=
-                        (obj, e) =>
-                        {
-                            for (int i = e.Index; i < outputCollection.Count; i++)
-                            {
-                                this.WriteOutput(outputCollection[i].ToString(), true);
-                            }
-                        };
-                }
-
-                DebuggerCommandResults commandResults =
-                    this.currentRunspace.Debugger.ProcessCommand(
-                        psCommand,
-                        outputCollection);
-
-                // If the command was a debugger action, run it
-                if (commandResults.ResumeAction.HasValue)
-                {
-                    this.ResumeDebugger(commandResults.ResumeAction.Value);
-                }
-
-                executionResult =
-                    outputCollection
-                        .Select(pso => pso.BaseObject)
-                        .Cast<TResult>();
-#endif
-            }
-            else
-            {
-                using (var nestedPipeline = this.currentRunspace.CreateNestedPipeline())
-                {
-                    foreach (var command in psCommand.Commands)
-                    {
-                        nestedPipeline.Commands.Add(command);
-                    }
-
-                    executionResult =
-                        nestedPipeline
-                            .Invoke()
-                            .Select(pso => pso.BaseObject)
-                            .Cast<TResult>();
-                }
-
-                // Write the output to the host if necessary
-                if (sendOutputToHost)
-                {
-                    foreach (var line in executionResult)
-                    {
-                        this.WriteOutput(line.ToString(), true);
-                    }
-                }
-            }
-
-            return executionResult;
+            return this.versionSpecificOperations.ExecuteCommandInDebugger<TResult>(
+                this,
+                this.currentRunspace,
+                psCommand,
+                sendOutputToHost);
         }
 
-        private void WriteOutput(string outputString, bool includeNewLine)
+        internal void WriteOutput(string outputString, bool includeNewLine)
         {
             if (this.ConsoleHost != null)
             {
@@ -1064,7 +1021,8 @@ namespace Microsoft.PowerShell.EditorServices
                 if (taskIndex == 0)
                 {
                     // Write a new output line before continuing
-                    this.WriteOutput("", true);
+                    // TODO: Re-enable this with fix for #133
+                    //this.WriteOutput("", true);
 
                     e.ResumeAction = this.debuggerStoppedTask.Task.Result;
                     Logger.Write(LogLevel.Verbose, "Received debugger resume action " + e.ResumeAction.ToString());

@@ -295,7 +295,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object pauseParams,
             RequestContext<object> requestContext)
         {
-            editorSession.DebugService.Break();
+            try
+            {
+                editorSession.DebugService.Break();
+            }
+            catch (NotSupportedException e)
+            {
+                return requestContext.SendError(e.Message);
+            }
 
             // This request is responded to by sending the "stopped" event
             return Task.FromResult(true);

@@ -98,8 +98,12 @@
     <Compile Include="Console\ChoiceDetails.cs" />
     <Compile Include="Session\EditorSession.cs" />
     <Compile Include="Console\IConsoleHost.cs" />
+    <Compile Include="Session\IVersionSpecificOperations.cs" />
     <Compile Include="Session\OutputType.cs" />
     <Compile Include="Session\OutputWrittenEventArgs.cs" />
+    <Compile Include="Session\PowerShell3Operations.cs" />
+    <Compile Include="Session\PowerShell4Operations.cs" />
+    <Compile Include="Session\PowerShell5Operations.cs" />
     <Compile Include="Session\PowerShellExecutionResult.cs" />
     <Compile Include="Session\PowerShellContext.cs" />
     <Compile Include="Session\PowerShellContextState.cs" />
