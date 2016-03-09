@@ -5,9 +5,11 @@
 
 using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Utility;
+using System;
 using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Reflection;
 using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -66,17 +68,34 @@ namespace Microsoft.PowerShell.EditorServices
             this.DebugService = new DebugService(this.PowerShellContext);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
 
-            // AnalysisService will throw FileNotFoundException if
-            // Script Analyzer binaries are not included.
-            try
+            // Only enable the AnalysisService if the machine has PowerShell
+            // v5 installed.  Script Analyzer works on earlier PowerShell
+            // versions but our hard dependency on their binaries complicates
+            // the deployment and assembly loading since we would have to
+            // conditionally load the binaries for v3/v4 support.  This problem
+            // will be solved in the future by using Script Analyzer as a
+            // module rather than an assembly dependency.
+            if (this.PowerShellContext.PowerShellVersion.Major >= 5)
             {
-                this.AnalysisService = new AnalysisService();
+                // AnalysisService will throw FileNotFoundException if
+                // Script Analyzer binaries are not included.
+                try
+                {
+                    this.AnalysisService = new AnalysisService();
+                }
+                catch (FileNotFoundException)
+                {
+                    Logger.Write(
+                        LogLevel.Warning,
+                        "Script Analyzer binaries not found, AnalysisService will be disabled.");
+                }
             }
-            catch (FileNotFoundException)
+            else
             {
                 Logger.Write(
-                    LogLevel.Warning,
-                    "Script Analyzer binaries not found, AnalysisService will be disabled.");
+                    LogLevel.Normal,
+                    "Script Analyzer cannot be loaded due to unsupported PowerShell version " +
+                    this.PowerShellContext.PowerShellVersion.ToString());
             }
 
             // Create a workspace to contain open files
