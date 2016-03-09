@@ -1021,7 +1021,8 @@ namespace Microsoft.PowerShell.EditorServices
                 if (taskIndex == 0)
                 {
                     // Write a new output line before continuing
-                    this.WriteOutput("", true);
+                    // TODO: Re-enable this with fix for #133
+                    //this.WriteOutput("", true);
 
                     e.ResumeAction = this.debuggerStoppedTask.Task.Result;
                     Logger.Write(LogLevel.Verbose, "Received debugger resume action " + e.ResumeAction.ToString());
