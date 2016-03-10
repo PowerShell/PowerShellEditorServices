@@ -1,5 +1,28 @@
 # PowerShell Editor Services Release History
 
+## 0.5.0
+### Thursday, March 10, 2016
+
+### Support for PowerShell v3 and v4
+
+- Support for PowerShell v3 and v4 is now complete!  Note that for this release,
+  Script Analyzer support has been disabled for PS v3 and v4 until we implement
+  a better strategy for integrating it as a module dependency
+
+### Debugging improvements
+
+- Added support for command breakpoints
+- Added support for conditional breakpoints
+- Improved the debug adapter startup sequence to handle new VS Code debugging features
+
+### Other improvements
+
+- `using 'module'` now resolves relative paths correctly, removing a syntax error that
+  previously appeared when relative paths were used
+- Calling `Read-Host -AsSecureString` or `Get-Credential` from the console now shows an
+  appropriate "not supported" error message instead of crashing the language service. 
+  Support for these commands will be added in a later release.
+
 ## 0.4.3
 ### Monday, February 29, 2016
 
