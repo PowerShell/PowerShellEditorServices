@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <package>
   <metadata>
     <id>$id$</id>
@@ -21,6 +21,6 @@
   </metadata>
   <files>
     <file src="bin\$configuration$\$id$.exe" target="lib\net45\" />
-    <file src="..\PowerShellEditorServices.Host.x86\bin\$configuration$\$id$.x86.exe" target="lib\net45\" />
+    <file src="bin\$configuration$\$id$.x86.exe" target="lib\net45\" />
   </files>
 </package>
