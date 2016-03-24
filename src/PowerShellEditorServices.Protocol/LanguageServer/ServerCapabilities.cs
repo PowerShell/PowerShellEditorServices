@@ -24,6 +24,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public bool? DocumentSymbolProvider { get; set; }
 
         public bool? WorkspaceSymbolProvider { get; set; }
+
+        public bool? CodeActionProvider { get; set; }
     }
 
     /// <summary>

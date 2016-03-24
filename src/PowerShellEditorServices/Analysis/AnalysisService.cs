@@ -17,7 +17,7 @@ using System.Text;
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// Provides a high-level service for performing semantic analysis  
+    /// Provides a high-level service for performing semantic analysis
     /// of PowerShell scripts.
     /// </summary>
     public class AnalysisService : IDisposable
@@ -31,15 +31,19 @@ namespace Microsoft.PowerShell.EditorServices
         /// Defines the list of Script Analyzer rules to include by default if
         /// no settings file is specified.
         /// </summary>
-        private static readonly string[] IncludedRules = {
+        private static readonly string[] IncludedRules = new string[]
+        {
+            "PSUseToExportFieldsInManifest",
+            "PSMisleadingBacktick",
+            "PSAvoidUsingCmdletAliases",
             "PSUseApprovedVerbs",
+            "PSAvoidUsingPlainTextForPassword",
             "PSReservedCmdletChar",
             "PSReservedParams",
             "PSShouldProcess",
             "PSMissingModuleManifestField",
             "PSAvoidDefaultValueSwitchParameter",
-            "PSUseDeclaredVarsMoreThanAssigments",
-            "PSMisleadingBacktick",
+            "PSUseDeclaredVarsMoreThanAssigments"
         };
 
         #endregion // Private Fields
@@ -64,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Creates an instance of the AnalysisService class.
         /// </summary>
-        /// <param name="consoleHost">An object that implements IConsoleHost in which to write errors/warnings 
+        /// <param name="consoleHost">An object that implements IConsoleHost in which to write errors/warnings
         /// from analyzer.</param>
         /// <param name="settingsPath">Path to a PSScriptAnalyzer settings file.</param>
         public AnalysisService(IConsoleHost consoleHost, string settingsPath = null)
@@ -107,8 +111,8 @@ namespace Microsoft.PowerShell.EditorServices
                     Task.Factory.StartNew<ScriptFileMarker[]>(
                         () =>
                         {
-                                return 
-                                     GetDiagnosticRecords(file) 
+                                return
+                                     GetDiagnosticRecords(file)
                                     .Select(ScriptFileMarker.FromDiagnosticRecord)
                                     .ToArray();
                         },
