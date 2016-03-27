@@ -6,7 +6,6 @@
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
-using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -292,9 +291,19 @@ function __Expand-Alias {
         {
             bool oldScriptAnalysisEnabled =
                 this.currentSettings.ScriptAnalysis.Enable.HasValue;
+            string oldScriptAnalysisSettingsPath =
+                this.currentSettings.ScriptAnalysis.SettingsPath;
 
             this.currentSettings.Update(
                 configChangeParams.Settings.Powershell);
+
+            string newSettingsPath = this.currentSettings.ScriptAnalysis.SettingsPath;
+            
+            // If there is a new settings file path, restart the analyzer with the new settigs.
+            if (!(oldScriptAnalysisSettingsPath?.Equals(newSettingsPath, StringComparison.OrdinalIgnoreCase) ?? false))
+            {
+                this.editorSession.RestartAnalysisService(newSettingsPath);
+            }
 
             if (oldScriptAnalysisEnabled != this.currentSettings.ScriptAnalysis.Enable)
             {

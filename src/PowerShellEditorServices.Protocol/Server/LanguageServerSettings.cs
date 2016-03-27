@@ -27,6 +27,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         public bool? Enable { get; set; }
 
+        public string SettingsPath { get; set; }
+
         public ScriptAnalysisSettings()
         {
             this.Enable = true;
@@ -37,6 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             if (settings != null)
             {
                 this.Enable = settings.Enable;
+                this.SettingsPath = settings.SettingsPath;
             }
         }
     }
