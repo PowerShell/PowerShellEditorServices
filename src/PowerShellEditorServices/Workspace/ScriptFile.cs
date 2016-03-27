@@ -72,6 +72,12 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Gets a BufferRange that represents the entire content
+        /// range of the file.
+        /// </summary>
+        public BufferRange FileRange { get; private set; }
+
+        /// <summary>
         /// Gets the list of syntax markers found by parsing this
         /// file's contents.
         /// </summary>
@@ -175,9 +181,88 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>The complete line at the given line number.</returns>
         public string GetLine(int lineNumber)
         {
-            // TODO: Validate range
+            Validate.IsWithinRange(
+                "lineNumber", lineNumber,
+                1, this.FileLines.Count + 1);
 
             return this.FileLines[lineNumber - 1];
+        }
+
+        /// <summary>
+        /// Gets a range of lines from the file's contents.
+        /// </summary>
+        /// <param name="bufferRange">The buffer range from which lines will be extracted.</param>
+        /// <returns>An array of strings from the specified range of the file.</returns>
+        public string[] GetLinesInRange(BufferRange bufferRange)
+        {
+            this.ValidatePosition(bufferRange.Start);
+            this.ValidatePosition(bufferRange.End);
+
+            List<string> linesInRange = new List<string>();
+
+            int startLine = bufferRange.Start.Line,
+                endLine = bufferRange.End.Line;
+
+            for (int line = startLine; line <= endLine; line++)
+            {
+                string currentLine = this.FileLines[line - 1];
+                int startColumn =
+                    line == startLine
+                    ? bufferRange.Start.Column
+                    : 1;
+                int endColumn =
+                    line == endLine
+                    ? bufferRange.End.Column
+                    : currentLine.Length + 1;
+
+                currentLine =
+                    currentLine.Substring(
+                        startColumn - 1,
+                        endColumn - startColumn);
+
+                linesInRange.Add(currentLine);
+            }
+
+            return linesInRange.ToArray();
+        }
+
+        /// <summary>
+        /// Throws ArgumentOutOfRangeException if the given position is outside
+        /// of the file's buffer extents.
+        /// </summary>
+        /// <param name="bufferPosition">The position in the buffer to be validated.</param>
+        public void ValidatePosition(BufferPosition bufferPosition)
+        {
+            this.ValidatePosition(
+                bufferPosition.Line,
+                bufferPosition.Column);
+        }
+
+        /// <summary>
+        /// Throws ArgumentOutOfRangeException if the given position is outside
+        /// of the file's buffer extents.
+        /// </summary>
+        /// <param name="line">The 1-based line to be validated.</param>
+        /// <param name="column">The 1-based column to be validated.</param>
+        public void ValidatePosition(int line, int column)
+        {
+            if (line < 1 || line > this.FileLines.Count + 1)
+            {
+                throw new ArgumentOutOfRangeException("Position is outside of file line range.");
+            }
+
+            // The maximum column is either one past the length of the string
+            // or 1 if the string is empty.
+            string lineString = this.FileLines[line - 1];
+            int maxColumn = lineString.Length > 0 ? lineString.Length + 1 : 1;
+
+            if (column < 1 || column > maxColumn)
+            {
+                throw new ArgumentOutOfRangeException(
+                    string.Format(
+                        "Position is outside of column range for line {0}.",
+                        line));
+            }
         }
 
         /// <summary>
@@ -186,7 +271,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="fileChange">The FileChange to apply to the file's contents.</param>
         public void ApplyChange(FileChange fileChange)
         {
-            // TODO: Verify offsets are in range
+            this.ValidatePosition(fileChange.Line, fileChange.Offset);
+            this.ValidatePosition(fileChange.EndLine, fileChange.EndOffset);
 
             // Break up the change lines
             string[] changeLines = fileChange.InsertString.Split('\n');
@@ -269,6 +355,30 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Calculates a FilePosition relative to a starting BufferPosition
+        /// using the given 1-based line and column offset.
+        /// </summary>
+        /// <param name="originalPosition">The original BufferPosition from which an new position should be calculated.</param>
+        /// <param name="lineOffset">The 1-based line offset added to the original position in this file.</param>
+        /// <param name="columnOffset">The 1-based column offset added to the original position in this file.</param>
+        /// <returns>A new FilePosition instance with the resulting line and column number.</returns>
+        public FilePosition CalculatePosition(
+            BufferPosition originalPosition,
+            int lineOffset,
+            int columnOffset)
+        {
+            int newLine = originalPosition.Line + lineOffset,
+                newColumn = originalPosition.Column + columnOffset;
+
+            this.ValidatePosition(newLine, newColumn);
+
+            string scriptLine = this.FileLines[newLine - 1];
+            newColumn = Math.Min(scriptLine.Length + 1, newColumn);
+
+            return new FilePosition(this, newLine, newColumn);
+        }
+
+        /// <summary>
         /// Calculates the 1-based line and column number position based
         /// on the given buffer offset.
         /// </summary>
@@ -296,7 +406,7 @@ namespace Microsoft.PowerShell.EditorServices
             int currentOffset = 0;
             int searchedOffset = startOffset;
 
-            BufferPosition startPosition = new BufferPosition();
+            BufferPosition startPosition = new BufferPosition(0, 0);
             BufferPosition endPosition = startPosition;
 
             int line = 0;
@@ -368,6 +478,22 @@ namespace Microsoft.PowerShell.EditorServices
         private void ParseFileContents()
         {
             ParseError[] parseErrors = null;
+
+            // First, get the updated file range
+            int lineCount = this.FileLines.Count;
+            if (lineCount > 0)
+            {
+                this.FileRange =
+                    new BufferRange(
+                        new BufferPosition(1, 1),
+                        new BufferPosition(
+                            lineCount + 1,
+                            this.FileLines[lineCount - 1].Length + 1));
+            }
+            else
+            {
+                this.FileRange = BufferRange.None;
+            }
 
             try
             {

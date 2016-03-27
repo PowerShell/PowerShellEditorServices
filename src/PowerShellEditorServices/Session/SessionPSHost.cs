@@ -8,6 +8,7 @@ using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Management.Automation.Host;
+using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -16,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// ConsoleService and routes its calls to an IConsoleHost
     /// implementation.
     /// </summary>
-    internal class ConsoleServicePSHost : PSHost
+    internal class ConsoleServicePSHost : PSHost, IHostSupportsInteractiveSession
     {
         #region Private Fields
 
@@ -92,6 +93,16 @@ namespace Microsoft.PowerShell.EditorServices
             get { return this.hostUserInterface; }
         }
 
+        public bool IsRunspacePushed
+        {
+            get { return false; }
+        }
+
+        public Runspace Runspace
+        {
+            get; internal set;
+        }
+
         public override void EnterNestedPrompt()
         {
             Logger.Write(LogLevel.Verbose, "EnterNestedPrompt() called.");
@@ -118,6 +129,16 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 this.consoleHost.ExitSession(exitCode);
             }
+        }
+
+        public void PushRunspace(Runspace runspace)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void PopRunspace()
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

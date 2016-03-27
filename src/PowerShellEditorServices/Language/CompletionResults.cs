@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices
         public CompletionResults()
         {
             this.Completions = new CompletionDetails[0];
-            this.ReplacedRange = new BufferRange();
+            this.ReplacedRange = new BufferRange(0, 0, 0, 0);
         }
 
         internal static CompletionResults Create(
