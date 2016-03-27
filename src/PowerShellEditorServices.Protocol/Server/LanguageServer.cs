@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
@@ -27,6 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private bool profilesLoaded;
         private EditorSession editorSession;
         private OutputDebouncer outputDebouncer;
+        private LanguageServerEditorOperations editorOperations;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
 
         /// <param name="hostDetails">
@@ -47,6 +49,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession.StartSession(hostDetails);
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
 
+            // Attach to ExtensionService events
+            this.editorSession.ExtensionService.CommandAdded += ExtensionService_ExtensionAdded;
+            this.editorSession.ExtensionService.CommandUpdated += ExtensionService_ExtensionUpdated;
+            this.editorSession.ExtensionService.CommandRemoved += ExtensionService_ExtensionRemoved;
+
+            // Create the IEditorOperations implementation
+            this.editorOperations =
+                new LanguageServerEditorOperations(
+                    this.editorSession,
+                    this);
+
             // Always send console prompts through the UI in the language service
             // TODO: This will change later once we have a general REPL available
             // in VS Code.
@@ -61,6 +74,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         protected override void Initialize()
         {
+            // Initialize the extension service
+            // TODO: This should be made awaited once Initialize is async!
+            this.editorSession.ExtensionService.Initialize(
+                this.editorOperations).Wait();
+
             // Register all supported message types
 
             this.SetRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
@@ -85,6 +103,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
             this.SetRequestHandler(InstallModuleRequest.Type, this.HandleInstallModuleRequest);
+
+            this.SetRequestHandler(InvokeExtensionCommandRequest.Type, this.HandleInvokeExtensionCommandRequest);
 
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
@@ -169,6 +189,26 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await requestContext.SendResult(null);
         }
 
+        private Task HandleInvokeExtensionCommandRequest(
+            InvokeExtensionCommandRequest commandDetails,
+            RequestContext<string> requestContext)
+        {
+            EditorContext editorContext =
+                this.editorOperations.ConvertClientEditorContext(
+                    commandDetails.Context);
+
+            Task commandTask =
+                this.editorSession.ExtensionService.InvokeCommand(
+                    commandDetails.Name,
+                    editorContext);
+
+            commandTask.ContinueWith(t =>
+            {
+                return requestContext.SendResult(null);
+            });
+
+            return commandTask;
+        }
 
         private async Task HandleExpandAliasRequest(
             string content,
@@ -802,11 +842,43 @@ function __Expand-Alias {
 
         #region Event Handlers
 
-        async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
+        private async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
         {
             // Queue the output for writing
             await this.outputDebouncer.Invoke(e);
         }
+
+        private async void ExtensionService_ExtensionAdded(object sender, EditorCommand e)
+        {
+            await this.SendEvent(
+                ExtensionCommandAddedNotification.Type,
+                new ExtensionCommandAddedNotification
+                {
+                    Name = e.Name,
+                    DisplayName = e.DisplayName
+                });
+        }
+
+        private async void ExtensionService_ExtensionUpdated(object sender, EditorCommand e)
+        {
+            await this.SendEvent(
+                ExtensionCommandUpdatedNotification.Type,
+                new ExtensionCommandUpdatedNotification
+                {
+                    Name = e.Name,
+                });
+        }
+
+        private async void ExtensionService_ExtensionRemoved(object sender, EditorCommand e)
+        {
+            await this.SendEvent(
+                ExtensionCommandRemovedNotification.Type,
+                new ExtensionCommandRemovedNotification
+                {
+                    Name = e.Name,
+                });
+        }
+
 
         #endregion
 

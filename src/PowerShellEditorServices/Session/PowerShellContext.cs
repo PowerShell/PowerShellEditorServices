@@ -168,6 +168,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.initialRunspace = initialRunspace;
             this.currentRunspace = initialRunspace;
+            this.psHost.Runspace = initialRunspace;
 
             this.currentRunspace.Debugger.BreakpointUpdated += OnBreakpointUpdated;
             this.currentRunspace.Debugger.DebuggerStop += OnDebuggerStop;
@@ -721,12 +722,23 @@ namespace Microsoft.PowerShell.EditorServices
 
         internal void WriteOutput(string outputString, bool includeNewLine)
         {
+            this.WriteOutput(
+                outputString,
+                includeNewLine,
+                OutputType.Normal);
+        }
+
+        internal void WriteOutput(
+            string outputString,
+            bool includeNewLine,
+            OutputType outputType)
+        {
             if (this.ConsoleHost != null)
             {
                 this.ConsoleHost.WriteOutput(
                     outputString,
                     includeNewLine,
-                    OutputType.Normal);
+                    outputType);
             }
         }
 

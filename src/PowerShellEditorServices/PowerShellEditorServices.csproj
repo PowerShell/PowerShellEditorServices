@@ -75,6 +75,13 @@
     <Compile Include="Debugging\VariableDetailsBase.cs" />
     <Compile Include="Debugging\VariableScope.cs" />
     <Compile Include="Debugging\VariableContainerDetails.cs" />
+    <Compile Include="Extensions\EditorContext.cs" />
+    <Compile Include="Extensions\EditorObject.cs" />
+    <Compile Include="Extensions\EditorWorkspace.cs" />
+    <Compile Include="Extensions\EditorCommand.cs" />
+    <Compile Include="Extensions\ExtensionService.cs" />
+    <Compile Include="Extensions\FileContext.cs" />
+    <Compile Include="Extensions\IEditorOperations.cs" />
     <Compile Include="Language\AstOperations.cs" />
     <Compile Include="Language\CommandHelpers.cs" />
     <Compile Include="Language\CompletionResults.cs" />
@@ -127,6 +134,7 @@
     <Compile Include="Workspace\BufferRange.cs" />
     <Compile Include="Workspace\FileChange.cs" />
     <Compile Include="Workspace\BufferPosition.cs" />
+    <Compile Include="Workspace\FilePosition.cs" />
     <Compile Include="Workspace\ScriptFile.cs" />
     <Compile Include="Workspace\ScriptFileMarker.cs" />
     <Compile Include="Workspace\ScriptRegion.cs" />
@@ -138,7 +146,9 @@
       <Name>ScriptAnalyzerEngine</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Extensions\CmdletInterface.ps1" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
