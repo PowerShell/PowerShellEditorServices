@@ -5,12 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Utility;
-using System;
 using System.IO;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
-using System.Reflection;
-using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -62,8 +57,23 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void StartSession()
         {
+            this.StartSession(null);
+        }
+
+        /// <summary>
+        /// Starts the session using the provided IConsoleHost implementation
+        /// for the ConsoleService.
+        /// </summary>
+        /// <param name="hostProfileId">
+        /// The identifier of the PowerShell host to use for its profile path.
+        /// loaded. Used to resolve a profile path of the form 'X_profile.ps1'
+        /// where 'X' represents the value of hostProfileId.  If null, a default
+        /// will be used.
+        /// </param>
+        public void StartSession(string hostProfileId)
+        {
             // Initialize all services
-            this.PowerShellContext = new PowerShellContext();
+            this.PowerShellContext = new PowerShellContext(hostProfileId);
             this.LanguageService = new LanguageService(this.PowerShellContext);
             this.DebugService = new DebugService(this.PowerShellContext);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);

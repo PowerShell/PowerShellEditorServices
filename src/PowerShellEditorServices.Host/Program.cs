@@ -9,7 +9,6 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -78,20 +77,27 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             "/debugAdapter",
                             StringComparison.InvariantCultureIgnoreCase));
 
+            string hostProfileId = null;
+            string hostProfileIdArgument =
+                args.FirstOrDefault(
+                    arg =>
+                        arg.StartsWith(
+                            "/hostProfileId:",
+                            StringComparison.InvariantCultureIgnoreCase));
+
+            if (!string.IsNullOrEmpty(hostProfileIdArgument))
+            {
+                hostProfileId = hostProfileIdArgument.Substring(15).Trim('"');
+            }
+
             // Catch unhandled exceptions for logging purposes
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            ProtocolEndpoint server = null;
-            if (runDebugAdapter)
-            {
-                logPath = logPath ?? "DebugAdapter.log";
-                server = new DebugAdapter();
-            }
-            else
-            {
-                logPath = logPath ?? "EditorServices.log";
-                server = new LanguageServer();
-            }
+            // Use a default log path filename if one isn't specified
+            logPath =
+                runDebugAdapter
+                ? logPath ?? "DebugAdapter.log"
+                : logPath ?? "EditorServices.log";
 
             // Start the logger with the specified log path and level
             Logger.Initialize(logPath, logLevel);
@@ -103,9 +109,16 @@ namespace Microsoft.PowerShell.EditorServices.Host
             Logger.Write(
                 LogLevel.Normal,
                 string.Format(
-                    "PowerShell Editor Services Host v{0} starting (pid {1})...",
+                    "PowerShell Editor Services Host v{0} starting (pid {1}, hostProfileId '{2}')...",
                     fileVersionInfo.FileVersion,
-                    Process.GetCurrentProcess().Id));
+                    Process.GetCurrentProcess().Id,
+                    hostProfileId));
+
+            // Create the appropriate server type
+            ProtocolEndpoint server =
+                runDebugAdapter
+                ? (ProtocolEndpoint) new DebugAdapter()
+                : (ProtocolEndpoint) new LanguageServer(hostProfileId);
 
             // Start the server
             server.Start().Wait();

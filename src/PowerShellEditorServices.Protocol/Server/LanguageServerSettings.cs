@@ -7,6 +7,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class LanguageServerSettings
     {
+        public bool LoadProfiles { get; set; }
+
         public ScriptAnalysisSettings ScriptAnalysis { get; set; }
 
         public LanguageServerSettings()
@@ -18,6 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             if (settings != null)
             {
+                this.LoadProfiles = settings.LoadProfiles;
                 this.ScriptAnalysis.Update(settings.ScriptAnalysis);
             }
         }
@@ -41,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
     }
 
-    public class SettingsWrapper
+    public class LanguageServerSettingsWrapper
     {
         // NOTE: This property is capitalized as 'Powershell' because the
         // mode name sent from the client is written as 'powershell' and

@@ -139,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
     {
         public LanguageServerWebSocketConnection()
         {
-            Server = new LanguageServer(Channel);
+            Server = new LanguageServer(null, Channel);
         }
     }
 

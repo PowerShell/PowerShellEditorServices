@@ -6,7 +6,6 @@
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
-using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -24,18 +23,33 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private static CancellationTokenSource existingRequestCancellation;
 
+        private bool profilesLoaded;
         private EditorSession editorSession;
         private OutputDebouncer outputDebouncer;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
 
-        public LanguageServer() : this(new StdioServerChannel())
+        /// <param name="hostProfileId">
+        /// The identifier of the PowerShell host to use for its profile path.
+        /// loaded. Used to resolve a profile path of the form 'X_profile.ps1'
+        /// where 'X' represents the value of hostProfileId.  If null, a default
+        /// will be used.
+        /// </param>
+        public LanguageServer(string hostProfileId)
+            : this(hostProfileId, new StdioServerChannel())
         {
         }
 
-        public LanguageServer(ChannelBase serverChannel) : base(serverChannel)
+        /// <param name="hostProfileId">
+        /// The identifier of the PowerShell host to use for its profile path.
+        /// loaded. Used to resolve a profile path of the form 'X_profile.ps1'
+        /// where 'X' represents the value of hostProfileId.  If null, a default
+        /// will be used.
+        /// </param>
+        public LanguageServer(string hostProfileId, ChannelBase serverChannel)
+            : base(serverChannel)
         {
             this.editorSession = new EditorSession();
-            this.editorSession.StartSession();
+            this.editorSession.StartSession(hostProfileId);
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
 
             // Always send console prompts through the UI in the language service
@@ -59,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotification);
             this.SetEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotification);
             this.SetEventHandler(DidChangeTextDocumentNotification.Type, this.HandleDidChangeTextDocumentNotification);
-            this.SetEventHandler(DidChangeConfigurationNotification<SettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
+            this.SetEventHandler(DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
 
             this.SetRequestHandler(DefinitionRequest.Type, this.HandleDefinitionRequest);
             this.SetRequestHandler(ReferencesRequest.Type, this.HandleReferencesRequest);
@@ -287,14 +301,23 @@ function __Expand-Alias {
         }
 
         protected async Task HandleDidChangeConfigurationNotification(
-            DidChangeConfigurationParams<SettingsWrapper> configChangeParams,
+            DidChangeConfigurationParams<LanguageServerSettingsWrapper> configChangeParams,
             EventContext eventContext)
         {
+            bool oldLoadProfiles = this.currentSettings.LoadProfiles;
             bool oldScriptAnalysisEnabled =
                 this.currentSettings.ScriptAnalysis.Enable.HasValue;
 
             this.currentSettings.Update(
                 configChangeParams.Settings.Powershell);
+
+            if (!this.profilesLoaded &&
+                this.currentSettings.LoadProfiles &&
+                oldLoadProfiles != this.currentSettings.LoadProfiles)
+            {
+                await this.editorSession.PowerShellContext.LoadProfilesForHost();
+                this.profilesLoaded = true;
+            }
 
             if (oldScriptAnalysisEnabled != this.currentSettings.ScriptAnalysis.Enable)
             {

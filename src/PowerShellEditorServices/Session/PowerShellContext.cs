@@ -37,6 +37,7 @@ namespace Microsoft.PowerShell.EditorServices
         private bool ownsInitialRunspace;
         private Runspace initialRunspace;
         private Runspace currentRunspace;
+        private ProfilePaths profilePaths;
         private ConsoleServicePSHost psHost;
         private InitialSessionState initialSessionState;
         private IVersionSpecificOperations versionSpecificOperations;
@@ -104,7 +105,21 @@ namespace Microsoft.PowerShell.EditorServices
         /// Initializes a new instance of the PowerShellContext class and
         /// opens a runspace to be used for the session.
         /// </summary>
-        public PowerShellContext()
+        public PowerShellContext() : this(null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the PowerShellContext class and
+        /// opens a runspace to be used for the session.
+        /// </summary>
+        /// <param name="hostProfileId">
+        /// The identifier of the PowerShell host to use for its profile path.
+        /// loaded. Used to resolve a profile path of the form 'X_profile.ps1'
+        /// where 'X' represents the value of hostProfileId.  If null, a default
+        /// will be used.
+        /// </param>
+        public PowerShellContext(string hostProfileId)
         {
             this.psHost = new ConsoleServicePSHost();
             this.initialSessionState = InitialSessionState.CreateDefault2();
@@ -116,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.ownsInitialRunspace = true;
 
-            this.Initialize(runspace);
+            this.Initialize(hostProfileId, runspace);
 
             // Use reflection to execute ConsoleVisibility.AlwaysCaptureApplicationIO = true;
             Type consoleVisibilityType =
@@ -142,12 +157,23 @@ namespace Microsoft.PowerShell.EditorServices
         /// an existing runspace for the session.
         /// </summary>
         /// <param name="initialRunspace"></param>
-        public PowerShellContext(Runspace initialRunspace)
+        /// <param name="hostProfileId">
+        /// The identifier of the PowerShell host to use for its profile path.
+        /// loaded. Used to resolve a profile path of the form 'X_profile.ps1'
+        /// where 'X' represents the value of hostProfileId.  If null, a default
+        /// will be used.
+        /// </param>
+        public PowerShellContext(string hostProfileId, Runspace initialRunspace)
         {
-            this.Initialize(initialRunspace);
+            this.Initialize(hostProfileId, initialRunspace);
         }
 
         private void Initialize(Runspace initialRunspace)
+        {
+            this.Initialize(null, initialRunspace);
+        }
+
+        private void Initialize(string hostProfileId, Runspace initialRunspace)
         {
             Validate.IsNotNull("initialRunspace", initialRunspace);
 
@@ -160,7 +186,6 @@ namespace Microsoft.PowerShell.EditorServices
             this.currentRunspace.Debugger.DebuggerStop += OnDebuggerStop;
 
             this.powerShell = PowerShell.Create();
-            this.powerShell.InvocationStateChanged += powerShell_InvocationStateChanged;
             this.powerShell.Runspace = this.currentRunspace;
 
             // TODO: Should this be configurable?
@@ -198,6 +223,14 @@ namespace Microsoft.PowerShell.EditorServices
             // Configure the runspace's debugger
             this.versionSpecificOperations.ConfigureDebugger(
                 this.currentRunspace);
+
+            // Set the $profile variable in the runspace
+            this.profilePaths =
+                this.SetProfileVariableInCurrentRunspace(
+                    hostProfileId ?? ProfilePaths.DefaultHostProfileId);
+
+            // Now that initialization is complete we can watch for InvocationStateChanged
+            this.powerShell.InvocationStateChanged += powerShell_InvocationStateChanged;
 
             this.SessionState = PowerShellContextState.Ready;
 
@@ -491,6 +524,24 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             await this.ExecuteCommand<object>(command, true);
+        }
+
+        /// <summary>
+        /// Loads PowerShell profiles for the host from the
+        /// standard system locations.  Only the profile paths which
+        /// exist are loaded.
+        /// </summary>
+        /// <returns>A Task that can be awaited for completion.</returns>
+        public async Task LoadProfilesForHost()
+        {
+            // Load any of the profile paths that exist
+            PSCommand command = null;
+            foreach (var profilePath in this.profilePaths.GetLoadableProfilePaths())
+            {
+                command = new PSCommand();
+                command.AddCommand(profilePath, false);
+                await this.ExecuteCommand(command);
+            }
         }
 
         /// <summary>
@@ -969,6 +1020,56 @@ namespace Microsoft.PowerShell.EditorServices
                                 .FirstOrDefault();
                     });
             }
+        }
+
+        private ProfilePaths SetProfileVariableInCurrentRunspace(string hostProfileId)
+        {
+            // Get the profile paths for the host name
+            ProfilePaths profilePaths =
+                new ProfilePaths(
+                    hostProfileId,
+                    this.currentRunspace);
+
+            // Create the $profile variable
+            PSObject profile = new PSObject(profilePaths.CurrentUserCurrentHost);
+
+            profile.Members.Add(
+                new PSNoteProperty(
+                    nameof(profilePaths.AllUsersAllHosts),
+                    profilePaths.AllUsersAllHosts));
+
+            profile.Members.Add(
+                new PSNoteProperty(
+                    nameof(profilePaths.AllUsersCurrentHost),
+                    profilePaths.AllUsersCurrentHost));
+
+            profile.Members.Add(
+                new PSNoteProperty(
+                    nameof(profilePaths.CurrentUserAllHosts),
+                    profilePaths.CurrentUserAllHosts));
+
+            profile.Members.Add(
+                new PSNoteProperty(
+                    nameof(profilePaths.CurrentUserCurrentHost),
+                    profilePaths.CurrentUserCurrentHost));
+
+            Logger.Write(
+                LogLevel.Verbose,
+                string.Format(
+                    "Setting $profile variable in runspace.  Current user host profile path: {0}",
+                    profilePaths.CurrentUserCurrentHost));
+
+            // Set the variable in the runspace
+            this.powerShell.Commands.Clear();
+            this.powerShell
+                .AddCommand("Set-Variable")
+                .AddParameter("Name", "profile")
+                .AddParameter("Value", profile)
+                .AddParameter("Option", "None");
+            this.powerShell.Invoke();
+            this.powerShell.Commands.Clear();
+
+            return profilePaths;
         }
         
         #endregion

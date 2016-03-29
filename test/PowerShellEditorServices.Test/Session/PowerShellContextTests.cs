@@ -3,9 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading.Tasks;
@@ -18,12 +20,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         private PowerShellContext powerShellContext;
         private AsyncQueue<SessionStateChangedEventArgs> stateChangeQueue;
 
+        private const string TestHostProfileId = "Test.PowerShellEditorServices";
         private const string DebugTestFilePath =
             @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1";
 
         public PowerShellContextTests()
         {
-            this.powerShellContext = new PowerShellContext();
+            this.powerShellContext = new PowerShellContext(TestHostProfileId);
             this.powerShellContext.SessionStateChanged += OnSessionStateChanged;
             this.stateChangeQueue = new AsyncQueue<SessionStateChangedEventArgs>();
         }
@@ -92,6 +95,79 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             await executeTask;
+        }
+
+        [Fact]
+        public async Task CanResolveAndLoadProfilesForHostId()
+        {
+            string testProfilePath =
+                Path.GetFullPath(
+                    @"..\..\..\PowerShellEditorServices.Test.Shared\Profile\Profile.ps1");
+
+            string profileName =
+                string.Format(
+                    "{0}_{1}",
+                    TestHostProfileId,
+                    ProfilePaths.AllHostsProfileName);
+
+            string currentUserPath =
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "WindowsPowerShell");
+            string allUsersPath = null; // To be set later
+
+            using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandle())
+            {
+                allUsersPath =
+                    (string)runspaceHandle
+                        .Runspace
+                        .SessionStateProxy
+                        .PSVariable
+                        .Get("PsHome")
+                        .Value;
+            }
+
+            string[] expectedProfilePaths =
+                new string[]
+                {
+                    Path.Combine(allUsersPath, ProfilePaths.AllHostsProfileName),
+                    Path.Combine(allUsersPath, profileName),
+                    Path.Combine(currentUserPath, ProfilePaths.AllHostsProfileName),
+                    Path.Combine(currentUserPath, profileName)
+                };
+
+            // Copy the test profile to the current user's host profile path
+            File.Copy(testProfilePath, expectedProfilePaths[3], true);
+
+            // Load the profiles for the test host name
+            await this.powerShellContext.LoadProfilesForHost();
+
+            // Delete the test profile before any assert failures
+            // cause the function to exit
+            File.Delete(expectedProfilePaths[3]);
+
+            // Ensure that all the paths are set in the correct variables
+            // and that the current user's host profile got loaded
+            PSCommand psCommand = new PSCommand();
+            psCommand.AddScript(
+                "\"$($profile.AllUsersAllHosts) " +
+                "$($profile.AllUsersCurrentHost) " +
+                "$($profile.CurrentUserAllHosts) " +
+                "$($profile.CurrentUserCurrentHost) " +
+                "$(Assert-ProfileLoaded)\"");
+
+            var result =
+                await this.powerShellContext.ExecuteCommand<string>(
+                    psCommand);
+
+            string expectedString =
+                string.Format(
+                    "{0} True",
+                    string.Join(
+                        " ",
+                        expectedProfilePaths));
+
+            Assert.Equal(expectedString, result.FirstOrDefault(), true);
         }
 
         #region Helper Methods
