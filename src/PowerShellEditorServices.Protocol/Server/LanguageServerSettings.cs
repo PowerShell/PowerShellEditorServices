@@ -7,6 +7,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class LanguageServerSettings
     {
+        public bool EnableProfileLoading { get; set; }
+
         public ScriptAnalysisSettings ScriptAnalysis { get; set; }
 
         public LanguageServerSettings()
@@ -18,6 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             if (settings != null)
             {
+                this.EnableProfileLoading = settings.EnableProfileLoading;
                 this.ScriptAnalysis.Update(settings.ScriptAnalysis);
             }
         }
@@ -41,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
     }
 
-    public class SettingsWrapper
+    public class LanguageServerSettingsWrapper
     {
         // NOTE: This property is capitalized as 'Powershell' because the
         // mode name sent from the client is written as 'powershell' and

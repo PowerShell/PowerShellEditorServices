@@ -98,6 +98,7 @@
     <Compile Include="Console\ChoiceDetails.cs" />
     <Compile Include="Session\EditorSession.cs" />
     <Compile Include="Console\IConsoleHost.cs" />
+    <Compile Include="Session\HostDetails.cs" />
     <Compile Include="Session\IVersionSpecificOperations.cs" />
     <Compile Include="Session\OutputType.cs" />
     <Compile Include="Session\OutputWrittenEventArgs.cs" />
@@ -107,6 +108,7 @@
     <Compile Include="Session\PowerShellExecutionResult.cs" />
     <Compile Include="Session\PowerShellContext.cs" />
     <Compile Include="Session\PowerShellContextState.cs" />
+    <Compile Include="Session\ProfilePaths.cs" />
     <Compile Include="Session\ProgressDetails.cs" />
     <Compile Include="Session\RunspaceHandle.cs" />
     <Compile Include="Session\SessionPSHost.cs" />
