@@ -5,11 +5,11 @@
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
+using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -78,20 +78,62 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             "/debugAdapter",
                             StringComparison.InvariantCultureIgnoreCase));
 
+            string hostProfileId = null;
+            string hostProfileIdArgument =
+                args.FirstOrDefault(
+                    arg =>
+                        arg.StartsWith(
+                            "/hostProfileId:",
+                            StringComparison.InvariantCultureIgnoreCase));
+
+            if (!string.IsNullOrEmpty(hostProfileIdArgument))
+            {
+                hostProfileId = hostProfileIdArgument.Substring(15).Trim('"');
+            }
+
+            string hostName = null;
+            string hostNameArgument =
+                args.FirstOrDefault(
+                    arg =>
+                        arg.StartsWith(
+                            "/hostName:",
+                            StringComparison.InvariantCultureIgnoreCase));
+
+            if (!string.IsNullOrEmpty(hostNameArgument))
+            {
+                hostName = hostNameArgument.Substring(10).Trim('"');
+            }
+
+            Version hostVersion = null;
+            string hostVersionArgument =
+                args.FirstOrDefault(
+                    arg =>
+                        arg.StartsWith(
+                            "/hostVersion:",
+                            StringComparison.InvariantCultureIgnoreCase));
+
+            if (!string.IsNullOrEmpty(hostVersionArgument))
+            {
+                hostVersion =
+                    new Version(
+                        hostVersionArgument.Substring(13).Trim('"'));
+            }
+
+            // Create the host details from parameters
+            HostDetails hostDetails =
+                new HostDetails(
+                    hostName,
+                    hostProfileId,
+                    hostVersion);
+
             // Catch unhandled exceptions for logging purposes
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            ProtocolEndpoint server = null;
-            if (runDebugAdapter)
-            {
-                logPath = logPath ?? "DebugAdapter.log";
-                server = new DebugAdapter();
-            }
-            else
-            {
-                logPath = logPath ?? "EditorServices.log";
-                server = new LanguageServer();
-            }
+            // Use a default log path filename if one isn't specified
+            logPath =
+                runDebugAdapter
+                ? logPath ?? "DebugAdapter.log"
+                : logPath ?? "EditorServices.log";
 
             // Start the logger with the specified log path and level
             Logger.Initialize(logPath, logLevel);
@@ -103,9 +145,20 @@ namespace Microsoft.PowerShell.EditorServices.Host
             Logger.Write(
                 LogLevel.Normal,
                 string.Format(
-                    "PowerShell Editor Services Host v{0} starting (pid {1})...",
+                    "PowerShell Editor Services Host v{0} starting (pid {1})...\r\n\r\n" +
+                    "  Host application details:\r\n\r\n" +
+                    "    Name: {2}\r\n    ProfileId: {3}\r\n    Version: {4}",
                     fileVersionInfo.FileVersion,
-                    Process.GetCurrentProcess().Id));
+                    Process.GetCurrentProcess().Id,
+                    hostDetails.Name,
+                    hostDetails.ProfileId,
+                    hostDetails.Version));
+
+            // Create the appropriate server type
+            ProtocolEndpoint server =
+                runDebugAdapter
+                ? (ProtocolEndpoint) new DebugAdapter(hostDetails)
+                : (ProtocolEndpoint) new LanguageServer(hostDetails);
 
             // Start the server
             server.Start().Wait();

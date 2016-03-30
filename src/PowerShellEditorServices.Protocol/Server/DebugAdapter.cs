@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -25,14 +26,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private string scriptPathToLaunch;
         private string arguments;
 
-        public DebugAdapter() : this(new StdioServerChannel())
+        public DebugAdapter(HostDetails hostDetails)
+            : this(hostDetails, new StdioServerChannel())
         {
         }
 
-        public DebugAdapter(ChannelBase serverChannel) : base(serverChannel)
+        public DebugAdapter(HostDetails hostDetails, ChannelBase serverChannel)
+            : base(serverChannel)
         {
             this.editorSession = new EditorSession();
-            this.editorSession.StartSession();
+            this.editorSession.StartSession(hostDetails);
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
 
