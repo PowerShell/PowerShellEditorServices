@@ -211,9 +211,32 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             SetBreakpointsRequestArguments setBreakpointsParams,
             RequestContext<SetBreakpointsResponseBody> requestContext)
         {
-            ScriptFile scriptFile =
-                editorSession.Workspace.GetFile(
-                    setBreakpointsParams.Source.Path);
+            ScriptFile scriptFile;
+
+            // Fix for issue #195 - user can change name of file outside of VSCode in which case
+            // VSCode sends breakpoint requests with the original filename that doesn't exist anymore.
+            try
+            {
+                scriptFile = editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
+            }
+            catch (FileNotFoundException)
+            {
+                Logger.Write(
+                    LogLevel.Warning, 
+                    $"Attempted to set breakpoints on a non-existing file: {setBreakpointsParams.Source.Path}");
+
+                var srcBreakpoints = setBreakpointsParams.Breakpoints
+                    .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
+                        srcBkpt, setBreakpointsParams.Source.Path, "Source does not exist, breakpoint not set."));
+
+                // Return non-verified breakpoint message.
+                await requestContext.SendResult(
+                    new SetBreakpointsResponseBody {
+                        Breakpoints = srcBreakpoints.ToArray()
+                    });
+
+	            return;
+	        }
 
             var breakpointDetails = new BreakpointDetails[setBreakpointsParams.Breakpoints.Length];
             for (int i = 0; i < breakpointDetails.Length; i++)
