@@ -1009,7 +1009,6 @@ function __Expand-Alias {
         {
             string detailString = null;
             string documentationString = null;
-            string labelString = completionDetails.ListItemText;
 
             if ((completionDetails.CompletionType == CompletionType.Variable) ||
                 (completionDetails.CompletionType == CompletionType.ParameterName))
@@ -1022,11 +1021,6 @@ function __Expand-Alias {
                 {
                     detailString = matches[0].Groups[1].Value;
                 }
-
-                // PowerShell returns ListItemText for parameters & variables that is not prefixed
-                // and it needs to be or the completion will not appear for these CompletionTypes.
-                string prefix = (completionDetails.CompletionType == CompletionType.Variable) ? "$" : "-";
-                labelString = prefix + completionDetails.ListItemText;
             }
             else if ((completionDetails.CompletionType == CompletionType.Method) ||
                      (completionDetails.CompletionType == CompletionType.Property))
@@ -1063,13 +1057,13 @@ function __Expand-Alias {
             // completion list. Technically we don't need the ListItemText at all but it may come
             // in handy during debug.
             var sortText = (completionDetails.CompletionType == CompletionType.ParameterName)
-                  ? string.Format("{0:D3}{1}", sortIndex, completionDetails.ListItemText)
-                  : null;
+                ? $"{sortIndex:D3}{completionDetails.ListItemText}"
+                : null;
 
             return new CompletionItem
             {
                 InsertText = completionDetails.CompletionText,
-                Label = labelString,
+                Label = completionDetails.ListItemText,
                 Kind = MapCompletionKind(completionDetails.CompletionType),
                 Detail = detailString,
                 Documentation = documentationString,

@@ -147,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             CompletionItem consoleFileNameItem =
                 completions
                     .FirstOrDefault(
-                        c => c.Label == "$ConsoleFileName");
+                        c => c.Label == "ConsoleFileName");
 
             Assert.NotNull(consoleFileNameItem);
             Assert.Equal("[string]", consoleFileNameItem.Detail);
