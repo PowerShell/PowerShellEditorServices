@@ -62,11 +62,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     SupportsFunctionBreakpoints = true
                 });
 
-            // Send the Initialized event first so that we get breakpoints
+            // Send the Initialized event so that we get breakpoints
             await requestContext.SendEvent(
                 InitializedEvent.Type,
                 null);
         }
     }
 }
-
