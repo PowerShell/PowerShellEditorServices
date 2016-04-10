@@ -76,6 +76,24 @@ namespace Microsoft.PowerShell.EditorServices
             this.DebugService = new DebugService(this.PowerShellContext);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
 
+            this.InstantiateAnalysisService();
+
+            // Create a workspace to contain open files
+            this.Workspace = new Workspace(this.PowerShellContext.PowerShellVersion);
+        }
+
+        /// <summary>
+        /// Restarts the AnalysisService so it can be configured with a new settings file.
+        /// </summary>
+        /// <param name="settingsPath">Path to the settings file.</param>
+        public void RestartAnalysisService(string settingsPath)
+        {
+            this.AnalysisService?.Dispose();
+            InstantiateAnalysisService(settingsPath);
+        }
+
+        internal void InstantiateAnalysisService(string settingsPath = null)
+        {
             // Only enable the AnalysisService if the machine has PowerShell
             // v5 installed.  Script Analyzer works on earlier PowerShell
             // versions but our hard dependency on their binaries complicates
@@ -89,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices
                 // Script Analyzer binaries are not included.
                 try
                 {
-                    this.AnalysisService = new AnalysisService();
+                    this.AnalysisService = new AnalysisService(this.PowerShellContext.ConsoleHost, settingsPath);
                 }
                 catch (FileNotFoundException)
                 {
@@ -105,9 +123,6 @@ namespace Microsoft.PowerShell.EditorServices
                     "Script Analyzer cannot be loaded due to unsupported PowerShell version " +
                     this.PowerShellContext.PowerShellVersion.ToString());
             }
-
-            // Create a workspace to contain open files
-            this.Workspace = new Workspace(this.PowerShellContext.PowerShellVersion);
         }
 
         #endregion

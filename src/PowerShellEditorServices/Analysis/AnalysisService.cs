@@ -11,6 +11,7 @@ using System.Linq;
 using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Console;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -26,11 +27,10 @@ namespace Microsoft.PowerShell.EditorServices
         private ScriptAnalyzer scriptAnalyzer;
 
         /// <summary>
-        /// Defines the list of Script Analyzer rules to include by default.
-        /// In the future, a default rule set from Script Analyzer may be used.
+        /// Defines the list of Script Analyzer rules to include by default if
+        /// no settings file is specified.
         /// </summary>
-        private static readonly string[] IncludedRules = new string[]
-        {
+        private static readonly string[] IncludedRules = {
             "PSUseApprovedVerbs",
             "PSReservedCmdletChar",
             "PSReservedParams",
@@ -47,7 +47,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Creates an instance of the AnalysisService class.
         /// </summary>
-        public AnalysisService()
+        /// <param name="consoleHost">An object that implements IConsoleHost in which to write errors/warnings 
+        /// from analyzer.</param>
+        /// <param name="settingsPath">Path to a PSScriptAnalyzer settings file.</param>
+        public AnalysisService(IConsoleHost consoleHost, string settingsPath = null)
         {
             try
             {
@@ -63,9 +66,10 @@ namespace Microsoft.PowerShell.EditorServices
 
                 this.scriptAnalyzer.Initialize(
                     this.analysisRunspace,
-                    new AnalysisOutputWriter(),
-                    includeRuleNames: IncludedRules,
-                    includeDefaultRules: true);
+                    new AnalysisOutputWriter(consoleHost),
+                    includeRuleNames: settingsPath == null ? IncludedRules : null,
+                    includeDefaultRules: true,
+                    profile: settingsPath);
             }
             catch (FileNotFoundException)
             {

@@ -300,11 +300,14 @@ function __Expand-Alias {
             EventContext eventContext)
         {
             bool oldLoadProfiles = this.currentSettings.EnableProfileLoading;
-            bool oldScriptAnalysisEnabled =
+            bool oldScriptAnalysisEnabled = 
                 this.currentSettings.ScriptAnalysis.Enable.HasValue;
+            string oldScriptAnalysisSettingsPath =
+                this.currentSettings.ScriptAnalysis.SettingsPath;
 
             this.currentSettings.Update(
-                configChangeParams.Settings.Powershell);
+                configChangeParams.Settings.Powershell, 
+                this.editorSession.Workspace.WorkspacePath);
 
             if (!this.profilesLoaded &&
                 this.currentSettings.EnableProfileLoading &&
@@ -314,11 +317,21 @@ function __Expand-Alias {
                 this.profilesLoaded = true;
             }
 
-            if (oldScriptAnalysisEnabled != this.currentSettings.ScriptAnalysis.Enable)
+            // If there is a new settings file path, restart the analyzer with the new settigs.
+            bool settingsPathChanged = false;
+            string newSettingsPath = this.currentSettings.ScriptAnalysis.SettingsPath;
+            if (!(oldScriptAnalysisSettingsPath?.Equals(newSettingsPath, StringComparison.OrdinalIgnoreCase) ?? false))
             {
-                // If the user just turned off script analysis, send a diagnostics
-                // event to clear the analysis markers that they already have
-                if (!this.currentSettings.ScriptAnalysis.Enable.Value)
+                this.editorSession.RestartAnalysisService(newSettingsPath);
+                settingsPathChanged = true;
+            }
+
+            // If script analysis settings have changed we need to clear & possibly update the current diagnostic records.
+            if ((oldScriptAnalysisEnabled != this.currentSettings.ScriptAnalysis.Enable) || settingsPathChanged)
+            {
+                // If the user just turned off script analysis or changed the settings path, send a diagnostics
+                // event to clear the analysis markers that they already have.
+                if (!this.currentSettings.ScriptAnalysis.Enable.Value || settingsPathChanged)
                 {
                     ScriptFileMarker[] emptyAnalysisDiagnostics = new ScriptFileMarker[0];
 
@@ -329,6 +342,15 @@ function __Expand-Alias {
                             emptyAnalysisDiagnostics,
                             eventContext);
                     }
+                }
+
+                // If script analysis is enabled and the settings file changed get new diagnostic records.
+                if (this.currentSettings.ScriptAnalysis.Enable.Value && settingsPathChanged)
+                {
+                    await this.RunScriptDiagnostics(
+                        this.editorSession.Workspace.GetOpenedFiles(),
+                        this.editorSession,
+                        eventContext);
                 }
             }
         }
