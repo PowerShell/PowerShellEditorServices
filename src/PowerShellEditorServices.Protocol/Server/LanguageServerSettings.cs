@@ -3,10 +3,15 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.IO;
+using Microsoft.PowerShell.EditorServices.Utility;
+
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class LanguageServerSettings
     {
+        public bool EnableProfileLoading { get; set; }
+
         public ScriptAnalysisSettings ScriptAnalysis { get; set; }
 
         public LanguageServerSettings()
@@ -14,11 +19,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.ScriptAnalysis = new ScriptAnalysisSettings();
         }
 
-        public void Update(LanguageServerSettings settings)
+        public void Update(LanguageServerSettings settings, string workspaceRootPath)
         {
             if (settings != null)
             {
-                this.ScriptAnalysis.Update(settings.ScriptAnalysis);
+                this.EnableProfileLoading = settings.EnableProfileLoading;
+                this.ScriptAnalysis.Update(settings.ScriptAnalysis, workspaceRootPath);
             }
         }
     }
@@ -34,17 +40,31 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.Enable = true;
         }
 
-        public void Update(ScriptAnalysisSettings settings)
+        public void Update(ScriptAnalysisSettings settings, string workspaceRootPath)
         {
             if (settings != null)
             {
+                Validate.IsNotNullOrEmptyString(nameof(workspaceRootPath), workspaceRootPath);
+
                 this.Enable = settings.Enable;
-                this.SettingsPath = settings.SettingsPath;
+
+                string settingsPath = settings.SettingsPath;
+
+                if (string.IsNullOrWhiteSpace(settingsPath))
+                {
+                    settingsPath = null;
+                }
+                else if (!Path.IsPathRooted(settingsPath))
+                {
+                    settingsPath = Path.GetFullPath(Path.Combine(workspaceRootPath, settingsPath));
+                }
+
+                this.SettingsPath = settingsPath;
             }
         }
     }
 
-    public class SettingsWrapper
+    public class LanguageServerSettingsWrapper
     {
         // NOTE: This property is capitalized as 'Powershell' because the
         // mode name sent from the client is written as 'powershell' and

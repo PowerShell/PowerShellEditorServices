@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -23,18 +24,27 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private static CancellationTokenSource existingRequestCancellation;
 
+        private bool profilesLoaded;
         private EditorSession editorSession;
         private OutputDebouncer outputDebouncer;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
 
-        public LanguageServer() : this(new StdioServerChannel())
+        /// <param name="hostDetails">
+        /// Provides details about the host application.
+        /// </param>
+        public LanguageServer(HostDetails hostDetails)
+            : this(hostDetails, new StdioServerChannel())
         {
         }
 
-        public LanguageServer(ChannelBase serverChannel) : base(serverChannel)
+        /// <param name="hostDetails">
+        /// Provides details about the host application.
+        /// </param>
+        public LanguageServer(HostDetails hostDetails, ChannelBase serverChannel)
+            : base(serverChannel)
         {
             this.editorSession = new EditorSession();
-            this.editorSession.StartSession();
+            this.editorSession.StartSession(hostDetails);
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
 
             // Always send console prompts through the UI in the language service
@@ -58,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotification);
             this.SetEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotification);
             this.SetEventHandler(DidChangeTextDocumentNotification.Type, this.HandleDidChangeTextDocumentNotification);
-            this.SetEventHandler(DidChangeConfigurationNotification<SettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
+            this.SetEventHandler(DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
 
             this.SetRequestHandler(DefinitionRequest.Type, this.HandleDefinitionRequest);
             this.SetRequestHandler(ReferencesRequest.Type, this.HandleReferencesRequest);
@@ -286,20 +296,29 @@ function __Expand-Alias {
         }
 
         protected async Task HandleDidChangeConfigurationNotification(
-            DidChangeConfigurationParams<SettingsWrapper> configChangeParams,
+            DidChangeConfigurationParams<LanguageServerSettingsWrapper> configChangeParams,
             EventContext eventContext)
         {
-            bool oldScriptAnalysisEnabled =
+            bool oldLoadProfiles = this.currentSettings.EnableProfileLoading;
+            bool oldScriptAnalysisEnabled = 
                 this.currentSettings.ScriptAnalysis.Enable.HasValue;
             string oldScriptAnalysisSettingsPath =
                 this.currentSettings.ScriptAnalysis.SettingsPath;
 
             this.currentSettings.Update(
-                configChangeParams.Settings.Powershell);
+                configChangeParams.Settings.Powershell, 
+                this.editorSession.Workspace.WorkspacePath);
 
-            string newSettingsPath = this.currentSettings.ScriptAnalysis.SettingsPath;
-            
+            if (!this.profilesLoaded &&
+                this.currentSettings.EnableProfileLoading &&
+                oldLoadProfiles != this.currentSettings.EnableProfileLoading)
+            {
+                await this.editorSession.PowerShellContext.LoadHostProfiles();
+                this.profilesLoaded = true;
+            }
+
             // If there is a new settings file path, restart the analyzer with the new settigs.
+            string newSettingsPath = this.currentSettings.ScriptAnalysis.SettingsPath;
             if (!(oldScriptAnalysisSettingsPath?.Equals(newSettingsPath, StringComparison.OrdinalIgnoreCase) ?? false))
             {
                 this.editorSession.RestartAnalysisService(newSettingsPath);
@@ -1000,7 +1019,6 @@ function __Expand-Alias {
         {
             string detailString = null;
             string documentationString = null;
-            string labelString = completionDetails.ListItemText;
 
             if ((completionDetails.CompletionType == CompletionType.Variable) ||
                 (completionDetails.CompletionType == CompletionType.ParameterName))
@@ -1013,11 +1031,6 @@ function __Expand-Alias {
                 {
                     detailString = matches[0].Groups[1].Value;
                 }
-
-                // PowerShell returns ListItemText for parameters & variables that is not prefixed
-                // and it needs to be or the completion will not appear for these CompletionTypes.
-                string prefix = (completionDetails.CompletionType == CompletionType.Variable) ? "$" : "-";
-                labelString = prefix + completionDetails.ListItemText;
             }
             else if ((completionDetails.CompletionType == CompletionType.Method) ||
                      (completionDetails.CompletionType == CompletionType.Property))
@@ -1054,13 +1067,13 @@ function __Expand-Alias {
             // completion list. Technically we don't need the ListItemText at all but it may come
             // in handy during debug.
             var sortText = (completionDetails.CompletionType == CompletionType.ParameterName)
-                  ? string.Format("{0:D3}{1}", sortIndex, completionDetails.ListItemText)
-                  : null;
+                ? $"{sortIndex:D3}{completionDetails.ListItemText}"
+                : null;
 
             return new CompletionItem
             {
                 InsertText = completionDetails.CompletionText,
-                Label = labelString,
+                Label = completionDetails.ListItemText,
                 Kind = MapCompletionKind(completionDetails.CompletionType),
                 Detail = detailString,
                 Documentation = documentationString,
