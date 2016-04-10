@@ -54,20 +54,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object shutdownParams,
             RequestContext<InitializeResponseBody> requestContext)
         {
-            // Send the Initialized event first so that we get breakpoints
-            await requestContext.SendEvent(
-                InitializedEvent.Type,
-                null);
-
             // Now send the Initialize response to continue setup
             await requestContext.SendResult(
-                new InitializeResponseBody
-                {
+                new InitializeResponseBody {
                     SupportsConfigurationDoneRequest = true,
                     SupportsConditionalBreakpoints = true,
                     SupportsFunctionBreakpoints = true
                 });
+
+            // Send the Initialized event so that we get breakpoints
+            await requestContext.SendEvent(
+                InitializedEvent.Type,
+                null);
         }
     }
 }
-

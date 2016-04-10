@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -25,14 +26,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private string scriptPathToLaunch;
         private string arguments;
 
-        public DebugAdapter() : this(new StdioServerChannel())
+        public DebugAdapter(HostDetails hostDetails)
+            : this(hostDetails, new StdioServerChannel())
         {
         }
 
-        public DebugAdapter(ChannelBase serverChannel) : base(serverChannel)
+        public DebugAdapter(HostDetails hostDetails, ChannelBase serverChannel)
+            : base(serverChannel)
         {
             this.editorSession = new EditorSession();
-            this.editorSession.StartSession();
+            this.editorSession.StartSession(hostDetails);
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
 
@@ -208,9 +211,32 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             SetBreakpointsRequestArguments setBreakpointsParams,
             RequestContext<SetBreakpointsResponseBody> requestContext)
         {
-            ScriptFile scriptFile =
-                editorSession.Workspace.GetFile(
-                    setBreakpointsParams.Source.Path);
+            ScriptFile scriptFile;
+
+            // Fix for issue #195 - user can change name of file outside of VSCode in which case
+            // VSCode sends breakpoint requests with the original filename that doesn't exist anymore.
+            try
+            {
+                scriptFile = editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
+            }
+            catch (FileNotFoundException)
+            {
+                Logger.Write(
+                    LogLevel.Warning, 
+                    $"Attempted to set breakpoints on a non-existing file: {setBreakpointsParams.Source.Path}");
+
+                var srcBreakpoints = setBreakpointsParams.Breakpoints
+                    .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
+                        srcBkpt, setBreakpointsParams.Source.Path, "Source does not exist, breakpoint not set."));
+
+                // Return non-verified breakpoint message.
+                await requestContext.SendResult(
+                    new SetBreakpointsResponseBody {
+                        Breakpoints = srcBreakpoints.ToArray()
+                    });
+
+	            return;
+	        }
 
             var breakpointDetails = new BreakpointDetails[setBreakpointsParams.Breakpoints.Length];
             for (int i = 0; i < breakpointDetails.Length; i++)

@@ -9,6 +9,8 @@ using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Protocol.Messages;
+using Microsoft.PowerShell.EditorServices.Protocol.Server;
+using Microsoft.PowerShell.EditorServices.Session;
 using System;
 using System.IO;
 using System.Linq;
@@ -37,6 +39,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 new LanguageServiceClient(
                     new StdioClientChannel(
                         "Microsoft.PowerShell.EditorServices.Host.exe",
+                        //"/waitForDebugger",
+                        "/hostName:\"PowerShell Editor Services Test Host\"",
+                        "/hostProfileId:Test.PowerShellEditorServices",
+                        "/hostVersion:1.0.0",
                         "/logPath:\"" + testLogPath + "\"",
                         "/logLevel:Verbose"));
 
@@ -141,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             CompletionItem consoleFileNameItem =
                 completions
                     .FirstOrDefault(
-                        c => c.Label == "$ConsoleFileName");
+                        c => c.Label == "ConsoleFileName");
 
             Assert.NotNull(consoleFileNameItem);
             Assert.Equal("[string]", consoleFileNameItem.Detail);
@@ -608,6 +614,76 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             // Wait for the selection to appear as output
             await evaluateTask;
             Assert.Equal("Test Output", await outputReader.ReadLine());
+        }
+
+        [Fact]
+        public async Task ServiceLoadsProfilesOnDemand()
+        {
+            // Send the configuration change to cause profiles to be loaded
+            await this.languageServiceClient.SendEvent(
+                DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type,
+                new DidChangeConfigurationParams<LanguageServerSettingsWrapper>
+                {
+                    Settings = new LanguageServerSettingsWrapper
+                    {
+                        Powershell = new LanguageServerSettings
+                        {
+                            EnableProfileLoading = true,
+                            ScriptAnalysis = null
+                        }
+                    }
+                });
+
+            string testProfilePath =
+                Path.GetFullPath(
+                    @"..\..\..\PowerShellEditorServices.Test.Shared\Profile\Profile.ps1");
+
+            string testHostName = "Test.PowerShellEditorServices";
+            string profileName =
+                string.Format(
+                    "{0}_{1}",
+                    testHostName,
+                    ProfilePaths.AllHostsProfileName);
+
+            string currentUserCurrentHostPath =
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "WindowsPowerShell",
+                    profileName);
+
+            // Copy the test profile to the current user's host profile path
+            File.Copy(testProfilePath, currentUserCurrentHostPath, true);
+
+            OutputReader outputReader = new OutputReader(this.protocolClient);
+
+            Task<EvaluateResponseBody> evaluateTask =
+                this.SendRequest(
+                    EvaluateRequest.Type,
+                    new EvaluateRequestArguments
+                    {
+                        Expression = "\"PROFILE: $(Assert-ProfileLoaded)\"",
+                        Context = "repl"
+                    });
+
+            // Try reading up to 10 lines to find the
+            string outputString = null;
+            for (int i = 0; i < 10; i++)
+            {
+                outputString = await outputReader.ReadLine();
+
+                if (outputString.StartsWith("PROFILE"))
+                {
+                    break;
+                }
+            }
+
+            // Delete the test profile before any assert failures
+            // cause the function to exit
+            File.Delete(currentUserCurrentHostPath);
+
+            // Wait for the selection to appear as output
+            await evaluateTask;
+            Assert.Equal("PROFILE: True", outputString);
         }
 
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)

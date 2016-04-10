@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Console;
+using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Management.Automation.Host;
@@ -19,6 +20,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
+        private HostDetails hostDetails;
         private IConsoleHost consoleHost;
         private Guid instanceId = Guid.NewGuid();
         private ConsoleServicePSHostUserInterface hostUserInterface;
@@ -40,12 +42,17 @@ namespace Microsoft.PowerShell.EditorServices
         #endregion
 
         #region Constructors
+
         /// <summary>
         /// Creates a new instance of the ConsoleServicePSHost class
         /// with the given IConsoleHost implementation.
         /// </summary>
-        public ConsoleServicePSHost()
+        /// <param name="hostDetails">
+        /// Provides details about the host application.
+        /// </param>
+        public ConsoleServicePSHost(HostDetails hostDetails)
         {
+            this.hostDetails = hostDetails;
             this.hostUserInterface = new ConsoleServicePSHostUserInterface();
         }
 
@@ -60,16 +67,12 @@ namespace Microsoft.PowerShell.EditorServices
 
         public override string Name
         {
-            // TODO: Change this based on proper naming!
-            get { return "PowerShell Editor Services"; }
+            get { return this.hostDetails.Name; }
         }
 
         public override Version Version
         {
-            get
-            {
-                return this.GetType().Assembly.GetName().Version;
-            }
+            get { return this.hostDetails.Version; }
         }
 
         // TODO: Pull these from IConsoleHost
