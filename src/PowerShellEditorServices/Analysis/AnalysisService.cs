@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         /// <summary>
         /// Defines the list of Script Analyzer rules to include by default if
-        /// no settings file can be found.
+        /// no settings file is specified.
         /// </summary>
         private static readonly string[] IncludedRules = {
             "PSUseApprovedVerbs",
