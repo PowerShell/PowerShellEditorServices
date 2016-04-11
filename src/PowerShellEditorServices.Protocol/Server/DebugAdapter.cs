@@ -76,8 +76,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // If this is a run without debugging session, disable all breakpoints.
             if (this.noDebug)
             {
-                Task diableBreakpoints = this.editorSession.DebugService.DisableAllBreakpoints();
-                Task.WhenAll(diableBreakpoints);
+                Task disableBreakpointsTask = 
+                    this.editorSession.DebugService.DisableAllBreakpoints();
+                Task.WhenAll(disableBreakpointsTask);
             }
 
             return editorSession.PowerShellContext
