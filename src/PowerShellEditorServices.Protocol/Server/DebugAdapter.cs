@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private OutputDebouncer outputDebouncer;
         private bool isConfigurationDoneRequestComplete;
         private bool isLaunchRequestComplete;
+        private bool noDebug;
         private string scriptPathToLaunch;
         private string arguments;
 
@@ -72,6 +73,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         protected Task LaunchScript(RequestContext<object> requestContext)
         {
+            // If this is a run without debugging session, disable all breakpoints.
+            if (this.noDebug)
+            {
+                Task diableBreakpoints = this.editorSession.DebugService.DisableAllBreakpoints();
+                Task.WhenAll(diableBreakpoints);
+            }
+
             return editorSession.PowerShellContext
                     .ExecuteScriptAtPath(this.scriptPathToLaunch, this.arguments)
                     .ContinueWith(
@@ -158,6 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // If the launch request comes first, then stash the launch
             // params so that the subsequent configurationDone request handler 
             // can launch the script. 
+            this.noDebug = launchParams.NoDebug;
             this.scriptPathToLaunch = launchParams.Program;
             this.arguments = arguments;
 

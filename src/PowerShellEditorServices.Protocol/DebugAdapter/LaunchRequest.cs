@@ -23,6 +23,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public string Program { get; set; }
 
         /// <summary>
+        /// Gets or sets a boolean value that indicates whether the script should be
+        /// run with (false) or without (true) debugging support.
+        /// </summary>
+        public bool NoDebug { get; set; }
+
+        /// <summary>
         /// Gets or sets a boolean value that determines whether to automatically stop 
         /// target after launch. If not specified, target does not stop.
         /// </summary>
