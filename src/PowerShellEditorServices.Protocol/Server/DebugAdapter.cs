@@ -227,7 +227,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     LogLevel.Warning, 
                     $"Attempted to set breakpoints on a non-existing file: {setBreakpointsParams.Source.Path}");
 
-                string message = this.noDebug ? null : "Source does not exist, breakpoint not set.";
+                string message = this.noDebug ? string.Empty : "Source does not exist, breakpoint not set.";
 
                 var srcBreakpoints = setBreakpointsParams.Breakpoints
                     .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
