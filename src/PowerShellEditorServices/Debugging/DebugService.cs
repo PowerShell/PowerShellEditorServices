@@ -58,20 +58,6 @@ namespace Microsoft.PowerShell.EditorServices
         #region Public Methods
 
         /// <summary>
-        /// Disables all breakpoints in the runspace.
-        /// </summary>
-        /// <returns></returns>
-        public async Task DisableAllBreakpoints()
-        {
-            var psCommand = new PSCommand();
-
-            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
-            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Disable-PSBreakpoint");
-
-            await this.powerShellContext.ExecuteCommand(psCommand);
-        }
-
-        /// <summary>
         /// Sets the list of line breakpoints for the current debugging session.
         /// </summary>
         /// <param name="scriptFile">The ScriptFile in which breakpoints will be set.</param>

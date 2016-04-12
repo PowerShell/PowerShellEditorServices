@@ -53,6 +53,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             return new BreakpointDetails
             {
+                Verified = true,
                 Source = source,
                 LineNumber = line,
                 ColumnNumber = column,

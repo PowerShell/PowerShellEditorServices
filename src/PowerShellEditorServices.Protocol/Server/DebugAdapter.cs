@@ -73,14 +73,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         protected Task LaunchScript(RequestContext<object> requestContext)
         {
-            // If this is a run without debugging session, disable all breakpoints.
-            if (this.noDebug)
-            {
-                Task disableBreakpointsTask = 
-                    this.editorSession.DebugService.DisableAllBreakpoints();
-                Task.WhenAll(disableBreakpointsTask);
-            }
-
             return editorSession.PowerShellContext
                     .ExecuteScriptAtPath(this.scriptPathToLaunch, this.arguments)
                     .ContinueWith(
@@ -235,9 +227,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     LogLevel.Warning, 
                     $"Attempted to set breakpoints on a non-existing file: {setBreakpointsParams.Source.Path}");
 
+                string message = this.noDebug ? null : "Source does not exist, breakpoint not set.";
+
                 var srcBreakpoints = setBreakpointsParams.Breakpoints
                     .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
-                        srcBkpt, setBreakpointsParams.Source.Path, "Source does not exist, breakpoint not set."));
+                        srcBkpt, setBreakpointsParams.Source.Path, message, verified: this.noDebug));
 
                 // Return non-verified breakpoint message.
                 await requestContext.SendResult(
@@ -259,16 +253,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     srcBreakpoint.Condition);
             }
 
-            BreakpointDetails[] breakpoints =
-                await editorSession.DebugService.SetLineBreakpoints(
-                    scriptFile,
-                    breakpointDetails);
+            // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
+            BreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
+            if (!this.noDebug)
+            {
+                updatedBreakpointDetails =
+                    await editorSession.DebugService.SetLineBreakpoints(
+                        scriptFile,
+                        breakpointDetails);
+            }
 
             await requestContext.SendResult(
-                new SetBreakpointsResponseBody
-                {
+                new SetBreakpointsResponseBody {
                     Breakpoints =
-                        breakpoints
+                        updatedBreakpointDetails
                             .Select(Protocol.DebugAdapter.Breakpoint.Create)
                             .ToArray()
                 });
@@ -287,14 +285,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     funcBreakpoint.Condition);
             }
 
-            CommandBreakpointDetails[] breakpoints =
-                await editorSession.DebugService.SetCommandBreakpoints(
-                    breakpointDetails);
+            // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
+            CommandBreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
+            if (!this.noDebug)
+            {
+                updatedBreakpointDetails =
+                    await editorSession.DebugService.SetCommandBreakpoints(
+                        breakpointDetails);
+            }
 
             await requestContext.SendResult(
                 new SetBreakpointsResponseBody {
                     Breakpoints =
-                        breakpoints
+                        updatedBreakpointDetails
                             .Select(Protocol.DebugAdapter.Breakpoint.Create)
                             .ToArray()
                 });
