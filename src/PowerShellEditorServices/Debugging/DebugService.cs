@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices
                 foreach (BreakpointDetails breakpoint in breakpoints)
                 {
                     PSCommand psCommand = new PSCommand();
-                    psCommand.AddCommand("Set-PSBreakpoint");
+                    psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint");
                     psCommand.AddParameter("Script", escapedScriptPath);
                     psCommand.AddParameter("Line", breakpoint.LineNumber);
 
