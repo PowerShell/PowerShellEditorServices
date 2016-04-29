@@ -360,7 +360,7 @@ function __Expand-Alias {
             // If there is a new settings file path, restart the analyzer with the new settigs.
             bool settingsPathChanged = false;
             string newSettingsPath = this.currentSettings.ScriptAnalysis.SettingsPath;
-            if (!(oldScriptAnalysisSettingsPath?.Equals(newSettingsPath, StringComparison.OrdinalIgnoreCase) ?? false))
+            if (!string.Equals(oldScriptAnalysisSettingsPath, newSettingsPath, StringComparison.OrdinalIgnoreCase))
             {
                 this.editorSession.RestartAnalysisService(newSettingsPath);
                 settingsPathChanged = true;

@@ -619,21 +619,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task ServiceLoadsProfilesOnDemand()
         {
-            // Send the configuration change to cause profiles to be loaded
-            await this.languageServiceClient.SendEvent(
-                DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type,
-                new DidChangeConfigurationParams<LanguageServerSettingsWrapper>
-                {
-                    Settings = new LanguageServerSettingsWrapper
-                    {
-                        Powershell = new LanguageServerSettings
-                        {
-                            EnableProfileLoading = true,
-                            ScriptAnalysis = null
-                        }
-                    }
-                });
-
             string testProfilePath =
                 Path.GetFullPath(
                     @"..\..\..\PowerShellEditorServices.Test.Shared\Profile\Profile.ps1");
@@ -654,6 +639,28 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             // Copy the test profile to the current user's host profile path
             File.Copy(testProfilePath, currentUserCurrentHostPath, true);
 
+            Assert.True(
+                File.Exists(currentUserCurrentHostPath),
+                "Copied profile path does not exist!");
+
+            // Send the configuration change to cause profiles to be loaded
+            await this.languageServiceClient.SendEvent(
+                DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type,
+                new DidChangeConfigurationParams<LanguageServerSettingsWrapper>
+                {
+                    Settings = new LanguageServerSettingsWrapper
+                    {
+                        Powershell = new LanguageServerSettings
+                        {
+                            EnableProfileLoading = true,
+                            ScriptAnalysis = new ScriptAnalysisSettings
+                            {
+                                Enable = false
+                            }
+                        }
+                    }
+                });
+
             OutputReader outputReader = new OutputReader(this.protocolClient);
 
             Task<EvaluateResponseBody> evaluateTask =
@@ -665,7 +672,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         Context = "repl"
                     });
 
-            // Try reading up to 10 lines to find the
+            // Try reading up to 10 lines to find the expected output line
             string outputString = null;
             for (int i = 0; i < 10; i++)
             {
