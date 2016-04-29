@@ -44,8 +44,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             if (settings != null)
             {
-                Validate.IsNotNullOrEmptyString(nameof(workspaceRootPath), workspaceRootPath);
-
                 this.Enable = settings.Enable;
 
                 string settingsPath = settings.SettingsPath;
@@ -56,7 +54,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
                 else if (!Path.IsPathRooted(settingsPath))
                 {
-                    settingsPath = Path.GetFullPath(Path.Combine(workspaceRootPath, settingsPath));
+                    if (string.IsNullOrEmpty(workspaceRootPath))
+                    {
+                        // The workspace root path could be an empty string
+                        // when the user has opened a PowerShell script file
+                        // without opening an entire folder (workspace) first.
+                        // In this case we should just log an error and let
+                        // the specified settings path go through even though
+                        // it will fail to load.
+                        Logger.Write(
+                            LogLevel.Error,
+                            "Could not resolve Script Analyzer settings path due to null or empty workspaceRootPath.");
+                    }
+                    else
+                    {
+                        settingsPath = Path.GetFullPath(Path.Combine(workspaceRootPath, settingsPath));
+                    }
                 }
 
                 this.SettingsPath = settingsPath;
