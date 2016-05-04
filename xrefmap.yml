@@ -1,0 +1,2105 @@
+sorted: true
+references:
+- uid: Microsoft.PowerShell.EditorServices
+  name: Microsoft.PowerShell.EditorServices
+  href: api/Microsoft.PowerShell.EditorServices.html#Microsoft_PowerShell_EditorServices
+  fullName: Microsoft.PowerShell.EditorServices
+- uid: Microsoft.PowerShell.EditorServices.AnalysisService
+  name: AnalysisService
+  href: api/Microsoft.PowerShell.EditorServices.AnalysisService.html#Microsoft_PowerShell_EditorServices_AnalysisService
+  fullName: Microsoft.PowerShell.EditorServices.AnalysisService
+- uid: Microsoft.PowerShell.EditorServices.AnalysisService.#ctor(Microsoft.PowerShell.EditorServices.Console.IConsoleHost,System.String)
+  name: AnalysisService(IConsoleHost, String)
+  href: api/Microsoft.PowerShell.EditorServices.AnalysisService.html#Microsoft_PowerShell_EditorServices_AnalysisService__ctor_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.AnalysisService.AnalysisService(Microsoft.PowerShell.EditorServices.Console.IConsoleHost, System.String)
+- uid: Microsoft.PowerShell.EditorServices.AnalysisService.Dispose
+  name: Dispose()
+  href: api/Microsoft.PowerShell.EditorServices.AnalysisService.html#Microsoft_PowerShell_EditorServices_AnalysisService_Dispose
+  fullName: Microsoft.PowerShell.EditorServices.AnalysisService.Dispose()
+- uid: Microsoft.PowerShell.EditorServices.AnalysisService.GetSemanticMarkers(Microsoft.PowerShell.EditorServices.ScriptFile)
+  name: GetSemanticMarkers(ScriptFile)
+  href: api/Microsoft.PowerShell.EditorServices.AnalysisService.html#Microsoft_PowerShell_EditorServices_AnalysisService_GetSemanticMarkers_Microsoft_PowerShell_EditorServices_ScriptFile_
+  fullName: Microsoft.PowerShell.EditorServices.AnalysisService.GetSemanticMarkers(Microsoft.PowerShell.EditorServices.ScriptFile)
+- uid: Microsoft.PowerShell.EditorServices.BreakpointDetails
+  name: BreakpointDetails
+  href: api/Microsoft.PowerShell.EditorServices.BreakpointDetails.html#Microsoft_PowerShell_EditorServices_BreakpointDetails
+  fullName: Microsoft.PowerShell.EditorServices.BreakpointDetails
+- uid: Microsoft.PowerShell.EditorServices.BreakpointDetails.ColumnNumber
+  name: ColumnNumber
+  href: api/Microsoft.PowerShell.EditorServices.BreakpointDetails.html#Microsoft_PowerShell_EditorServices_BreakpointDetails_ColumnNumber
+  fullName: Microsoft.PowerShell.EditorServices.BreakpointDetails.ColumnNumber
+- uid: Microsoft.PowerShell.EditorServices.BreakpointDetails.Create(System.Management.Automation.Breakpoint)
+  name: Create(Breakpoint)
+  href: api/Microsoft.PowerShell.EditorServices.BreakpointDetails.html#Microsoft_PowerShell_EditorServices_BreakpointDetails_Create_System_Management_Automation_Breakpoint_
+  fullName: Microsoft.PowerShell.EditorServices.BreakpointDetails.Create(System.Management.Automation.Breakpoint)
+- uid: Microsoft.PowerShell.EditorServices.BreakpointDetails.Create(System.String,System.Int32,System.Nullable{System.Int32},System.String)
+  name: Create(String, Int32, Nullable<Int32>, String)
+  href: api/Microsoft.PowerShell.EditorServices.BreakpointDetails.html#Microsoft_PowerShell_EditorServices_BreakpointDetails_Create_System_String_System_Int32_System_Nullable_System_Int32__System_String_
+  name.vb: Create(String, Int32, Nullable(Of Int32), String)
+  fullName: Microsoft.PowerShell.EditorServices.BreakpointDetails.Create(System.String, System.Int32, System.Nullable<System.Int32>, System.String)
+  fullName.vb: Microsoft.PowerShell.EditorServices.BreakpointDetails.Create(System.String, System.Int32, System.Nullable(Of System.Int32), System.String)
+- uid: Microsoft.PowerShell.EditorServices.BreakpointDetails.LineNumber
+  name: LineNumber
+  href: api/Microsoft.PowerShell.EditorServices.BreakpointDetails.html#Microsoft_PowerShell_EditorServices_BreakpointDetails_LineNumber
+  fullName: Microsoft.PowerShell.EditorServices.BreakpointDetails.LineNumber
+- uid: Microsoft.PowerShell.EditorServices.BreakpointDetails.Source
+  name: Source
+  href: api/Microsoft.PowerShell.EditorServices.BreakpointDetails.html#Microsoft_PowerShell_EditorServices_BreakpointDetails_Source
+  fullName: Microsoft.PowerShell.EditorServices.BreakpointDetails.Source
+- uid: Microsoft.PowerShell.EditorServices.BreakpointDetailsBase
+  name: BreakpointDetailsBase
+  href: api/Microsoft.PowerShell.EditorServices.BreakpointDetailsBase.html#Microsoft_PowerShell_EditorServices_BreakpointDetailsBase
+  fullName: Microsoft.PowerShell.EditorServices.BreakpointDetailsBase
+- uid: Microsoft.PowerShell.EditorServices.BreakpointDetailsBase.Condition
+  name: Condition
+  href: api/Microsoft.PowerShell.EditorServices.BreakpointDetailsBase.html#Microsoft_PowerShell_EditorServices_BreakpointDetailsBase_Condition
+  fullName: Microsoft.PowerShell.EditorServices.BreakpointDetailsBase.Condition
+- uid: Microsoft.PowerShell.EditorServices.BreakpointDetailsBase.Message
+  name: Message
+  href: api/Microsoft.PowerShell.EditorServices.BreakpointDetailsBase.html#Microsoft_PowerShell_EditorServices_BreakpointDetailsBase_Message
+  fullName: Microsoft.PowerShell.EditorServices.BreakpointDetailsBase.Message
+- uid: Microsoft.PowerShell.EditorServices.BreakpointDetailsBase.Verified
+  name: Verified
+  href: api/Microsoft.PowerShell.EditorServices.BreakpointDetailsBase.html#Microsoft_PowerShell_EditorServices_BreakpointDetailsBase_Verified
+  fullName: Microsoft.PowerShell.EditorServices.BreakpointDetailsBase.Verified
+- uid: Microsoft.PowerShell.EditorServices.BufferPosition
+  name: BufferPosition
+  href: api/Microsoft.PowerShell.EditorServices.BufferPosition.html#Microsoft_PowerShell_EditorServices_BufferPosition
+  fullName: Microsoft.PowerShell.EditorServices.BufferPosition
+- uid: Microsoft.PowerShell.EditorServices.BufferPosition.#ctor(System.Int32,System.Int32)
+  name: BufferPosition(Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.BufferPosition.html#Microsoft_PowerShell_EditorServices_BufferPosition__ctor_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.BufferPosition.BufferPosition(System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.BufferPosition.Column
+  name: Column
+  href: api/Microsoft.PowerShell.EditorServices.BufferPosition.html#Microsoft_PowerShell_EditorServices_BufferPosition_Column
+  fullName: Microsoft.PowerShell.EditorServices.BufferPosition.Column
+- uid: Microsoft.PowerShell.EditorServices.BufferPosition.Equals(System.Object)
+  name: Equals(Object)
+  href: api/Microsoft.PowerShell.EditorServices.BufferPosition.html#Microsoft_PowerShell_EditorServices_BufferPosition_Equals_System_Object_
+  fullName: Microsoft.PowerShell.EditorServices.BufferPosition.Equals(System.Object)
+- uid: Microsoft.PowerShell.EditorServices.BufferPosition.GetHashCode
+  name: GetHashCode()
+  href: api/Microsoft.PowerShell.EditorServices.BufferPosition.html#Microsoft_PowerShell_EditorServices_BufferPosition_GetHashCode
+  fullName: Microsoft.PowerShell.EditorServices.BufferPosition.GetHashCode()
+- uid: Microsoft.PowerShell.EditorServices.BufferPosition.Line
+  name: Line
+  href: api/Microsoft.PowerShell.EditorServices.BufferPosition.html#Microsoft_PowerShell_EditorServices_BufferPosition_Line
+  fullName: Microsoft.PowerShell.EditorServices.BufferPosition.Line
+- uid: Microsoft.PowerShell.EditorServices.BufferPosition.None
+  name: None
+  href: api/Microsoft.PowerShell.EditorServices.BufferPosition.html#Microsoft_PowerShell_EditorServices_BufferPosition_None
+  fullName: Microsoft.PowerShell.EditorServices.BufferPosition.None
+- uid: Microsoft.PowerShell.EditorServices.BufferPosition.op_GreaterThan(Microsoft.PowerShell.EditorServices.BufferPosition,Microsoft.PowerShell.EditorServices.BufferPosition)
+  name: GreaterThan(BufferPosition, BufferPosition)
+  href: api/Microsoft.PowerShell.EditorServices.BufferPosition.html#Microsoft_PowerShell_EditorServices_BufferPosition_op_GreaterThan_Microsoft_PowerShell_EditorServices_BufferPosition_Microsoft_PowerShell_EditorServices_BufferPosition_
+  fullName: Microsoft.PowerShell.EditorServices.BufferPosition.GreaterThan(Microsoft.PowerShell.EditorServices.BufferPosition, Microsoft.PowerShell.EditorServices.BufferPosition)
+- uid: Microsoft.PowerShell.EditorServices.BufferPosition.op_LessThan(Microsoft.PowerShell.EditorServices.BufferPosition,Microsoft.PowerShell.EditorServices.BufferPosition)
+  name: LessThan(BufferPosition, BufferPosition)
+  href: api/Microsoft.PowerShell.EditorServices.BufferPosition.html#Microsoft_PowerShell_EditorServices_BufferPosition_op_LessThan_Microsoft_PowerShell_EditorServices_BufferPosition_Microsoft_PowerShell_EditorServices_BufferPosition_
+  fullName: Microsoft.PowerShell.EditorServices.BufferPosition.LessThan(Microsoft.PowerShell.EditorServices.BufferPosition, Microsoft.PowerShell.EditorServices.BufferPosition)
+- uid: Microsoft.PowerShell.EditorServices.BufferRange
+  name: BufferRange
+  href: api/Microsoft.PowerShell.EditorServices.BufferRange.html#Microsoft_PowerShell_EditorServices_BufferRange
+  fullName: Microsoft.PowerShell.EditorServices.BufferRange
+- uid: Microsoft.PowerShell.EditorServices.BufferRange.#ctor(Microsoft.PowerShell.EditorServices.BufferPosition,Microsoft.PowerShell.EditorServices.BufferPosition)
+  name: BufferRange(BufferPosition, BufferPosition)
+  href: api/Microsoft.PowerShell.EditorServices.BufferRange.html#Microsoft_PowerShell_EditorServices_BufferRange__ctor_Microsoft_PowerShell_EditorServices_BufferPosition_Microsoft_PowerShell_EditorServices_BufferPosition_
+  fullName: Microsoft.PowerShell.EditorServices.BufferRange.BufferRange(Microsoft.PowerShell.EditorServices.BufferPosition, Microsoft.PowerShell.EditorServices.BufferPosition)
+- uid: Microsoft.PowerShell.EditorServices.BufferRange.#ctor(System.Int32,System.Int32,System.Int32,System.Int32)
+  name: BufferRange(Int32, Int32, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.BufferRange.html#Microsoft_PowerShell_EditorServices_BufferRange__ctor_System_Int32_System_Int32_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.BufferRange.BufferRange(System.Int32, System.Int32, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.BufferRange.End
+  name: End
+  href: api/Microsoft.PowerShell.EditorServices.BufferRange.html#Microsoft_PowerShell_EditorServices_BufferRange_End
+  fullName: Microsoft.PowerShell.EditorServices.BufferRange.End
+- uid: Microsoft.PowerShell.EditorServices.BufferRange.Equals(System.Object)
+  name: Equals(Object)
+  href: api/Microsoft.PowerShell.EditorServices.BufferRange.html#Microsoft_PowerShell_EditorServices_BufferRange_Equals_System_Object_
+  fullName: Microsoft.PowerShell.EditorServices.BufferRange.Equals(System.Object)
+- uid: Microsoft.PowerShell.EditorServices.BufferRange.GetHashCode
+  name: GetHashCode()
+  href: api/Microsoft.PowerShell.EditorServices.BufferRange.html#Microsoft_PowerShell_EditorServices_BufferRange_GetHashCode
+  fullName: Microsoft.PowerShell.EditorServices.BufferRange.GetHashCode()
+- uid: Microsoft.PowerShell.EditorServices.BufferRange.HasRange
+  name: HasRange
+  href: api/Microsoft.PowerShell.EditorServices.BufferRange.html#Microsoft_PowerShell_EditorServices_BufferRange_HasRange
+  fullName: Microsoft.PowerShell.EditorServices.BufferRange.HasRange
+- uid: Microsoft.PowerShell.EditorServices.BufferRange.None
+  name: None
+  href: api/Microsoft.PowerShell.EditorServices.BufferRange.html#Microsoft_PowerShell_EditorServices_BufferRange_None
+  fullName: Microsoft.PowerShell.EditorServices.BufferRange.None
+- uid: Microsoft.PowerShell.EditorServices.BufferRange.Start
+  name: Start
+  href: api/Microsoft.PowerShell.EditorServices.BufferRange.html#Microsoft_PowerShell_EditorServices_BufferRange_Start
+  fullName: Microsoft.PowerShell.EditorServices.BufferRange.Start
+- uid: Microsoft.PowerShell.EditorServices.ChoiceDetails
+  name: ChoiceDetails
+  href: api/Microsoft.PowerShell.EditorServices.ChoiceDetails.html#Microsoft_PowerShell_EditorServices_ChoiceDetails
+  fullName: Microsoft.PowerShell.EditorServices.ChoiceDetails
+- uid: Microsoft.PowerShell.EditorServices.ChoiceDetails.#ctor
+  name: ChoiceDetails()
+  href: api/Microsoft.PowerShell.EditorServices.ChoiceDetails.html#Microsoft_PowerShell_EditorServices_ChoiceDetails__ctor
+  fullName: Microsoft.PowerShell.EditorServices.ChoiceDetails.ChoiceDetails()
+- uid: Microsoft.PowerShell.EditorServices.ChoiceDetails.#ctor(System.String,System.String)
+  name: ChoiceDetails(String, String)
+  href: api/Microsoft.PowerShell.EditorServices.ChoiceDetails.html#Microsoft_PowerShell_EditorServices_ChoiceDetails__ctor_System_String_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.ChoiceDetails.ChoiceDetails(System.String, System.String)
+- uid: Microsoft.PowerShell.EditorServices.ChoiceDetails.Create(System.Management.Automation.Host.ChoiceDescription)
+  name: Create(ChoiceDescription)
+  href: api/Microsoft.PowerShell.EditorServices.ChoiceDetails.html#Microsoft_PowerShell_EditorServices_ChoiceDetails_Create_System_Management_Automation_Host_ChoiceDescription_
+  fullName: Microsoft.PowerShell.EditorServices.ChoiceDetails.Create(System.Management.Automation.Host.ChoiceDescription)
+- uid: Microsoft.PowerShell.EditorServices.ChoiceDetails.HelpMessage
+  name: HelpMessage
+  href: api/Microsoft.PowerShell.EditorServices.ChoiceDetails.html#Microsoft_PowerShell_EditorServices_ChoiceDetails_HelpMessage
+  fullName: Microsoft.PowerShell.EditorServices.ChoiceDetails.HelpMessage
+- uid: Microsoft.PowerShell.EditorServices.ChoiceDetails.HotKeyCharacter
+  name: HotKeyCharacter
+  href: api/Microsoft.PowerShell.EditorServices.ChoiceDetails.html#Microsoft_PowerShell_EditorServices_ChoiceDetails_HotKeyCharacter
+  fullName: Microsoft.PowerShell.EditorServices.ChoiceDetails.HotKeyCharacter
+- uid: Microsoft.PowerShell.EditorServices.ChoiceDetails.HotKeyIndex
+  name: HotKeyIndex
+  href: api/Microsoft.PowerShell.EditorServices.ChoiceDetails.html#Microsoft_PowerShell_EditorServices_ChoiceDetails_HotKeyIndex
+  fullName: Microsoft.PowerShell.EditorServices.ChoiceDetails.HotKeyIndex
+- uid: Microsoft.PowerShell.EditorServices.ChoiceDetails.Label
+  name: Label
+  href: api/Microsoft.PowerShell.EditorServices.ChoiceDetails.html#Microsoft_PowerShell_EditorServices_ChoiceDetails_Label
+  fullName: Microsoft.PowerShell.EditorServices.ChoiceDetails.Label
+- uid: Microsoft.PowerShell.EditorServices.ChoiceDetails.MatchesInput(System.String)
+  name: MatchesInput(String)
+  href: api/Microsoft.PowerShell.EditorServices.ChoiceDetails.html#Microsoft_PowerShell_EditorServices_ChoiceDetails_MatchesInput_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.ChoiceDetails.MatchesInput(System.String)
+- uid: Microsoft.PowerShell.EditorServices.CommandBreakpointDetails
+  name: CommandBreakpointDetails
+  href: api/Microsoft.PowerShell.EditorServices.CommandBreakpointDetails.html#Microsoft_PowerShell_EditorServices_CommandBreakpointDetails
+  fullName: Microsoft.PowerShell.EditorServices.CommandBreakpointDetails
+- uid: Microsoft.PowerShell.EditorServices.CommandBreakpointDetails.Create(System.Management.Automation.Breakpoint)
+  name: Create(Breakpoint)
+  href: api/Microsoft.PowerShell.EditorServices.CommandBreakpointDetails.html#Microsoft_PowerShell_EditorServices_CommandBreakpointDetails_Create_System_Management_Automation_Breakpoint_
+  fullName: Microsoft.PowerShell.EditorServices.CommandBreakpointDetails.Create(System.Management.Automation.Breakpoint)
+- uid: Microsoft.PowerShell.EditorServices.CommandBreakpointDetails.Create(System.String,System.String)
+  name: Create(String, String)
+  href: api/Microsoft.PowerShell.EditorServices.CommandBreakpointDetails.html#Microsoft_PowerShell_EditorServices_CommandBreakpointDetails_Create_System_String_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.CommandBreakpointDetails.Create(System.String, System.String)
+- uid: Microsoft.PowerShell.EditorServices.CommandBreakpointDetails.Name
+  name: Name
+  href: api/Microsoft.PowerShell.EditorServices.CommandBreakpointDetails.html#Microsoft_PowerShell_EditorServices_CommandBreakpointDetails_Name
+  fullName: Microsoft.PowerShell.EditorServices.CommandBreakpointDetails.Name
+- uid: Microsoft.PowerShell.EditorServices.CommandHelpers
+  name: CommandHelpers
+  href: api/Microsoft.PowerShell.EditorServices.CommandHelpers.html#Microsoft_PowerShell_EditorServices_CommandHelpers
+  fullName: Microsoft.PowerShell.EditorServices.CommandHelpers
+- uid: Microsoft.PowerShell.EditorServices.CommandHelpers.GetCommandInfo(System.String,System.Management.Automation.Runspaces.Runspace)
+  name: GetCommandInfo(String, Runspace)
+  href: api/Microsoft.PowerShell.EditorServices.CommandHelpers.html#Microsoft_PowerShell_EditorServices_CommandHelpers_GetCommandInfo_System_String_System_Management_Automation_Runspaces_Runspace_
+  fullName: Microsoft.PowerShell.EditorServices.CommandHelpers.GetCommandInfo(System.String, System.Management.Automation.Runspaces.Runspace)
+- uid: Microsoft.PowerShell.EditorServices.CommandHelpers.GetCommandSynopsis(System.Management.Automation.CommandInfo,System.Management.Automation.Runspaces.Runspace)
+  name: GetCommandSynopsis(CommandInfo, Runspace)
+  href: api/Microsoft.PowerShell.EditorServices.CommandHelpers.html#Microsoft_PowerShell_EditorServices_CommandHelpers_GetCommandSynopsis_System_Management_Automation_CommandInfo_System_Management_Automation_Runspaces_Runspace_
+  fullName: Microsoft.PowerShell.EditorServices.CommandHelpers.GetCommandSynopsis(System.Management.Automation.CommandInfo, System.Management.Automation.Runspaces.Runspace)
+- uid: Microsoft.PowerShell.EditorServices.CompletionDetails
+  name: CompletionDetails
+  href: api/Microsoft.PowerShell.EditorServices.CompletionDetails.html#Microsoft_PowerShell_EditorServices_CompletionDetails
+  fullName: Microsoft.PowerShell.EditorServices.CompletionDetails
+- uid: Microsoft.PowerShell.EditorServices.CompletionDetails.CompletionText
+  name: CompletionText
+  href: api/Microsoft.PowerShell.EditorServices.CompletionDetails.html#Microsoft_PowerShell_EditorServices_CompletionDetails_CompletionText
+  fullName: Microsoft.PowerShell.EditorServices.CompletionDetails.CompletionText
+- uid: Microsoft.PowerShell.EditorServices.CompletionDetails.CompletionType
+  name: CompletionType
+  href: api/Microsoft.PowerShell.EditorServices.CompletionDetails.html#Microsoft_PowerShell_EditorServices_CompletionDetails_CompletionType
+  fullName: Microsoft.PowerShell.EditorServices.CompletionDetails.CompletionType
+- uid: Microsoft.PowerShell.EditorServices.CompletionDetails.Equals(System.Object)
+  name: Equals(Object)
+  href: api/Microsoft.PowerShell.EditorServices.CompletionDetails.html#Microsoft_PowerShell_EditorServices_CompletionDetails_Equals_System_Object_
+  fullName: Microsoft.PowerShell.EditorServices.CompletionDetails.Equals(System.Object)
+- uid: Microsoft.PowerShell.EditorServices.CompletionDetails.GetHashCode
+  name: GetHashCode()
+  href: api/Microsoft.PowerShell.EditorServices.CompletionDetails.html#Microsoft_PowerShell_EditorServices_CompletionDetails_GetHashCode
+  fullName: Microsoft.PowerShell.EditorServices.CompletionDetails.GetHashCode()
+- uid: Microsoft.PowerShell.EditorServices.CompletionDetails.ListItemText
+  name: ListItemText
+  href: api/Microsoft.PowerShell.EditorServices.CompletionDetails.html#Microsoft_PowerShell_EditorServices_CompletionDetails_ListItemText
+  fullName: Microsoft.PowerShell.EditorServices.CompletionDetails.ListItemText
+- uid: Microsoft.PowerShell.EditorServices.CompletionDetails.SymbolTypeName
+  name: SymbolTypeName
+  href: api/Microsoft.PowerShell.EditorServices.CompletionDetails.html#Microsoft_PowerShell_EditorServices_CompletionDetails_SymbolTypeName
+  fullName: Microsoft.PowerShell.EditorServices.CompletionDetails.SymbolTypeName
+- uid: Microsoft.PowerShell.EditorServices.CompletionDetails.ToolTipText
+  name: ToolTipText
+  href: api/Microsoft.PowerShell.EditorServices.CompletionDetails.html#Microsoft_PowerShell_EditorServices_CompletionDetails_ToolTipText
+  fullName: Microsoft.PowerShell.EditorServices.CompletionDetails.ToolTipText
+- uid: Microsoft.PowerShell.EditorServices.CompletionResults
+  name: CompletionResults
+  href: api/Microsoft.PowerShell.EditorServices.CompletionResults.html#Microsoft_PowerShell_EditorServices_CompletionResults
+  fullName: Microsoft.PowerShell.EditorServices.CompletionResults
+- uid: Microsoft.PowerShell.EditorServices.CompletionResults.#ctor
+  name: CompletionResults()
+  href: api/Microsoft.PowerShell.EditorServices.CompletionResults.html#Microsoft_PowerShell_EditorServices_CompletionResults__ctor
+  fullName: Microsoft.PowerShell.EditorServices.CompletionResults.CompletionResults()
+- uid: Microsoft.PowerShell.EditorServices.CompletionResults.Completions
+  name: Completions
+  href: api/Microsoft.PowerShell.EditorServices.CompletionResults.html#Microsoft_PowerShell_EditorServices_CompletionResults_Completions
+  fullName: Microsoft.PowerShell.EditorServices.CompletionResults.Completions
+- uid: Microsoft.PowerShell.EditorServices.CompletionResults.ReplacedRange
+  name: ReplacedRange
+  href: api/Microsoft.PowerShell.EditorServices.CompletionResults.html#Microsoft_PowerShell_EditorServices_CompletionResults_ReplacedRange
+  fullName: Microsoft.PowerShell.EditorServices.CompletionResults.ReplacedRange
+- uid: Microsoft.PowerShell.EditorServices.CompletionType
+  name: CompletionType
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType
+- uid: Microsoft.PowerShell.EditorServices.CompletionType.Command
+  name: Command
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType_Command
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType.Command
+- uid: Microsoft.PowerShell.EditorServices.CompletionType.Keyword
+  name: Keyword
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType_Keyword
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType.Keyword
+- uid: Microsoft.PowerShell.EditorServices.CompletionType.Method
+  name: Method
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType_Method
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType.Method
+- uid: Microsoft.PowerShell.EditorServices.CompletionType.Namespace
+  name: Namespace
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType_Namespace
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType.Namespace
+- uid: Microsoft.PowerShell.EditorServices.CompletionType.ParameterName
+  name: ParameterName
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType_ParameterName
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType.ParameterName
+- uid: Microsoft.PowerShell.EditorServices.CompletionType.ParameterValue
+  name: ParameterValue
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType_ParameterValue
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType.ParameterValue
+- uid: Microsoft.PowerShell.EditorServices.CompletionType.Path
+  name: Path
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType_Path
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType.Path
+- uid: Microsoft.PowerShell.EditorServices.CompletionType.Property
+  name: Property
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType_Property
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType.Property
+- uid: Microsoft.PowerShell.EditorServices.CompletionType.Type
+  name: Type
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType_Type
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType.Type
+- uid: Microsoft.PowerShell.EditorServices.CompletionType.Unknown
+  name: Unknown
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType_Unknown
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType.Unknown
+- uid: Microsoft.PowerShell.EditorServices.CompletionType.Variable
+  name: Variable
+  href: api/Microsoft.PowerShell.EditorServices.CompletionType.html#Microsoft_PowerShell_EditorServices_CompletionType_Variable
+  fullName: Microsoft.PowerShell.EditorServices.CompletionType.Variable
+- uid: Microsoft.PowerShell.EditorServices.Console
+  name: Microsoft.PowerShell.EditorServices.Console
+  href: api/Microsoft.PowerShell.EditorServices.Console.html#Microsoft_PowerShell_EditorServices_Console
+  fullName: Microsoft.PowerShell.EditorServices.Console
+- uid: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler
+  name: ChoicePromptHandler
+  href: api/Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ChoicePromptHandler
+  fullName: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler
+- uid: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.Caption
+  name: Caption
+  href: api/Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ChoicePromptHandler_Caption
+  fullName: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.Caption
+- uid: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.Choices
+  name: Choices
+  href: api/Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ChoicePromptHandler_Choices
+  fullName: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.Choices
+- uid: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.DefaultChoice
+  name: DefaultChoice
+  href: api/Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ChoicePromptHandler_DefaultChoice
+  fullName: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.DefaultChoice
+- uid: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.HandleResponse(System.String)
+  name: HandleResponse(String)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ChoicePromptHandler_HandleResponse_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.HandleResponse(System.String)
+- uid: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.Message
+  name: Message
+  href: api/Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ChoicePromptHandler_Message
+  fullName: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.Message
+- uid: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.OnPromptCancelled
+  name: OnPromptCancelled()
+  href: api/Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ChoicePromptHandler_OnPromptCancelled
+  fullName: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.OnPromptCancelled()
+- uid: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.PromptForChoice(System.String,System.String,Microsoft.PowerShell.EditorServices.ChoiceDetails[],System.Int32,System.Threading.CancellationToken)
+  name: PromptForChoice(String, String, ChoiceDetails[], Int32, CancellationToken)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ChoicePromptHandler_PromptForChoice_System_String_System_String_Microsoft_PowerShell_EditorServices_ChoiceDetails___System_Int32_System_Threading_CancellationToken_
+  name.vb: PromptForChoice(String, String, ChoiceDetails(), Int32, CancellationToken)
+  fullName: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.PromptForChoice(System.String, System.String, Microsoft.PowerShell.EditorServices.ChoiceDetails[], System.Int32, System.Threading.CancellationToken)
+  fullName.vb: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.PromptForChoice(System.String, System.String, Microsoft.PowerShell.EditorServices.ChoiceDetails(), System.Int32, System.Threading.CancellationToken)
+- uid: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.ShowPrompt(Microsoft.PowerShell.EditorServices.Console.PromptStyle)
+  name: ShowPrompt(PromptStyle)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ChoicePromptHandler_ShowPrompt_Microsoft_PowerShell_EditorServices_Console_PromptStyle_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ChoicePromptHandler.ShowPrompt(Microsoft.PowerShell.EditorServices.Console.PromptStyle)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler
+  name: ConsoleChoicePromptHandler
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ConsoleChoicePromptHandler
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler.#ctor(Microsoft.PowerShell.EditorServices.Console.IConsoleHost)
+  name: ConsoleChoicePromptHandler(IConsoleHost)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ConsoleChoicePromptHandler__ctor_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler.ConsoleChoicePromptHandler(Microsoft.PowerShell.EditorServices.Console.IConsoleHost)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler.HandleResponse(System.String)
+  name: HandleResponse(String)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ConsoleChoicePromptHandler_HandleResponse_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler.HandleResponse(System.String)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler.ShowPrompt(Microsoft.PowerShell.EditorServices.Console.PromptStyle)
+  name: ShowPrompt(PromptStyle)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ConsoleChoicePromptHandler_ShowPrompt_Microsoft_PowerShell_EditorServices_Console_PromptStyle_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleChoicePromptHandler.ShowPrompt(Microsoft.PowerShell.EditorServices.Console.PromptStyle)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler
+  name: ConsoleInputPromptHandler
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ConsoleInputPromptHandler
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.#ctor(Microsoft.PowerShell.EditorServices.Console.IConsoleHost)
+  name: ConsoleInputPromptHandler(IConsoleHost)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ConsoleInputPromptHandler__ctor_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.ConsoleInputPromptHandler(Microsoft.PowerShell.EditorServices.Console.IConsoleHost)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.ShowErrorMessage(System.Exception)
+  name: ShowErrorMessage(Exception)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ConsoleInputPromptHandler_ShowErrorMessage_System_Exception_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.ShowErrorMessage(System.Exception)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.ShowFieldPrompt(Microsoft.PowerShell.EditorServices.Console.FieldDetails)
+  name: ShowFieldPrompt(FieldDetails)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ConsoleInputPromptHandler_ShowFieldPrompt_Microsoft_PowerShell_EditorServices_Console_FieldDetails_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.ShowFieldPrompt(Microsoft.PowerShell.EditorServices.Console.FieldDetails)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.ShowPromptMessage(System.String,System.String)
+  name: ShowPromptMessage(String, String)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_ConsoleInputPromptHandler_ShowPromptMessage_System_String_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleInputPromptHandler.ShowPromptMessage(System.String, System.String)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext
+  name: ConsolePromptHandlerContext
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext.html#Microsoft_PowerShell_EditorServices_Console_ConsolePromptHandlerContext
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext.#ctor(Microsoft.PowerShell.EditorServices.Console.IConsoleHost)
+  name: ConsolePromptHandlerContext(IConsoleHost)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext.html#Microsoft_PowerShell_EditorServices_Console_ConsolePromptHandlerContext__ctor_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext.ConsolePromptHandlerContext(Microsoft.PowerShell.EditorServices.Console.IConsoleHost)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext.GetChoicePromptHandler
+  name: GetChoicePromptHandler()
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext.html#Microsoft_PowerShell_EditorServices_Console_ConsolePromptHandlerContext_GetChoicePromptHandler
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext.GetChoicePromptHandler()
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext.GetInputPromptHandler
+  name: GetInputPromptHandler()
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext.html#Microsoft_PowerShell_EditorServices_Console_ConsolePromptHandlerContext_GetInputPromptHandler
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsolePromptHandlerContext.GetInputPromptHandler()
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService
+  name: ConsoleService
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.#ctor(Microsoft.PowerShell.EditorServices.PowerShellContext)
+  name: ConsoleService(PowerShellContext)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService__ctor_Microsoft_PowerShell_EditorServices_PowerShellContext_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.ConsoleService(Microsoft.PowerShell.EditorServices.PowerShellContext)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.#ctor(Microsoft.PowerShell.EditorServices.PowerShellContext,Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext)
+  name: ConsoleService(PowerShellContext, IPromptHandlerContext)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService__ctor_Microsoft_PowerShell_EditorServices_PowerShellContext_Microsoft_PowerShell_EditorServices_Console_IPromptHandlerContext_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.ConsoleService(Microsoft.PowerShell.EditorServices.PowerShellContext, Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.ExecuteCommand(System.String,System.Boolean)
+  name: ExecuteCommand(String, Boolean)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService_ExecuteCommand_System_String_System_Boolean_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.ExecuteCommand(System.String, System.Boolean)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.Microsoft#PowerShell#EditorServices#Console#IConsoleHost#ExitSession(System.Int32)
+  name: IConsoleHost.ExitSession(Int32)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_ExitSession_System_Int32_
+  name.vb: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.ExitSession(Int32)
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.Microsoft.PowerShell.EditorServices.Console.IConsoleHost.ExitSession(System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.Microsoft#PowerShell#EditorServices#Console#IConsoleHost#GetChoicePromptHandler
+  name: IConsoleHost.GetChoicePromptHandler()
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_GetChoicePromptHandler
+  name.vb: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.GetChoicePromptHandler()
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.Microsoft.PowerShell.EditorServices.Console.IConsoleHost.GetChoicePromptHandler()
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.Microsoft#PowerShell#EditorServices#Console#IConsoleHost#GetInputPromptHandler
+  name: IConsoleHost.GetInputPromptHandler()
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_GetInputPromptHandler
+  name.vb: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.GetInputPromptHandler()
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.Microsoft.PowerShell.EditorServices.Console.IConsoleHost.GetInputPromptHandler()
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.Microsoft#PowerShell#EditorServices#Console#IConsoleHost#UpdateProgress(System.Int64,Microsoft.PowerShell.EditorServices.ProgressDetails)
+  name: IConsoleHost.UpdateProgress(Int64, ProgressDetails)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_UpdateProgress_System_Int64_Microsoft_PowerShell_EditorServices_ProgressDetails_
+  name.vb: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.UpdateProgress(Int64, ProgressDetails)
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.Microsoft.PowerShell.EditorServices.Console.IConsoleHost.UpdateProgress(System.Int64, Microsoft.PowerShell.EditorServices.ProgressDetails)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.Microsoft#PowerShell#EditorServices#Console#IConsoleHost#WriteOutput(System.String,System.Boolean,Microsoft.PowerShell.EditorServices.OutputType,System.ConsoleColor,System.ConsoleColor)
+  name: IConsoleHost.WriteOutput(String, Boolean, OutputType, ConsoleColor, ConsoleColor)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_WriteOutput_System_String_System_Boolean_Microsoft_PowerShell_EditorServices_OutputType_System_ConsoleColor_System_ConsoleColor_
+  name.vb: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.WriteOutput(String, Boolean, OutputType, ConsoleColor, ConsoleColor)
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.Microsoft.PowerShell.EditorServices.Console.IConsoleHost.WriteOutput(System.String, System.Boolean, Microsoft.PowerShell.EditorServices.OutputType, System.ConsoleColor, System.ConsoleColor)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.OutputWritten
+  name: OutputWritten
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService_OutputWritten
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.OutputWritten
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.PopPromptHandlerContext
+  name: PopPromptHandlerContext()
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService_PopPromptHandlerContext
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.PopPromptHandlerContext()
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.PushPromptHandlerContext(Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext)
+  name: PushPromptHandlerContext(IPromptHandlerContext)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService_PushPromptHandlerContext_Microsoft_PowerShell_EditorServices_Console_IPromptHandlerContext_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.PushPromptHandlerContext(Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.ReceivePromptResponse(System.String,System.Boolean)
+  name: ReceivePromptResponse(String, Boolean)
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService_ReceivePromptResponse_System_String_System_Boolean_
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.ReceivePromptResponse(System.String, System.Boolean)
+- uid: Microsoft.PowerShell.EditorServices.Console.ConsoleService.SendControlC
+  name: SendControlC()
+  href: api/Microsoft.PowerShell.EditorServices.Console.ConsoleService.html#Microsoft_PowerShell_EditorServices_Console_ConsoleService_SendControlC
+  fullName: Microsoft.PowerShell.EditorServices.Console.ConsoleService.SendControlC()
+- uid: Microsoft.PowerShell.EditorServices.Console.FieldDetails
+  name: FieldDetails
+  href: api/Microsoft.PowerShell.EditorServices.Console.FieldDetails.html#Microsoft_PowerShell_EditorServices_Console_FieldDetails
+  fullName: Microsoft.PowerShell.EditorServices.Console.FieldDetails
+- uid: Microsoft.PowerShell.EditorServices.Console.FieldDetails.#ctor(System.String,System.String,System.Type,System.Boolean,System.Object)
+  name: FieldDetails(String, String, Type, Boolean, Object)
+  href: api/Microsoft.PowerShell.EditorServices.Console.FieldDetails.html#Microsoft_PowerShell_EditorServices_Console_FieldDetails__ctor_System_String_System_String_System_Type_System_Boolean_System_Object_
+  fullName: Microsoft.PowerShell.EditorServices.Console.FieldDetails.FieldDetails(System.String, System.String, System.Type, System.Boolean, System.Object)
+- uid: Microsoft.PowerShell.EditorServices.Console.FieldDetails.DefaultValue
+  name: DefaultValue
+  href: api/Microsoft.PowerShell.EditorServices.Console.FieldDetails.html#Microsoft_PowerShell_EditorServices_Console_FieldDetails_DefaultValue
+  fullName: Microsoft.PowerShell.EditorServices.Console.FieldDetails.DefaultValue
+- uid: Microsoft.PowerShell.EditorServices.Console.FieldDetails.ElementType
+  name: ElementType
+  href: api/Microsoft.PowerShell.EditorServices.Console.FieldDetails.html#Microsoft_PowerShell_EditorServices_Console_FieldDetails_ElementType
+  fullName: Microsoft.PowerShell.EditorServices.Console.FieldDetails.ElementType
+- uid: Microsoft.PowerShell.EditorServices.Console.FieldDetails.FieldType
+  name: FieldType
+  href: api/Microsoft.PowerShell.EditorServices.Console.FieldDetails.html#Microsoft_PowerShell_EditorServices_Console_FieldDetails_FieldType
+  fullName: Microsoft.PowerShell.EditorServices.Console.FieldDetails.FieldType
+- uid: Microsoft.PowerShell.EditorServices.Console.FieldDetails.HelpMessage
+  name: HelpMessage
+  href: api/Microsoft.PowerShell.EditorServices.Console.FieldDetails.html#Microsoft_PowerShell_EditorServices_Console_FieldDetails_HelpMessage
+  fullName: Microsoft.PowerShell.EditorServices.Console.FieldDetails.HelpMessage
+- uid: Microsoft.PowerShell.EditorServices.Console.FieldDetails.IsCollection
+  name: IsCollection
+  href: api/Microsoft.PowerShell.EditorServices.Console.FieldDetails.html#Microsoft_PowerShell_EditorServices_Console_FieldDetails_IsCollection
+  fullName: Microsoft.PowerShell.EditorServices.Console.FieldDetails.IsCollection
+- uid: Microsoft.PowerShell.EditorServices.Console.FieldDetails.IsMandatory
+  name: IsMandatory
+  href: api/Microsoft.PowerShell.EditorServices.Console.FieldDetails.html#Microsoft_PowerShell_EditorServices_Console_FieldDetails_IsMandatory
+  fullName: Microsoft.PowerShell.EditorServices.Console.FieldDetails.IsMandatory
+- uid: Microsoft.PowerShell.EditorServices.Console.FieldDetails.Label
+  name: Label
+  href: api/Microsoft.PowerShell.EditorServices.Console.FieldDetails.html#Microsoft_PowerShell_EditorServices_Console_FieldDetails_Label
+  fullName: Microsoft.PowerShell.EditorServices.Console.FieldDetails.Label
+- uid: Microsoft.PowerShell.EditorServices.Console.FieldDetails.Name
+  name: Name
+  href: api/Microsoft.PowerShell.EditorServices.Console.FieldDetails.html#Microsoft_PowerShell_EditorServices_Console_FieldDetails_Name
+  fullName: Microsoft.PowerShell.EditorServices.Console.FieldDetails.Name
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHost
+  name: IConsoleHost
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHost.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHost
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHost
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.ExitSession(System.Int32)
+  name: ExitSession(Int32)
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHost.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHost_ExitSession_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.ExitSession(System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.GetChoicePromptHandler
+  name: GetChoicePromptHandler()
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHost.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHost_GetChoicePromptHandler
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.GetChoicePromptHandler()
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.GetInputPromptHandler
+  name: GetInputPromptHandler()
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHost.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHost_GetInputPromptHandler
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.GetInputPromptHandler()
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.UpdateProgress(System.Int64,Microsoft.PowerShell.EditorServices.ProgressDetails)
+  name: UpdateProgress(Int64, ProgressDetails)
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHost.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHost_UpdateProgress_System_Int64_Microsoft_PowerShell_EditorServices_ProgressDetails_
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.UpdateProgress(System.Int64, Microsoft.PowerShell.EditorServices.ProgressDetails)
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.WriteOutput(System.String,System.Boolean,Microsoft.PowerShell.EditorServices.OutputType,System.ConsoleColor,System.ConsoleColor)
+  name: WriteOutput(String, Boolean, OutputType, ConsoleColor, ConsoleColor)
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHost.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHost_WriteOutput_System_String_System_Boolean_Microsoft_PowerShell_EditorServices_OutputType_System_ConsoleColor_System_ConsoleColor_
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHost.WriteOutput(System.String, System.Boolean, Microsoft.PowerShell.EditorServices.OutputType, System.ConsoleColor, System.ConsoleColor)
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions
+  name: IConsoleHostExtensions
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHostExtensions
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.WriteOutput(Microsoft.PowerShell.EditorServices.Console.IConsoleHost,System.String)
+  name: WriteOutput(IConsoleHost, String)
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHostExtensions_WriteOutput_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.WriteOutput(Microsoft.PowerShell.EditorServices.Console.IConsoleHost, System.String)
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.WriteOutput(Microsoft.PowerShell.EditorServices.Console.IConsoleHost,System.String,Microsoft.PowerShell.EditorServices.OutputType)
+  name: WriteOutput(IConsoleHost, String, OutputType)
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHostExtensions_WriteOutput_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_System_String_Microsoft_PowerShell_EditorServices_OutputType_
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.WriteOutput(Microsoft.PowerShell.EditorServices.Console.IConsoleHost, System.String, Microsoft.PowerShell.EditorServices.OutputType)
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.WriteOutput(Microsoft.PowerShell.EditorServices.Console.IConsoleHost,System.String,System.Boolean)
+  name: WriteOutput(IConsoleHost, String, Boolean)
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHostExtensions_WriteOutput_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_System_String_System_Boolean_
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.WriteOutput(Microsoft.PowerShell.EditorServices.Console.IConsoleHost, System.String, System.Boolean)
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.WriteOutput(Microsoft.PowerShell.EditorServices.Console.IConsoleHost,System.String,System.Boolean,Microsoft.PowerShell.EditorServices.OutputType)
+  name: WriteOutput(IConsoleHost, String, Boolean, OutputType)
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHostExtensions_WriteOutput_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_System_String_System_Boolean_Microsoft_PowerShell_EditorServices_OutputType_
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.WriteOutput(Microsoft.PowerShell.EditorServices.Console.IConsoleHost, System.String, System.Boolean, Microsoft.PowerShell.EditorServices.OutputType)
+- uid: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.WriteOutput(Microsoft.PowerShell.EditorServices.Console.IConsoleHost,System.String,System.Boolean,Microsoft.PowerShell.EditorServices.OutputType,System.ConsoleColor)
+  name: WriteOutput(IConsoleHost, String, Boolean, OutputType, ConsoleColor)
+  href: api/Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.html#Microsoft_PowerShell_EditorServices_Console_IConsoleHostExtensions_WriteOutput_Microsoft_PowerShell_EditorServices_Console_IConsoleHost_System_String_System_Boolean_Microsoft_PowerShell_EditorServices_OutputType_System_ConsoleColor_
+  fullName: Microsoft.PowerShell.EditorServices.Console.IConsoleHostExtensions.WriteOutput(Microsoft.PowerShell.EditorServices.Console.IConsoleHost, System.String, System.Boolean, Microsoft.PowerShell.EditorServices.OutputType, System.ConsoleColor)
+- uid: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler
+  name: InputPromptHandler
+  href: api/Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_InputPromptHandler
+  fullName: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler
+- uid: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.Fields
+  name: Fields
+  href: api/Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_InputPromptHandler_Fields
+  fullName: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.Fields
+- uid: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.HandleResponse(System.String)
+  name: HandleResponse(String)
+  href: api/Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_InputPromptHandler_HandleResponse_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.HandleResponse(System.String)
+- uid: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.OnPromptCancelled
+  name: OnPromptCancelled()
+  href: api/Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_InputPromptHandler_OnPromptCancelled
+  fullName: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.OnPromptCancelled()
+- uid: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.PromptForInput(System.String,System.String,Microsoft.PowerShell.EditorServices.Console.FieldDetails[],System.Threading.CancellationToken)
+  name: PromptForInput(String, String, FieldDetails[], CancellationToken)
+  href: api/Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_InputPromptHandler_PromptForInput_System_String_System_String_Microsoft_PowerShell_EditorServices_Console_FieldDetails___System_Threading_CancellationToken_
+  name.vb: PromptForInput(String, String, FieldDetails(), CancellationToken)
+  fullName: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.PromptForInput(System.String, System.String, Microsoft.PowerShell.EditorServices.Console.FieldDetails[], System.Threading.CancellationToken)
+  fullName.vb: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.PromptForInput(System.String, System.String, Microsoft.PowerShell.EditorServices.Console.FieldDetails(), System.Threading.CancellationToken)
+- uid: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.PromptForInput(System.Threading.CancellationToken)
+  name: PromptForInput(CancellationToken)
+  href: api/Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_InputPromptHandler_PromptForInput_System_Threading_CancellationToken_
+  fullName: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.PromptForInput(System.Threading.CancellationToken)
+- uid: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.ShowErrorMessage(System.Exception)
+  name: ShowErrorMessage(Exception)
+  href: api/Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_InputPromptHandler_ShowErrorMessage_System_Exception_
+  fullName: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.ShowErrorMessage(System.Exception)
+- uid: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.ShowFieldPrompt(Microsoft.PowerShell.EditorServices.Console.FieldDetails)
+  name: ShowFieldPrompt(FieldDetails)
+  href: api/Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_InputPromptHandler_ShowFieldPrompt_Microsoft_PowerShell_EditorServices_Console_FieldDetails_
+  fullName: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.ShowFieldPrompt(Microsoft.PowerShell.EditorServices.Console.FieldDetails)
+- uid: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.ShowPromptMessage(System.String,System.String)
+  name: ShowPromptMessage(String, String)
+  href: api/Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.html#Microsoft_PowerShell_EditorServices_Console_InputPromptHandler_ShowPromptMessage_System_String_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Console.InputPromptHandler.ShowPromptMessage(System.String, System.String)
+- uid: Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext
+  name: IPromptHandlerContext
+  href: api/Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext.html#Microsoft_PowerShell_EditorServices_Console_IPromptHandlerContext
+  fullName: Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext
+- uid: Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext.GetChoicePromptHandler
+  name: GetChoicePromptHandler()
+  href: api/Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext.html#Microsoft_PowerShell_EditorServices_Console_IPromptHandlerContext_GetChoicePromptHandler
+  fullName: Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext.GetChoicePromptHandler()
+- uid: Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext.GetInputPromptHandler
+  name: GetInputPromptHandler()
+  href: api/Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext.html#Microsoft_PowerShell_EditorServices_Console_IPromptHandlerContext_GetInputPromptHandler
+  fullName: Microsoft.PowerShell.EditorServices.Console.IPromptHandlerContext.GetInputPromptHandler()
+- uid: Microsoft.PowerShell.EditorServices.Console.PromptHandler
+  name: PromptHandler
+  href: api/Microsoft.PowerShell.EditorServices.Console.PromptHandler.html#Microsoft_PowerShell_EditorServices_Console_PromptHandler
+  fullName: Microsoft.PowerShell.EditorServices.Console.PromptHandler
+- uid: Microsoft.PowerShell.EditorServices.Console.PromptHandler.CancelPrompt
+  name: CancelPrompt()
+  href: api/Microsoft.PowerShell.EditorServices.Console.PromptHandler.html#Microsoft_PowerShell_EditorServices_Console_PromptHandler_CancelPrompt
+  fullName: Microsoft.PowerShell.EditorServices.Console.PromptHandler.CancelPrompt()
+- uid: Microsoft.PowerShell.EditorServices.Console.PromptHandler.HandleResponse(System.String)
+  name: HandleResponse(String)
+  href: api/Microsoft.PowerShell.EditorServices.Console.PromptHandler.html#Microsoft_PowerShell_EditorServices_Console_PromptHandler_HandleResponse_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Console.PromptHandler.HandleResponse(System.String)
+- uid: Microsoft.PowerShell.EditorServices.Console.PromptHandler.OnPromptCancelled
+  name: OnPromptCancelled()
+  href: api/Microsoft.PowerShell.EditorServices.Console.PromptHandler.html#Microsoft_PowerShell_EditorServices_Console_PromptHandler_OnPromptCancelled
+  fullName: Microsoft.PowerShell.EditorServices.Console.PromptHandler.OnPromptCancelled()
+- uid: Microsoft.PowerShell.EditorServices.Console.PromptHandler.PromptCancelled
+  name: PromptCancelled
+  href: api/Microsoft.PowerShell.EditorServices.Console.PromptHandler.html#Microsoft_PowerShell_EditorServices_Console_PromptHandler_PromptCancelled
+  fullName: Microsoft.PowerShell.EditorServices.Console.PromptHandler.PromptCancelled
+- uid: Microsoft.PowerShell.EditorServices.Console.PromptStyle
+  name: PromptStyle
+  href: api/Microsoft.PowerShell.EditorServices.Console.PromptStyle.html#Microsoft_PowerShell_EditorServices_Console_PromptStyle
+  fullName: Microsoft.PowerShell.EditorServices.Console.PromptStyle
+- uid: Microsoft.PowerShell.EditorServices.Console.PromptStyle.Full
+  name: Full
+  href: api/Microsoft.PowerShell.EditorServices.Console.PromptStyle.html#Microsoft_PowerShell_EditorServices_Console_PromptStyle_Full
+  fullName: Microsoft.PowerShell.EditorServices.Console.PromptStyle.Full
+- uid: Microsoft.PowerShell.EditorServices.Console.PromptStyle.Minimal
+  name: Minimal
+  href: api/Microsoft.PowerShell.EditorServices.Console.PromptStyle.html#Microsoft_PowerShell_EditorServices_Console_PromptStyle_Minimal
+  fullName: Microsoft.PowerShell.EditorServices.Console.PromptStyle.Minimal
+- uid: Microsoft.PowerShell.EditorServices.DebugService
+  name: DebugService
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService
+  fullName: Microsoft.PowerShell.EditorServices.DebugService
+- uid: Microsoft.PowerShell.EditorServices.DebugService.#ctor(Microsoft.PowerShell.EditorServices.PowerShellContext)
+  name: DebugService(PowerShellContext)
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService__ctor_Microsoft_PowerShell_EditorServices_PowerShellContext_
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.DebugService(Microsoft.PowerShell.EditorServices.PowerShellContext)
+- uid: Microsoft.PowerShell.EditorServices.DebugService.Abort
+  name: Abort()
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_Abort
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.Abort()
+- uid: Microsoft.PowerShell.EditorServices.DebugService.Break
+  name: Break()
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_Break
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.Break()
+- uid: Microsoft.PowerShell.EditorServices.DebugService.BreakpointUpdated
+  name: BreakpointUpdated
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_BreakpointUpdated
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.BreakpointUpdated
+- uid: Microsoft.PowerShell.EditorServices.DebugService.Continue
+  name: Continue()
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_Continue
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.Continue()
+- uid: Microsoft.PowerShell.EditorServices.DebugService.DebuggerStopped
+  name: DebuggerStopped
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_DebuggerStopped
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.DebuggerStopped
+- uid: Microsoft.PowerShell.EditorServices.DebugService.EvaluateExpression(System.String,System.Int32,System.Boolean)
+  name: EvaluateExpression(String, Int32, Boolean)
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_EvaluateExpression_System_String_System_Int32_System_Boolean_
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.EvaluateExpression(System.String, System.Int32, System.Boolean)
+- uid: Microsoft.PowerShell.EditorServices.DebugService.GetStackFrames
+  name: GetStackFrames()
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_GetStackFrames
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.GetStackFrames()
+- uid: Microsoft.PowerShell.EditorServices.DebugService.GetVariableFromExpression(System.String,System.Int32)
+  name: GetVariableFromExpression(String, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_GetVariableFromExpression_System_String_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.GetVariableFromExpression(System.String, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.DebugService.GetVariables(System.Int32)
+  name: GetVariables(Int32)
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_GetVariables_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.GetVariables(System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.DebugService.GetVariableScopes(System.Int32)
+  name: GetVariableScopes(Int32)
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_GetVariableScopes_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.GetVariableScopes(System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.DebugService.SetCommandBreakpoints(Microsoft.PowerShell.EditorServices.CommandBreakpointDetails[],System.Boolean)
+  name: SetCommandBreakpoints(CommandBreakpointDetails[], Boolean)
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_SetCommandBreakpoints_Microsoft_PowerShell_EditorServices_CommandBreakpointDetails___System_Boolean_
+  name.vb: SetCommandBreakpoints(CommandBreakpointDetails(), Boolean)
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.SetCommandBreakpoints(Microsoft.PowerShell.EditorServices.CommandBreakpointDetails[], System.Boolean)
+  fullName.vb: Microsoft.PowerShell.EditorServices.DebugService.SetCommandBreakpoints(Microsoft.PowerShell.EditorServices.CommandBreakpointDetails(), System.Boolean)
+- uid: Microsoft.PowerShell.EditorServices.DebugService.SetLineBreakpoints(Microsoft.PowerShell.EditorServices.ScriptFile,Microsoft.PowerShell.EditorServices.BreakpointDetails[],System.Boolean)
+  name: SetLineBreakpoints(ScriptFile, BreakpointDetails[], Boolean)
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_SetLineBreakpoints_Microsoft_PowerShell_EditorServices_ScriptFile_Microsoft_PowerShell_EditorServices_BreakpointDetails___System_Boolean_
+  name.vb: SetLineBreakpoints(ScriptFile, BreakpointDetails(), Boolean)
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.SetLineBreakpoints(Microsoft.PowerShell.EditorServices.ScriptFile, Microsoft.PowerShell.EditorServices.BreakpointDetails[], System.Boolean)
+  fullName.vb: Microsoft.PowerShell.EditorServices.DebugService.SetLineBreakpoints(Microsoft.PowerShell.EditorServices.ScriptFile, Microsoft.PowerShell.EditorServices.BreakpointDetails(), System.Boolean)
+- uid: Microsoft.PowerShell.EditorServices.DebugService.StepIn
+  name: StepIn()
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_StepIn
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.StepIn()
+- uid: Microsoft.PowerShell.EditorServices.DebugService.StepOut
+  name: StepOut()
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_StepOut
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.StepOut()
+- uid: Microsoft.PowerShell.EditorServices.DebugService.StepOver
+  name: StepOver()
+  href: api/Microsoft.PowerShell.EditorServices.DebugService.html#Microsoft_PowerShell_EditorServices_DebugService_StepOver
+  fullName: Microsoft.PowerShell.EditorServices.DebugService.StepOver()
+- uid: Microsoft.PowerShell.EditorServices.EditorSession
+  name: EditorSession
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession
+- uid: Microsoft.PowerShell.EditorServices.EditorSession.AnalysisService
+  name: AnalysisService
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession_AnalysisService
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession.AnalysisService
+- uid: Microsoft.PowerShell.EditorServices.EditorSession.ConsoleService
+  name: ConsoleService
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession_ConsoleService
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession.ConsoleService
+- uid: Microsoft.PowerShell.EditorServices.EditorSession.DebugService
+  name: DebugService
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession_DebugService
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession.DebugService
+- uid: Microsoft.PowerShell.EditorServices.EditorSession.Dispose
+  name: Dispose()
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession_Dispose
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession.Dispose()
+- uid: Microsoft.PowerShell.EditorServices.EditorSession.ExtensionService
+  name: ExtensionService
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession_ExtensionService
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession.ExtensionService
+- uid: Microsoft.PowerShell.EditorServices.EditorSession.LanguageService
+  name: LanguageService
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession_LanguageService
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession.LanguageService
+- uid: Microsoft.PowerShell.EditorServices.EditorSession.PowerShellContext
+  name: PowerShellContext
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession_PowerShellContext
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession.PowerShellContext
+- uid: Microsoft.PowerShell.EditorServices.EditorSession.RestartAnalysisService(System.String)
+  name: RestartAnalysisService(String)
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession_RestartAnalysisService_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession.RestartAnalysisService(System.String)
+- uid: Microsoft.PowerShell.EditorServices.EditorSession.StartSession
+  name: StartSession()
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession_StartSession
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession.StartSession()
+- uid: Microsoft.PowerShell.EditorServices.EditorSession.StartSession(Microsoft.PowerShell.EditorServices.Session.HostDetails)
+  name: StartSession(HostDetails)
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession_StartSession_Microsoft_PowerShell_EditorServices_Session_HostDetails_
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession.StartSession(Microsoft.PowerShell.EditorServices.Session.HostDetails)
+- uid: Microsoft.PowerShell.EditorServices.EditorSession.Workspace
+  name: Workspace
+  href: api/Microsoft.PowerShell.EditorServices.EditorSession.html#Microsoft_PowerShell_EditorServices_EditorSession_Workspace
+  fullName: Microsoft.PowerShell.EditorServices.EditorSession.Workspace
+- uid: Microsoft.PowerShell.EditorServices.Extensions
+  name: Microsoft.PowerShell.EditorServices.Extensions
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.html#Microsoft_PowerShell_EditorServices_Extensions
+  fullName: Microsoft.PowerShell.EditorServices.Extensions
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand
+  name: EditorCommand
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.html#Microsoft_PowerShell_EditorServices_Extensions_EditorCommand
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.#ctor(System.String,System.String,System.Boolean,System.Management.Automation.ScriptBlock)
+  name: EditorCommand(String, String, Boolean, ScriptBlock)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.html#Microsoft_PowerShell_EditorServices_Extensions_EditorCommand__ctor_System_String_System_String_System_Boolean_System_Management_Automation_ScriptBlock_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.EditorCommand(System.String, System.String, System.Boolean, System.Management.Automation.ScriptBlock)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.#ctor(System.String,System.String,System.Boolean,System.String)
+  name: EditorCommand(String, String, Boolean, String)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.html#Microsoft_PowerShell_EditorServices_Extensions_EditorCommand__ctor_System_String_System_String_System_Boolean_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.EditorCommand(System.String, System.String, System.Boolean, System.String)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.DisplayName
+  name: DisplayName
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.html#Microsoft_PowerShell_EditorServices_Extensions_EditorCommand_DisplayName
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.DisplayName
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.Name
+  name: Name
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.html#Microsoft_PowerShell_EditorServices_Extensions_EditorCommand_Name
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.Name
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.ScriptBlock
+  name: ScriptBlock
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.html#Microsoft_PowerShell_EditorServices_Extensions_EditorCommand_ScriptBlock
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.ScriptBlock
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.SuppressOutput
+  name: SuppressOutput
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.html#Microsoft_PowerShell_EditorServices_Extensions_EditorCommand_SuppressOutput
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorCommand.SuppressOutput
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorContext
+  name: EditorContext
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorContext
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.#ctor(Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations,Microsoft.PowerShell.EditorServices.ScriptFile,Microsoft.PowerShell.EditorServices.BufferPosition,Microsoft.PowerShell.EditorServices.BufferRange)
+  name: EditorContext(IEditorOperations, ScriptFile, BufferPosition, BufferRange)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext__ctor_Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_Microsoft_PowerShell_EditorServices_ScriptFile_Microsoft_PowerShell_EditorServices_BufferPosition_Microsoft_PowerShell_EditorServices_BufferRange_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.EditorContext(Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations, Microsoft.PowerShell.EditorServices.ScriptFile, Microsoft.PowerShell.EditorServices.BufferPosition, Microsoft.PowerShell.EditorServices.BufferRange)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.CurrentFile
+  name: CurrentFile
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext_CurrentFile
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.CurrentFile
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.CursorPosition
+  name: CursorPosition
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext_CursorPosition
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.CursorPosition
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.SelectedRange
+  name: SelectedRange
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext_SelectedRange
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.SelectedRange
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.SetSelection(Microsoft.PowerShell.EditorServices.BufferPosition,Microsoft.PowerShell.EditorServices.BufferPosition)
+  name: SetSelection(BufferPosition, BufferPosition)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext_SetSelection_Microsoft_PowerShell_EditorServices_BufferPosition_Microsoft_PowerShell_EditorServices_BufferPosition_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.SetSelection(Microsoft.PowerShell.EditorServices.BufferPosition, Microsoft.PowerShell.EditorServices.BufferPosition)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.SetSelection(Microsoft.PowerShell.EditorServices.BufferRange)
+  name: SetSelection(BufferRange)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext_SetSelection_Microsoft_PowerShell_EditorServices_BufferRange_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.SetSelection(Microsoft.PowerShell.EditorServices.BufferRange)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.SetSelection(System.Int32,System.Int32,System.Int32,System.Int32)
+  name: SetSelection(Int32, Int32, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext_SetSelection_System_Int32_System_Int32_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorContext.SetSelection(System.Int32, System.Int32, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorObject
+  name: EditorObject
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorObject.html#Microsoft_PowerShell_EditorServices_Extensions_EditorObject
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorObject
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.#ctor(Microsoft.PowerShell.EditorServices.Extensions.ExtensionService,Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations)
+  name: EditorObject(ExtensionService, IEditorOperations)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorObject.html#Microsoft_PowerShell_EditorServices_Extensions_EditorObject__ctor_Microsoft_PowerShell_EditorServices_Extensions_ExtensionService_Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.EditorObject(Microsoft.PowerShell.EditorServices.Extensions.ExtensionService, Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.EditorServicesVersion
+  name: EditorServicesVersion
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorObject.html#Microsoft_PowerShell_EditorServices_Extensions_EditorObject_EditorServicesVersion
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.EditorServicesVersion
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.GetEditorContext
+  name: GetEditorContext()
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorObject.html#Microsoft_PowerShell_EditorServices_Extensions_EditorObject_GetEditorContext
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.GetEditorContext()
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.RegisterCommand(Microsoft.PowerShell.EditorServices.Extensions.EditorCommand)
+  name: RegisterCommand(EditorCommand)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorObject.html#Microsoft_PowerShell_EditorServices_Extensions_EditorObject_RegisterCommand_Microsoft_PowerShell_EditorServices_Extensions_EditorCommand_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.RegisterCommand(Microsoft.PowerShell.EditorServices.Extensions.EditorCommand)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.UnregisterCommand(System.String)
+  name: UnregisterCommand(String)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorObject.html#Microsoft_PowerShell_EditorServices_Extensions_EditorObject_UnregisterCommand_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.UnregisterCommand(System.String)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.Workspace
+  name: Workspace
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorObject.html#Microsoft_PowerShell_EditorServices_Extensions_EditorObject_Workspace
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorObject.Workspace
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorWorkspace
+  name: EditorWorkspace
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorWorkspace.html#Microsoft_PowerShell_EditorServices_Extensions_EditorWorkspace
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorWorkspace
+- uid: Microsoft.PowerShell.EditorServices.Extensions.EditorWorkspace.OpenFile(System.String)
+  name: OpenFile(String)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.EditorWorkspace.html#Microsoft_PowerShell_EditorServices_Extensions_EditorWorkspace_OpenFile_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.EditorWorkspace.OpenFile(System.String)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService
+  name: ExtensionService
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.#ctor(Microsoft.PowerShell.EditorServices.PowerShellContext)
+  name: ExtensionService(PowerShellContext)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService__ctor_Microsoft_PowerShell_EditorServices_PowerShellContext_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.ExtensionService(Microsoft.PowerShell.EditorServices.PowerShellContext)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.CommandAdded
+  name: CommandAdded
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService_CommandAdded
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.CommandAdded
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.CommandRemoved
+  name: CommandRemoved
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService_CommandRemoved
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.CommandRemoved
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.CommandUpdated
+  name: CommandUpdated
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService_CommandUpdated
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.CommandUpdated
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.EditorObject
+  name: EditorObject
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService_EditorObject
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.EditorObject
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.EditorOperations
+  name: EditorOperations
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService_EditorOperations
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.EditorOperations
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.Initialize(Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations)
+  name: Initialize(IEditorOperations)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService_Initialize_Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.Initialize(Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.InvokeCommand(System.String,Microsoft.PowerShell.EditorServices.Extensions.EditorContext)
+  name: InvokeCommand(String, EditorContext)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService_InvokeCommand_System_String_Microsoft_PowerShell_EditorServices_Extensions_EditorContext_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.InvokeCommand(System.String, Microsoft.PowerShell.EditorServices.Extensions.EditorContext)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.PowerShellContext
+  name: PowerShellContext
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService_PowerShellContext
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.PowerShellContext
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.RegisterCommand(Microsoft.PowerShell.EditorServices.Extensions.EditorCommand)
+  name: RegisterCommand(EditorCommand)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService_RegisterCommand_Microsoft_PowerShell_EditorServices_Extensions_EditorCommand_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.RegisterCommand(Microsoft.PowerShell.EditorServices.Extensions.EditorCommand)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.UnregisterCommand(System.String)
+  name: UnregisterCommand(String)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.html#Microsoft_PowerShell_EditorServices_Extensions_ExtensionService_UnregisterCommand_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.ExtensionService.UnregisterCommand(System.String)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext
+  name: FileContext
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.#ctor(Microsoft.PowerShell.EditorServices.ScriptFile,Microsoft.PowerShell.EditorServices.Extensions.EditorContext,Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations)
+  name: FileContext(ScriptFile, EditorContext, IEditorOperations)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext__ctor_Microsoft_PowerShell_EditorServices_ScriptFile_Microsoft_PowerShell_EditorServices_Extensions_EditorContext_Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.FileContext(Microsoft.PowerShell.EditorServices.ScriptFile, Microsoft.PowerShell.EditorServices.Extensions.EditorContext, Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.Ast
+  name: Ast
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_Ast
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.Ast
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.FileRange
+  name: FileRange
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_FileRange
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.FileRange
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.GetText
+  name: GetText()
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_GetText
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.GetText()
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.GetText(Microsoft.PowerShell.EditorServices.BufferRange)
+  name: GetText(BufferRange)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_GetText_Microsoft_PowerShell_EditorServices_BufferRange_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.GetText(Microsoft.PowerShell.EditorServices.BufferRange)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.GetTextLines
+  name: GetTextLines()
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_GetTextLines
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.GetTextLines()
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.GetTextLines(Microsoft.PowerShell.EditorServices.BufferRange)
+  name: GetTextLines(BufferRange)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_GetTextLines_Microsoft_PowerShell_EditorServices_BufferRange_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.GetTextLines(Microsoft.PowerShell.EditorServices.BufferRange)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.InsertText(System.String)
+  name: InsertText(String)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_InsertText_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.InsertText(System.String)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.InsertText(System.String,Microsoft.PowerShell.EditorServices.BufferPosition)
+  name: InsertText(String, BufferPosition)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_InsertText_System_String_Microsoft_PowerShell_EditorServices_BufferPosition_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.InsertText(System.String, Microsoft.PowerShell.EditorServices.BufferPosition)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.InsertText(System.String,Microsoft.PowerShell.EditorServices.BufferRange)
+  name: InsertText(String, BufferRange)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_InsertText_System_String_Microsoft_PowerShell_EditorServices_BufferRange_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.InsertText(System.String, Microsoft.PowerShell.EditorServices.BufferRange)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.InsertText(System.String,System.Int32,System.Int32)
+  name: InsertText(String, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_InsertText_System_String_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.InsertText(System.String, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.InsertText(System.String,System.Int32,System.Int32,System.Int32,System.Int32)
+  name: InsertText(String, Int32, Int32, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_InsertText_System_String_System_Int32_System_Int32_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.InsertText(System.String, System.Int32, System.Int32, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.Path
+  name: Path
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_Path
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.Path
+- uid: Microsoft.PowerShell.EditorServices.Extensions.FileContext.Tokens
+  name: Tokens
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.FileContext.html#Microsoft_PowerShell_EditorServices_Extensions_FileContext_Tokens
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.FileContext.Tokens
+- uid: Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations
+  name: IEditorOperations
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.html#Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations
+- uid: Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.GetEditorContext
+  name: GetEditorContext()
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.html#Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_GetEditorContext
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.GetEditorContext()
+- uid: Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.InsertText(System.String,System.String,Microsoft.PowerShell.EditorServices.BufferRange)
+  name: InsertText(String, String, BufferRange)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.html#Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_InsertText_System_String_System_String_Microsoft_PowerShell_EditorServices_BufferRange_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.InsertText(System.String, System.String, Microsoft.PowerShell.EditorServices.BufferRange)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.OpenFile(System.String)
+  name: OpenFile(String)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.html#Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_OpenFile_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.OpenFile(System.String)
+- uid: Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.SetSelection(Microsoft.PowerShell.EditorServices.BufferRange)
+  name: SetSelection(BufferRange)
+  href: api/Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.html#Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_SetSelection_Microsoft_PowerShell_EditorServices_BufferRange_
+  fullName: Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.SetSelection(Microsoft.PowerShell.EditorServices.BufferRange)
+- uid: Microsoft.PowerShell.EditorServices.FileChange
+  name: FileChange
+  href: api/Microsoft.PowerShell.EditorServices.FileChange.html#Microsoft_PowerShell_EditorServices_FileChange
+  fullName: Microsoft.PowerShell.EditorServices.FileChange
+- uid: Microsoft.PowerShell.EditorServices.FileChange.EndLine
+  name: EndLine
+  href: api/Microsoft.PowerShell.EditorServices.FileChange.html#Microsoft_PowerShell_EditorServices_FileChange_EndLine
+  fullName: Microsoft.PowerShell.EditorServices.FileChange.EndLine
+- uid: Microsoft.PowerShell.EditorServices.FileChange.EndOffset
+  name: EndOffset
+  href: api/Microsoft.PowerShell.EditorServices.FileChange.html#Microsoft_PowerShell_EditorServices_FileChange_EndOffset
+  fullName: Microsoft.PowerShell.EditorServices.FileChange.EndOffset
+- uid: Microsoft.PowerShell.EditorServices.FileChange.InsertString
+  name: InsertString
+  href: api/Microsoft.PowerShell.EditorServices.FileChange.html#Microsoft_PowerShell_EditorServices_FileChange_InsertString
+  fullName: Microsoft.PowerShell.EditorServices.FileChange.InsertString
+- uid: Microsoft.PowerShell.EditorServices.FileChange.Line
+  name: Line
+  href: api/Microsoft.PowerShell.EditorServices.FileChange.html#Microsoft_PowerShell_EditorServices_FileChange_Line
+  fullName: Microsoft.PowerShell.EditorServices.FileChange.Line
+- uid: Microsoft.PowerShell.EditorServices.FileChange.Offset
+  name: Offset
+  href: api/Microsoft.PowerShell.EditorServices.FileChange.html#Microsoft_PowerShell_EditorServices_FileChange_Offset
+  fullName: Microsoft.PowerShell.EditorServices.FileChange.Offset
+- uid: Microsoft.PowerShell.EditorServices.FilePosition
+  name: FilePosition
+  href: api/Microsoft.PowerShell.EditorServices.FilePosition.html#Microsoft_PowerShell_EditorServices_FilePosition
+  fullName: Microsoft.PowerShell.EditorServices.FilePosition
+- uid: Microsoft.PowerShell.EditorServices.FilePosition.#ctor(Microsoft.PowerShell.EditorServices.ScriptFile,Microsoft.PowerShell.EditorServices.BufferPosition)
+  name: FilePosition(ScriptFile, BufferPosition)
+  href: api/Microsoft.PowerShell.EditorServices.FilePosition.html#Microsoft_PowerShell_EditorServices_FilePosition__ctor_Microsoft_PowerShell_EditorServices_ScriptFile_Microsoft_PowerShell_EditorServices_BufferPosition_
+  fullName: Microsoft.PowerShell.EditorServices.FilePosition.FilePosition(Microsoft.PowerShell.EditorServices.ScriptFile, Microsoft.PowerShell.EditorServices.BufferPosition)
+- uid: Microsoft.PowerShell.EditorServices.FilePosition.#ctor(Microsoft.PowerShell.EditorServices.ScriptFile,System.Int32,System.Int32)
+  name: FilePosition(ScriptFile, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.FilePosition.html#Microsoft_PowerShell_EditorServices_FilePosition__ctor_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.FilePosition.FilePosition(Microsoft.PowerShell.EditorServices.ScriptFile, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.FilePosition.AddOffset(System.Int32,System.Int32)
+  name: AddOffset(Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.FilePosition.html#Microsoft_PowerShell_EditorServices_FilePosition_AddOffset_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.FilePosition.AddOffset(System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.FilePosition.GetLineEnd
+  name: GetLineEnd()
+  href: api/Microsoft.PowerShell.EditorServices.FilePosition.html#Microsoft_PowerShell_EditorServices_FilePosition_GetLineEnd
+  fullName: Microsoft.PowerShell.EditorServices.FilePosition.GetLineEnd()
+- uid: Microsoft.PowerShell.EditorServices.FilePosition.GetLineStart
+  name: GetLineStart()
+  href: api/Microsoft.PowerShell.EditorServices.FilePosition.html#Microsoft_PowerShell_EditorServices_FilePosition_GetLineStart
+  fullName: Microsoft.PowerShell.EditorServices.FilePosition.GetLineStart()
+- uid: Microsoft.PowerShell.EditorServices.FindOccurrencesResult
+  name: FindOccurrencesResult
+  href: api/Microsoft.PowerShell.EditorServices.FindOccurrencesResult.html#Microsoft_PowerShell_EditorServices_FindOccurrencesResult
+  fullName: Microsoft.PowerShell.EditorServices.FindOccurrencesResult
+- uid: Microsoft.PowerShell.EditorServices.FindOccurrencesResult.FoundOccurrences
+  name: FoundOccurrences
+  href: api/Microsoft.PowerShell.EditorServices.FindOccurrencesResult.html#Microsoft_PowerShell_EditorServices_FindOccurrencesResult_FoundOccurrences
+  fullName: Microsoft.PowerShell.EditorServices.FindOccurrencesResult.FoundOccurrences
+- uid: Microsoft.PowerShell.EditorServices.FindReferencesResult
+  name: FindReferencesResult
+  href: api/Microsoft.PowerShell.EditorServices.FindReferencesResult.html#Microsoft_PowerShell_EditorServices_FindReferencesResult
+  fullName: Microsoft.PowerShell.EditorServices.FindReferencesResult
+- uid: Microsoft.PowerShell.EditorServices.FindReferencesResult.FoundReferences
+  name: FoundReferences
+  href: api/Microsoft.PowerShell.EditorServices.FindReferencesResult.html#Microsoft_PowerShell_EditorServices_FindReferencesResult_FoundReferences
+  fullName: Microsoft.PowerShell.EditorServices.FindReferencesResult.FoundReferences
+- uid: Microsoft.PowerShell.EditorServices.FindReferencesResult.SymbolFileOffset
+  name: SymbolFileOffset
+  href: api/Microsoft.PowerShell.EditorServices.FindReferencesResult.html#Microsoft_PowerShell_EditorServices_FindReferencesResult_SymbolFileOffset
+  fullName: Microsoft.PowerShell.EditorServices.FindReferencesResult.SymbolFileOffset
+- uid: Microsoft.PowerShell.EditorServices.FindReferencesResult.SymbolName
+  name: SymbolName
+  href: api/Microsoft.PowerShell.EditorServices.FindReferencesResult.html#Microsoft_PowerShell_EditorServices_FindReferencesResult_SymbolName
+  fullName: Microsoft.PowerShell.EditorServices.FindReferencesResult.SymbolName
+- uid: Microsoft.PowerShell.EditorServices.GetDefinitionResult
+  name: GetDefinitionResult
+  href: api/Microsoft.PowerShell.EditorServices.GetDefinitionResult.html#Microsoft_PowerShell_EditorServices_GetDefinitionResult
+  fullName: Microsoft.PowerShell.EditorServices.GetDefinitionResult
+- uid: Microsoft.PowerShell.EditorServices.GetDefinitionResult.#ctor(Microsoft.PowerShell.EditorServices.SymbolReference)
+  name: GetDefinitionResult(SymbolReference)
+  href: api/Microsoft.PowerShell.EditorServices.GetDefinitionResult.html#Microsoft_PowerShell_EditorServices_GetDefinitionResult__ctor_Microsoft_PowerShell_EditorServices_SymbolReference_
+  fullName: Microsoft.PowerShell.EditorServices.GetDefinitionResult.GetDefinitionResult(Microsoft.PowerShell.EditorServices.SymbolReference)
+- uid: Microsoft.PowerShell.EditorServices.GetDefinitionResult.FoundDefinition
+  name: FoundDefinition
+  href: api/Microsoft.PowerShell.EditorServices.GetDefinitionResult.html#Microsoft_PowerShell_EditorServices_GetDefinitionResult_FoundDefinition
+  fullName: Microsoft.PowerShell.EditorServices.GetDefinitionResult.FoundDefinition
+- uid: Microsoft.PowerShell.EditorServices.LanguageService
+  name: LanguageService
+  href: api/Microsoft.PowerShell.EditorServices.LanguageService.html#Microsoft_PowerShell_EditorServices_LanguageService
+  fullName: Microsoft.PowerShell.EditorServices.LanguageService
+- uid: Microsoft.PowerShell.EditorServices.LanguageService.#ctor(Microsoft.PowerShell.EditorServices.PowerShellContext)
+  name: LanguageService(PowerShellContext)
+  href: api/Microsoft.PowerShell.EditorServices.LanguageService.html#Microsoft_PowerShell_EditorServices_LanguageService__ctor_Microsoft_PowerShell_EditorServices_PowerShellContext_
+  fullName: Microsoft.PowerShell.EditorServices.LanguageService.LanguageService(Microsoft.PowerShell.EditorServices.PowerShellContext)
+- uid: Microsoft.PowerShell.EditorServices.LanguageService.FindOccurrencesInFile(Microsoft.PowerShell.EditorServices.ScriptFile,System.Int32,System.Int32)
+  name: FindOccurrencesInFile(ScriptFile, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.LanguageService.html#Microsoft_PowerShell_EditorServices_LanguageService_FindOccurrencesInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.LanguageService.FindOccurrencesInFile(Microsoft.PowerShell.EditorServices.ScriptFile, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.LanguageService.FindParameterSetsInFile(Microsoft.PowerShell.EditorServices.ScriptFile,System.Int32,System.Int32)
+  name: FindParameterSetsInFile(ScriptFile, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.LanguageService.html#Microsoft_PowerShell_EditorServices_LanguageService_FindParameterSetsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.LanguageService.FindParameterSetsInFile(Microsoft.PowerShell.EditorServices.ScriptFile, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.LanguageService.FindReferencesOfSymbol(Microsoft.PowerShell.EditorServices.SymbolReference,Microsoft.PowerShell.EditorServices.ScriptFile[])
+  name: FindReferencesOfSymbol(SymbolReference, ScriptFile[])
+  href: api/Microsoft.PowerShell.EditorServices.LanguageService.html#Microsoft_PowerShell_EditorServices_LanguageService_FindReferencesOfSymbol_Microsoft_PowerShell_EditorServices_SymbolReference_Microsoft_PowerShell_EditorServices_ScriptFile___
+  name.vb: FindReferencesOfSymbol(SymbolReference, ScriptFile())
+  fullName: Microsoft.PowerShell.EditorServices.LanguageService.FindReferencesOfSymbol(Microsoft.PowerShell.EditorServices.SymbolReference, Microsoft.PowerShell.EditorServices.ScriptFile[])
+  fullName.vb: Microsoft.PowerShell.EditorServices.LanguageService.FindReferencesOfSymbol(Microsoft.PowerShell.EditorServices.SymbolReference, Microsoft.PowerShell.EditorServices.ScriptFile())
+- uid: Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolAtLocation(Microsoft.PowerShell.EditorServices.ScriptFile,System.Int32,System.Int32)
+  name: FindSymbolAtLocation(ScriptFile, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.LanguageService.html#Microsoft_PowerShell_EditorServices_LanguageService_FindSymbolAtLocation_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolAtLocation(Microsoft.PowerShell.EditorServices.ScriptFile, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolDetailsAtLocation(Microsoft.PowerShell.EditorServices.ScriptFile,System.Int32,System.Int32)
+  name: FindSymbolDetailsAtLocation(ScriptFile, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.LanguageService.html#Microsoft_PowerShell_EditorServices_LanguageService_FindSymbolDetailsAtLocation_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolDetailsAtLocation(Microsoft.PowerShell.EditorServices.ScriptFile, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolsInFile(Microsoft.PowerShell.EditorServices.ScriptFile)
+  name: FindSymbolsInFile(ScriptFile)
+  href: api/Microsoft.PowerShell.EditorServices.LanguageService.html#Microsoft_PowerShell_EditorServices_LanguageService_FindSymbolsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_
+  fullName: Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolsInFile(Microsoft.PowerShell.EditorServices.ScriptFile)
+- uid: Microsoft.PowerShell.EditorServices.LanguageService.GetCompletionDetailsInFile(Microsoft.PowerShell.EditorServices.ScriptFile,System.String)
+  name: GetCompletionDetailsInFile(ScriptFile, String)
+  href: api/Microsoft.PowerShell.EditorServices.LanguageService.html#Microsoft_PowerShell_EditorServices_LanguageService_GetCompletionDetailsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.LanguageService.GetCompletionDetailsInFile(Microsoft.PowerShell.EditorServices.ScriptFile, System.String)
+- uid: Microsoft.PowerShell.EditorServices.LanguageService.GetCompletionsInFile(Microsoft.PowerShell.EditorServices.ScriptFile,System.Int32,System.Int32)
+  name: GetCompletionsInFile(ScriptFile, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.LanguageService.html#Microsoft_PowerShell_EditorServices_LanguageService_GetCompletionsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.LanguageService.GetCompletionsInFile(Microsoft.PowerShell.EditorServices.ScriptFile, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.LanguageService.GetDefinitionOfSymbol(Microsoft.PowerShell.EditorServices.ScriptFile,Microsoft.PowerShell.EditorServices.SymbolReference,Microsoft.PowerShell.EditorServices.Workspace)
+  name: GetDefinitionOfSymbol(ScriptFile, SymbolReference, Workspace)
+  href: api/Microsoft.PowerShell.EditorServices.LanguageService.html#Microsoft_PowerShell_EditorServices_LanguageService_GetDefinitionOfSymbol_Microsoft_PowerShell_EditorServices_ScriptFile_Microsoft_PowerShell_EditorServices_SymbolReference_Microsoft_PowerShell_EditorServices_Workspace_
+  fullName: Microsoft.PowerShell.EditorServices.LanguageService.GetDefinitionOfSymbol(Microsoft.PowerShell.EditorServices.ScriptFile, Microsoft.PowerShell.EditorServices.SymbolReference, Microsoft.PowerShell.EditorServices.Workspace)
+- uid: Microsoft.PowerShell.EditorServices.OutputType
+  name: OutputType
+  href: api/Microsoft.PowerShell.EditorServices.OutputType.html#Microsoft_PowerShell_EditorServices_OutputType
+  fullName: Microsoft.PowerShell.EditorServices.OutputType
+- uid: Microsoft.PowerShell.EditorServices.OutputType.Debug
+  name: Debug
+  href: api/Microsoft.PowerShell.EditorServices.OutputType.html#Microsoft_PowerShell_EditorServices_OutputType_Debug
+  fullName: Microsoft.PowerShell.EditorServices.OutputType.Debug
+- uid: Microsoft.PowerShell.EditorServices.OutputType.Error
+  name: Error
+  href: api/Microsoft.PowerShell.EditorServices.OutputType.html#Microsoft_PowerShell_EditorServices_OutputType_Error
+  fullName: Microsoft.PowerShell.EditorServices.OutputType.Error
+- uid: Microsoft.PowerShell.EditorServices.OutputType.Normal
+  name: Normal
+  href: api/Microsoft.PowerShell.EditorServices.OutputType.html#Microsoft_PowerShell_EditorServices_OutputType_Normal
+  fullName: Microsoft.PowerShell.EditorServices.OutputType.Normal
+- uid: Microsoft.PowerShell.EditorServices.OutputType.Verbose
+  name: Verbose
+  href: api/Microsoft.PowerShell.EditorServices.OutputType.html#Microsoft_PowerShell_EditorServices_OutputType_Verbose
+  fullName: Microsoft.PowerShell.EditorServices.OutputType.Verbose
+- uid: Microsoft.PowerShell.EditorServices.OutputType.Warning
+  name: Warning
+  href: api/Microsoft.PowerShell.EditorServices.OutputType.html#Microsoft_PowerShell_EditorServices_OutputType_Warning
+  fullName: Microsoft.PowerShell.EditorServices.OutputType.Warning
+- uid: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs
+  name: OutputWrittenEventArgs
+  href: api/Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.html#Microsoft_PowerShell_EditorServices_OutputWrittenEventArgs
+  fullName: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs
+- uid: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.#ctor(System.String,System.Boolean,Microsoft.PowerShell.EditorServices.OutputType,System.ConsoleColor,System.ConsoleColor)
+  name: OutputWrittenEventArgs(String, Boolean, OutputType, ConsoleColor, ConsoleColor)
+  href: api/Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.html#Microsoft_PowerShell_EditorServices_OutputWrittenEventArgs__ctor_System_String_System_Boolean_Microsoft_PowerShell_EditorServices_OutputType_System_ConsoleColor_System_ConsoleColor_
+  fullName: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.OutputWrittenEventArgs(System.String, System.Boolean, Microsoft.PowerShell.EditorServices.OutputType, System.ConsoleColor, System.ConsoleColor)
+- uid: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.BackgroundColor
+  name: BackgroundColor
+  href: api/Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.html#Microsoft_PowerShell_EditorServices_OutputWrittenEventArgs_BackgroundColor
+  fullName: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.BackgroundColor
+- uid: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.ForegroundColor
+  name: ForegroundColor
+  href: api/Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.html#Microsoft_PowerShell_EditorServices_OutputWrittenEventArgs_ForegroundColor
+  fullName: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.ForegroundColor
+- uid: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.IncludeNewLine
+  name: IncludeNewLine
+  href: api/Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.html#Microsoft_PowerShell_EditorServices_OutputWrittenEventArgs_IncludeNewLine
+  fullName: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.IncludeNewLine
+- uid: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.OutputText
+  name: OutputText
+  href: api/Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.html#Microsoft_PowerShell_EditorServices_OutputWrittenEventArgs_OutputText
+  fullName: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.OutputText
+- uid: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.OutputType
+  name: OutputType
+  href: api/Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.html#Microsoft_PowerShell_EditorServices_OutputWrittenEventArgs_OutputType
+  fullName: Microsoft.PowerShell.EditorServices.OutputWrittenEventArgs.OutputType
+- uid: Microsoft.PowerShell.EditorServices.ParameterInfo
+  name: ParameterInfo
+  href: api/Microsoft.PowerShell.EditorServices.ParameterInfo.html#Microsoft_PowerShell_EditorServices_ParameterInfo
+  fullName: Microsoft.PowerShell.EditorServices.ParameterInfo
+- uid: Microsoft.PowerShell.EditorServices.ParameterInfo.#ctor(System.Management.Automation.CommandParameterInfo)
+  name: ParameterInfo(CommandParameterInfo)
+  href: api/Microsoft.PowerShell.EditorServices.ParameterInfo.html#Microsoft_PowerShell_EditorServices_ParameterInfo__ctor_System_Management_Automation_CommandParameterInfo_
+  fullName: Microsoft.PowerShell.EditorServices.ParameterInfo.ParameterInfo(System.Management.Automation.CommandParameterInfo)
+- uid: Microsoft.PowerShell.EditorServices.ParameterInfo.HelpMessage
+  name: HelpMessage
+  href: api/Microsoft.PowerShell.EditorServices.ParameterInfo.html#Microsoft_PowerShell_EditorServices_ParameterInfo_HelpMessage
+  fullName: Microsoft.PowerShell.EditorServices.ParameterInfo.HelpMessage
+- uid: Microsoft.PowerShell.EditorServices.ParameterInfo.IsMandatory
+  name: IsMandatory
+  href: api/Microsoft.PowerShell.EditorServices.ParameterInfo.html#Microsoft_PowerShell_EditorServices_ParameterInfo_IsMandatory
+  fullName: Microsoft.PowerShell.EditorServices.ParameterInfo.IsMandatory
+- uid: Microsoft.PowerShell.EditorServices.ParameterInfo.Name
+  name: Name
+  href: api/Microsoft.PowerShell.EditorServices.ParameterInfo.html#Microsoft_PowerShell_EditorServices_ParameterInfo_Name
+  fullName: Microsoft.PowerShell.EditorServices.ParameterInfo.Name
+- uid: Microsoft.PowerShell.EditorServices.ParameterInfo.ParameterType
+  name: ParameterType
+  href: api/Microsoft.PowerShell.EditorServices.ParameterInfo.html#Microsoft_PowerShell_EditorServices_ParameterInfo_ParameterType
+  fullName: Microsoft.PowerShell.EditorServices.ParameterInfo.ParameterType
+- uid: Microsoft.PowerShell.EditorServices.ParameterInfo.Position
+  name: Position
+  href: api/Microsoft.PowerShell.EditorServices.ParameterInfo.html#Microsoft_PowerShell_EditorServices_ParameterInfo_Position
+  fullName: Microsoft.PowerShell.EditorServices.ParameterInfo.Position
+- uid: Microsoft.PowerShell.EditorServices.ParameterSetSignature
+  name: ParameterSetSignature
+  href: api/Microsoft.PowerShell.EditorServices.ParameterSetSignature.html#Microsoft_PowerShell_EditorServices_ParameterSetSignature
+  fullName: Microsoft.PowerShell.EditorServices.ParameterSetSignature
+- uid: Microsoft.PowerShell.EditorServices.ParameterSetSignature.#ctor(System.Management.Automation.CommandParameterSetInfo)
+  name: ParameterSetSignature(CommandParameterSetInfo)
+  href: api/Microsoft.PowerShell.EditorServices.ParameterSetSignature.html#Microsoft_PowerShell_EditorServices_ParameterSetSignature__ctor_System_Management_Automation_CommandParameterSetInfo_
+  fullName: Microsoft.PowerShell.EditorServices.ParameterSetSignature.ParameterSetSignature(System.Management.Automation.CommandParameterSetInfo)
+- uid: Microsoft.PowerShell.EditorServices.ParameterSetSignature.Parameters
+  name: Parameters
+  href: api/Microsoft.PowerShell.EditorServices.ParameterSetSignature.html#Microsoft_PowerShell_EditorServices_ParameterSetSignature_Parameters
+  fullName: Microsoft.PowerShell.EditorServices.ParameterSetSignature.Parameters
+- uid: Microsoft.PowerShell.EditorServices.ParameterSetSignature.SignatureText
+  name: SignatureText
+  href: api/Microsoft.PowerShell.EditorServices.ParameterSetSignature.html#Microsoft_PowerShell_EditorServices_ParameterSetSignature_SignatureText
+  fullName: Microsoft.PowerShell.EditorServices.ParameterSetSignature.SignatureText
+- uid: Microsoft.PowerShell.EditorServices.ParameterSetSignatures
+  name: ParameterSetSignatures
+  href: api/Microsoft.PowerShell.EditorServices.ParameterSetSignatures.html#Microsoft_PowerShell_EditorServices_ParameterSetSignatures
+  fullName: Microsoft.PowerShell.EditorServices.ParameterSetSignatures
+- uid: Microsoft.PowerShell.EditorServices.ParameterSetSignatures.#ctor(System.Collections.Generic.IEnumerable{System.Management.Automation.CommandParameterSetInfo},Microsoft.PowerShell.EditorServices.SymbolReference)
+  name: ParameterSetSignatures(IEnumerable<CommandParameterSetInfo>, SymbolReference)
+  href: api/Microsoft.PowerShell.EditorServices.ParameterSetSignatures.html#Microsoft_PowerShell_EditorServices_ParameterSetSignatures__ctor_System_Collections_Generic_IEnumerable_System_Management_Automation_CommandParameterSetInfo__Microsoft_PowerShell_EditorServices_SymbolReference_
+  name.vb: ParameterSetSignatures(IEnumerable(Of CommandParameterSetInfo), SymbolReference)
+  fullName: Microsoft.PowerShell.EditorServices.ParameterSetSignatures.ParameterSetSignatures(System.Collections.Generic.IEnumerable<System.Management.Automation.CommandParameterSetInfo>, Microsoft.PowerShell.EditorServices.SymbolReference)
+  fullName.vb: Microsoft.PowerShell.EditorServices.ParameterSetSignatures.ParameterSetSignatures(System.Collections.Generic.IEnumerable(Of System.Management.Automation.CommandParameterSetInfo), Microsoft.PowerShell.EditorServices.SymbolReference)
+- uid: Microsoft.PowerShell.EditorServices.ParameterSetSignatures.CommandName
+  name: CommandName
+  href: api/Microsoft.PowerShell.EditorServices.ParameterSetSignatures.html#Microsoft_PowerShell_EditorServices_ParameterSetSignatures_CommandName
+  fullName: Microsoft.PowerShell.EditorServices.ParameterSetSignatures.CommandName
+- uid: Microsoft.PowerShell.EditorServices.ParameterSetSignatures.ScriptRegion
+  name: ScriptRegion
+  href: api/Microsoft.PowerShell.EditorServices.ParameterSetSignatures.html#Microsoft_PowerShell_EditorServices_ParameterSetSignatures_ScriptRegion
+  fullName: Microsoft.PowerShell.EditorServices.ParameterSetSignatures.ScriptRegion
+- uid: Microsoft.PowerShell.EditorServices.ParameterSetSignatures.Signatures
+  name: Signatures
+  href: api/Microsoft.PowerShell.EditorServices.ParameterSetSignatures.html#Microsoft_PowerShell_EditorServices_ParameterSetSignatures_Signatures
+  fullName: Microsoft.PowerShell.EditorServices.ParameterSetSignatures.Signatures
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext
+  name: PowerShellContext
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.#ctor
+  name: PowerShellContext()
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext__ctor
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.PowerShellContext()
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.#ctor(Microsoft.PowerShell.EditorServices.Session.HostDetails)
+  name: PowerShellContext(HostDetails)
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext__ctor_Microsoft_PowerShell_EditorServices_Session_HostDetails_
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.PowerShellContext(Microsoft.PowerShell.EditorServices.Session.HostDetails)
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.#ctor(Microsoft.PowerShell.EditorServices.Session.HostDetails,System.Management.Automation.Runspaces.Runspace)
+  name: PowerShellContext(HostDetails, Runspace)
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext__ctor_Microsoft_PowerShell_EditorServices_Session_HostDetails_System_Management_Automation_Runspaces_Runspace_
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.PowerShellContext(Microsoft.PowerShell.EditorServices.Session.HostDetails, System.Management.Automation.Runspaces.Runspace)
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.AbortExecution
+  name: AbortExecution()
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_AbortExecution
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.AbortExecution()
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.Dispose
+  name: Dispose()
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_Dispose
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.Dispose()
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.EscapePath(System.String,System.Boolean)
+  name: EscapePath(String, Boolean)
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_EscapePath_System_String_System_Boolean_
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.EscapePath(System.String, System.Boolean)
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.ExecuteCommand(System.Management.Automation.PSCommand)
+  name: ExecuteCommand(PSCommand)
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_ExecuteCommand_System_Management_Automation_PSCommand_
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.ExecuteCommand(System.Management.Automation.PSCommand)
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.ExecuteCommand``1(System.Management.Automation.PSCommand,System.Boolean,System.Boolean)
+  name: ExecuteCommand<TResult>(PSCommand, Boolean, Boolean)
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_ExecuteCommand__1_System_Management_Automation_PSCommand_System_Boolean_System_Boolean_
+  name.vb: ExecuteCommand(Of TResult)(PSCommand, Boolean, Boolean)
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.ExecuteCommand<TResult>(System.Management.Automation.PSCommand, System.Boolean, System.Boolean)
+  fullName.vb: Microsoft.PowerShell.EditorServices.PowerShellContext.ExecuteCommand(Of TResult)(System.Management.Automation.PSCommand, System.Boolean, System.Boolean)
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.ExecuteScriptAtPath(System.String,System.String)
+  name: ExecuteScriptAtPath(String, String)
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_ExecuteScriptAtPath_System_String_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.ExecuteScriptAtPath(System.String, System.String)
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.ExecuteScriptString(System.String)
+  name: ExecuteScriptString(String)
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_ExecuteScriptString_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.ExecuteScriptString(System.String)
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.ExecuteScriptString(System.String,System.Boolean,System.Boolean)
+  name: ExecuteScriptString(String, Boolean, Boolean)
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_ExecuteScriptString_System_String_System_Boolean_System_Boolean_
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.ExecuteScriptString(System.String, System.Boolean, System.Boolean)
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.GetRunspaceHandle
+  name: GetRunspaceHandle()
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_GetRunspaceHandle
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.GetRunspaceHandle()
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.GetRunspaceHandle(System.Threading.CancellationToken)
+  name: GetRunspaceHandle(CancellationToken)
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_GetRunspaceHandle_System_Threading_CancellationToken_
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.GetRunspaceHandle(System.Threading.CancellationToken)
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.IsDebuggerStopped
+  name: IsDebuggerStopped
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_IsDebuggerStopped
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.IsDebuggerStopped
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.LoadHostProfiles
+  name: LoadHostProfiles()
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_LoadHostProfiles
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.LoadHostProfiles()
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.PowerShellVersion
+  name: PowerShellVersion
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_PowerShellVersion
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.PowerShellVersion
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.SessionState
+  name: SessionState
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_SessionState
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.SessionState
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.SessionStateChanged
+  name: SessionStateChanged
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_SessionStateChanged
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.SessionStateChanged
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.SetWorkingDirectory(System.String)
+  name: SetWorkingDirectory(String)
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_SetWorkingDirectory_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.SetWorkingDirectory(System.String)
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContext.UnescapePath(System.String)
+  name: UnescapePath(String)
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext_UnescapePath_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContext.UnescapePath(System.String)
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContextState
+  name: PowerShellContextState
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContextState.html#Microsoft_PowerShell_EditorServices_PowerShellContextState
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContextState
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContextState.Aborting
+  name: Aborting
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContextState.html#Microsoft_PowerShell_EditorServices_PowerShellContextState_Aborting
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContextState.Aborting
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContextState.Disposed
+  name: Disposed
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContextState.html#Microsoft_PowerShell_EditorServices_PowerShellContextState_Disposed
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContextState.Disposed
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContextState.NotStarted
+  name: NotStarted
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContextState.html#Microsoft_PowerShell_EditorServices_PowerShellContextState_NotStarted
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContextState.NotStarted
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContextState.Ready
+  name: Ready
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContextState.html#Microsoft_PowerShell_EditorServices_PowerShellContextState_Ready
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContextState.Ready
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContextState.Running
+  name: Running
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContextState.html#Microsoft_PowerShell_EditorServices_PowerShellContextState_Running
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContextState.Running
+- uid: Microsoft.PowerShell.EditorServices.PowerShellContextState.Unknown
+  name: Unknown
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellContextState.html#Microsoft_PowerShell_EditorServices_PowerShellContextState_Unknown
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellContextState.Unknown
+- uid: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult
+  name: PowerShellExecutionResult
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.html#Microsoft_PowerShell_EditorServices_PowerShellExecutionResult
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult
+- uid: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.Aborted
+  name: Aborted
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.html#Microsoft_PowerShell_EditorServices_PowerShellExecutionResult_Aborted
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.Aborted
+- uid: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.Completed
+  name: Completed
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.html#Microsoft_PowerShell_EditorServices_PowerShellExecutionResult_Completed
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.Completed
+- uid: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.Failed
+  name: Failed
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.html#Microsoft_PowerShell_EditorServices_PowerShellExecutionResult_Failed
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.Failed
+- uid: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.NotFinished
+  name: NotFinished
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.html#Microsoft_PowerShell_EditorServices_PowerShellExecutionResult_NotFinished
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.NotFinished
+- uid: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.Stopped
+  name: Stopped
+  href: api/Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.html#Microsoft_PowerShell_EditorServices_PowerShellExecutionResult_Stopped
+  fullName: Microsoft.PowerShell.EditorServices.PowerShellExecutionResult.Stopped
+- uid: Microsoft.PowerShell.EditorServices.ProgressDetails
+  name: ProgressDetails
+  href: api/Microsoft.PowerShell.EditorServices.ProgressDetails.html#Microsoft_PowerShell_EditorServices_ProgressDetails
+  fullName: Microsoft.PowerShell.EditorServices.ProgressDetails
+- uid: Microsoft.PowerShell.EditorServices.ProgressDetails.PercentComplete
+  name: PercentComplete
+  href: api/Microsoft.PowerShell.EditorServices.ProgressDetails.html#Microsoft_PowerShell_EditorServices_ProgressDetails_PercentComplete
+  fullName: Microsoft.PowerShell.EditorServices.ProgressDetails.PercentComplete
+- uid: Microsoft.PowerShell.EditorServices.RunspaceHandle
+  name: RunspaceHandle
+  href: api/Microsoft.PowerShell.EditorServices.RunspaceHandle.html#Microsoft_PowerShell_EditorServices_RunspaceHandle
+  fullName: Microsoft.PowerShell.EditorServices.RunspaceHandle
+- uid: Microsoft.PowerShell.EditorServices.RunspaceHandle.#ctor(System.Management.Automation.Runspaces.Runspace,Microsoft.PowerShell.EditorServices.PowerShellContext)
+  name: RunspaceHandle(Runspace, PowerShellContext)
+  href: api/Microsoft.PowerShell.EditorServices.RunspaceHandle.html#Microsoft_PowerShell_EditorServices_RunspaceHandle__ctor_System_Management_Automation_Runspaces_Runspace_Microsoft_PowerShell_EditorServices_PowerShellContext_
+  fullName: Microsoft.PowerShell.EditorServices.RunspaceHandle.RunspaceHandle(System.Management.Automation.Runspaces.Runspace, Microsoft.PowerShell.EditorServices.PowerShellContext)
+- uid: Microsoft.PowerShell.EditorServices.RunspaceHandle.Dispose
+  name: Dispose()
+  href: api/Microsoft.PowerShell.EditorServices.RunspaceHandle.html#Microsoft_PowerShell_EditorServices_RunspaceHandle_Dispose
+  fullName: Microsoft.PowerShell.EditorServices.RunspaceHandle.Dispose()
+- uid: Microsoft.PowerShell.EditorServices.RunspaceHandle.Runspace
+  name: Runspace
+  href: api/Microsoft.PowerShell.EditorServices.RunspaceHandle.html#Microsoft_PowerShell_EditorServices_RunspaceHandle_Runspace
+  fullName: Microsoft.PowerShell.EditorServices.RunspaceHandle.Runspace
+- uid: Microsoft.PowerShell.EditorServices.ScriptExtent
+  name: ScriptExtent
+  href: api/Microsoft.PowerShell.EditorServices.ScriptExtent.html#Microsoft_PowerShell_EditorServices_ScriptExtent
+  fullName: Microsoft.PowerShell.EditorServices.ScriptExtent
+- uid: Microsoft.PowerShell.EditorServices.ScriptExtent.EndColumnNumber
+  name: EndColumnNumber
+  href: api/Microsoft.PowerShell.EditorServices.ScriptExtent.html#Microsoft_PowerShell_EditorServices_ScriptExtent_EndColumnNumber
+  fullName: Microsoft.PowerShell.EditorServices.ScriptExtent.EndColumnNumber
+- uid: Microsoft.PowerShell.EditorServices.ScriptExtent.EndLineNumber
+  name: EndLineNumber
+  href: api/Microsoft.PowerShell.EditorServices.ScriptExtent.html#Microsoft_PowerShell_EditorServices_ScriptExtent_EndLineNumber
+  fullName: Microsoft.PowerShell.EditorServices.ScriptExtent.EndLineNumber
+- uid: Microsoft.PowerShell.EditorServices.ScriptExtent.EndOffset
+  name: EndOffset
+  href: api/Microsoft.PowerShell.EditorServices.ScriptExtent.html#Microsoft_PowerShell_EditorServices_ScriptExtent_EndOffset
+  fullName: Microsoft.PowerShell.EditorServices.ScriptExtent.EndOffset
+- uid: Microsoft.PowerShell.EditorServices.ScriptExtent.EndScriptPosition
+  name: EndScriptPosition
+  href: api/Microsoft.PowerShell.EditorServices.ScriptExtent.html#Microsoft_PowerShell_EditorServices_ScriptExtent_EndScriptPosition
+  fullName: Microsoft.PowerShell.EditorServices.ScriptExtent.EndScriptPosition
+- uid: Microsoft.PowerShell.EditorServices.ScriptExtent.File
+  name: File
+  href: api/Microsoft.PowerShell.EditorServices.ScriptExtent.html#Microsoft_PowerShell_EditorServices_ScriptExtent_File
+  fullName: Microsoft.PowerShell.EditorServices.ScriptExtent.File
+- uid: Microsoft.PowerShell.EditorServices.ScriptExtent.StartColumnNumber
+  name: StartColumnNumber
+  href: api/Microsoft.PowerShell.EditorServices.ScriptExtent.html#Microsoft_PowerShell_EditorServices_ScriptExtent_StartColumnNumber
+  fullName: Microsoft.PowerShell.EditorServices.ScriptExtent.StartColumnNumber
+- uid: Microsoft.PowerShell.EditorServices.ScriptExtent.StartLineNumber
+  name: StartLineNumber
+  href: api/Microsoft.PowerShell.EditorServices.ScriptExtent.html#Microsoft_PowerShell_EditorServices_ScriptExtent_StartLineNumber
+  fullName: Microsoft.PowerShell.EditorServices.ScriptExtent.StartLineNumber
+- uid: Microsoft.PowerShell.EditorServices.ScriptExtent.StartOffset
+  name: StartOffset
+  href: api/Microsoft.PowerShell.EditorServices.ScriptExtent.html#Microsoft_PowerShell_EditorServices_ScriptExtent_StartOffset
+  fullName: Microsoft.PowerShell.EditorServices.ScriptExtent.StartOffset
+- uid: Microsoft.PowerShell.EditorServices.ScriptExtent.StartScriptPosition
+  name: StartScriptPosition
+  href: api/Microsoft.PowerShell.EditorServices.ScriptExtent.html#Microsoft_PowerShell_EditorServices_ScriptExtent_StartScriptPosition
+  fullName: Microsoft.PowerShell.EditorServices.ScriptExtent.StartScriptPosition
+- uid: Microsoft.PowerShell.EditorServices.ScriptExtent.Text
+  name: Text
+  href: api/Microsoft.PowerShell.EditorServices.ScriptExtent.html#Microsoft_PowerShell_EditorServices_ScriptExtent_Text
+  fullName: Microsoft.PowerShell.EditorServices.ScriptExtent.Text
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile
+  name: ScriptFile
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.#ctor(System.String,System.String,System.IO.TextReader,System.Version)
+  name: ScriptFile(String, String, TextReader, Version)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile__ctor_System_String_System_String_System_IO_TextReader_System_Version_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.ScriptFile(System.String, System.String, System.IO.TextReader, System.Version)
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.#ctor(System.String,System.String,System.String,System.Version)
+  name: ScriptFile(String, String, String, Version)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile__ctor_System_String_System_String_System_String_System_Version_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.ScriptFile(System.String, System.String, System.String, System.Version)
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.ApplyChange(Microsoft.PowerShell.EditorServices.FileChange)
+  name: ApplyChange(FileChange)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_ApplyChange_Microsoft_PowerShell_EditorServices_FileChange_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.ApplyChange(Microsoft.PowerShell.EditorServices.FileChange)
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.CalculatePosition(Microsoft.PowerShell.EditorServices.BufferPosition,System.Int32,System.Int32)
+  name: CalculatePosition(BufferPosition, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_CalculatePosition_Microsoft_PowerShell_EditorServices_BufferPosition_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.CalculatePosition(Microsoft.PowerShell.EditorServices.BufferPosition, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.ClientFilePath
+  name: ClientFilePath
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_ClientFilePath
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.ClientFilePath
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.Contents
+  name: Contents
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_Contents
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.Contents
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.FilePath
+  name: FilePath
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_FilePath
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.FilePath
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.FileRange
+  name: FileRange
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_FileRange
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.FileRange
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.GetLine(System.Int32)
+  name: GetLine(Int32)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_GetLine_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.GetLine(System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.GetLinesInRange(Microsoft.PowerShell.EditorServices.BufferRange)
+  name: GetLinesInRange(BufferRange)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_GetLinesInRange_Microsoft_PowerShell_EditorServices_BufferRange_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.GetLinesInRange(Microsoft.PowerShell.EditorServices.BufferRange)
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.GetOffsetAtPosition(System.Int32,System.Int32)
+  name: GetOffsetAtPosition(Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_GetOffsetAtPosition_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.GetOffsetAtPosition(System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.GetPositionAtOffset(System.Int32)
+  name: GetPositionAtOffset(Int32)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_GetPositionAtOffset_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.GetPositionAtOffset(System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.GetRangeBetweenOffsets(System.Int32,System.Int32)
+  name: GetRangeBetweenOffsets(Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_GetRangeBetweenOffsets_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.GetRangeBetweenOffsets(System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.Id
+  name: Id
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_Id
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.Id
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.IsInMemory
+  name: IsInMemory
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_IsInMemory
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.IsInMemory
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.ReferencedFiles
+  name: ReferencedFiles
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_ReferencedFiles
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.ReferencedFiles
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.ScriptAst
+  name: ScriptAst
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_ScriptAst
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.ScriptAst
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.ScriptTokens
+  name: ScriptTokens
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_ScriptTokens
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.ScriptTokens
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.SyntaxMarkers
+  name: SyntaxMarkers
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_SyntaxMarkers
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.SyntaxMarkers
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.ValidatePosition(Microsoft.PowerShell.EditorServices.BufferPosition)
+  name: ValidatePosition(BufferPosition)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_ValidatePosition_Microsoft_PowerShell_EditorServices_BufferPosition_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.ValidatePosition(Microsoft.PowerShell.EditorServices.BufferPosition)
+- uid: Microsoft.PowerShell.EditorServices.ScriptFile.ValidatePosition(System.Int32,System.Int32)
+  name: ValidatePosition(Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile_ValidatePosition_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFile.ValidatePosition(System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.ScriptFileMarker
+  name: ScriptFileMarker
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFileMarker.html#Microsoft_PowerShell_EditorServices_ScriptFileMarker
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFileMarker
+- uid: Microsoft.PowerShell.EditorServices.ScriptFileMarker.Level
+  name: Level
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFileMarker.html#Microsoft_PowerShell_EditorServices_ScriptFileMarker_Level
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFileMarker.Level
+- uid: Microsoft.PowerShell.EditorServices.ScriptFileMarker.Message
+  name: Message
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFileMarker.html#Microsoft_PowerShell_EditorServices_ScriptFileMarker_Message
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFileMarker.Message
+- uid: Microsoft.PowerShell.EditorServices.ScriptFileMarker.ScriptRegion
+  name: ScriptRegion
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFileMarker.html#Microsoft_PowerShell_EditorServices_ScriptFileMarker_ScriptRegion
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFileMarker.ScriptRegion
+- uid: Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel
+  name: ScriptFileMarkerLevel
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel.html#Microsoft_PowerShell_EditorServices_ScriptFileMarkerLevel
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel
+- uid: Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel.Error
+  name: Error
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel.html#Microsoft_PowerShell_EditorServices_ScriptFileMarkerLevel_Error
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel.Error
+- uid: Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel.Information
+  name: Information
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel.html#Microsoft_PowerShell_EditorServices_ScriptFileMarkerLevel_Information
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel.Information
+- uid: Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel.Warning
+  name: Warning
+  href: api/Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel.html#Microsoft_PowerShell_EditorServices_ScriptFileMarkerLevel_Warning
+  fullName: Microsoft.PowerShell.EditorServices.ScriptFileMarkerLevel.Warning
+- uid: Microsoft.PowerShell.EditorServices.ScriptRegion
+  name: ScriptRegion
+  href: api/Microsoft.PowerShell.EditorServices.ScriptRegion.html#Microsoft_PowerShell_EditorServices_ScriptRegion
+  fullName: Microsoft.PowerShell.EditorServices.ScriptRegion
+- uid: Microsoft.PowerShell.EditorServices.ScriptRegion.Create(System.Management.Automation.Language.IScriptExtent)
+  name: Create(IScriptExtent)
+  href: api/Microsoft.PowerShell.EditorServices.ScriptRegion.html#Microsoft_PowerShell_EditorServices_ScriptRegion_Create_System_Management_Automation_Language_IScriptExtent_
+  fullName: Microsoft.PowerShell.EditorServices.ScriptRegion.Create(System.Management.Automation.Language.IScriptExtent)
+- uid: Microsoft.PowerShell.EditorServices.ScriptRegion.EndColumnNumber
+  name: EndColumnNumber
+  href: api/Microsoft.PowerShell.EditorServices.ScriptRegion.html#Microsoft_PowerShell_EditorServices_ScriptRegion_EndColumnNumber
+  fullName: Microsoft.PowerShell.EditorServices.ScriptRegion.EndColumnNumber
+- uid: Microsoft.PowerShell.EditorServices.ScriptRegion.EndLineNumber
+  name: EndLineNumber
+  href: api/Microsoft.PowerShell.EditorServices.ScriptRegion.html#Microsoft_PowerShell_EditorServices_ScriptRegion_EndLineNumber
+  fullName: Microsoft.PowerShell.EditorServices.ScriptRegion.EndLineNumber
+- uid: Microsoft.PowerShell.EditorServices.ScriptRegion.EndOffset
+  name: EndOffset
+  href: api/Microsoft.PowerShell.EditorServices.ScriptRegion.html#Microsoft_PowerShell_EditorServices_ScriptRegion_EndOffset
+  fullName: Microsoft.PowerShell.EditorServices.ScriptRegion.EndOffset
+- uid: Microsoft.PowerShell.EditorServices.ScriptRegion.File
+  name: File
+  href: api/Microsoft.PowerShell.EditorServices.ScriptRegion.html#Microsoft_PowerShell_EditorServices_ScriptRegion_File
+  fullName: Microsoft.PowerShell.EditorServices.ScriptRegion.File
+- uid: Microsoft.PowerShell.EditorServices.ScriptRegion.StartColumnNumber
+  name: StartColumnNumber
+  href: api/Microsoft.PowerShell.EditorServices.ScriptRegion.html#Microsoft_PowerShell_EditorServices_ScriptRegion_StartColumnNumber
+  fullName: Microsoft.PowerShell.EditorServices.ScriptRegion.StartColumnNumber
+- uid: Microsoft.PowerShell.EditorServices.ScriptRegion.StartLineNumber
+  name: StartLineNumber
+  href: api/Microsoft.PowerShell.EditorServices.ScriptRegion.html#Microsoft_PowerShell_EditorServices_ScriptRegion_StartLineNumber
+  fullName: Microsoft.PowerShell.EditorServices.ScriptRegion.StartLineNumber
+- uid: Microsoft.PowerShell.EditorServices.ScriptRegion.StartOffset
+  name: StartOffset
+  href: api/Microsoft.PowerShell.EditorServices.ScriptRegion.html#Microsoft_PowerShell_EditorServices_ScriptRegion_StartOffset
+  fullName: Microsoft.PowerShell.EditorServices.ScriptRegion.StartOffset
+- uid: Microsoft.PowerShell.EditorServices.ScriptRegion.Text
+  name: Text
+  href: api/Microsoft.PowerShell.EditorServices.ScriptRegion.html#Microsoft_PowerShell_EditorServices_ScriptRegion_Text
+  fullName: Microsoft.PowerShell.EditorServices.ScriptRegion.Text
+- uid: Microsoft.PowerShell.EditorServices.Session
+  name: Microsoft.PowerShell.EditorServices.Session
+  href: api/Microsoft.PowerShell.EditorServices.Session.html#Microsoft_PowerShell_EditorServices_Session
+  fullName: Microsoft.PowerShell.EditorServices.Session
+- uid: Microsoft.PowerShell.EditorServices.Session.HostDetails
+  name: HostDetails
+  href: api/Microsoft.PowerShell.EditorServices.Session.HostDetails.html#Microsoft_PowerShell_EditorServices_Session_HostDetails
+  fullName: Microsoft.PowerShell.EditorServices.Session.HostDetails
+- uid: Microsoft.PowerShell.EditorServices.Session.HostDetails.#ctor(System.String,System.String,System.Version)
+  name: HostDetails(String, String, Version)
+  href: api/Microsoft.PowerShell.EditorServices.Session.HostDetails.html#Microsoft_PowerShell_EditorServices_Session_HostDetails__ctor_System_String_System_String_System_Version_
+  fullName: Microsoft.PowerShell.EditorServices.Session.HostDetails.HostDetails(System.String, System.String, System.Version)
+- uid: Microsoft.PowerShell.EditorServices.Session.HostDetails.Default
+  name: Default
+  href: api/Microsoft.PowerShell.EditorServices.Session.HostDetails.html#Microsoft_PowerShell_EditorServices_Session_HostDetails_Default
+  fullName: Microsoft.PowerShell.EditorServices.Session.HostDetails.Default
+- uid: Microsoft.PowerShell.EditorServices.Session.HostDetails.DefaultHostName
+  name: DefaultHostName
+  href: api/Microsoft.PowerShell.EditorServices.Session.HostDetails.html#Microsoft_PowerShell_EditorServices_Session_HostDetails_DefaultHostName
+  fullName: Microsoft.PowerShell.EditorServices.Session.HostDetails.DefaultHostName
+- uid: Microsoft.PowerShell.EditorServices.Session.HostDetails.DefaultHostProfileId
+  name: DefaultHostProfileId
+  href: api/Microsoft.PowerShell.EditorServices.Session.HostDetails.html#Microsoft_PowerShell_EditorServices_Session_HostDetails_DefaultHostProfileId
+  fullName: Microsoft.PowerShell.EditorServices.Session.HostDetails.DefaultHostProfileId
+- uid: Microsoft.PowerShell.EditorServices.Session.HostDetails.DefaultHostVersion
+  name: DefaultHostVersion
+  href: api/Microsoft.PowerShell.EditorServices.Session.HostDetails.html#Microsoft_PowerShell_EditorServices_Session_HostDetails_DefaultHostVersion
+  fullName: Microsoft.PowerShell.EditorServices.Session.HostDetails.DefaultHostVersion
+- uid: Microsoft.PowerShell.EditorServices.Session.HostDetails.Name
+  name: Name
+  href: api/Microsoft.PowerShell.EditorServices.Session.HostDetails.html#Microsoft_PowerShell_EditorServices_Session_HostDetails_Name
+  fullName: Microsoft.PowerShell.EditorServices.Session.HostDetails.Name
+- uid: Microsoft.PowerShell.EditorServices.Session.HostDetails.ProfileId
+  name: ProfileId
+  href: api/Microsoft.PowerShell.EditorServices.Session.HostDetails.html#Microsoft_PowerShell_EditorServices_Session_HostDetails_ProfileId
+  fullName: Microsoft.PowerShell.EditorServices.Session.HostDetails.ProfileId
+- uid: Microsoft.PowerShell.EditorServices.Session.HostDetails.Version
+  name: Version
+  href: api/Microsoft.PowerShell.EditorServices.Session.HostDetails.html#Microsoft_PowerShell_EditorServices_Session_HostDetails_Version
+  fullName: Microsoft.PowerShell.EditorServices.Session.HostDetails.Version
+- uid: Microsoft.PowerShell.EditorServices.Session.ProfilePaths
+  name: ProfilePaths
+  href: api/Microsoft.PowerShell.EditorServices.Session.ProfilePaths.html#Microsoft_PowerShell_EditorServices_Session_ProfilePaths
+  fullName: Microsoft.PowerShell.EditorServices.Session.ProfilePaths
+- uid: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.#ctor(System.String,System.Management.Automation.Runspaces.Runspace)
+  name: ProfilePaths(String, Runspace)
+  href: api/Microsoft.PowerShell.EditorServices.Session.ProfilePaths.html#Microsoft_PowerShell_EditorServices_Session_ProfilePaths__ctor_System_String_System_Management_Automation_Runspaces_Runspace_
+  fullName: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.ProfilePaths(System.String, System.Management.Automation.Runspaces.Runspace)
+- uid: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.AllHostsProfileName
+  name: AllHostsProfileName
+  href: api/Microsoft.PowerShell.EditorServices.Session.ProfilePaths.html#Microsoft_PowerShell_EditorServices_Session_ProfilePaths_AllHostsProfileName
+  fullName: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.AllHostsProfileName
+- uid: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.AllUsersAllHosts
+  name: AllUsersAllHosts
+  href: api/Microsoft.PowerShell.EditorServices.Session.ProfilePaths.html#Microsoft_PowerShell_EditorServices_Session_ProfilePaths_AllUsersAllHosts
+  fullName: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.AllUsersAllHosts
+- uid: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.AllUsersCurrentHost
+  name: AllUsersCurrentHost
+  href: api/Microsoft.PowerShell.EditorServices.Session.ProfilePaths.html#Microsoft_PowerShell_EditorServices_Session_ProfilePaths_AllUsersCurrentHost
+  fullName: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.AllUsersCurrentHost
+- uid: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.CurrentUserAllHosts
+  name: CurrentUserAllHosts
+  href: api/Microsoft.PowerShell.EditorServices.Session.ProfilePaths.html#Microsoft_PowerShell_EditorServices_Session_ProfilePaths_CurrentUserAllHosts
+  fullName: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.CurrentUserAllHosts
+- uid: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.CurrentUserCurrentHost
+  name: CurrentUserCurrentHost
+  href: api/Microsoft.PowerShell.EditorServices.Session.ProfilePaths.html#Microsoft_PowerShell_EditorServices_Session_ProfilePaths_CurrentUserCurrentHost
+  fullName: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.CurrentUserCurrentHost
+- uid: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.GetLoadableProfilePaths
+  name: GetLoadableProfilePaths()
+  href: api/Microsoft.PowerShell.EditorServices.Session.ProfilePaths.html#Microsoft_PowerShell_EditorServices_Session_ProfilePaths_GetLoadableProfilePaths
+  fullName: Microsoft.PowerShell.EditorServices.Session.ProfilePaths.GetLoadableProfilePaths()
+- uid: Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs
+  name: SessionStateChangedEventArgs
+  href: api/Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.html#Microsoft_PowerShell_EditorServices_SessionStateChangedEventArgs
+  fullName: Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs
+- uid: Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.#ctor(Microsoft.PowerShell.EditorServices.PowerShellContextState,Microsoft.PowerShell.EditorServices.PowerShellExecutionResult,System.Exception)
+  name: SessionStateChangedEventArgs(PowerShellContextState, PowerShellExecutionResult, Exception)
+  href: api/Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.html#Microsoft_PowerShell_EditorServices_SessionStateChangedEventArgs__ctor_Microsoft_PowerShell_EditorServices_PowerShellContextState_Microsoft_PowerShell_EditorServices_PowerShellExecutionResult_System_Exception_
+  fullName: Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.SessionStateChangedEventArgs(Microsoft.PowerShell.EditorServices.PowerShellContextState, Microsoft.PowerShell.EditorServices.PowerShellExecutionResult, System.Exception)
+- uid: Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.ErrorException
+  name: ErrorException
+  href: api/Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.html#Microsoft_PowerShell_EditorServices_SessionStateChangedEventArgs_ErrorException
+  fullName: Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.ErrorException
+- uid: Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.ExecutionResult
+  name: ExecutionResult
+  href: api/Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.html#Microsoft_PowerShell_EditorServices_SessionStateChangedEventArgs_ExecutionResult
+  fullName: Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.ExecutionResult
+- uid: Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.NewSessionState
+  name: NewSessionState
+  href: api/Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.html#Microsoft_PowerShell_EditorServices_SessionStateChangedEventArgs_NewSessionState
+  fullName: Microsoft.PowerShell.EditorServices.SessionStateChangedEventArgs.NewSessionState
+- uid: Microsoft.PowerShell.EditorServices.StackFrameDetails
+  name: StackFrameDetails
+  href: api/Microsoft.PowerShell.EditorServices.StackFrameDetails.html#Microsoft_PowerShell_EditorServices_StackFrameDetails
+  fullName: Microsoft.PowerShell.EditorServices.StackFrameDetails
+- uid: Microsoft.PowerShell.EditorServices.StackFrameDetails.AutoVariables
+  name: AutoVariables
+  href: api/Microsoft.PowerShell.EditorServices.StackFrameDetails.html#Microsoft_PowerShell_EditorServices_StackFrameDetails_AutoVariables
+  fullName: Microsoft.PowerShell.EditorServices.StackFrameDetails.AutoVariables
+- uid: Microsoft.PowerShell.EditorServices.StackFrameDetails.ColumnNumber
+  name: ColumnNumber
+  href: api/Microsoft.PowerShell.EditorServices.StackFrameDetails.html#Microsoft_PowerShell_EditorServices_StackFrameDetails_ColumnNumber
+  fullName: Microsoft.PowerShell.EditorServices.StackFrameDetails.ColumnNumber
+- uid: Microsoft.PowerShell.EditorServices.StackFrameDetails.FunctionName
+  name: FunctionName
+  href: api/Microsoft.PowerShell.EditorServices.StackFrameDetails.html#Microsoft_PowerShell_EditorServices_StackFrameDetails_FunctionName
+  fullName: Microsoft.PowerShell.EditorServices.StackFrameDetails.FunctionName
+- uid: Microsoft.PowerShell.EditorServices.StackFrameDetails.LineNumber
+  name: LineNumber
+  href: api/Microsoft.PowerShell.EditorServices.StackFrameDetails.html#Microsoft_PowerShell_EditorServices_StackFrameDetails_LineNumber
+  fullName: Microsoft.PowerShell.EditorServices.StackFrameDetails.LineNumber
+- uid: Microsoft.PowerShell.EditorServices.StackFrameDetails.LocalVariables
+  name: LocalVariables
+  href: api/Microsoft.PowerShell.EditorServices.StackFrameDetails.html#Microsoft_PowerShell_EditorServices_StackFrameDetails_LocalVariables
+  fullName: Microsoft.PowerShell.EditorServices.StackFrameDetails.LocalVariables
+- uid: Microsoft.PowerShell.EditorServices.StackFrameDetails.ScriptPath
+  name: ScriptPath
+  href: api/Microsoft.PowerShell.EditorServices.StackFrameDetails.html#Microsoft_PowerShell_EditorServices_StackFrameDetails_ScriptPath
+  fullName: Microsoft.PowerShell.EditorServices.StackFrameDetails.ScriptPath
+- uid: Microsoft.PowerShell.EditorServices.SymbolDetails
+  name: SymbolDetails
+  href: api/Microsoft.PowerShell.EditorServices.SymbolDetails.html#Microsoft_PowerShell_EditorServices_SymbolDetails
+  fullName: Microsoft.PowerShell.EditorServices.SymbolDetails
+- uid: Microsoft.PowerShell.EditorServices.SymbolDetails.DisplayString
+  name: DisplayString
+  href: api/Microsoft.PowerShell.EditorServices.SymbolDetails.html#Microsoft_PowerShell_EditorServices_SymbolDetails_DisplayString
+  fullName: Microsoft.PowerShell.EditorServices.SymbolDetails.DisplayString
+- uid: Microsoft.PowerShell.EditorServices.SymbolDetails.Documentation
+  name: Documentation
+  href: api/Microsoft.PowerShell.EditorServices.SymbolDetails.html#Microsoft_PowerShell_EditorServices_SymbolDetails_Documentation
+  fullName: Microsoft.PowerShell.EditorServices.SymbolDetails.Documentation
+- uid: Microsoft.PowerShell.EditorServices.SymbolDetails.SymbolReference
+  name: SymbolReference
+  href: api/Microsoft.PowerShell.EditorServices.SymbolDetails.html#Microsoft_PowerShell_EditorServices_SymbolDetails_SymbolReference
+  fullName: Microsoft.PowerShell.EditorServices.SymbolDetails.SymbolReference
+- uid: Microsoft.PowerShell.EditorServices.SymbolReference
+  name: SymbolReference
+  href: api/Microsoft.PowerShell.EditorServices.SymbolReference.html#Microsoft_PowerShell_EditorServices_SymbolReference
+  fullName: Microsoft.PowerShell.EditorServices.SymbolReference
+- uid: Microsoft.PowerShell.EditorServices.SymbolReference.#ctor(Microsoft.PowerShell.EditorServices.SymbolType,System.Management.Automation.Language.IScriptExtent,System.String,System.String)
+  name: SymbolReference(SymbolType, IScriptExtent, String, String)
+  href: api/Microsoft.PowerShell.EditorServices.SymbolReference.html#Microsoft_PowerShell_EditorServices_SymbolReference__ctor_Microsoft_PowerShell_EditorServices_SymbolType_System_Management_Automation_Language_IScriptExtent_System_String_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.SymbolReference.SymbolReference(Microsoft.PowerShell.EditorServices.SymbolType, System.Management.Automation.Language.IScriptExtent, System.String, System.String)
+- uid: Microsoft.PowerShell.EditorServices.SymbolReference.FilePath
+  name: FilePath
+  href: api/Microsoft.PowerShell.EditorServices.SymbolReference.html#Microsoft_PowerShell_EditorServices_SymbolReference_FilePath
+  fullName: Microsoft.PowerShell.EditorServices.SymbolReference.FilePath
+- uid: Microsoft.PowerShell.EditorServices.SymbolReference.ScriptRegion
+  name: ScriptRegion
+  href: api/Microsoft.PowerShell.EditorServices.SymbolReference.html#Microsoft_PowerShell_EditorServices_SymbolReference_ScriptRegion
+  fullName: Microsoft.PowerShell.EditorServices.SymbolReference.ScriptRegion
+- uid: Microsoft.PowerShell.EditorServices.SymbolReference.SourceLine
+  name: SourceLine
+  href: api/Microsoft.PowerShell.EditorServices.SymbolReference.html#Microsoft_PowerShell_EditorServices_SymbolReference_SourceLine
+  fullName: Microsoft.PowerShell.EditorServices.SymbolReference.SourceLine
+- uid: Microsoft.PowerShell.EditorServices.SymbolReference.SymbolName
+  name: SymbolName
+  href: api/Microsoft.PowerShell.EditorServices.SymbolReference.html#Microsoft_PowerShell_EditorServices_SymbolReference_SymbolName
+  fullName: Microsoft.PowerShell.EditorServices.SymbolReference.SymbolName
+- uid: Microsoft.PowerShell.EditorServices.SymbolReference.SymbolType
+  name: SymbolType
+  href: api/Microsoft.PowerShell.EditorServices.SymbolReference.html#Microsoft_PowerShell_EditorServices_SymbolReference_SymbolType
+  fullName: Microsoft.PowerShell.EditorServices.SymbolReference.SymbolType
+- uid: Microsoft.PowerShell.EditorServices.SymbolType
+  name: SymbolType
+  href: api/Microsoft.PowerShell.EditorServices.SymbolType.html#Microsoft_PowerShell_EditorServices_SymbolType
+  fullName: Microsoft.PowerShell.EditorServices.SymbolType
+- uid: Microsoft.PowerShell.EditorServices.SymbolType.Configuration
+  name: Configuration
+  href: api/Microsoft.PowerShell.EditorServices.SymbolType.html#Microsoft_PowerShell_EditorServices_SymbolType_Configuration
+  fullName: Microsoft.PowerShell.EditorServices.SymbolType.Configuration
+- uid: Microsoft.PowerShell.EditorServices.SymbolType.Function
+  name: Function
+  href: api/Microsoft.PowerShell.EditorServices.SymbolType.html#Microsoft_PowerShell_EditorServices_SymbolType_Function
+  fullName: Microsoft.PowerShell.EditorServices.SymbolType.Function
+- uid: Microsoft.PowerShell.EditorServices.SymbolType.Parameter
+  name: Parameter
+  href: api/Microsoft.PowerShell.EditorServices.SymbolType.html#Microsoft_PowerShell_EditorServices_SymbolType_Parameter
+  fullName: Microsoft.PowerShell.EditorServices.SymbolType.Parameter
+- uid: Microsoft.PowerShell.EditorServices.SymbolType.Unknown
+  name: Unknown
+  href: api/Microsoft.PowerShell.EditorServices.SymbolType.html#Microsoft_PowerShell_EditorServices_SymbolType_Unknown
+  fullName: Microsoft.PowerShell.EditorServices.SymbolType.Unknown
+- uid: Microsoft.PowerShell.EditorServices.SymbolType.Variable
+  name: Variable
+  href: api/Microsoft.PowerShell.EditorServices.SymbolType.html#Microsoft_PowerShell_EditorServices_SymbolType_Variable
+  fullName: Microsoft.PowerShell.EditorServices.SymbolType.Variable
+- uid: Microsoft.PowerShell.EditorServices.SymbolType.Workflow
+  name: Workflow
+  href: api/Microsoft.PowerShell.EditorServices.SymbolType.html#Microsoft_PowerShell_EditorServices_SymbolType_Workflow
+  fullName: Microsoft.PowerShell.EditorServices.SymbolType.Workflow
+- uid: Microsoft.PowerShell.EditorServices.Utility
+  name: Microsoft.PowerShell.EditorServices.Utility
+  href: api/Microsoft.PowerShell.EditorServices.Utility.html#Microsoft_PowerShell_EditorServices_Utility
+  fullName: Microsoft.PowerShell.EditorServices.Utility
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncContext
+  name: AsyncContext
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncContext.html#Microsoft_PowerShell_EditorServices_Utility_AsyncContext
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncContext
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncContext.Start(System.Func{System.Threading.Tasks.Task})
+  name: Start(Func<Task>)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncContext.html#Microsoft_PowerShell_EditorServices_Utility_AsyncContext_Start_System_Func_System_Threading_Tasks_Task__
+  name.vb: Start(Func(Of Task))
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncContext.Start(System.Func<System.Threading.Tasks.Task>)
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncContext.Start(System.Func(Of System.Threading.Tasks.Task))
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread
+  name: AsyncContextThread
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.html#Microsoft_PowerShell_EditorServices_Utility_AsyncContextThread
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.#ctor(System.String)
+  name: AsyncContextThread(String)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.html#Microsoft_PowerShell_EditorServices_Utility_AsyncContextThread__ctor_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.AsyncContextThread(System.String)
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.Run(System.Func{System.Threading.Tasks.Task})
+  name: Run(Func<Task>)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.html#Microsoft_PowerShell_EditorServices_Utility_AsyncContextThread_Run_System_Func_System_Threading_Tasks_Task__
+  name.vb: Run(Func(Of Task))
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.Run(System.Func<System.Threading.Tasks.Task>)
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.Run(System.Func(Of System.Threading.Tasks.Task))
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.Stop
+  name: Stop()
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.html#Microsoft_PowerShell_EditorServices_Utility_AsyncContextThread_Stop
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.Stop()
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1
+  name: AsyncDebouncer<TInvokeArgs>
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncDebouncer_1
+  name.vb: AsyncDebouncer(Of TInvokeArgs)
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer<TInvokeArgs>
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer(Of TInvokeArgs)
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1.#ctor(System.Int32,System.Boolean)
+  name: AsyncDebouncer(Int32, Boolean)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncDebouncer_1__ctor_System_Int32_System_Boolean_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer<TInvokeArgs>.AsyncDebouncer(System.Int32, System.Boolean)
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer(Of TInvokeArgs).AsyncDebouncer(System.Int32, System.Boolean)
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1.Flush
+  name: Flush()
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncDebouncer_1_Flush
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer<TInvokeArgs>.Flush()
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer(Of TInvokeArgs).Flush()
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1.Invoke(`0)
+  name: Invoke(TInvokeArgs)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncDebouncer_1_Invoke__0_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer<TInvokeArgs>.Invoke(TInvokeArgs)
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer(Of TInvokeArgs).Invoke(TInvokeArgs)
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1.OnFlush
+  name: OnFlush()
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncDebouncer_1_OnFlush
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer<TInvokeArgs>.OnFlush()
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer(Of TInvokeArgs).OnFlush()
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1.OnInvoke(`0)
+  name: OnInvoke(TInvokeArgs)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncDebouncer_1_OnInvoke__0_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer<TInvokeArgs>.OnInvoke(TInvokeArgs)
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer(Of TInvokeArgs).OnInvoke(TInvokeArgs)
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncLock
+  name: AsyncLock
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncLock.html#Microsoft_PowerShell_EditorServices_Utility_AsyncLock
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncLock
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncLock.#ctor
+  name: AsyncLock()
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncLock.html#Microsoft_PowerShell_EditorServices_Utility_AsyncLock__ctor
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncLock.AsyncLock()
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncLock.LockAsync
+  name: LockAsync()
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncLock.html#Microsoft_PowerShell_EditorServices_Utility_AsyncLock_LockAsync
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncLock.LockAsync()
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncLock.LockAsync(System.Threading.CancellationToken)
+  name: LockAsync(CancellationToken)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncLock.html#Microsoft_PowerShell_EditorServices_Utility_AsyncLock_LockAsync_System_Threading_CancellationToken_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncLock.LockAsync(System.Threading.CancellationToken)
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1
+  name: AsyncQueue<T>
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1
+  name.vb: AsyncQueue(Of T)
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue<T>
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue(Of T)
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.#ctor
+  name: AsyncQueue()
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1__ctor
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue<T>.AsyncQueue()
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue(Of T).AsyncQueue()
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.#ctor(System.Collections.Generic.IEnumerable{`0})
+  name: AsyncQueue(IEnumerable<T>)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1__ctor_System_Collections_Generic_IEnumerable__0__
+  name.vb: AsyncQueue(IEnumerable(Of T))
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue<T>.AsyncQueue(System.Collections.Generic.IEnumerable<T>)
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue(Of T).AsyncQueue(System.Collections.Generic.IEnumerable(Of T))
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.DequeueAsync
+  name: DequeueAsync()
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_DequeueAsync
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue<T>.DequeueAsync()
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue(Of T).DequeueAsync()
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.DequeueAsync(System.Threading.CancellationToken)
+  name: DequeueAsync(CancellationToken)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_DequeueAsync_System_Threading_CancellationToken_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue<T>.DequeueAsync(System.Threading.CancellationToken)
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue(Of T).DequeueAsync(System.Threading.CancellationToken)
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.EnqueueAsync(`0)
+  name: EnqueueAsync(T)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_EnqueueAsync__0_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue<T>.EnqueueAsync(T)
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue(Of T).EnqueueAsync(T)
+- uid: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.IsEmpty
+  name: IsEmpty
+  href: api/Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.html#Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_IsEmpty
+  fullName: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue<T>.IsEmpty
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.AsyncQueue(Of T).IsEmpty
+- uid: Microsoft.PowerShell.EditorServices.Utility.Logger
+  name: Logger
+  href: api/Microsoft.PowerShell.EditorServices.Utility.Logger.html#Microsoft_PowerShell_EditorServices_Utility_Logger
+  fullName: Microsoft.PowerShell.EditorServices.Utility.Logger
+- uid: Microsoft.PowerShell.EditorServices.Utility.Logger.Close
+  name: Close()
+  href: api/Microsoft.PowerShell.EditorServices.Utility.Logger.html#Microsoft_PowerShell_EditorServices_Utility_Logger_Close
+  fullName: Microsoft.PowerShell.EditorServices.Utility.Logger.Close()
+- uid: Microsoft.PowerShell.EditorServices.Utility.Logger.Initialize(System.String,Microsoft.PowerShell.EditorServices.Utility.LogLevel)
+  name: Initialize(String, LogLevel)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.Logger.html#Microsoft_PowerShell_EditorServices_Utility_Logger_Initialize_System_String_Microsoft_PowerShell_EditorServices_Utility_LogLevel_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.Logger.Initialize(System.String, Microsoft.PowerShell.EditorServices.Utility.LogLevel)
+- uid: Microsoft.PowerShell.EditorServices.Utility.Logger.Write(Microsoft.PowerShell.EditorServices.Utility.LogLevel,System.String,System.String,System.String,System.Int32)
+  name: Write(LogLevel, String, String, String, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.Logger.html#Microsoft_PowerShell_EditorServices_Utility_Logger_Write_Microsoft_PowerShell_EditorServices_Utility_LogLevel_System_String_System_String_System_String_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.Logger.Write(Microsoft.PowerShell.EditorServices.Utility.LogLevel, System.String, System.String, System.String, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.Utility.LogLevel
+  name: LogLevel
+  href: api/Microsoft.PowerShell.EditorServices.Utility.LogLevel.html#Microsoft_PowerShell_EditorServices_Utility_LogLevel
+  fullName: Microsoft.PowerShell.EditorServices.Utility.LogLevel
+- uid: Microsoft.PowerShell.EditorServices.Utility.LogLevel.Error
+  name: Error
+  href: api/Microsoft.PowerShell.EditorServices.Utility.LogLevel.html#Microsoft_PowerShell_EditorServices_Utility_LogLevel_Error
+  fullName: Microsoft.PowerShell.EditorServices.Utility.LogLevel.Error
+- uid: Microsoft.PowerShell.EditorServices.Utility.LogLevel.Normal
+  name: Normal
+  href: api/Microsoft.PowerShell.EditorServices.Utility.LogLevel.html#Microsoft_PowerShell_EditorServices_Utility_LogLevel_Normal
+  fullName: Microsoft.PowerShell.EditorServices.Utility.LogLevel.Normal
+- uid: Microsoft.PowerShell.EditorServices.Utility.LogLevel.Verbose
+  name: Verbose
+  href: api/Microsoft.PowerShell.EditorServices.Utility.LogLevel.html#Microsoft_PowerShell_EditorServices_Utility_LogLevel_Verbose
+  fullName: Microsoft.PowerShell.EditorServices.Utility.LogLevel.Verbose
+- uid: Microsoft.PowerShell.EditorServices.Utility.LogLevel.Warning
+  name: Warning
+  href: api/Microsoft.PowerShell.EditorServices.Utility.LogLevel.html#Microsoft_PowerShell_EditorServices_Utility_LogLevel_Warning
+  fullName: Microsoft.PowerShell.EditorServices.Utility.LogLevel.Warning
+- uid: Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext
+  name: ThreadSynchronizationContext
+  href: api/Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext.html#Microsoft_PowerShell_EditorServices_Utility_ThreadSynchronizationContext
+  fullName: Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext
+- uid: Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext.EndLoop
+  name: EndLoop()
+  href: api/Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext.html#Microsoft_PowerShell_EditorServices_Utility_ThreadSynchronizationContext_EndLoop
+  fullName: Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext.EndLoop()
+- uid: Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext.Post(System.Threading.SendOrPostCallback,System.Object)
+  name: Post(SendOrPostCallback, Object)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext.html#Microsoft_PowerShell_EditorServices_Utility_ThreadSynchronizationContext_Post_System_Threading_SendOrPostCallback_System_Object_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext.Post(System.Threading.SendOrPostCallback, System.Object)
+- uid: Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext.RunLoopOnCurrentThread
+  name: RunLoopOnCurrentThread()
+  href: api/Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext.html#Microsoft_PowerShell_EditorServices_Utility_ThreadSynchronizationContext_RunLoopOnCurrentThread
+  fullName: Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext.RunLoopOnCurrentThread()
+- uid: Microsoft.PowerShell.EditorServices.Utility.Validate
+  name: Validate
+  href: api/Microsoft.PowerShell.EditorServices.Utility.Validate.html#Microsoft_PowerShell_EditorServices_Utility_Validate
+  fullName: Microsoft.PowerShell.EditorServices.Utility.Validate
+- uid: Microsoft.PowerShell.EditorServices.Utility.Validate.IsGreaterThan(System.String,System.Int32,System.Int32)
+  name: IsGreaterThan(String, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.Validate.html#Microsoft_PowerShell_EditorServices_Utility_Validate_IsGreaterThan_System_String_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.Validate.IsGreaterThan(System.String, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.Utility.Validate.IsLessThan(System.String,System.Int32,System.Int32)
+  name: IsLessThan(String, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.Validate.html#Microsoft_PowerShell_EditorServices_Utility_Validate_IsLessThan_System_String_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.Validate.IsLessThan(System.String, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.Utility.Validate.IsNotEqual``1(System.String,``0,``0)
+  name: IsNotEqual<TValue>(String, TValue, TValue)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.Validate.html#Microsoft_PowerShell_EditorServices_Utility_Validate_IsNotEqual__1_System_String___0___0_
+  name.vb: IsNotEqual(Of TValue)(String, TValue, TValue)
+  fullName: Microsoft.PowerShell.EditorServices.Utility.Validate.IsNotEqual<TValue>(System.String, TValue, TValue)
+  fullName.vb: Microsoft.PowerShell.EditorServices.Utility.Validate.IsNotEqual(Of TValue)(System.String, TValue, TValue)
+- uid: Microsoft.PowerShell.EditorServices.Utility.Validate.IsNotNull(System.String,System.Object)
+  name: IsNotNull(String, Object)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.Validate.html#Microsoft_PowerShell_EditorServices_Utility_Validate_IsNotNull_System_String_System_Object_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.Validate.IsNotNull(System.String, System.Object)
+- uid: Microsoft.PowerShell.EditorServices.Utility.Validate.IsNotNullOrEmptyString(System.String,System.String)
+  name: IsNotNullOrEmptyString(String, String)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.Validate.html#Microsoft_PowerShell_EditorServices_Utility_Validate_IsNotNullOrEmptyString_System_String_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.Validate.IsNotNullOrEmptyString(System.String, System.String)
+- uid: Microsoft.PowerShell.EditorServices.Utility.Validate.IsWithinRange(System.String,System.Int32,System.Int32,System.Int32)
+  name: IsWithinRange(String, Int32, Int32, Int32)
+  href: api/Microsoft.PowerShell.EditorServices.Utility.Validate.html#Microsoft_PowerShell_EditorServices_Utility_Validate_IsWithinRange_System_String_System_Int32_System_Int32_System_Int32_
+  fullName: Microsoft.PowerShell.EditorServices.Utility.Validate.IsWithinRange(System.String, System.Int32, System.Int32, System.Int32)
+- uid: Microsoft.PowerShell.EditorServices.VariableContainerDetails
+  name: VariableContainerDetails
+  href: api/Microsoft.PowerShell.EditorServices.VariableContainerDetails.html#Microsoft_PowerShell_EditorServices_VariableContainerDetails
+  fullName: Microsoft.PowerShell.EditorServices.VariableContainerDetails
+- uid: Microsoft.PowerShell.EditorServices.VariableContainerDetails.#ctor(System.Int32,System.String)
+  name: VariableContainerDetails(Int32, String)
+  href: api/Microsoft.PowerShell.EditorServices.VariableContainerDetails.html#Microsoft_PowerShell_EditorServices_VariableContainerDetails__ctor_System_Int32_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.VariableContainerDetails.VariableContainerDetails(System.Int32, System.String)
+- uid: Microsoft.PowerShell.EditorServices.VariableContainerDetails.AutoVariablesName
+  name: AutoVariablesName
+  href: api/Microsoft.PowerShell.EditorServices.VariableContainerDetails.html#Microsoft_PowerShell_EditorServices_VariableContainerDetails_AutoVariablesName
+  fullName: Microsoft.PowerShell.EditorServices.VariableContainerDetails.AutoVariablesName
+- uid: Microsoft.PowerShell.EditorServices.VariableContainerDetails.Children
+  name: Children
+  href: api/Microsoft.PowerShell.EditorServices.VariableContainerDetails.html#Microsoft_PowerShell_EditorServices_VariableContainerDetails_Children
+  fullName: Microsoft.PowerShell.EditorServices.VariableContainerDetails.Children
+- uid: Microsoft.PowerShell.EditorServices.VariableContainerDetails.GetChildren
+  name: GetChildren()
+  href: api/Microsoft.PowerShell.EditorServices.VariableContainerDetails.html#Microsoft_PowerShell_EditorServices_VariableContainerDetails_GetChildren
+  fullName: Microsoft.PowerShell.EditorServices.VariableContainerDetails.GetChildren()
+- uid: Microsoft.PowerShell.EditorServices.VariableContainerDetails.GlobalScopeName
+  name: GlobalScopeName
+  href: api/Microsoft.PowerShell.EditorServices.VariableContainerDetails.html#Microsoft_PowerShell_EditorServices_VariableContainerDetails_GlobalScopeName
+  fullName: Microsoft.PowerShell.EditorServices.VariableContainerDetails.GlobalScopeName
+- uid: Microsoft.PowerShell.EditorServices.VariableContainerDetails.LocalScopeName
+  name: LocalScopeName
+  href: api/Microsoft.PowerShell.EditorServices.VariableContainerDetails.html#Microsoft_PowerShell_EditorServices_VariableContainerDetails_LocalScopeName
+  fullName: Microsoft.PowerShell.EditorServices.VariableContainerDetails.LocalScopeName
+- uid: Microsoft.PowerShell.EditorServices.VariableContainerDetails.ScriptScopeName
+  name: ScriptScopeName
+  href: api/Microsoft.PowerShell.EditorServices.VariableContainerDetails.html#Microsoft_PowerShell_EditorServices_VariableContainerDetails_ScriptScopeName
+  fullName: Microsoft.PowerShell.EditorServices.VariableContainerDetails.ScriptScopeName
+- uid: Microsoft.PowerShell.EditorServices.VariableDetails
+  name: VariableDetails
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetails.html#Microsoft_PowerShell_EditorServices_VariableDetails
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetails
+- uid: Microsoft.PowerShell.EditorServices.VariableDetails.#ctor(System.Management.Automation.PSPropertyInfo)
+  name: VariableDetails(PSPropertyInfo)
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetails.html#Microsoft_PowerShell_EditorServices_VariableDetails__ctor_System_Management_Automation_PSPropertyInfo_
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetails.VariableDetails(System.Management.Automation.PSPropertyInfo)
+- uid: Microsoft.PowerShell.EditorServices.VariableDetails.#ctor(System.Management.Automation.PSVariable)
+  name: VariableDetails(PSVariable)
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetails.html#Microsoft_PowerShell_EditorServices_VariableDetails__ctor_System_Management_Automation_PSVariable_
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetails.VariableDetails(System.Management.Automation.PSVariable)
+- uid: Microsoft.PowerShell.EditorServices.VariableDetails.#ctor(System.String,System.Object)
+  name: VariableDetails(String, Object)
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetails.html#Microsoft_PowerShell_EditorServices_VariableDetails__ctor_System_String_System_Object_
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetails.VariableDetails(System.String, System.Object)
+- uid: Microsoft.PowerShell.EditorServices.VariableDetails.DollarPrefix
+  name: DollarPrefix
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetails.html#Microsoft_PowerShell_EditorServices_VariableDetails_DollarPrefix
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetails.DollarPrefix
+- uid: Microsoft.PowerShell.EditorServices.VariableDetails.GetChildren
+  name: GetChildren()
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetails.html#Microsoft_PowerShell_EditorServices_VariableDetails_GetChildren
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetails.GetChildren()
+- uid: Microsoft.PowerShell.EditorServices.VariableDetailsBase
+  name: VariableDetailsBase
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetailsBase.html#Microsoft_PowerShell_EditorServices_VariableDetailsBase
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetailsBase
+- uid: Microsoft.PowerShell.EditorServices.VariableDetailsBase.FirstVariableId
+  name: FirstVariableId
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetailsBase.html#Microsoft_PowerShell_EditorServices_VariableDetailsBase_FirstVariableId
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetailsBase.FirstVariableId
+- uid: Microsoft.PowerShell.EditorServices.VariableDetailsBase.GetChildren
+  name: GetChildren()
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetailsBase.html#Microsoft_PowerShell_EditorServices_VariableDetailsBase_GetChildren
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetailsBase.GetChildren()
+- uid: Microsoft.PowerShell.EditorServices.VariableDetailsBase.Id
+  name: Id
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetailsBase.html#Microsoft_PowerShell_EditorServices_VariableDetailsBase_Id
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetailsBase.Id
+- uid: Microsoft.PowerShell.EditorServices.VariableDetailsBase.IsExpandable
+  name: IsExpandable
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetailsBase.html#Microsoft_PowerShell_EditorServices_VariableDetailsBase_IsExpandable
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetailsBase.IsExpandable
+- uid: Microsoft.PowerShell.EditorServices.VariableDetailsBase.Name
+  name: Name
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetailsBase.html#Microsoft_PowerShell_EditorServices_VariableDetailsBase_Name
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetailsBase.Name
+- uid: Microsoft.PowerShell.EditorServices.VariableDetailsBase.ValueString
+  name: ValueString
+  href: api/Microsoft.PowerShell.EditorServices.VariableDetailsBase.html#Microsoft_PowerShell_EditorServices_VariableDetailsBase_ValueString
+  fullName: Microsoft.PowerShell.EditorServices.VariableDetailsBase.ValueString
+- uid: Microsoft.PowerShell.EditorServices.VariableScope
+  name: VariableScope
+  href: api/Microsoft.PowerShell.EditorServices.VariableScope.html#Microsoft_PowerShell_EditorServices_VariableScope
+  fullName: Microsoft.PowerShell.EditorServices.VariableScope
+- uid: Microsoft.PowerShell.EditorServices.VariableScope.#ctor(System.Int32,System.String)
+  name: VariableScope(Int32, String)
+  href: api/Microsoft.PowerShell.EditorServices.VariableScope.html#Microsoft_PowerShell_EditorServices_VariableScope__ctor_System_Int32_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.VariableScope.VariableScope(System.Int32, System.String)
+- uid: Microsoft.PowerShell.EditorServices.VariableScope.Id
+  name: Id
+  href: api/Microsoft.PowerShell.EditorServices.VariableScope.html#Microsoft_PowerShell_EditorServices_VariableScope_Id
+  fullName: Microsoft.PowerShell.EditorServices.VariableScope.Id
+- uid: Microsoft.PowerShell.EditorServices.VariableScope.Name
+  name: Name
+  href: api/Microsoft.PowerShell.EditorServices.VariableScope.html#Microsoft_PowerShell_EditorServices_VariableScope_Name
+  fullName: Microsoft.PowerShell.EditorServices.VariableScope.Name
+- uid: Microsoft.PowerShell.EditorServices.Workspace
+  name: Workspace
+  href: api/Microsoft.PowerShell.EditorServices.Workspace.html#Microsoft_PowerShell_EditorServices_Workspace
+  fullName: Microsoft.PowerShell.EditorServices.Workspace
+- uid: Microsoft.PowerShell.EditorServices.Workspace.#ctor(System.Version)
+  name: Workspace(Version)
+  href: api/Microsoft.PowerShell.EditorServices.Workspace.html#Microsoft_PowerShell_EditorServices_Workspace__ctor_System_Version_
+  fullName: Microsoft.PowerShell.EditorServices.Workspace.Workspace(System.Version)
+- uid: Microsoft.PowerShell.EditorServices.Workspace.CloseFile(Microsoft.PowerShell.EditorServices.ScriptFile)
+  name: CloseFile(ScriptFile)
+  href: api/Microsoft.PowerShell.EditorServices.Workspace.html#Microsoft_PowerShell_EditorServices_Workspace_CloseFile_Microsoft_PowerShell_EditorServices_ScriptFile_
+  fullName: Microsoft.PowerShell.EditorServices.Workspace.CloseFile(Microsoft.PowerShell.EditorServices.ScriptFile)
+- uid: Microsoft.PowerShell.EditorServices.Workspace.ExpandScriptReferences(Microsoft.PowerShell.EditorServices.ScriptFile)
+  name: ExpandScriptReferences(ScriptFile)
+  href: api/Microsoft.PowerShell.EditorServices.Workspace.html#Microsoft_PowerShell_EditorServices_Workspace_ExpandScriptReferences_Microsoft_PowerShell_EditorServices_ScriptFile_
+  fullName: Microsoft.PowerShell.EditorServices.Workspace.ExpandScriptReferences(Microsoft.PowerShell.EditorServices.ScriptFile)
+- uid: Microsoft.PowerShell.EditorServices.Workspace.GetFile(System.String)
+  name: GetFile(String)
+  href: api/Microsoft.PowerShell.EditorServices.Workspace.html#Microsoft_PowerShell_EditorServices_Workspace_GetFile_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Workspace.GetFile(System.String)
+- uid: Microsoft.PowerShell.EditorServices.Workspace.GetFileBuffer(System.String,System.String)
+  name: GetFileBuffer(String, String)
+  href: api/Microsoft.PowerShell.EditorServices.Workspace.html#Microsoft_PowerShell_EditorServices_Workspace_GetFileBuffer_System_String_System_String_
+  fullName: Microsoft.PowerShell.EditorServices.Workspace.GetFileBuffer(System.String, System.String)
+- uid: Microsoft.PowerShell.EditorServices.Workspace.GetOpenedFiles
+  name: GetOpenedFiles()
+  href: api/Microsoft.PowerShell.EditorServices.Workspace.html#Microsoft_PowerShell_EditorServices_Workspace_GetOpenedFiles
+  fullName: Microsoft.PowerShell.EditorServices.Workspace.GetOpenedFiles()
+- uid: Microsoft.PowerShell.EditorServices.Workspace.WorkspacePath
+  name: WorkspacePath
+  href: api/Microsoft.PowerShell.EditorServices.Workspace.html#Microsoft_PowerShell_EditorServices_Workspace_WorkspacePath
+  fullName: Microsoft.PowerShell.EditorServices.Workspace.WorkspacePath

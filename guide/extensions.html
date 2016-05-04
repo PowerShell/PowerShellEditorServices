@@ -1,0 +1,207 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Extending the Host Editor </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Extending the Host Editor ">
+    
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/style.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <!--
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+    ga('create', 'UA-63735192-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+    -->
+  </head>  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav class="navbar navbar-inverse">
+             <div class="container">
+               <a href="../"><img height="50px" src="../images/PowerShell_logo.png" style="float:right;"></a>
+               <div class="navbar-header ">
+                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                   <span class="sr-only">Toggle navigation</span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                 </button>
+                 <a class="navbar-brand" href="../"><span class="dotnet">PowerShell Editor Services</span></a>
+               </div>
+               <div id="navbar" class="collapse navbar-collapse">
+               </div><!--/.nav-collapse -->
+             </div>
+           </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content">
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/docs/guide/extensions.md/#L1" class="pull-right mobile-hide"><span class="fa fa-github"></span> Improve this Doc</a>
+              <h1 id="extending-the-host-editor">Extending the Host Editor</h1>
+              
+<p>PowerShell Editor Services exposes a common extensibility model which allows
+you to write extension code in PowerShell that works across any editor that
+uses PowerShell Editor Services.</p>
+<h2 id="api-overview">API Overview</h2>
+<h3 id="introducing-pseditor-">Introducing <code>$psEditor</code></h3>
+<p>The entry point for the PowerShell Editor Services extensibility model is the <code>$psEditor</code>
+object of the type <a class="xref" href="../api/Microsoft.PowerShell.EditorServices.Extensions.EditorObject.html#Microsoft_PowerShell_EditorServices_Extensions_EditorObject">EditorObject</a>. For
+those familiar with the PowerShell ISE&#39;s <code>$psISE</code> object, the <code>$psEditor</code> object is very
+similar.  The primary difference is that this model has been generalized to work against
+any editor which leverages PowerShell Editor Services for its PowerShell editing experience.</p>
+<blockquote><p>NOTE: For now the <code>$psEditor</code> object is limited as it has just been
+introduced.  If you have ideas for other useful APIs it could expose
+please file an issue on our GitHub page.</p>
+</blockquote>
+<p>This object gives access to all of the high-level services in the current
+editing session.  For example, the <a class="xref" href="../api/Microsoft.PowerShell.EditorServices.Extensions.EditorObject.html#Microsoft_PowerShell_EditorServices_Extensions_EditorObject_Workspace">Workspace</a>
+property gives access to the editor&#39;s workspace, allowing you to create or open files
+in the editor.</p>
+<h3 id="usage-examples">Usage Examples</h3>
+<h4 id="opening-a-file-in-the-editor">Opening a file in the editor</h4>
+<p><strong>TODO</strong></p>
+<h4 id="manipulating-the-user-s-active-file-buffer">Manipulating the user&#39;s active file buffer</h4>
+<p><strong>TODO</strong></p>
+<h4 id="setting-the-selection-based-on-the-cursor-position">Setting the selection based on the cursor position</h4>
+<p><strong>TODO</strong></p>
+<p>The <code>$psEditor</code> object gives you the ability to write a script that can automate the
+host editor when run inside of it.  However, you may not want to give a user a plan
+script to run to perform some operation.
+within the host editor, automate operations in the editor.  What if you&#39;d like to</p>
+<h2 id="registering-editor-commands">Registering Editor Commands</h2>
+<p>It might be helpful to register a command with the editor so that your extension
+functionality is easily accessible to the user.  The <code>Register-EditorCommand</code>
+cmdlet can be used to register either a function, cmdlet, or ScriptBlock as a
+command in the host editor.</p>
+<h3 id="registering-a-cmdlet-or-function-command">Registering a cmdlet or function command</h3>
+<pre><code class="lang-powershell">function Invoke-MyCommand {
+    Write-Output &quot;My extension function was invoked!&quot;
+}
+
+Register-EditorCommand `
+    -Name &quot;MyExt.MyExtensionFunction&quot; `
+    -DisplayName &quot;My extension function&quot; `
+    -Function MyExtensionFunction
+</code></pre>
+<h3 id="registering-a-script-block-command">Registering a script block command</h3>
+<pre><code class="lang-powershell">Register-EditorCommand `
+    -Name &quot;MyExt.MyExtensionScriptBlock&quot; `
+    -DisplayName &quot;My extension script block&quot; `
+    -ScriptBlock { Write-Output &quot;My extension script block was invoked!&quot; }
+</code></pre>
+<h3 id="the-microsoft-powershell-editorservices-extensions-editorcontext-parameter">The <a class="xref" href="../api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext">EditorContext</a> parameter</h3>
+<p>Your function, cmdlet, or ScriptBlock can optionally accept a single parameter
+of type <a class="xref" href="../api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext">EditorContext</a> which provides
+information about the state of the host editor at the time your command was
+invoked.  With this object you can easily perform operations like manipulatin the
+state of the user&#39;s active editor buffer or changing the current selection.</p>
+<p>The usual convention is that a <code>$context</code> parameter is added to your editor
+command&#39;s function.  For now it is recommended that you fully specify the
+type of the <a class="xref" href="../api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext">EditorContext</a> object
+so that you get full IntelliSense on your context parameter.</p>
+<p>Here is an example of using the <code>$context</code> parameter:</p>
+<pre><code class="lang-powershell">Register-EditorCommand `
+    -Name &quot;MyExt.MyExtensionScriptBlockWithContext&quot; `
+    -DisplayName &quot;My extension script block with context&quot; `
+    -ScriptBlock {
+        param([Microsoft.PowerShell.EditorServices.Extensions.EditorContext]$context)
+        Write-Output &quot;The user&#39;s cursor is on line $($context.CursorPosition.Line)!&quot;
+    }
+</code></pre>
+<h3 id="suppressing-command-output">Suppressing command output</h3>
+<p>If you would like for your editor command to run without its output being
+written to the user&#39;s console, you can use the <code>-SuppressOutput</code> switch
+parameter of the <code>Register-EditorCommand</code> cmdlet.  We recommend that you
+use this parameter if your command does not need to write output to the
+user&#39;s console.</p>
+<p>Regardless of whether the <code>-SuppressOutput</code> parameter is used, any errors
+that occur while running your editor command will be written to the user&#39;s
+console.</p>
+<h2 id="using-editor-commands">Using Editor Commands</h2>
+<p>If you&#39;ve registered an editor command, either through your own code or
+a module that you&#39;ve installed, you can launch it using your editor&#39;s <strong>Show
+additional commands from PowerShell modules</strong> command.  Running this command
+will cause a list of commands to be displayed.  Here&#39;s an example of how this
+looks in Visual Studio Code:</p>
+<p><strong>TODO TODO TODO</strong></p>
+<blockquote><p>NOTE: In the future we hope to be able to register editor commands at the top level
+so that these commands are easier to find and so that they also can be bound to
+hotkeys for quick access.</p>
+</blockquote>
+<h2 id="shipping-an-extension-module">Shipping an Extension Module</h2>
+<p>You can easily ship a module containing editor commands which get registered
+if the module is loaded into an editor session.  Assuming that you&#39;ve exported
+a function or cmdlet named <code>Invoke-MyExtensionCommand</code> in your module&#39;s psd1
+file, you can add this code at the very end of your module&#39;s psm1 file:</p>
+<pre><code class="lang-powershell">if ($psEditor) {
+    Register-EditorCommand `
+        -Name &quot;MyModule.MyExtensionCommand&quot; `
+        -DisplayName &quot;My extension command&quot; `
+        -Function Invoke-MyExtensionCommand `
+        -SuppressOutput
+}
+</code></pre>
+<p>The user will now be able to import your module in their host editor&#39;s profile and
+your editor command will be immediately available after the PowerShell extension
+in that editor starts up.</p>
+<blockquote><p>NOTE: In the future we plan to provide an easy way for the user to opt-in
+to the automatic loading of any editor command modules that they&#39;ve installed
+from the PowerShell Gallery.  If this interests you, please let us know on
+<a href="https://github.com/PowerShell/PowerShellEditorServices/issues/215">this GitHub issue</a>.</p>
+</blockquote>
+
+            </article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+            <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+            </nav>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="inner-footer">
+          <p>© Microsoft &nbsp;//&nbsp; Generated with <a href="https://github.com/dotnet/docfx">DocFX</a></p>
+          </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>

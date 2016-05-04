@@ -1,0 +1,679 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class LanguageService
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class LanguageService
+   ">
+    
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/style.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <!--
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+    ga('create', 'UA-63735192-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+    -->
+  </head>  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav class="navbar navbar-inverse">
+             <div class="container">
+               <a href="../"><img height="50px" src="../images/PowerShell_logo.png" style="float:right;"></a>
+               <div class="navbar-header ">
+                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                   <span class="sr-only">Toggle navigation</span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                 </button>
+                 <a class="navbar-brand" href="../"><span class="dotnet">PowerShell Editor Services</span></a>
+               </div>
+               <div id="navbar" class="collapse navbar-collapse">
+               </div><!--/.nav-collapse -->
+             </div>
+           </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content">
+              
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_LanguageService.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.LanguageService%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="pull-right mobile-hide"><span class="fa fa-github"></span>Improve this Doc</a>
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Language/LanguageService.cs/#L21" class="pull-right mobile-hide">View Source</a>
+              <h1 id="Microsoft_PowerShell_EditorServices_LanguageService" data-uid="Microsoft.PowerShell.EditorServices.LanguageService">Class LanguageService
+              </h1>
+              <div class="markdown level0 summary"><p>Provides a high-level service for performing code completion and
+navigation operations on PowerShell scripts.</p>
+</div>
+              <div class="markdown level0 conceptual"></div>
+              <div class="inheritance">
+                <h5>Inheritance</h5>
+                  <div class="level0"><span class="xref">System.Object</span></div>
+                  <div class="level1"><span class="xref">LanguageService</span></div>
+              </div>
+              <h6><strong>Namespace</strong>:Microsoft.PowerShell.EditorServices</h6>
+              <h6><strong>Assembly</strong>:Microsoft.PowerShell.EditorServices.dll</h6>
+              <h5 id="Microsoft_PowerShell_EditorServices_LanguageService_syntax">Syntax</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public class LanguageService</code></pre>
+              </div>
+              <h3 id="constructors">Constructors
+              </h3>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_LanguageService__ctor_Microsoft_PowerShell_EditorServices_PowerShellContext_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.LanguageService.%23ctor(Microsoft.PowerShell.EditorServices.PowerShellContext)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Language/LanguageService.cs/#L47">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_LanguageService__ctor_Microsoft_PowerShell_EditorServices_PowerShellContext_" data-uid="Microsoft.PowerShell.EditorServices.LanguageService.#ctor(Microsoft.PowerShell.EditorServices.PowerShellContext)">LanguageService(PowerShellContext)</h4>
+              <div class="markdown level1 summary"><p>Constructs an instance of the LanguageService class and uses
+the given Runspace to execute language service operations.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public LanguageService(PowerShellContext powerShellContext)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.PowerShellContext.html#Microsoft_PowerShell_EditorServices_PowerShellContext">PowerShellContext</a></td>
+                    <td><em>powerShellContext</em></td>
+                    <td><p>The PowerShellContext in which language service operations will be executed.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3 id="methods">Methods
+              </h3>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_LanguageService_FindOccurrencesInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.LanguageService.FindOccurrencesInFile(Microsoft.PowerShell.EditorServices.ScriptFile%2CSystem.Int32%2CSystem.Int32)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Language/LanguageService.cs/#L359">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_LanguageService_FindOccurrencesInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_" data-uid="Microsoft.PowerShell.EditorServices.LanguageService.FindOccurrencesInFile(Microsoft.PowerShell.EditorServices.ScriptFile,System.Int32,System.Int32)">FindOccurrencesInFile(ScriptFile, Int32, Int32)</h4>
+              <div class="markdown level1 summary"><p>Finds all the occurences of a symbol in the script given a file location</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public FindOccurrencesResult FindOccurrencesInFile(ScriptFile file, int lineNumber, int columnNumber)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile">ScriptFile</a></td>
+                    <td><em>file</em></td>
+                    <td><p>The details and contents of a open script file</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.Int32</span></td>
+                    <td><em>lineNumber</em></td>
+                    <td><p>The line number of the cursor for the given script</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.Int32</span></td>
+                    <td><em>columnNumber</em></td>
+                    <td><p>The coulumn number of the cursor for the given script</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.FindOccurrencesResult.html#Microsoft_PowerShell_EditorServices_FindOccurrencesResult">FindOccurrencesResult</a></td>
+                    <td><p>FindOccurrencesResult</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_LanguageService_FindParameterSetsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.LanguageService.FindParameterSetsInFile(Microsoft.PowerShell.EditorServices.ScriptFile%2CSystem.Int32%2CSystem.Int32)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Language/LanguageService.cs/#L399">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_LanguageService_FindParameterSetsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_" data-uid="Microsoft.PowerShell.EditorServices.LanguageService.FindParameterSetsInFile(Microsoft.PowerShell.EditorServices.ScriptFile,System.Int32,System.Int32)">FindParameterSetsInFile(ScriptFile, Int32, Int32)</h4>
+              <div class="markdown level1 summary"><p>Finds the parameter set hints of a specific command (determined by a given file location)</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public Task&lt;ParameterSetSignatures&gt; FindParameterSetsInFile(ScriptFile file, int lineNumber, int columnNumber)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile">ScriptFile</a></td>
+                    <td><em>file</em></td>
+                    <td><p>The details and contents of a open script file</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.Int32</span></td>
+                    <td><em>lineNumber</em></td>
+                    <td><p>The line number of the cursor for the given script</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.Int32</span></td>
+                    <td><em>columnNumber</em></td>
+                    <td><p>The coulumn number of the cursor for the given script</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Microsoft.PowerShell.EditorServices.ParameterSetSignatures.html#Microsoft_PowerShell_EditorServices_ParameterSetSignatures">ParameterSetSignatures</a>&gt;</td>
+                    <td><p>ParameterSetSignatures</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_LanguageService_FindReferencesOfSymbol_Microsoft_PowerShell_EditorServices_SymbolReference_Microsoft_PowerShell_EditorServices_ScriptFile___.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.LanguageService.FindReferencesOfSymbol(Microsoft.PowerShell.EditorServices.SymbolReference%2CMicrosoft.PowerShell.EditorServices.ScriptFile%5B%5D)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Language/LanguageService.cs/#L250">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_LanguageService_FindReferencesOfSymbol_Microsoft_PowerShell_EditorServices_SymbolReference_Microsoft_PowerShell_EditorServices_ScriptFile___" data-uid="Microsoft.PowerShell.EditorServices.LanguageService.FindReferencesOfSymbol(Microsoft.PowerShell.EditorServices.SymbolReference,Microsoft.PowerShell.EditorServices.ScriptFile[])">FindReferencesOfSymbol(SymbolReference, ScriptFile[])</h4>
+              <div class="markdown level1 summary"><p>Finds all the references of a symbol</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public Task&lt;FindReferencesResult&gt; FindReferencesOfSymbol(SymbolReference foundSymbol, ScriptFile[] referencedFiles)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.SymbolReference.html#Microsoft_PowerShell_EditorServices_SymbolReference">SymbolReference</a></td>
+                    <td><em>foundSymbol</em></td>
+                    <td><p>The symbol to find all references for</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile">ScriptFile</a>[]</td>
+                    <td><em>referencedFiles</em></td>
+                    <td><p>An array of scriptFiles too search for references in</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Microsoft.PowerShell.EditorServices.FindReferencesResult.html#Microsoft_PowerShell_EditorServices_FindReferencesResult">FindReferencesResult</a>&gt;</td>
+                    <td><p>FindReferencesResult</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_LanguageService_FindSymbolAtLocation_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolAtLocation(Microsoft.PowerShell.EditorServices.ScriptFile%2CSystem.Int32%2CSystem.Int32)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Language/LanguageService.cs/#L159">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_LanguageService_FindSymbolAtLocation_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_" data-uid="Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolAtLocation(Microsoft.PowerShell.EditorServices.ScriptFile,System.Int32,System.Int32)">FindSymbolAtLocation(ScriptFile, Int32, Int32)</h4>
+              <div class="markdown level1 summary"><p>Finds the symbol in the script given a file location</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public SymbolReference FindSymbolAtLocation(ScriptFile scriptFile, int lineNumber, int columnNumber)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile">ScriptFile</a></td>
+                    <td><em>scriptFile</em></td>
+                    <td><p>The details and contents of a open script file</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.Int32</span></td>
+                    <td><em>lineNumber</em></td>
+                    <td><p>The line number of the cursor for the given script</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.Int32</span></td>
+                    <td><em>columnNumber</em></td>
+                    <td><p>The coulumn number of the cursor for the given script</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.SymbolReference.html#Microsoft_PowerShell_EditorServices_SymbolReference">SymbolReference</a></td>
+                    <td><p>A SymbolReference of the symbol found at the given location
+or null if there is no symbol at that location </p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_LanguageService_FindSymbolDetailsAtLocation_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolDetailsAtLocation(Microsoft.PowerShell.EditorServices.ScriptFile%2CSystem.Int32%2CSystem.Int32)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Language/LanguageService.cs/#L185">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_LanguageService_FindSymbolDetailsAtLocation_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_" data-uid="Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolDetailsAtLocation(Microsoft.PowerShell.EditorServices.ScriptFile,System.Int32,System.Int32)">FindSymbolDetailsAtLocation(ScriptFile, Int32, Int32)</h4>
+              <div class="markdown level1 summary"><p>Finds the details of the symbol at the given script file location.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public Task&lt;SymbolDetails&gt; FindSymbolDetailsAtLocation(ScriptFile scriptFile, int lineNumber, int columnNumber)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile">ScriptFile</a></td>
+                    <td><em>scriptFile</em></td>
+                    <td><p>The ScriptFile in which the symbol can be located.</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.Int32</span></td>
+                    <td><em>lineNumber</em></td>
+                    <td><p>The line number at which the symbol can be located.</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.Int32</span></td>
+                    <td><em>columnNumber</em></td>
+                    <td><p>The column number at which the symbol can be located.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Microsoft.PowerShell.EditorServices.SymbolDetails.html#Microsoft_PowerShell_EditorServices_SymbolDetails">SymbolDetails</a>&gt;</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_LanguageService_FindSymbolsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolsInFile(Microsoft.PowerShell.EditorServices.ScriptFile)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Language/LanguageService.cs/#L223">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_LanguageService_FindSymbolsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_" data-uid="Microsoft.PowerShell.EditorServices.LanguageService.FindSymbolsInFile(Microsoft.PowerShell.EditorServices.ScriptFile)">FindSymbolsInFile(ScriptFile)</h4>
+              <div class="markdown level1 summary"><p>Finds all the symbols in a file.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public FindOccurrencesResult FindSymbolsInFile(ScriptFile scriptFile)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile">ScriptFile</a></td>
+                    <td><em>scriptFile</em></td>
+                    <td><p>The ScriptFile in which the symbol can be located.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.FindOccurrencesResult.html#Microsoft_PowerShell_EditorServices_FindOccurrencesResult">FindOccurrencesResult</a></td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_LanguageService_GetCompletionDetailsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_String_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.LanguageService.GetCompletionDetailsInFile(Microsoft.PowerShell.EditorServices.ScriptFile%2CSystem.String)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Language/LanguageService.cs/#L131">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_LanguageService_GetCompletionDetailsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_String_" data-uid="Microsoft.PowerShell.EditorServices.LanguageService.GetCompletionDetailsInFile(Microsoft.PowerShell.EditorServices.ScriptFile,System.String)">GetCompletionDetailsInFile(ScriptFile, String)</h4>
+              <div class="markdown level1 summary"><p>Finds command completion details for the script given a file location </p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public CompletionDetails GetCompletionDetailsInFile(ScriptFile file, string entryName)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile">ScriptFile</a></td>
+                    <td><em>file</em></td>
+                    <td><p>The details and contents of a open script file</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.String</span></td>
+                    <td><em>entryName</em></td>
+                    <td><p>The name of the suggestion that needs details</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.CompletionDetails.html#Microsoft_PowerShell_EditorServices_CompletionDetails">CompletionDetails</a></td>
+                    <td><p>CompletionResult object (contains information about the command completion)</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_LanguageService_GetCompletionsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.LanguageService.GetCompletionsInFile(Microsoft.PowerShell.EditorServices.ScriptFile%2CSystem.Int32%2CSystem.Int32)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Language/LanguageService.cs/#L77">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_LanguageService_GetCompletionsInFile_Microsoft_PowerShell_EditorServices_ScriptFile_System_Int32_System_Int32_" data-uid="Microsoft.PowerShell.EditorServices.LanguageService.GetCompletionsInFile(Microsoft.PowerShell.EditorServices.ScriptFile,System.Int32,System.Int32)">GetCompletionsInFile(ScriptFile, Int32, Int32)</h4>
+              <div class="markdown level1 summary"><p>Gets completions for a statement contained in the given
+script file at the specified line and column position.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public Task&lt;CompletionResults&gt; GetCompletionsInFile(ScriptFile scriptFile, int lineNumber, int columnNumber)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile">ScriptFile</a></td>
+                    <td><em>scriptFile</em></td>
+                    <td><p>The script file in which completions will be gathered.</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.Int32</span></td>
+                    <td><em>lineNumber</em></td>
+                    <td><p>The 1-based line number at which completions will be gathered.</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.Int32</span></td>
+                    <td><em>columnNumber</em></td>
+                    <td><p>The 1-based column number at which completions will be gathered.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Microsoft.PowerShell.EditorServices.CompletionResults.html#Microsoft_PowerShell_EditorServices_CompletionResults">CompletionResults</a>&gt;</td>
+                    <td><p>A CommandCompletion instance completions for the identified statement.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_LanguageService_GetDefinitionOfSymbol_Microsoft_PowerShell_EditorServices_ScriptFile_Microsoft_PowerShell_EditorServices_SymbolReference_Microsoft_PowerShell_EditorServices_Workspace_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.LanguageService.GetDefinitionOfSymbol(Microsoft.PowerShell.EditorServices.ScriptFile%2CMicrosoft.PowerShell.EditorServices.SymbolReference%2CMicrosoft.PowerShell.EditorServices.Workspace)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Language/LanguageService.cs/#L304">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_LanguageService_GetDefinitionOfSymbol_Microsoft_PowerShell_EditorServices_ScriptFile_Microsoft_PowerShell_EditorServices_SymbolReference_Microsoft_PowerShell_EditorServices_Workspace_" data-uid="Microsoft.PowerShell.EditorServices.LanguageService.GetDefinitionOfSymbol(Microsoft.PowerShell.EditorServices.ScriptFile,Microsoft.PowerShell.EditorServices.SymbolReference,Microsoft.PowerShell.EditorServices.Workspace)">GetDefinitionOfSymbol(ScriptFile, SymbolReference, Workspace)</h4>
+              <div class="markdown level1 summary"><p>Finds the definition of a symbol in the script file or any of the
+files that it references.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public Task&lt;GetDefinitionResult&gt; GetDefinitionOfSymbol(ScriptFile sourceFile, SymbolReference foundSymbol, Workspace workspace)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.ScriptFile.html#Microsoft_PowerShell_EditorServices_ScriptFile">ScriptFile</a></td>
+                    <td><em>sourceFile</em></td>
+                    <td><p>The initial script file to be searched for the symbol&#39;s definition.</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.SymbolReference.html#Microsoft_PowerShell_EditorServices_SymbolReference">SymbolReference</a></td>
+                    <td><em>foundSymbol</em></td>
+                    <td><p>The symbol for which a definition will be found.</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.Workspace.html#Microsoft_PowerShell_EditorServices_Workspace">Workspace</a></td>
+                    <td><em>workspace</em></td>
+                    <td><p>The Workspace to which the ScriptFile belongs.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Microsoft.PowerShell.EditorServices.GetDefinitionResult.html#Microsoft_PowerShell_EditorServices_GetDefinitionResult">GetDefinitionResult</a>&gt;</td>
+                    <td><p>The resulting GetDefinitionResult for the symbol&#39;s definition.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+            </article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+            <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+            </nav>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="inner-footer">
+          <p>© Microsoft &nbsp;//&nbsp; Generated with <a href="https://github.com/dotnet/docfx">DocFX</a></p>
+          </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>

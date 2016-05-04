@@ -1,0 +1,293 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class VariableContainerDetails
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class VariableContainerDetails
+   ">
+    
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/style.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <!--
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+    ga('create', 'UA-63735192-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+    -->
+  </head>  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav class="navbar navbar-inverse">
+             <div class="container">
+               <a href="../"><img height="50px" src="../images/PowerShell_logo.png" style="float:right;"></a>
+               <div class="navbar-header ">
+                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                   <span class="sr-only">Toggle navigation</span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                 </button>
+                 <a class="navbar-brand" href="../"><span class="dotnet">PowerShell Editor Services</span></a>
+               </div>
+               <div id="navbar" class="collapse navbar-collapse">
+               </div><!--/.nav-collapse -->
+             </div>
+           </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content">
+              
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_VariableContainerDetails.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.VariableContainerDetails%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="pull-right mobile-hide"><span class="fa fa-github"></span>Improve this Doc</a>
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Debugging/VariableContainerDetails.cs/#L20" class="pull-right mobile-hide">View Source</a>
+              <h1 id="Microsoft_PowerShell_EditorServices_VariableContainerDetails" data-uid="Microsoft.PowerShell.EditorServices.VariableContainerDetails">Class VariableContainerDetails
+              </h1>
+              <div class="markdown level0 summary"><p>Container for variables that is not itself a variable per se.  However given how
+VSCode uses an integer variable reference id for every node under the &quot;Variables&quot; tool
+window, it is useful to treat containers, typically scope containers, as a variable.
+Note that these containers are not necessarily always a scope container. Consider a
+container such as &quot;Auto&quot; or &quot;My&quot;.  These aren&#39;t scope related but serve as just another
+way to organize variables into a useful UI structure.</p>
+</div>
+              <div class="markdown level0 conceptual"></div>
+              <div class="inheritance">
+                <h5>Inheritance</h5>
+                  <div class="level0"><span class="xref">System.Object</span></div>
+                  <div class="level1"><a class="xref" href="Microsoft.PowerShell.EditorServices.VariableDetailsBase.html#Microsoft_PowerShell_EditorServices_VariableDetailsBase">VariableDetailsBase</a></div>
+                  <div class="level2"><span class="xref">VariableContainerDetails</span></div>
+              </div>
+              <h6><strong>Namespace</strong>:Microsoft.PowerShell.EditorServices</h6>
+              <h6><strong>Assembly</strong>:Microsoft.PowerShell.EditorServices.dll</h6>
+              <h5 id="Microsoft_PowerShell_EditorServices_VariableContainerDetails_syntax">Syntax</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">[DebuggerDisplay(&quot;Name = {Name}, Id = {Id}, Count = {Children.Count}&quot;)]
+public class VariableContainerDetails : VariableDetailsBase</code></pre>
+              </div>
+              <h3 id="constructors">Constructors
+              </h3>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_VariableContainerDetails__ctor_System_Int32_System_String_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.VariableContainerDetails.%23ctor(System.Int32%2CSystem.String)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Debugging/VariableContainerDetails.cs/#L50">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_VariableContainerDetails__ctor_System_Int32_System_String_" data-uid="Microsoft.PowerShell.EditorServices.VariableContainerDetails.#ctor(System.Int32,System.String)">VariableContainerDetails(Int32, String)</h4>
+              <div class="markdown level1 summary"><p>Instantiates an instance of VariableScopeDetails.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public VariableContainerDetails(int id, string name)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Int32</span></td>
+                    <td><em>id</em></td>
+                    <td><p>The variable reference id for this scope.</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.String</span></td>
+                    <td><em>name</em></td>
+                    <td><p>The name of the variable scope.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3 id="fields">Fields
+              </h3>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_VariableContainerDetails_AutoVariablesName.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.VariableContainerDetails.AutoVariablesName%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Debugging/VariableContainerDetails.cs/#L26">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_VariableContainerDetails_AutoVariablesName" data-uid="Microsoft.PowerShell.EditorServices.VariableContainerDetails.AutoVariablesName">AutoVariablesName</h4>
+              <div class="markdown level1 summary"><p>Provides a constant for the name of the Global scope.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public const string AutoVariablesName = &quot;Auto&quot;</code></pre>
+              </div>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_VariableContainerDetails_GlobalScopeName.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.VariableContainerDetails.GlobalScopeName%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Debugging/VariableContainerDetails.cs/#L31">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_VariableContainerDetails_GlobalScopeName" data-uid="Microsoft.PowerShell.EditorServices.VariableContainerDetails.GlobalScopeName">GlobalScopeName</h4>
+              <div class="markdown level1 summary"><p>Provides a constant for the name of the Global scope.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public const string GlobalScopeName = &quot;Global&quot;</code></pre>
+              </div>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_VariableContainerDetails_LocalScopeName.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.VariableContainerDetails.LocalScopeName%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Debugging/VariableContainerDetails.cs/#L36">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_VariableContainerDetails_LocalScopeName" data-uid="Microsoft.PowerShell.EditorServices.VariableContainerDetails.LocalScopeName">LocalScopeName</h4>
+              <div class="markdown level1 summary"><p>Provides a constant for the name of the Local scope.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public const string LocalScopeName = &quot;Local&quot;</code></pre>
+              </div>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_VariableContainerDetails_ScriptScopeName.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.VariableContainerDetails.ScriptScopeName%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Debugging/VariableContainerDetails.cs/#L41">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_VariableContainerDetails_ScriptScopeName" data-uid="Microsoft.PowerShell.EditorServices.VariableContainerDetails.ScriptScopeName">ScriptScopeName</h4>
+              <div class="markdown level1 summary"><p>Provides a constant for the name of the Script scope.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public const string ScriptScopeName = &quot;Script&quot;</code></pre>
+              </div>
+              <h3 id="properties">Properties
+              </h3>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_VariableContainerDetails_Children.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.VariableContainerDetails.Children%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Debugging/VariableContainerDetails.cs/#L65">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_VariableContainerDetails_Children" data-uid="Microsoft.PowerShell.EditorServices.VariableContainerDetails.Children">Children</h4>
+              <div class="markdown level1 summary"><p>Gets the collection of child variables.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public IDictionary&lt;string, VariableDetailsBase&gt; Children
+{
+
+    get;
+
+}</code></pre>
+              </div>
+              <h5 class="propertyValue"></h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Collections.Generic.IDictionary</span>&lt;<span class="xref">System.String</span>, <a class="xref" href="Microsoft.PowerShell.EditorServices.VariableDetailsBase.html#Microsoft_PowerShell_EditorServices_VariableDetailsBase">VariableDetailsBase</a>&gt;</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3 id="methods">Methods
+              </h3>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_VariableContainerDetails_GetChildren.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.VariableContainerDetails.GetChildren%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Debugging/VariableContainerDetails.cs/#L74">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_VariableContainerDetails_GetChildren" data-uid="Microsoft.PowerShell.EditorServices.VariableContainerDetails.GetChildren">GetChildren()</h4>
+              <div class="markdown level1 summary"><p>Returns the details of the variable container&#39;s children.  If empty, returns an empty array.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public override VariableDetailsBase[] GetChildren()</code></pre>
+              </div>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.VariableDetailsBase.html#Microsoft_PowerShell_EditorServices_VariableDetailsBase">VariableDetailsBase</a>[]</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+            <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+            </nav>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="inner-footer">
+          <p>© Microsoft &nbsp;//&nbsp; Generated with <a href="https://github.com/dotnet/docfx">DocFX</a></p>
+          </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>

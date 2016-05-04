@@ -1,0 +1,304 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Interface IEditorOperations
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Interface IEditorOperations
+   ">
+    
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/style.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <!--
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+    ga('create', 'UA-63735192-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+    -->
+  </head>  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav class="navbar navbar-inverse">
+             <div class="container">
+               <a href="../"><img height="50px" src="../images/PowerShell_logo.png" style="float:right;"></a>
+               <div class="navbar-header ">
+                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                   <span class="sr-only">Toggle navigation</span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                 </button>
+                 <a class="navbar-brand" href="../"><span class="dotnet">PowerShell Editor Services</span></a>
+               </div>
+               <div id="navbar" class="collapse navbar-collapse">
+               </div><!--/.nav-collapse -->
+             </div>
+           </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content">
+              
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="pull-right mobile-hide"><span class="fa fa-github"></span>Improve this Doc</a>
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Extensions/IEditorOperations.cs/#L15" class="pull-right mobile-hide">View Source</a>
+              <h1 id="Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations" data-uid="Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations">Interface IEditorOperations
+              </h1>
+              <div class="markdown level0 summary"><p>Provides an interface that must be implemented by an editor
+host to perform operations invoked by extensions written in
+PowerShell.</p>
+</div>
+              <div class="markdown level0 conceptual"></div>
+              <h6><strong>Namespace</strong>:Microsoft.PowerShell.EditorServices.Extensions</h6>
+              <h6><strong>Assembly</strong>:Microsoft.PowerShell.EditorServices.dll</h6>
+              <h5 id="Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_syntax">Syntax</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public interface IEditorOperations</code></pre>
+              </div>
+              <h3 id="methods">Methods
+              </h3>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_GetEditorContext.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.GetEditorContext%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Extensions/IEditorOperations.cs/#L21">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_GetEditorContext" data-uid="Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.GetEditorContext">GetEditorContext()</h4>
+              <div class="markdown level1 summary"><p>Gets the EditorContext for the editor&#39;s current state.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">Task&lt;EditorContext&gt; GetEditorContext()</code></pre>
+              </div>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext">EditorContext</a>&gt;</td>
+                    <td><p>A new EditorContext object.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_InsertText_System_String_System_String_Microsoft_PowerShell_EditorServices_BufferRange_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.InsertText(System.String%2CSystem.String%2CMicrosoft.PowerShell.EditorServices.BufferRange)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Extensions/IEditorOperations.cs/#L38">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_InsertText_System_String_System_String_Microsoft_PowerShell_EditorServices_BufferRange_" data-uid="Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.InsertText(System.String,System.String,Microsoft.PowerShell.EditorServices.BufferRange)">InsertText(String, String, BufferRange)</h4>
+              <div class="markdown level1 summary"><p>Inserts text into the specified range for the file at the specified path.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">Task InsertText(string filePath, string insertText, BufferRange insertRange)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.String</span></td>
+                    <td><em>filePath</em></td>
+                    <td><p>The path of the file which will have text inserted.</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><span class="xref">System.String</span></td>
+                    <td><em>insertText</em></td>
+                    <td><p>The text to insert into the file.</p>
+</td>
+                  </tr>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.BufferRange.html#Microsoft_PowerShell_EditorServices_BufferRange">BufferRange</a></td>
+                    <td><em>insertRange</em></td>
+                    <td><p>The range in the file to be replaced.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span></td>
+                    <td><p>A Task that can be tracked for completion.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_OpenFile_System_String_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.OpenFile(System.String)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Extensions/IEditorOperations.cs/#L29">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_OpenFile_System_String_" data-uid="Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.OpenFile(System.String)">OpenFile(String)</h4>
+              <div class="markdown level1 summary"><p>Causes a file to be opened in the editor.  If the file is
+already open, the editor must switch to the file.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">Task OpenFile(string filePath)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.String</span></td>
+                    <td><em>filePath</em></td>
+                    <td><p>The path of the file to be opened.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span></td>
+                    <td><p>A Task that can be tracked for completion.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_SetSelection_Microsoft_PowerShell_EditorServices_BufferRange_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.SetSelection(Microsoft.PowerShell.EditorServices.BufferRange)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Extensions/IEditorOperations.cs/#L45">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_Extensions_IEditorOperations_SetSelection_Microsoft_PowerShell_EditorServices_BufferRange_" data-uid="Microsoft.PowerShell.EditorServices.Extensions.IEditorOperations.SetSelection(Microsoft.PowerShell.EditorServices.BufferRange)">SetSelection(BufferRange)</h4>
+              <div class="markdown level1 summary"><p>Causes the selection to be changed in the editor&#39;s active file buffer.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">Task SetSelection(BufferRange selectionRange)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a class="xref" href="Microsoft.PowerShell.EditorServices.BufferRange.html#Microsoft_PowerShell_EditorServices_BufferRange">BufferRange</a></td>
+                    <td><em>selectionRange</em></td>
+                    <td><p>The range over which the selection will be made.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span></td>
+                    <td><p>A Task that can be tracked for completion.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+            </article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+            <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+            </nav>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="inner-footer">
+          <p>© Microsoft &nbsp;//&nbsp; Generated with <a href="https://github.com/dotnet/docfx">DocFX</a></p>
+          </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>

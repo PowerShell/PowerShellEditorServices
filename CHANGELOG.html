@@ -1,0 +1,213 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>PowerShell Editor Services Release History </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="PowerShell Editor Services Release History ">
+    
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="styles/docfx.vendor.css">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/docfx.css">
+    <link rel="stylesheet" href="styles/style.css">
+    <meta property="docfx:navrel" content="toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <!--
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+    ga('create', 'UA-63735192-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+    -->
+  </head>  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav class="navbar navbar-inverse">
+             <div class="container">
+               <a href=""><img height="50px" src="images/PowerShell_logo.png" style="float:right;"></a>
+               <div class="navbar-header ">
+                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                   <span class="sr-only">Toggle navigation</span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                 </button>
+                 <a class="navbar-brand" href=""><span class="dotnet">PowerShell Editor Services</span></a>
+               </div>
+               <div id="navbar" class="collapse navbar-collapse">
+               </div><!--/.nav-collapse -->
+             </div>
+           </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content">
+        <div class="article row grid">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content">
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/CHANGELOG.md/#L1" class="pull-right mobile-hide"><span class="fa fa-github"></span> Improve this Doc</a>
+              <h1 id="powershell-editor-services-release-history">PowerShell Editor Services Release History</h1>
+              
+<h2 id="0-5-0">0.5.0</h2>
+<h3 id="thursday-march-10-2016">Thursday, March 10, 2016</h3>
+<h3 id="support-for-powershell-v3-and-v4">Support for PowerShell v3 and v4</h3>
+<ul>
+<li>Support for PowerShell v3 and v4 is now complete!  Note that for this release,
+Script Analyzer support has been disabled for PS v3 and v4 until we implement
+a better strategy for integrating it as a module dependency</li>
+</ul>
+<h3 id="debugging-improvements">Debugging improvements</h3>
+<ul>
+<li>Added support for command breakpoints</li>
+<li>Added support for conditional breakpoints</li>
+<li>Improved the debug adapter startup sequence to handle new VS Code debugging features</li>
+</ul>
+<h3 id="other-improvements">Other improvements</h3>
+<ul>
+<li><code>using &#39;module&#39;</code> now resolves relative paths correctly, removing a syntax error that
+previously appeared when relative paths were used</li>
+<li>Calling <code>Read-Host -AsSecureString</code> or <code>Get-Credential</code> from the console now shows an
+appropriate &quot;not supported&quot; error message instead of crashing the language service. 
+Support for these commands will be added in a later release.</li>
+</ul>
+<h2 id="0-4-3">0.4.3</h2>
+<h3 id="monday-february-29-2016">Monday, February 29, 2016</h3>
+<ul>
+<li>Fixed #166: PowerShell Editor Services should be usable without PSScriptAnalyzer binaries</li>
+</ul>
+<h2 id="0-4-2">0.4.2</h2>
+<h3 id="wednesday-february-17-2016">Wednesday, February 17, 2016</h3>
+<ul>
+<li>Fixed #127: Update to PSScriptAnalyzer 1.4.0</li>
+<li>Fixed #149: Scripts fail to launch in the debugger if working directory path contains spaces</li>
+<li>Fixed #153: Script Analyzer integration is not working in 0.4.1 release</li>
+<li>Fixed #159: LanguageServer.Shutdown method hangs while waiting for remaining buffered output to flush</li>
+</ul>
+<h2 id="0-4-1">0.4.1</h2>
+<h3 id="tuesday-february-9-2016">Tuesday, February 9, 2016</h3>
+<ul>
+<li>Fixed #147: Running native console apps causes their stdout to be written in the Host</li>
+</ul>
+<h2 id="0-4-0">0.4.0</h2>
+<h3 id="monday-february-8-2016">Monday, February 8, 2016</h3>
+<h4 id="debugging-improvements">Debugging improvements</h4>
+<ul>
+<li>A new <code>Microsoft.PowerShell.EditorServices.Host.x86.exe</code> executable has been added to enable 32-bit PowerShell sessions on 64-bit machines (thanks <a href="https://github.com/adamdriscoll">@adamdriscoll</a>!)</li>
+<li>You can now pass arguments to scripts in the debugger with the <code>LaunchRequest.Args</code> parameter (thanks <a href="https://github.com/rkeithhill">@rkeithhill</a>!)</li>
+<li>You can also set the working directory where the script is run by setting the <code>LaunchRequest.Cwd</code> parameter to an absolute path (thanks <a href="https://github.com/rkeithhill">@rkeithhill</a>!)</li>
+</ul>
+<h4 id="console-improvements">Console improvements</h4>
+<ul>
+<li><p>Improved PowerShell console output formatting and performance</p>
+<ul>
+<li>The console prompt is now displayed after a command is executed</li>
+<li>Command execution errors are now displayed correctly in more cases</li>
+<li>Console output now wraps at 120 characters instead of 80 characters</li>
+<li>Console output is now buffered to reduce the number of OutputEvent messages sent from the host to the editor</li>
+</ul>
+</li>
+<li><p>Added choice and input prompt support.  Prompts can be shown either through the console or natively
+in the editor via the <code>powerShell/showInputPrompt</code> and <code>powerShell/showChoicePrompt</code> requests.</p>
+</li>
+</ul>
+<h4 id="new-host-command-line-parameters">New host command line parameters</h4>
+<ul>
+<li><code>/logLevel:&lt;level&gt;</code>: Sets the log output level for the host.  Possible values: <code>Verbose</code>, <code>Normal</code>, <code>Warning</code>, or <code>Error</code>.</li>
+<li><code>/logPath:&lt;path&gt;</code>: Sets the output path for logs written while the host is running</li>
+</ul>
+<h4 id="other-improvements">Other improvements</h4>
+<ul>
+<li>Initial work has been done to ensure support for PowerShell v3 and v4 APIs by compiling against the PowerShell
+reference assemblies that are published on NuGet. (thanks <a href="https://github.com/adamdriscoll">@adamdriscoll</a>!)</li>
+<li>Initial WebSocket channel support (thanks <a href="https://github.com/adamdriscoll">@adamdriscoll</a>!)</li>
+<li>Removed Nito.AsyncEx dependency</li>
+</ul>
+<h2 id="0-3-1">0.3.1</h2>
+<h3 id="thursday-december-17-2015">Thursday, December 17, 2015</h3>
+<ul>
+<li>Fixed issue PowerShell/vscode-powershell#49, Debug Console does not receive script output</li>
+</ul>
+<h2 id="0-3-0">0.3.0</h2>
+<h3 id="tuesday-december-15-2015">Tuesday, December 15, 2015</h3>
+<ul>
+<li>First release with official NuGet packages!<ul>
+<li><a href="https://www.nuget.org/packages/Microsoft.PowerShell.EditorServices/">Microsoft.PowerShell.EditorServices</a> - Core .NET library</li>
+<li><a href="https://www.nuget.org/packages/Microsoft.PowerShell.EditorServices.Protocol/">Microsoft.PowerShell.EditorServices.Protocol</a> - Protocol and client/server library</li>
+<li><a href="https://www.nuget.org/packages/Microsoft.PowerShell.EditorServices.Host/">Microsoft.PowerShell.EditorServices.Host</a> - API host process package</li>
+</ul>
+</li>
+<li>Introduced a new client/server API in the Protocol project which makes it
+much easier to write a client or server for the language and debugging services</li>
+<li>Introduced a new channel model which makes it much easier to add and consume
+new protocol channel implementations</li>
+<li>Major improvements in variables retrieved from the debugging service:<ul>
+<li>Global and script scope variables are now accessible</li>
+<li>New &quot;Autos&quot; scope which shows only the variables defined within the current scope</li>
+<li>Greatly improved representation of variable values, especially for dictionaries and
+objects that implement the ToString() method</li>
+</ul>
+</li>
+<li>Added new &quot;Expand Alias&quot; command which resolves command aliases used in a file or
+selection and updates the source text with the resolved command names</li>
+<li>Reduced default Script Analyzer rules to a minimal list</li>
+<li>Improved startup/shutdown behavior and logging</li>
+<li>Fixed a wide array of completion text replacement bugs</li>
+</ul>
+<h2 id="0-2-0">0.2.0</h2>
+<h3 id="monday-november-23-2015">Monday, November 23, 2015</h3>
+<ul>
+<li>Added Online Help command</li>
+<li>Enabled PowerShell language features for untitled and in-memory (e.g. in Git diff viewer) PowerShell files</li>
+<li>Fixed high CPU usage when completing or hovering over an application path</li>
+</ul>
+<h2 id="0-1-0">0.1.0</h2>
+<h3 id="wednesday-november-18-2015">Wednesday, November 18, 2015</h3>
+<p>Initial release with the following features:</p>
+<ul>
+<li>IntelliSense for cmdlets and more</li>
+<li>Rule-based analysis provided by PowerShell Script Analyzer</li>
+<li>Go to Definition of cmdlets and variables</li>
+<li>Find References of cmdlets and variables</li>
+<li>Document and workspace symbol discovery</li>
+<li>Local script debugging and basic interactive console support</li>
+</ul>
+
+            </article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+            <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+            </nav>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="inner-footer">
+          <p>© Microsoft &nbsp;//&nbsp; Generated with <a href="https://github.com/dotnet/docfx">DocFX</a></p>
+          </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="styles/docfx.js"></script>
+    <script type="text/javascript" src="styles/main.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>

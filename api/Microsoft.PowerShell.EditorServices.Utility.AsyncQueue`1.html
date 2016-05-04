@@ -1,0 +1,339 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class AsyncQueue&lt;T&gt;
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class AsyncQueue&lt;T&gt;
+   ">
+    
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/style.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <!--
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+    ga('create', 'UA-63735192-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+    -->
+  </head>  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav class="navbar navbar-inverse">
+             <div class="container">
+               <a href="../"><img height="50px" src="../images/PowerShell_logo.png" style="float:right;"></a>
+               <div class="navbar-header ">
+                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                   <span class="sr-only">Toggle navigation</span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                 </button>
+                 <a class="navbar-brand" href="../"><span class="dotnet">PowerShell Editor Services</span></a>
+               </div>
+               <div id="navbar" class="collapse navbar-collapse">
+               </div><!--/.nav-collapse -->
+             </div>
+           </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content">
+              
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Utility.AsyncQueue%601%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="pull-right mobile-hide"><span class="fa fa-github"></span>Improve this Doc</a>
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Utility/AsyncQueue.cs/#L18" class="pull-right mobile-hide">View Source</a>
+              <h1 id="Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1" data-uid="Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1">Class AsyncQueue&lt;T&gt;
+              </h1>
+              <div class="markdown level0 summary"><p>Provides a synchronized queue which can be used from within async
+operations.  This is primarily used for producer/consumer scenarios.</p>
+</div>
+              <div class="markdown level0 conceptual"></div>
+              <div class="inheritance">
+                <h5>Inheritance</h5>
+                  <div class="level0"><span class="xref">System.Object</span></div>
+                  <div class="level1"><span class="xref">AsyncQueue&lt;T&gt;</span></div>
+              </div>
+              <h6><strong>Namespace</strong>:Microsoft.PowerShell.EditorServices.Utility</h6>
+              <h6><strong>Assembly</strong>:Microsoft.PowerShell.EditorServices.dll</h6>
+              <h5 id="Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_syntax">Syntax</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public class AsyncQueue&lt;T&gt;</code></pre>
+              </div>
+              <h3 id="constructors">Constructors
+              </h3>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1__ctor.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Utility.AsyncQueue%601.%23ctor%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Utility/AsyncQueue.cs/#L42">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1__ctor" data-uid="Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.#ctor">AsyncQueue()</h4>
+              <div class="markdown level1 summary"><p>Initializes an empty instance of the AsyncQueue class.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public AsyncQueue()</code></pre>
+              </div>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1__ctor_System_Collections_Generic_IEnumerable__0__.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Utility.AsyncQueue%601.%23ctor(System.Collections.Generic.IEnumerable%7B%600%7D)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Utility/AsyncQueue.cs/#L54">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1__ctor_System_Collections_Generic_IEnumerable__0__" data-uid="Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.#ctor(System.Collections.Generic.IEnumerable{`0})">AsyncQueue(IEnumerable&lt;T&gt;)</h4>
+              <div class="markdown level1 summary"><p>Initializes an instance of the AsyncQueue class, pre-populated
+with the given collection of items.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public AsyncQueue(IEnumerable&lt;T&gt; initialItems)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;T&gt;</td>
+                    <td><em>initialItems</em></td>
+                    <td><p>An IEnumerable containing the initial items with which the queue will
+be populated.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3 id="properties">Properties
+              </h3>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_IsEmpty.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Utility.AsyncQueue%601.IsEmpty%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Utility/AsyncQueue.cs/#L33">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_IsEmpty" data-uid="Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.IsEmpty">IsEmpty</h4>
+              <div class="markdown level1 summary"><p>Returns true if the queue is currently empty.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public bool IsEmpty
+{
+
+    get;
+
+}</code></pre>
+              </div>
+              <h5 class="propertyValue"></h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Boolean</span></td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3 id="methods">Methods
+              </h3>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_DequeueAsync.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Utility.AsyncQueue%601.DequeueAsync%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Utility/AsyncQueue.cs/#L104">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_DequeueAsync" data-uid="Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.DequeueAsync">DequeueAsync()</h4>
+              <div class="markdown level1 summary"><p>Dequeues an item from the queue or waits asynchronously
+until an item is available.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public Task&lt;T&gt; DequeueAsync()</code></pre>
+              </div>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span>&lt;T&gt;</td>
+                    <td><p>A Task which can be awaited until a value can be dequeued.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_DequeueAsync_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Utility.AsyncQueue%601.DequeueAsync(System.Threading.CancellationToken)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Utility/AsyncQueue.cs/#L120">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_DequeueAsync_System_Threading_CancellationToken_" data-uid="Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.DequeueAsync(System.Threading.CancellationToken)">DequeueAsync(CancellationToken)</h4>
+              <div class="markdown level1 summary"><p>Dequeues an item from the queue or waits asynchronously
+until an item is available.  The wait can be cancelled
+using the given CancellationToken.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public Task&lt;T&gt; DequeueAsync(CancellationToken cancellationToken)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.CancellationToken</span></td>
+                    <td><em>cancellationToken</em></td>
+                    <td><p>A CancellationToken with which a dequeue wait can be cancelled.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span>&lt;T&gt;</td>
+                    <td><p>A Task which can be awaited until a value can be dequeued.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="small pull-right mobile-hide">
+                <span class="divider">|</span>
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_EnqueueAsync__0_.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Utility.AsyncQueue%601.EnqueueAsync(%600)%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+              </span>
+              <span class="small pull-right mobile-hide">
+                <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/src/PowerShellEditorServices/Utility/AsyncQueue.cs/#L72">View Source</a>
+              </span>
+              <h4 id="Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1_EnqueueAsync__0_" data-uid="Microsoft.PowerShell.EditorServices.Utility.AsyncQueue`1.EnqueueAsync(`0)">EnqueueAsync(T)</h4>
+              <div class="markdown level1 summary"><p>Enqueues an item onto the end of the queue.</p>
+</div>
+              <div class="markdown level1 conceptual"></div>
+              <h5 class="decalaration">Declaration</h5>
+              <div class="codewrapper">
+                <pre><code class="lang-csharp hljs">public Task EnqueueAsync(T item)</code></pre>
+              </div>
+              <h5 class="parameters">Parameters</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">T</span></td>
+                    <td><em>item</em></td>
+                    <td><p>The item to be added to the queue.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="returns">Returns</h5>
+              <table class="table table-bordered table-striped table-condensed">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="xref">System.Threading.Tasks.Task</span></td>
+                    <td><p>A Task which can be awaited until the synchronized enqueue
+operation completes.</p>
+</td>
+                  </tr>
+                </tbody>
+              </table>
+            </article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+            <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+            </nav>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="inner-footer">
+          <p>© Microsoft &nbsp;//&nbsp; Generated with <a href="https://github.com/dotnet/docfx">DocFX</a></p>
+          </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>

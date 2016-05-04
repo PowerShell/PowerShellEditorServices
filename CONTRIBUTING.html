@@ -1,0 +1,216 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Contribution Guidelines </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Contribution Guidelines ">
+    
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="styles/docfx.vendor.css">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/docfx.css">
+    <link rel="stylesheet" href="styles/style.css">
+    <meta property="docfx:navrel" content="toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <!--
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+    ga('create', 'UA-63735192-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+    -->
+  </head>  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav class="navbar navbar-inverse">
+             <div class="container">
+               <a href=""><img height="50px" src="images/PowerShell_logo.png" style="float:right;"></a>
+               <div class="navbar-header ">
+                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                   <span class="sr-only">Toggle navigation</span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                 </button>
+                 <a class="navbar-brand" href=""><span class="dotnet">PowerShell Editor Services</span></a>
+               </div>
+               <div id="navbar" class="collapse navbar-collapse">
+               </div><!--/.nav-collapse -->
+             </div>
+           </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content">
+        <div class="article row grid">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content">
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/CONTRIBUTING.md/#L1" class="pull-right mobile-hide"><span class="fa fa-github"></span> Improve this Doc</a>
+              <h1 id="contribution-guidelines">Contribution Guidelines</h1>
+              
+<p>We welcome many kinds of community contributions to this project!  Whether it&#39;s a feature implementation, 
+bug fix, or a good idea, please create an issue so that we can discuss it.  It is not necessary to create an 
+issue before sending a pull request but it may speed up the process if we can discuss your idea before 
+you start implementing it.</p>
+<p>Because this project exposes a couple different public APIs, we must be very mindful of any potential breaking 
+changes.  Some contributions may not be accepted if they risk introducing breaking changes or if they 
+don&#39;t match the goals of the project.  The core maintainer team has the right of final approval over
+any contribution to this project.  However, we are very happy to hear community feedback on any decision 
+so that we can ensure we are solving the right problems in the right way.</p>
+<h2 id="ways-to-contribute">Ways to Contribute</h2>
+<ul>
+<li>File a bug or feature request as an <a href="https://github.com/PowerShell/PowerShellEditorServices/issues">issue</a></li>
+<li>Comment on existing issues to give your feedback on how they should be fixed/implemented</li>
+<li>Contribute a bug fix or feature implementation by submitting a pull request</li>
+<li>Contribute more unit tests for feature areas that lack good coverage</li>
+<li>Review the pull requests that others submit to ensure they follow <a href="#pull-request-guidelines">established guidelines</a></li>
+<li>Help others gets started with the project by contributing documentation or hanging out
+in the #editors room in the <a href="http://slack.poshcode.org">PowerShell community Slack chat</a>.</li>
+</ul>
+<h2 id="code-contribution-guidelines">Code Contribution Guidelines</h2>
+<p>Here&#39;s a high level list of guidelines to follow to ensure your code contribution is accepted:</p>
+<ul>
+<li>Follow established guidelines for coding style and design</li>
+<li>Follow established guidelines for commit hygiene</li>
+<li>Write unit tests to validate new features and bug fixes</li>
+<li>Ensure that the &#39;Release&#39; build and unit tests pass locally</li>
+<li>Ensure that the AppVeyor build passes for your change</li>
+<li>Respond to all review feedback and final commit cleanup</li>
+</ul>
+<h3 id="practice-good-commit-hygiene">Practice Good Commit Hygiene</h3>
+<p>First of all, make sure you are practicing <a href="http://blog.ericbmerritt.com/2011/09/21/commit-hygiene-and-git.html">good commit hygiene</a>
+so that your commits provide a good history of the changes you are making.  To be more specific:</p>
+<ul>
+<li><p><strong>Write good commit messages</strong></p>
+<p>Commit messages should be clearly written so that a person can look at the commit log and understand
+how and why a given change was made.  Here is a great model commit message taken from a <a href="http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html">blog post
+by Tim Pope</a>:</p>
+<pre><code>Capitalized, short (50 chars or less) summary
+
+More detailed explanatory text, if necessary.  Wrap it to about 72
+characters or so.  In some contexts, the first line is treated as the
+subject of an email and the rest of the text as the body.  The blank
+line separating the summary from the body is critical (unless you omit
+the body entirely); tools like rebase can get confused if you run the
+two together.
+
+Write your commit message in the imperative: &quot;Fix bug&quot; and not &quot;Fixed bug&quot;
+or &quot;Fixes bug.&quot;  This convention matches up with commit messages generated
+by commands like git merge and git revert.
+
+Further paragraphs come after blank lines.
+
+- Bullet points are okay, too
+
+- Typically a hyphen or asterisk is used for the bullet, followed by a
+  single space, with blank lines in between, but conventions vary here
+
+- Use a hanging indent
+</code></pre><p>A change that fixes a known bug with an issue filed should use the proper syntax so that the <a href="https://help.github.com/articles/closing-issues-via-commit-messages/">issue
+is automatically closed</a> once 
+your change is merged.  Here&#39;s an example of what such a commit message should look like:</p>
+<pre><code>Fix #3: Catch NullReferenceException from DoThing
+
+This change adds a try/catch block to catch a NullReferenceException that
+gets thrown by DoThing [...]
+</code></pre></li>
+<li><p><strong>Squash your commits</strong></p>
+<p>If you are introducing a new feature but have implemented it over multiple commits, 
+please <a href="http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html">squash those commits</a> 
+into a single commit that contains all the changes in one place.  This especially applies to any &quot;oops&quot;
+commits where a file is forgotten or a typo is being fixed.  Following this approach makes it a lot easier 
+to pull those changes to other branches or roll back the change if necessary.</p>
+</li>
+<li><p><strong>Keep individual commits for larger changes</strong></p>
+<p>You can certainly maintain individual commits for different phases of a big change.  For example, if
+you want to reorganize some files before adding new functionality, have your first commit contain all
+of the file move changes and then the following commit can have all of the feature additions.  We
+highly recommend this approach so that larger commits don&#39;t turn into a jumbled mess.</p>
+</li>
+</ul>
+<h3 id="add-unit-tests-for-new-code">Add Unit Tests for New Code</h3>
+<p>If you&#39;re adding a new feature to the project, please make sure to include adequate <a href="http://xunit.github.io/">xUnit</a>
+tests with your change.  In this project, we have chosen write out unit tests in a way that uses the
+actual PowerShell environment rather than extensive interface mocking.  This allows us to be sure that
+our features will work in practice.  </p>
+<p>We do both component-level and scenario-level testing depending on what code is being tested.  We don&#39;t 
+expect contributors to test every possible edge case.  Testing mainline scenarios and the most common 
+failure scenarios is often good enough.</p>
+<p>We are very happy to accept unit test contributions for any feature areas that are more error-prone than
+others.  Also, if you find that a feature fails for you in a specific case, please feel free to file an issue
+that includes a unit test which reproduces the problem.  This will allow us to quickly implement a fix
+that resolves the problem.</p>
+<h3 id="build-release-before-submitting">Build &#39;Release&#39; Before Submitting</h3>
+<p>Before you send out your pull request, make sure that you have run a Release configuration build of the
+project and that all new and existing tests are passing.  The Release configuration build ensures that
+all public API interfaces have been documented correctly otherwise it throws an error.  We have turned
+on this check so that our project will always have good generated documentation.</p>
+<h3 id="follow-the-pull-request-process">Follow the Pull Request Process</h3>
+<ul>
+<li><p><strong>Create your pull request</strong></p>
+<p>Use the <a href="https://help.github.com/articles/using-pull-requests/">typical process</a> to send a pull request 
+from your fork of the project.  In your pull request message, please give a high-level summary of the
+changes that you have made so that reviewers understand the intent of the changes.  You should receive
+initial comments within a day or two, but please feel free to ping if things are taking longer than
+expected.</p>
+</li>
+<li><p><strong>The build and unit tests must run green</strong></p>
+<p>When you submit your pull request, our automated build system on AppVeyor will attempt to run a
+Release build of your changes and then run all unit tests against the build.  If you notice that
+any of your unit tests have failed, please fix them by creating a new commit and then pushing it
+to your branch.  If you see that some unrelated test has failed, try re-running the build for your
+pull request.  If you continue to see issues, write a comment on the pull request and we will
+look into it.</p>
+</li>
+<li><p><strong>Respond to code review feedback</strong></p>
+<p>If the reviewers ask you to make changes, make them as a new commit to your branch and push them so
+that they are made available for a final review pass.  Do not rebase the fixes just yet so that the
+commit hash changes don&#39;t upset GitHub&#39;s pull request UI.  </p>
+</li>
+<li><p><strong>If necessary, do a final rebase</strong></p>
+<p>Once your final changes have been accepted, we may ask you to do a final rebase to have your commits
+so that they follow our commit guidelines.  If specific guidance is given, please follow it when
+rebasing your commits.  Once you do your final push and we see the AppVeyor build pass, we will
+merge your changes!</p>
+</li>
+</ul>
+
+            </article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+            <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+            </nav>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="inner-footer">
+          <p>© Microsoft &nbsp;//&nbsp; Generated with <a href="https://github.com/dotnet/docfx">DocFX</a></p>
+          </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="styles/docfx.js"></script>
+    <script type="text/javascript" src="styles/main.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>

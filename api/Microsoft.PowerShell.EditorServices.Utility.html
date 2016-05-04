@@ -1,0 +1,146 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Namespace Microsoft.PowerShell.EditorServices.Utility
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Namespace Microsoft.PowerShell.EditorServices.Utility
+   ">
+    
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/style.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <!--
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+    ga('create', 'UA-63735192-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+    -->
+  </head>  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav class="navbar navbar-inverse">
+             <div class="container">
+               <a href="../"><img height="50px" src="../images/PowerShell_logo.png" style="float:right;"></a>
+               <div class="navbar-header ">
+                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                   <span class="sr-only">Toggle navigation</span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                 </button>
+                 <a class="navbar-brand" href="../"><span class="dotnet">PowerShell Editor Services</span></a>
+               </div>
+               <div id="navbar" class="collapse navbar-collapse">
+               </div><!--/.nav-collapse -->
+             </div>
+           </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content">
+              
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/new/daviwil/extensions/docs/apispec/new?filename=Microsoft_PowerShell_EditorServices_Utility.md&amp;value=---%0Auid%3A%20Microsoft.PowerShell.EditorServices.Utility%0Aremarks%3A%20'*THIS*%20is%20remarks%20overriden%20in%20*MARKDOWN*%20file'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="pull-right mobile-hide"><span class="fa fa-github"></span>Improve this Doc</a>
+              <h1 id="Microsoft_PowerShell_EditorServices_Utility" data-uid="Microsoft.PowerShell.EditorServices.Utility">Namespace Microsoft.PowerShell.EditorServices.Utility
+              </h1>
+              <div class="markdown level0 summary"></div>
+              <div class="markdown level0 conceptual"></div>
+              <div class="markdown level0 remarks"></div>
+                <h3 id="classes">Classes
+              </h3>
+                  <h4><a class="xref" href="Microsoft.PowerShell.EditorServices.Utility.AsyncContext.html#Microsoft_PowerShell_EditorServices_Utility_AsyncContext">AsyncContext</a></h4>
+                  <section><p>Simplifies the setup of a SynchronizationContext for the use
+of async calls in the current thread.</p>
+</section>
+                  <h4><a class="xref" href="Microsoft.PowerShell.EditorServices.Utility.AsyncContextThread.html#Microsoft_PowerShell_EditorServices_Utility_AsyncContextThread">AsyncContextThread</a></h4>
+                  <section><p>Provides a simplified interface for creating a new thread
+and establishing an AsyncContext in it.</p>
+</section>
+                  <h4><a class="xref" href="Microsoft.PowerShell.EditorServices.Utility.AsyncDebouncer%601.html#Microsoft_PowerShell_EditorServices_Utility_AsyncDebouncer_1">AsyncDebouncer</a>&lt;TInvokeArgs&gt;</h4>
+                  <section><p>Restricts the invocation of an operation to a specified time
+interval.  Can also cause previous requests to be cancelled
+by new requests within that time window.  Typically used for
+buffering information for an operation or ensuring that an
+operation only runs after some interval.</p>
+</section>
+                  <h4><a class="xref" href="Microsoft.PowerShell.EditorServices.Utility.AsyncLock.html#Microsoft_PowerShell_EditorServices_Utility_AsyncLock">AsyncLock</a></h4>
+                  <section><p>Provides a simple wrapper over a SemaphoreSlim to allow
+synchronization locking inside of async calls.  Cannot be
+used recursively.</p>
+</section>
+                  <h4><a class="xref" href="Microsoft.PowerShell.EditorServices.Utility.AsyncQueue%601.html#Microsoft_PowerShell_EditorServices_Utility_AsyncQueue_1">AsyncQueue</a>&lt;T&gt;</h4>
+                  <section><p>Provides a synchronized queue which can be used from within async
+operations.  This is primarily used for producer/consumer scenarios.</p>
+</section>
+                  <h4><a class="xref" href="Microsoft.PowerShell.EditorServices.Utility.Logger.html#Microsoft_PowerShell_EditorServices_Utility_Logger">Logger</a></h4>
+                  <section><p>Provides a simple logging interface.  May be replaced with a
+more robust solution at a later date.</p>
+</section>
+                  <h4><a class="xref" href="Microsoft.PowerShell.EditorServices.Utility.ThreadSynchronizationContext.html#Microsoft_PowerShell_EditorServices_Utility_ThreadSynchronizationContext">ThreadSynchronizationContext</a></h4>
+                  <section><p>Provides a SynchronizationContext implementation that can be used
+in console applications or any thread which doesn&#39;t have its
+own SynchronizationContext.</p>
+</section>
+                  <h4><a class="xref" href="Microsoft.PowerShell.EditorServices.Utility.Validate.html#Microsoft_PowerShell_EditorServices_Utility_Validate">Validate</a></h4>
+                  <section><p>Provides common validation methods to simplify method
+parameter checks.</p>
+</section>
+                <h3 id="enums">Enums
+              </h3>
+                  <h4><a class="xref" href="Microsoft.PowerShell.EditorServices.Utility.LogLevel.html#Microsoft_PowerShell_EditorServices_Utility_LogLevel">LogLevel</a></h4>
+                  <section><p>Defines the level indicators for log messages.</p>
+</section>
+            </article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+            <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+            </nav>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="inner-footer">
+          <p>© Microsoft &nbsp;//&nbsp; Generated with <a href="https://github.com/dotnet/docfx">DocFX</a></p>
+          </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>

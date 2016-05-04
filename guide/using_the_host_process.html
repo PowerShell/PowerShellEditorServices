@@ -1,0 +1,1006 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Using the PowerShell Editor Services Host Process </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Using the PowerShell Editor Services Host Process ">
+    
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/style.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <!--
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+    ga('create', 'UA-63735192-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+    -->
+  </head>  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav class="navbar navbar-inverse">
+             <div class="container">
+               <a href="../"><img height="50px" src="../images/PowerShell_logo.png" style="float:right;"></a>
+               <div class="navbar-header ">
+                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                   <span class="sr-only">Toggle navigation</span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                   <span class="icon-bar"></span>
+                 </button>
+                 <a class="navbar-brand" href="../"><span class="dotnet">PowerShell Editor Services</span></a>
+               </div>
+               <div id="navbar" class="collapse navbar-collapse">
+               </div><!--/.nav-collapse -->
+             </div>
+           </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content">
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/docs/guide/using_the_host_process.md/#L1" class="pull-right mobile-hide"><span class="fa fa-github"></span> Improve this Doc</a>
+              <h1 id="using-the-powershell-editor-services-host-process">Using the PowerShell Editor Services Host Process</h1>
+              
+<p>The PowerShell Editor Services host process provides an editor-agnostic interface for
+leveraging the core .NET API.</p>
+<blockquote><p>WARNING: Much of the information in this file is out of date due to recent protocol
+changes.  The general details in the document still apply but the schema of the language service
+message has changed a lot.  This document will be updated soon with the correct details.</p>
+</blockquote>
+<h2 id="launching-the-host-process">Launching the Host Process</h2>
+<p>From your editor&#39;s PowerShell plugin code, launch <code>Microsoft.PowerShell.EditorServices.Host.exe</code>
+using an editor-native process API that allows you to read and write this process&#39; standard in/out
+streams.  All communication with the host process occurs via this channel.</p>
+<p>It is recommended that the process I/O be dealt with as a byte stream rather than read as a
+string since different parts of the message format could be sent with different text encodings
+(see next section).</p>
+<p>It is expected that an editor will launch one instance of the host process for each PowerShell
+&#39;workspace&#39; that the user has opened.  Generally this would map to a single top-level folder
+which contains all of the user&#39;s PowerShell script files for a given project.</p>
+<h1 id="message-protocol">Message Protocol</h1>
+<p>A message consists of two parts: a header section and the message body.  For now, there is
+only one header, <code>Content-Length</code>.  This header, written with ASCII encoding, specifies the
+UTF-8 byte length of the message content to follow.  The host process expects that all messages
+sent to it will come with an accurate <code>Content-Length</code> header so that it knows exactly how many
+bytes to read.  Likewise, all messages returned from the host process will be sent in this manner.</p>
+<h2 id="message-schema">Message Schema</h2>
+<p>The body of a message is encoded in JSON and conforms to a specific schema.  There are three types of
+messages that can be transmitted between editor and host process: <code>Request</code>, <code>Response</code>, and <code>Event</code>.</p>
+<h3 id="common-fields">Common Fields</h3>
+<p>The common fields shared between all message types are as follows:</p>
+<ul>
+<li><code>seq</code>: A sequence number that increases with each message sent from the editor to the host.
+Even though this field shows up on all message types, it is generally only used to correlate
+reponse messages to the initial request that caused it.</li>
+<li><code>type</code>: The type of message being transmitted, either <code>request</code>, <code>response</code>, or <code>event</code>.</li>
+</ul>
+<h3 id="request-fields">Request Fields</h3>
+<p>A request gets sent by the editor when a particular type of behavior is needed.
+In this case, the <code>type</code> field will be set to <code>request</code>.</p>
+<ul>
+<li><code>command</code>: The request type.  There are a variety of request types that will be enumerated
+later in this document.</li>
+<li><code>arguments</code>: A JSON object containing arguments for the request, varies per each request <code>command</code>.</li>
+</ul>
+<p><em>NOTE: Some <code>request</code> types do not require a matching <code>response</code> or may cause <code>events</code> to be raised at a later time</em></p>
+<h3 id="response-fields">Response Fields</h3>
+<p>A response gets sent by the host process when a request completes or fails.  In this case,
+the <code>type</code>field will be set to <code>response</code>.</p>
+<ul>
+<li><code>request_seq</code>: The <code>seq</code> number that was included with the original request, used to help
+the editor correlate the response to the original request</li>
+<li><code>command</code>: The name of the request command to which this response relates</li>
+<li><code>body</code>: A JSON object body for the response, varies per each response <code>command</code>.</li>
+<li><code>success</code>: A boolean indicating whether the request was successful</li>
+<li><code>message</code>: An optional response message, generally used when <code>success</code> is set to <code>false</code>.</li>
+</ul>
+<h3 id="event-fields">Event Fields</h3>
+<p>An event gets sent by the host process when</p>
+<ul>
+<li><code>event</code>: The name of the event type to which this event relates</li>
+<li><code>body</code>: A JSON object body for the event, varies per each <code>event</code> type</li>
+</ul>
+<h1 id="request-and-response-types">Request and Response Types</h1>
+<h2 id="file-management">File Management</h2>
+<h3 id="-open-"><code>open</code></h3>
+<p>This request is sent by the editor when the user opens a file with a known PowerShell extension.  It causes
+the file to be opened by the language service and parsed for syntax errors.</p>
+<h4 id="request">Request</h4>
+<p>The arguments object specifies the absolute file path to be loaded.</p>
+<pre><code class="lang-json">    {
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;command&quot;: &quot;open&quot;,
+      &quot;arguments&quot;: {
+        &quot;file&quot;: &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/Stop-Process2.ps1&quot;
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<p>No response is needed for this command.</p>
+<h3 id="-close-"><code>close</code></h3>
+<p>This request is sent by the editor when the user closes a file with a known PowerShell extension which was
+previously opened in the language service.</p>
+<h4 id="request">Request</h4>
+<p>The arguments object specifies the absolute file path to be closed.</p>
+<pre><code class="lang-json">    {
+      &quot;seq&quot;: 3,
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;command&quot;: &quot;close&quot;,
+      &quot;arguments&quot;: {
+        &quot;file&quot;: &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/Stop-Process2.ps1&quot;
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<p>No response is needed for this command.</p>
+<h3 id="-change-"><code>change</code></h3>
+<p>This request is sent by the editor when the user changes the contents of a PowerShell file that has previously
+been opened in the language service.  Depending on how the request arguments are specified, the file change could
+either be an arbitrary-length string insertion, region delete, or region replacement.</p>
+<p>It is up to the editor to decide how often to send these requests in response
+to the user&#39;s typing activity.  The language service can deal with change deltas of any length, so it is really
+just a matter of preference how often <code>change</code> requests are sent.</p>
+<h4 id="request">Request</h4>
+<p>The arguments for this request specify the absolute path of the <code>file</code> being changed as well as the complete details
+of the edit that the user performed.  The <code>line</code>/<code>endLine</code> and <code>offset</code>/<code>endOffset</code> (column) numbers indicate the
+1-based range of the file that is being replaced.  The <code>insertString</code> field indicates the string that will be
+inserted.  In the specified range.</p>
+<p><em>NOTE: In the very near future, all file locations will be specified with zero-based coordinates.</em></p>
+<pre><code class="lang-json">    {
+      &quot;seq&quot;: 9,
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;command&quot;: &quot;change&quot;,
+      &quot;arguments&quot;: {
+        &quot;file&quot;: &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/Stop-Process2.ps1&quot;,
+        &quot;line&quot;: 39,
+        &quot;offset&quot;: 5,
+        &quot;endLine&quot;: 39,
+        &quot;endOffset&quot;: 5,
+        &quot;insertString&quot;: &quot;Test\r\nchange&quot;
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<p>No response is needed for this command.</p>
+<h3 id="-geterr-"><code>geterr</code></h3>
+<p>This request causes script diagnostics to be performed on a list of script file paths.  The editor
+will typically send this request after every successful <code>change</code> request (though it is best to throttle
+these requests on the editor side so that it doesn&#39;t overwhelm the host).  Responses will be sent back
+as <code>syntaxDiag</code> and <code>semanticDiag</code> events.</p>
+<h4 id="request">Request</h4>
+<p>The arguments for this request specify the list of <code>files</code> to be analyzed (sorted by those most recently changed)
+and a millisecond <code>delay</code> value which instructs the language service to wait for some period before performing
+diagnostics.  If another <code>geterr</code> request is sent before the specified <code>delay</code> expires, the original request will
+be cancelled server-side and a new delay period will start.</p>
+<pre><code class="lang-json">    {
+      &quot;seq&quot;: 1,
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;command&quot;: &quot;geterr&quot;,
+      &quot;arguments&quot;: {
+        &quot;delay&quot;: 750,
+        &quot;files&quot;: [
+          &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/Stop-Process2.ps1&quot;
+        ]
+      }
+    }
+</code></pre>
+<h2 id="code-completions">Code Completions</h2>
+<h3 id="-completions-"><code>completions</code></h3>
+<h3 id="request">Request</h3>
+<pre><code class="lang-json">    {
+      &quot;seq&quot;: 34,
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;command&quot;: &quot;completions&quot;,
+      &quot;arguments&quot;: {
+        &quot;file&quot;: &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/Stop-Process2.ps1&quot;,
+        &quot;line&quot;: 34,
+        &quot;offset&quot;: 9
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 34,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;completions&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: [
+        {
+          &quot;name&quot;: &quot;Get-Acl&quot;,
+          &quot;kind&quot;: &quot;method&quot;,
+          &quot;kindModifiers&quot;: null,
+          &quot;sortText&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;Get-Alias&quot;,
+          &quot;kind&quot;: &quot;method&quot;,
+          &quot;kindModifiers&quot;: null,
+          &quot;sortText&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;Get-AliasPattern&quot;,
+          &quot;kind&quot;: &quot;method&quot;,
+          &quot;kindModifiers&quot;: null,
+          &quot;sortText&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;Get-AppLockerFileInformation&quot;,
+          &quot;kind&quot;: &quot;method&quot;,
+          &quot;kindModifiers&quot;: null,
+          &quot;sortText&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;Get-AppLockerPolicy&quot;,
+          &quot;kind&quot;: &quot;method&quot;,
+          &quot;kindModifiers&quot;: null,
+          &quot;sortText&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;Get-AppxDefaultVolume&quot;,
+          &quot;kind&quot;: &quot;method&quot;,
+          &quot;kindModifiers&quot;: null,
+          &quot;sortText&quot;: null
+        },
+
+        ... many more completions ...
+
+      ],
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-completionentrydetails-"><code>completionEntryDetails</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;seq&quot;: 37,
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;command&quot;: &quot;completionEntryDetails&quot;,
+      &quot;arguments&quot;: {
+        &quot;file&quot;: &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/Stop-Process2.ps1&quot;,
+        &quot;line&quot;: 34,
+        &quot;offset&quot;: 9,
+        &quot;entryNames&quot;: [
+          &quot;Get-Acl&quot;
+        ]
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 37,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;completionEntryDetails&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: [
+        {
+          &quot;name&quot;: null,
+          &quot;kind&quot;: null,
+          &quot;kindModifiers&quot;: null,
+          &quot;displayParts&quot;: null,
+          &quot;documentation&quot;: null,
+          &quot;docString&quot;: null
+        }
+      ],
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-signaturehelp-"><code>signatureHelp</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;seq&quot;: 36,
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;command&quot;: &quot;signatureHelp&quot;,
+      &quot;arguments&quot;: {
+        &quot;file&quot;: &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/Stop-Process2.ps1&quot;,
+        &quot;line&quot;: 34,
+        &quot;offset&quot;: 9
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<p><em>* TODO: This is a bad example, find another</em>*</p>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 36,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;signatureHelp&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: null,
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+`
+</code></pre>
+<h2 id="symbol-operations">Symbol Operations</h2>
+<h3 id="-definition-"><code>definition</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;seq&quot;: 20,
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;command&quot;: &quot;definition&quot;,
+      &quot;arguments&quot;: {
+        &quot;file&quot;: &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/StopTest.ps1&quot;,
+        &quot;line&quot;: 8,
+        &quot;offset&quot;: 10
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 20,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;definition&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: [
+        {
+          &quot;file&quot;: &quot;c:\\Users\\daviwil\\.vscode\\extensions\\vscode-powershell\\examples\\Stop-Process2.ps1&quot;,
+          &quot;start&quot;: {
+            &quot;line&quot;: 11,
+            &quot;offset&quot;: 10
+          },
+          &quot;end&quot;: {
+            &quot;line&quot;: 11,
+            &quot;offset&quot;: 23
+          }
+        }
+      ],
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-references-"><code>references</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;seq&quot;: 2,
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;command&quot;: &quot;references&quot;,
+      &quot;arguments&quot;: {
+        &quot;file&quot;: &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/Stop-Process2.ps1&quot;,
+        &quot;line&quot;: 38,
+        &quot;offset&quot;: 12
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 2,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;references&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: {
+        &quot;refs&quot;: [
+          {
+            &quot;lineText&quot;: &quot;\t\t\tforeach ($process in $processes)&quot;,
+            &quot;isWriteAccess&quot;: true,
+            &quot;file&quot;: &quot;c:\\Users\\daviwil\\.vscode\\extensions\\vscode-powershell\\examples\\Stop-Process2.ps1&quot;,
+            &quot;start&quot;: {
+              &quot;line&quot;: 32,
+              &quot;offset&quot;: 13
+            },
+            &quot;end&quot;: {
+              &quot;line&quot;: 32,
+              &quot;offset&quot;: 21
+            }
+          }
+        ],
+        &quot;symbolName&quot;: &quot;$process&quot;,
+        &quot;symbolStartOffest&quot;: 690,
+        &quot;symbolDisplayString&quot;: &quot;$process&quot;
+      },
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-occurrences-"><code>occurrences</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;seq&quot;: 53,
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;command&quot;: &quot;occurrences&quot;,
+      &quot;arguments&quot;: {
+        &quot;file&quot;: &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/Stop-Process2.ps1&quot;,
+        &quot;line&quot;: 32,
+        &quot;offset&quot;: 17
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 53,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;occurrences&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: [
+        {
+          &quot;isWriteAccess&quot;: true,
+          &quot;file&quot;: &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/Stop-Process2.ps1&quot;,
+          &quot;start&quot;: {
+            &quot;line&quot;: 32,
+            &quot;offset&quot;: 13
+          },
+          &quot;end&quot;: {
+            &quot;line&quot;: 32,
+            &quot;offset&quot;: 21
+          }
+        },
+        {
+          &quot;isWriteAccess&quot;: true,
+          &quot;file&quot;: &quot;c:/Users/daviwil/.vscode/extensions/vscode-powershell/examples/Stop-Process2.ps1&quot;,
+          &quot;start&quot;: {
+            &quot;line&quot;: 35,
+            &quot;offset&quot;: 11
+          },
+          &quot;end&quot;: {
+            &quot;line&quot;: 35,
+            &quot;offset&quot;: 19
+          }
+        },
+
+        ... more occurrences ...
+
+      ],
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h2 id="debugger-operations">Debugger Operations</h2>
+<h3 id="-initialize-"><code>initialize</code></h3>
+<h3 id="-launch-"><code>launch</code></h3>
+<p>This request is sent by the editor when the user wants to launch a given script file in the
+debugger.</p>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 3,
+      &quot;command&quot;: &quot;launch&quot;,
+      &quot;arguments&quot;: {
+        &quot;program&quot;: &quot;c:\\Users\\daviwil\\.vscode\\extensions\\vscode-powershell\\examples\\DebugTest.ps1&quot;,
+        &quot;stopOnEntry&quot;: false,
+        &quot;arguments&quot;: null,
+        &quot;workingDirectory&quot;: &quot;c:\\Users\\daviwil\\.vscode\\extensions\\vscode-powershell\\examples&quot;,
+        &quot;runtimeExecutable&quot;: null,
+        &quot;runtimeArguments&quot;: null
+      }
+    }
+</code></pre>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 3,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;launch&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: null,
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-disconnect-"><code>disconnect</code></h3>
+<p>This request is sent by the editor when the user wants to terminate the debugging session before
+the script completes.  When this message is received, execution of the script is aborted and the
+instance of the host process is aborted.</p>
+<p><em>NOTE: For now, it is assumed that debugging will be performed in a separate instance of the
+ host process.  This will change in the next couple of minor releases.</em></p>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 22,
+      &quot;command&quot;: &quot;disconnect&quot;,
+      &quot;arguments&quot;: {
+        &quot;extensionHostData&quot;: {
+          &quot;restart&quot;: false
+        }
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 0,
+      &quot;success&quot;: false,
+      &quot;command&quot;: &quot;disconnect&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: null,
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-setbreakpoints-"><code>setBreakpoints</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 2,
+      &quot;command&quot;: &quot;setBreakpoints&quot;,
+      &quot;arguments&quot;: {
+        &quot;source&quot;: {
+          &quot;path&quot;: &quot;c:\\Users\\daviwil\\.vscode\\extensions\\vscode-powershell\\examples\\DebugTest.ps1&quot;
+        },
+        &quot;lines&quot;: [
+          10
+        ]
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 2,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;setBreakpoints&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: {
+        &quot;breakpoints&quot;: [
+          {
+            &quot;verified&quot;: true,
+            &quot;line&quot;: 10
+          }
+        ]
+      },
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-pause-"><code>pause</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 4,
+      &quot;command&quot;: &quot;pause&quot;
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<p>No response needed for this command.  The debugging service will send a <code>stopped</code> event
+when execution is stopped due to this request.</p>
+<h3 id="-continue-"><code>continue</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 9,
+      &quot;command&quot;: &quot;continue&quot;
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 9,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;continue&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: null,
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-next-"><code>next</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 9,
+      &quot;command&quot;: &quot;next&quot;
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 9,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;next&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: null,
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-stepin-"><code>stepIn</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 13,
+      &quot;command&quot;: &quot;stepIn&quot;
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 13,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;stepIn&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: null,
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-stepout-"><code>stepOut</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 17,
+      &quot;command&quot;: &quot;stepOut&quot;
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 17,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;stepOut&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: null,
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-threads-"><code>threads</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 5,
+      &quot;command&quot;: &quot;threads&quot;
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 5,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;threads&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: {
+        &quot;threads&quot;: [
+          {
+            &quot;id&quot;: 1,
+            &quot;name&quot;: &quot;Main Thread&quot;
+          }
+        ]
+      },
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-scopes-"><code>scopes</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 7,
+      &quot;command&quot;: &quot;scopes&quot;,
+      &quot;arguments&quot;: {
+        &quot;frameId&quot;: 1
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 7,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;scopes&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: {
+        &quot;scopes&quot;: [
+          {
+            &quot;name&quot;: &quot;Locals&quot;,
+            &quot;variablesReference&quot;: 1,
+            &quot;expensive&quot;: false
+          }
+        ]
+      },
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-variables-"><code>variables</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 8,
+      &quot;command&quot;: &quot;variables&quot;,
+      &quot;arguments&quot;: {
+        &quot;variablesReference&quot;: 1
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 8,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;variables&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: {
+        &quot;variables&quot;: [
+          {
+            &quot;name&quot;: &quot;?&quot;,
+            &quot;value&quot;: &quot;True&quot;,
+            &quot;variablesReference&quot;: 0
+          },
+          {
+            &quot;name&quot;: &quot;args&quot;,
+            &quot;value&quot;: &quot; &quot;,
+            &quot;variablesReference&quot;: 11
+          },
+          {
+            &quot;name&quot;: &quot;ConsoleFileName&quot;,
+            &quot;value&quot;: &quot;&quot;,
+            &quot;variablesReference&quot;: 0
+          },
+          {
+            &quot;name&quot;: &quot;ExecutionContext&quot;,
+            &quot;value&quot;: &quot; &quot;,
+            &quot;variablesReference&quot;: 13
+          },
+          {
+            &quot;name&quot;: &quot;false&quot;,
+            &quot;value&quot;: &quot;False&quot;,
+            &quot;variablesReference&quot;: 0
+          },
+          {
+            &quot;name&quot;: &quot;HOME&quot;,
+            &quot;value&quot;: &quot;C:\\Users\\daviwil&quot;,
+            &quot;variablesReference&quot;: 0
+          },
+
+          ... more variables ...
+
+        ]
+      },
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-stacktrace-"><code>stackTrace</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 6,
+      &quot;command&quot;: &quot;stackTrace&quot;,
+      &quot;arguments&quot;: {
+        &quot;threadId&quot;: 1,
+        &quot;levels&quot;: 20
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 6,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;stackTrace&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: {
+        &quot;stackFrames&quot;: [
+          {
+            &quot;id&quot;: 1,
+            &quot;name&quot;: &quot;Write-Item&quot;,
+            &quot;source&quot;: {
+              &quot;name&quot;: null,
+              &quot;path&quot;: &quot;C:\\Users\\daviwil\\.vscode\\extensions\\vscode-powershell\\examples\\DebugTest.ps1&quot;,
+              &quot;sourceReference&quot;: null
+            },
+            &quot;line&quot;: 10,
+            &quot;column&quot;: 9
+          },
+          {
+            &quot;id&quot;: 2,
+            &quot;name&quot;: &quot;Do-Work&quot;,
+            &quot;source&quot;: {
+              &quot;name&quot;: null,
+              &quot;path&quot;: &quot;C:\\Users\\daviwil\\.vscode\\extensions\\vscode-powershell\\examples\\DebugTest.ps1&quot;,
+              &quot;sourceReference&quot;: null
+            },
+            &quot;line&quot;: 18,
+            &quot;column&quot;: 5
+          },
+          {
+            &quot;id&quot;: 3,
+            &quot;name&quot;: &quot;&lt;ScriptBlock&gt;&quot;,
+            &quot;source&quot;: {
+              &quot;name&quot;: null,
+              &quot;path&quot;: &quot;C:\\Users\\daviwil\\.vscode\\extensions\\vscode-powershell\\examples\\DebugTest.ps1&quot;,
+              &quot;sourceReference&quot;: null
+            },
+            &quot;line&quot;: 23,
+            &quot;column&quot;: 1
+          }
+        ]
+      },
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h3 id="-evaluate-"><code>evaluate</code></h3>
+<h4 id="request">Request</h4>
+<pre><code class="lang-json">    {
+      &quot;type&quot;: &quot;request&quot;,
+      &quot;seq&quot;: 13,
+      &quot;command&quot;: &quot;evaluate&quot;,
+      &quot;arguments&quot;: {
+        &quot;expression&quot;: &quot;i&quot;,
+        &quot;frameId&quot;: 1
+      }
+    }
+</code></pre>
+<h4 id="response">Response</h4>
+<pre><code class="lang-json">    {
+      &quot;request_seq&quot;: 13,
+      &quot;success&quot;: true,
+      &quot;command&quot;: &quot;evaluate&quot;,
+      &quot;message&quot;: null,
+      &quot;body&quot;: {
+        &quot;result&quot;: &quot;2&quot;,
+        &quot;variablesReference&quot;: 0
+      },
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;response&quot;
+    }
+</code></pre>
+<h1 id="event-types">Event Types</h1>
+<h2 id="script-diagnostics">Script Diagnostics</h2>
+<h3 id="-syntaxdiag-"><code>syntaxDiag</code></h3>
+<pre><code class="lang-json">    {
+      &quot;event&quot;: &quot;syntaxDiag&quot;,
+      &quot;body&quot;: {
+        &quot;file&quot;: &quot;c:\\Users\\daviwil\\.vscode\\extensions\\vscode-powershell\\examples\\DebugTest.ps1&quot;,
+        &quot;diagnostics&quot;: [
+          {
+            &quot;start&quot;: {
+              &quot;line&quot;: 3,
+              &quot;offset&quot;: 1
+            },
+            &quot;end&quot;: {
+              &quot;line&quot;: 3,
+              &quot;offset&quot;: 2
+            },
+            &quot;text&quot;: &quot;Missing closing &#39;}&#39; in statement block or type definition.&quot;,
+            &quot;severity&quot;: 2
+          }
+        ]
+      },
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;event&quot;
+    }
+</code></pre>
+<h3 id="-semanticdiag-"><code>semanticDiag</code></h3>
+<pre><code class="lang-json">    {
+      &quot;event&quot;: &quot;semanticDiag&quot;,
+      &quot;body&quot;: {
+        &quot;file&quot;: &quot;c:\\Users\\daviwil\\.vscode\\extensions\\vscode-powershell\\examples\\DebugTest.ps1&quot;,
+        &quot;diagnostics&quot;: [
+          {
+            &quot;start&quot;: {
+              &quot;line&quot;: 14,
+              &quot;offset&quot;: 1
+            },
+            &quot;end&quot;: {
+              &quot;line&quot;: 21,
+              &quot;offset&quot;: 2
+            },
+            &quot;text&quot;: &quot;The cmdlet &#39;Do-Work&#39; uses an unapproved verb.&quot;,
+            &quot;severity&quot;: 1
+          },
+          {
+            &quot;start&quot;: {
+              &quot;line&quot;: 20,
+              &quot;offset&quot;: 5
+            },
+            &quot;end&quot;: {
+              &quot;line&quot;: 20,
+              &quot;offset&quot;: 23
+            },
+            &quot;text&quot;: &quot;File &#39;&#39; uses Write-Host. This is not recommended because it may not work in some hosts or there may even be no hosts at all. Use Write-Output instead.&quot;,
+            &quot;severity&quot;: 1
+          },
+          {
+            &quot;start&quot;: {
+              &quot;line&quot;: 18,
+              &quot;offset&quot;: 16
+            },
+            &quot;end&quot;: {
+              &quot;line&quot;: 18,
+              &quot;offset&quot;: 26
+            },
+            &quot;text&quot;: &quot;Variable &#39;workcount&#39; is not initialized. Non-global variables must be initialized. To fix a violation of this rule, please initialize non-global variables.&quot;,
+            &quot;severity&quot;: 1
+          }
+        ]
+      },
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;event&quot;
+    }
+</code></pre>
+<h2 id="language-service-events">Language Service Events</h2>
+<h3 id="-started-"><code>started</code></h3>
+<p>This message is sent as soon as the language service finishes initializing.  The editor will
+wait for this message to be received before it starts sending requests to the host.  This event
+has no body and will always be <code>null</code>.</p>
+<pre><code class="lang-json">    {
+      &quot;event&quot;: &quot;started&quot;,
+      &quot;body&quot;: null,
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;event&quot;
+    }
+</code></pre>
+<h2 id="debugger-events">Debugger Events</h2>
+<h3 id="-initialized-"><code>initialized</code></h3>
+<pre><code class="lang-json">    {
+      &quot;event&quot;: &quot;initialized&quot;,
+      &quot;body&quot;: null,
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;event&quot;
+    }
+</code></pre>
+<h3 id="-stopped-"><code>stopped</code></h3>
+<pre><code class="lang-json">    {
+      &quot;event&quot;: &quot;stopped&quot;,
+      &quot;body&quot;: {
+        &quot;reason&quot;: &quot;breakpoint&quot;,
+        &quot;threadId&quot;: 1,
+        &quot;source&quot;: {
+          &quot;name&quot;: null,
+          &quot;path&quot;: &quot;C:\\Users\\daviwil\\.vscode\\extensions\\vscode-powershell\\examples\\DebugTest.ps1&quot;,
+          &quot;sourceReference&quot;: null
+        },
+        &quot;line&quot;: 10,
+        &quot;column&quot;: 9,
+        &quot;text&quot;: null
+      },
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;event&quot;
+    }
+</code></pre>
+<h3 id="-terminated-"><code>terminated</code></h3>
+<pre><code class="lang-json">    {
+      &quot;event&quot;: &quot;terminated&quot;,
+      &quot;body&quot;: null,
+      &quot;seq&quot;: 0,
+      &quot;type&quot;: &quot;event&quot;
+    }
+</code></pre>
+<h1 id="host-process-lifecycle">Host Process Lifecycle</h1>
+<p>Right now, language and debugging service generally run separately.</p>
+<h2 id="language-service">Language Service</h2>
+<p><code>started</code> event, etc</p>
+<h2 id="debugging-service">Debugging Service</h2>
+
+            </article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+            <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+            </nav>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="inner-footer">
+          <p>© Microsoft &nbsp;//&nbsp; Generated with <a href="https://github.com/dotnet/docfx">DocFX</a></p>
+          </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
