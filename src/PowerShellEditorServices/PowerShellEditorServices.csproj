@@ -120,6 +120,7 @@
     <Compile Include="Utility\AsyncLock.cs" />
     <Compile Include="Utility\AsyncQueue.cs" />
     <Compile Include="Utility\AsyncContext.cs" />
+    <Compile Include="Utility\Extensions.cs" />
     <Compile Include="Utility\Logger.cs" />
     <Compile Include="Utility\ThreadSynchronizationContext.cs" />
     <Compile Include="Utility\Validate.cs" />

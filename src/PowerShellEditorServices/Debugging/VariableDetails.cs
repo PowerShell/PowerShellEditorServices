@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Management.Automation;
 using System.Reflection;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -159,44 +160,49 @@ namespace Microsoft.PowerShell.EditorServices
                             entry.Key,
                             GetValueString(entry.Value, GetIsExpandable(entry.Value)));
                 }
-                else if (value.ToString().Equals(objType.ToString()))
-                {
-                    // If the ToString() matches the type name, then display the type 
-                    // name in PowerShell format.
-                    string shortTypeName = objType.Name;
-
-                    // For arrays and ICollection, display the number of contained items.
-                    if (value is Array)
-                    {
-                        var arr = value as Array;
-                        if (arr.Rank == 1)
-                        {
-                            shortTypeName = InsertDimensionSize(shortTypeName, arr.Length);
-                        }
-                    }
-                    else if (value is ICollection)
-                    {
-                        var collection = (ICollection)value;
-                        shortTypeName = InsertDimensionSize(shortTypeName, collection.Count);
-                    }
-
-                    valueString = "[" + shortTypeName + "]";
-                }
                 else
                 {
-                    valueString = value.ToString();
+                    string valueToString = value.SafeToString();
+
+                    if (valueToString.Equals(objType.ToString()))
+                    {
+                        // If the ToString() matches the type name, then display the type 
+                        // name in PowerShell format.
+                        string shortTypeName = objType.Name;
+
+                        // For arrays and ICollection, display the number of contained items.
+                        if (value is Array)
+                        {
+                            var arr = value as Array;
+                            if (arr.Rank == 1)
+                            {
+                                shortTypeName = InsertDimensionSize(shortTypeName, arr.Length);
+                            }
+                        }
+                        else if (value is ICollection)
+                        {
+                            var collection = (ICollection)value;
+                            shortTypeName = InsertDimensionSize(shortTypeName, collection.Count);
+                        }
+
+                        valueString = "[" + shortTypeName + "]";
+                    }
+                    else
+                    {
+                        valueString = valueToString;
+                    }
                 }
             }
             else
             {
-                // ToString() output is not the typename, so display that as this object's value
+                // Value is a scalar (not expandable). If it's a string, display it directly otherwise use SafeToString()
                 if (value is string)
                 {
                     valueString = "\"" + value + "\"";
                 }
                 else
                 {
-                    valueString = value.ToString();
+                    valueString = value.SafeToString();
                 }
             }
 
