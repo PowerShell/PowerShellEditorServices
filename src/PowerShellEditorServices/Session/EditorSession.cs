@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Console;
+using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System.IO;
@@ -48,6 +49,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public ConsoleService ConsoleService { get; private set; }
 
+        /// <summary>
+        /// Gets the ExtensionService instance for this session.
+        /// </summary>
+        public ExtensionService ExtensionService { get; private set; }
+
         #endregion
 
         #region Public Methods
@@ -75,6 +81,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.LanguageService = new LanguageService(this.PowerShellContext);
             this.DebugService = new DebugService(this.PowerShellContext);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
+            this.ExtensionService = new ExtensionService(this.PowerShellContext);
 
             this.InstantiateAnalysisService();
 

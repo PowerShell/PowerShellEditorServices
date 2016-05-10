@@ -41,20 +41,28 @@ namespace Microsoft.PowerShell.EditorServices
         public CompletionResults()
         {
             this.Completions = new CompletionDetails[0];
-            this.ReplacedRange = new BufferRange();
+            this.ReplacedRange = new BufferRange(0, 0, 0, 0);
         }
 
         internal static CompletionResults Create(
             ScriptFile scriptFile,
             CommandCompletion commandCompletion)
         {
+            BufferRange replacedRange = null;
+
+            // Only calculate the replacement range if there are completion results
+            if (commandCompletion.CompletionMatches.Count > 0)
+            {
+                replacedRange =
+                    scriptFile.GetRangeBetweenOffsets(
+                        commandCompletion.ReplacementIndex,
+                        commandCompletion.ReplacementIndex + commandCompletion.ReplacementLength);
+            }
+
             return new CompletionResults
             {
                 Completions = GetCompletionsArray(commandCompletion),
-                ReplacedRange = 
-                    scriptFile.GetRangeBetweenOffsets(
-                        commandCompletion.ReplacementIndex,
-                        commandCompletion.ReplacementIndex + commandCompletion.ReplacementLength)
+                ReplacedRange = replacedRange
             };
         }
 
