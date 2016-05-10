@@ -58,9 +58,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Registers a new command in the editor.
         /// </summary>
         /// <param name="editorCommand">The EditorCommand to be registered.</param>
-        public void RegisterCommand(EditorCommand editorCommand)
+        /// <returns>True if the command is newly registered, false if the command already exists.</returns>
+        public bool RegisterCommand(EditorCommand editorCommand)
         {
-            this.extensionService.RegisterCommand(editorCommand);
+            return this.extensionService.RegisterCommand(editorCommand);
         }
 
         /// <summary>
