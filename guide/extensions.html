@@ -67,7 +67,7 @@
         <div class="article row grid-right">
           <div class="col-md-10">
             <article class="content wrap" id="_content">
-              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/extensions/docs/guide/extensions.md/#L1" class="pull-right mobile-hide"><span class="fa fa-github"></span> Improve this Doc</a>
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/api-docs/docs/guide/extensions.md/#L1" class="pull-right mobile-hide"><span class="fa fa-github"></span> Improve this Doc</a>
               <h1 id="extending-the-host-editor">Extending the Host Editor</h1>
               
 <p>PowerShell Editor Services exposes a common extensibility model which allows
@@ -90,35 +90,41 @@ property gives access to the editor&#39;s workspace, allowing you to create or o
 in the editor.</p>
 <h3 id="usage-examples">Usage Examples</h3>
 <h4 id="opening-a-file-in-the-editor">Opening a file in the editor</h4>
-<p><strong>TODO</strong></p>
+<pre><code class="lang-powershell"># Open the current user&#39;s profile for this editor
+$psEditor.Workspace.OpenFile($profile)
+</code></pre>
 <h4 id="manipulating-the-user-s-active-file-buffer">Manipulating the user&#39;s active file buffer</h4>
-<p><strong>TODO</strong></p>
+<pre><code class="lang-powershell"># Insert new text replacing the user&#39;s current selection
+$context = $psEditor.GetEditorContext()
+$context.InsertText(&quot;# All your script are belong to us&quot;, $context.SelectedRange)
+</code></pre>
 <h4 id="setting-the-selection-based-on-the-cursor-position">Setting the selection based on the cursor position</h4>
-<p><strong>TODO</strong></p>
-<p>The <code>$psEditor</code> object gives you the ability to write a script that can automate the
-host editor when run inside of it.  However, you may not want to give a user a plan
-script to run to perform some operation.
-within the host editor, automate operations in the editor.  What if you&#39;d like to</p>
+<pre><code class="lang-powershell"># Set the selection from their cursor position to the end of the same line
+$context = $psEditor.GetEditorContext()
+$context.SetSelection($context.CursorPosition, $context.CursorPosition.GetLineEnd())
+</code></pre>
 <h2 id="registering-editor-commands">Registering Editor Commands</h2>
-<p>It might be helpful to register a command with the editor so that your extension
-functionality is easily accessible to the user.  The <code>Register-EditorCommand</code>
-cmdlet can be used to register either a function, cmdlet, or ScriptBlock as a
+<p>The <code>$psEditor</code> object gives you the ability to write a script that can automate the
+host editor when run inside of it.  However, you may not want to give a user a plain
+script that performs some operation.  What if you&#39;d prefer to add a new command to the
+editor which can execute your code when the user invokes it?  The <code>Register-EditorCommand</code>
+cmdlet allows you to register either a function, cmdlet, or ScriptBlock as a
 command in the host editor.</p>
 <h3 id="registering-a-cmdlet-or-function-command">Registering a cmdlet or function command</h3>
 <pre><code class="lang-powershell">function Invoke-MyCommand {
-    Write-Output &quot;My extension function was invoked!&quot;
+    Write-Output &quot;My command&#39;s function was invoked!&quot;
 }
 
 Register-EditorCommand `
-    -Name &quot;MyExt.MyExtensionFunction&quot; `
-    -DisplayName &quot;My extension function&quot; `
-    -Function MyExtensionFunction
+    -Name &quot;MyModule.MyCommandWithFunction&quot; `
+    -DisplayName &quot;My command with function&quot; `
+    -Function Invoke-MyCommand
 </code></pre>
 <h3 id="registering-a-script-block-command">Registering a script block command</h3>
 <pre><code class="lang-powershell">Register-EditorCommand `
-    -Name &quot;MyExt.MyExtensionScriptBlock&quot; `
-    -DisplayName &quot;My extension script block&quot; `
-    -ScriptBlock { Write-Output &quot;My extension script block was invoked!&quot; }
+    -Name &quot;MyModule.MyCommandWithScriptBlock&quot; `
+    -DisplayName &quot;My command with script block&quot; `
+    -ScriptBlock { Write-Output &quot;My command&#39;s script block was invoked!&quot; }
 </code></pre>
 <h3 id="the-microsoft-powershell-editorservices-extensions-editorcontext-parameter">The <a class="xref" href="../api/Microsoft.PowerShell.EditorServices.Extensions.EditorContext.html#Microsoft_PowerShell_EditorServices_Extensions_EditorContext">EditorContext</a> parameter</h3>
 <p>Your function, cmdlet, or ScriptBlock can optionally accept a single parameter
@@ -132,8 +138,8 @@ type of the <a class="xref" href="../api/Microsoft.PowerShell.EditorServices.Ext
 so that you get full IntelliSense on your context parameter.</p>
 <p>Here is an example of using the <code>$context</code> parameter:</p>
 <pre><code class="lang-powershell">Register-EditorCommand `
-    -Name &quot;MyExt.MyExtensionScriptBlockWithContext&quot; `
-    -DisplayName &quot;My extension script block with context&quot; `
+    -Name &quot;MyModule.MyEditorCommandWithContext&quot; `
+    -DisplayName &quot;My command with context usage&quot; `
     -ScriptBlock {
         param([Microsoft.PowerShell.EditorServices.Extensions.EditorContext]$context)
         Write-Output &quot;The user&#39;s cursor is on line $($context.CursorPosition.Line)!&quot;
@@ -152,9 +158,16 @@ console.</p>
 <p>If you&#39;ve registered an editor command, either through your own code or
 a module that you&#39;ve installed, you can launch it using your editor&#39;s <strong>Show
 additional commands from PowerShell modules</strong> command.  Running this command
-will cause a list of commands to be displayed.  Here&#39;s an example of how this
-looks in Visual Studio Code:</p>
-<p><strong>TODO TODO TODO</strong></p>
+will cause a list of commands to be displayed.</p>
+<p>In Visual Studio Code, press <code>Ctrl+Shift+P</code> to open the command palette.  Type
+the characters <code>addi</code> until you see the following item and then press <code>Enter</code>:</p>
+<p><img src="../images/vsc_command_palette.png" alt="Command palette screenshot"></p>
+<p>The list that appears next will show all of the editor commands that have
+been registered with PowerShell code.  Selecting one of them will cause its
+function or ScriptBlock to be executed.</p>
+<p><img src="../images/vsc_editor_command_list.png" alt="Command list screenshot"></p>
+<p>Other editors should follow a similar pattern, exposing this command list through
+a &quot;Show additional commands&quot; item in the command palette.</p>
 <blockquote><p>NOTE: In the future we hope to be able to register editor commands at the top level
 so that these commands are easier to find and so that they also can be bound to
 hotkeys for quick access.</p>
@@ -162,13 +175,13 @@ hotkeys for quick access.</p>
 <h2 id="shipping-an-extension-module">Shipping an Extension Module</h2>
 <p>You can easily ship a module containing editor commands which get registered
 if the module is loaded into an editor session.  Assuming that you&#39;ve exported
-a function or cmdlet named <code>Invoke-MyExtensionCommand</code> in your module&#39;s psd1
+a function or cmdlet named <code>Invoke-MyEditorCommand</code> in your module&#39;s psd1
 file, you can add this code at the very end of your module&#39;s psm1 file:</p>
 <pre><code class="lang-powershell">if ($psEditor) {
     Register-EditorCommand `
-        -Name &quot;MyModule.MyExtensionCommand&quot; `
-        -DisplayName &quot;My extension command&quot; `
-        -Function Invoke-MyExtensionCommand `
+        -Name &quot;MyModule.MyEditorCommand&quot; `
+        -DisplayName &quot;My editor command&quot; `
+        -Function Invoke-MyEditorCommand `
         -SuppressOutput
 }
 </code></pre>
