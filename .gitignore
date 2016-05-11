@@ -26,6 +26,11 @@ lock
 registered_data.ini
 .vs/
 
+docs/_site/
+docs/_repo/
+docs/metadata/
+tools/
+
 # quickbuild.exe
 /VersionGeneratingLogs/
 QLogs

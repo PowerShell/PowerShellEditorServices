@@ -1,0 +1,69 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [ "*.csproj" ],
+          "cwd": "../src/PowerShellEditorServices",
+          "exclude": [ "**/obj/**", "**/bin/**" ]
+        }
+      ],
+      "dest": "metadata/api"
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "cwd": "metadata/api",
+        "files": [
+          "**/**.yml"
+        ],
+        "dest": "api"
+      },
+      {
+        "cwd": "../",
+        "files": [
+          "CONTRIBUTING.md",
+          "CHANGELOG.md"
+        ]
+      },
+      {
+        "cwd":  ".",
+        "files": [
+          "toc.yml",
+          "index.md",
+          "api/index.md",
+          "guide/**.md"
+        ],
+        "exclude": [
+          "metadata/**",
+          "_site/**"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "images/**"
+        ],
+        "exclude": [
+          "obj/**",
+          "_site/**"
+        ]
+      }
+    ],
+    "overwrite": [
+      {
+        "files": [
+          "apidoc/**.md"
+        ],
+        "exclude": [
+          "obj/**",
+          "_site/**"
+        ]
+      }
+    ],
+    "dest": "_site",
+    "template": [ "default", "template" ]
+  }
+}

@@ -3,18 +3,18 @@
 The PowerShell Editor Services host process provides an editor-agnostic interface for
 leveraging the core .NET API.
 
-**WARNING: Some of the information in this file is out of date due to recent protocol
-changes.  The general details in the document still apply but the schema of the language service
-message has changed a lot.  This document will be updated soon with the correct details.**
+> WARNING: Much of the information in this file is out of date due to recent protocol
+> changes.  The general details in the document still apply but the schema of the language service
+> message has changed a lot.  This document will be updated soon with the correct details.
 
 ## Launching the Host Process
 
-From your editor's PowerShell plugin code, launch `Microsoft.PowerShell.EditorServices.Host.exe` 
-using an editor-native process API that allows you to read and write this process' standard in/out 
+From your editor's PowerShell plugin code, launch `Microsoft.PowerShell.EditorServices.Host.exe`
+using an editor-native process API that allows you to read and write this process' standard in/out
 streams.  All communication with the host process occurs via this channel.
 
-It is recommended that the process I/O be dealt with as a byte stream rather than read as a 
-string since different parts of the message format could be sent with different text encodings 
+It is recommended that the process I/O be dealt with as a byte stream rather than read as a
+string since different parts of the message format could be sent with different text encodings
 (see next section).
 
 It is expected that an editor will launch one instance of the host process for each PowerShell
@@ -24,7 +24,7 @@ which contains all of the user's PowerShell script files for a given project.
 # Message Protocol
 
 A message consists of two parts: a header section and the message body.  For now, there is
-only one header, `Content-Length`.  This header, written with ASCII encoding, specifies the 
+only one header, `Content-Length`.  This header, written with ASCII encoding, specifies the
 UTF-8 byte length of the message content to follow.  The host process expects that all messages
 sent to it will come with an accurate `Content-Length` header so that it knows exactly how many
 bytes to read.  Likewise, all messages returned from the host process will be sent in this manner.
@@ -59,7 +59,7 @@ In this case, the `type` field will be set to `request`.
 A response gets sent by the host process when a request completes or fails.  In this case,
 the `type`field will be set to `response`.
 
-- `request_seq`: The `seq` number that was included with the original request, used to help 
+- `request_seq`: The `seq` number that was included with the original request, used to help
   the editor correlate the response to the original request
 - `command`: The name of the request command to which this response relates
 - `body`: A JSON object body for the response, varies per each response `command`.
@@ -68,7 +68,7 @@ the `type`field will be set to `response`.
 
 ### Event Fields
 
-An event gets sent by the host process when 
+An event gets sent by the host process when
 
 - `event`: The name of the event type to which this event relates
 - `body`: A JSON object body for the event, varies per each `event` type
@@ -128,19 +128,19 @@ No response is needed for this command.
 ### `change`
 
 This request is sent by the editor when the user changes the contents of a PowerShell file that has previously
-been opened in the language service.  Depending on how the request arguments are specified, the file change could 
-either be an arbitrary-length string insertion, region delete, or region replacement.  
+been opened in the language service.  Depending on how the request arguments are specified, the file change could
+either be an arbitrary-length string insertion, region delete, or region replacement.
 
 It is up to the editor to decide how often to send these requests in response
 to the user's typing activity.  The language service can deal with change deltas of any length, so it is really
-just a matter of preference how often `change` requests are sent.  
+just a matter of preference how often `change` requests are sent.
 
 #### Request
 
 The arguments for this request specify the absolute path of the `file` being changed as well as the complete details
 of the edit that the user performed.  The `line`/`endLine` and `offset`/`endOffset` (column) numbers indicate the
-1-based range of the file that is being replaced.  The `insertString` field indicates the string that will be 
-inserted.  In the specified range. 
+1-based range of the file that is being replaced.  The `insertString` field indicates the string that will be
+inserted.  In the specified range.
 
 *NOTE: In the very near future, all file locations will be specified with zero-based coordinates.*
 
@@ -256,9 +256,9 @@ be cancelled server-side and a new delay period will start.
           "kindModifiers": null,
           "sortText": null
         },
-        
+
         ... many more completions ...
-        
+
       ],
       "seq": 0,
       "type": "response"
@@ -486,9 +486,9 @@ be cancelled server-side and a new delay period will start.
             "offset": 19
           }
         },
-        
+
         ... more occurrences ...
-        
+
       ],
       "seq": 0,
       "type": "response"
@@ -536,13 +536,13 @@ debugger.
 
 ### `disconnect`
 
-This request is sent by the editor when the user wants to terminate the debugging session before 
+This request is sent by the editor when the user wants to terminate the debugging session before
 the script completes.  When this message is received, execution of the script is aborted and the
 instance of the host process is aborted.
 
 *NOTE: For now, it is assumed that debugging will be performed in a separate instance of the
  host process.  This will change in the next couple of minor releases.*
- 
+
 #### Request
 
 ```json
@@ -573,7 +573,7 @@ instance of the host process is aborted.
 ```
 
 ### `setBreakpoints`
- 
+
 #### Request
 
 ```json
@@ -614,7 +614,7 @@ instance of the host process is aborted.
 ```
 
 ### `pause`
- 
+
 #### Request
 
 ```json
@@ -631,7 +631,7 @@ No response needed for this command.  The debugging service will send a `stopped
 when execution is stopped due to this request.
 
 ### `continue`
- 
+
 #### Request
 
 ```json
@@ -657,7 +657,7 @@ when execution is stopped due to this request.
 ```
 
 ### `next`
- 
+
 #### Request
 
 ```json
@@ -683,7 +683,7 @@ when execution is stopped due to this request.
 ```
 
 ### `stepIn`
- 
+
 #### Request
 
 ```json
@@ -709,7 +709,7 @@ when execution is stopped due to this request.
 ```
 
 ### `stepOut`
- 
+
 #### Request
 
 ```json
@@ -735,7 +735,7 @@ when execution is stopped due to this request.
 ```
 
 ### `threads`
- 
+
 #### Request
 
 ```json
@@ -768,7 +768,7 @@ when execution is stopped due to this request.
 ```
 
 ### `scopes`
- 
+
 #### Request
 
 ```json
@@ -805,7 +805,7 @@ when execution is stopped due to this request.
 ```
 
 ### `variables`
- 
+
 #### Request
 
 ```json
@@ -861,7 +861,7 @@ when execution is stopped due to this request.
           },
 
           ... more variables ...
-          
+
         ]
       },
       "seq": 0,
@@ -870,7 +870,7 @@ when execution is stopped due to this request.
 ```
 
 ### `stackTrace`
- 
+
 #### Request
 
 ```json
@@ -936,7 +936,7 @@ when execution is stopped due to this request.
 ```
 
 ### `evaluate`
- 
+
 #### Request
 
 ```json
