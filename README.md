@@ -19,6 +19,8 @@ across multiple editors.
   - Choice prompt support
   - Input prompt support
   - Get-Credential support (coming soon)
+- The Extension Service provides a generalized extensibility model that allows you to
+  write new functionality for any host editor that uses PowerShell Editor Services
 
 The core Editor Services library is intended to be consumed in any type of host application, whether
 it is a WPF UI, console application, or web service.  A standard console application host is included
@@ -27,12 +29,9 @@ exposes.
 
 ## Documentation
 
-Check out the following two pages for information about how to use the API and host process:
-
-- **[Using the .NET API](docs/using_the_dotnet_api.md)** - Read this if you want to use the API in your .NET application
-- **[Using the Host Process](docs/using_the_host_process.md)** - Read this if you want to use the API in a non-.NET application such as a code editor
-
-You can also read our plans for future feature development by looking at the **[Development Roadmap](https://github.com/PowerShell/PowerShellEditorServices/wiki/Development-Roadmap)**.
+Check out our **[documentation site](http://powershell.github.io/PowerShellEditorServices)** for information about
+how to use this project. You can also read our plans for future feature development by looking at the
+**[Development Roadmap](https://github.com/PowerShell/PowerShellEditorServices/wiki/Development-Roadmap)**.
 
 ## Installation
 
@@ -57,7 +56,7 @@ git submodule update
 
 We would love to incorporate community contributions into this project.  If you would like to
 contribute code, documentation, tests, or bug reports, please read our [Contribution Guide]
-(docs/contributing.md) to learn more.
+(http://powershell.github.io/PowerShellEditorServices/CONTRIBUTING.html) to learn more.
 
 ## Maintainers
 
@@ -66,4 +65,4 @@ contribute code, documentation, tests, or bug reports, please read our [Contribu
 
 ## License
 
-This project is [licensed under the MIT License](LICENSE.txt).
+This project is [licensed under the MIT License](LICENSE).
