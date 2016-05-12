@@ -1,26 +1,69 @@
 # PowerShell Editor Services Release History
 
+## 0.6.0
+### Thursday, May 12, 2016
+
+#### Introduced a new documentation site
+
+- We have launched a new [documentation site](https://powershell.github.io/PowerShellEditorServices/)
+  for this project on GitHub Pages.  This documentation provides both a user guide
+  and .NET API documentation pages that are generated directly from our code
+  documentation.  Check it out and let us know what you think!
+
+#### Added a new cross-editor extensibility model
+
+- We've added a new extensibility model which allows you to write PowerShell
+  code to add new functionality to Visual Studio Code and other editors with
+  a single API.  If you've used `$psISE` in the PowerShell ISE, you'll feel
+  right at home with `$psEditor`.  Check out the [documentation](https://powershell.github.io/PowerShellEditorServices/guide/extensions.html)
+  for more details!
+
+#### Support for user and system-wide profiles
+
+- We've now introduced the `$profile` variable which contains the expected
+  properties that you normally see in `powershell.exe` and `powershell_ise.exe`:
+  - `AllUsersAllHosts`
+  - `AllUsersCurrentHost`
+  - `CurrentUserAllHosts`
+  - `CurrentUserCurrentHost`
+- Each editor integration can specify what their host-specific profile filename
+  should be.  If no profile name has been specified a default of `PowerShellEditorServices_profile.ps1`
+  is used.
+- Profiles are not loaded by default when PowerShell Editor Services is used.
+  This behavior may change in the future based on user feedback.
+- Editor integrations can also specify their name and version for the `$host.Name`
+  and `$host.Version` properties so that script authors have a better idea of
+  where their code is being used.
+
+#### Other improvements
+
+- `$env` variables now have IntelliSense complete correctly (#206).
+- The debug adapter now does not crash when you attempt to add breakpoints
+  for files that have been moved or don't exist (#195).
+- Fixed an issue preventing output from being written in the debugger if you
+  don't set a breakpoint before running a script (.
+
 ## 0.5.0
 ### Thursday, March 10, 2016
 
-### Support for PowerShell v3 and v4
+#### Support for PowerShell v3 and v4
 
 - Support for PowerShell v3 and v4 is now complete!  Note that for this release,
   Script Analyzer support has been disabled for PS v3 and v4 until we implement
   a better strategy for integrating it as a module dependency
 
-### Debugging improvements
+#### Debugging improvements
 
 - Added support for command breakpoints
 - Added support for conditional breakpoints
 - Improved the debug adapter startup sequence to handle new VS Code debugging features
 
-### Other improvements
+#### Other improvements
 
 - `using 'module'` now resolves relative paths correctly, removing a syntax error that
   previously appeared when relative paths were used
 - Calling `Read-Host -AsSecureString` or `Get-Credential` from the console now shows an
-  appropriate "not supported" error message instead of crashing the language service. 
+  appropriate "not supported" error message instead of crashing the language service.
   Support for these commands will be added in a later release.
 
 ## 0.4.3
