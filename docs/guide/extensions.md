@@ -37,7 +37,7 @@ $psEditor.Workspace.OpenFile($profile)
 ```powershell
 # Insert new text replacing the user's current selection
 $context = $psEditor.GetEditorContext()
-$context.InsertText("# All your script are belong to us", $context.SelectedRange)
+$context.CurrentFile.InsertText("# All your script are belong to us", $context.SelectedRange)
 ```
 
 #### Setting the selection based on the cursor position
