@@ -60,29 +60,75 @@
         <div class="article row grid">
           <div class="col-md-10">
             <article class="content wrap" id="_content">
-              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/api-docs/CHANGELOG.md/#L1" class="pull-right mobile-hide"><span class="fa fa-github"></span> Improve this Doc</a>
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/doc-fix/CHANGELOG.md/#L1" class="pull-right mobile-hide"><span class="fa fa-github"></span> Improve this Doc</a>
               <h1 id="powershell-editor-services-release-history">PowerShell Editor Services Release History</h1>
               
+<h2 id="0-6-0">0.6.0</h2>
+<h3 id="thursday-may-12-2016">Thursday, May 12, 2016</h3>
+<h4 id="introduced-a-new-documentation-site">Introduced a new documentation site</h4>
+<ul>
+<li>We have launched a new <a href="https://powershell.github.io/PowerShellEditorServices/">documentation site</a>
+for this project on GitHub Pages.  This documentation provides both a user guide
+and .NET API documentation pages that are generated directly from our code
+documentation.  Check it out and let us know what you think!</li>
+</ul>
+<h4 id="added-a-new-cross-editor-extensibility-model">Added a new cross-editor extensibility model</h4>
+<ul>
+<li>We&#39;ve added a new extensibility model which allows you to write PowerShell
+code to add new functionality to Visual Studio Code and other editors with
+a single API.  If you&#39;ve used <code>$psISE</code> in the PowerShell ISE, you&#39;ll feel
+right at home with <code>$psEditor</code>.  Check out the <a href="https://powershell.github.io/PowerShellEditorServices/guide/extensions.html">documentation</a>
+for more details!</li>
+</ul>
+<h4 id="support-for-user-and-system-wide-profiles">Support for user and system-wide profiles</h4>
+<ul>
+<li>We&#39;ve now introduced the <code>$profile</code> variable which contains the expected
+properties that you normally see in <code>powershell.exe</code> and <code>powershell_ise.exe</code>:<ul>
+<li><code>AllUsersAllHosts</code></li>
+<li><code>AllUsersCurrentHost</code></li>
+<li><code>CurrentUserAllHosts</code></li>
+<li><code>CurrentUserCurrentHost</code></li>
+</ul>
+</li>
+<li>Each editor integration can specify what their host-specific profile filename
+should be.  If no profile name has been specified a default of <code>PowerShellEditorServices_profile.ps1</code>
+is used.</li>
+<li>Profiles are not loaded by default when PowerShell Editor Services is used.
+This behavior may change in the future based on user feedback.</li>
+<li>Editor integrations can also specify their name and version for the <code>$host.Name</code>
+and <code>$host.Version</code> properties so that script authors have a better idea of
+where their code is being used.</li>
+</ul>
+<h4 id="other-improvements">Other improvements</h4>
+<ul>
+<li><code>$env</code> variables now have IntelliSense complete correctly (#206).</li>
+<li>The debug adapter now does not crash when you attempt to add breakpoints
+for files that have been moved or don&#39;t exist (#195).</li>
+<li>Fixed an issue preventing output from being written in the debugger if you
+don&#39;t set a breakpoint before running a script.</li>
+<li>Debug adapter now doesn&#39;t crash when rendering an object for the
+variables view if ToString throws an exception.</li>
+</ul>
 <h2 id="0-5-0">0.5.0</h2>
 <h3 id="thursday-march-10-2016">Thursday, March 10, 2016</h3>
-<h3 id="support-for-powershell-v3-and-v4">Support for PowerShell v3 and v4</h3>
+<h4 id="support-for-powershell-v3-and-v4">Support for PowerShell v3 and v4</h4>
 <ul>
 <li>Support for PowerShell v3 and v4 is now complete!  Note that for this release,
 Script Analyzer support has been disabled for PS v3 and v4 until we implement
 a better strategy for integrating it as a module dependency</li>
 </ul>
-<h3 id="debugging-improvements">Debugging improvements</h3>
+<h4 id="debugging-improvements">Debugging improvements</h4>
 <ul>
 <li>Added support for command breakpoints</li>
 <li>Added support for conditional breakpoints</li>
 <li>Improved the debug adapter startup sequence to handle new VS Code debugging features</li>
 </ul>
-<h3 id="other-improvements">Other improvements</h3>
+<h4 id="other-improvements">Other improvements</h4>
 <ul>
 <li><code>using &#39;module&#39;</code> now resolves relative paths correctly, removing a syntax error that
 previously appeared when relative paths were used</li>
 <li>Calling <code>Read-Host -AsSecureString</code> or <code>Get-Credential</code> from the console now shows an
-appropriate &quot;not supported&quot; error message instead of crashing the language service. 
+appropriate &quot;not supported&quot; error message instead of crashing the language service.
 Support for these commands will be added in a later release.</li>
 </ul>
 <h2 id="0-4-3">0.4.3</h2>

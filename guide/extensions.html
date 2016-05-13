@@ -67,7 +67,7 @@
         <div class="article row grid-right">
           <div class="col-md-10">
             <article class="content wrap" id="_content">
-              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/api-docs/docs/guide/extensions.md/#L1" class="pull-right mobile-hide"><span class="fa fa-github"></span> Improve this Doc</a>
+              <a href="https://github.com/PowerShell/PowerShellEditorServices/blob/daviwil/doc-fix/docs/guide/extensions.md/#L1" class="pull-right mobile-hide"><span class="fa fa-github"></span> Improve this Doc</a>
               <h1 id="extending-the-host-editor">Extending the Host Editor</h1>
               
 <p>PowerShell Editor Services exposes a common extensibility model which allows
@@ -96,7 +96,7 @@ $psEditor.Workspace.OpenFile($profile)
 <h4 id="manipulating-the-user-s-active-file-buffer">Manipulating the user&#39;s active file buffer</h4>
 <pre><code class="lang-powershell"># Insert new text replacing the user&#39;s current selection
 $context = $psEditor.GetEditorContext()
-$context.InsertText(&quot;# All your script are belong to us&quot;, $context.SelectedRange)
+$context.CurrentFile.InsertText(&quot;# All your script are belong to us&quot;, $context.SelectedRange)
 </code></pre>
 <h4 id="setting-the-selection-based-on-the-cursor-position">Setting the selection based on the cursor position</h4>
 <pre><code class="lang-powershell"># Set the selection from their cursor position to the end of the same line
