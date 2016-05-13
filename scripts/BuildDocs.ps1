@@ -36,7 +36,9 @@ else {
 
     if ($Publish.IsPresent) {
         # Delete the existing docs repo folder
-        Remove-Item -Path $docsRepoPath -Recurse -Force -ErrorAction Stop | Out-Null
+        if (Test-Path $docsRepoPath) {
+            Remove-Item -Path $docsRepoPath -Recurse -Force -ErrorAction Stop | Out-Null
+        }
 
         # Clone the documentation site branch of the Editor Services repo
         git clone -b gh-pages https://github.com/PowerShell/PowerShellEditorServices.git $docsRepoPath
