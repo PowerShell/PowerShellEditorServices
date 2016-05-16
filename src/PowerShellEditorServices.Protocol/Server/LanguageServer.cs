@@ -74,11 +74,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         protected override void Initialize()
         {
-            // Initialize the extension service
-            // TODO: This should be made awaited once Initialize is async!
-            this.editorSession.ExtensionService.Initialize(
-                this.editorOperations).Wait();
-
             // Register all supported message types
 
             this.SetRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
@@ -107,6 +102,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(InvokeExtensionCommandRequest.Type, this.HandleInvokeExtensionCommandRequest);
 
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
+
+            // Initialize the extension service
+            // TODO: This should be made awaited once Initialize is async!
+            this.editorSession.ExtensionService.Initialize(
+                this.editorOperations).Wait();
         }
 
         protected override async Task Shutdown()
