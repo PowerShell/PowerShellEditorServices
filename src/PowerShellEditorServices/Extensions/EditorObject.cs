@@ -5,6 +5,7 @@
 
 using System;
 using System.Management.Automation;
+using System.Reflection;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
@@ -28,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         public Version EditorServicesVersion
         {
-            get { return this.GetType().Assembly.GetName().Version; }
+            get { return this.GetType().GetTypeInfo().Assembly.GetName().Version; }
         }
 
         /// <summary>

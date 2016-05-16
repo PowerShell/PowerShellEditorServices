@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices
             };
 
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
-                 nameExtent.Text.Equals(symbolRef.ScriptRegion.Text, StringComparison.InvariantCultureIgnoreCase))
+                 nameExtent.Text.Equals(symbolRef.ScriptRegion.Text, StringComparison.CurrentCultureIgnoreCase))
             {
                 this.FoundDeclartion =
                     new SymbolReference(
@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
             if(symbolRef.SymbolType.Equals(SymbolType.Variable) &&
-                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.InvariantCultureIgnoreCase))
+                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 this.FoundDeclartion =
                     new SymbolReference(

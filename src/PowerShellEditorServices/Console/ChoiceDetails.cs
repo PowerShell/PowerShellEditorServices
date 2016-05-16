@@ -120,8 +120,8 @@ namespace Microsoft.PowerShell.EditorServices
         {
             // Is it the hotkey?
             return
-                string.Equals(inputString, this.hotKeyString, StringComparison.InvariantCultureIgnoreCase) ||
-                string.Equals(inputString, this.Label, StringComparison.InvariantCultureIgnoreCase);
+                string.Equals(inputString, this.hotKeyString, StringComparison.CurrentCultureIgnoreCase) ||
+                string.Equals(inputString, this.Label, StringComparison.CurrentCultureIgnoreCase);
         }
 
         #endregion

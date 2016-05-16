@@ -27,16 +27,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private string scriptPathToLaunch;
         private string arguments;
 
-        public DebugAdapter(HostDetails hostDetails)
-            : this(hostDetails, new StdioServerChannel())
+        public DebugAdapter(HostDetails hostDetails, ProfilePaths profilePaths)
+            : this(hostDetails, profilePaths, new StdioServerChannel())
         {
         }
 
-        public DebugAdapter(HostDetails hostDetails, ChannelBase serverChannel)
+        public DebugAdapter(HostDetails hostDetails, ProfilePaths profilePaths, ChannelBase serverChannel)
             : base(serverChannel)
         {
             this.editorSession = new EditorSession();
-            this.editorSession.StartSession(hostDetails);
+            this.editorSession.StartSession(hostDetails, profilePaths);
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
 
@@ -84,7 +84,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                                 null);
 
                             // Stop the server
-                            this.Stop();
+                            await this.Stop();
+
+                            // Notify that the session has ended
+                            this.OnSessionEnded();
                         });
         }
 
@@ -140,7 +143,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             catch (Exception ex)
             {
                 Logger.Write(LogLevel.Error, "cwd path is invalid: " + ex.Message);
+
+#if NanoServer
+                workingDir = AppContext.BaseDirectory;
+#else
                 workingDir = Environment.CurrentDirectory;
+#endif
             }
 
             editorSession.PowerShellContext.SetWorkingDirectory(workingDir);
@@ -477,7 +485,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 string.Equals(
                     evaluateParams.Context,
                     "repl",
-                    StringComparison.InvariantCultureIgnoreCase);
+                    StringComparison.CurrentCultureIgnoreCase);
 
             if (isFromRepl)
             {
@@ -509,6 +517,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     Result = valueString,
                     VariablesReference = variableId
                 });
+        }
+
+        #endregion
+
+        #region Events
+
+        public event EventHandler SessionEnded;
+
+        protected virtual void OnSessionEnded()
+        {
+            this.SessionEnded?.Invoke(this, null);
         }
 
         #endregion
@@ -559,4 +578,3 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         #endregion
     }
 }
-

@@ -29,9 +29,20 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 "Test.PowerShellEditorServices",
                 new Version("1.0.0"));
 
+        // NOTE: These paths are arbitrarily chosen just to verify that the profile paths
+        //       can be set to whatever they need to be for the given host.
+
+        private readonly ProfilePaths TestProfilePaths =
+            new ProfilePaths(
+                TestHostDetails.ProfileId, 
+                    Path.GetFullPath(
+                        @"..\..\..\PowerShellEditorServices.Test.Shared\Profile"),
+                    Path.GetFullPath(
+                        @"..\..\..\PowerShellEditorServices.Test.Shared"));
+
         public PowerShellContextTests()
         {
-            this.powerShellContext = new PowerShellContext(TestHostDetails);
+            this.powerShellContext = new PowerShellContext(TestHostDetails, TestProfilePaths);
             this.powerShellContext.SessionStateChanged += OnSessionStateChanged;
             this.stateChangeQueue = new AsyncQueue<SessionStateChangedEventArgs>();
         }
@@ -105,51 +116,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task CanResolveAndLoadProfilesForHostId()
         {
-            string testProfilePath =
-                Path.GetFullPath(
-                    @"..\..\..\PowerShellEditorServices.Test.Shared\Profile\Profile.ps1");
-
-            string profileName =
-                string.Format(
-                    "{0}_{1}",
-                    TestHostDetails.ProfileId,
-                    ProfilePaths.AllHostsProfileName);
-
-            string currentUserPath =
-                Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "WindowsPowerShell");
-            string allUsersPath = null; // To be set later
-
-            using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandle())
-            {
-                allUsersPath =
-                    (string)runspaceHandle
-                        .Runspace
-                        .SessionStateProxy
-                        .PSVariable
-                        .Get("PsHome")
-                        .Value;
-            }
-
             string[] expectedProfilePaths =
                 new string[]
                 {
-                    Path.Combine(allUsersPath, ProfilePaths.AllHostsProfileName),
-                    Path.Combine(allUsersPath, profileName),
-                    Path.Combine(currentUserPath, ProfilePaths.AllHostsProfileName),
-                    Path.Combine(currentUserPath, profileName)
+                    TestProfilePaths.AllUsersAllHosts,
+                    TestProfilePaths.AllUsersCurrentHost,
+                    TestProfilePaths.CurrentUserAllHosts,
+                    TestProfilePaths.CurrentUserCurrentHost
                 };
-
-            // Copy the test profile to the current user's host profile path
-            File.Copy(testProfilePath, expectedProfilePaths[3], true);
 
             // Load the profiles for the test host name
             await this.powerShellContext.LoadHostProfiles();
-
-            // Delete the test profile before any assert failures
-            // cause the function to exit
-            File.Delete(expectedProfilePaths[3]);
 
             // Ensure that all the paths are set in the correct variables
             // and that the current user's host profile got loaded

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions
@@ -84,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             // Load the cmdlet interface
             Type thisType = this.GetType();
             Stream resourceStream =
-                thisType.Assembly.GetManifestResourceStream(
+                thisType.GetTypeInfo().Assembly.GetManifestResourceStream(
                     thisType.Namespace + ".CmdletInterface.ps1");
 
             using (StreamReader reader = new StreamReader(resourceStream))
