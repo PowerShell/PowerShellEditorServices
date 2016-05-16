@@ -3,9 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -28,6 +26,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         private Dictionary<string, TaskCompletionSource<Message>> pendingRequests =
             new Dictionary<string, TaskCompletionSource<Message>>();
+
+        /// <summary>
+        /// Gets the MessageDispatcher which allows registration of
+        /// handlers for requests, responses, and events that are
+        /// transmitted through the channel.
+        /// </summary>
+        protected MessageDispatcher MessageDispatcher { get; set; }
 
         /// <summary>
         /// Initializes an instance of the protocol server using the
@@ -59,14 +64,30 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 // Start the provided protocol channel
                 this.protocolChannel.Start(this.messageProtocolType);
 
+                // Start the message dispatcher
+                this.MessageDispatcher = new MessageDispatcher(this.protocolChannel);
+
                 // Set the handler for any message responses that come back
-                this.protocolChannel.MessageDispatcher.SetResponseHandler(this.HandleResponse);
+                this.MessageDispatcher.SetResponseHandler(this.HandleResponse);
 
                 // Listen for unhandled exceptions from the dispatcher
-                this.protocolChannel.MessageDispatcher.UnhandledException += MessageDispatcher_UnhandledException;
+                this.MessageDispatcher.UnhandledException += MessageDispatcher_UnhandledException;
 
                 // Notify implementation about endpoint start
                 await this.OnStart();
+
+                // Wait for connection and notify the implementor
+                // NOTE: This task is not meant to be awaited.
+                Task waitTask =
+                    this.protocolChannel
+                        .WaitForConnection()
+                        .ContinueWith(
+                            async (t) =>
+                            {
+                                // Start the MessageDispatcher
+                                this.MessageDispatcher.Start();
+                                await this.OnConnect();
+                            });
 
                 // Endpoint is now started
                 this.isStarted = true;
@@ -88,6 +109,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
                 // Stop the implementation first
                 await this.OnStop();
+
+                // Stop the dispatcher and channel
+                this.MessageDispatcher.Stop();
                 this.protocolChannel.Stop();
 
                 // Notify anyone waiting for exit
@@ -120,6 +144,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             TParams requestParams,
             bool waitForResponse)
         {
+            if (!this.protocolChannel.IsConnected)
+            {
+                throw new InvalidOperationException("SendRequest called when ProtocolChannel was not yet connected");
+            }
+
             this.currentMessageId++;
 
             TaskCompletionSource<Message> responseTask = null;
@@ -164,15 +193,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             EventType<TParams> eventType,
             TParams eventParams)
         {
+            if (!this.protocolChannel.IsConnected)
+            {
+                throw new InvalidOperationException("SendEvent called when ProtocolChannel was not yet connected");
+            }
+
             // Some events could be raised from a different thread.
             // To ensure that messages are written serially, dispatch
             // dispatch the SendEvent call to the message loop thread.
 
-            if (!this.protocolChannel.MessageDispatcher.InMessageLoopThread)
+            if (!this.MessageDispatcher.InMessageLoopThread)
             {
                 TaskCompletionSource<bool> writeTask = new TaskCompletionSource<bool>();
 
-                this.protocolChannel.MessageDispatcher.SynchronizationContext.Post(
+                this.MessageDispatcher.SynchronizationContext.Post(
                     async (obj) =>
                     {
                         await this.protocolChannel.MessageWriter.WriteEvent(
@@ -200,17 +234,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             RequestType<TParams, TResult> requestType,
             Func<TParams, RequestContext<TResult>, Task> requestHandler)
         {
-            this.protocolChannel.MessageDispatcher.SetRequestHandler(
+            this.MessageDispatcher.SetRequestHandler(
                 requestType,
                 requestHandler);
         }
-
 
         public void SetEventHandler<TParams>(
             EventType<TParams> eventType,
             Func<TParams, EventContext, Task> eventHandler)
         {
-            this.protocolChannel.MessageDispatcher.SetEventHandler(
+            this.MessageDispatcher.SetEventHandler(
                 eventType,
                 eventHandler,
                 false);
@@ -221,7 +254,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             Func<TParams, EventContext, Task> eventHandler,
             bool overrideExisting)
         {
-            this.protocolChannel.MessageDispatcher.SetEventHandler(
+            this.MessageDispatcher.SetEventHandler(
                 eventType,
                 eventHandler,
                 overrideExisting);
@@ -243,6 +276,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         #region Subclass Lifetime Methods
 
         protected virtual Task OnStart()
+        {
+            return Task.FromResult(true);
+        }
+
+        protected virtual Task OnConnect()
         {
             return Task.FromResult(true);
         }

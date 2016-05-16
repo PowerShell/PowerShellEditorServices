@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
     {
         private LanguageServiceClient languageServiceClient;
 
-        public Task InitializeAsync()
+        public async Task InitializeAsync()
         {
             string testLogPath =
                 Path.Combine(
@@ -34,24 +34,37 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
-            this.protocolClient =
-            this.languageServiceClient =
-                new LanguageServiceClient(
-                    new StdioClientChannel(
-                        "Microsoft.PowerShell.EditorServices.Host.exe",
-                        //"/waitForDebugger",
-                        "/hostName:\"PowerShell Editor Services Test Host\"",
-                        "/hostProfileId:Test.PowerShellEditorServices",
-                        "/hostVersion:1.0.0",
-                        "/logPath:\"" + testLogPath + "\"",
-                        "/logLevel:Verbose"));
+            string uniqueId = Guid.NewGuid().ToString();
+            string languageServicePipeName = "PSES-Test-LanguageService-" + uniqueId;
+            string debugServicePipeName = "PSES-Test-DebugService-" + uniqueId;
 
-            return this.languageServiceClient.Start();
+            await this.LaunchService(
+                testLogPath,
+                languageServicePipeName,
+                debugServicePipeName,
+                waitForDebugger: false);
+                //waitForDebugger: true);
+
+            this.protocolClient =
+                this.languageServiceClient =
+                    new LanguageServiceClient(
+                        new NamedPipeClientChannel(
+                            languageServicePipeName));
+
+            await this.languageServiceClient.Start();
+
+            // HACK: Insert a short delay to give the MessageDispatcher time to
+            // start up.  This will have to be fixed soon with a larger refactoring
+            // to improve the client/server model.  Tracking this here:
+            // https://github.com/PowerShell/PowerShellEditorServices/issues/245
+            await Task.Delay(1750);
         }
 
-        public Task DisposeAsync()
+        public async Task DisposeAsync()
         {
-            return this.languageServiceClient.Stop();
+            await this.languageServiceClient.Stop();
+
+            this.KillService();
         }
 
         [Fact]
@@ -71,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 string.IsNullOrEmpty(diagnostics.Diagnostics[0].Message));
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until Script Analyzer integration is added back")]
         public async Task ServiceReturnsSemanticMarkers()
         {
             // Send the 'didOpen' event
@@ -619,16 +632,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task ServiceLoadsProfilesOnDemand()
         {
-            string testProfilePath =
-                Path.GetFullPath(
-                    @"..\..\..\PowerShellEditorServices.Test.Shared\Profile\Profile.ps1");
-
             string testHostName = "Test.PowerShellEditorServices";
             string profileName =
                 string.Format(
                     "{0}_{1}",
                     testHostName,
                     ProfilePaths.AllHostsProfileName);
+            string testProfilePath =
+                Path.Combine(
+                    Path.GetFullPath(
+                        @"..\..\..\PowerShellEditorServices.Test.Shared\Profile\"),
+                    profileName);
 
             string currentUserCurrentHostPath =
                 Path.Combine(

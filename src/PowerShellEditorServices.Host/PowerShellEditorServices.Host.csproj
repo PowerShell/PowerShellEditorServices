@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{B2F6369A-D737-4AFD-8B81-9B094DB07DA7}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Microsoft.PowerShell.EditorServices.Host</RootNamespace>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Host</AssemblyName>
@@ -13,6 +13,7 @@
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -37,8 +38,14 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed" />
+    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -49,21 +56,14 @@
     <Reference Include="System.Management.Automation" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="EditorServicesHost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\submodules\PSScriptAnalyzer\Engine\ScriptAnalyzerEngine.csproj">
-      <Project>{f4bde3d0-3eef-4157-8a3e-722df7adef60}</Project>
-      <Name>ScriptAnalyzerEngine</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\submodules\PSScriptAnalyzer\Rules\ScriptAnalyzerBuiltinRules.csproj">
-      <Project>{c33b6b9d-e61c-45a3-9103-895fd82a5c1e}</Project>
-      <Name>ScriptAnalyzerBuiltinRules</Name>
-    </ProjectReference>
     <ProjectReference Include="..\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj">
       <Project>{f8a0946a-5d25-4651-8079-b8d5776916fb}</Project>
       <Name>PowerShellEditorServices.Protocol</Name>
@@ -84,9 +84,17 @@
   </Target>
   <PropertyGroup>
     <PostBuildEvent>
-      copy /y "$(ProjectDir)bin\$(Configuration)\Microsoft.PowerShell.EditorServices.Host.exe" "$(ProjectDir)bin\$(Configuration)\Microsoft.PowerShell.EditorServices.Host.x86.exe"
-      copy /y "$(ProjectDir)bin\$(Configuration)\Microsoft.PowerShell.EditorServices.Host.exe.config" "$(ProjectDir)bin\$(Configuration)\Microsoft.PowerShell.EditorServices.Host.x86.exe.config"
-      "$(TargetFrameworkSDKToolsDirectory)\corflags.exe" "$(ProjectDir)bin\$(Configuration)\Microsoft.PowerShell.EditorServices.Host.x86.exe" /32BIT+ /Force
+      if not exist "$(SolutionDir)module\$(SolutionName)\bin" (
+          mkdir "$(SolutionDir)module\$(SolutionName)\bin"
+      )
+      if not exist "$(SolutionDir)module\$(SolutionName)\bin\Desktop" (
+          mkdir "$(SolutionDir)module\$(SolutionName)\bin\Desktop"
+      )
+
+      copy /y "$(ProjectDir)bin\$(Configuration)\Newtonsoft.Json.dll" "$(SolutionDir)module\$(SolutionName)\bin\Desktop"
+      copy /y "$(ProjectDir)bin\$(Configuration)\Microsoft.PowerShell.EditorServices.dll" "$(SolutionDir)module\$(SolutionName)\bin\Desktop"
+      copy /y "$(ProjectDir)bin\$(Configuration)\Microsoft.PowerShell.EditorServices.Protocol.dll" "$(SolutionDir)module\$(SolutionName)\bin\Desktop"
+      copy /y "$(ProjectDir)bin\$(Configuration)\Microsoft.PowerShell.EditorServices.Host.dll" "$(SolutionDir)module\$(SolutionName)\bin\Desktop"
     </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

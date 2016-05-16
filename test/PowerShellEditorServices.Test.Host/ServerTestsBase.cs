@@ -7,12 +7,16 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class ServerTestsBase
     {
+        private Process serviceProcess;
         protected ProtocolEndpoint protocolClient;
 
         private ConcurrentDictionary<string, AsyncQueue<object>> eventQueuePerType =
@@ -20,6 +24,105 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
         private ConcurrentDictionary<string, AsyncQueue<object>> requestQueuePerType =
             new ConcurrentDictionary<string, AsyncQueue<object>>();
+
+        protected async Task LaunchService(
+            string logPath,
+            string languageServicePipeName,
+            string debugServicePipeName,
+            bool waitForDebugger = false)
+        {
+            string modulePath = Path.GetFullPath(@"..\..\..\..\module");
+            string scriptPath = Path.Combine(modulePath, "Start-EditorServices.ps1");
+
+            // TODO: Need to determine the right module version programmatically!
+
+            string scriptArgs =
+                "\"" + scriptPath + "\" " +
+                "-EditorServicesVersion \"0.7.0\" " +
+                "-HostName \\\"PowerShell Editor Services Test Host\\\" " +
+                "-HostProfileId \"Test.PowerShellEditorServices\" " +
+                "-HostVersion \"1.0.0\" " +
+                "-LanguageServicePipeName \"" + languageServicePipeName + "\" " +
+                "-DebugServicePipeName \"" + debugServicePipeName + "\" " +
+                "-BundledModulesPath \\\"" + modulePath + "\\\" " +
+                "-LogLevel \"Verbose\" " +
+                "-LogPath \"" + logPath + "\" " +
+                "-WaitForCompletion ";
+
+            if (waitForDebugger)
+            {
+                scriptArgs += "-WaitForDebugger ";
+            }
+
+            string[] args =
+                new string[]
+                {
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-ExecutionPolicy", "Unrestricted",
+                    "-Command \"" + scriptArgs + "\""
+                };
+
+            this.serviceProcess = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = string.Join(" ", args),
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    StandardOutputEncoding = Encoding.UTF8
+                },
+                EnableRaisingEvents = true,
+            };
+
+            // Start the process
+            this.serviceProcess.Start();
+
+            // Wait for the server to finish initializing
+            Task<string> completedRead =
+                await Task.WhenAny<string>(
+                    this.serviceProcess.StandardOutput.ReadLineAsync(),
+                    this.serviceProcess.StandardError.ReadLineAsync());
+
+            if (!string.Equals("PowerShell Editor Services host has started.", completedRead.Result))
+            {
+                // Must have read an error?  Keep reading from error stream
+                string errorString = completedRead.Result;
+
+                while (true)
+                {
+                    Task<string> errorRead = this.serviceProcess.StandardError.ReadLineAsync();
+
+                    if (!string.IsNullOrEmpty(errorRead.Result))
+                    {
+                        errorString += errorRead.Result + Environment.NewLine;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                throw new Exception("Could not launch powershell.exe:\r\n\r\n" + errorString);
+            }
+        }
+
+        protected void KillService()
+        {
+            try
+            {
+                this.serviceProcess.Kill();
+            }
+            catch (InvalidOperationException)
+            {
+                // This exception gets thrown if the server process has
+                // already existed by the time Kill gets called.
+            }
+        }
 
         protected Task<TResult> SendRequest<TParams, TResult>(
             RequestType<TParams, TResult> requestType, 

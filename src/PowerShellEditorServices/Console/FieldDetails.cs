@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Host;
+using System.Reflection;
 using System.Security;
 
 namespace Microsoft.PowerShell.EditorServices.Console
@@ -100,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 throw new NotSupportedException(
                     "Input fields of type 'PSCredential' are currently not supported.");
             }
-            else if (typeof(IList).IsAssignableFrom(fieldType))
+            else if (typeof(IList).GetTypeInfo().IsAssignableFrom(fieldType.GetTypeInfo()))
             {
                 this.IsCollection = true;
                 this.ElementType = typeof(object);
@@ -110,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     this.ElementType = fieldType.GetElementType();
                 }
             }
-            else if (fieldType.IsGenericType)
+            else if (fieldType.GetTypeInfo().IsGenericType)
             {
                 throw new PSArgumentException(
                     "Generic types are not supported for input fields at this time.");

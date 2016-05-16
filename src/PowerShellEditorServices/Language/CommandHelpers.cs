@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices
                         string.Empty;
 
                     // Ignore the placeholder value for this field
-                    if (string.Equals(synopsisString, "SHORT DESCRIPTION", System.StringComparison.InvariantCultureIgnoreCase))
+                    if (string.Equals(synopsisString, "SHORT DESCRIPTION", System.StringComparison.CurrentCultureIgnoreCase))
                     {
                         synopsisString = string.Empty;
                     }

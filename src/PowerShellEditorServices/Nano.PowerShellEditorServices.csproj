@@ -1,0 +1,246 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{02DC1749-7657-4A41-9865-313F07DE8901}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Microsoft.PowerShell.EditorServices</RootNamespace>
+    <AssemblyName>Microsoft.PowerShell.EditorServices.Nano</AssemblyName>
+    <TargetFrameworkVersion>v0.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+    <DefineConstants>$(DefineConstants);NanoServer;PowerShellv5r2;PowerShellv5</DefineConstants>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin-nano\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;$(DefineConstants)</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\Microsoft.PowerShell.EditorServices.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin-nano\Release\</OutputPath>
+    <DefineConstants>TRACE;$(DefineConstants)</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\Microsoft.PowerShell.EditorServices.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Analysis\AnalysisOutputWriter.cs" />
+    <Compile Include="Analysis\AnalysisService.cs" />
+    <Compile Include="Console\ChoicePromptHandler.cs" />
+    <Compile Include="Console\ConsoleChoicePromptHandler.cs" />
+    <Compile Include="Console\ConsoleInputPromptHandler.cs" />
+    <Compile Include="Console\ConsolePromptHandlerContext.cs" />
+    <Compile Include="Console\ConsoleService.cs" />
+    <Compile Include="Console\FieldDetails.cs" />
+    <Compile Include="Console\InputPromptHandler.cs" />
+    <Compile Include="Console\IPromptHandlerContext.cs" />
+    <Compile Include="Console\PromptHandler.cs" />
+    <Compile Include="Debugging\BreakpointDetails.cs" />
+    <Compile Include="Debugging\BreakpointDetailsBase.cs" />
+    <Compile Include="Debugging\DebugService.cs" />
+    <Compile Include="Debugging\CommandBreakpointDetails.cs" />
+    <Compile Include="Debugging\StackFrameDetails.cs" />
+    <Compile Include="Debugging\VariableDetails.cs" />
+    <Compile Include="Debugging\VariableDetailsBase.cs" />
+    <Compile Include="Debugging\VariableScope.cs" />
+    <Compile Include="Debugging\VariableContainerDetails.cs" />
+    <Compile Include="Extensions\EditorContext.cs" />
+    <Compile Include="Extensions\EditorObject.cs" />
+    <Compile Include="Extensions\EditorWorkspace.cs" />
+    <Compile Include="Extensions\EditorCommand.cs" />
+    <Compile Include="Extensions\ExtensionService.cs" />
+    <Compile Include="Extensions\FileContext.cs" />
+    <Compile Include="Extensions\IEditorOperations.cs" />
+    <Compile Include="Language\AstOperations.cs" />
+    <Compile Include="Language\CommandHelpers.cs" />
+    <Compile Include="Language\CompletionResults.cs" />
+    <Compile Include="Language\FindCommandVisitor.cs" />
+    <Compile Include="Language\FindDeclartionVisitor.cs" />
+    <Compile Include="Language\FindDotSourcedVisitor.cs" />
+    <Compile Include="Language\FindOccurrencesResult.cs" />
+    <Compile Include="Language\FindReferencesResult.cs" />
+    <Compile Include="Language\FindReferencesVisitor.cs" />
+    <Compile Include="Language\FindSymbolsVisitor.cs" />
+    <Compile Include="Language\FindSymbolsVisitor2.cs" />
+    <Compile Include="Language\FindSymbolVisitor.cs" />
+    <Compile Include="Language\GetDefinitionResult.cs" />
+    <Compile Include="Language\LanguageService.cs" />
+    <Compile Include="Language\ParameterSetSignatures.cs" />
+    <Compile Include="Language\ScriptExtent.cs" />
+    <Compile Include="Language\SymbolDetails.cs" />
+    <Compile Include="Language\SymbolReference.cs" />
+    <Compile Include="Language\SymbolType.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Console\ChoiceDetails.cs" />
+    <Compile Include="Session\EditorSession.cs" />
+    <Compile Include="Console\IConsoleHost.cs" />
+    <Compile Include="Session\HostDetails.cs" />
+    <Compile Include="Session\IVersionSpecificOperations.cs" />
+    <Compile Include="Session\OutputType.cs" />
+    <Compile Include="Session\OutputWrittenEventArgs.cs" />
+    <Compile Include="Session\PowerShell3Operations.cs" />
+    <Compile Include="Session\PowerShell4Operations.cs" />
+    <Compile Include="Session\PowerShell5Operations.cs" />
+    <Compile Include="Session\PowerShellExecutionResult.cs" />
+    <Compile Include="Session\PowerShellContext.cs" />
+    <Compile Include="Session\PowerShellContextState.cs" />
+    <Compile Include="Session\ProfilePaths.cs" />
+    <Compile Include="Session\ProgressDetails.cs" />
+    <Compile Include="Session\RunspaceHandle.cs" />
+    <Compile Include="Session\SessionPSHost.cs" />
+    <Compile Include="Session\SessionPSHostRawUserInterface.cs" />
+    <Compile Include="Session\SessionPSHostUserInterface.cs" />
+    <Compile Include="Session\SessionStateChangedEventArgs.cs" />
+    <Compile Include="Utility\AsyncContextThread.cs" />
+    <Compile Include="Utility\AsyncDebouncer.cs" />
+    <Compile Include="Utility\AsyncLock.cs" />
+    <Compile Include="Utility\AsyncQueue.cs" />
+    <Compile Include="Utility\AsyncContext.cs" />
+    <Compile Include="Utility\Extensions.cs" />
+    <Compile Include="Utility\Logger.cs" />
+    <Compile Include="Utility\ThreadSynchronizationContext.cs" />
+    <Compile Include="Utility\Validate.cs" />
+    <Compile Include="Workspace\BufferRange.cs" />
+    <Compile Include="Workspace\FileChange.cs" />
+    <Compile Include="Workspace\BufferPosition.cs" />
+    <Compile Include="Workspace\FilePosition.cs" />
+    <Compile Include="Workspace\ScriptFile.cs" />
+    <Compile Include="Workspace\ScriptFileMarker.cs" />
+    <Compile Include="Workspace\ScriptRegion.cs" />
+    <Compile Include="Workspace\Workspace.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.8.0.2\lib\portable-net45+wp80+win8+wpa81+dnxcore50\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\AttachRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\Breakpoint.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\ConfigurationDoneRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\ContinueRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\SetFunctionBreakpointsRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\EditorCommands.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\FindModuleRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\InstallModuleRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\NamedPipeClientChannel.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\NamedPipeServerChannel.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\IMessageSender.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\ProtocolEndpoint.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Messages\PromptEvents.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Server\DebugAdapter.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Server\DebugAdapterBase.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Client\DebugAdapterClientBase.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\DisconnectRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\EvaluateRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\ExitedEvent.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\InitializedEvent.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\InitializeRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\LaunchRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\NextRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\OutputEvent.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\PauseRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\Scope.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\ScopesRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\SetBreakpointsRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\SetExceptionBreakpointsRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\Source.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\SourceRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\StackFrame.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\StackTraceRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\StartedEvent.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\StepInRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\StepOutRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\StoppedEvent.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\TerminatedEvent.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\Thread.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\ThreadsRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Client\LanguageServiceClient.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Serializers\V8MessageSerializer.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\Variable.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\VariablesRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\Configuration.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\Definition.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\DocumentHighlight.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\ExpandAliasRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\Hover.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Client\LanguageClientBase.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Server\LanguageServer.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Server\LanguageServerBase.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\ShowOnlineHelpRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\SignatureHelp.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\WorkspaceSymbols.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\StdioClientChannel.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\EventContext.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\EventType.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\ClientCapabilities.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\Completion.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\Diagnostics.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Serializers\JsonRpcMessageSerializer.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\Initialize.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\ServerCapabilities.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\Shutdown.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\TextDocument.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Constants.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\IMessageSerializer.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Message.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\MessageDispatcher.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\MessageParseException.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\MessageProtocolType.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\MessageReader.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\MessageWriter.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\RequestContext.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\RequestType.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\ChannelBase.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\StdioServerChannel.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\References.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Server\LanguageServerEditorOperations.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Server\LanguageServerSettings.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Server\OutputDebouncer.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\Server\PromptHandlers.cs" />
+    <Compile Include="..\PowerShellEditorServices.Host\EditorServicesHost.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\PowerShellEditorServices\Extensions\CmdletInterface.ps1" />
+  </ItemGroup>
+  <Import Project="$(SolutionDir)\src\Microsoft.CoreSys.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+  </Target>
+  <PropertyGroup>
+    <PostBuildEvent>
+      if not exist "$(SolutionDir)module\$(SolutionName)\bin" (
+          mkdir "$(SolutionDir)module\$(SolutionName)\bin"
+      )
+      if not exist "$(SolutionDir)module\$(SolutionName)\bin\Nano" (
+          mkdir "$(SolutionDir)module\$(SolutionName)\bin\Nano"
+      )
+
+      copy /y "$(ProjectDir)bin-nano\$(Configuration)\Microsoft.PowerShell.EditorServices.Nano.dll" "$(SolutionDir)module\$(SolutionName)\bin\Nano"
+    </PostBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             IMessageSerializer messageSerializer,
             Encoding messageEncoding = null)
         {
-            Validate.IsNotNull("inputStream", inputStream);
+            Validate.IsNotNull("streamReader", inputStream);
             Validate.IsNotNull("messageSerializer", messageSerializer);
 
             this.inputStream = inputStream;

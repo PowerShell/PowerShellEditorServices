@@ -46,11 +46,17 @@ namespace Microsoft.PowerShell.EditorServices
         {
             var type = scriptAst.Extent.StartScriptPosition.GetType();
             var method = 
+#if NanoServer
+                type.GetMethod(
+                    "CloneWithNewOffset",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+#else
                 type.GetMethod(
                     "CloneWithNewOffset",
                     BindingFlags.Instance | BindingFlags.NonPublic,
                     null,
                     new[] { typeof(int) }, null);
+#endif
 
             IScriptPosition cursorPosition = 
                 (IScriptPosition)method.Invoke(

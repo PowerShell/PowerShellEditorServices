@@ -57,34 +57,33 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// Creates a new instance of the ProfilePaths class.
         /// </summary>
         /// <param name="hostProfileId">
-        /// The identifier of the host used in the host-specific X_profile.ps1 filename.</param>
-        /// <param name="runspace">A runspace used to gather profile path locations.</param>
+        /// The identifier of the host used in the host-specific X_profile.ps1 filename.
+        /// </param>
+        /// <param name="baseAllUsersPath">The base path to use for constructing AllUsers profile paths.</param>
+        /// <param name="baseCurrentUserPath">The base path to use for constructing CurrentUser profile paths.</param>
         public ProfilePaths(
             string hostProfileId,
-            Runspace runspace)
+            string baseAllUsersPath,
+            string baseCurrentUserPath)
         {
-            string allUsersPath =
-                (string)runspace
-                    .SessionStateProxy
-                    .PSVariable
-                    .Get("PsHome")
-                    .Value;
+            this.Initialize(hostProfileId, baseAllUsersPath, baseCurrentUserPath);
+        }
 
-            string currentUserPath =
-                Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "WindowsPowerShell");
-
+        private void Initialize(
+            string hostProfileId,
+            string baseAllUsersPath,
+            string baseCurrentUserPath)
+        {
             string currentHostProfileName =
                 string.Format(
                     "{0}_{1}",
                     hostProfileId,
                     AllHostsProfileName);
 
-            this.AllUsersCurrentHost = Path.Combine(allUsersPath, currentHostProfileName);
-            this.CurrentUserCurrentHost = Path.Combine(currentUserPath, currentHostProfileName);
-            this.AllUsersAllHosts = Path.Combine(allUsersPath, AllHostsProfileName);
-            this.CurrentUserAllHosts = Path.Combine(currentUserPath, AllHostsProfileName);
+            this.AllUsersCurrentHost = Path.Combine(baseAllUsersPath, currentHostProfileName);
+            this.CurrentUserCurrentHost = Path.Combine(baseCurrentUserPath, currentHostProfileName);
+            this.AllUsersAllHosts = Path.Combine(baseAllUsersPath, AllHostsProfileName);
+            this.CurrentUserAllHosts = Path.Combine(baseCurrentUserPath, AllHostsProfileName);
         }
 
         /// <summary>

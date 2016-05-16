@@ -4,7 +4,6 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers;
-using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
@@ -16,6 +15,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     public abstract class ChannelBase
     {
         /// <summary>
+        /// Gets a boolean that is true if the channel is connected or false if not.
+        /// </summary>
+        public bool IsConnected { get; protected set; }
+
+        /// <summary>
         /// Gets the MessageReader for reading messages from the channel.
         /// </summary>
         public MessageReader MessageReader { get; protected set; }
@@ -24,13 +28,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         /// Gets the MessageWriter for writing messages to the channel.
         /// </summary>
         public MessageWriter MessageWriter { get; protected set; }
-
-        /// <summary>
-        /// Gets the MessageDispatcher which allows registration of
-        /// handlers for requests, responses, and events that are
-        /// transmitted through the channel.
-        /// </summary>
-        public MessageDispatcher MessageDispatcher { get; protected set; }
 
         /// <summary>
         /// Starts the channel and initializes the MessageDispatcher.
@@ -49,24 +46,21 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             }
 
             this.Initialize(messageSerializer);
-
-            if (this.MessageDispatcher == null)
-            {
-                this.MessageDispatcher =
-                    new MessageDispatcher(
-                        this.MessageReader,
-                        this.MessageWriter);
-
-                this.MessageDispatcher.Start();
-            }
         }
-        
+
+        /// <summary>
+        /// Returns a Task that allows the consumer of the ChannelBase
+        /// implementation to wait until a connection has been made to
+        /// the opposite endpoint whether it's a client or server.
+        /// </summary>
+        /// <returns>A Task to be awaited until a connection is made.</returns>
+        public abstract Task WaitForConnection();
+
         /// <summary>
         /// Stops the channel.
         /// </summary>
         public void Stop()
         {
-            this.MessageDispatcher.Stop();
             this.Shutdown();
         }
 

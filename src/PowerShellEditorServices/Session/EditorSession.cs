@@ -62,22 +62,16 @@ namespace Microsoft.PowerShell.EditorServices
         /// Starts the session using the provided IConsoleHost implementation
         /// for the ConsoleService.
         /// </summary>
-        public void StartSession()
-        {
-            this.StartSession(null);
-        }
-
-        /// <summary>
-        /// Starts the session using the provided IConsoleHost implementation
-        /// for the ConsoleService.
-        /// </summary>
         /// <param name="hostDetails">
         /// Provides details about the host application.
         /// </param>
-        public void StartSession(HostDetails hostDetails)
+        /// <param name="profilePaths">
+        /// An object containing the profile paths for the session.
+        /// </param>
+        public void StartSession(HostDetails hostDetails, ProfilePaths profilePaths)
         {
             // Initialize all services
-            this.PowerShellContext = new PowerShellContext(hostDetails);
+            this.PowerShellContext = new PowerShellContext(hostDetails, profilePaths);
             this.LanguageService = new LanguageService(this.PowerShellContext);
             this.DebugService = new DebugService(this.PowerShellContext);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);

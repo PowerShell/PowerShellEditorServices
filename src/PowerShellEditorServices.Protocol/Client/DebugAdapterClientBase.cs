@@ -28,10 +28,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
             await this.SendRequest(ConfigurationDoneRequest.Type, null);
         }
 
-        protected override async Task OnStart()
+        protected override Task OnStart()
+        {
+            return Task.FromResult(true);
+        }
+
+        protected override Task OnConnect()
         {
             // Initialize the debug adapter
-            await this.SendRequest(
+            return this.SendRequest(
                 InitializeRequest.Type,
                 new InitializeRequestArguments
                 {

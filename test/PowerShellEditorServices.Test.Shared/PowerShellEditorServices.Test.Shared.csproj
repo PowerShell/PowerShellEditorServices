@@ -66,8 +66,8 @@
     </None>
     <None Include="Debugging\Debug With Params [Test].ps1" />
     <None Include="Debugging\VariableTest.ps1" />
-    <None Include="Profile\Profile.ps1" />
     <None Include="Profile\ProfileTest.ps1" />
+    <None Include="Profile\Test.PowerShellEditorServices_profile.ps1" />
     <None Include="SymbolDetails\SymbolDetails.ps1" />
     <None Include="Symbols\MultipleSymbols.ps1" />
     <None Include="Symbols\NoSymbols.ps1" />

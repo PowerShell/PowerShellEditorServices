@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         private string DebugScriptPath = 
             Path.GetFullPath(@"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
 
-        public Task InitializeAsync()
+        public async Task InitializeAsync()
         {
             string testLogPath =
                 Path.Combine(
@@ -30,21 +30,30 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
-            this.protocolClient =
-            this.debugAdapterClient =
-                new DebugAdapterClient(
-                    new StdioClientChannel(
-                        "Microsoft.PowerShell.EditorServices.Host.exe",
-                        "/debugAdapter",
-                        "/logPath:\"" + testLogPath + "\"",
-                        "/logLevel:Verbose"));
+            string uniqueId = Guid.NewGuid().ToString();
+            string languageServicePipeName = "PSES-Test-LanguageService-" + uniqueId;
+            string debugServicePipeName = "PSES-Test-DebugService-" + uniqueId;
 
-            return this.debugAdapterClient.Start();
+            await this.LaunchService(
+                testLogPath,
+                languageServicePipeName,
+                debugServicePipeName,
+                waitForDebugger: false);
+                //waitForDebugger: true);
+
+            this.protocolClient =
+                this.debugAdapterClient =
+                    new DebugAdapterClient(
+                        new NamedPipeClientChannel(
+                            debugServicePipeName));
+
+            await this.debugAdapterClient.Start();
         }
 
-        public Task DisposeAsync()
+        public async Task DisposeAsync()
         {
-            return this.debugAdapterClient.Stop();
+            await this.debugAdapterClient.Stop();
+            this.KillService();
         }
 
         [Fact]

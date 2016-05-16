@@ -23,6 +23,7 @@
     <!-- of these versions for anything that should work against both APIs.          -->
     <DefineConstants Condition="'$(PowerShellVersion)' == 'v5r1'">$(DefineConstants);PowerShellv5r1;PowerShellv5</DefineConstants>
     <DefineConstants Condition="'$(PowerShellVersion)' == 'v5r2' Or '$(PowerShellVersion)' == ''">$(DefineConstants);PowerShellv5r2;PowerShellv5</DefineConstants>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -139,12 +140,6 @@
     <Compile Include="Workspace\ScriptFileMarker.cs" />
     <Compile Include="Workspace\ScriptRegion.cs" />
     <Compile Include="Workspace\Workspace.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\submodules\PSScriptAnalyzer\Engine\ScriptAnalyzerEngine.csproj">
-      <Project>{f4bde3d0-3eef-4157-8a3e-722df7adef60}</Project>
-      <Name>ScriptAnalyzerEngine</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Extensions\CmdletInterface.ps1" />

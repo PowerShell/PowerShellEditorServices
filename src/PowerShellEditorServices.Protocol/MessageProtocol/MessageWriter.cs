@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using System;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
@@ -32,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             Stream outputStream,
             IMessageSerializer messageSerializer)
         {
-            Validate.IsNotNull("outputStream", outputStream);
+            Validate.IsNotNull("streamWriter", outputStream);
             Validate.IsNotNull("messageSerializer", messageSerializer);
 
             this.outputStream = outputStream;

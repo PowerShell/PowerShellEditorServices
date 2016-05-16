@@ -39,12 +39,11 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
             this.serverUrl = url;
         }
 
-        protected override void Initialize(IMessageSerializer messageSerializer)
+        public override async Task WaitForConnection()
         {
             try
             {
-                this.socket = new ClientWebSocket();
-                this.socket.ConnectAsync(new Uri(serverUrl), CancellationToken.None).Wait();
+                await this.socket.ConnectAsync(new Uri(serverUrl), CancellationToken.None);
             }
             catch (AggregateException ex)
             {
@@ -58,7 +57,13 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
 
                 throw;
             }
-            
+
+            this.IsConnected = true;
+        }
+
+        protected override void Initialize(IMessageSerializer messageSerializer)
+        {
+            this.socket = new ClientWebSocket();
             this.inputStream = new ClientWebSocketStream(socket);
             this.outputStream = new ClientWebSocketStream(socket);
 
