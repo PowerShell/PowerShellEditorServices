@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## 0.6.1
+### Monday, May 16, 2016
+
+- Fixed #221: Language server sometimes fails to initialize preventing IntelliSense, etc from working
+- Fixed #222: Editor commands are not receiving $host.UI prompt results
+
 ## 0.6.0
 ### Thursday, May 12, 2016
 
