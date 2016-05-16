@@ -193,6 +193,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             InvokeExtensionCommandRequest commandDetails,
             RequestContext<string> requestContext)
         {
+            // We don't await the result of the execution here because we want
+            // to be able to receive further messages while the editor command
+            // is executing.  This important in cases where the pipeline thread
+            // gets blocked by something in the script like a prompt to the user.
             EditorContext editorContext =
                 this.editorOperations.ConvertClientEditorContext(
                     commandDetails.Context);
@@ -207,7 +211,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 return requestContext.SendResult(null);
             });
 
-            return commandTask;
+            return Task.FromResult(true);
         }
 
         private async Task HandleExpandAliasRequest(
