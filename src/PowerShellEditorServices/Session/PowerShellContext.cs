@@ -296,7 +296,7 @@ namespace Microsoft.PowerShell.EditorServices
             bool sendErrorToHost = true)
         {
             RunspaceHandle runspaceHandle = null;
-            IEnumerable<TResult> executionResult = null;
+            IEnumerable<TResult> executionResult = Enumerable.Empty<TResult>();
 
             // If the debugger is active and the caller isn't on the pipeline 
             // thread, send the command over to that thread to be executed.

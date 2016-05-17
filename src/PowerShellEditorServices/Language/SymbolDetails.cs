@@ -6,6 +6,7 @@
 using System.Diagnostics;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -37,34 +38,35 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Constructors
 
-        internal SymbolDetails(
+        static internal async Task<SymbolDetails> Create(
             SymbolReference symbolReference, 
-            Runspace runspace)
+            PowerShellContext powerShellContext)
         {
-            this.SymbolReference = symbolReference;
+            SymbolDetails symbolDetails = new SymbolDetails();
+            symbolDetails.SymbolReference = symbolReference;
 
             // If the symbol is a command, get its documentation
             if (symbolReference.SymbolType == SymbolType.Function)
             {
                 CommandInfo commandInfo =
-                    CommandHelpers.GetCommandInfo(
+                    await CommandHelpers.GetCommandInfo(
                         symbolReference.SymbolName,
-                        runspace);
+                        powerShellContext);
 
                 if (commandInfo != null)
                 {
-                    this.Documentation =
-                        CommandHelpers.GetCommandSynopsis(
+                    symbolDetails.Documentation =
+                        await CommandHelpers.GetCommandSynopsis(
                             commandInfo,
-                            runspace);
+                            powerShellContext);
 
                     if (commandInfo.CommandType == CommandTypes.Application)
                     {
-                        this.DisplayString = "(application) " + symbolReference.SymbolName;
+                        symbolDetails.DisplayString = "(application) " + symbolReference.SymbolName;
                     }
                     else
                     {
-                        this.DisplayString = "function " + symbolReference.SymbolName;
+                        symbolDetails.DisplayString = "function " + symbolReference.SymbolName;
                     }
                 }
                 else
@@ -72,18 +74,20 @@ namespace Microsoft.PowerShell.EditorServices
                     // Command information can't be loaded.  This is likely due to
                     // the symbol being a function that is defined in a file that
                     // hasn't been loaded in the runspace yet.
-                    this.DisplayString = "function " + symbolReference.SymbolName;
+                    symbolDetails.DisplayString = "function " + symbolReference.SymbolName;
                 }
             }
             else if (symbolReference.SymbolType == SymbolType.Parameter)
             {
                 // TODO: Get parameter help
-                this.DisplayString = "(parameter) " + symbolReference.SymbolName;
+                symbolDetails.DisplayString = "(parameter) " + symbolReference.SymbolName;
             }
             else if (symbolReference.SymbolType == SymbolType.Variable)
             {
-                this.DisplayString = symbolReference.SymbolName;
+                symbolDetails.DisplayString = symbolReference.SymbolName;
             }
+
+            return symbolDetails;
         }
 
         #endregion

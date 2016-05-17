@@ -7,13 +7,12 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Management.Automation;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    using System.Management.Automation;
-    using System.Management.Automation.Runspaces;
-    using System.Threading;
     /// <summary>
     /// Provides a high-level service for performing code completion and
     /// navigation operations on PowerShell scripts.
@@ -196,15 +195,11 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (symbolReference != null)
             {
-                // Request a runspace handle with a short timeout
-                RunspaceHandle runspaceHandle =
-                    await this.powerShellContext.GetRunspaceHandle(
-                        new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
-
                 symbolReference.FilePath = scriptFile.FilePath;
-                symbolDetails = new SymbolDetails(symbolReference, runspaceHandle.Runspace);
-
-                runspaceHandle.Dispose();
+                symbolDetails =
+                    await SymbolDetails.Create(
+                        symbolReference,
+                        this.powerShellContext);
             }
             else
             {
@@ -335,7 +330,10 @@ namespace Microsoft.PowerShell.EditorServices
             // look for it in the builtin commands
             if (foundDefinition == null)
             {
-                CommandInfo cmdInfo = await GetCommandInfo(foundSymbol.SymbolName);
+                CommandInfo cmdInfo =
+                    await CommandHelpers.GetCommandInfo(
+                        foundSymbol.SymbolName,
+                        this.powerShellContext);
 
                 foundDefinition = 
                     await FindDeclarationForBuiltinCommand(
@@ -409,7 +407,11 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (foundSymbol != null)
             {
-                CommandInfo commandInfo = await GetCommandInfo(foundSymbol.SymbolName);
+                CommandInfo commandInfo =
+                    await CommandHelpers.GetCommandInfo(
+                        foundSymbol.SymbolName,
+                        this.powerShellContext);
+
                 if (commandInfo != null)
                 {
                     try
@@ -481,16 +483,6 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private async Task<CommandInfo> GetCommandInfo(string commandName)
-        {
-            PSCommand command = new PSCommand();
-            command.AddCommand("Get-Command");
-            command.AddArgument(commandName);
-
-            var results = await this.powerShellContext.ExecuteCommand<CommandInfo>(command);
-            return results.FirstOrDefault();
-        }
-
         private ScriptFile[] GetBuiltinCommandScriptFiles(
             PSModuleInfo moduleInfo,
             Workspace workspace)
@@ -541,7 +533,10 @@ namespace Microsoft.PowerShell.EditorServices
                 int index = 0;
                 ScriptFile[] nestedModuleFiles;
 
-                CommandInfo commandInfo = await GetCommandInfo(foundSymbol.SymbolName);
+                CommandInfo commandInfo =
+                    await CommandHelpers.GetCommandInfo(
+                        foundSymbol.SymbolName,
+                        this.powerShellContext);
 
                 nestedModuleFiles =
                     GetBuiltinCommandScriptFiles(
