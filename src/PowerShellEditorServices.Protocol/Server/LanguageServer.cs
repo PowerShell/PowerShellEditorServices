@@ -528,21 +528,16 @@ function __Expand-Alias {
         {
             if (completionItem.Kind == CompletionItemKind.Function)
             {
-                RunspaceHandle runspaceHandle =
-                    await editorSession.PowerShellContext.GetRunspaceHandle();
-
                 // Get the documentation for the function
                 CommandInfo commandInfo =
-                    CommandHelpers.GetCommandInfo(
+                    await CommandHelpers.GetCommandInfo(
                         completionItem.Label,
-                        runspaceHandle.Runspace);
+                        this.editorSession.PowerShellContext);
 
                 completionItem.Documentation =
-                    CommandHelpers.GetCommandSynopsis(
+                    await CommandHelpers.GetCommandSynopsis(
                         commandInfo,
-                        runspaceHandle.Runspace);
-
-                runspaceHandle.Dispose();
+                        this.editorSession.PowerShellContext);
             }
 
             // Send back the updated CompletionItem
