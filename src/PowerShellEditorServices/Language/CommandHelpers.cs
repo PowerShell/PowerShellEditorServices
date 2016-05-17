@@ -4,12 +4,11 @@
 //
 
 using System.Linq;
+using System.Management.Automation;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    using System.Management.Automation;
-    using System.Management.Automation.Runspaces;
-
     /// <summary>
     /// Provides utility methods for working with PowerShell commands.
     /// </summary>
@@ -19,34 +18,29 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the CommandInfo instance for a command with a particular name.
         /// </summary>
         /// <param name="commandName">The name of the command.</param>
-        /// <param name="runspace">The Runspace to use for running Get-Command.</param>
+        /// <param name="powerShellContext">The PowerShellContext to use for running Get-Command.</param>
         /// <returns>A CommandInfo object with details about the specified command.</returns>
-        public static CommandInfo GetCommandInfo(
+        public static async Task<CommandInfo> GetCommandInfo(
             string commandName, 
-            Runspace runspace)
+            PowerShellContext powerShellContext)
         {
-            CommandInfo commandInfo = null;
+            PSCommand command = new PSCommand();
+            command.AddCommand(@"Microsoft.PowerShell.Core\Get-Command");
+            command.AddArgument(commandName);
 
-            using (PowerShell powerShell = PowerShell.Create())
-            {
-                powerShell.Runspace = runspace;
-                powerShell.AddCommand("Get-Command");
-                powerShell.AddArgument(commandName);
-                commandInfo = powerShell.Invoke<CommandInfo>().FirstOrDefault();
-            }
-
-            return commandInfo;
+            var results = await powerShellContext.ExecuteCommand<CommandInfo>(command, false, false);
+            return results.FirstOrDefault();
         }
 
         /// <summary>
         /// Gets the command's "Synopsis" documentation section.
         /// </summary>
         /// <param name="commandInfo">The CommandInfo instance for the command.</param>
-        /// <param name="runspace">The Runspace to use for getting command documentation.</param>
+        /// <param name="powerShellContext">The PowerShellContext to use for getting command documentation.</param>
         /// <returns></returns>
-        public static string GetCommandSynopsis(
+        public static async Task<string> GetCommandSynopsis(
             CommandInfo commandInfo, 
-            Runspace runspace)
+            PowerShellContext powerShellContext)
         {
             string synopsisString = string.Empty;
 
@@ -57,13 +51,12 @@ namespace Microsoft.PowerShell.EditorServices
                  commandInfo.CommandType == CommandTypes.Function ||
                  commandInfo.CommandType == CommandTypes.Filter))
             {
-                using (PowerShell powerShell = PowerShell.Create())
-                {
-                    powerShell.Runspace = runspace;
-                    powerShell.AddCommand("Get-Help");
-                    powerShell.AddArgument(commandInfo);
-                    helpObject = powerShell.Invoke<PSObject>().FirstOrDefault();
-                }
+                PSCommand command = new PSCommand();
+                command.AddCommand(@"Microsoft.PowerShell.Core\Get-Help");
+                command.AddArgument(commandInfo);
+
+                var results = await powerShellContext.ExecuteCommand<PSObject>(command, false, false);
+                helpObject = results.FirstOrDefault();
 
                 if (helpObject != null)
                 {
