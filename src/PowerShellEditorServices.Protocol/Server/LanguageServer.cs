@@ -1128,7 +1128,7 @@ function __Expand-Alias {
                 // from the ToolTipText - if there is any ToolTipText.
                 if (completionDetails.ToolTipText != null)
                 {
-                    // Fix for #193 - notepad++.exe in tooltip text caused regex parser to throw.
+                    // Fix for #240 - notepad++.exe in tooltip text caused regex parser to throw.
                     string escapedToolTipText = Regex.Escape(completionDetails.ToolTipText);
 
                     // Don't display ToolTipText if it is the same as the ListItemText.
