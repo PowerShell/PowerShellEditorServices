@@ -107,5 +107,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
             RequestType<string, EditorCommandResponse> Type =
             RequestType<string, EditorCommandResponse>.Create("editor/openFile");
     }
+    public class ShowInformationMessageRequest
+    {
+        public static readonly
+            RequestType<string, EditorCommandResponse> Type =
+            RequestType<string, EditorCommandResponse>.Create("editor/showInformationMessage");
+    }
+
+    public class ShowWarningMessageRequest
+    {
+        public static readonly
+            RequestType<string, EditorCommandResponse> Type =
+            RequestType<string, EditorCommandResponse>.Create("editor/showWarningMessage");
+    }
+
+    public class ShowErrorMessageRequest
+    {
+        public static readonly
+            RequestType<string, EditorCommandResponse> Type =
+            RequestType<string, EditorCommandResponse>.Create("editor/showErrorMessage");
+    }
 }
 
