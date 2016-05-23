@@ -109,5 +109,33 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     filePath,
                     true);
         }
+
+        public Task ShowInformationMessage(string message)
+        {
+            return
+                this.messageSender.SendRequest(
+                    ShowInformationMessageRequest.Type,
+                    message,
+                    true);
+        }
+
+        public Task ShowErrorMessage(string message)
+        {
+            return
+                this.messageSender.SendRequest(
+                    ShowErrorMessageRequest.Type,
+                    message,
+                    true);
+        }
+
+        public Task ShowWarningMessage(string message)
+        {
+            return
+                this.messageSender.SendRequest(
+                    ShowWarningMessageRequest.Type,
+                    message,
+                    true);
+
+        }
     }
 }

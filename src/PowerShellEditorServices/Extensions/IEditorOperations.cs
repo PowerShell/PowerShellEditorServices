@@ -43,6 +43,27 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="selectionRange">The range over which the selection will be made.</param>
         /// <returns>A Task that can be tracked for completion.</returns>
         Task SetSelection(BufferRange selectionRange);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        Task ShowInformationMessage(string message);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        Task ShowErrorMessage(string message);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        Task ShowWarningMessage(string message);
     }
 }
 

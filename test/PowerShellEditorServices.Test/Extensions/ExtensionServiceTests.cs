@@ -187,6 +187,21 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
         {
             throw new NotImplementedException();
         }
+
+        public Task ShowInformationMessage(string message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ShowErrorMessage(string message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ShowWarningMessage(string message)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 
