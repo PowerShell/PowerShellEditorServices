@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System.Threading.Tasks;
+using System;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
@@ -135,7 +136,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     ShowWarningMessageRequest.Type,
                     message,
                     true);
+        }
 
+        public Task SetStatusBarMessage(string message)
+        {
+            return
+                this.messageSender.SendRequest(
+                    SetStatusBarMessageRequest.Type,
+                    message,
+            true);
         }
     }
 }

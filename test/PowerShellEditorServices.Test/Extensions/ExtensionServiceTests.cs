@@ -202,6 +202,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
         {
             throw new NotImplementedException();
         }
+
+        public Task SetStatusBarMessage(string message)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

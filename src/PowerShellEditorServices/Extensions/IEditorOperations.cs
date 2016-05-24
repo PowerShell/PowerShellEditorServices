@@ -64,6 +64,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="message"></param>
         /// <returns></returns>
         Task ShowWarningMessage(string message);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        Task SetStatusBarMessage(string message);
     }
 }
 
