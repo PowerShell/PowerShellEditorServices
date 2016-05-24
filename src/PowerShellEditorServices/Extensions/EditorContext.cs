@@ -109,50 +109,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
                 .Wait();
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
-        public void ShowInformationMessage(string message)
-        {
-            this.editorOperations
-                .ShowInformationMessage(message)
-                .Wait();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
-        public void ShowErrorMessage(string message)
-        {
-            this.editorOperations
-                .ShowErrorMessage(message)
-                .Wait();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
-        public void ShowWarningMessage(string message)
-        {
-            this.editorOperations
-                .ShowWarningMessage(message)
-                .Wait();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
-        public void SetStatusBarMessage(string message)
-        {
-            this.editorOperations
-                .SetStatusBarMessage(message)
-                .Wait();
-        }
-
         #endregion
     }
 }
