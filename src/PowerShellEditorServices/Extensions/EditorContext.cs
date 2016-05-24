@@ -142,6 +142,17 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
                 .Wait();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        public void SetStatusBarMessage(string message)
+        {
+            this.editorOperations
+                .SetStatusBarMessage(message)
+                .Wait();
+        }
+
         #endregion
     }
 }

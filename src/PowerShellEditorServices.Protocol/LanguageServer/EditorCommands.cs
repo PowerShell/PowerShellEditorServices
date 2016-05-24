@@ -127,5 +127,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
             RequestType<string, EditorCommandResponse> Type =
             RequestType<string, EditorCommandResponse>.Create("editor/showErrorMessage");
     }
+
+    public class SetStatusBarMessageRequest
+    {
+        public static readonly
+            RequestType<string, EditorCommandResponse> Type =
+            RequestType<string, EditorCommandResponse>.Create("editor/setStatusBarMessage");
+    }
 }
 
