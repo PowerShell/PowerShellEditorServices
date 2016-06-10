@@ -15,7 +15,8 @@ Register-EditorCommand `
     -ScriptBlock {
         param([Microsoft.PowerShell.EditorServices.Extensions.EditorContext]$context)
         
-        $List = @('Microsoft.VSCode_profile.ps1','Microsoft.PowerShell_profile.ps1','Microsoft.PowerShellISE_profile.ps1','Profile.ps1')
+        $Current = Split-Path -Path $profile -Leaf        
+        $List = @($Current,'Microsoft.VSCode_profile.ps1','Microsoft.PowerShell_profile.ps1','Microsoft.PowerShellISE_profile.ps1','Profile.ps1') | Select-Object -Unique
         $Choices = [System.Management.Automation.Host.ChoiceDescription[]] @($List)
         $Selection = $host.ui.PromptForChoice('Please Select a Profile', '(Current User)', $choices,'0')
         $Name = $List[$Selection]
