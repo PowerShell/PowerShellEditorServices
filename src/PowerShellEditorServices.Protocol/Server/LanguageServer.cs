@@ -473,6 +473,14 @@ function __Expand-Alias {
                 editorSession.Workspace.GetFile(
                     textDocumentPosition.Uri);
 
+
+            int lineNumber = textDocumentPosition.Position.Line + 1;
+            int colNumber = textDocumentPosition.Position.Character + 1;
+            var symbol = editorSession.LanguageService.FindSymbolAtLocation(
+                    scriptFile,
+                    lineNumber,
+                    colNumber);
+
             ParameterSetSignatures parameterSets =
                 await editorSession.LanguageService.FindParameterSetsInFile(
                     scriptFile,
@@ -480,8 +488,6 @@ function __Expand-Alias {
                     textDocumentPosition.Position.Character + 1);
 
             SignatureInformation[] signatures = null;
-            int? activeParameter = null;
-            int? activeSignature = 0;
 
             if (parameterSets != null)
             {
@@ -507,12 +513,14 @@ function __Expand-Alias {
                 signatures = new SignatureInformation[0];
             }
 
+            var activeParamAndSig = editorSession.LanguageService.GetActiveParameterAndSignature(parameterSets, symbol == null ? null : symbol.SymbolName);
+
             await requestContext.SendResult(
                 new SignatureHelp
                 {
                     Signatures = signatures,
-                    ActiveParameter = activeParameter,
-                    ActiveSignature = activeSignature
+                    ActiveParameter = activeParamAndSig.Item1,
+                    ActiveSignature = activeParamAndSig.Item2
                 });
         }
 
