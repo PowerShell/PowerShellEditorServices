@@ -74,8 +74,8 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 // This method allows FileNotFoundException to bubble up 
                 // if the file isn't found.
-
-                using (StreamReader streamReader = new StreamReader(resolvedFilePath, Encoding.UTF8))
+                using (FileStream fileStream = new FileStream(resolvedFilePath, FileMode.Open, FileAccess.Read))
+                using (StreamReader streamReader = new StreamReader(fileStream, Encoding.UTF8))
                 {
                     scriptFile = 
                         new ScriptFile(

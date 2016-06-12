@@ -23,11 +23,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         {
         }
 
-        protected override async Task Initialize()
+        protected override Task Initialize()
         {
             // Add handlers for common events
             this.SetEventHandler(PublishDiagnosticsNotification.Type, HandlePublishDiagnosticsEvent);
 
+            return Task.FromResult(true);
+        }
+
+        protected override Task OnConnect()
+        {
             // Send the 'initialize' request and wait for the response
             var initializeRequest = new InitializeRequest
             {
@@ -35,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
                 Capabilities = new ClientCapabilities()
             };
 
-            await this.SendRequest(
+            return this.SendRequest(
                 InitializeRequest.Type, 
                 initializeRequest);
         }

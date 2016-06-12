@@ -128,10 +128,12 @@ namespace Microsoft.PowerShell.EditorServices
                     valueObject.GetType() : 
                     null;
 
+            TypeInfo valueTypeInfo = valueType.GetTypeInfo();
+
             return
                 valueObject != null &&
-                !valueType.IsPrimitive &&
-                !valueType.IsEnum && // Enums don't have any properties
+                !valueTypeInfo.IsPrimitive &&
+                !valueTypeInfo.IsEnum && // Enums don't have any properties
                 !(valueObject is string) && // Strings get treated as IEnumerables
                 !(valueObject is decimal) &&
                 !(valueObject is UnableToRetrievePropertyMessage);

@@ -24,6 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Channel.WebSocket
         public async Task InitializeAsync()
         {
             webapp = WebApp.Start<Startup>("http://localhost:9999");
+
             this.languageServiceClient =
                  new LanguageServiceClient(
                      new WebsocketClientChannel("ws://localhost:9999/language"));
@@ -37,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Channel.WebSocket
             return Task.Delay(0);
         }
 
-        [Fact]
+        [Fact(Skip = "Disabling WebSocket test until the channel implementation is refactored.")]
         public async Task ServiceCommunicatesOverWebsockets()
         {
             string expandedText =

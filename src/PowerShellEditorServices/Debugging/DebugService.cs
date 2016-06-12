@@ -301,7 +301,7 @@ namespace Microsoft.PowerShell.EditorServices
                             string.Equals(
                                 v.Name,
                                 variableExpression,
-                                StringComparison.InvariantCultureIgnoreCase));
+                                StringComparison.CurrentCultureIgnoreCase));
 
                 if (resolvedVariable != null &&
                     resolvedVariable.IsExpandable)

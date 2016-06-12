@@ -22,9 +22,8 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
     /// </summary>
     public class WebSocketServerChannel : ChannelBase
     {
-        private readonly WebSocketConnection socketConnection;
         private MemoryStream inStream;
-        private WebSocketMessageDispatcher webSocketMessageDispatcher;
+        private readonly WebSocketConnection socketConnection;
 
         public WebSocketServerChannel(WebSocketConnection socket)
         {
@@ -45,9 +44,6 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
                 new MessageWriter(
                     new WebSocketStream(socketConnection), 
                     messageSerializer);
-
-            webSocketMessageDispatcher = new WebSocketMessageDispatcher(MessageReader, MessageWriter);
-            this.MessageDispatcher = webSocketMessageDispatcher;
         }
 
         /// <summary>
@@ -67,12 +63,17 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
             //Write data and dispatch to handlers
             await inStream.WriteAsync(message.ToArray(), 0, message.Count);
             inStream.Position = 0;
-            await webSocketMessageDispatcher.DispatchMessage();
         }
 
         protected override void Shutdown()
         {
             this.socketConnection.Close(WebSocketCloseStatus.NormalClosure, "Server shutting down");
+        }
+
+        public override Task WaitForConnection()
+        {
+            // TODO: Need to update behavior here
+            return Task.FromResult(true);
         }
     }
 
@@ -139,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
     {
         public LanguageServerWebSocketConnection()
         {
-            Server = new LanguageServer(null, Channel);
+            Server = new LanguageServer(null, null, Channel);
         }
     }
 
@@ -150,28 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
     {
         public DebugAdapterWebSocketConnection()
         {
-            Server = new DebugAdapter(null, Channel);
-        }
-    }
-
-    /// <summary>
-    /// Overrides the default behavior of the <see cref="MessageDispatcher"/> class to dispatch messages
-    /// on command rather than on a background thread. 
-    /// </summary>
-    internal class WebSocketMessageDispatcher : MessageDispatcher
-    {
-        public WebSocketMessageDispatcher(MessageReader messageReader, MessageWriter messageWriter) : base(messageReader, messageWriter)
-        {
-        }
-
-        /// <summary>
-        /// Reads and dispatches a message to the configured handlers.
-        /// </summary>
-        /// <returns></returns>
-        public async Task DispatchMessage()
-        {
-            var message = await this.MessageReader.ReadMessage();
-            await base.DispatchMessage(message, this.MessageWriter);
+            Server = new DebugAdapter(null, null, Channel);
         }
     }
 }

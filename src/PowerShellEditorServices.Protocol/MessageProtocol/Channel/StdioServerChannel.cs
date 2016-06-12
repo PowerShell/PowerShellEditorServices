@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers;
 using System.IO;
 using System.Text;
 using System;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
@@ -22,9 +23,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         protected override void Initialize(IMessageSerializer messageSerializer)
         {
+#if !NanoServer
             // Ensure that the console is using UTF-8 encoding
             System.Console.InputEncoding = Encoding.UTF8;
             System.Console.OutputEncoding = Encoding.UTF8;
+#endif
 
             // Open the standard input/output streams
             this.inputStream = System.Console.OpenStandardInput();
@@ -40,6 +43,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                 new MessageWriter(
                     this.outputStream,
                     messageSerializer);
+
+            this.IsConnected = true;
+        }
+
+        public override Task WaitForConnection()
+        {
+            // We're always connected immediately in the stdio channel
+            return Task.FromResult(true);
         }
 
         protected override void Shutdown()

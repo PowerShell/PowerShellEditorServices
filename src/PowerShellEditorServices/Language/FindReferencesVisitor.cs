@@ -91,10 +91,10 @@ namespace Microsoft.PowerShell.EditorServices
                         // Check if the found symbol's name is the same as the commandAst's name OR
                         // if the symbol's name is an alias for this commandAst's name (commandAst is a cmdlet) OR 
                         // if the symbol's name is the same as the commandAst's cmdlet name (commandAst is a alias)
-                        if (commandName.Equals(symbolRef.SymbolName, StringComparison.InvariantCultureIgnoreCase) ||
+                        if (commandName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase) ||
                         alaises.Contains(symbolRef.ScriptRegion.Text.ToLower()) ||
-                        command.Equals(symbolRef.ScriptRegion.Text, StringComparison.InvariantCultureIgnoreCase) ||
-                        (!command.Equals(string.Empty) && command.Equals(symbolRefCommandName, StringComparison.InvariantCultureIgnoreCase)))
+                        command.Equals(symbolRef.ScriptRegion.Text, StringComparison.CurrentCultureIgnoreCase) ||
+                        (!command.Equals(string.Empty) && command.Equals(symbolRefCommandName, StringComparison.CurrentCultureIgnoreCase)))
                         {
                             this.FoundReferences.Add(new SymbolReference(
                                 SymbolType.Function,
@@ -105,7 +105,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 else // search does not include aliases
                 {
-                    if (commandName.Equals(symbolRef.SymbolName, StringComparison.InvariantCultureIgnoreCase))
+                    if (commandName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
                     {
                         this.FoundReferences.Add(new SymbolReference(
                             SymbolType.Function,
@@ -141,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices
             };
 
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
-                nameExtent.Text.Equals(symbolRef.SymbolName, StringComparison.InvariantCultureIgnoreCase))
+                nameExtent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 this.FoundReferences.Add(new SymbolReference(
                                           SymbolType.Function,
@@ -159,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices
         public override AstVisitAction VisitCommandParameter(CommandParameterAst commandParameterAst)
         {
             if (symbolRef.SymbolType.Equals(SymbolType.Parameter) &&
-                commandParameterAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.InvariantCultureIgnoreCase))
+                commandParameterAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 this.FoundReferences.Add(new SymbolReference(
                                          SymbolType.Parameter,
@@ -177,7 +177,7 @@ namespace Microsoft.PowerShell.EditorServices
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
             if(symbolRef.SymbolType.Equals(SymbolType.Variable) &&
-                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.InvariantCultureIgnoreCase))
+                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 this.FoundReferences.Add(new SymbolReference(
                                          SymbolType.Variable,

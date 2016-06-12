@@ -20,7 +20,6 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="bin\$configuration$\$id$.exe" target="lib\net45\" />
-    <file src="bin\$configuration$\$id$.x86.exe" target="lib\net45\" />
+    <file src="bin\$configuration$\$id$.dll" target="lib\net45\" />
   </files>
 </package>

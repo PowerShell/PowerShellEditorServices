@@ -3,9 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,6 +17,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     {
         #region Fields
 
+        private ChannelBase protocolChannel;
+        private AsyncQueue<Message> messagesToWrite;
         private AsyncContextThread messageLoopThread;
 
         private Dictionary<string, Func<Message, MessageWriter, Task>> requestHandlers =
@@ -46,6 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         }
 
         protected MessageReader MessageReader { get; private set; }
+
         protected MessageWriter MessageWriter { get; private set; }
 
 
@@ -53,12 +58,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Constructors
 
-        public MessageDispatcher(
-            MessageReader messageReader,
-            MessageWriter messageWriter)
+        public MessageDispatcher(ChannelBase protocolChannel)
         {
-            this.MessageReader = messageReader;
-            this.MessageWriter = messageWriter;
+            this.protocolChannel = protocolChannel;
+            this.MessageReader = protocolChannel.MessageReader;
+            this.MessageWriter = protocolChannel.MessageWriter;
         }
 
         #endregion
@@ -67,7 +71,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         public void Start()
         {
-
             // Start the main message loop thread.  The Task is
             // not explicitly awaited because it is running on
             // an independent background thread.
@@ -171,6 +174,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             this.responseHandler = responseHandler;
         }
 
+        #endregion
+
+        #region Events
+
         public event EventHandler<Exception> UnhandledException;
 
         protected void OnUnhandledException(Exception unhandledException)
@@ -197,7 +204,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
                 try
                 {
-                    // Read a message from stdin
+                    // Read a message from the channel
                     newMessage = await this.MessageReader.ReadMessage();
                 }
                 catch (MessageParseException e)
@@ -211,6 +218,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
                     // Continue the loop
                     continue;
+                }
+                catch (EndOfStreamException)
+                {
+                    // The stream has ended, end the message loop
+                    break;
                 }
                 catch (Exception e)
                 {

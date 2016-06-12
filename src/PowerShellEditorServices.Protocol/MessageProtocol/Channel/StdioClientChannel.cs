@@ -7,6 +7,8 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
@@ -85,6 +87,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                 new MessageWriter(
                     this.outputStream,
                     messageSerializer);
+
+            this.IsConnected = true;
+        }
+
+        public override Task WaitForConnection()
+        {
+            // We're always connected immediately in the stdio channel
+            return Task.FromResult(true);
         }
 
         protected override void Shutdown()

@@ -47,8 +47,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "desktop", "desktop", "{EE0A
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nano", "nano", "{5B98CD12-46AA-47CB-95B9-AFF11EA76489}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nano.PowerShellEditorServices", "src\PowerShellEditorServices\Nano.PowerShellEditorServices.csproj", "{02DC1749-7657-4A41-9865-313F07DE8901}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,10 +97,6 @@ Global
 		{9D98120C-9601-4678-AD50-EF2808DABAC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9D98120C-9601-4678-AD50-EF2808DABAC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9D98120C-9601-4678-AD50-EF2808DABAC9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{02DC1749-7657-4A41-9865-313F07DE8901}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{02DC1749-7657-4A41-9865-313F07DE8901}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{02DC1749-7657-4A41-9865-313F07DE8901}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{02DC1749-7657-4A41-9865-313F07DE8901}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -121,6 +115,5 @@ Global
 		{9D98120C-9601-4678-AD50-EF2808DABAC9} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 		{EE0A010C-E246-49AE-92E7-AD4320C45086} = {F594E7FD-1E72-4E51-A496-B019C2BA3180}
 		{5B98CD12-46AA-47CB-95B9-AFF11EA76489} = {F594E7FD-1E72-4E51-A496-B019C2BA3180}
-		{02DC1749-7657-4A41-9865-313F07DE8901} = {5B98CD12-46AA-47CB-95B9-AFF11EA76489}
 	EndGlobalSection
 EndGlobal

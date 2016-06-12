@@ -34,19 +34,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         /// <param name="hostDetails">
         /// Provides details about the host application.
         /// </param>
-        public LanguageServer(HostDetails hostDetails)
-            : this(hostDetails, new StdioServerChannel())
+        public LanguageServer(HostDetails hostDetails, ProfilePaths profilePaths)
+            : this(hostDetails, profilePaths, new StdioServerChannel())
         {
         }
 
         /// <param name="hostDetails">
         /// Provides details about the host application.
         /// </param>
-        public LanguageServer(HostDetails hostDetails, ChannelBase serverChannel)
+        public LanguageServer(HostDetails hostDetails, ProfilePaths profilePaths, ChannelBase serverChannel)
             : base(serverChannel)
         {
             this.editorSession = new EditorSession();
-            this.editorSession.StartSession(hostDetails);
+            this.editorSession.StartSession(hostDetails, profilePaths);
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
 
             // Attach to ExtensionService events

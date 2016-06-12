@@ -3,10 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+#if ScriptAnalyzer
+using Microsoft.Windows.PowerShell.ScriptAnalyzer;
 using System;
 using System.Management.Automation;
 using Microsoft.PowerShell.EditorServices.Console;
-using Microsoft.Windows.PowerShell.ScriptAnalyzer;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -14,6 +15,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// Provides an implementation of ScriptAnalyzer's IOutputWriter
     /// interface that writes to trace logs.
     /// </summary>
+
     internal class AnalysisOutputWriter : IOutputWriter
     {
         private IConsoleHost consoleHost;
@@ -51,3 +53,5 @@ namespace Microsoft.PowerShell.EditorServices
         #endregion
     }
 }
+
+#endif

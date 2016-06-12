@@ -80,12 +80,12 @@ namespace Microsoft.PowerShell.EditorServices
 
         public override System.Globalization.CultureInfo CurrentCulture
         {
-            get { return System.Threading.Thread.CurrentThread.CurrentCulture; }
+            get { return System.Globalization.CultureInfo.CurrentCulture; }
         }
 
         public override System.Globalization.CultureInfo CurrentUICulture
         {
-            get { return System.Threading.Thread.CurrentThread.CurrentUICulture; }
+            get { return System.Globalization.CultureInfo.CurrentUICulture; }
         }
 
         public override PSHostUserInterface UI

@@ -4,7 +4,6 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Utility;
-using Microsoft.Windows.PowerShell.ScriptAnalyzer;
 using System;
 using System.IO;
 using System.Linq;
@@ -12,6 +11,11 @@ using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Console;
+using System.Management.Automation;
+
+#if ScriptAnalyzer
+using Microsoft.Windows.PowerShell.ScriptAnalyzer;
+#endif
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -24,7 +28,9 @@ namespace Microsoft.PowerShell.EditorServices
         #region Private Fields
 
         private Runspace analysisRunspace;
+        #if ScriptAnalyzer
         private ScriptAnalyzer scriptAnalyzer;
+        #endif
 
         /// <summary>
         /// Defines the list of Script Analyzer rules to include by default if
@@ -54,6 +60,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             try
             {
+#if ScriptAnalyzer
                 // Attempt to create a ScriptAnalyzer instance first
                 // just in case the assembly can't be found and we
                 // can skip creating an extra runspace.
@@ -70,6 +77,7 @@ namespace Microsoft.PowerShell.EditorServices
                     includeRuleNames: settingsPath == null ? IncludedRules : null,
                     includeDefaultRules: true,
                     profile: settingsPath);
+#endif
             }
             catch (FileNotFoundException)
             {
@@ -91,6 +99,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
         public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file)
         {
+#if ScriptAnalyzer
             if (this.scriptAnalyzer != null && file.IsAnalysisEnabled)
             {
                 // TODO: This is a temporary fix until we can change how
@@ -115,6 +124,7 @@ namespace Microsoft.PowerShell.EditorServices
                 return analysisTask.Result;
             }
             else
+#endif
             {
                 // Return an empty marker list
                 return new ScriptFileMarker[0];

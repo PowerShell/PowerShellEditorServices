@@ -76,9 +76,17 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// PowerShell Version of the current runspace.
+        /// Gets the PowerShell version of the current runspace.
         /// </summary>
         public Version PowerShellVersion
+        {
+            get; private set;
+        }
+
+        /// <summary>
+        /// Gets the PowerShell edition of the current runspace.
+        /// </summary>
+        public string PowerShellEdition
         {
             get; private set;
         }
@@ -105,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Initializes a new instance of the PowerShellContext class and
         /// opens a runspace to be used for the session.
         /// </summary>
-        public PowerShellContext() : this(null)
+        public PowerShellContext() : this((HostDetails)null, null)
         {
         }
 
@@ -114,7 +122,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// opens a runspace to be used for the session.
         /// </summary>
         /// <param name="hostDetails">Provides details about the host application.</param>
-        public PowerShellContext(HostDetails hostDetails)
+        /// <param name="profilePaths">An object containing the profile paths for the session.</param>
+        public PowerShellContext(HostDetails hostDetails, ProfilePaths profilePaths)
         {
             hostDetails = hostDetails ?? HostDetails.Default;
 
@@ -122,13 +131,15 @@ namespace Microsoft.PowerShell.EditorServices
             this.initialSessionState = InitialSessionState.CreateDefault2();
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, this.initialSessionState);
+#if !NanoServer
             runspace.ApartmentState = ApartmentState.STA;
+#endif
             runspace.ThreadOptions = PSThreadOptions.ReuseThread;
             runspace.Open();
 
             this.ownsInitialRunspace = true;
 
-            this.Initialize(hostDetails, runspace);
+            this.Initialize(profilePaths, runspace);
 
             // Use reflection to execute ConsoleVisibility.AlwaysCaptureApplicationIO = true;
             Type consoleVisibilityType =
@@ -153,14 +164,14 @@ namespace Microsoft.PowerShell.EditorServices
         /// Initializes a new instance of the PowerShellContext class using
         /// an existing runspace for the session.
         /// </summary>
+        /// <param name="profilePaths">An object containing the profile paths for the session.</param>
         /// <param name="initialRunspace">The initial runspace to use for this instance.</param>
-        /// <param name="hostDetails">Provides details about the host application.</param>
-        public PowerShellContext(HostDetails hostDetails, Runspace initialRunspace)
+        public PowerShellContext(ProfilePaths profilePaths, Runspace initialRunspace)
         {
-            this.Initialize(hostDetails, initialRunspace);
+            this.Initialize(profilePaths, initialRunspace);
         }
 
-        private void Initialize(HostDetails hostDetails, Runspace initialRunspace)
+        private void Initialize(ProfilePaths profilePaths, Runspace initialRunspace)
         {
             Validate.IsNotNull("initialRunspace", initialRunspace);
 
@@ -180,14 +191,17 @@ namespace Microsoft.PowerShell.EditorServices
             this.SetExecutionPolicy(ExecutionPolicy.RemoteSigned);
 
             // Get the PowerShell runtime version
-            this.PowerShellVersion = GetPowerShellVersion();
+            Tuple<Version, string> versionEditionTuple = GetPowerShellVersion();
+            this.PowerShellVersion = versionEditionTuple.Item1;
+            this.PowerShellEdition = versionEditionTuple.Item2;
 
             // Write out the PowerShell version for tracking purposes
             Logger.Write(
                 LogLevel.Normal,
                 string.Format(
-                    "PowerShell runtime version: {0}",
-                    this.PowerShellVersion));
+                    "PowerShell runtime version: {0}, edition: {1}",
+                    this.PowerShellVersion,
+                    this.PowerShellEdition));
 
             if (PowerShellVersion >= new Version(5,0))
             {
@@ -213,9 +227,11 @@ namespace Microsoft.PowerShell.EditorServices
                 this.currentRunspace);
 
             // Set the $profile variable in the runspace
-            this.profilePaths =
-                this.SetProfileVariableInCurrentRunspace(
-                    hostDetails);
+            this.profilePaths = profilePaths;
+            if (this.profilePaths != null)
+            {
+                this.SetProfileVariableInCurrentRunspace(profilePaths);
+            }
 
             // Now that initialization is complete we can watch for InvocationStateChanged
             this.powerShell.InvocationStateChanged += powerShell_InvocationStateChanged;
@@ -227,16 +243,27 @@ namespace Microsoft.PowerShell.EditorServices
             this.runspaceWaitQueue.EnqueueAsync(runspaceHandle).Wait();
         }
 
-        private Version GetPowerShellVersion()
+        private Tuple<Version, string> GetPowerShellVersion()
         {
+            Version powerShellVersion = new Version(5, 0);
+            string powerShellEdition = "Desktop";
+
             try
             {
                 var psVersionTable = this.currentRunspace.SessionStateProxy.GetVariable("PSVersionTable") as Hashtable;
                 if (psVersionTable != null)
                 {
                     var version = psVersionTable["PSVersion"] as Version;
-                    if (version == null) return new Version(5, 0);
-                    return version;
+                    if (version != null)
+                    {
+                        powerShellVersion = version;
+                    }
+
+                    var edition = psVersionTable["PSEdition"] as string;
+                    if (edition != null)
+                    {
+                        powerShellEdition = edition;
+                    }
                 }
             }
             catch (Exception ex)
@@ -244,7 +271,7 @@ namespace Microsoft.PowerShell.EditorServices
                 Logger.Write(LogLevel.Warning, "Failed to look up PowerShell version. Defaulting to version 5. " + ex.Message);
             }
 
-            return new Version(5, 0);
+            return new Tuple<Version, string>(powerShellVersion, powerShellEdition);
         }
 
         #endregion
@@ -515,20 +542,23 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Loads PowerShell profiles for the host from the
-        /// standard system locations.  Only the profile paths which
-        /// exist are loaded.
+        /// Loads PowerShell profiles for the host from the specified
+        /// profile locations.  Only the profile paths which exist are
+        /// loaded.
         /// </summary>
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task LoadHostProfiles()
         {
-            // Load any of the profile paths that exist
-            PSCommand command = null;
-            foreach (var profilePath in this.profilePaths.GetLoadableProfilePaths())
+            if (this.profilePaths != null)
             {
-                command = new PSCommand();
-                command.AddCommand(profilePath, false);
-                await this.ExecuteCommand(command);
+                // Load any of the profile paths that exist
+                PSCommand command = null;
+                foreach (var profilePath in this.profilePaths.GetLoadableProfilePaths())
+                {
+                    command = new PSCommand();
+                    command.AddCommand(profilePath, false);
+                    await this.ExecuteCommand(command);
+                }
             }
         }
 
@@ -1021,14 +1051,8 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private ProfilePaths SetProfileVariableInCurrentRunspace(HostDetails hostDetails)
+        private void SetProfileVariableInCurrentRunspace(ProfilePaths profilePaths)
         {
-            // Get the profile paths for the host name
-            ProfilePaths profilePaths =
-                new ProfilePaths(
-                    hostDetails.ProfileId,
-                    this.currentRunspace);
-
             // Create the $profile variable
             PSObject profile = new PSObject(profilePaths.CurrentUserCurrentHost);
 
@@ -1067,8 +1091,6 @@ namespace Microsoft.PowerShell.EditorServices
                 .AddParameter("Option", "None");
             this.powerShell.Invoke();
             this.powerShell.Commands.Clear();
-
-            return profilePaths;
         }
         
         #endregion

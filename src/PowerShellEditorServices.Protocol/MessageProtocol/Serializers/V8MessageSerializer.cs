@@ -63,14 +63,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serialize
             {
                 string messageType = token.ToString();
 
-                if (string.Equals("request", messageType, StringComparison.InvariantCultureIgnoreCase))
+                if (string.Equals("request", messageType, StringComparison.CurrentCultureIgnoreCase))
                 {
                     return Message.Request(
                         messageJson.GetValue("seq").ToString(),
                         messageJson.GetValue("command").ToString(),
                         messageJson.GetValue("arguments"));
                 }
-                else if (string.Equals("response", messageType, StringComparison.InvariantCultureIgnoreCase))
+                else if (string.Equals("response", messageType, StringComparison.CurrentCultureIgnoreCase))
                 {
                     if (messageJson.TryGetValue("success", out token))
                     {
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serialize
                     }
 
                 }
-                else if (string.Equals("event", messageType, StringComparison.InvariantCultureIgnoreCase))
+                else if (string.Equals("event", messageType, StringComparison.CurrentCultureIgnoreCase))
                 {
                     return Message.Event(
                         messageJson.GetValue("event").ToString(),

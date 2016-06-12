@@ -4,9 +4,12 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Utility;
-using Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic;
 using System;
 using System.Management.Automation.Language;
+
+#if ScriptAnalyzer
+using Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic;
+#endif
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -72,6 +75,7 @@ namespace Microsoft.PowerShell.EditorServices
             };
         }
 
+#if ScriptAnalyzer
         internal static ScriptFileMarker FromDiagnosticRecord(
             DiagnosticRecord diagnosticRecord)
         {
@@ -104,7 +108,9 @@ namespace Microsoft.PowerShell.EditorServices
                         "diagnosticSeverity");
             }
         }
+#endif
 
         #endregion
     }
 }
+
