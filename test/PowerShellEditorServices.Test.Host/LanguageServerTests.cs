@@ -439,7 +439,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [InlineData(14, 13, 6, 0, 0)] // Get-Process -
         [InlineData(16, 14, 6, 0, 0)] // Get-Process -N
         [InlineData(18, 31, 6, 0, 1)] // Get-Process -Name powershell -C
-        [InlineData(18, 31, 6, 1, 1)] // Get-Process -Name powershell -I        
+        [InlineData(20, 31, 6, 1, 1)] // Get-Process -Name powershell -I
         public async Task GetParamterHintsWithActiveSignatureAndParamter(
             int line,
             int column,

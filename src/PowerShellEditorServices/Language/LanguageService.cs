@@ -460,7 +460,6 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 resetMostRecents();
                 mostRecentActiveCommand = paramSetSigs.CommandName;
-                return getRetVal();
             }
 
             int activeSig = 0;
@@ -484,11 +483,12 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             // no match found
+            // or current symbol is null
             // check if the most recent active parameter is the last one in the current signature.
             // if so, we can expand common parameters or for now set it to null
             if (mostRecentActiveSignature.HasValue
                 && mostRecentActiveSignature < paramSetSigs.Signatures.Length
-                && mostRecentActiveSignature.HasValue
+                && mostRecentActiveParameter.HasValue
                 && mostRecentActiveParameter.Value == paramSetSigs.Signatures[mostRecentActiveSignature.Value].Parameters.Count() - 1)
             {
                 mostRecentActiveParameter = null;
