@@ -51,7 +51,7 @@ csx/
 
 # Don't include ScriptAnalyzer binaries
 PowerShellEditorServices/**
-
+PowerShellEditorServices.NoNano/**
 
 PowerShellEditorServices.sln.ide/edb.chk
 PowerShellEditorServices.sln.ide/edbres00001.jrs
