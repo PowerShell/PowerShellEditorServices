@@ -86,17 +86,22 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
 #endif
 
+            var newLine = Environment.NewLine;
+
             Logger.Write(
                 LogLevel.Normal,
                 string.Format(
-                    "PowerShell Editor Services Host v{0} starting (pid {1})...\r\n\r\n" +
-                    "  Host application details:\r\n\r\n" +
-                    "    Name: {2}\r\n    ProfileId: {3}\r\n    Version: {4}",
-                    fileVersionInfo.FileVersion,
-                    Process.GetCurrentProcess().Id,
-                    this.hostDetails.Name,
-                    this.hostDetails.ProfileId,
-                    this.hostDetails.Version));
+                    $"PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (pid {Process.GetCurrentProcess().Id})..." + newLine + newLine +
+                     "  Host application details:" + newLine + newLine +
+                    $"    Name:      {this.hostDetails.Name}" + newLine +
+                    $"    ProfileId: {this.hostDetails.ProfileId}" + newLine +
+                    $"    Version:   {this.hostDetails.Version}" + newLine +
+                     "    Arch:      {0}" + newLine + newLine +
+                     "  Operating system details:" + newLine + newLine +
+                    $"    Version: {Environment.OSVersion.VersionString}" + newLine +
+                     "    Arch:    {1}",
+                    Environment.Is64BitProcess ? "64-bit" : "32-bit",
+                    Environment.Is64BitOperatingSystem ? "64-bit" : "32-bit"));
         }
 
         /// <summary>
