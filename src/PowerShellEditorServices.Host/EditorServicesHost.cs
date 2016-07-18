@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
 #endif
 
-            var newLine = Environment.NewLine;
+            string newLine = Environment.NewLine;
 
             Logger.Write(
                 LogLevel.Normal,
