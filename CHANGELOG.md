@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## 0.6.2
+### Tuesday, August 9, 2016
+
+- Fixed #264: Variable and parameter IntelliSense broken in VS Code 1.4.0
+- Fixed #240: Completion item with regex metachars can cause editor host to crash
+- Fixed #232: Language server sometimes crashes then $ErrorActionPreference = "Stop"
+
 ## 0.6.1
 ### Monday, May 16, 2016
 
