@@ -1164,6 +1164,7 @@ function __Expand-Alias {
                 Detail = detailString,
                 Documentation = documentationString,
                 SortText = sortText,
+                FilterText = completionDetails.CompletionText,
                 TextEdit = new TextEdit
                 {
                     NewText = completionDetails.CompletionText,
