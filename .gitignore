@@ -26,6 +26,7 @@ lock
 .corext/gen
 registered_data.ini
 .vs/
+module/
 
 docs/_site/
 docs/_repo/

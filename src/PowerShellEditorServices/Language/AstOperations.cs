@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -62,6 +63,14 @@ namespace Microsoft.PowerShell.EditorServices
                 (IScriptPosition)method.Invoke(
                     scriptAst.Extent.StartScriptPosition, 
                     new object[] { fileOffset });
+
+            Logger.Write(
+                LogLevel.Verbose,
+                string.Format(
+                    "Getting completions at offset {0} (line: {1}, column: {2})",
+                    fileOffset,
+                    cursorPosition.LineNumber,
+                    cursorPosition.ColumnNumber));
 
             CommandCompletion commandCompletion = null;
             if (runspace.RunspaceAvailability == RunspaceAvailability.Available)

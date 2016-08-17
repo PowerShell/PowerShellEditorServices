@@ -5,11 +5,8 @@
 
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Management.Automation;
 using System.Management.Automation.Language;
-
-#if ScriptAnalyzer
-using Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic;
-#endif
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -74,31 +71,40 @@ namespace Microsoft.PowerShell.EditorServices
                 ScriptRegion = ScriptRegion.Create(parseError.Extent)
             };
         }
+        private static string GetIfExistsString(PSObject psobj, string memberName)
+        {            
+            if (psobj.Members.Match(memberName).Count > 0)
+            {
+                return psobj.Members[memberName].Value != null ? (string)psobj.Members[memberName].Value : "";
+            }
+            else
+            {
+                return "";
+            }            
+        }
 
-#if ScriptAnalyzer
-        internal static ScriptFileMarker FromDiagnosticRecord(
-            DiagnosticRecord diagnosticRecord)
+        internal static ScriptFileMarker FromDiagnosticRecord(PSObject psObject)
         {
-            Validate.IsNotNull("diagnosticRecord", diagnosticRecord);
-
+            Validate.IsNotNull("psObject", psObject);
             return new ScriptFileMarker
             {
-                Message = diagnosticRecord.Message,
-                Level = GetMarkerLevelFromDiagnosticSeverity(diagnosticRecord.Severity),
-                ScriptRegion = ScriptRegion.Create(diagnosticRecord.Extent)
+                Message = GetIfExistsString(psObject, "Message"),
+                //Level = GetMarkerLevelFromDiagnosticSeverity(GetIfExistsString(psObject, "Severity")),
+                Level = GetMarkerLevelFromDiagnosticSeverity("Warning"),
+                ScriptRegion = ScriptRegion.Create((IScriptExtent)psObject.Members["Extent"].Value)
             };
         }
 
         private static ScriptFileMarkerLevel GetMarkerLevelFromDiagnosticSeverity(
-            DiagnosticSeverity diagnosticSeverity)
+            string diagnosticSeverity)
         {
             switch (diagnosticSeverity)
             {
-                case DiagnosticSeverity.Information:
+                case "Information":
                     return ScriptFileMarkerLevel.Information;
-                case DiagnosticSeverity.Warning:
+                case "Warning":
                     return ScriptFileMarkerLevel.Warning;
-                case DiagnosticSeverity.Error:
+                case "Error":
                     return ScriptFileMarkerLevel.Error;
                 default:
                     throw new ArgumentException(
@@ -108,8 +114,6 @@ namespace Microsoft.PowerShell.EditorServices
                         "diagnosticSeverity");
             }
         }
-#endif
-
         #endregion
     }
 }

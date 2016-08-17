@@ -34,22 +34,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
-            string uniqueId = Guid.NewGuid().ToString();
-            string languageServicePipeName = "PSES-Test-LanguageService-" + uniqueId;
-            string debugServicePipeName = "PSES-Test-DebugService-" + uniqueId;
-
-            await this.LaunchService(
-                testLogPath,
-                languageServicePipeName,
-                debugServicePipeName,
-                waitForDebugger: false);
-                //waitForDebugger: true);
+            Tuple<int, int> portNumbers =
+                await this.LaunchService(
+                    testLogPath,
+                    waitForDebugger: false);
+                    //waitForDebugger: true);
 
             this.protocolClient =
                 this.languageServiceClient =
                     new LanguageServiceClient(
-                        new NamedPipeClientChannel(
-                            languageServicePipeName));
+                        new TcpSocketClientChannel(
+                            portNumbers.Item1));
 
             await this.languageServiceClient.Start();
 

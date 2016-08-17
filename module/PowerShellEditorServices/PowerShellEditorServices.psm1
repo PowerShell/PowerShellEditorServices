@@ -1,9 +1,9 @@
 if (!$PSVersionTable.PSEdition -or $PSVersionTable.PSEdition -eq "Desktop") {
-    Add-Type -Path "$PSScriptRoot\bin\Desktop\Microsoft.PowerShell.EditorServices.dll"
-    Add-Type -Path "$PSScriptRoot\bin\Desktop\Microsoft.PowerShell.EditorServices.Host.dll"
+    Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.dll"
+    Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.Host.dll"
 }
 else {
-    Add-Type -Path "$PSScriptRoot\bin\Nano\Microsoft.PowerShell.EditorServices.Nano.dll"
+    Add-Type -Path "$PSScriptRoot/bin/Nano/Microsoft.PowerShell.EditorServices.Nano.dll"
 }
 
 function Start-EditorServicesHost {
@@ -26,13 +26,13 @@ function Start-EditorServicesHost {
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
-        [string]
-        $LanguageServicePipeName,
+        [int]
+        $LanguageServicePort,
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
-        [string]
-        $DebugServicePipeName,
+        [int]
+        $DebugServicePort,
 
         [ValidateNotNullOrEmpty()]
         [string]
@@ -44,9 +44,6 @@ function Start-EditorServicesHost {
 
         [ValidateSet("Normal", "Verbose", "Error")]
         $LogLevel = "Normal",
-
-        [switch]
-        $WaitForCompletion,
 
         [switch]
         $WaitForDebugger
@@ -69,14 +66,8 @@ function Start-EditorServicesHost {
             [System.IO.Path]::GetDirectoryName($profile.CurrentUserAllHosts));
 
         $editorServicesHost.StartLogging($LogPath, $LogLevel);
-        $editorServicesHost.StartLanguageService($LanguageServicePipeName, $profilePaths);
-        $editorServicesHost.StartDebugService($DebugServicePipeName, $profilePaths);
-
-        Write-Output "PowerShell Editor Services host has started."
-
-        if ($WaitForCompletion.IsPresent) {
-            $editorServicesHost.WaitForCompletion();
-        }
+        $editorServicesHost.StartLanguageService($LanguageServicePort, $profilePaths);
+        $editorServicesHost.StartDebugService($DebugServicePort, $profilePaths);
     }
     catch {
         Write-Error "PowerShell Editor Services host initialization failed, terminating."

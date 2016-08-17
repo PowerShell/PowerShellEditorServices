@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -25,10 +26,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         private ConcurrentDictionary<string, AsyncQueue<object>> requestQueuePerType =
             new ConcurrentDictionary<string, AsyncQueue<object>>();
 
-        protected async Task LaunchService(
+        protected async Task<Tuple<int, int>> LaunchService(
             string logPath,
-            string languageServicePipeName,
-            string debugServicePipeName,
             bool waitForDebugger = false)
         {
             string modulePath = Path.GetFullPath(@"..\..\..\..\module");
@@ -42,12 +41,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 "-HostName \\\"PowerShell Editor Services Test Host\\\" " +
                 "-HostProfileId \"Test.PowerShellEditorServices\" " +
                 "-HostVersion \"1.0.0\" " +
-                "-LanguageServicePipeName \"" + languageServicePipeName + "\" " +
-                "-DebugServicePipeName \"" + debugServicePipeName + "\" " +
                 "-BundledModulesPath \\\"" + modulePath + "\\\" " +
                 "-LogLevel \"Verbose\" " +
-                "-LogPath \"" + logPath + "\" " +
-                "-WaitForCompletion ";
+                "-LogPath \"" + logPath + "\" ";
 
             if (waitForDebugger)
             {
@@ -83,12 +79,23 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             this.serviceProcess.Start();
 
             // Wait for the server to finish initializing
-            Task<string> completedRead =
-                await Task.WhenAny<string>(
-                    this.serviceProcess.StandardOutput.ReadLineAsync(),
-                    this.serviceProcess.StandardError.ReadLineAsync());
+            Task<string> stdoutTask = this.serviceProcess.StandardOutput.ReadLineAsync();
+            Task<string> stderrTask = this.serviceProcess.StandardError.ReadLineAsync();
+            Task<string> completedRead = await Task.WhenAny<string>(stdoutTask, stderrTask);
 
-            if (!string.Equals("PowerShell Editor Services host has started.", completedRead.Result))
+            if (completedRead == stdoutTask)
+            {
+                JObject result = JObject.Parse(completedRead.Result);
+                if (result["status"].Value<string>() == "started")
+                {
+                    return new Tuple<int, int>(
+                        result["languageServicePort"].Value<int>(),
+                        result["debugServicePort"].Value<int>());
+                }
+
+                return null;
+            }
+            else
             {
                 // Must have read an error?  Keep reading from error stream
                 string errorString = completedRead.Result;
@@ -264,4 +271,3 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
     }
 }
-
