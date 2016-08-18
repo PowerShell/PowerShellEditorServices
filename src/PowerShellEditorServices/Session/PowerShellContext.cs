@@ -187,9 +187,6 @@ namespace Microsoft.PowerShell.EditorServices
             this.powerShell = PowerShell.Create();
             this.powerShell.Runspace = this.currentRunspace;
 
-            // TODO: Should this be configurable?
-            this.SetExecutionPolicy(ExecutionPolicy.RemoteSigned);
-
             // Get the PowerShell runtime version
             Tuple<Version, string> versionEditionTuple = GetPowerShellVersion();
             this.PowerShellVersion = versionEditionTuple.Item1;
@@ -220,6 +217,12 @@ namespace Microsoft.PowerShell.EditorServices
                 throw new NotSupportedException(
                     "This computer has an unsupported version of PowerShell installed: " +
                     PowerShellVersion.ToString());
+            }
+
+            if (this.PowerShellEdition != "Linux")
+            {
+                // TODO: Should this be configurable?
+                this.SetExecutionPolicy(ExecutionPolicy.RemoteSigned);
             }
 
             // Configure the runspace's debugger

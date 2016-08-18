@@ -61,8 +61,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         public MessageDispatcher(ChannelBase protocolChannel)
         {
             this.protocolChannel = protocolChannel;
-            this.MessageReader = protocolChannel.MessageReader;
-            this.MessageWriter = protocolChannel.MessageWriter;
         }
 
         #endregion
@@ -71,6 +69,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         public void Start()
         {
+            // At this point the MessageReader and MessageWriter should be ready
+            this.MessageReader = protocolChannel.MessageReader;
+            this.MessageWriter = protocolChannel.MessageWriter;
+
             // Start the main message loop thread.  The Task is
             // not explicitly awaited because it is running on
             // an independent background thread.
@@ -219,15 +221,33 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     // Continue the loop
                     continue;
                 }
-                catch (EndOfStreamException)
+                catch (IOException e)
                 {
                     // The stream has ended, end the message loop
+                    Logger.Write(
+                        LogLevel.Error,
+                        string.Format(
+                            "Stream terminated unexpectedly, ending MessageDispatcher loop\r\n\r\nException: {0}\r\n{1}",
+                            e.GetType().Name,
+                            e.Message));
+
+                    break;
+                }
+                catch (ObjectDisposedException)
+                {
+                    Logger.Write(
+                        LogLevel.Verbose,
+                        "MessageReader attempted to read from a disposed stream, ending MessageDispatcher loop");
+
                     break;
                 }
                 catch (Exception e)
                 {
-                    var b = e.Message;
-                    newMessage = null;
+                    Logger.Write(
+                        LogLevel.Verbose,
+                        "Caught unexpected exception '{0}' in MessageDispatcher loop:\r\n{1}",
+                        e.GetType().Name,
+                        e.Message);
                 }
 
                 // The message could be null if there was an error parsing the
@@ -322,4 +342,3 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         #endregion
     }
 }
-

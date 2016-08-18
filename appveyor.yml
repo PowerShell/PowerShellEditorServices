@@ -2,14 +2,16 @@ version: '$(core_version).{build}'
 os: WMF 5
 configuration: Release
 clone_depth: 10
+skip_tags: true
 
 environment:
-  core_version: '0.6.2'
+  core_version: '0.7.0'
   prerelease_name: '-beta'
 
 branches:
   only:
   - master
+  - develop
 
 # NOTE: If you need to debug a problem with the AppVeyor build, uncomment the
 #       following two lines and push them to your PR branch.  Once the next

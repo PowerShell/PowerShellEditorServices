@@ -30,24 +30,25 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
-            string uniqueId = Guid.NewGuid().ToString();
-            string languageServicePipeName = "PSES-Test-LanguageService-" + uniqueId;
-            string debugServicePipeName = "PSES-Test-DebugService-" + uniqueId;
-
-            await this.LaunchService(
-                testLogPath,
-                languageServicePipeName,
-                debugServicePipeName,
-                waitForDebugger: false);
-                //waitForDebugger: true);
+            Tuple<int, int> portNumbers =
+                await this.LaunchService(
+                    testLogPath,
+                    waitForDebugger: false);
+                    //waitForDebugger: true);
 
             this.protocolClient =
                 this.debugAdapterClient =
                     new DebugAdapterClient(
-                        new NamedPipeClientChannel(
-                            debugServicePipeName));
+                        new TcpSocketClientChannel(
+                            portNumbers.Item2));
 
             await this.debugAdapterClient.Start();
+
+            // HACK: Insert a short delay to give the MessageDispatcher time to
+            // start up.  This will have to be fixed soon with a larger refactoring
+            // to improve the client/server model.  Tracking this here:
+            // https://github.com/PowerShell/PowerShellEditorServices/issues/245
+            await Task.Delay(1750);
         }
 
         public async Task DisposeAsync()
@@ -121,4 +122,3 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
     }
 }
-

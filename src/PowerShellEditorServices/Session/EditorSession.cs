@@ -84,6 +84,27 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Starts a debug-only session using the provided IConsoleHost implementation
+        /// for the ConsoleService.
+        /// </summary>
+        /// <param name="hostDetails">
+        /// Provides details about the host application.
+        /// </param>
+        /// <param name="profilePaths">
+        /// An object containing the profile paths for the session.
+        /// </param>
+        public void StartDebugSession(HostDetails hostDetails, ProfilePaths profilePaths)
+        {
+            // Initialize all services
+            this.PowerShellContext = new PowerShellContext(hostDetails, profilePaths);
+            this.DebugService = new DebugService(this.PowerShellContext);
+            this.ConsoleService = new ConsoleService(this.PowerShellContext);
+
+            // Create a workspace to contain open files
+            this.Workspace = new Workspace(this.PowerShellContext.PowerShellVersion);
+        }
+
+        /// <summary>
         /// Restarts the AnalysisService so it can be configured with a new settings file.
         /// </summary>
         /// <param name="settingsPath">Path to the settings file.</param>

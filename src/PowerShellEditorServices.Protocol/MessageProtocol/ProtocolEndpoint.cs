@@ -17,7 +17,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     /// </summary>
     public class ProtocolEndpoint : IMessageSender
     {
-        private bool isStarted;
+        private enum ProtocolEndpointState
+        {
+            NotStarted,
+            Started,
+            Shutdown
+        }
+
+        private ProtocolEndpointState currentState;
         private int currentMessageId;
         private ChannelBase protocolChannel;
         private MessageProtocolType messageProtocolType;
@@ -52,14 +59,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             this.messageProtocolType = messageProtocolType;
             this.originalSynchronizationContext = SynchronizationContext.Current;
         }
-
+        
         /// <summary>
         /// Starts the language server client and sends the Initialize method.
         /// </summary>
         /// <returns>A Task that can be awaited for initialization to complete.</returns>
         public async Task Start()
         {
-            if (!this.isStarted)
+            if (this.currentState == ProtocolEndpointState.NotStarted)
             {
                 // Start the provided protocol channel
                 this.protocolChannel.Start(this.messageProtocolType);
@@ -90,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                             });
 
                 // Endpoint is now started
-                this.isStarted = true;
+                this.currentState = ProtocolEndpointState.Started;
             }
         }
 
@@ -102,10 +109,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         public async Task Stop()
         {
-            if (this.isStarted)
+            if (this.currentState == ProtocolEndpointState.Started)
             {
                 // Make sure no future calls try to stop the endpoint during shutdown
-                this.isStarted = false;
+                this.currentState = ProtocolEndpointState.Shutdown;
 
                 // Stop the implementation first
                 await this.OnStop();
@@ -115,6 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 this.protocolChannel.Stop();
 
                 // Notify anyone waiting for exit
+                this.OnSessionEnded();
                 if (this.endpointExitedTask != null)
                 {
                     this.endpointExitedTask.SetResult(true);
@@ -144,6 +152,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             TParams requestParams,
             bool waitForResponse)
         {
+            // Some requests may still be in the SynchronizationContext queue
+            // after the server stops so don't act on those requests because
+            // the protocol channel will already be disposed
+            if (this.currentState == ProtocolEndpointState.Shutdown)
+            {
+                return default(TResult);
+            }
+
             if (!this.protocolChannel.IsConnected)
             {
                 throw new InvalidOperationException("SendRequest called when ProtocolChannel was not yet connected");
@@ -193,6 +209,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             EventType<TParams> eventType,
             TParams eventParams)
         {
+            // Some requests may still be in the SynchronizationContext queue
+            // after the server stops so don't act on those requests because
+            // the protocol channel will already be disposed
+            if (this.currentState == ProtocolEndpointState.Shutdown)
+            {
+                return Task.FromResult(true);
+            }
+
             if (!this.protocolChannel.IsConnected)
             {
                 throw new InvalidOperationException("SendEvent called when ProtocolChannel was not yet connected");
@@ -288,6 +312,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         protected virtual Task OnStop()
         {
             return Task.FromResult(true);
+        }
+
+        #endregion
+
+        #region Events
+
+        public event EventHandler SessionEnded;
+
+        protected virtual void OnSessionEnded()
+        {
+            this.SessionEnded?.Invoke(this, null);
         }
 
         #endregion

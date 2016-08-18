@@ -203,6 +203,13 @@ namespace Microsoft.PowerShell.EditorServices
                         baseFilePath,
                         referencedFileName);
 
+                Logger.Write(
+                    LogLevel.Verbose,
+                    string.Format(
+                        "Resolved relative path '{0}' to '{1}'",
+                        referencedFileName,
+                        resolvedScriptPath));
+
                 // Make sure file exists before trying to get the file
                 if (File.Exists(resolvedScriptPath))
                 {
@@ -227,14 +234,10 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (filePath.StartsWith(@"file://"))
                 {
-                    // Client sent the path in URI format, extract the local path and trim
-                    // any extraneous slashes
-                    Uri fileUri = new Uri(filePath);
-                    filePath = fileUri.LocalPath.TrimStart('/');
+                    // Client sent the path in URI format, extract the local path
+                    Uri fileUri = new Uri(Uri.UnescapeDataString(filePath));
+                    filePath = fileUri.LocalPath;
                 }
-
-                // Some clients send paths with UNIX-style slashes, replace those if necessary
-                filePath = filePath.Replace('/', '\\');
 
                 // Clients could specify paths with escaped space, [ and ] characters which .NET APIs
                 // will not handle.  These paths will get appropriately escaped just before being passed
