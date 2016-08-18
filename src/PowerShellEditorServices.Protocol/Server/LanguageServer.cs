@@ -429,7 +429,7 @@ function __Expand-Alias {
                     definitionLocations.Add(
                         new Location
                         {
-                            Uri = new Uri(definition.FoundDefinition.FilePath).AbsoluteUri,
+                            Uri = new Uri("file://" + definition.FoundDefinition.FilePath).AbsoluteUri,
                             Range = GetRangeFromScriptRegion(definition.FoundDefinition.ScriptRegion)
                         });
                 }
@@ -468,7 +468,7 @@ function __Expand-Alias {
                             {
                                 return new Location
                                 {
-                                    Uri = new Uri(r.FilePath).AbsoluteUri,
+                                    Uri = new Uri("file://" + r.FilePath).AbsoluteUri,
                                     Range = GetRangeFromScriptRegion(r.ScriptRegion)
                                 };
                             })
@@ -712,7 +712,7 @@ function __Expand-Alias {
                                     Kind = GetSymbolKind(r.SymbolType),
                                     Location = new Location
                                     {
-                                        Uri = new Uri(r.FilePath).AbsolutePath,
+                                        Uri = new Uri("file://" + r.FilePath).AbsolutePath,
                                         Range = GetRangeFromScriptRegion(r.ScriptRegion)
                                     },
                                     Name = GetDecoratedSymbolName(r)
@@ -785,7 +785,7 @@ function __Expand-Alias {
                                         Kind = r.SymbolType == SymbolType.Variable ? SymbolKind.Variable : SymbolKind.Function,
                                         Location = new Location
                                         {
-                                            Uri = new Uri(r.FilePath).AbsoluteUri,
+                                            Uri = new Uri("file://" + r.FilePath).AbsoluteUri,
                                             Range = GetRangeFromScriptRegion(r.ScriptRegion)
                                         },
                                         Name = GetDecoratedSymbolName(r)
@@ -945,7 +945,7 @@ function __Expand-Alias {
                 Logger.Write(
                     LogLevel.Error,
                     string.Format(
-                        "Exception while cancelling analysis task:\n\n{0}",
+                        "Exception while canceling analysis task:\n\n{0}",
                         e.ToString()));
 
                 TaskCompletionSource<bool> cancelTask = new TaskCompletionSource<bool>();
@@ -1019,9 +1019,7 @@ function __Expand-Alias {
                     // isn't available
                     semanticMarkers = new ScriptFileMarker[0];
                 }
-
                 var allMarkers = scriptFile.SyntaxMarkers.Concat(semanticMarkers);
-
                 await PublishScriptDiagnostics(
                     scriptFile,
                     semanticMarkers,

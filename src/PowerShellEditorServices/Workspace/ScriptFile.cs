@@ -67,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             get
             {
-                return string.Join("\r\n", this.FileLines);
+                return string.Join(Environment.NewLine, this.FileLines);
             }
         }
 

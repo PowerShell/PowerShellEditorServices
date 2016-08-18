@@ -21,7 +21,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin-nano\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;$(DefineConstants)</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NanoServer;PowerShellv5r2;PowerShellv5</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\Microsoft.PowerShell.EditorServices.XML</DocumentationFile>
@@ -122,8 +122,8 @@
     <Compile Include="Workspace\Workspace.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Newtonsoft.Json.8.0.2\lib\portable-net45+wp80+win8+wpa81+dnxcore50\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.7.0.1\lib\portable-net45+wp80+win8+wpa81+dnxcore50\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
@@ -138,6 +138,8 @@
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\InstallModuleRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\NamedPipeClientChannel.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\NamedPipeServerChannel.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\TcpSocketClientChannel.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\TcpSocketServerChannel.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\IMessageSender.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\ProtocolEndpoint.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\Messages\PromptEvents.cs" />

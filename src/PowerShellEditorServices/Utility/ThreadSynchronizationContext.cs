@@ -38,10 +38,19 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </param>
         public override void Post(SendOrPostCallback callback, object state)
         {
-            // Add the request to the queue
-            this.requestQueue.Add(
-                new Tuple<SendOrPostCallback, object>(
-                    callback, state));
+            if (!this.requestQueue.IsAddingCompleted)
+            {
+                // Add the request to the queue
+                this.requestQueue.Add(
+                    new Tuple<SendOrPostCallback, object>(
+                        callback, state));
+            }
+            else
+            {
+                Logger.Write(
+                    LogLevel.Verbose,
+                    "Attempted to post message to synchronization context after it's already completed");
+            }
         }
 
         #endregion

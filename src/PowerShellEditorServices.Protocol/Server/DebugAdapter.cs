@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             : base(serverChannel)
         {
             this.editorSession = new EditorSession();
-            this.editorSession.StartSession(hostDetails, profilePaths);
+            this.editorSession.StartDebugSession(hostDetails, profilePaths);
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
 
@@ -85,9 +85,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                             // Stop the server
                             await this.Stop();
-
-                            // Notify that the session has ended
-                            this.OnSessionEnded();
                         });
         }
 
@@ -207,7 +204,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         editorSession.PowerShellContext.SessionStateChanged -= handler;
 
                         // Stop the server
-                        this.Stop();
+                        await this.Stop();
                     }
                 };
 
@@ -517,17 +514,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     Result = valueString,
                     VariablesReference = variableId
                 });
-        }
-
-        #endregion
-
-        #region Events
-
-        public event EventHandler SessionEnded;
-
-        protected virtual void OnSessionEnded()
-        {
-            this.SessionEnded?.Invoke(this, null);
         }
 
         #endregion
