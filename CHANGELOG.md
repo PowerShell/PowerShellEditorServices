@@ -1,5 +1,24 @@
 # PowerShell Editor Services Release History
 
+## 0.7.0
+### Thursday, August 18, 2016
+
+#### Introducing support for Linux and macOS!
+
+This release marks the beginning of our support for Linux and macOS via
+the new [cross-platform release of PowerShell](https://github.com/PowerShell/PowerShell).
+
+NuGet packages will be provided in the upcoming 0.7.1 release.
+
+#### Other improvements
+
+- Introduced a new TCP channel to provide a commonly-available communication channel
+  across multiple editors and platforms
+- PowerShell Script Analyzer integration has been shifted from direct use via DLL to
+  consuming the PowerShell module and cmdlets
+- Updated code to account for platform differences across Windows and Linux/macOS
+- Improved stability of the language service when being used in Sublime Text
+
 ## 0.6.2
 ### Tuesday, August 9, 2016
 
