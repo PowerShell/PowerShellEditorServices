@@ -325,6 +325,33 @@ namespace Microsoft.PowerShell.EditorServices
             bool sendOutputToHost = false,
             bool sendErrorToHost = true)
         {
+            return await ExecuteCommand<TResult>(psCommand, null, sendOutputToHost, sendErrorToHost);
+        }
+
+        /// <summary>
+        /// Executes a PSCommand against the session's runspace and returns
+        /// a collection of results of the expected type.
+        /// </summary>
+        /// <typeparam name="TResult">The expected result type.</typeparam>
+        /// <param name="psCommand">The PSCommand to be executed.</param>
+        /// <param name="errorMessages">Error messages from PowerShell will be written to the StringBuilder. 
+        /// You must set sendErrorToHost to false for errors to be written to the StringBuilder. This value can be null.</param>
+        /// <param name="sendOutputToHost">
+        /// If true, causes any output written during command execution to be written to the host.
+        /// </param>
+        /// <param name="sendErrorToHost">
+        /// If true, causes any errors encountered during command execution to be written to the host.
+        /// </param>
+        /// <returns>
+        /// An awaitable Task which will provide results once the command
+        /// execution completes.
+        /// </returns>
+        public async Task<IEnumerable<TResult>> ExecuteCommand<TResult>(
+            PSCommand psCommand,
+            StringBuilder errorMessages,
+            bool sendOutputToHost = false,
+            bool sendErrorToHost = true)
+        {
             RunspaceHandle runspaceHandle = null;
             IEnumerable<TResult> executionResult = Enumerable.Empty<TResult>();
 
@@ -337,7 +364,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                 PipelineExecutionRequest<TResult> executionRequest =
                     new PipelineExecutionRequest<TResult>(
-                        this, psCommand, sendOutputToHost);
+                        this, psCommand, errorMessages, sendOutputToHost);
 
                 // Send the pipeline execution request to the pipeline thread
                 this.pipelineResultTask = new TaskCompletionSource<IPipelineExecutionRequest>();
@@ -415,6 +442,7 @@ namespace Microsoft.PowerShell.EditorServices
                                 errorMessage += error.ToString() + "\r\n";
                             }
 
+                            errorMessages?.Append(errorMessage);
                             Logger.Write(LogLevel.Error, errorMessage);
                         }
                         else
@@ -432,6 +460,8 @@ namespace Microsoft.PowerShell.EditorServices
                     Logger.Write(
                         LogLevel.Error,
                         "Runtime exception occurred while executing command:\r\n\r\n" + e.ToString());
+
+                    errorMessages?.Append(e.Message);
 
                     if (sendErrorToHost)
                     {
@@ -1209,6 +1239,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             PowerShellContext powerShellContext;
             PSCommand psCommand;
+            StringBuilder errorMessages;
             bool sendOutputToHost;
 
             public IEnumerable<TResult> Results { get; private set; }
@@ -1216,10 +1247,12 @@ namespace Microsoft.PowerShell.EditorServices
             public PipelineExecutionRequest(
                 PowerShellContext powerShellContext,
                 PSCommand psCommand,
+                StringBuilder errorMessages,
                 bool sendOutputToHost)
             {
                 this.powerShellContext = powerShellContext;
                 this.psCommand = psCommand;
+                this.errorMessages = errorMessages;
                 this.sendOutputToHost = sendOutputToHost;
             }
 
@@ -1228,6 +1261,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.Results =
                     await this.powerShellContext.ExecuteCommand<TResult>(
                         psCommand,
+                        errorMessages,
                         sendOutputToHost);
 
                 // TODO: Deal with errors?

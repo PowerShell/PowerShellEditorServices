@@ -54,6 +54,7 @@
     <Compile Include="DebugAdapter\ConfigurationDoneRequest.cs" />
     <Compile Include="DebugAdapter\ContinueRequest.cs" />
     <Compile Include="DebugAdapter\SetFunctionBreakpointsRequest.cs" />
+    <Compile Include="DebugAdapter\SetVariableRequest.cs" />
     <Compile Include="LanguageServer\EditorCommands.cs" />
     <Compile Include="LanguageServer\FindModuleRequest.cs" />
     <Compile Include="LanguageServer\InstallModuleRequest.cs" />

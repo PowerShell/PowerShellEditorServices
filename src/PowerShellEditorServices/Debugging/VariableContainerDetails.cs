@@ -77,5 +77,23 @@ namespace Microsoft.PowerShell.EditorServices
             this.children.Values.CopyTo(variablesArray, 0);
             return variablesArray;
         }
+
+        /// <summary>
+        /// Determines whether this variable container contains the specified variable by its referenceId.
+        /// </summary>
+        /// <param name="variableReferenceId">The variableReferenceId to search for.</param>
+        /// <returns>Returns true if this variable container directly contains the specified variableReferenceId, false otherwise.</returns>
+        public bool ContainsVariable(int variableReferenceId)
+        {
+            foreach (VariableDetailsBase value in this.children.Values)
+            {
+                if (value.Id == variableReferenceId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

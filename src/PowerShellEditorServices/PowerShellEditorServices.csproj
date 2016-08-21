@@ -71,6 +71,7 @@
     <Compile Include="Debugging\BreakpointDetailsBase.cs" />
     <Compile Include="Debugging\DebugService.cs" />
     <Compile Include="Debugging\CommandBreakpointDetails.cs" />
+    <Compile Include="Debugging\InvalidPowerShellExpressionException.cs" />
     <Compile Include="Debugging\StackFrameDetails.cs" />
     <Compile Include="Debugging\VariableDetails.cs" />
     <Compile Include="Debugging\VariableDetailsBase.cs" />

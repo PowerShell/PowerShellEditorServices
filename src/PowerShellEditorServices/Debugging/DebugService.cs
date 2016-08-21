@@ -8,7 +8,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -278,7 +280,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="variableExpression">The variable expression string to evaluate.</param>
         /// <param name="stackFrameId">The ID of the stack frame in which the expression should be evaluated.</param>
-        /// <returns>A VariableDetails object containing the result.</returns>
+        /// <returns>A VariableDetailsBase object containing the result.</returns>
         public VariableDetailsBase GetVariableFromExpression(string variableExpression, int stackFrameId)
         {
             // Break up the variable path
@@ -312,6 +314,153 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return resolvedVariable;
+        }
+
+        /// <summary>
+        /// Sets the specified variable by container variableReferenceId and variable name to the
+        /// specified new value.  If the variable cannot be set or converted to that value this
+        /// method will throw FormatException, InvalidCastException, OverflowException or 
+        /// SessionStateUnauthorizedAccessException.
+        /// </summary>
+        /// <param name="variableContainerReferenceId">The container (Autos, Local, Script, Global) that holds the variable.</param>
+        /// <param name="name">The name of the variable either prefixed with $ or not.</param>
+        /// <param name="value">The new string value.  This value must not be null but if want to set the variable to null
+        /// pass in null or $null with no quotes.</param>
+        /// <returns>The string representation of the value the variable was set to.</returns>
+        public async Task<string> SetVariable(int variableContainerReferenceId, string name, string value)
+        {
+            Validate.IsNotNull(nameof(name), name);
+            Validate.IsNotNull(nameof(value), value);
+
+            Logger.Write(LogLevel.Verbose, $"SetVariableRequest for '{name}' to value string (pre-quote processing): '{value}'");
+
+            // An empty or whitespace only value is not a valid expression for SetVariable.
+            if (value.Trim().Length == 0)
+            {
+                throw new InvalidPowerShellExpressionException("Expected an expression.");
+            }
+
+            // Evaluate the expression to get back a PowerShell object from the expression string.
+            PSCommand psCommand = new PSCommand();
+            psCommand.AddScript(value);
+            var errorMessages = new StringBuilder();
+            var results = 
+                await this.powerShellContext.ExecuteCommand<object>(
+                    psCommand, 
+                    errorMessages, 
+                    false, 
+                    false);
+
+            // PowerShell doesn't think this is a valid expression.  Report the error back through the exception
+            object psobject = results.FirstOrDefault();
+            if ((psobject == null) && (errorMessages.Length > 0))
+            {
+                throw new InvalidPowerShellExpressionException(errorMessages.ToString());
+            }
+
+            // Doh! PowerShellContext.ExecuteCommand returns an ErrorRecord as output.  Ideally we would have a separate
+            // means from communicating error records apart from normal output. But we can test for it by type.
+            ErrorRecord errorRecord = psobject as ErrorRecord;
+            if (errorRecord != null)
+            {
+                throw new InvalidPowerShellExpressionException(errorRecord.ToString());
+            }
+
+            // OK, now we have a PS object from the supplied value string (expression) to assign to a variable.
+            // Get the variable referenced by variableContainerReferenceId and variable name.
+            VariableContainerDetails variableContainer = (VariableContainerDetails)this.variables[variableContainerReferenceId];
+            VariableDetailsBase variable = variableContainer.Children[name];
+
+            // Determine scope in which the variable lives. This is required later for the call to Get-Variable -Scope.
+            string scope = null;
+            if (variableContainerReferenceId == this.scriptScopeVariables.Id)
+            {
+                scope = "Script";
+            }
+            else if (variableContainerReferenceId == this.globalScopeVariables.Id)
+            {
+                scope = "Global";
+            }
+            else
+            {
+                // Determine which stackframe's local scope the variable is in.
+                for (int i = 0; i < this.stackFrameDetails.Length; i++)
+                {
+                    var stackFrame = this.stackFrameDetails[i];
+                    if (stackFrame.LocalVariables.ContainsVariable(variable.Id))
+                    {
+                        scope = i.ToString();
+                        break;
+                    }
+                }
+            }
+
+            if (scope == null)
+            {
+                // Hmm, this would be unexpected.  No scope means do not pass GO, do not collect $200.
+                throw new Exception("Could not find the scope for this variable.");
+            }
+
+            // Now, that we have the scope, get the associated PSVariable object for the variable to be set.
+            psCommand.Commands.Clear();
+            psCommand = new PSCommand();
+            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable");
+            psCommand.AddParameter("Name", name.TrimStart('$'));
+            psCommand.AddParameter("Scope", scope);
+
+            IEnumerable<PSVariable> result = await this.powerShellContext.ExecuteCommand<PSVariable>(psCommand, sendErrorToHost: false);
+            PSVariable psVariable = result.FirstOrDefault();
+            if (psVariable == null)
+            {
+                throw new Exception($"Failed to retrieve PSVariable object for '{name}' from scope '{scope}'.");
+            }
+
+            // We have the PSVariable object for the variable the user wants to set and an object to assign to that variable.
+            // The last step is to determine whether the PSVariable is "strongly typed" which may require a conversion.
+            // If it is not strongly typed, we simply assign the object directly to the PSVariable potentially changing its type.
+            // Turns out ArgumentTypeConverterAttribute is not public. I wonder if it is enough to find the first
+            // ArgumentTransformationAttribute?
+            var argTypeConverterAttr = 
+                psVariable.Attributes
+                          .OfType<ArgumentTransformationAttribute>()
+                          .FirstOrDefault(a => a.GetType().Name.Equals("ArgumentTypeConverterAttribute"));
+
+            if (argTypeConverterAttr != null)
+            {
+                // Hmm, seems like there should be a way to access EngineIntrinsic directly, right?
+                psCommand.Commands.Clear();
+                psCommand = new PSCommand();
+                psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable");
+                psCommand.AddParameter("Name", "ExecutionContext");
+                psCommand.AddParameter("ValueOnly");
+
+                errorMessages.Clear();
+
+                var getExecContextResults = 
+                    await this.powerShellContext.ExecuteCommand<object>(
+                        psCommand, 
+                        errorMessages, 
+                        sendErrorToHost: false);
+
+                EngineIntrinsics executionContext = getExecContextResults.OfType<EngineIntrinsics>().FirstOrDefault();
+
+                var msg = $"Setting variable '{name}' using conversion to value: {psobject ?? "<null>"}";
+                Logger.Write(LogLevel.Verbose, msg);
+
+                psVariable.Value = argTypeConverterAttr.Transform(executionContext, psobject);
+            }
+            else
+            {
+                var msg = $"Setting variable '{name}' directly to value: {psobject ?? "<null>"} - previous type was {psVariable.Value?.GetType().Name ?? "<unknown>"}";
+                Logger.Write(LogLevel.Verbose, msg);
+                psVariable.Value = psobject;
+            }
+
+            // Use the VariableDetails.ValueString functionality to get the string representation for client debugger.
+            // This makes the returned string consistent with the strings normally displayed for variables in the debugger.
+            var tempVariable = new VariableDetails(psVariable);
+            Logger.Write(LogLevel.Verbose, $"Set variable '{name}' to: {tempVariable.ValueString ?? "<null>"}");
+            return tempVariable.ValueString;
         }
 
         /// <summary>
