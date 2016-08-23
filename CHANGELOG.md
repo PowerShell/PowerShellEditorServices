@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## 0.7.1
+### Tuesday, August 23, 2016
+
+- Fixed PowerShell/vscode-powerShell#246: Restore default PSScriptAnalyzer ruleset
+- Fixed PowerShell/vscode-powershell#248: Extension fails to load on Windows 7 with PowerShell v3
+
 ## 0.7.0
 ### Thursday, August 18, 2016
 
