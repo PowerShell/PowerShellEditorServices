@@ -50,17 +50,17 @@ function Start-EditorServicesHost {
     )
 
     $editorServicesHost = $null
-    $hostDetails = [Microsoft.PowerShell.EditorServices.Session.HostDetails]::new($HostName, $HostProfileId, [System.Version]::new($HostVersion))
+    $hostDetails = New-Object Microsoft.PowerShell.EditorServices.Session.HostDetails @($HostName, $HostProfileId, (New-Object System.Version @($HostVersion)))
 
     try {
         $editorServicesHost =
-            [Microsoft.PowerShell.EditorServices.Host.EditorServicesHost]::new(
+            New-Object Microsoft.PowerShell.EditorServices.Host.EditorServicesHost @(
                 $hostDetails,
                 $BundledModulesPath,
-                $WaitForDebugger.IsPresent);
+                $WaitForDebugger.IsPresent)
 
         # Build the profile paths using the root paths of the current $profile variable
-        $profilePaths = [Microsoft.PowerShell.EditorServices.Session.ProfilePaths]::new(
+        $profilePaths = New-Object Microsoft.PowerShell.EditorServices.Session.ProfilePaths @(
             $hostDetails.ProfileId,
             [System.IO.Path]::GetDirectoryName($profile.AllUsersAllHosts),
             [System.IO.Path]::GetDirectoryName($profile.CurrentUserAllHosts));

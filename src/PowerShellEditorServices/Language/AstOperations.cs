@@ -197,15 +197,17 @@ namespace Microsoft.PowerShell.EditorServices
         {
             IEnumerable<SymbolReference> symbolReferences = null;
 
-            if (powerShellVersion >= new Version(5,0))
-            {
-#if PowerShellv5
-                FindSymbolsVisitor2 findSymbolsVisitor = new FindSymbolsVisitor2();
-                scriptAst.Visit(findSymbolsVisitor);
-                symbolReferences = findSymbolsVisitor.SymbolReferences;
-#endif
-            }
-            else
+            // TODO: Restore this when we figure out how to support multiple
+            //       PS versions in the new PSES-as-a-module world (issue #276)
+//            if (powerShellVersion >= new Version(5,0))
+//            {
+//#if PowerShellv5
+//                FindSymbolsVisitor2 findSymbolsVisitor = new FindSymbolsVisitor2();
+//                scriptAst.Visit(findSymbolsVisitor);
+//                symbolReferences = findSymbolsVisitor.SymbolReferences;
+//#endif
+//            }
+//            else
             {
                 FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
                 scriptAst.Visit(findSymbolsVisitor);
