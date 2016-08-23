@@ -130,10 +130,12 @@ namespace Microsoft.PowerShell.EditorServices
             using (var ps = System.Management.Automation.PowerShell.Create())
             {
                 ps.Runspace = this.analysisRunspace;
+
                 var modules = ps.AddCommand("Get-Module")
                     .AddParameter("List")
                     .AddParameter("Name", "PSScriptAnalyzer")
                     .Invoke();
+
                 var psModule = modules == null ? null : modules.FirstOrDefault();
                 if (psModule != null)
                 {
@@ -160,10 +162,12 @@ namespace Microsoft.PowerShell.EditorServices
                 using (var ps = System.Management.Automation.PowerShell.Create())
                 {
                     ps.Runspace = this.analysisRunspace;
-                    var module = ps.AddCommand("Import-Module").
-                        AddParameter("ModuleInfo", scriptAnalyzerModuleInfo)
+
+                    var module = ps.AddCommand("Import-Module")
+                        .AddParameter("ModuleInfo", scriptAnalyzerModuleInfo)
                         .AddParameter("PassThru")
                         .Invoke();
+
                     if (module == null)
                     {
                         this.scriptAnalyzerModuleInfo = null;
@@ -186,13 +190,16 @@ namespace Microsoft.PowerShell.EditorServices
                 using (var ps = System.Management.Automation.PowerShell.Create())
                 {
                     ps.Runspace = this.analysisRunspace;
+
                     var rules = ps.AddCommand("Get-ScriptAnalyzerRule").Invoke();
                     var sb = new StringBuilder();
                     sb.AppendLine("Available PSScriptAnalyzer Rules:");
+
                     foreach (var rule in rules)
                     {
                         sb.AppendLine((string)rule.Members["RuleName"].Value);
                     }
+
                     Logger.Write(LogLevel.Verbose, sb.ToString());
                 }
             }
@@ -209,6 +216,7 @@ namespace Microsoft.PowerShell.EditorServices
         private IEnumerable<PSObject> GetDiagnosticRecords(ScriptFile file)
         {
             IEnumerable<PSObject> diagnosticRecords = Enumerable.Empty<PSObject>();
+
             if (this.scriptAnalyzerModuleInfo != null)
             {
                 using (var ps = System.Management.Automation.PowerShell.Create())
@@ -218,15 +226,17 @@ namespace Microsoft.PowerShell.EditorServices
                         LogLevel.Verbose,
                         String.Format("Running PSScriptAnalyzer against {0}", file.FilePath));
 
-                    // currently not working with include rules
                     diagnosticRecords = ps.AddCommand("Invoke-ScriptAnalyzer")
                         .AddParameter("ScriptDefinition", file.Contents)
+                        .AddParameter("IncludeRule", IncludedRules)
                         .Invoke();
                 }
             }
+
             Logger.Write(
                 LogLevel.Verbose,
                 String.Format("Found {0} violations", diagnosticRecords.Count()));
+
             return diagnosticRecords;
         }
 
