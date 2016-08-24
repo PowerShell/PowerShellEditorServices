@@ -30,7 +30,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
                 Name = scope.Name,
                 VariablesReference = scope.Id,
                 // Temporary fix for #95 to get debug hover tips to work well at least for the local scope.
-                Expensive = (scope.Name != VariableContainerDetails.LocalScopeName)
+                Expensive = ((scope.Name != VariableContainerDetails.LocalScopeName) &&
+                             (scope.Name != VariableContainerDetails.AutoVariablesName))
             };
         }
     }

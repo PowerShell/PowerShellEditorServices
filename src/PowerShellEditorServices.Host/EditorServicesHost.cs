@@ -96,11 +96,20 @@ namespace Microsoft.PowerShell.EditorServices.Host
         {
             Logger.Initialize(logFilePath, logLevel);
 
-            FileVersionInfo fileVersionInfo =
 #if NanoServer
+            FileVersionInfo fileVersionInfo =
                 FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
+
+            // TODO #278: Need the correct dependency package for this to work correctly
+            //string osVersionString = RuntimeInformation.OSDescription;
+            //string processArchitecture = RuntimeInformation.ProcessArchitecture == Architecture.X64 ? "64-bit" : "32-bit";
+            //string osArchitecture = RuntimeInformation.OSArchitecture == Architecture.X64 ? "64-bit" : "32-bit";
 #else
+            FileVersionInfo fileVersionInfo =
                 FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
+            string osVersionString = Environment.OSVersion.VersionString;
+            string processArchitecture = Environment.Is64BitProcess ? "64-bit" : "32-bit";
+            string osArchitecture = Environment.Is64BitOperatingSystem ? "64-bit" : "32-bit";
 #endif
 
             string newLine = Environment.NewLine;
@@ -113,12 +122,14 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     $"    Name:      {this.hostDetails.Name}" + newLine +
                     $"    ProfileId: {this.hostDetails.ProfileId}" + newLine +
                     $"    Version:   {this.hostDetails.Version}" + newLine +
-                     "    Arch:      {0}" + newLine + newLine +
+#if !NanoServer
+                    $"    Arch:      {processArchitecture}" + newLine + newLine +
                      "  Operating system details:" + newLine + newLine +
-                    $"    Version: {Environment.OSVersion.VersionString}" + newLine +
-                     "    Arch:    {1}",
-                    Environment.Is64BitProcess ? "64-bit" : "32-bit",
-                    Environment.Is64BitOperatingSystem ? "64-bit" : "32-bit"));
+                    $"    Version: {osVersionString}" + newLine +
+                    $"    Arch:    {osArchitecture}"));
+#else
+                    ""));
+#endif
         }
 
         /// <summary>

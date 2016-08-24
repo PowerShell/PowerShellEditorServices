@@ -12,7 +12,7 @@
 RootModule = 'PowerShellEditorServices.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.7.0'
+ModuleVersion = '0.7.1'
 
 # ID used to uniquely identify this module
 GUID = '9ca15887-53a2-479a-9cda-48d26bcb6c47'
@@ -33,7 +33,7 @@ Copyright = '(c) 2016 Microsoft. All rights reserved.'
 # PowerShellVersion = ''
 
 # Name of the Windows PowerShell host required by this module
-#PowerShellHostName = ''
+# PowerShellHostName = ''
 
 # Minimum version of the Windows PowerShell host required by this module
 # PowerShellHostVersion = ''
@@ -72,7 +72,7 @@ FunctionsToExport = @('Start-EditorServicesHost')
 CmdletsToExport = @()
 
 # Variables to export from this module
-VariablesToExport = '*'
+VariablesToExport = @()
 
 # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
 AliasesToExport = @()
