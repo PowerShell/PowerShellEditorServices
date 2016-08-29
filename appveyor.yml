@@ -21,28 +21,27 @@ branches:
 #init:
 #- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
-assembly_info:
-  patch: true
-  file: '**\AssemblyInfo.*'
-  assembly_version: '{version}'
-  assembly_file_version: '{version}'
-  assembly_informational_version: '$(core_version)$(prerelease_name)+{build}'
+# assembly_info:
+#   patch: true
+#   file: '**\AssemblyInfo.*'
+#   assembly_version: '{version}'
+#   assembly_file_version: '{version}'
+#   assembly_informational_version: '$(core_version)$(prerelease_name)+{build}'
 
 install:
 - git submodule -q update --init
 
-before_build:
-- ps: if (Test-Path 'C:\Tools\NuGet3') { $nugetDir = 'C:\Tools\NuGet3' } else { $nugetDir = 'C:\Tools\NuGet' }; (New-Object Net.WebClient).DownloadFile('https://dist.nuget.org/win-x86-commandline/v3.3.0/nuget.exe', "$nugetDir\NuGet.exe")
-- nuget restore PowerShellEditorServices.sln
+# before_build:
+# - ps: if (Test-Path 'C:\Tools\NuGet3') { $nugetDir = 'C:\Tools\NuGet3' } else { $nugetDir = 'C:\Tools\NuGet' }; (New-Object Net.WebClient).DownloadFile('https://dist.nuget.org/win-x86-commandline/v3.3.0/nuget.exe', "$nugetDir\NuGet.exe")
+# - nuget restore PowerShellEditorServices.sln
 
-build:
-  project: PowerShellEditorServices.NoNano.sln
-  publish_nuget: true
-  verbosity: minimal
+build_script:
+    - ps: |
+        ./build.ps1 -Configuration Release -BuildNumber $env:APPVEYOR_BUILD_NUMBER -PackageNuget -PackageModule
 
-test:
-  assemblies:
-  - Microsoft.PowerShell.EditorServices.Test.dll
-  - Microsoft.PowerShell.EditorServices.Test.Protocol.dll
-  - Microsoft.PowerShell.EditorServices.Test.Host.dll
-  - Microsoft.PowerShell.EditorServices.Test.Channel.WebSockets.dll
+# test:
+#   assemblies:
+#   - Microsoft.PowerShell.EditorServices.Test.dll
+#   - Microsoft.PowerShell.EditorServices.Test.Protocol.dll
+#   - Microsoft.PowerShell.EditorServices.Test.Host.dll
+#   - Microsoft.PowerShell.EditorServices.Test.Channel.WebSockets.dll
