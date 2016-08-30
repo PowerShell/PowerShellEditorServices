@@ -36,8 +36,10 @@ install:
 # - nuget restore PowerShellEditorServices.sln
 
 build_script:
-    - ps: |
-        ./build.ps1 -Configuration Release -BuildNumber $env:APPVEYOR_BUILD_NUMBER -PackageNuget -PackageModule
+    - ps: ./build.ps1 -Configuration Release -BuildNumber $env:APPVEYOR_BUILD_NUMBER -PackageNuget -PackageModule
+
+after_build:
+  - ps: Get-ChildItem -Path "release/BuiltPackages/*" -Include "*.nupkg", "*.zip" | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
 
 # test:
 #   assemblies:

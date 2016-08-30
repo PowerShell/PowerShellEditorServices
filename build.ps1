@@ -107,7 +107,7 @@ if ($PackageModule.IsPresent) {
 }
 
 if ($PackageNuget.IsPresent) {
-    Write-Host "`nCreating NuGet packages...`n" -ForegroundColor Yellow
+    Write-Host "`nCreating NuGet packages..." -ForegroundColor Yellow
 
     foreach ($projectPath in $projectPaths) {
         Push-Location (Join-Path $PSScriptRoot $projectPath)
@@ -115,7 +115,7 @@ if ($PackageNuget.IsPresent) {
         Pop-Location
 
         if ($LASTEXITCODE -ne 0) {
-            $success = false
+            $success = $false
             break
         }
     }
