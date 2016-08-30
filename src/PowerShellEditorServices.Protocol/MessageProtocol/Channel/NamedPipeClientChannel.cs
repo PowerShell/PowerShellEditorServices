@@ -12,7 +12,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     public class NamedPipeClientChannel : ChannelBase
     {
         private string pipeName;
-        private bool isClientConnected;
         private NamedPipeClientStream pipeClient;
 
         public NamedPipeClientChannel(string pipeName)
