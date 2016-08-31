@@ -484,9 +484,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
             catch (Exception ex) when (ex is ArgumentTransformationMetadataException ||
                                        ex is InvalidPowerShellExpressionException ||
-                                       ex is FormatException || 
-                                       ex is OverflowException ||
-                                       ex is InvalidCastException ||
                                        ex is SessionStateUnauthorizedAccessException)
             {
                 // Catch common, innocuous errors caused by the user supplying a value that can't be converted or the variable is not settable.

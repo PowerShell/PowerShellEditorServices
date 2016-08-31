@@ -319,13 +319,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Sets the specified variable by container variableReferenceId and variable name to the
         /// specified new value.  If the variable cannot be set or converted to that value this
-        /// method will throw FormatException, InvalidCastException, OverflowException or 
+        /// method will throw InvalidPowerShellExpressionException, ArgumentTransformationMetadataException, or 
         /// SessionStateUnauthorizedAccessException.
         /// </summary>
         /// <param name="variableContainerReferenceId">The container (Autos, Local, Script, Global) that holds the variable.</param>
-        /// <param name="name">The name of the variable either prefixed with $ or not.</param>
-        /// <param name="value">The new string value.  This value must not be null but if want to set the variable to null
-        /// pass in null or $null with no quotes.</param>
+        /// <param name="name">The name of the variable prefixed with $.</param>
+        /// <param name="value">The new string value.  This value must not be null.  If you want to set the variable to $null
+        /// pass in the string "$null".</param>
         /// <returns>The string representation of the value the variable was set to.</returns>
         public async Task<string> SetVariable(int variableContainerReferenceId, string name, string value)
         {
@@ -351,15 +351,15 @@ namespace Microsoft.PowerShell.EditorServices
                     false, 
                     false);
 
-            // PowerShell doesn't think this is a valid expression.  Report the error back through the exception
+            // Check if PowerShell's evaluation of the expression resulted in an error.
             object psobject = results.FirstOrDefault();
             if ((psobject == null) && (errorMessages.Length > 0))
             {
                 throw new InvalidPowerShellExpressionException(errorMessages.ToString());
             }
 
-            // Doh! PowerShellContext.ExecuteCommand returns an ErrorRecord as output.  Ideally we would have a separate
-            // means from communicating error records apart from normal output. But we can test for it by type.
+            // If PowerShellContext.ExecuteCommand returns an ErrorRecord as output, the expression failed evaluation.  
+            // Ideally we would have a separate means from communicating error records apart from normal output. 
             ErrorRecord errorRecord = psobject as ErrorRecord;
             if (errorRecord != null)
             {
@@ -401,7 +401,7 @@ namespace Microsoft.PowerShell.EditorServices
                 throw new Exception("Could not find the scope for this variable.");
             }
 
-            // Now, that we have the scope, get the associated PSVariable object for the variable to be set.
+            // Now that we have the scope, get the associated PSVariable object for the variable to be set.
             psCommand.Commands.Clear();
             psCommand = new PSCommand();
             psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable");
@@ -418,8 +418,8 @@ namespace Microsoft.PowerShell.EditorServices
             // We have the PSVariable object for the variable the user wants to set and an object to assign to that variable.
             // The last step is to determine whether the PSVariable is "strongly typed" which may require a conversion.
             // If it is not strongly typed, we simply assign the object directly to the PSVariable potentially changing its type.
-            // Turns out ArgumentTypeConverterAttribute is not public. I wonder if it is enough to find the first
-            // ArgumentTransformationAttribute?
+            // Turns out ArgumentTypeConverterAttribute is not public. So we call the attribute through it's base class - 
+            // ArgumentTransformationAttribute.
             var argTypeConverterAttr = 
                 psVariable.Attributes
                           .OfType<ArgumentTransformationAttribute>()
@@ -427,7 +427,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (argTypeConverterAttr != null)
             {
-                // Hmm, seems like there should be a way to access EngineIntrinsic directly, right?
+                // PSVariable is strongly typed. Need to apply the conversion/transform to the new value.
                 psCommand.Commands.Clear();
                 psCommand = new PSCommand();
                 psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable");
@@ -451,6 +451,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             else
             {
+                // PSVariable is *not* strongly typed. In this case, whack the old value with the new value.
                 var msg = $"Setting variable '{name}' directly to value: {psobject ?? "<null>"} - previous type was {psVariable.Value?.GetType().Name ?? "<unknown>"}";
                 Logger.Write(LogLevel.Verbose, msg);
                 psVariable.Value = psobject;
