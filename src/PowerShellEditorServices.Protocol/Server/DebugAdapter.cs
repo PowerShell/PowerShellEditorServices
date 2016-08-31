@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
@@ -67,6 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(StackTraceRequest.Type, this.HandleStackTraceRequest);
             this.SetRequestHandler(ScopesRequest.Type, this.HandleScopesRequest);
             this.SetRequestHandler(VariablesRequest.Type, this.HandleVariablesRequest);
+            this.SetRequestHandler(SetVariableRequest.Type, this.HandleSetVariablesRequest);
             this.SetRequestHandler(SourceRequest.Type, this.HandleSourceRequest);
             this.SetRequestHandler(EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
@@ -459,6 +461,42 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
 
             await requestContext.SendResult(variablesResponse);
+        }
+
+        protected async Task HandleSetVariablesRequest(
+            SetVariableRequestArguments setVariableParams,
+            RequestContext<SetVariableResponseBody> requestContext)
+        {
+            try
+            {
+                string updatedValue =
+                    await editorSession.DebugService.SetVariable(
+                        setVariableParams.VariablesReference,
+                        setVariableParams.Name,
+                        setVariableParams.Value);
+
+                var setVariableResponse = new SetVariableResponseBody
+                {
+                    Value = updatedValue
+                };
+
+                await requestContext.SendResult(setVariableResponse);
+            }
+            catch (Exception ex) when (ex is ArgumentTransformationMetadataException ||
+                                       ex is InvalidPowerShellExpressionException ||
+                                       ex is SessionStateUnauthorizedAccessException)
+            {
+                // Catch common, innocuous errors caused by the user supplying a value that can't be converted or the variable is not settable.
+                Logger.Write(LogLevel.Verbose, $"Failed to set variable: {ex.Message}");
+                await requestContext.SendError(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Logger.Write(LogLevel.Error, $"Unexpected error setting variable: {ex.Message}");
+                string msg =
+                    $"Unexpected error: {ex.GetType().Name} - {ex.Message}  Please report this error to the PowerShellEditorServices project on GitHub.";
+                await requestContext.SendError(msg);
+            }
         }
 
         protected Task HandleSourceRequest(

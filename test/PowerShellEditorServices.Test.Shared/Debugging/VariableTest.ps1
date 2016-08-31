@@ -1,11 +1,11 @@
 ﻿class MyClass {
 	[String] $Name;
-	[Int32] $Number;
-}
-
-function Test-Variables
-{
-	$strVar = "Hello"
+	[Int32] $Number; }
+[bool]$scriptBool = $false
+$scriptInt = 42
+function Test-Variables {
+    $strVar = "Hello"
+	[string]$strVar2 = "Hello2"
 	$arrVar = @(1, 2, $strVar, $objVar)
 	$assocArrVar = @{ firstChild = "Child"; secondChild = 42 }
 	$classVar = [MyClass]::new();

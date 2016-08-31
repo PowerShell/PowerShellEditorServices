@@ -59,7 +59,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 new InitializeResponseBody {
                     SupportsConfigurationDoneRequest = true,
                     SupportsConditionalBreakpoints = true,
-                    SupportsFunctionBreakpoints = true
+                    SupportsFunctionBreakpoints = true,
+                    SupportsSetVariable = true
                 });
 
             // Send the Initialized event so that we get breakpoints
