@@ -366,7 +366,7 @@ function __Expand-Alias {
             string newSettingsPath = this.currentSettings.ScriptAnalysis.SettingsPath;
             if (!string.Equals(oldScriptAnalysisSettingsPath, newSettingsPath, StringComparison.OrdinalIgnoreCase))
             {
-                this.editorSession.RestartAnalysisService(newSettingsPath);
+                this.editorSession.AnalysisService.SettingsPath = newSettingsPath;
                 settingsPathChanged = true;
             }
 
