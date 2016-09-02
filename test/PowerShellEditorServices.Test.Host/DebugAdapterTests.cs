@@ -23,7 +23,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         {
             string testLogPath =
                 Path.Combine(
+#if CoreCLR
+                    AppContext.BaseDirectory,
+#else
                     AppDomain.CurrentDomain.BaseDirectory,
+#endif
                     "logs",
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8) + ".log");

@@ -35,7 +35,9 @@ $projectPaths = @(
 )
 
 $testProjectPaths = @(
-    #"test/PowerShellEditorServices.Test",
+    "test/PowerShellEditorServices.Test.Runner",
+    "test/PowerShellEditorServices.Test.Shared",
+    "test/PowerShellEditorServices.Test"
     #"test/PowerShellEditorServices.Test.Protocol",
     #"test/PowerShellEditorServices.Test.Host"
 )

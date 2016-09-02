@@ -73,10 +73,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public async Task CanQueueParallelRunspaceRequests()
         {
             // Concurrently initiate 4 requests in the session
-            this.powerShellContext.ExecuteScriptString("$x = 100");
+            var taskOne = this.powerShellContext.ExecuteScriptString("$x = 100");
             Task<RunspaceHandle> handleTask = this.powerShellContext.GetRunspaceHandle();
-            this.powerShellContext.ExecuteScriptString("$x += 200");
-            this.powerShellContext.ExecuteScriptString("$x = $x / 100");
+            var taskTwo = this.powerShellContext.ExecuteScriptString("$x += 200");
+            var taskThree = this.powerShellContext.ExecuteScriptString("$x = $x / 100");
 
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript("$x");

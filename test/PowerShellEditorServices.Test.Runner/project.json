@@ -1,0 +1,19 @@
+{
+  "name": "Microsoft.PowerShell.EditorServices.Test.Runner",
+  "version": "0.7.1-beta-*",
+  "dependencies": {
+    "xunit": "2.2.0-beta2-*",
+    "xunit.runner.utility": "2.2.0-beta2-*",
+    "Microsoft.PowerShell.SDK": "1.0.0-alpha9"
+  },
+  "frameworks": {
+    "net451": {     
+    },
+    "netstandard1.6": {
+      "imports": ["dnxcore50", "portable-net45+win8"],
+      "buildOptions": {
+        "define": [ "CoreCLR" ]
+      }
+    }
+  }
+}

@@ -17,7 +17,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         private const string testMessage = "This is a test log message.";
         private readonly string logFilePath =
             Path.Combine(
+#if CoreCLR
+                AppContext.BaseDirectory,
+#else
                 AppDomain.CurrentDomain.BaseDirectory,
+#endif
                 "Test.log");
 
         [Fact]

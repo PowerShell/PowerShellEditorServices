@@ -12,5 +12,11 @@
             "args": [ "./build.ps1" ],
             "isBuildCommand": true,
             "problemMatcher": "$msCompile"
+        },
+        {
+            "taskName": "test",
+            "args": [ "./scripts/RunTests.ps1" ],
+            "isTestCommand": true,
+            "problemMatcher": "$msCompile"
         }
     ]
