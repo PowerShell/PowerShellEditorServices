@@ -203,6 +203,12 @@ namespace Microsoft.PowerShell.EditorServices
                         baseFilePath,
                         referencedFileName);
 
+                // If there was an error resolving the string, skip this reference
+                if (resolvedScriptPath == null)
+                {
+                    continue;
+                }
+
                 Logger.Write(
                     LogLevel.Verbose,
                     string.Format(
@@ -287,18 +293,49 @@ namespace Microsoft.PowerShell.EditorServices
 
         private string ResolveRelativeScriptPath(string baseFilePath, string relativePath)
         {
-            if (Path.IsPathRooted(relativePath))
+            string combinedPath = null;
+            Exception resolveException = null;
+
+            try
             {
-                return relativePath;
+                // If the path is already absolute there's no need to resolve it relatively
+                // to the baseFilePath.
+                if (Path.IsPathRooted(relativePath))
+                {
+                    return relativePath;
+                }
+
+                // Get the directory of the original script file, combine it
+                // with the given path and then resolve the absolute file path.
+                combinedPath =
+                    Path.GetFullPath(
+                        Path.Combine(
+                            baseFilePath,
+                            relativePath));
+            }
+            catch (NotSupportedException e)
+            {
+                // Occurs if the path is incorrectly formatted for any reason.  One
+                // instance where this occurred is when a user had curly double-quote
+                // characters in their source instead of normal double-quotes.
+                resolveException = e;
+            }
+            catch (ArgumentException e)
+            {
+                // Occurs if the path contains invalid characters, specifically those
+                // listed in System.IO.Path.InvalidPathChars.
+                resolveException = e;
             }
 
-            // Get the directory of the original script file, combine it
-            // with the given path and then resolve the absolute file path.
-            string combinedPath =
-                Path.GetFullPath(
-                    Path.Combine(
-                        baseFilePath,
-                        relativePath));
+            if (resolveException != null)
+            {
+                Logger.Write(
+                    LogLevel.Error,
+                    $"Could not resolve relative script path\r\n" +
+                    $"    baseFilePath = {baseFilePath}\r\n    " +
+                    $"    relativePath = {relativePath}\r\n\r\n" +
+                    $"{resolveException.ToString()}");
+            }
 
             return combinedPath;
         }

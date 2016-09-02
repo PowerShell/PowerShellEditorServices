@@ -34,9 +34,11 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (commandAst.InvocationOperator.Equals(TokenKind.Dot))
             {
-                string fileName = commandAst.CommandElements[0].Extent.Text;
+                // Strip any quote characters off of the string
+                string fileName = commandAst.CommandElements[0].Extent.Text.Trim('\'', '"');
                 DotSourcedFiles.Add(fileName);
             }
+
             return base.VisitCommand(commandAst);
         }
     }
