@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## 0.7.2
+### Friday, September 2, 2016
+
+- Fixed #284: PowerShellContext.AbortException crashes when called more than once
+- Fixed #285: PSScriptAnalyzer settings are not being passed to Invoke-ScriptAnalyzer
+- Fixed #287: Language service crashes when invalid path chars are used in dot-sourced script reference
+
 ## 0.7.1
 ### Tuesday, August 23, 2016
 

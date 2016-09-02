@@ -5,7 +5,6 @@
 
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
-using System.IO;
 using System.Linq;
 using System.Management.Automation.Runspaces;
 using System.Threading;
@@ -44,6 +43,21 @@ namespace Microsoft.PowerShell.EditorServices
 
         #endregion // Private Fields
 
+
+        #region Properties
+
+        /// <summary>
+        /// Gets or sets the path to a settings file (.psd1)
+        /// containing PSScriptAnalyzer settings.
+        /// </summary>
+        public string SettingsPath
+        {
+            get;
+            set;
+        }
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
@@ -56,6 +70,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             try
             {
+                this.SettingsPath = settingsPath;
                 this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
                 this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
                 this.analysisRunspace.Open();
@@ -219,17 +234,28 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (this.scriptAnalyzerModuleInfo != null)
             {
-                using (var ps = System.Management.Automation.PowerShell.Create())
+                using (var powerShell = System.Management.Automation.PowerShell.Create())
                 {
-                    ps.Runspace = this.analysisRunspace;
+                    powerShell.Runspace = this.analysisRunspace;
                     Logger.Write(
                         LogLevel.Verbose,
                         String.Format("Running PSScriptAnalyzer against {0}", file.FilePath));
 
-                    diagnosticRecords = ps.AddCommand("Invoke-ScriptAnalyzer")
-                        .AddParameter("ScriptDefinition", file.Contents)
-                        .AddParameter("IncludeRule", IncludedRules)
-                        .Invoke();
+                    powerShell
+                        .AddCommand("Invoke-ScriptAnalyzer")
+                        .AddParameter("ScriptDefinition", file.Contents);
+
+                    // Use a settings file if one is provided, otherwise use the default rule list.
+                    if (!string.IsNullOrWhiteSpace(this.SettingsPath))
+                    {
+                        powerShell.AddParameter("Settings", this.SettingsPath);
+                    }
+                    else
+                    {
+                        powerShell.AddParameter("IncludeRule", IncludedRules);
+                    }
+
+                    diagnosticRecords = powerShell.Invoke();
                 }
             }
 

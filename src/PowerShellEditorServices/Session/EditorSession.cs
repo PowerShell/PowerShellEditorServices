@@ -104,16 +104,6 @@ namespace Microsoft.PowerShell.EditorServices
             this.Workspace = new Workspace(this.PowerShellContext.PowerShellVersion);
         }
 
-        /// <summary>
-        /// Restarts the AnalysisService so it can be configured with a new settings file.
-        /// </summary>
-        /// <param name="settingsPath">Path to the settings file.</param>
-        public void RestartAnalysisService(string settingsPath)
-        {
-            this.AnalysisService?.Dispose();
-            InstantiateAnalysisService(settingsPath);
-        }
-
         internal void InstantiateAnalysisService(string settingsPath = null)
         {
             // Only enable the AnalysisService if the machine has PowerShell
