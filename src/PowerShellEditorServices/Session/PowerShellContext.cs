@@ -601,7 +601,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void AbortExecution()
         {
-            if (this.SessionState != PowerShellContextState.Aborting)
+            if (this.SessionState != PowerShellContextState.Aborting &&
+                this.SessionState != PowerShellContextState.Disposed)
             {
                 Logger.Write(LogLevel.Verbose, "Execution abort requested...");
 
@@ -617,7 +618,8 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 Logger.Write(
                     LogLevel.Verbose,
-                    "Execution abort requested while already aborting");
+                    string.Format(
+                        $"Execution abort requested when already aborted (SessionState = {this.SessionState})"));
             }
         }
 

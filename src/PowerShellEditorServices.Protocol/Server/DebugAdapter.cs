@@ -203,15 +203,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     if (e.NewSessionState == PowerShellContextState.Ready)
                     {
                         await requestContext.SendResult(null);
-                        editorSession.PowerShellContext.SessionStateChanged -= handler;
+                        this.editorSession.PowerShellContext.SessionStateChanged -= handler;
 
                         // Stop the server
                         await this.Stop();
                     }
                 };
 
-            editorSession.PowerShellContext.SessionStateChanged += handler;
-            editorSession.PowerShellContext.AbortExecution();
+            // In some rare cases, the EditorSession will already be disposed
+            // so we shouldn't try to abort because PowerShellContext will be null
+            if (this.editorSession != null && this.editorSession.PowerShellContext != null)
+            {
+                this.editorSession.PowerShellContext.SessionStateChanged += handler;
+                this.editorSession.PowerShellContext.AbortExecution();
+            }
 
             return Task.FromResult(true);
         }

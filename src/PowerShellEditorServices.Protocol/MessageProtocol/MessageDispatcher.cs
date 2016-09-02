@@ -331,6 +331,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         {
             if (listenTask.IsFaulted)
             {
+                Logger.Write(
+                    LogLevel.Error,
+                    string.Format(
+                        "MessageDispatcher loop terminated due to unhandled exception:\r\n\r\n{0}",
+                        listenTask.Exception.ToString()));
+
                 this.OnUnhandledException(listenTask.Exception);
             }
             else if (listenTask.IsCompleted || listenTask.IsCanceled)
