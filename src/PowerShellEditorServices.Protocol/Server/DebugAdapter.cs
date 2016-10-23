@@ -130,7 +130,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Set the working directory for the PowerShell runspace to the cwd passed in via launch.json. 
             // In case that is null, use the the folder of the script to be executed.  If the resulting 
             // working dir path is a file path then extract the directory and use that.
-            string workingDir = launchParams.Cwd ?? launchParams.Program;
+            string workingDir = launchParams.Cwd ?? launchParams.Script ?? launchParams.Program;
             workingDir = PowerShellContext.UnescapePath(workingDir);
             try
             {
@@ -167,7 +167,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // params so that the subsequent configurationDone request handler 
             // can launch the script. 
             this.noDebug = launchParams.NoDebug;
-            this.scriptPathToLaunch = launchParams.Program;
+            this.scriptPathToLaunch = launchParams.Script ?? launchParams.Program;
             this.arguments = arguments;
 
             // The order of debug protocol messages apparently isn't as guaranteed as we might like.
