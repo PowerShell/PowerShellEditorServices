@@ -262,7 +262,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     scriptFile.FilePath, 
                     srcBreakpoint.Line, 
                     srcBreakpoint.Column, 
-                    srcBreakpoint.Condition);
+                    srcBreakpoint.Condition,
+                    srcBreakpoint.HitCondition);
             }
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
@@ -294,7 +295,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 FunctionBreakpoint funcBreakpoint = setBreakpointsParams.Breakpoints[i];
                 breakpointDetails[i] = CommandBreakpointDetails.Create(
                     funcBreakpoint.Name,
-                    funcBreakpoint.Condition);
+                    funcBreakpoint.Condition,
+                    funcBreakpoint.HitCondition);
             }
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.

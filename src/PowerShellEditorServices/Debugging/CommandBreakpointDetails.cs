@@ -29,10 +29,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="name">The name of the command to break on.</param>
         /// <param name="condition">Condition string that would be applied to the breakpoint Action parameter.</param>
+        /// <param name="hitCondition">Hit condition string that would be applied to the breakpoint Action parameter.</param>
         /// <returns></returns>
         public static CommandBreakpointDetails Create(
             string name,
-            string condition = null)
+            string condition = null,
+            string hitCondition = null)
         {
             Validate.IsNotNull(nameof(name), name);
 

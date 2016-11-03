@@ -58,8 +58,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await requestContext.SendResult(
                 new InitializeResponseBody {
                     SupportsConfigurationDoneRequest = true,
-                    SupportsConditionalBreakpoints = true,
                     SupportsFunctionBreakpoints = true,
+                    SupportsConditionalBreakpoints = true,
+                    SupportsHitConditionalBreakpoints = true,
                     SupportsSetVariable = true
                 });
 
