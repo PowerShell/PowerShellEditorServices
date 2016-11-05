@@ -337,6 +337,79 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         }
 
         [Fact]
+        public async Task DebuggerStopsOnHitConditionBreakpoint()
+        {
+            const int hitCount = 5;
+
+            BreakpointDetails[] breakpoints =
+                await this.debugService.SetLineBreakpoints(
+                    this.debugScriptFile,
+                    new[] {
+                        BreakpointDetails.Create("", 6, null, null, $"{hitCount}"),
+                    });
+
+            await this.AssertStateChange(PowerShellContextState.Ready);
+
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptAtPath(
+                    this.debugScriptFile.FilePath);
+
+            // Wait for conditional breakpoint to hit
+            await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 6);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            // Verify the breakpoint only broke at the condition ie. $i -eq breakpointValue1
+            var i = variables.FirstOrDefault(v => v.Name == "$i");
+            Assert.NotNull(i);
+            Assert.False(i.IsExpandable);
+            Assert.Equal($"{hitCount}", i.ValueString);
+
+            // Abort script execution early and wait for completion
+            this.debugService.Abort();
+            await executeTask;
+        }
+
+        [Fact]
+        public async Task DebuggerStopsOnConditionalAndHitConditionBreakpoint()
+        {
+            const int hitCount = 5;
+
+            BreakpointDetails[] breakpoints =
+                await this.debugService.SetLineBreakpoints(
+                    this.debugScriptFile,
+                    new[] {
+                        BreakpointDetails.Create("", 6, null, $"$i % 2 -eq 0", $"{hitCount}"),
+                    });
+
+            await this.AssertStateChange(PowerShellContextState.Ready);
+
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptAtPath(
+                    this.debugScriptFile.FilePath);
+
+            // Wait for conditional breakpoint to hit
+            await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 6);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            // Verify the breakpoint only broke at the condition ie. $i -eq breakpointValue1
+            var i = variables.FirstOrDefault(v => v.Name == "$i");
+            Assert.NotNull(i);
+            Assert.False(i.IsExpandable);
+            // Condition is even numbers ($i starting at 1) should end up on 10 with a hit count of 5.
+            Assert.Equal("10", i.ValueString);
+
+            // Abort script execution early and wait for completion
+            this.debugService.Abort();
+            await executeTask;
+        }
+
+        [Fact]
         public async Task DebuggerProvidesMessageForInvalidConditionalBreakpoint()
         {
             BreakpointDetails[] breakpoints =
