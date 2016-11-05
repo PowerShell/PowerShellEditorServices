@@ -35,6 +35,8 @@ namespace Microsoft.PowerShell.EditorServices
         private VariableContainerDetails scriptScopeVariables;
         private StackFrameDetails[] stackFrameDetails;
 
+        private static int breakpointHitCounter = 0;
+
         #endregion
 
         #region Constructors
@@ -102,7 +104,8 @@ namespace Microsoft.PowerShell.EditorServices
                     }
 
                     // Check if this is a "conditional" line breakpoint.
-                    if (breakpoint.Condition != null)
+                    if (!String.IsNullOrWhiteSpace(breakpoint.Condition) ||
+                        !String.IsNullOrWhiteSpace(breakpoint.HitCondition))
                     {
                         ScriptBlock actionScriptBlock =
                             GetBreakpointActionScriptBlock(breakpoint);
@@ -157,7 +160,8 @@ namespace Microsoft.PowerShell.EditorServices
                     psCommand.AddParameter("Command", breakpoint.Name);
 
                     // Check if this is a "conditional" command breakpoint.
-                    if (breakpoint.Condition != null)
+                    if (!String.IsNullOrWhiteSpace(breakpoint.Condition) ||
+                        !String.IsNullOrWhiteSpace(breakpoint.HitCondition))
                     {
                         ScriptBlock actionScriptBlock = GetBreakpointActionScriptBlock(breakpoint);
 
@@ -719,32 +723,85 @@ namespace Microsoft.PowerShell.EditorServices
         {
             try
             {
-                ScriptBlock actionScriptBlock = ScriptBlock.Create(breakpoint.Condition);
+                ScriptBlock actionScriptBlock;
+                int? hitCount = null;
 
-                // Check for simple, common errors that ScriptBlock parsing will not catch 
-                // e.g. $i == 3 and $i > 3
-                string message;
-                if (!ValidateBreakpointConditionAst(actionScriptBlock.Ast, out message))
+                // If HitCondition specified, parse and verify it.
+                if (!(String.IsNullOrWhiteSpace(breakpoint.HitCondition)))
                 {
-                    breakpoint.Verified = false;
-                    breakpoint.Message = message;
-                    return null;
+                    int parsedHitCount;
+
+                    if (Int32.TryParse(breakpoint.HitCondition, out parsedHitCount))
+                    {
+                        hitCount = parsedHitCount;
+                    }
+                    else
+                    {
+                        breakpoint.Verified = false;
+                        breakpoint.Message = $"The specified HitCount '{breakpoint.HitCondition}' is not valid. " +
+                                              "The HitCount must be an integer number.";
+                        return null;
+                    }
                 }
 
-                // Check for "advanced" condition syntax i.e. if the user has specified
-                // a "break" or  "continue" statement anywhere in their scriptblock,
-                // pass their scriptblock through to the Action parameter as-is.
-                Ast breakOrContinueStatementAst =
-                    actionScriptBlock.Ast.Find(
-                        ast => (ast is BreakStatementAst || ast is ContinueStatementAst), true);
-
-                // If this isn't advanced syntax then the conditions string should be a simple
-                // expression that needs to be wrapped in a "if" test that conditionally executes
-                // a break statement.
-                if (breakOrContinueStatementAst == null)
+                // Create an Action scriptblock based on condition and/or hit count passed in.
+                if (hitCount.HasValue && String.IsNullOrWhiteSpace(breakpoint.Condition))
                 {
-                    string wrappedCondition = $"if ({breakpoint.Condition}) {{ break }}";
-                    actionScriptBlock = ScriptBlock.Create(wrappedCondition);
+                    // In the HitCount only case, this is simple as we can just use the HitCount 
+                    // property on the breakpoint object which is represented by $_.
+                    string action = $"if ($_.HitCount -eq {hitCount}) {{ break }}";
+                    actionScriptBlock = ScriptBlock.Create(action);
+                }
+                else if (!String.IsNullOrWhiteSpace(breakpoint.Condition))
+                {
+                    // Must be either condition only OR condition and hit count.
+                    actionScriptBlock = ScriptBlock.Create(breakpoint.Condition);
+
+                    // Check for simple, common errors that ScriptBlock parsing will not catch 
+                    // e.g. $i == 3 and $i > 3
+                    string message;
+                    if (!ValidateBreakpointConditionAst(actionScriptBlock.Ast, out message))
+                    {
+                        breakpoint.Verified = false;
+                        breakpoint.Message = message;
+                        return null;
+                    }
+
+                    // Check for "advanced" condition syntax i.e. if the user has specified
+                    // a "break" or  "continue" statement anywhere in their scriptblock,
+                    // pass their scriptblock through to the Action parameter as-is.
+                    Ast breakOrContinueStatementAst =
+                        actionScriptBlock.Ast.Find(
+                            ast => (ast is BreakStatementAst || ast is ContinueStatementAst), true);
+
+                    // If this isn't advanced syntax then the conditions string should be a simple
+                    // expression that needs to be wrapped in a "if" test that conditionally executes
+                    // a break statement.
+                    if (breakOrContinueStatementAst == null)
+                    {
+                        string wrappedCondition;
+
+                        if (hitCount.HasValue)
+                        {
+                            string globalHitCountVarName =
+                                $"$global:__psEditorServices_BreakHitCounter_{breakpointHitCounter++}";
+
+                            wrappedCondition =
+                                $"if ({breakpoint.Condition}) {{ if (++{globalHitCountVarName} -eq {hitCount}) {{ break }} }}";
+                        }
+                        else
+                        {
+                            wrappedCondition = $"if ({breakpoint.Condition}) {{ break }}";
+                        }
+
+                        actionScriptBlock = ScriptBlock.Create(wrappedCondition);
+                    }
+                }
+                else
+                {
+                    // Shouldn't get here unless someone called this with no condition and no hit count.
+                    actionScriptBlock = ScriptBlock.Create("break");
+                    Logger.Write(LogLevel.Warning, "No condition and no hit count specified by caller.");
                 }
 
                 return actionScriptBlock;

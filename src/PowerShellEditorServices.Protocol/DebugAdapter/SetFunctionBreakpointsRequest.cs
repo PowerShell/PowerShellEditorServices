@@ -27,5 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public string Name { get; set; }
 
         public string Condition { get; set; }
+
+        public string HitCondition { get; set; }
     }
 }
