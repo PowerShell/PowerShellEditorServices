@@ -97,48 +97,51 @@ namespace Microsoft.PowerShell.EditorServices
         internal static ScriptFileMarker FromDiagnosticRecord(PSObject psObject)
         {
             Validate.IsNotNull("psObject", psObject);
-            // return new ScriptFileMarker
-            // {
-            //     Message = GetIfExistsString(psObject, "Message"),
-            //     //Level = GetMarkerLevelFromDiagnosticSeverity(GetIfExistsString(psObject, "Severity")),
-            //     Level = GetMarkerLevelFromDiagnosticSeverity("Warning"),
-            //     ScriptRegion = ScriptRegion.Create((IScriptExtent)psObject.Members["Extent"].Value)
-
-            // Validate.IsNotNull("diagnosticRecord", diagnosticRecord);
-
             MarkerCorrection correction = null;
 
-            if (psObject.SuggestedCorrections != null)
+            // make sure psobject is of type DiagnosticRecord
+            if (!psObject.TypeNames.Contains(
+                    "Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord",
+                    StringComparer.OrdinalIgnoreCase))
             {
-                IEnumerable<ScriptRegion> editRegions =
-                    psObject
-                        .SuggestedCorrections
-                        .Select(
-                            c => new ScriptRegion
-                            {
-                                File = psObject.Extent.File,
-                                Text = c.Text,
-                                StartLineNumber = c.StartLineNumber,
-                                StartColumnNumber = c.StartColumnNumber,
-                                EndLineNumber = c.EndLineNumber,
-                                EndColumnNumber = c.EndColumnNumber
-                            });
+                throw new ArgumentException("Input PSObject must of DiagnosticRecord type.");
+            }
+
+            // casting psobject to dynamic allows us to access
+            // the diagnostic record's properties directly i.e. <instance>.<propertyName>
+            // without having to go through PSObject's Members property.
+            var diagnosticRecord = psObject as dynamic;
+            string ruleName = diagnosticRecord.RuleName as string;
+
+            if (diagnosticRecord.SuggestedCorrections != null)
+            {
+                var suggestedCorrections = diagnosticRecord.SuggestedCorrections as dynamic;
+                List<ScriptRegion> editRegions = new List<ScriptRegion>();
+                foreach (var suggestedCorrection in suggestedCorrections)
+                {
+                    editRegions.Add(new ScriptRegion
+                    {
+                        File = diagnosticRecord.ScriptPath,
+                        Text = suggestedCorrection.Text,
+                        StartLineNumber = suggestedCorrection.StartLineNumber,
+                        StartColumnNumber = suggestedCorrection.StartColumnNumber,
+                        EndLineNumber = suggestedCorrection.EndLineNumber,
+                        EndColumnNumber = suggestedCorrection.EndColumnNumber
+                    });
+                }
 
                 correction = new MarkerCorrection
                 {
-                    Name =
-                        psObject.SuggestedCorrections.Select(e => e.Description).FirstOrDefault()
-                        ?? psObject.Message,
-
+                    Name = diagnosticRecord.Message,
                     Edits = editRegions.ToArray()
                 };
             }
 
             return new ScriptFileMarker
             {
-                Message = psObject.Message,
-                Level = GetMarkerLevelFromDiagnosticSeverity(psObject.Severity),
-                ScriptRegion = ScriptRegion.Create(psObject.Extent),
+                Message = diagnosticRecord.Message as string,
+                Level = GetMarkerLevelFromDiagnosticSeverity((diagnosticRecord.Severity as Enum).ToString()),
+                ScriptRegion = ScriptRegion.Create(diagnosticRecord.Extent as IScriptExtent),
                 Correction = correction
             };
         }
