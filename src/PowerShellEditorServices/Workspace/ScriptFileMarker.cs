@@ -117,6 +117,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 var suggestedCorrections = diagnosticRecord.SuggestedCorrections as dynamic;
                 List<ScriptRegion> editRegions = new List<ScriptRegion>();
+                string correctionMessage = null;
                 foreach (var suggestedCorrection in suggestedCorrections)
                 {
                     editRegions.Add(new ScriptRegion
@@ -128,11 +129,12 @@ namespace Microsoft.PowerShell.EditorServices
                         EndLineNumber = suggestedCorrection.EndLineNumber,
                         EndColumnNumber = suggestedCorrection.EndColumnNumber
                     });
+                    correctionMessage = suggestedCorrection.Description;
                 }
 
                 correction = new MarkerCorrection
                 {
-                    Name = diagnosticRecord.Message,
+                    Name = correctionMessage == null ? diagnosticRecord.Message : correctionMessage,
                     Edits = editRegions.ToArray()
                 };
             }
