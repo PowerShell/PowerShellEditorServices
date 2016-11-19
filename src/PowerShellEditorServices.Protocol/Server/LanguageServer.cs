@@ -31,19 +31,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private OutputDebouncer outputDebouncer;
         private LanguageServerEditorOperations editorOperations;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
+        private Dictionary<string, Dictionary<string, MarkerCorrection>> codeActionsPerFile =
+            new Dictionary<string, Dictionary<string, MarkerCorrection>>();
 
-<<<<<<< 2d4012eee01d844c3e2d46aa538aa348d63530b0
         /// <param name="hostDetails">
         /// Provides details about the host application.
         /// </param>
         public LanguageServer(HostDetails hostDetails, ProfilePaths profilePaths)
             : this(hostDetails, profilePaths, new StdioServerChannel())
-=======
-        private Dictionary<string, Dictionary<string, MarkerCorrection>> codeActionsPerFile =
-            new Dictionary<string, Dictionary<string, MarkerCorrection>>();
-
-        public LanguageServer() : this(new StdioServerChannel())
->>>>>>> DRAFT: Initial "code actions" support
         {
         }
 
