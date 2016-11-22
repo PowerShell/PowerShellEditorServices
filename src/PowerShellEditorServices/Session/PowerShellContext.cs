@@ -76,11 +76,19 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Gets the PowerShell version details for the current runspace.
+        /// </summary>
+        public PowerShellVersionDetails PowerShellVersionDetails
+        {
+            get; private set;
+        }
+
+        /// <summary>
         /// Gets the PowerShell version of the current runspace.
         /// </summary>
         public Version PowerShellVersion
         {
-            get; private set;
+            get { return this.PowerShellVersionDetails.Version; }
         }
 
         /// <summary>
@@ -88,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public string PowerShellEdition
         {
-            get; private set;
+            get { return this.PowerShellVersionDetails.Edition; }
         }
 
         /// <summary>
@@ -188,9 +196,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.powerShell.Runspace = this.currentRunspace;
 
             // Get the PowerShell runtime version
-            Tuple<Version, string> versionEditionTuple = GetPowerShellVersion();
-            this.PowerShellVersion = versionEditionTuple.Item1;
-            this.PowerShellEdition = versionEditionTuple.Item2;
+            this.PowerShellVersionDetails = GetPowerShellVersion();
 
             // Write out the PowerShell version for tracking purposes
             Logger.Write(
@@ -246,10 +252,12 @@ namespace Microsoft.PowerShell.EditorServices
             this.runspaceWaitQueue.EnqueueAsync(runspaceHandle).Wait();
         }
 
-        private Tuple<Version, string> GetPowerShellVersion()
+        private PowerShellVersionDetails GetPowerShellVersion()
         {
             Version powerShellVersion = new Version(5, 0);
+            string versionString = null;
             string powerShellEdition = "Desktop";
+            string architecture = "Unknown";
 
             try
             {
@@ -267,6 +275,14 @@ namespace Microsoft.PowerShell.EditorServices
                     {
                         powerShellEdition = edition;
                     }
+
+                    var gitCommitId = psVersionTable["GitCommitId"] as string;
+                    if (gitCommitId != null)
+                    {
+                        versionString = gitCommitId;
+                    }
+
+                    architecture = this.currentRunspace.SessionStateProxy.GetVariable("env:PROCESSOR_ARCHITECTURE") as string;
                 }
             }
             catch (Exception ex)
@@ -274,7 +290,11 @@ namespace Microsoft.PowerShell.EditorServices
                 Logger.Write(LogLevel.Warning, "Failed to look up PowerShell version. Defaulting to version 5. " + ex.Message);
             }
 
-            return new Tuple<Version, string>(powerShellVersion, powerShellEdition);
+            return new PowerShellVersionDetails(
+                powerShellVersion,
+                versionString,
+                powerShellEdition,
+                architecture);
         }
 
         #endregion

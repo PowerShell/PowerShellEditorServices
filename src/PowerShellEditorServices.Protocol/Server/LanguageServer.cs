@@ -101,6 +101,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.SetRequestHandler(InvokeExtensionCommandRequest.Type, this.HandleInvokeExtensionCommandRequest);
 
+            this.SetRequestHandler(PowerShellVersionRequest.Type, this.HandlePowerShellVersionRequest);
+
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
 
             // Initialize the extension service
@@ -797,6 +799,15 @@ function __Expand-Alias {
             }
 
             await requestContext.SendResult(symbols.ToArray());
+        }
+
+        protected async Task HandlePowerShellVersionRequest(
+            object noParams,
+            RequestContext<PowerShellVersionResponse> requestContext)
+        {
+            await requestContext.SendResult(
+                new PowerShellVersionResponse(
+                    this.editorSession.PowerShellContext.PowerShellVersionDetails));
         }
 
         private bool IsQueryMatch(string query, string symbolName)

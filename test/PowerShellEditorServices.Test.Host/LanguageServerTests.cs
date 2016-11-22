@@ -702,6 +702,21 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("PROFILE: True", outputString);
         }
 
+        [Fact]
+        public async Task ServiceReturnsPowerShellVersionDetails()
+        {
+            PowerShellVersionResponse versionDetails =
+                await this.SendRequest(
+                    PowerShellVersionRequest.Type,
+                    new PowerShellVersionRequest());
+
+            // TODO: This should be more robust and predictable.
+            Assert.StartsWith("5.", versionDetails.Version);
+            Assert.StartsWith("5.", versionDetails.DisplayVersion);
+            Assert.Equal("Desktop", versionDetails.Edition);
+            Assert.Equal("x86", versionDetails.Architecture);
+        }
+
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)
         {
             string fileContents = string.Join(Environment.NewLine, File.ReadAllLines(filePath));

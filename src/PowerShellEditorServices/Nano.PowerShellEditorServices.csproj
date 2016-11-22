@@ -97,6 +97,7 @@
     <Compile Include="Session\PowerShellExecutionResult.cs" />
     <Compile Include="Session\PowerShellContext.cs" />
     <Compile Include="Session\PowerShellContextState.cs" />
+    <Compile Include="Session\PowerShellVersionDetails.cs" />
     <Compile Include="Session\ProfilePaths.cs" />
     <Compile Include="Session\ProgressDetails.cs" />
     <Compile Include="Session\RunspaceHandle.cs" />
@@ -137,6 +138,7 @@
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\EditorCommands.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\FindModuleRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\InstallModuleRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\PowerShellVersionRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\NamedPipeClientChannel.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\NamedPipeServerChannel.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\TcpSocketClientChannel.cs" />
