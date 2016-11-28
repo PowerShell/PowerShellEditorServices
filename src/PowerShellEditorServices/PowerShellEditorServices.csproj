@@ -117,6 +117,7 @@
     <Compile Include="Session\PowerShellExecutionResult.cs" />
     <Compile Include="Session\PowerShellContext.cs" />
     <Compile Include="Session\PowerShellContextState.cs" />
+    <Compile Include="Session\PowerShellVersionDetails.cs" />
     <Compile Include="Session\ProfilePaths.cs" />
     <Compile Include="Session\ProgressDetails.cs" />
     <Compile Include="Session\RunspaceHandle.cs" />

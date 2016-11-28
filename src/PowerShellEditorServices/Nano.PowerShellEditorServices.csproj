@@ -51,6 +51,7 @@
     <Compile Include="Debugging\BreakpointDetailsBase.cs" />
     <Compile Include="Debugging\DebugService.cs" />
     <Compile Include="Debugging\CommandBreakpointDetails.cs" />
+    <Compile Include="Debugging\InvalidPowerShellExpressionException.cs" />
     <Compile Include="Debugging\StackFrameDetails.cs" />
     <Compile Include="Debugging\VariableDetails.cs" />
     <Compile Include="Debugging\VariableDetailsBase.cs" />
@@ -96,6 +97,7 @@
     <Compile Include="Session\PowerShellExecutionResult.cs" />
     <Compile Include="Session\PowerShellContext.cs" />
     <Compile Include="Session\PowerShellContextState.cs" />
+    <Compile Include="Session\PowerShellVersionDetails.cs" />
     <Compile Include="Session\ProfilePaths.cs" />
     <Compile Include="Session\ProgressDetails.cs" />
     <Compile Include="Session\RunspaceHandle.cs" />
@@ -136,6 +138,7 @@
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\EditorCommands.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\FindModuleRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\InstallModuleRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\PowerShellVersionRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\NamedPipeClientChannel.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\NamedPipeServerChannel.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\TcpSocketClientChannel.cs" />
@@ -158,6 +161,7 @@
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\Scope.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\ScopesRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\SetBreakpointsRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\SetVariableRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\SetExceptionBreakpointsRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\Source.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\SourceRequest.cs" />
