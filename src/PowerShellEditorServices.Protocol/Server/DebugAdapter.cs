@@ -79,7 +79,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     .ExecuteScriptAtPath(this.scriptPathToLaunch, this.arguments)
                     .ContinueWith(
                         async (t) => {
-                            Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
+                            Logger.Write(LogLevel.Verbose, "Execution completed, flushing output then terminating...");
+
+                            // Make sure remaining output is flushed before exiting
+                            await this.outputDebouncer.Flush();
 
                             await requestContext.SendEvent(
                                 TerminatedEvent.Type,
