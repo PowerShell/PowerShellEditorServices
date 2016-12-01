@@ -257,23 +257,31 @@ namespace Microsoft.PowerShell.EditorServices
             Version powerShellVersion = new Version(5, 0);
             string versionString = null;
             string powerShellEdition = "Desktop";
-            string architecture = "Unknown";
+            var architecture = PowerShellProcessArchitecture.Unknown;
 
             try
             {
                 var psVersionTable = this.currentRunspace.SessionStateProxy.GetVariable("PSVersionTable") as Hashtable;
                 if (psVersionTable != null)
                 {
-                    var version = psVersionTable["PSVersion"] as Version;
-                    if (version != null)
-                    {
-                        powerShellVersion = version;
-                    }
-
                     var edition = psVersionTable["PSEdition"] as string;
                     if (edition != null)
                     {
                         powerShellEdition = edition;
+                    }
+
+                    // The PSVersion value will either be of Version or SemanticVersion.
+                    // In the former case, take the value directly.  In the latter case,
+                    // generate a Version from its string representation.
+                    var version = psVersionTable["PSVersion"];
+                    if (version is Version)
+                    {
+                        powerShellVersion = (Version)version;
+                    }
+                    else if (string.Equals(powerShellEdition, "Core", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        // Expected version string format is 6.0.0-alpha so build a simpler version from that
+                        powerShellVersion = new Version(version.ToString().Split('-')[0]);
                     }
 
                     var gitCommitId = psVersionTable["GitCommitId"] as string;
@@ -281,8 +289,20 @@ namespace Microsoft.PowerShell.EditorServices
                     {
                         versionString = gitCommitId;
                     }
+                    else
+                    {
+                        versionString = powerShellVersion.ToString();
+                    }
 
-                    architecture = this.currentRunspace.SessionStateProxy.GetVariable("env:PROCESSOR_ARCHITECTURE") as string;
+                    var arch = this.currentRunspace.SessionStateProxy.GetVariable("env:PROCESSOR_ARCHITECTURE") as string;
+                    if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        architecture = PowerShellProcessArchitecture.X64;
+                    }
+                    else if (string.Equals(arch, "x86", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        architecture = PowerShellProcessArchitecture.X86;
+                    }
                 }
             }
             catch (Exception ex)

@@ -31,10 +31,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 
         public PowerShellVersionResponse(PowerShellVersionDetails versionDetails)
         {
-            this.Version = versionDetails.Version.ToString();
-            this.DisplayVersion = versionDetails.VersionString;
+            this.Version = versionDetails.VersionString;
+            this.DisplayVersion =  $"{versionDetails.Version.Major}.{versionDetails.Version.Minor}";
             this.Edition = versionDetails.Edition;
-            this.Architecture = versionDetails.Architecture;
+
+            switch (versionDetails.Architecture)
+            {
+                case PowerShellProcessArchitecture.X64:
+                    this.Architecture = "x64";
+                    break;
+                case PowerShellProcessArchitecture.X86:
+                    this.Architecture = "x86";
+                    break;
+                default:
+                    this.Architecture = "Architecture Unknown";
+                    break;
+            }
         }
     }
 }

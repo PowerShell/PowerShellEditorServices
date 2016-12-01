@@ -8,6 +8,27 @@ using System;
 namespace Microsoft.PowerShell.EditorServices.Session
 {
     /// <summary>
+    /// Defines the possible enumeration values for the PowerShell process architecture.
+    /// </summary>
+    public enum PowerShellProcessArchitecture
+    {
+        /// <summary>
+        /// The processor architecture is unknown or wasn't accessible.
+        /// </summary>
+        Unknown,
+
+        /// <summary>
+        /// The processor architecture is 32-bit.
+        /// </summary>
+        X86,
+
+        /// <summary>
+        /// The processor architecture is 64-bit.
+        /// </summary>
+        X64
+    }
+
+    /// <summary>
     /// Provides details about the version of the PowerShell runtime.
     /// </summary>
     public class PowerShellVersionDetails
@@ -29,31 +50,27 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public string Edition { get; private set; }
 
         /// <summary>
-        /// Gets the architecture of the PowerShell process, either "x86" or
-        /// "x64".
+        /// Gets the architecture of the PowerShell process.
         /// </summary>
-        public string Architecture { get; private set; }
+        public PowerShellProcessArchitecture Architecture { get; private set; }
 
         /// <summary>
         /// Creates an instance of the PowerShellVersionDetails class.
         /// </summary>
-        /// <param name="powerShellVersion">The version of the PowerShell runtime.</param>
+        /// <param name="version">The version of the PowerShell runtime.</param>
         /// <param name="versionString">A string representation of the PowerShell version.</param>
         /// <param name="editionString">The string representation of the PowerShell edition.</param>
-        /// <param name="architectureString">The string representation of the processor architecture.</param>
+        /// <param name="architecture">The processor architecture.</param>
         public PowerShellVersionDetails(
-            Version powerShellVersion,
+            Version version,
             string versionString,
             string editionString,
-            string architectureString)
+            PowerShellProcessArchitecture architecture)
         {
-            this.Version = powerShellVersion;
-            this.VersionString = versionString ?? $"{powerShellVersion.Major}.{powerShellVersion.Minor}";
+            this.Version = version;
+            this.VersionString = versionString;
             this.Edition = editionString;
-            this.Architecture =
-                string.Equals(architectureString, "AMD64", StringComparison.CurrentCultureIgnoreCase)
-                    ? "x64"
-                    : architectureString;
+            this.Architecture = architecture;
         }
     }
 }
