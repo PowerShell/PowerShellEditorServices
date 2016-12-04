@@ -142,6 +142,25 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        public IEnumerable<string> GetPSScriptAnalyzerRules()
+        {
+            List<string> ruleNames = new List<string>();
+            if (scriptAnalyzerModuleInfo != null)
+            {
+                using (var ps = System.Management.Automation.PowerShell.Create())
+                {
+                    ps.Runspace = this.analysisRunspace;
+                    var ruleObjects = ps.AddCommand("Get-ScriptAnalyzerRule").Invoke();
+                    foreach(var rule in ruleObjects)
+                    {
+                        ruleNames.Add((string)rule.Members["RuleName"].Value);
+                    }
+                }
+            }
+
+            return ruleNames;
+        }
+
         #endregion // public methods
 
         #region Private Methods
@@ -207,23 +226,16 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (scriptAnalyzerModuleInfo != null)
             {
-                using (var ps = System.Management.Automation.PowerShell.Create())
+                var rules = GetPSScriptAnalyzerRules();
+                var sb = new StringBuilder();
+                sb.AppendLine("Available PSScriptAnalyzer Rules:");
+                foreach (var rule in rules)
                 {
-                    ps.Runspace = this.analysisRunspace;
-
-                    var rules = ps.AddCommand("Get-ScriptAnalyzerRule").Invoke();
-                    var sb = new StringBuilder();
-                    sb.AppendLine("Available PSScriptAnalyzer Rules:");
-
-                    foreach (var rule in rules)
-                    {
-                        sb.AppendLine((string)rule.Members["RuleName"].Value);
-                    }
-
-                    Logger.Write(LogLevel.Verbose, sb.ToString());
+                    sb.AppendLine(rule);
                 }
-            }
 
+                Logger.Write(LogLevel.Verbose, sb.ToString());
+            }
         }
 
         private void InitializePSScriptAnalyzer()

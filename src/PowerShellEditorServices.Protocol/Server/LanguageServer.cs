@@ -109,6 +109,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
 
+            this.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
+
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
             this.editorSession.ExtensionService.Initialize(
@@ -178,6 +180,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
 
             await requestContext.SendResult(null);
+        }
+
+        private async Task HandleGetPSSARulesRequest(
+            object param,
+            RequestContext<object> requestContext)
+        {
+            List<string> ruleList = new List<string>();
+            if (editorSession.AnalysisService != null)
+            {
+                var ruleNames = editorSession.AnalysisService.GetPSScriptAnalyzerRules();
+                foreach (var ruleName in ruleNames)
+                {
+                    ruleList.Add(ruleName);
+                }
+            }
+            await requestContext.SendResult(ruleList);
         }
 
         private async Task HandleInstallModuleRequest(
