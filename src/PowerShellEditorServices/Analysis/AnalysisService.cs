@@ -46,10 +46,17 @@ namespace Microsoft.PowerShell.EditorServices
             "PSUseDeclaredVarsMoreThanAssigments"
         };
 
+        private List<string> activeRules;
+
         #endregion // Private Fields
 
 
         #region Properties
+
+        public string[] ActiveRules
+        {
+            get { return activeRules != null ? activeRules.ToArray() : null; }
+        }
 
         /// <summary>
         /// Gets or sets the path to a settings file (.psd1)
@@ -79,6 +86,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
                 this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
                 this.analysisRunspace.Open();
+                activeRules = new List<string>(IncludedRules);
                 InitializePSScriptAnalyzer();
             }
             catch (Exception e)
@@ -269,7 +277,7 @@ namespace Microsoft.PowerShell.EditorServices
                     }
                     else
                     {
-                        powerShell.AddParameter("IncludeRule", IncludedRules);
+                        powerShell.AddParameter("IncludeRule", activeRules.ToArray());
                     }
 
                     diagnosticRecords = powerShell.Invoke();

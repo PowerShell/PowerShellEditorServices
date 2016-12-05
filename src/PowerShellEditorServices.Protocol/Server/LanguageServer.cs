@@ -187,15 +187,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<object> requestContext)
         {
             List<string> ruleList = new List<string>();
+            List<object> rules = new List<object>();
             if (editorSession.AnalysisService != null)
             {
                 var ruleNames = editorSession.AnalysisService.GetPSScriptAnalyzerRules();
+                var activeRules = editorSession.AnalysisService.ActiveRules;
                 foreach (var ruleName in ruleNames)
                 {
-                    ruleList.Add(ruleName);
+                    rules.Add(new { Name = ruleName, IsEnabled = activeRules.Contains(ruleName, StringComparer.OrdinalIgnoreCase) });
                 }
             }
-            await requestContext.SendResult(ruleList);
+
+            await requestContext.SendResult(rules);
         }
 
         private async Task HandleInstallModuleRequest(
