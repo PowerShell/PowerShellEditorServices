@@ -193,10 +193,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 var dynParam = param as dynamic;
                 foreach (dynamic ruleInfo in dynParam)
                 {
-
-                    if ((Boolean) ruleInfo.IsEnabled)
+                    if ((Boolean) ruleInfo.isEnabled)
                     {
-                        activeRules.Add((string) ruleInfo.Name);
+                        activeRules.Add((string) ruleInfo.name);
                     }
                 }
                 editorSession.AnalysisService.ActiveRules = activeRules.ToArray();
@@ -217,7 +216,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 var activeRules = editorSession.AnalysisService.ActiveRules;
                 foreach (var ruleName in ruleNames)
                 {
-                    rules.Add(new { Name = ruleName, IsEnabled = activeRules.Contains(ruleName, StringComparer.OrdinalIgnoreCase) });
+                    rules.Add(new { name = ruleName, isEnabled = activeRules.Contains(ruleName, StringComparer.OrdinalIgnoreCase) });
                 }
             }
 
