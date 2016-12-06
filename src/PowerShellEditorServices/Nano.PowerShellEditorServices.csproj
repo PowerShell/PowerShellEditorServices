@@ -39,6 +39,9 @@
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\GetPSSARulesRequest.cs">
       <Link>GetPSSARulesRequest.cs</Link>
     </Compile>
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\SetPSSARulesRequest.cs">
+      <Link>SetPSSARulesRequest.cs</Link>
+    </Compile>
     <Compile Include="Analysis\AnalysisOutputWriter.cs" />
     <Compile Include="Analysis\AnalysisService.cs" />
     <Compile Include="Console\ChoicePromptHandler.cs" />
