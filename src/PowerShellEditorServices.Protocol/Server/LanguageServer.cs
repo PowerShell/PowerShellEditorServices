@@ -110,6 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
 
             this.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
+            this.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
 
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
@@ -178,6 +179,28 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             psCommand.AddParameter("Online");
 
             await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
+
+            await requestContext.SendResult(null);
+        }
+
+        private async Task HandleSetPSSARulesRequest(
+            object param,
+            RequestContext<object> requestContext)
+        {
+            if (editorSession.AnalysisService != null)
+            {
+                var activeRules = new List<string>();
+                var dynParam = param as dynamic;
+                foreach (dynamic ruleInfo in dynParam)
+                {
+
+                    if ((Boolean) ruleInfo.IsEnabled)
+                    {
+                        activeRules.Add((string) ruleInfo.Name);
+                    }
+                }
+                editorSession.AnalysisService.ActiveRules = activeRules.ToArray();
+            }
 
             await requestContext.SendResult(null);
         }

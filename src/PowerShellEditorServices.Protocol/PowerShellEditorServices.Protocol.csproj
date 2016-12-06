@@ -61,6 +61,7 @@
     <Compile Include="LanguageServer\FindModuleRequest.cs" />
     <Compile Include="LanguageServer\InstallModuleRequest.cs" />
     <Compile Include="LanguageServer\PowerShellVersionRequest.cs" />
+    <Compile Include="LanguageServer\SetPSSARulesRequest.cs" />
     <Compile Include="MessageProtocol\Channel\NamedPipeClientChannel.cs" />
     <Compile Include="MessageProtocol\Channel\NamedPipeServerChannel.cs" />
     <Compile Include="MessageProtocol\Channel\TcpSocketClientChannel.cs" />

@@ -7,10 +7,10 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
-    class GetPSSARulesRequest
+    class SetPSSARulesRequest
     {
         public static readonly
-            RequestType<string, object> Type =
-            RequestType<string, object>.Create("powerShell/getPSSARules");
+            RequestType<object, object> Type =
+            RequestType<object, object>.Create("powerShell/setPSSARules");
     }
 }

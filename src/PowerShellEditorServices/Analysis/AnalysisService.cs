@@ -55,7 +55,14 @@ namespace Microsoft.PowerShell.EditorServices
 
         public string[] ActiveRules
         {
-            get { return activeRules != null ? activeRules.ToArray() : null; }
+            get
+            {
+                return activeRules != null ? activeRules.ToArray() : null;
+            }
+            set
+            {
+                activeRules = new List<string>(value); // TODO check the argument
+            }
         }
 
         /// <summary>
