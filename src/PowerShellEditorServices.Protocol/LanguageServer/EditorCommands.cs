@@ -132,8 +132,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class SetStatusBarMessageRequest
     {
         public static readonly
-            RequestType<string, EditorCommandResponse> Type =
-            RequestType<string, EditorCommandResponse>.Create("editor/setStatusBarMessage");
+            RequestType<StatusBarMessageDetails, EditorCommandResponse> Type =
+            RequestType<StatusBarMessageDetails, EditorCommandResponse>.Create("editor/setStatusBarMessage");
+    }
+
+    public class StatusBarMessageDetails
+    {
+        public string Message { get; set; }
+
+        public int? Timeout { get; set; }
     }
 }
 

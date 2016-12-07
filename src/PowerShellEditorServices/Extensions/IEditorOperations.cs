@@ -69,8 +69,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Sets the status bar message in the editor UI (if applicable).
         /// </summary>
         /// <param name="message">The message to be shown.</param>
+        /// <param name="timeout">If non-null, a timeout in milliseconds for how long the message should remain visible.</param>
         /// <returns>A Task that can be tracked for completion.</returns>
-        Task SetStatusBarMessage(string message);
+        Task SetStatusBarMessage(string message, int? timeout);
     }
 }
 

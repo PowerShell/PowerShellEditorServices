@@ -138,13 +138,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     true);
         }
 
-        public Task SetStatusBarMessage(string message)
+        public Task SetStatusBarMessage(string message, int? timeout)
         {
             return
                 this.messageSender.SendRequest(
                     SetStatusBarMessageRequest.Type,
-                    message,
-            true);
+                    new StatusBarMessageDetails
+                    {
+                        Message = message,
+                        Timeout = timeout
+                    },
+                    true);
         }
     }
 }

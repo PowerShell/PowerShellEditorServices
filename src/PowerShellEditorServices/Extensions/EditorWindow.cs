@@ -65,7 +65,17 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="message">The message to be shown.</param>
         public void SetStatusBarMessage(string message)
         {
-            this.editorOperations.SetStatusBarMessage(message).Wait();
+            this.editorOperations.SetStatusBarMessage(message, null).Wait();
+        }
+
+        /// <summary>
+        /// Sets the status bar message in the editor UI (if applicable).
+        /// </summary>
+        /// <param name="message">The message to be shown.</param>
+        /// <param name="timeout">A timeout in milliseconds for how long the message should remain visible.</param>
+        public void SetStatusBarMessage(string message, int timeout)
+        {
+            this.editorOperations.SetStatusBarMessage(message, timeout).Wait();
         }
 
         #endregion 

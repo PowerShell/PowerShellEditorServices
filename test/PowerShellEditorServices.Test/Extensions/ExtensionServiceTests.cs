@@ -203,7 +203,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
             throw new NotImplementedException();
         }
 
-        public Task SetStatusBarMessage(string message)
+        public Task SetStatusBarMessage(string message, int? timeout)
         {
             throw new NotImplementedException();
         }
