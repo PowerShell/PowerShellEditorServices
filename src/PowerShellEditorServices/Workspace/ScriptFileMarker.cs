@@ -6,10 +6,28 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Management.Automation;
+using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
 {
+    /// <summary>
+    /// Contains details for a code correction which can be applied from a ScriptFileMarker.
+    /// </summary>
+    public class MarkerCorrection
+    {
+        /// <summary>
+        /// Gets or sets the display name of the code correction.
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of ScriptRegions that define the edits to be made by the correction.
+        /// </summary>
+        public ScriptRegion[] Edits { get; set; }
+    }
+
     /// <summary>
     /// Defines the message level of a script file marker.
     /// </summary>
@@ -55,6 +73,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public ScriptRegion ScriptRegion { get; set; }
 
+        /// <summary>
+        /// Gets or sets an optional code correction that can be applied based on this marker.
+        /// </summary>
+        public MarkerCorrection Correction { get; set; }
+
         #endregion
 
         #region Public Methods
@@ -72,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices
             };
         }
         private static string GetIfExistsString(PSObject psobj, string memberName)
-        {            
+        {
             if (psobj.Members.Match(memberName).Count > 0)
             {
                 return psobj.Members[memberName].Value != null ? (string)psobj.Members[memberName].Value : "";
@@ -80,18 +103,60 @@ namespace Microsoft.PowerShell.EditorServices
             else
             {
                 return "";
-            }            
+            }
         }
 
         internal static ScriptFileMarker FromDiagnosticRecord(PSObject psObject)
         {
             Validate.IsNotNull("psObject", psObject);
+            MarkerCorrection correction = null;
+
+            // make sure psobject is of type DiagnosticRecord
+            if (!psObject.TypeNames.Contains(
+                    "Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord",
+                    StringComparer.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("Input PSObject must of DiagnosticRecord type.");
+            }
+
+            // casting psobject to dynamic allows us to access
+            // the diagnostic record's properties directly i.e. <instance>.<propertyName>
+            // without having to go through PSObject's Members property.
+            var diagnosticRecord = psObject as dynamic;
+            string ruleName = diagnosticRecord.RuleName as string;
+
+            if (diagnosticRecord.SuggestedCorrections != null)
+            {
+                var suggestedCorrections = diagnosticRecord.SuggestedCorrections as dynamic;
+                List<ScriptRegion> editRegions = new List<ScriptRegion>();
+                string correctionMessage = null;
+                foreach (var suggestedCorrection in suggestedCorrections)
+                {
+                    editRegions.Add(new ScriptRegion
+                    {
+                        File = diagnosticRecord.ScriptPath,
+                        Text = suggestedCorrection.Text,
+                        StartLineNumber = suggestedCorrection.StartLineNumber,
+                        StartColumnNumber = suggestedCorrection.StartColumnNumber,
+                        EndLineNumber = suggestedCorrection.EndLineNumber,
+                        EndColumnNumber = suggestedCorrection.EndColumnNumber
+                    });
+                    correctionMessage = suggestedCorrection.Description;
+                }
+
+                correction = new MarkerCorrection
+                {
+                    Name = correctionMessage == null ? diagnosticRecord.Message : correctionMessage,
+                    Edits = editRegions.ToArray()
+                };
+            }
+
             return new ScriptFileMarker
             {
-                Message = GetIfExistsString(psObject, "Message"),
-                //Level = GetMarkerLevelFromDiagnosticSeverity(GetIfExistsString(psObject, "Severity")),
-                Level = GetMarkerLevelFromDiagnosticSeverity("Warning"),
-                ScriptRegion = ScriptRegion.Create((IScriptExtent)psObject.Members["Extent"].Value)
+                Message = diagnosticRecord.Message as string,
+                Level = GetMarkerLevelFromDiagnosticSeverity((diagnosticRecord.Severity as Enum).ToString()),
+                ScriptRegion = ScriptRegion.Create(diagnosticRecord.Extent as IScriptExtent),
+                Correction = correction
             };
         }
 

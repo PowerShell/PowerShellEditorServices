@@ -54,9 +54,12 @@
     <Compile Include="DebugAdapter\ConfigurationDoneRequest.cs" />
     <Compile Include="DebugAdapter\ContinueRequest.cs" />
     <Compile Include="DebugAdapter\SetFunctionBreakpointsRequest.cs" />
+    <Compile Include="DebugAdapter\SetVariableRequest.cs" />
     <Compile Include="LanguageServer\EditorCommands.cs" />
+    <Compile Include="LanguageServer\CodeAction.cs" />
     <Compile Include="LanguageServer\FindModuleRequest.cs" />
     <Compile Include="LanguageServer\InstallModuleRequest.cs" />
+    <Compile Include="LanguageServer\PowerShellVersionRequest.cs" />
     <Compile Include="MessageProtocol\Channel\NamedPipeClientChannel.cs" />
     <Compile Include="MessageProtocol\Channel\NamedPipeServerChannel.cs" />
     <Compile Include="MessageProtocol\Channel\TcpSocketClientChannel.cs" />
@@ -153,7 +156,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

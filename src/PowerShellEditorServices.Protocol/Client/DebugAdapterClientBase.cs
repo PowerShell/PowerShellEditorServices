@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
             await this.SendRequest(
                 LaunchRequest.Type,
                 new LaunchRequestArguments {
-                    Program = scriptFilePath
+                    Script = scriptFilePath
                 });
 
             await this.SendRequest(ConfigurationDoneRequest.Type, null);

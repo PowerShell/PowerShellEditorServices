@@ -145,7 +145,13 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (value == null)
             {
-                valueString = "null";
+                // Set to identifier recognized by PowerShell to make setVariable from the debug UI more natural.
+                valueString = "$null";
+            }
+            else if (value is bool)
+            {
+                // Set to identifier recognized by PowerShell to make setVariable from the debug UI more natural.
+                valueString = (bool) value ? "$true" : "$false";
             }
             else if (isExpandable)
             {

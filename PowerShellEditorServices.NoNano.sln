@@ -7,12 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F594E7FD-1E7
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{422E561A-8118-4BE7-A54F-9309E4F03AAE}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "submodules", "submodules", "{AF08DA0C-B0A6-47AD-AC55-E13C687D4A91}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptAnalyzerEngine", "submodules\PSScriptAnalyzer\Engine\ScriptAnalyzerEngine.csproj", "{F4BDE3D0-3EEF-4157-8A3E-722DF7ADEF60}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptAnalyzerBuiltinRules", "submodules\PSScriptAnalyzer\Rules\ScriptAnalyzerBuiltinRules.csproj", "{C33B6B9D-E61C-45A3-9103-895FD82A5C1E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices", "src\PowerShellEditorServices\PowerShellEditorServices.csproj", "{81E8CBCD-6319-49E7-9662-0475BD0791F4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Host", "src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj", "{B2F6369A-D737-4AFD-8B81-9B094DB07DA7}"
@@ -53,14 +47,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{F4BDE3D0-3EEF-4157-8A3E-722DF7ADEF60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F4BDE3D0-3EEF-4157-8A3E-722DF7ADEF60}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F4BDE3D0-3EEF-4157-8A3E-722DF7ADEF60}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F4BDE3D0-3EEF-4157-8A3E-722DF7ADEF60}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C33B6B9D-E61C-45A3-9103-895FD82A5C1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C33B6B9D-E61C-45A3-9103-895FD82A5C1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C33B6B9D-E61C-45A3-9103-895FD82A5C1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C33B6B9D-E61C-45A3-9103-895FD82A5C1E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -102,8 +88,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{F4BDE3D0-3EEF-4157-8A3E-722DF7ADEF60} = {AF08DA0C-B0A6-47AD-AC55-E13C687D4A91}
-		{C33B6B9D-E61C-45A3-9103-895FD82A5C1E} = {AF08DA0C-B0A6-47AD-AC55-E13C687D4A91}
 		{81E8CBCD-6319-49E7-9662-0475BD0791F4} = {EE0A010C-E246-49AE-92E7-AD4320C45086}
 		{B2F6369A-D737-4AFD-8B81-9B094DB07DA7} = {EE0A010C-E246-49AE-92E7-AD4320C45086}
 		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}

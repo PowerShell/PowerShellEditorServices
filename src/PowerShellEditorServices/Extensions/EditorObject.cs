@@ -37,6 +37,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         public EditorWorkspace Workspace { get; private set; }
 
+        /// <summary>
+        /// Gets the window interface for the editor API.
+        /// </summary>
+        public EditorWindow Window { get; private set; }
+
         #endregion
 
         /// <summary>
@@ -53,6 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
             // Create API area objects
             this.Workspace = new EditorWorkspace(this.editorOperations);
+            this.Window = new EditorWindow(this.editorOperations);
         }
 
         /// <summary>
@@ -82,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public EditorContext GetEditorContext()
         {
             return this.editorOperations.GetEditorContext().Result;
-       }
+        }
     }
 }
 

@@ -76,11 +76,19 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Gets the PowerShell version details for the current runspace.
+        /// </summary>
+        public PowerShellVersionDetails PowerShellVersionDetails
+        {
+            get; private set;
+        }
+
+        /// <summary>
         /// Gets the PowerShell version of the current runspace.
         /// </summary>
         public Version PowerShellVersion
         {
-            get; private set;
+            get { return this.PowerShellVersionDetails.Version; }
         }
 
         /// <summary>
@@ -88,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public string PowerShellEdition
         {
-            get; private set;
+            get { return this.PowerShellVersionDetails.Edition; }
         }
 
         /// <summary>
@@ -188,9 +196,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.powerShell.Runspace = this.currentRunspace;
 
             // Get the PowerShell runtime version
-            Tuple<Version, string> versionEditionTuple = GetPowerShellVersion();
-            this.PowerShellVersion = versionEditionTuple.Item1;
-            this.PowerShellEdition = versionEditionTuple.Item2;
+            this.PowerShellVersionDetails = GetPowerShellVersion();
 
             // Write out the PowerShell version for tracking purposes
             Logger.Write(
@@ -246,26 +252,56 @@ namespace Microsoft.PowerShell.EditorServices
             this.runspaceWaitQueue.EnqueueAsync(runspaceHandle).Wait();
         }
 
-        private Tuple<Version, string> GetPowerShellVersion()
+        private PowerShellVersionDetails GetPowerShellVersion()
         {
             Version powerShellVersion = new Version(5, 0);
+            string versionString = null;
             string powerShellEdition = "Desktop";
+            var architecture = PowerShellProcessArchitecture.Unknown;
 
             try
             {
                 var psVersionTable = this.currentRunspace.SessionStateProxy.GetVariable("PSVersionTable") as Hashtable;
                 if (psVersionTable != null)
                 {
-                    var version = psVersionTable["PSVersion"] as Version;
-                    if (version != null)
-                    {
-                        powerShellVersion = version;
-                    }
-
                     var edition = psVersionTable["PSEdition"] as string;
                     if (edition != null)
                     {
                         powerShellEdition = edition;
+                    }
+
+                    // The PSVersion value will either be of Version or SemanticVersion.
+                    // In the former case, take the value directly.  In the latter case,
+                    // generate a Version from its string representation.
+                    var version = psVersionTable["PSVersion"];
+                    if (version is Version)
+                    {
+                        powerShellVersion = (Version)version;
+                    }
+                    else if (string.Equals(powerShellEdition, "Core", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        // Expected version string format is 6.0.0-alpha so build a simpler version from that
+                        powerShellVersion = new Version(version.ToString().Split('-')[0]);
+                    }
+
+                    var gitCommitId = psVersionTable["GitCommitId"] as string;
+                    if (gitCommitId != null)
+                    {
+                        versionString = gitCommitId;
+                    }
+                    else
+                    {
+                        versionString = powerShellVersion.ToString();
+                    }
+
+                    var arch = this.currentRunspace.SessionStateProxy.GetVariable("env:PROCESSOR_ARCHITECTURE") as string;
+                    if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        architecture = PowerShellProcessArchitecture.X64;
+                    }
+                    else if (string.Equals(arch, "x86", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        architecture = PowerShellProcessArchitecture.X86;
                     }
                 }
             }
@@ -274,7 +310,11 @@ namespace Microsoft.PowerShell.EditorServices
                 Logger.Write(LogLevel.Warning, "Failed to look up PowerShell version. Defaulting to version 5. " + ex.Message);
             }
 
-            return new Tuple<Version, string>(powerShellVersion, powerShellEdition);
+            return new PowerShellVersionDetails(
+                powerShellVersion,
+                versionString,
+                powerShellEdition,
+                architecture);
         }
 
         #endregion
@@ -325,6 +365,33 @@ namespace Microsoft.PowerShell.EditorServices
             bool sendOutputToHost = false,
             bool sendErrorToHost = true)
         {
+            return await ExecuteCommand<TResult>(psCommand, null, sendOutputToHost, sendErrorToHost);
+        }
+
+        /// <summary>
+        /// Executes a PSCommand against the session's runspace and returns
+        /// a collection of results of the expected type.
+        /// </summary>
+        /// <typeparam name="TResult">The expected result type.</typeparam>
+        /// <param name="psCommand">The PSCommand to be executed.</param>
+        /// <param name="errorMessages">Error messages from PowerShell will be written to the StringBuilder. 
+        /// You must set sendErrorToHost to false for errors to be written to the StringBuilder. This value can be null.</param>
+        /// <param name="sendOutputToHost">
+        /// If true, causes any output written during command execution to be written to the host.
+        /// </param>
+        /// <param name="sendErrorToHost">
+        /// If true, causes any errors encountered during command execution to be written to the host.
+        /// </param>
+        /// <returns>
+        /// An awaitable Task which will provide results once the command
+        /// execution completes.
+        /// </returns>
+        public async Task<IEnumerable<TResult>> ExecuteCommand<TResult>(
+            PSCommand psCommand,
+            StringBuilder errorMessages,
+            bool sendOutputToHost = false,
+            bool sendErrorToHost = true)
+        {
             RunspaceHandle runspaceHandle = null;
             IEnumerable<TResult> executionResult = Enumerable.Empty<TResult>();
 
@@ -337,7 +404,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                 PipelineExecutionRequest<TResult> executionRequest =
                     new PipelineExecutionRequest<TResult>(
-                        this, psCommand, sendOutputToHost);
+                        this, psCommand, errorMessages, sendOutputToHost);
 
                 // Send the pipeline execution request to the pipeline thread
                 this.pipelineResultTask = new TaskCompletionSource<IPipelineExecutionRequest>();
@@ -415,6 +482,7 @@ namespace Microsoft.PowerShell.EditorServices
                                 errorMessage += error.ToString() + "\r\n";
                             }
 
+                            errorMessages?.Append(errorMessage);
                             Logger.Write(LogLevel.Error, errorMessage);
                         }
                         else
@@ -432,6 +500,8 @@ namespace Microsoft.PowerShell.EditorServices
                     Logger.Write(
                         LogLevel.Error,
                         "Runtime exception occurred while executing command:\r\n\r\n" + e.ToString());
+
+                    errorMessages?.Append(e.Message);
 
                     if (sendErrorToHost)
                     {
@@ -1211,6 +1281,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             PowerShellContext powerShellContext;
             PSCommand psCommand;
+            StringBuilder errorMessages;
             bool sendOutputToHost;
 
             public IEnumerable<TResult> Results { get; private set; }
@@ -1218,10 +1289,12 @@ namespace Microsoft.PowerShell.EditorServices
             public PipelineExecutionRequest(
                 PowerShellContext powerShellContext,
                 PSCommand psCommand,
+                StringBuilder errorMessages,
                 bool sendOutputToHost)
             {
                 this.powerShellContext = powerShellContext;
                 this.psCommand = psCommand;
+                this.errorMessages = errorMessages;
                 this.sendOutputToHost = sendOutputToHost;
             }
 
@@ -1230,6 +1303,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.Results =
                     await this.powerShellContext.ExecuteCommand<TResult>(
                         psCommand,
+                        errorMessages,
                         sendOutputToHost);
 
                 // TODO: Deal with errors?

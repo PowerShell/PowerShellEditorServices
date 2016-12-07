@@ -34,6 +34,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public int? Column { get; set; }
 
         public string Condition { get; set; }
+
+        public string HitCondition { get; set; }
     }
 
     public class SetBreakpointsResponseBody

@@ -42,12 +42,14 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="line"></param>
         /// <param name="column"></param>
         /// <param name="condition"></param>
+        /// <param name="hitCondition"></param>
         /// <returns></returns>
         public static BreakpointDetails Create(
             string source, 
             int line, 
             int? column = null, 
-            string condition = null)
+            string condition = null,
+            string hitCondition = null)
         {
             Validate.IsNotNull("source", source);
 
@@ -57,7 +59,8 @@ namespace Microsoft.PowerShell.EditorServices
                 Source = source,
                 LineNumber = line,
                 ColumnNumber = column,
-                Condition = condition
+                Condition = condition,
+                HitCondition = hitCondition
             };
         }
 

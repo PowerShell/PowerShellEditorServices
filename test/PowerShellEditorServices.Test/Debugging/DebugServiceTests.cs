@@ -337,6 +337,79 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         }
 
         [Fact]
+        public async Task DebuggerStopsOnHitConditionBreakpoint()
+        {
+            const int hitCount = 5;
+
+            BreakpointDetails[] breakpoints =
+                await this.debugService.SetLineBreakpoints(
+                    this.debugScriptFile,
+                    new[] {
+                        BreakpointDetails.Create("", 6, null, null, $"{hitCount}"),
+                    });
+
+            await this.AssertStateChange(PowerShellContextState.Ready);
+
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptAtPath(
+                    this.debugScriptFile.FilePath);
+
+            // Wait for conditional breakpoint to hit
+            await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 6);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            // Verify the breakpoint only broke at the condition ie. $i -eq breakpointValue1
+            var i = variables.FirstOrDefault(v => v.Name == "$i");
+            Assert.NotNull(i);
+            Assert.False(i.IsExpandable);
+            Assert.Equal($"{hitCount}", i.ValueString);
+
+            // Abort script execution early and wait for completion
+            this.debugService.Abort();
+            await executeTask;
+        }
+
+        [Fact]
+        public async Task DebuggerStopsOnConditionalAndHitConditionBreakpoint()
+        {
+            const int hitCount = 5;
+
+            BreakpointDetails[] breakpoints =
+                await this.debugService.SetLineBreakpoints(
+                    this.debugScriptFile,
+                    new[] {
+                        BreakpointDetails.Create("", 6, null, $"$i % 2 -eq 0", $"{hitCount}"),
+                    });
+
+            await this.AssertStateChange(PowerShellContextState.Ready);
+
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptAtPath(
+                    this.debugScriptFile.FilePath);
+
+            // Wait for conditional breakpoint to hit
+            await this.AssertDebuggerStopped(this.debugScriptFile.FilePath, 6);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            // Verify the breakpoint only broke at the condition ie. $i -eq breakpointValue1
+            var i = variables.FirstOrDefault(v => v.Name == "$i");
+            Assert.NotNull(i);
+            Assert.False(i.IsExpandable);
+            // Condition is even numbers ($i starting at 1) should end up on 10 with a hit count of 5.
+            Assert.Equal("10", i.ValueString);
+
+            // Abort script execution early and wait for completion
+            this.debugService.Abort();
+            await executeTask;
+        }
+
+        [Fact]
         public async Task DebuggerProvidesMessageForInvalidConditionalBreakpoint()
         {
             BreakpointDetails[] breakpoints =
@@ -499,6 +572,146 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             var classChildren = debugService.GetVariables(classVar.Id);
             Assert.Equal(2, classChildren.Length);
+
+            // Abort execution of the script
+            this.powerShellContext.AbortExecution();
+        }
+
+        [Fact]
+        public async Task DebuggerSetsVariablesNoConversion()
+        {
+            await this.debugService.SetLineBreakpoints(
+                this.variableScriptFile,
+                new[] { BreakpointDetails.Create("", 14) });
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptString(
+                    this.variableScriptFile.FilePath);
+
+            await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            // Test set of a local string variable (not strongly typed)
+            string newStrValue = "\"Goodbye\"";
+            string setStrValue = await debugService.SetVariable(stackFrames[0].LocalVariables.Id, "$strVar", newStrValue);
+            Assert.Equal(newStrValue, setStrValue);
+
+            VariableScope[] scopes = this.debugService.GetVariableScopes(0);
+            
+            // Test set of script scope int variable (not strongly typed)
+            VariableScope scriptScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.ScriptScopeName);
+            string newIntValue = "49";
+            string newIntExpr = "7 * 7";
+            string setIntValue = await debugService.SetVariable(scriptScope.Id, "$scriptInt", newIntExpr);
+            Assert.Equal(newIntValue, setIntValue);
+
+            // Test set of global scope int variable (not strongly typed)
+            VariableScope globalScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.GlobalScopeName);
+            string newGlobalIntValue = "4242";
+            string setGlobalIntValue = await debugService.SetVariable(globalScope.Id, "$MaximumAliasCount", newGlobalIntValue);
+            Assert.Equal(newGlobalIntValue, setGlobalIntValue);
+
+            // The above just tests that the debug service returns the correct new value string.
+            // Let's step the debugger and make sure the values got set to the new values.
+            this.debugService.StepOver();
+            await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
+
+            stackFrames = debugService.GetStackFrames();
+
+            // Test set of a local string variable (not strongly typed)
+            variables = debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+            var strVar = variables.FirstOrDefault(v => v.Name == "$strVar");
+            Assert.Equal(newStrValue, strVar.ValueString);
+
+            scopes = this.debugService.GetVariableScopes(0);
+
+            // Test set of script scope int variable (not strongly typed)
+            scriptScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.ScriptScopeName);
+            variables = debugService.GetVariables(scriptScope.Id);
+            var intVar = variables.FirstOrDefault(v => v.Name == "$scriptInt");
+            Assert.Equal(newIntValue, intVar.ValueString);
+
+            // Test set of global scope int variable (not strongly typed)
+            globalScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.GlobalScopeName);
+            variables = debugService.GetVariables(globalScope.Id);
+            var intGlobalVar = variables.FirstOrDefault(v => v.Name == "$MaximumAliasCount");
+            Assert.Equal(newGlobalIntValue, intGlobalVar.ValueString);
+
+            // Abort execution of the script
+            this.powerShellContext.AbortExecution();
+        }
+
+        [Fact]
+        public async Task DebuggerSetsVariablesWithConversion()
+        {
+            await this.debugService.SetLineBreakpoints(
+                this.variableScriptFile,
+                new[] { BreakpointDetails.Create("", 14) });
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptString(
+                    this.variableScriptFile.FilePath);
+
+            await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            // Test set of a local string variable (not strongly typed but force conversion)
+            string newStrValue = "\"False\"";
+            string newStrExpr = "$false";
+            string setStrValue = await debugService.SetVariable(stackFrames[0].LocalVariables.Id, "$strVar2", newStrExpr);
+            Assert.Equal(newStrValue, setStrValue);
+
+            VariableScope[] scopes = this.debugService.GetVariableScopes(0);
+
+            // Test set of script scope bool variable (strongly typed)
+            VariableScope scriptScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.ScriptScopeName);
+            string newBoolValue = "$true";
+            string newBoolExpr = "1";
+            string setBoolValue = await debugService.SetVariable(scriptScope.Id, "$scriptBool", newBoolExpr);
+            Assert.Equal(newBoolValue, setBoolValue);
+
+            // Test set of global scope ActionPreference variable (strongly typed)
+            VariableScope globalScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.GlobalScopeName);
+            string newGlobalValue = "Continue";
+            string newGlobalExpr = "'Continue'";
+            string setGlobalValue = await debugService.SetVariable(globalScope.Id, "$VerbosePreference", newGlobalExpr);
+            Assert.Equal(newGlobalValue, setGlobalValue);
+
+            // The above just tests that the debug service returns the correct new value string.
+            // Let's step the debugger and make sure the values got set to the new values.
+            this.debugService.StepOver();
+            await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
+
+            stackFrames = debugService.GetStackFrames();
+
+            // Test set of a local string variable (not strongly typed but force conversion)
+            variables = debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+            var strVar = variables.FirstOrDefault(v => v.Name == "$strVar2");
+            Assert.Equal(newStrValue, strVar.ValueString);
+
+            scopes = this.debugService.GetVariableScopes(0);
+
+            // Test set of script scope bool variable (strongly typed)
+            scriptScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.ScriptScopeName);
+            variables = debugService.GetVariables(scriptScope.Id);
+            var boolVar = variables.FirstOrDefault(v => v.Name == "$scriptBool");
+            Assert.Equal(newBoolValue, boolVar.ValueString);
+
+            // Test set of global scope ActionPreference variable (strongly typed)
+            globalScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.GlobalScopeName);
+            variables = debugService.GetVariables(globalScope.Id);
+            var globalVar = variables.FirstOrDefault(v => v.Name == "$VerbosePreference");
+            Assert.Equal(newGlobalValue, globalVar.ValueString);
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();

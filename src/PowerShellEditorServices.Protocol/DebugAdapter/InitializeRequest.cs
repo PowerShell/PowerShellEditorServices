@@ -49,8 +49,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 
         /// <summary>
         /// Gets or sets a boolean value that determines whether the debug adapter 
+        /// supports breakpoints that break execution after a specified number of hits.
+        /// </summary>
+        public bool SupportsHitConditionalBreakpoints { get; set; }
+
+        /// <summary>
+        /// Gets or sets a boolean value that determines whether the debug adapter 
         /// supports a (side effect free) evaluate request for data hovers.
         /// </summary>
         public bool SupportsEvaluateForHovers { get; set; }
+
+        /// <summary>
+        /// Gets or sets a boolean value that determines whether the debug adapter
+        /// supports allowing the user to set a variable from the Variables debug windows.
+        /// </summary>
+        public bool SupportsSetVariable { get; set; }
     }
 }

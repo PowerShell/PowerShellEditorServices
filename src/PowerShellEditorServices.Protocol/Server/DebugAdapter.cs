@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
@@ -67,6 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(StackTraceRequest.Type, this.HandleStackTraceRequest);
             this.SetRequestHandler(ScopesRequest.Type, this.HandleScopesRequest);
             this.SetRequestHandler(VariablesRequest.Type, this.HandleVariablesRequest);
+            this.SetRequestHandler(SetVariableRequest.Type, this.HandleSetVariablesRequest);
             this.SetRequestHandler(SourceRequest.Type, this.HandleSourceRequest);
             this.SetRequestHandler(EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
@@ -77,7 +79,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     .ExecuteScriptAtPath(this.scriptPathToLaunch, this.arguments)
                     .ContinueWith(
                         async (t) => {
-                            Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
+                            Logger.Write(LogLevel.Verbose, "Execution completed, flushing output then terminating...");
+
+                            // Make sure remaining output is flushed before exiting
+                            await this.outputDebouncer.Flush();
 
                             await requestContext.SendEvent(
                                 TerminatedEvent.Type,
@@ -128,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Set the working directory for the PowerShell runspace to the cwd passed in via launch.json. 
             // In case that is null, use the the folder of the script to be executed.  If the resulting 
             // working dir path is a file path then extract the directory and use that.
-            string workingDir = launchParams.Cwd ?? launchParams.Program;
+            string workingDir = launchParams.Cwd ?? launchParams.Script ?? launchParams.Program;
             workingDir = PowerShellContext.UnescapePath(workingDir);
             try
             {
@@ -165,7 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // params so that the subsequent configurationDone request handler 
             // can launch the script. 
             this.noDebug = launchParams.NoDebug;
-            this.scriptPathToLaunch = launchParams.Program;
+            this.scriptPathToLaunch = launchParams.Script ?? launchParams.Program;
             this.arguments = arguments;
 
             // The order of debug protocol messages apparently isn't as guaranteed as we might like.
@@ -260,7 +265,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     scriptFile.FilePath, 
                     srcBreakpoint.Line, 
                     srcBreakpoint.Column, 
-                    srcBreakpoint.Condition);
+                    srcBreakpoint.Condition,
+                    srcBreakpoint.HitCondition);
             }
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
@@ -292,7 +298,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 FunctionBreakpoint funcBreakpoint = setBreakpointsParams.Breakpoints[i];
                 breakpointDetails[i] = CommandBreakpointDetails.Create(
                     funcBreakpoint.Name,
-                    funcBreakpoint.Condition);
+                    funcBreakpoint.Condition,
+                    funcBreakpoint.HitCondition);
             }
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
@@ -464,6 +471,42 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
 
             await requestContext.SendResult(variablesResponse);
+        }
+
+        protected async Task HandleSetVariablesRequest(
+            SetVariableRequestArguments setVariableParams,
+            RequestContext<SetVariableResponseBody> requestContext)
+        {
+            try
+            {
+                string updatedValue =
+                    await editorSession.DebugService.SetVariable(
+                        setVariableParams.VariablesReference,
+                        setVariableParams.Name,
+                        setVariableParams.Value);
+
+                var setVariableResponse = new SetVariableResponseBody
+                {
+                    Value = updatedValue
+                };
+
+                await requestContext.SendResult(setVariableResponse);
+            }
+            catch (Exception ex) when (ex is ArgumentTransformationMetadataException ||
+                                       ex is InvalidPowerShellExpressionException ||
+                                       ex is SessionStateUnauthorizedAccessException)
+            {
+                // Catch common, innocuous errors caused by the user supplying a value that can't be converted or the variable is not settable.
+                Logger.Write(LogLevel.Verbose, $"Failed to set variable: {ex.Message}");
+                await requestContext.SendError(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Logger.Write(LogLevel.Error, $"Unexpected error setting variable: {ex.Message}");
+                string msg =
+                    $"Unexpected error: {ex.GetType().Name} - {ex.Message}  Please report this error to the PowerShellEditorServices project on GitHub.";
+                await requestContext.SendError(msg);
+            }
         }
 
         protected Task HandleSourceRequest(

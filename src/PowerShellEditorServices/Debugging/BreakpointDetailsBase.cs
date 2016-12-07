@@ -27,5 +27,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the breakpoint condition string.
         /// </summary>
         public string Condition { get; protected set; }
+
+        /// <summary>
+        /// Gets the breakpoint hit condition string.
+        /// </summary>
+        public string HitCondition { get; protected set; }
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System.Threading.Tasks;
+using System;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
@@ -107,6 +108,46 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 this.messageSender.SendRequest(
                     OpenFileRequest.Type,
                     filePath,
+                    true);
+        }
+
+        public Task ShowInformationMessage(string message)
+        {
+            return
+                this.messageSender.SendRequest(
+                    ShowInformationMessageRequest.Type,
+                    message,
+                    true);
+        }
+
+        public Task ShowErrorMessage(string message)
+        {
+            return
+                this.messageSender.SendRequest(
+                    ShowErrorMessageRequest.Type,
+                    message,
+                    true);
+        }
+
+        public Task ShowWarningMessage(string message)
+        {
+            return
+                this.messageSender.SendRequest(
+                    ShowWarningMessageRequest.Type,
+                    message,
+                    true);
+        }
+
+        public Task SetStatusBarMessage(string message, int? timeout)
+        {
+            return
+                this.messageSender.SendRequest(
+                    SetStatusBarMessageRequest.Type,
+                    new StatusBarMessageDetails
+                    {
+                        Message = message,
+                        Timeout = timeout
+                    },
                     true);
         }
     }
