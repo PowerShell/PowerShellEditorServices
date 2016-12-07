@@ -193,6 +193,7 @@
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\StdioClientChannel.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\EventContext.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\EventType.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\CodeAction.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\ClientCapabilities.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\Completion.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\Diagnostics.cs" />
