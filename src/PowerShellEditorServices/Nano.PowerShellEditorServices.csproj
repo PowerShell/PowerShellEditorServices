@@ -59,6 +59,7 @@
     <Compile Include="Debugging\VariableContainerDetails.cs" />
     <Compile Include="Extensions\EditorContext.cs" />
     <Compile Include="Extensions\EditorObject.cs" />
+    <Compile Include="Extensions\EditorWindow.cs" />
     <Compile Include="Extensions\EditorWorkspace.cs" />
     <Compile Include="Extensions\EditorCommand.cs" />
     <Compile Include="Extensions\ExtensionService.cs" />

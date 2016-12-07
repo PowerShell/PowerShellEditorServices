@@ -45,31 +45,31 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         Task SetSelection(BufferRange selectionRange);
 
         /// <summary>
-        /// 
+        /// Shows an informational message to the user.
         /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
+        /// <param name="message">The message to be shown.</param>
+        /// <returns>A Task that can be tracked for completion.</returns>
         Task ShowInformationMessage(string message);
 
         /// <summary>
-        /// 
+        /// Shows an error message to the user.
         /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
+        /// <param name="message">The message to be shown.</param>
+        /// <returns>A Task that can be tracked for completion.</returns>
         Task ShowErrorMessage(string message);
 
         /// <summary>
-        /// 
+        /// Shows a warning message to the user.
         /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
+        /// <param name="message">The message to be shown.</param>
+        /// <returns>A Task that can be tracked for completion.</returns>
         Task ShowWarningMessage(string message);
 
         /// <summary>
-        /// 
+        /// Sets the status bar message in the editor UI (if applicable).
         /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
+        /// <param name="message">The message to be shown.</param>
+        /// <returns>A Task that can be tracked for completion.</returns>
         Task SetStatusBarMessage(string message);
     }
 }
