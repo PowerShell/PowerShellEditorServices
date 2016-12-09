@@ -109,6 +109,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
 
+            this.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
+            this.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
+
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
             this.editorSession.ExtensionService.Initialize(
@@ -178,6 +181,55 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
 
             await requestContext.SendResult(null);
+        }
+
+        private async Task HandleSetPSSARulesRequest(
+            object param,
+            RequestContext<object> requestContext)
+        {
+            var dynParams = param as dynamic;
+            if (editorSession.AnalysisService != null &&
+                    editorSession.AnalysisService.SettingsPath == null)
+            {
+                var activeRules = new List<string>();
+                var ruleInfos = dynParams.ruleInfos;
+                foreach (dynamic ruleInfo in ruleInfos)
+                {
+                    if ((Boolean) ruleInfo.isEnabled)
+                    {
+                        activeRules.Add((string) ruleInfo.name);
+                    }
+                }
+                editorSession.AnalysisService.ActiveRules = activeRules.ToArray();
+            }
+
+            var sendresult = requestContext.SendResult(null);
+            var scripFile = editorSession.Workspace.GetFile((string)dynParams.filepath);
+            await RunScriptDiagnostics(
+                    new ScriptFile[] { scripFile },
+                        editorSession,
+                        requestContext.SendEvent);
+            await sendresult;
+        }
+
+        private async Task HandleGetPSSARulesRequest(
+            object param,
+            RequestContext<object> requestContext)
+        {
+            List<object> rules = null;
+            if (editorSession.AnalysisService != null
+                    && editorSession.AnalysisService.SettingsPath == null)
+            {
+                rules = new List<object>();
+                var ruleNames = editorSession.AnalysisService.GetPSScriptAnalyzerRules();
+                var activeRules = editorSession.AnalysisService.ActiveRules;
+                foreach (var ruleName in ruleNames)
+                {
+                    rules.Add(new { name = ruleName, isEnabled = activeRules.Contains(ruleName, StringComparer.OrdinalIgnoreCase) });
+                }
+            }
+
+            await requestContext.SendResult(rules);
         }
 
         private async Task HandleInstallModuleRequest(
@@ -965,6 +1017,14 @@ function __Expand-Alias {
             EditorSession editorSession,
             EventContext eventContext)
         {
+            return RunScriptDiagnostics(filesToAnalyze, editorSession, eventContext.SendEvent);
+        }
+
+        private Task RunScriptDiagnostics(
+            ScriptFile[] filesToAnalyze,
+            EditorSession editorSession,
+            Func<EventType<PublishDiagnosticsNotification>, PublishDiagnosticsNotification, Task> eventSender)
+        {
             if (!this.currentSettings.ScriptAnalysis.Enable.Value)
             {
                 // If the user has disabled script analysis, skip it entirely
@@ -1011,7 +1071,7 @@ function __Expand-Alias {
                         filesToAnalyze,
                         this.codeActionsPerFile,
                         editorSession,
-                        eventContext,
+                        eventSender,
                         existingRequestCancellation.Token),
                 CancellationToken.None,
                 TaskCreationOptions.None,
@@ -1020,12 +1080,31 @@ function __Expand-Alias {
             return Task.FromResult(true);
         }
 
+
         private static async Task DelayThenInvokeDiagnostics(
             int delayMilliseconds,
             ScriptFile[] filesToAnalyze,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EditorSession editorSession,
             EventContext eventContext,
+            CancellationToken cancellationToken)
+        {
+            await DelayThenInvokeDiagnostics(
+                delayMilliseconds,
+                filesToAnalyze,
+                correctionIndex,
+                editorSession,
+                eventContext.SendEvent,
+                cancellationToken);
+        }
+
+
+        private static async Task DelayThenInvokeDiagnostics(
+            int delayMilliseconds,
+            ScriptFile[] filesToAnalyze,
+            Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
+            EditorSession editorSession,
+            Func<EventType<PublishDiagnosticsNotification>, PublishDiagnosticsNotification, Task> eventSender,
             CancellationToken cancellationToken)
         {
             // First of all, wait for the desired delay period before
@@ -1072,7 +1151,7 @@ function __Expand-Alias {
                     scriptFile,
                     semanticMarkers,
                     correctionIndex,
-                    eventContext);
+                    eventSender);
             }
         }
 
@@ -1081,6 +1160,19 @@ function __Expand-Alias {
             ScriptFileMarker[] semanticMarkers,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EventContext eventContext)
+        {
+            await PublishScriptDiagnostics(
+                scriptFile,
+                semanticMarkers,
+                correctionIndex,
+                eventContext.SendEvent);
+        }
+
+        private static async Task PublishScriptDiagnostics(
+            ScriptFile scriptFile,
+            ScriptFileMarker[] semanticMarkers,
+            Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
+            Func<EventType<PublishDiagnosticsNotification>, PublishDiagnosticsNotification, Task> eventSender)
         {
             List<Diagnostic> diagnostics = new List<Diagnostic>();
 
@@ -1104,7 +1196,7 @@ function __Expand-Alias {
 
             // Always send syntax and semantic errors.  We want to
             // make sure no out-of-date markers are being displayed.
-            await eventContext.SendEvent(
+            await eventSender(
                 PublishDiagnosticsNotification.Type,
                 new PublishDiagnosticsNotification
                 {

@@ -55,11 +55,13 @@
     <Compile Include="DebugAdapter\ContinueRequest.cs" />
     <Compile Include="DebugAdapter\SetFunctionBreakpointsRequest.cs" />
     <Compile Include="DebugAdapter\SetVariableRequest.cs" />
+    <Compile Include="LanguageServer\GetPSSARulesRequest.cs" />
     <Compile Include="LanguageServer\EditorCommands.cs" />
     <Compile Include="LanguageServer\CodeAction.cs" />
     <Compile Include="LanguageServer\FindModuleRequest.cs" />
     <Compile Include="LanguageServer\InstallModuleRequest.cs" />
     <Compile Include="LanguageServer\PowerShellVersionRequest.cs" />
+    <Compile Include="LanguageServer\SetPSSARulesRequest.cs" />
     <Compile Include="MessageProtocol\Channel\NamedPipeClientChannel.cs" />
     <Compile Include="MessageProtocol\Channel\NamedPipeServerChannel.cs" />
     <Compile Include="MessageProtocol\Channel\TcpSocketClientChannel.cs" />

@@ -52,6 +52,11 @@ namespace Microsoft.PowerShell.EditorServices
         #region Properties
 
         /// <summary>
+        /// Set of PSScriptAnalyzer rules used for analysis
+        /// </summary>
+        public string[] ActiveRules { get; set; }
+
+        /// <summary>
         /// Gets or sets the path to a settings file (.psd1)
         /// containing PSScriptAnalyzer settings.
         /// </summary>
@@ -79,6 +84,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
                 this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
                 this.analysisRunspace.Open();
+                ActiveRules = IncludedRules.ToArray();
                 InitializePSScriptAnalyzer();
             }
             catch (Exception e)
@@ -127,6 +133,28 @@ namespace Microsoft.PowerShell.EditorServices
                 // Return an empty marker list
                 return new ScriptFileMarker[0];
             }
+        }
+
+        /// <summary>
+        /// Returns a list of builtin-in PSScriptAnalyzer rules
+        /// </summary>
+        public IEnumerable<string> GetPSScriptAnalyzerRules()
+        {
+            List<string> ruleNames = new List<string>();
+            if (scriptAnalyzerModuleInfo != null)
+            {
+                using (var ps = System.Management.Automation.PowerShell.Create())
+                {
+                    ps.Runspace = this.analysisRunspace;
+                    var ruleObjects = ps.AddCommand("Get-ScriptAnalyzerRule").Invoke();
+                    foreach (var rule in ruleObjects)
+                    {
+                        ruleNames.Add((string)rule.Members["RuleName"].Value);
+                    }
+                }
+            }
+
+            return ruleNames;
         }
 
         /// <summary>
@@ -207,23 +235,16 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (scriptAnalyzerModuleInfo != null)
             {
-                using (var ps = System.Management.Automation.PowerShell.Create())
+                var rules = GetPSScriptAnalyzerRules();
+                var sb = new StringBuilder();
+                sb.AppendLine("Available PSScriptAnalyzer Rules:");
+                foreach (var rule in rules)
                 {
-                    ps.Runspace = this.analysisRunspace;
-
-                    var rules = ps.AddCommand("Get-ScriptAnalyzerRule").Invoke();
-                    var sb = new StringBuilder();
-                    sb.AppendLine("Available PSScriptAnalyzer Rules:");
-
-                    foreach (var rule in rules)
-                    {
-                        sb.AppendLine((string)rule.Members["RuleName"].Value);
-                    }
-
-                    Logger.Write(LogLevel.Verbose, sb.ToString());
+                    sb.AppendLine(rule);
                 }
-            }
 
+                Logger.Write(LogLevel.Verbose, sb.ToString());
+            }
         }
 
         private void InitializePSScriptAnalyzer()
@@ -257,7 +278,7 @@ namespace Microsoft.PowerShell.EditorServices
                     }
                     else
                     {
-                        powerShell.AddParameter("IncludeRule", IncludedRules);
+                        powerShell.AddParameter("IncludeRule", ActiveRules);
                     }
 
                     diagnosticRecords = powerShell.Invoke();
