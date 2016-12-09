@@ -33,6 +33,19 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         }
 
         /// <summary>
+        /// Gets the workspace-relative path of the file.
+        /// </summary>
+        public string WorkspacePath
+        {
+            get
+            {
+                return
+                    this.editorOperations.GetWorkspaceRelativePath(
+                        this.scriptFile.FilePath);
+            }
+        }
+
+        /// <summary>
         /// Gets the parsed abstract syntax tree for the file.
         /// </summary>
         public Ast Ast

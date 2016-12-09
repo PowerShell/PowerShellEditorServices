@@ -7,7 +7,6 @@ using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System.Threading.Tasks;
-using System;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
@@ -109,6 +108,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     OpenFileRequest.Type,
                     filePath,
                     true);
+        }
+
+        public string GetWorkspacePath()
+        {
+            return this.editorSession.Workspace.WorkspacePath;
+        }
+
+        public string GetWorkspaceRelativePath(string filePath)
+        {
+            return this.editorSession.Workspace.GetRelativePath(filePath);
         }
 
         public Task ShowInformationMessage(string message)
