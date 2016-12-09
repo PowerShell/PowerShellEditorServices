@@ -46,24 +46,15 @@ namespace Microsoft.PowerShell.EditorServices
             "PSUseDeclaredVarsMoreThanAssigments"
         };
 
-        private List<string> activeRules;
-
         #endregion // Private Fields
 
 
         #region Properties
 
-        public string[] ActiveRules
-        {
-            get
-            {
-                return activeRules != null ? activeRules.ToArray() : null;
-            }
-            set
-            {
-                activeRules = new List<string>(value); // TODO check the argument
-            }
-        }
+        /// <summary>
+        /// Set of PSScriptAnalyzer rules used for analysis
+        /// </summary>
+        public string[] ActiveRules { get; set; }
 
         /// <summary>
         /// Gets or sets the path to a settings file (.psd1)
@@ -93,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
                 this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
                 this.analysisRunspace.Open();
-                activeRules = new List<string>(IncludedRules);
+                ActiveRules = IncludedRules.ToArray();
                 InitializePSScriptAnalyzer();
             }
             catch (Exception e)
@@ -145,6 +136,28 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Returns a list of builtin-in PSScriptAnalyzer rules
+        /// </summary>
+        public IEnumerable<string> GetPSScriptAnalyzerRules()
+        {
+            List<string> ruleNames = new List<string>();
+            if (scriptAnalyzerModuleInfo != null)
+            {
+                using (var ps = System.Management.Automation.PowerShell.Create())
+                {
+                    ps.Runspace = this.analysisRunspace;
+                    var ruleObjects = ps.AddCommand("Get-ScriptAnalyzerRule").Invoke();
+                    foreach (var rule in ruleObjects)
+                    {
+                        ruleNames.Add((string)rule.Members["RuleName"].Value);
+                    }
+                }
+            }
+
+            return ruleNames;
+        }
+
+        /// <summary>
         /// Disposes the runspace being used by the analysis service.
         /// </summary>
         public void Dispose()
@@ -155,25 +168,6 @@ namespace Microsoft.PowerShell.EditorServices
                 this.analysisRunspace.Dispose();
                 this.analysisRunspace = null;
             }
-        }
-
-        public IEnumerable<string> GetPSScriptAnalyzerRules()
-        {
-            List<string> ruleNames = new List<string>();
-            if (scriptAnalyzerModuleInfo != null)
-            {
-                using (var ps = System.Management.Automation.PowerShell.Create())
-                {
-                    ps.Runspace = this.analysisRunspace;
-                    var ruleObjects = ps.AddCommand("Get-ScriptAnalyzerRule").Invoke();
-                    foreach(var rule in ruleObjects)
-                    {
-                        ruleNames.Add((string)rule.Members["RuleName"].Value);
-                    }
-                }
-            }
-
-            return ruleNames;
         }
 
         #endregion // public methods
@@ -284,7 +278,7 @@ namespace Microsoft.PowerShell.EditorServices
                     }
                     else
                     {
-                        powerShell.AddParameter("IncludeRule", activeRules.ToArray());
+                        powerShell.AddParameter("IncludeRule", ActiveRules);
                     }
 
                     diagnosticRecords = powerShell.Invoke();

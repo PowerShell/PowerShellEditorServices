@@ -204,18 +204,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
 
             var sendresult = requestContext.SendResult(null);
-            // send the file uri from the client
-            // retrieve the file
-            // requestcontext is the eventcontext
             var scripFile = editorSession.Workspace.GetFile((string)dynParams.filepath);
             await RunScriptDiagnostics(
                     new ScriptFile[] { scripFile },
                         editorSession,
                         requestContext.SendEvent);
-
             await sendresult;
-
-            //await requestContext.SendResult(null);
         }
 
         private async Task HandleGetPSSARulesRequest(
