@@ -32,7 +32,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitCommand(CommandAst commandAst)
         {
-            if (commandAst.InvocationOperator.Equals(TokenKind.Dot))
+            if (commandAst.InvocationOperator.Equals(TokenKind.Dot) &&
+                commandAst.CommandElements[0] is StringConstantExpressionAst)
             {
                 // Strip any quote characters off of the string
                 string fileName = commandAst.CommandElements[0].Extent.Text.Trim('\'', '"');
