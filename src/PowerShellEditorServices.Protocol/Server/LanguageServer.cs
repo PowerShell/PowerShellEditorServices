@@ -141,6 +141,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Grab the workspace path from the parameters
             editorSession.Workspace.WorkspacePath = initializeParams.RootPath;
 
+            // Set the working directory of the PowerShell session to the workspace path
+            if (editorSession.Workspace.WorkspacePath != null)
+            {
+                editorSession.PowerShellContext.SetWorkingDirectory(
+                    editorSession.Workspace.WorkspacePath);
+            }
+
             await requestContext.SendResult(
                 new InitializeResult
                 {

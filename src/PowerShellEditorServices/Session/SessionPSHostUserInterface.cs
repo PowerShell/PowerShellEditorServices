@@ -320,10 +320,8 @@ namespace Microsoft.PowerShell.EditorServices
             try
             {
                 // This will synchronously block on the prompt task
-                // method which gets run on another thread.  Use a
-                // 30 second timeout so that everything doesn't get
-                // backed up if the user doesn't respond.
-                promptTask.Wait(15000);
+                // method which gets run on another thread.
+                promptTask.Wait();
 
                 if (promptTask.Status == TaskStatus.WaitingForActivation)
                 {

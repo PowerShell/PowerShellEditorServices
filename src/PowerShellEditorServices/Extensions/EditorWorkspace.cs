@@ -17,6 +17,18 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         #endregion
 
+        #region Properties
+
+        /// <summary>
+        /// Gets the current workspace path if there is one or null otherwise.
+        /// </summary>
+        public string Path
+        {
+            get { return this.editorOperations.GetWorkspacePath(); }
+        }
+
+        #endregion
+
         #region Constructors
 
         internal EditorWorkspace(IEditorOperations editorOperations)

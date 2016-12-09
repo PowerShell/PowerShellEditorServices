@@ -21,6 +21,19 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         Task<EditorContext> GetEditorContext();
 
         /// <summary>
+        /// Gets the path to the editor's active workspace.
+        /// </summary>
+        /// <returns>The workspace path or null if there isn't one.</returns>
+        string GetWorkspacePath();
+
+        /// <summary>
+        /// Resolves the given file path relative to the current workspace path.
+        /// </summary>
+        /// <param name="filePath">The file path to be resolved.</param>
+        /// <returns>The resolved file path.</returns>
+        string GetWorkspaceRelativePath(string filePath);
+
+        /// <summary>
         /// Causes a file to be opened in the editor.  If the file is
         /// already open, the editor must switch to the file.
         /// </summary>
