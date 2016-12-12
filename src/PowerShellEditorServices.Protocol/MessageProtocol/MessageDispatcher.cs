@@ -278,6 +278,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 else
                 {
                     // TODO: Message not supported error
+                    Logger.Write(LogLevel.Error, $"MessageDispatcher: No handler registered for Request type '{messageToDispatch.Method}'");
                 }
             }
             else if (messageToDispatch.MessageType == MessageType.Response)
@@ -297,11 +298,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 else
                 {
                     // TODO: Message not supported error
+                    Logger.Write(LogLevel.Error, $"MessageDispatcher: No handler registered for Event type '{messageToDispatch.Method}'");
                 }
             }
             else
             {
                 // TODO: Return message not supported
+                Logger.Write(LogLevel.Error, $"MessageDispatcher received unknown message type of method '{messageToDispatch.Method}'");
             }
 
             if (handlerToAwait != null)
