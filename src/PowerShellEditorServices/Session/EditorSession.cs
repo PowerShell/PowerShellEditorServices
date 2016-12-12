@@ -106,34 +106,17 @@ namespace Microsoft.PowerShell.EditorServices
 
         internal void InstantiateAnalysisService(string settingsPath = null)
         {
-            // Only enable the AnalysisService if the machine has PowerShell
-            // v5 installed.  Script Analyzer works on earlier PowerShell
-            // versions but our hard dependency on their binaries complicates
-            // the deployment and assembly loading since we would have to
-            // conditionally load the binaries for v3/v4 support.  This problem
-            // will be solved in the future by using Script Analyzer as a
-            // module rather than an assembly dependency.
-            if (this.PowerShellContext.PowerShellVersion.Major >= 5)
+            // AnalysisService will throw FileNotFoundException if
+            // Script Analyzer binaries are not included.
+            try
             {
-                // AnalysisService will throw FileNotFoundException if
-                // Script Analyzer binaries are not included.
-                try
-                {
-                    this.AnalysisService = new AnalysisService(this.PowerShellContext.ConsoleHost, settingsPath);
-                }
-                catch (FileNotFoundException)
-                {
-                    Logger.Write(
-                        LogLevel.Warning,
-                        "Script Analyzer binaries not found, AnalysisService will be disabled.");
-                }
+                this.AnalysisService = new AnalysisService(this.PowerShellContext.ConsoleHost, settingsPath);
             }
-            else
+            catch (FileNotFoundException)
             {
                 Logger.Write(
-                    LogLevel.Normal,
-                    "Script Analyzer cannot be loaded due to unsupported PowerShell version " +
-                    this.PowerShellContext.PowerShellVersion.ToString());
+                    LogLevel.Warning,
+                    "Script Analyzer binaries not found, AnalysisService will be disabled.");
             }
         }
 
