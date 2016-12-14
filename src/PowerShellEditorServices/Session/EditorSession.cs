@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Templates;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System.IO;
 
@@ -54,6 +55,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public ExtensionService ExtensionService { get; private set; }
 
+        /// <summary>
+        /// Gets the TemplateService instance for this session.
+        /// </summary>
+        public TemplateService TemplateService { get; private set; }
+
         #endregion
 
         #region Public Methods
@@ -76,6 +82,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.DebugService = new DebugService(this.PowerShellContext);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
             this.ExtensionService = new ExtensionService(this.PowerShellContext);
+            this.TemplateService = new TemplateService(this.PowerShellContext);
 
             this.InstantiateAnalysisService();
 

@@ -8,6 +8,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Templates;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using System;
@@ -106,6 +107,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(InvokeExtensionCommandRequest.Type, this.HandleInvokeExtensionCommandRequest);
 
             this.SetRequestHandler(PowerShellVersionRequest.Type, this.HandlePowerShellVersionRequest);
+
+            this.SetRequestHandler(NewProjectFromTemplateRequest.Type, this.HandleNewProjectFromTemplateRequest);
+            this.SetRequestHandler(GetProjectTemplatesRequest.Type, this.HandleGetProjectTemplatesRequest);
 
             this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
 
@@ -278,6 +282,55 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             });
 
             return Task.FromResult(true);
+        }
+
+        private Task HandleNewProjectFromTemplateRequest(
+            NewProjectFromTemplateRequest newProjectArgs,
+            RequestContext<NewProjectFromTemplateResponse> requestContext)
+        {
+            // Don't await the Task here so that we don't block the session
+            this.editorSession.TemplateService
+                .CreateFromTemplate(newProjectArgs.TemplatePath, newProjectArgs.DestinationPath)
+                .ContinueWith(
+                    async task =>
+                    {
+                        await requestContext.SendResult(
+                            new NewProjectFromTemplateResponse
+                            {
+                                CreationSuccessful = task.Result
+                            });
+                    });
+
+            return Task.FromResult(true);
+        }
+
+        private async Task HandleGetProjectTemplatesRequest(
+            GetProjectTemplatesRequest requestArgs,
+            RequestContext<GetProjectTemplatesResponse> requestContext)
+        {
+            bool plasterInstalled = await this.editorSession.TemplateService.ImportPlasterIfInstalled();
+
+            if (plasterInstalled)
+            {
+                var availableTemplates =
+                    await this.editorSession.TemplateService.GetAvailableTemplates(
+                        requestArgs.IncludeInstalledModules);
+
+                await requestContext.SendResult(
+                    new GetProjectTemplatesResponse
+                    {
+                        Templates = availableTemplates
+                    });
+            }
+            else
+            {
+                await requestContext.SendResult(
+                    new GetProjectTemplatesResponse
+                    {
+                        NeedsModuleInstall = true,
+                        Templates = new TemplateDetails[0]
+                    });
+            }
         }
 
         private async Task HandleExpandAliasRequest(

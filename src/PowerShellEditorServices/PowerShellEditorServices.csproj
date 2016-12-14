@@ -126,6 +126,8 @@
     <Compile Include="Session\SessionPSHostRawUserInterface.cs" />
     <Compile Include="Session\SessionPSHostUserInterface.cs" />
     <Compile Include="Session\SessionStateChangedEventArgs.cs" />
+    <Compile Include="Templates\TemplateDetails.cs" />
+    <Compile Include="Templates\TemplateService.cs" />
     <Compile Include="Utility\AsyncContextThread.cs" />
     <Compile Include="Utility\AsyncDebouncer.cs" />
     <Compile Include="Utility\AsyncLock.cs" />
