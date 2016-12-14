@@ -4,6 +4,9 @@
 //
 
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -37,11 +40,16 @@ namespace Microsoft.PowerShell.EditorServices.Console
     {
         #region Private Fields
 
-        private TaskCompletionSource<int> promptTask;
+        private TaskCompletionSource<int[]> promptTask;
 
         #endregion
 
         #region Properties
+
+        /// <summary>
+        /// Returns true if the choice prompt allows multiple selections.
+        /// </summary>
+        protected bool IsMultiChoice { get; private set; }
 
         /// <summary>
         /// Gets the caption (title) string to display with the prompt.
@@ -62,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// Gets the index of the default choice so that the user
         /// interface can make it easy to select this option.
         /// </summary>
-        protected int DefaultChoice { get; private set; }
+        protected int[] DefaultChoices { get; private set; }
 
         #endregion
 
@@ -102,8 +110,62 @@ namespace Microsoft.PowerShell.EditorServices.Console
             this.Caption = promptCaption;
             this.Message = promptMessage;
             this.Choices = choices;
-            this.DefaultChoice = defaultChoice;
-            this.promptTask = new TaskCompletionSource<int>();
+            this.promptTask = new TaskCompletionSource<int[]>();
+
+            this.DefaultChoices =
+                defaultChoice == -1
+                ? new int[] { }
+                : new int[] { defaultChoice };
+
+            // Cancel the TaskCompletionSource if the caller cancels the task
+            cancellationToken.Register(this.CancelPrompt, true);
+
+            // Show the prompt to the user
+            this.ShowPrompt(PromptStyle.Full);
+
+            // Convert the int[] result to int
+            return this.promptTask.Task.ContinueWith(
+                t => t.Result.DefaultIfEmpty(-1).First());
+        }
+
+        /// <summary>
+        /// Prompts the user to make a choice of one or more options using the
+        /// provided details.
+        /// </summary>
+        /// <param name="promptCaption">
+        /// The caption string which will be displayed to the user.
+        /// </param>
+        /// <param name="promptMessage">
+        /// The descriptive message which will be displayed to the user.
+        /// </param>
+        /// <param name="choices">
+        /// The list of choices from which the user will select.
+        /// </param>
+        /// <param name="defaultChoices">
+        /// The default choice(s) to highlight for the user.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// A CancellationToken that can be used to cancel the prompt.
+        /// </param>
+        /// <returns>
+        /// A Task instance that can be monitored for completion to get
+        /// the user's choices.
+        /// </returns>
+        public Task<int[]> PromptForChoice(
+            string promptCaption,
+            string promptMessage,
+            ChoiceDetails[] choices,
+            int[] defaultChoices,
+            CancellationToken cancellationToken)
+        {
+            // TODO: Guard against multiple calls
+
+            this.Caption = promptCaption;
+            this.Message = promptMessage;
+            this.Choices = choices;
+            this.DefaultChoices = defaultChoices;
+            this.IsMultiChoice = true;
+            this.promptTask = new TaskCompletionSource<int[]>();
 
             // Cancel the TaskCompletionSource if the caller cancels the task
             cancellationToken.Register(this.CancelPrompt, true);
@@ -113,7 +175,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             return this.promptTask.Task;
         }
-
         /// <summary>
         /// Implements behavior to handle the user's response.
         /// </summary>
@@ -124,21 +185,33 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </returns>
         public override bool HandleResponse(string responseString)
         {
-            int choiceIndex = -1;
+            List<int> choiceIndexes = new List<int>();
 
-            // Clean up the response string
-            responseString = responseString.Trim();
+            // Clean up the response string and split it
+            var choiceStrings =
+                responseString.Trim().Split(
+                    new char[] { ',' },
+                    StringSplitOptions.RemoveEmptyEntries);
 
-            for (int i = 0; i < this.Choices.Length; i++)
+            foreach (string choiceString in choiceStrings)
             {
-                if (this.Choices[i].MatchesInput(responseString))
+                for (int i = 0; i < this.Choices.Length; i++)
                 {
-                    choiceIndex = i;
-                    break;
+                    if (this.Choices[i].MatchesInput(choiceString))
+                    {
+                        choiceIndexes.Add(i);
+
+                        // If this is a single-choice prompt, break out after
+                        // the first matched choice
+                        if (!this.IsMultiChoice)
+                        {
+                            break;
+                        }
+                    }
                 }
             }
 
-            if (choiceIndex == -1)
+            if (choiceIndexes.Count == 0)
             {
                 // The user did not respond with a valid choice,
                 // show the prompt again to give another chance
@@ -146,7 +219,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 return false;
             }
 
-            this.promptTask.SetResult(choiceIndex);
+            this.promptTask.SetResult(choiceIndexes.ToArray());
             return true;
         }
 

@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 new ChoiceDetails("&Orange", "")
             };
 
-        private const int DefautlChoice = 1;
+        private const int DefaultChoice = 1;
 
         [Fact]
         public void ChoicePromptReturnsCorrectIdForChoice()
@@ -33,10 +33,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     "Test prompt",
                     "Message is irrelevant",
                     Choices,
-                    DefautlChoice,
+                    DefaultChoice,
                     CancellationToken.None);
 
             choicePromptHandler.HandleResponse("apple");
+
+            // Wait briefly for the prompt task to complete
+            promptTask.Wait(1000);
 
             Assert.Equal(TaskStatus.RanToCompletion, promptTask.Status);
             Assert.Equal(0, promptTask.Result);
@@ -52,11 +55,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     "Test prompt",
                     "Message is irrelevant",
                     Choices,
-                    DefautlChoice,
+                    DefaultChoice,
                     CancellationToken.None);
 
             // Try adding whitespace to ensure it works
             choicePromptHandler.HandleResponse(" N  ");
+
+            // Wait briefly for the prompt task to complete
+            promptTask.Wait(1000);
 
             Assert.Equal(TaskStatus.RanToCompletion, promptTask.Status);
             Assert.Equal(1, promptTask.Result);
@@ -74,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     "Test prompt",
                     "Message is irrelevant",
                     Choices,
-                    DefautlChoice,
+                    DefaultChoice,
                     CancellationToken.None);
 
             // Choice is invalid, should reprompt

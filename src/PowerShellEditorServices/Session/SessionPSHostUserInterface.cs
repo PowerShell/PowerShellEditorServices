@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// for the ConsoleService and routes its calls to an IConsoleHost
     /// implementation.
     /// </summary>
-    internal class ConsoleServicePSHostUserInterface : PSHostUserInterface
+    internal class ConsoleServicePSHostUserInterface : PSHostUserInterface, IHostUISupportsMultipleChoiceSelection
     {
         #region Private Fields
 
@@ -305,6 +305,50 @@ namespace Microsoft.PowerShell.EditorServices
                 this.consoleHost.UpdateProgress(
                     sourceId,
                     ProgressDetails.Create(record));
+            }
+        }
+
+        #endregion
+
+        #region IHostUISupportsMultipleChoiceSelection Implementation
+
+        public Collection<int> PromptForChoice(
+            string promptCaption,
+            string promptMessage,
+            Collection<ChoiceDescription> choiceDescriptions,
+            IEnumerable<int> defaultChoices)
+        {
+            if (this.consoleHost != null)
+            {
+                ChoiceDetails[] choices =
+                    choiceDescriptions
+                        .Select(ChoiceDetails.Create)
+                        .ToArray();
+
+                CancellationTokenSource cancellationToken = new CancellationTokenSource();
+                Task<int[]> promptTask =
+                    this.consoleHost
+                        .GetChoicePromptHandler()
+                        .PromptForChoice(
+                            promptCaption,
+                            promptMessage,
+                            choices,
+                            defaultChoices.ToArray(),
+                            cancellationToken.Token);
+
+                // Run the prompt task and wait for it to return
+                this.WaitForPromptCompletion(
+                    promptTask,
+                    "PromptForChoice",
+                    cancellationToken);
+
+                // Return the result
+                return new Collection<int>(promptTask.Result.ToList());
+            }
+            else
+            {
+                // Notify the caller that there's no implementation
+                throw new NotImplementedException();
             }
         }
 

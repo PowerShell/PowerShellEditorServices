@@ -118,6 +118,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>True if the input string is a match for the choice.</returns>
         public bool MatchesInput(string inputString)
         {
+            // Make sure the input string is trimmed of whitespace
+            inputString = inputString.Trim();
+
             // Is it the hotkey?
             return
                 string.Equals(inputString, this.hotKeyString, StringComparison.CurrentCultureIgnoreCase) ||

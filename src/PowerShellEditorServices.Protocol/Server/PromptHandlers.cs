@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
     }
 
-    internal class ProtocolChoicePromptHandler : ChoicePromptHandler
+    internal class ProtocolChoicePromptHandler : ConsoleChoicePromptHandler
     {
         private IMessageSender messageSender;
         private ConsoleService consoleService;
@@ -48,6 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public ProtocolChoicePromptHandler(
             IMessageSender messageSender,
             ConsoleService consoleService)
+                : base(consoleService)
         {
             this.messageSender = messageSender;
             this.consoleService = consoleService;
@@ -55,15 +56,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         protected override void ShowPrompt(PromptStyle promptStyle)
         {
+            base.ShowPrompt(promptStyle);
+
             messageSender
                 .SendRequest(
                     ShowChoicePromptRequest.Type,
                     new ShowChoicePromptRequest
                     {
+                        IsMultiChoice = this.IsMultiChoice,
                         Caption = this.Caption,
                         Message = this.Message,
                         Choices = this.Choices,
-                        DefaultChoice = this.DefaultChoice
+                        DefaultChoices = this.DefaultChoices
                     }, true)
                 .ContinueWith(HandlePromptResponse)
                 .ConfigureAwait(false);
@@ -79,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 if (!response.PromptCancelled)
                 {
                     this.consoleService.ReceivePromptResponse(
-                        response.ChosenItem,
+                        response.ResponseText,
                         false);
                 }
                 else
