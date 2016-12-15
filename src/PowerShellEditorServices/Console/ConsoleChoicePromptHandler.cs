@@ -3,6 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Linq;
+
 namespace Microsoft.PowerShell.EditorServices.Console
 {
     /// <summary>
@@ -71,12 +73,20 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             this.consoleHost.WriteOutput("[?] Help", false);
 
-            if (this.DefaultChoice > -1 && this.DefaultChoice < this.Choices.Length)
+            var validDefaultChoices =
+                this.DefaultChoices.Where(
+                    choice => choice > -1 && choice < this.Choices.Length);
+
+            if (validDefaultChoices.Any())
             {
+                var choiceString =
+                    string.Join(
+                        ", ",
+                        this.DefaultChoices
+                            .Select(choice => this.Choices[choice].Label));
+
                 this.consoleHost.WriteOutput(
-                    string.Format(
-                        " (default is \"{0}\"):",
-                        this.Choices[this.DefaultChoice].Label));
+                    $" (default is \"{choiceString}\"):");
             }
         }
 

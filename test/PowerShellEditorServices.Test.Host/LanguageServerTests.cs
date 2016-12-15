@@ -526,17 +526,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             ShowChoicePromptRequest showChoicePromptRequest = requestResponseContext.Item1;
             RequestContext<ShowChoicePromptResponse> requestContext = requestResponseContext.Item2;
 
-            Assert.Equal(1, showChoicePromptRequest.DefaultChoice);
+            Assert.Equal(1, showChoicePromptRequest.DefaultChoices[0]);
 
             // Respond to the prompt request
             await requestContext.SendResult(
                 new ShowChoicePromptResponse
                 {
-                    ChosenItem = "a"
+                    ResponseText = "a"
                 });
 
-            // Skip the initial script lines (6 script lines plus 2 blank lines)
-            string[] outputLines = await outputReader.ReadLines(8);
+            // Skip the initial script and prompt lines (6 script lines plus 2 blank lines and 3 prompt lines)
+            string[] outputLines = await outputReader.ReadLines(11);
 
             // Wait for the selection to appear as output
             await evaluateTask;

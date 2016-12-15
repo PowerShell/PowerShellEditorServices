@@ -71,6 +71,8 @@
     <Compile Include="Extensions\ExtensionService.cs" />
     <Compile Include="Extensions\FileContext.cs" />
     <Compile Include="Extensions\IEditorOperations.cs" />
+    <Compile Include="Templates\TemplateService.cs" />
+    <Compile Include="Templates\TemplateDetails.cs" />
     <Compile Include="Language\AstOperations.cs" />
     <Compile Include="Language\CommandHelpers.cs" />
     <Compile Include="Language\CompletionResults.cs" />
@@ -143,6 +145,7 @@
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\ContinueRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\SetFunctionBreakpointsRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\EditorCommands.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\ProjectTemplate.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\FindModuleRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\InstallModuleRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\PowerShellVersionRequest.cs" />

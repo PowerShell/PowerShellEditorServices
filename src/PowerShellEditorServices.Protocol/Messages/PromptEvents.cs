@@ -13,20 +13,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Messages
             RequestType<ShowChoicePromptRequest, ShowChoicePromptResponse> Type =
             RequestType<ShowChoicePromptRequest, ShowChoicePromptResponse>.Create("powerShell/showChoicePrompt");
 
+        public bool IsMultiChoice { get; set; }
+
         public string Caption { get; set; }
 
         public string Message { get; set; }
 
         public ChoiceDetails[] Choices { get; set; }
 
-        public int DefaultChoice { get; set; }
+        public int[] DefaultChoices { get; set; }
     }
 
     public class ShowChoicePromptResponse
     {
         public bool PromptCancelled { get; set; }
 
-        public string ChosenItem { get; set; }
+        public string ResponseText { get; set; }
     }
 
     public class ShowInputPromptRequest
