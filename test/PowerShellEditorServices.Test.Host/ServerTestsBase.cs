@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             string scriptPath = Path.Combine(modulePath, "Start-EditorServices.ps1");
 
             // TODO: Need to determine the right module version programmatically!
-            string editorServicesModuleVersion = "0.7.2";
+            string editorServicesModuleVersion = "0.8.0";
 
             string scriptArgs =
                 string.Format(
