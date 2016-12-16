@@ -1,5 +1,47 @@
 # PowerShell Editor Services Release History
 
+## 0.8.0
+### Friday, December 16, 2016
+
+#### Language feature improvements
+
+- Added support for "suggested corrections" from PSScriptAnalyzer
+- Added support for getting and setting the active list of PSScriptAnalyzer
+  rules in the editing session
+- Enabled the user of PSScriptAnalyzer in the language service on PowerShell
+  versions 3 and 4
+- Added PSHostUserInterface support for IHostUISupportsMultipleChoiceSelection
+
+#### $psEditor API improvements
+
+- Added $psEditor.Workspace
+- Added $psEditor.Window.Show[Error, Warning, Information]Message methods for
+  showing messages in the editor UI
+- Added $psEditor.Workspace.Path to provide access to the workspace path
+- Added $psEditor.Workspace.GetRelativePath to resolve an absolute path
+  to a workspace-relative path
+- Added FileContext.WorkspacePath to get the workspace-relative path of
+  the file
+
+#### Debugging improvements
+
+- Enabled setting variable values from the debug adapter protocol
+- Added breakpoint hit count support invthe debug service
+
+#### Other improvements
+
+- Added a new TemplateService for integration with Plaster
+- Refactored PSScriptAnalyzer integration to not take direct dependency
+  on the .NET assembly
+
+#### Bug fixes
+
+- Fixed #138: Debugger output was not being written for short scripts
+- Fixed #242: Remove timeout for PSHostUserInterface prompts
+- Fixed #237: Set session's current directory to the workspace path
+- Fixed #312: File preview Uris crash the language server
+- Fixed #291: Dot-source reference detection should ignore ScriptBlocks
+
 ## 0.7.2
 ### Friday, September 2, 2016
 
