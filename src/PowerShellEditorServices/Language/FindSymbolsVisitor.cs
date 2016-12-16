@@ -89,4 +89,48 @@ namespace Microsoft.PowerShell.EditorServices
             return false;
         }
     }
+
+    internal class FindHashtabeSymbolsVisitor : AstVisitor
+    {
+        public List<SymbolReference> SymbolReferences { get; private set; }
+
+        public FindHashtabeSymbolsVisitor()
+        {
+            SymbolReferences = new List<SymbolReference>();
+        }
+
+        public override AstVisitAction VisitHashtable(HashtableAst hashtableAst)
+        {
+            if (hashtableAst.KeyValuePairs == null)
+            {
+                return AstVisitAction.Continue;
+            }
+
+            foreach (var kvp in hashtableAst.KeyValuePairs)
+            {
+                var keyStrConstExprAst = kvp.Item1 as StringConstantExpressionAst;
+                if (keyStrConstExprAst != null)
+                {
+                    IScriptExtent nameExtent = new ScriptExtent()
+                    {
+                        Text = keyStrConstExprAst.Value,
+                        StartLineNumber = kvp.Item1.Extent.StartLineNumber,
+                        EndLineNumber = kvp.Item2.Extent.EndLineNumber,
+                        StartColumnNumber = kvp.Item1.Extent.StartColumnNumber,
+                        EndColumnNumber = kvp.Item2.Extent.EndColumnNumber
+                    };
+
+                    SymbolType symbolType = SymbolType.HashtableKey;
+
+                    this.SymbolReferences.Add(
+                        new SymbolReference(
+                            symbolType,
+                            nameExtent));
+
+                }
+            }
+
+            return AstVisitAction.Continue;
+        }
+    }
 }

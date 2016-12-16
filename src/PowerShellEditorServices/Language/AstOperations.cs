@@ -209,12 +209,94 @@ namespace Microsoft.PowerShell.EditorServices
 //            }
 //            else
             {
-                FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
-                scriptAst.Visit(findSymbolsVisitor);
-                symbolReferences = findSymbolsVisitor.SymbolReferences;
+                // we don't have reliable access to the filename here
+                // so we employ the following heuristic to check if the
+                // contents are part of a psd1 file.
+                if (IsPowerShellDataFile(scriptAst))
+                {
+                    var findHashtableSymbolsVisitor = new FindHashtabeSymbolsVisitor();
+                    scriptAst.Visit(findHashtableSymbolsVisitor);
+                    symbolReferences = findHashtableSymbolsVisitor.SymbolReferences;
+                }
+                else
+                {
+                    FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
+                    scriptAst.Visit(findSymbolsVisitor);
+                    symbolReferences = findSymbolsVisitor.SymbolReferences;
+                }
             }
 
             return symbolReferences;
+        }
+
+        static private bool IsPowerShellDataFile(Ast ast)
+        {
+            //var node = new { Item = ast, Children = new List<dynamic>() };
+            //GenerateTree(node);
+            //return node.Children.Count == 1 && node.Children[0].Item is NamedBlockAst
+            //    && node.Children[0].Children.Count == 1 && node.Children[0].Children[0].Item is PipelineAst
+            //    && node.Children[0].Children[0].Children.Count == 1 && ;
+
+            return IsPowerShellDataFile(
+                new { Item = ast, Children = new List<dynamic>() },
+                new Type[] {
+                    typeof(ScriptBlockAst),
+                    typeof(NamedBlockAst),
+                    typeof(PipelineAst),
+                    typeof(CommandExpressionAst),
+                    typeof(HashtableAst) },
+                0);
+        }
+
+        static private bool IsPowerShellDataFile(dynamic node, Type[] levelAstMap, int level)
+        {
+            var levelAstTypeMatch = node.Item.GetType().Equals(levelAstMap[level]);
+            if (!levelAstTypeMatch)
+            {
+                return false;
+            }
+
+            if (level == levelAstMap.Length - 1)
+            {
+                return levelAstTypeMatch;
+            }
+
+            var astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
+            if (astsFound != null)
+            {
+                foreach (var astFound in astsFound)
+                {
+                    if (!astFound.Equals(node.Item) && node.Item.Equals(astFound.Parent))
+                    {
+                        if (IsPowerShellDataFile(new { Item = astFound, Children = new List<dynamic>() }, levelAstMap, level + 1))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        static private void GenerateTree(dynamic node)
+        {
+            var astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
+            if (astsFound != null)
+            {
+                foreach (var astFound in astsFound)
+                {
+                    if (!astFound.Equals(node.Item) && node.Item.Equals(astFound.Parent))
+                    {
+                        node.Children.Add(new { Item = astFound, Children = new List<dynamic>() });
+                    }
+                }
+            }
+
+            foreach (var child in node.Children)
+            {
+                GenerateTree(child);
+            }
         }
 
         /// <summary>
