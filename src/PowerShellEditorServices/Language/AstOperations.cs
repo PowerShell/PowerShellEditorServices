@@ -209,10 +209,12 @@ namespace Microsoft.PowerShell.EditorServices
 //            }
 //            else
             {
-                // we don't have reliable access to the filename here
-                // so we employ the following heuristic to check if the
-                // contents are part of a psd1 file.
-                if (IsPowerShellDataFile(scriptAst))
+                // sometimes we don't have reliable access to the filename
+                // so we employ heuristics to check if the contents are
+                // part of a psd1 file.
+                if ((scriptAst.Extent.File != null
+                        && scriptAst.Extent.File.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase))
+                    || IsPowerShellDataFile(scriptAst))
                 {
                     var findHashtableSymbolsVisitor = new FindHashtabeSymbolsVisitor();
                     scriptAst.Visit(findHashtableSymbolsVisitor);
