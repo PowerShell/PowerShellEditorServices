@@ -413,7 +413,7 @@ function __Expand-Alias {
             return Task.FromResult(true);
         }
 
-        protected Task HandleDidCloseTextDocumentNotification(
+        protected async Task HandleDidCloseTextDocumentNotification(
             TextDocumentIdentifier closeParams,
             EventContext eventContext)
         {
@@ -423,11 +423,10 @@ function __Expand-Alias {
             if (fileToClose != null)
             {
                 editorSession.Workspace.CloseFile(fileToClose);
+                await ClearMarkers(fileToClose, eventContext);
             }
 
             Logger.Write(LogLevel.Verbose, "Finished closing document.");
-
-            return Task.FromResult(true);
         }
 
         protected Task HandleDidChangeTextDocumentNotification(
@@ -496,15 +495,9 @@ function __Expand-Alias {
                 // event to clear the analysis markers that they already have.
                 if (!this.currentSettings.ScriptAnalysis.Enable.Value || settingsPathChanged)
                 {
-                    ScriptFileMarker[] emptyAnalysisDiagnostics = new ScriptFileMarker[0];
-
                     foreach (var scriptFile in editorSession.Workspace.GetOpenedFiles())
                     {
-                        await PublishScriptDiagnostics(
-                            scriptFile,
-                            emptyAnalysisDiagnostics,
-                            this.codeActionsPerFile,
-                            eventContext);
+                        await ClearMarkers(scriptFile, eventContext);
                     }
                 }
 
@@ -1213,6 +1206,16 @@ function __Expand-Alias {
                     correctionIndex,
                     eventSender);
             }
+        }
+
+        private async Task ClearMarkers(ScriptFile scriptFile, EventContext eventContext)
+        {
+            // send empty diagnostic markers to clear any markers associated with the given file
+            await PublishScriptDiagnostics(
+                    scriptFile,
+                    new ScriptFileMarker[0],
+                    this.codeActionsPerFile,
+                    eventContext);
         }
 
         private static async Task PublishScriptDiagnostics(
