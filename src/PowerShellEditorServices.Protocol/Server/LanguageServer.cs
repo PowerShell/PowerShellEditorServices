@@ -463,7 +463,7 @@ function __Expand-Alias {
         {
             bool oldLoadProfiles = this.currentSettings.EnableProfileLoading;
             bool oldScriptAnalysisEnabled =
-                this.currentSettings.ScriptAnalysis.Enable.HasValue;
+                this.currentSettings.ScriptAnalysis.Enable.HasValue ? this.currentSettings.ScriptAnalysis.Enable.Value : false ;
             string oldScriptAnalysisSettingsPath =
                 this.currentSettings.ScriptAnalysis.SettingsPath;
 
@@ -501,14 +501,10 @@ function __Expand-Alias {
                     }
                 }
 
-                // If script analysis is enabled and the settings file changed get new diagnostic records.
-                if (this.currentSettings.ScriptAnalysis.Enable.Value && settingsPathChanged)
-                {
-                    await this.RunScriptDiagnostics(
-                        this.editorSession.Workspace.GetOpenedFiles(),
-                        this.editorSession,
-                        eventContext);
-                }
+                await this.RunScriptDiagnostics(
+                    this.editorSession.Workspace.GetOpenedFiles(),
+                    this.editorSession,
+                    eventContext);
             }
         }
 
@@ -1078,12 +1074,6 @@ function __Expand-Alias {
             EditorSession editorSession,
             Func<EventType<PublishDiagnosticsNotification>, PublishDiagnosticsNotification, Task> eventSender)
         {
-            if (!this.currentSettings.ScriptAnalysis.Enable.Value)
-            {
-                // If the user has disabled script analysis, skip it entirely
-                return Task.FromResult(true);
-            }
-
             // If there's an existing task, attempt to cancel it
             try
             {
@@ -1122,6 +1112,7 @@ function __Expand-Alias {
                     DelayThenInvokeDiagnostics(
                         750,
                         filesToAnalyze,
+                        this.currentSettings.ScriptAnalysis.Enable.Value,
                         this.codeActionsPerFile,
                         editorSession,
                         eventSender,
@@ -1133,10 +1124,10 @@ function __Expand-Alias {
             return Task.FromResult(true);
         }
 
-
         private static async Task DelayThenInvokeDiagnostics(
             int delayMilliseconds,
             ScriptFile[] filesToAnalyze,
+            bool isScriptAnalysisEnabled,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EditorSession editorSession,
             EventContext eventContext,
@@ -1145,6 +1136,7 @@ function __Expand-Alias {
             await DelayThenInvokeDiagnostics(
                 delayMilliseconds,
                 filesToAnalyze,
+                isScriptAnalysisEnabled,
                 correctionIndex,
                 editorSession,
                 eventContext.SendEvent,
@@ -1155,6 +1147,7 @@ function __Expand-Alias {
         private static async Task DelayThenInvokeDiagnostics(
             int delayMilliseconds,
             ScriptFile[] filesToAnalyze,
+            bool isScriptAnalysisEnabled,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EditorSession editorSession,
             Func<EventType<PublishDiagnosticsNotification>, PublishDiagnosticsNotification, Task> eventSender,
@@ -1183,7 +1176,7 @@ function __Expand-Alias {
             foreach (ScriptFile scriptFile in filesToAnalyze)
             {
                 ScriptFileMarker[] semanticMarkers = null;
-                if (editorSession.AnalysisService != null)
+                if (isScriptAnalysisEnabled && editorSession.AnalysisService != null)
                 {
                     Logger.Write(LogLevel.Verbose, "Analyzing script file: " + scriptFile.FilePath);
 
@@ -1199,10 +1192,10 @@ function __Expand-Alias {
                     // isn't available
                     semanticMarkers = new ScriptFileMarker[0];
                 }
-                var allMarkers = scriptFile.SyntaxMarkers.Concat(semanticMarkers);
+
                 await PublishScriptDiagnostics(
                     scriptFile,
-                    semanticMarkers,
+                    scriptFile.SyntaxMarkers.Concat(semanticMarkers).ToArray(),
                     correctionIndex,
                     eventSender);
             }
@@ -1220,20 +1213,20 @@ function __Expand-Alias {
 
         private static async Task PublishScriptDiagnostics(
             ScriptFile scriptFile,
-            ScriptFileMarker[] semanticMarkers,
+            ScriptFileMarker[] markers,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EventContext eventContext)
         {
             await PublishScriptDiagnostics(
                 scriptFile,
-                semanticMarkers,
+                markers,
                 correctionIndex,
                 eventContext.SendEvent);
         }
 
         private static async Task PublishScriptDiagnostics(
             ScriptFile scriptFile,
-            ScriptFileMarker[] semanticMarkers,
+            ScriptFileMarker[] markers,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             Func<EventType<PublishDiagnosticsNotification>, PublishDiagnosticsNotification, Task> eventSender)
         {
@@ -1243,7 +1236,7 @@ function __Expand-Alias {
             Dictionary<string, MarkerCorrection> fileCorrections =
                 new Dictionary<string, MarkerCorrection>();
 
-            foreach (var marker in scriptFile.SyntaxMarkers.Concat(semanticMarkers))
+            foreach (var marker in markers)
             {
                 // Does the marker contain a correction?
                 Diagnostic markerDiagnostic = GetDiagnosticFromMarker(marker);
