@@ -38,18 +38,13 @@ function Install-BuildPackage($packageName, $extension) {
 	mkdir $binariesToSignPath -Force | Out-Null
 	cp "$packageContentPath\lib\net45\$packageName.$extension" -Force -Destination $binariesToSignPath
 
-    # Don't forget the x86 exe
-    if ($extension -eq "exe") {
-        cp "$packageContentPath\lib\net45\$packageName.x86.$extension" -Force -Destination $binariesToSignPath
-    }
-
 	Write-Output "Extracted package $packageName ($buildVersion)"
 }
 
 # Pull the build packages from AppVeyor
 Install-BuildPackage "Microsoft.PowerShell.EditorServices" "dll"
 Install-BuildPackage "Microsoft.PowerShell.EditorServices.Protocol" "dll"
-Install-BuildPackage "Microsoft.PowerShell.EditorServices.Host" "exe"
+Install-BuildPackage "Microsoft.PowerShell.EditorServices.Host" "dll"
 
 # Open the BinariesToSign folder
 & start $binariesToSignPath
