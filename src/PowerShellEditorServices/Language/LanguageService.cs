@@ -102,23 +102,33 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (commandCompletion != null)
             {
-                CompletionResults completionResults =
-                    CompletionResults.Create(
-                        scriptFile,
-                        commandCompletion);
+                try
+                {
+                    CompletionResults completionResults =
+                        CompletionResults.Create(
+                            scriptFile,
+                            commandCompletion);
 
-                // save state of most recent completion
-                mostRecentCompletions = completionResults;
-                mostRecentRequestFile = scriptFile.Id;
-                mostRecentRequestLine = lineNumber;
-                mostRecentRequestOffest = columnNumber;
+                    // save state of most recent completion
+                    mostRecentCompletions = completionResults;
+                    mostRecentRequestFile = scriptFile.Id;
+                    mostRecentRequestLine = lineNumber;
+                    mostRecentRequestOffest = columnNumber;
 
-                return completionResults;
+                    return completionResults;
+                }
+                catch(ArgumentException e)
+                {
+                    // Bad completion results could return an invalid
+                    // replacement range, catch that here
+                    Logger.Write(
+                        LogLevel.Error,
+                        $"Caught exception while trying to create CompletionResults:\n\n{e.ToString()}");
+                }
             }
-            else
-            {
-                return new CompletionResults();
-            }
+
+            // If all else fails, return empty results
+            return new CompletionResults();
         }
 
         /// <summary>
