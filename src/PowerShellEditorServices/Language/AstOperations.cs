@@ -211,7 +211,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (IsPowerShellDataFileAst(scriptAst))
                 {
-                    var findHashtableSymbolsVisitor = new FindHashtabeSymbolsVisitor();
+                    var findHashtableSymbolsVisitor = new FindHashtableSymbolsVisitor();
                     scriptAst.Visit(findHashtableSymbolsVisitor);
                     symbolReferences = findHashtableSymbolsVisitor.SymbolReferences;
                 }

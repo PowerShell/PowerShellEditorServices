@@ -90,15 +90,27 @@ namespace Microsoft.PowerShell.EditorServices
         }
     }
 
-    internal class FindHashtabeSymbolsVisitor : AstVisitor
+    /// <summary>
+    /// Visitor to find all the keys in Hashtable AST
+    /// </summary>
+    internal class FindHashtableSymbolsVisitor : AstVisitor
     {
+        /// <summary>
+        /// List of symbols (keys) found in the hashtable
+        /// </summary>
         public List<SymbolReference> SymbolReferences { get; private set; }
 
-        public FindHashtabeSymbolsVisitor()
+        /// <summary>
+        /// Initializes a new instance of FindHashtableSymbolsVisitor class
+        /// </summary>
+        public FindHashtableSymbolsVisitor()
         {
             SymbolReferences = new List<SymbolReference>();
         }
 
+        /// <summary>
+        /// Adds keys in the input hashtable to the symbol reference
+        /// </summary>
         public override AstVisitAction VisitHashtable(HashtableAst hashtableAst)
         {
             if (hashtableAst.KeyValuePairs == null)
