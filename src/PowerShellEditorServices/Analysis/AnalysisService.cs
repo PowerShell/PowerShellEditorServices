@@ -179,10 +179,18 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 ps.Runspace = this.analysisRunspace;
 
-                var modules = ps.AddCommand("Get-Module")
-                    .AddParameter("List")
-                    .AddParameter("Name", "PSScriptAnalyzer")
-                    .Invoke();
+                ps.AddCommand("Get-Module")
+                  .AddParameter("ListAvailable")
+                  .AddParameter("Name", "PSScriptAnalyzer");
+
+                ps.AddCommand("Sort-Object")
+                  .AddParameter("Descending")
+                  .AddParameter("Property", "Version");
+
+                ps.AddCommand("Select-Object")
+                  .AddParameter("First", 1);
+
+                var modules = ps.Invoke();
 
                 var psModule = modules == null ? null : modules.FirstOrDefault();
                 if (psModule != null)
