@@ -52,17 +52,29 @@ namespace Microsoft.PowerShell.EditorServices.Templates
             if (!this.isPlasterInstalled.HasValue)
             {
                 PSCommand psCommand = new PSCommand();
-                psCommand.AddCommand("Get-Module");
-                psCommand.AddParameter("ListAvailable");
-                psCommand.AddParameter("Name", "Plaster");
+
+                psCommand
+                    .AddCommand("Get-Module")
+                    .AddParameter("ListAvailable")
+                    .AddParameter("Name", "Plaster");
+
+                psCommand
+                    .AddCommand("Sort-Object")
+                    .AddParameter("Descending")
+                    .AddParameter("Property", "Version");
+
+                psCommand
+                    .AddCommand("Select-Object")
+                    .AddParameter("First", 1);
 
                 Logger.Write(LogLevel.Verbose, "Checking if Plaster is installed...");
 
                 var getResult =
-                    await this.powerShellContext.ExecuteCommand<object>(
+                    await this.powerShellContext.ExecuteCommand<PSObject>(
                         psCommand, false, false);
 
-                this.isPlasterInstalled = getResult.Any();
+                PSObject moduleObject = getResult.First();
+                this.isPlasterInstalled = moduleObject != null;
                 string installedQualifier = 
                     this.isPlasterInstalled.Value
                         ? string.Empty : "not ";
@@ -77,9 +89,10 @@ namespace Microsoft.PowerShell.EditorServices.Templates
                     Logger.Write(LogLevel.Verbose, "Loading Plaster...");
 
                     psCommand = new PSCommand();
-                    psCommand.AddCommand("Import-Module");
-                    psCommand.AddParameter("Name", "Plaster");
-                    psCommand.AddParameter("PassThru");
+                    psCommand
+                        .AddCommand("Import-Module")
+                        .AddParameter("ModuleInfo", (PSModuleInfo)moduleObject.ImmediateBaseObject)
+                        .AddParameter("PassThru");
 
                     var importResult =
                         await this.powerShellContext.ExecuteCommand<object>(
