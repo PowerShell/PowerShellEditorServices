@@ -28,31 +28,12 @@ registered_data.ini
 .vs/
 module/
 
+project.lock.json
+
 docs/_site/
 docs/_repo/
 docs/metadata/
 tools/
-
-# quickbuild.exe
-/VersionGeneratingLogs/
-QLogs
-QLocal
-QTestLogs
-
-# bad tlb/chm generators in nmake tree
-*.tlb
-*.chm
-
-# dumb silverlight
-ClientBin/
-
-# dump azure
-*.build.csdef
-csx/
-
-# Don't include ScriptAnalyzer binaries
-PowerShellEditorServices/**
-PowerShellEditorServices.NoNano/**
 
 PowerShellEditorServices.sln.ide/edb.chk
 PowerShellEditorServices.sln.ide/edbres00001.jrs

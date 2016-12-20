@@ -111,8 +111,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             string arguments = string.Join(" ", args);
 
             // Execute the script and wait for the breakpoint to be hit
-            this.powerShellContext.ExecuteScriptAtPath(
-                debugWithParamsFile.FilePath, arguments);
+            var executeTask =
+                this.powerShellContext.ExecuteScriptAtPath(
+                    debugWithParamsFile.FilePath, arguments);
 
             await this.AssertDebuggerStopped(debugWithParamsFile.FilePath);
 

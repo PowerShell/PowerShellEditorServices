@@ -1,0 +1,22 @@
+{
+  "name": "Microsoft.PowerShell.EditorServices.Host",
+  "version": "0.7.1-beta-*",
+  "dependencies": {
+    "Microsoft.PowerShell.SDK": "1.0.0-alpha9",
+    "PowerShellEditorServices": "0.7.1-beta-*",
+    "PowerShellEditorServices.Protocol": "0.7.1-beta-*"
+  },
+  "frameworks": {
+    "net451": {
+      "buildOptions": {
+        "define": [ "PowerShellv5r2", "PowerShellv5" ]
+      }        
+    },
+    "netstandard1.6": {
+      "imports": ["dnxcore50", "portable-net45+win8"],
+      "buildOptions": {
+        "define": [ "NanoServer", "PowerShellv5r2", "PowerShellv5" ]
+      }
+    }
+  }
+}

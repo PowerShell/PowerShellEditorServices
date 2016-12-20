@@ -3,6 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+#if !CoreCLR
+
 using Microsoft.Win32;
 using System;
 using System.Diagnostics;
@@ -92,3 +94,5 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
     }
 }
 
+
+#endif

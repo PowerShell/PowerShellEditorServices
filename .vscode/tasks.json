@@ -1,0 +1,22 @@
+{
+    "version": "0.1.0",
+    "command": "powershell",
+    "isShellCommand": true,
+    "showOutput": "always",
+    "suppressTaskName": true,
+    "args": [ "-File" ],
+
+    "tasks": [
+        {
+            "taskName": "build",
+            "args": [ "./build.ps1" ],
+            "isBuildCommand": true,
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "taskName": "test",
+            "args": [ "./scripts/RunTests.ps1" ],
+            "isTestCommand": true,
+            "problemMatcher": "$msCompile"
+        }
+    ]

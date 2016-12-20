@@ -18,7 +18,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         #region Fields
 
         private ChannelBase protocolChannel;
-        private AsyncQueue<Message> messagesToWrite;
         private AsyncContextThread messageLoopThread;
 
         private Dictionary<string, Func<Message, MessageWriter, Task>> requestHandlers =
