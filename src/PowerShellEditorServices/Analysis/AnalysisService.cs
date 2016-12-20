@@ -26,6 +26,9 @@ namespace Microsoft.PowerShell.EditorServices
 
         private Runspace analysisRunspace;
         private PSModuleInfo scriptAnalyzerModuleInfo;
+        private Object runspaceLock;
+        private string[] activeRules;
+        private string settingsPath;
 
         /// <summary>
         /// Defines the list of Script Analyzer rules to include by default if
@@ -54,7 +57,21 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Set of PSScriptAnalyzer rules used for analysis
         /// </summary>
-        public string[] ActiveRules { get; set; }
+        public string[] ActiveRules
+        {
+            get
+            {
+                return activeRules;
+            }
+
+            set
+            {
+                lock (runspaceLock)
+                {
+                    activeRules = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Gets or sets the path to a settings file (.psd1)
@@ -62,8 +79,17 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public string SettingsPath
         {
-            get;
-            set;
+            get
+            {
+                return settingsPath;
+            }
+            set
+            {
+                lock (runspaceLock)
+                {
+                    settingsPath = value;
+                }
+            }
         }
 
         #endregion
@@ -80,6 +106,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             try
             {
+                this.runspaceLock = new Object();
                 this.SettingsPath = settingsPath;
                 this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
                 this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
@@ -117,10 +144,10 @@ namespace Microsoft.PowerShell.EditorServices
                     Task.Factory.StartNew<ScriptFileMarker[]>(
                         () =>
                         {
-                                return
-                                     GetDiagnosticRecords(file)
-                                    .Select(ScriptFileMarker.FromDiagnosticRecord)
-                                    .ToArray();
+                            return
+                                 GetDiagnosticRecords(file)
+                                .Select(ScriptFileMarker.FromDiagnosticRecord)
+                                .ToArray();
                         },
                         CancellationToken.None,
                         TaskCreationOptions.None,
@@ -143,13 +170,16 @@ namespace Microsoft.PowerShell.EditorServices
             List<string> ruleNames = new List<string>();
             if (scriptAnalyzerModuleInfo != null)
             {
-                using (var ps = System.Management.Automation.PowerShell.Create())
+                lock (runspaceLock)
                 {
-                    ps.Runspace = this.analysisRunspace;
-                    var ruleObjects = ps.AddCommand("Get-ScriptAnalyzerRule").Invoke();
-                    foreach (var rule in ruleObjects)
+                    using (var ps = System.Management.Automation.PowerShell.Create())
                     {
-                        ruleNames.Add((string)rule.Members["RuleName"].Value);
+                        ps.Runspace = this.analysisRunspace;
+                        var ruleObjects = ps.AddCommand("Get-ScriptAnalyzerRule").Invoke();
+                        foreach (var rule in ruleObjects)
+                        {
+                            ruleNames.Add((string)rule.Members["RuleName"].Value);
+                        }
                     }
                 }
             }
@@ -175,38 +205,33 @@ namespace Microsoft.PowerShell.EditorServices
         #region Private Methods
         private void FindPSScriptAnalyzer()
         {
-            using (var ps = System.Management.Automation.PowerShell.Create())
+            lock (runspaceLock)
             {
-                ps.Runspace = this.analysisRunspace;
-
-                ps.AddCommand("Get-Module")
-                  .AddParameter("ListAvailable")
-                  .AddParameter("Name", "PSScriptAnalyzer");
-
-                ps.AddCommand("Sort-Object")
-                  .AddParameter("Descending")
-                  .AddParameter("Property", "Version");
-
-                ps.AddCommand("Select-Object")
-                  .AddParameter("First", 1);
-
-                var modules = ps.Invoke();
-
-                var psModule = modules == null ? null : modules.FirstOrDefault();
-                if (psModule != null)
+                using (var ps = System.Management.Automation.PowerShell.Create())
                 {
-                    scriptAnalyzerModuleInfo = psModule.ImmediateBaseObject as PSModuleInfo;
-                    Logger.Write(
-                        LogLevel.Normal,
-                            string.Format(
-                                "PSScriptAnalyzer found at {0}",
-                                scriptAnalyzerModuleInfo.Path));
-                }
-                else
-                {
-                    Logger.Write(
-                        LogLevel.Normal,
-                        "PSScriptAnalyzer module was not found.");
+                    ps.Runspace = this.analysisRunspace;
+
+                    var modules = ps.AddCommand("Get-Module")
+                        .AddParameter("List")
+                        .AddParameter("Name", "PSScriptAnalyzer")
+                        .Invoke();
+
+                    var psModule = modules == null ? null : modules.FirstOrDefault();
+                    if (psModule != null)
+                    {
+                        scriptAnalyzerModuleInfo = psModule.ImmediateBaseObject as PSModuleInfo;
+                        Logger.Write(
+                            LogLevel.Normal,
+                                string.Format(
+                                    "PSScriptAnalyzer found at {0}",
+                                    scriptAnalyzerModuleInfo.Path));
+                    }
+                    else
+                    {
+                        Logger.Write(
+                            LogLevel.Normal,
+                            "PSScriptAnalyzer module was not found.");
+                    }
                 }
             }
         }
@@ -215,25 +240,28 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (scriptAnalyzerModuleInfo != null)
             {
-                using (var ps = System.Management.Automation.PowerShell.Create())
+                lock (runspaceLock)
                 {
-                    ps.Runspace = this.analysisRunspace;
-
-                    var module = ps.AddCommand("Import-Module")
-                        .AddParameter("ModuleInfo", scriptAnalyzerModuleInfo)
-                        .AddParameter("PassThru")
-                        .Invoke();
-
-                    if (module == null)
+                    using (var ps = System.Management.Automation.PowerShell.Create())
                     {
-                        this.scriptAnalyzerModuleInfo = null;
-                        Logger.Write(LogLevel.Warning,
-                            String.Format("Cannot Import PSScriptAnalyzer: {0}"));
-                    }
-                    else
-                    {
-                        Logger.Write(LogLevel.Normal,
-                            String.Format("Successfully imported PSScriptAnalyzer"));
+                        ps.Runspace = this.analysisRunspace;
+
+                        var module = ps.AddCommand("Import-Module")
+                            .AddParameter("ModuleInfo", scriptAnalyzerModuleInfo)
+                            .AddParameter("PassThru")
+                            .Invoke();
+
+                        if (module == null)
+                        {
+                            this.scriptAnalyzerModuleInfo = null;
+                            Logger.Write(LogLevel.Warning,
+                                String.Format("Cannot Import PSScriptAnalyzer: {0}"));
+                        }
+                        else
+                        {
+                            Logger.Write(LogLevel.Normal,
+                                String.Format("Successfully imported PSScriptAnalyzer"));
+                        }
                     }
                 }
             }
@@ -268,28 +296,31 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (this.scriptAnalyzerModuleInfo != null)
             {
-                using (var powerShell = System.Management.Automation.PowerShell.Create())
+                lock (runspaceLock)
                 {
-                    powerShell.Runspace = this.analysisRunspace;
-                    Logger.Write(
-                        LogLevel.Verbose,
-                        String.Format("Running PSScriptAnalyzer against {0}", file.FilePath));
-
-                    powerShell
-                        .AddCommand("Invoke-ScriptAnalyzer")
-                        .AddParameter("ScriptDefinition", file.Contents);
-
-                    // Use a settings file if one is provided, otherwise use the default rule list.
-                    if (!string.IsNullOrWhiteSpace(this.SettingsPath))
+                    using (var powerShell = System.Management.Automation.PowerShell.Create())
                     {
-                        powerShell.AddParameter("Settings", this.SettingsPath);
-                    }
-                    else
-                    {
-                        powerShell.AddParameter("IncludeRule", ActiveRules);
-                    }
+                        powerShell.Runspace = this.analysisRunspace;
+                        Logger.Write(
+                            LogLevel.Verbose,
+                            String.Format("Running PSScriptAnalyzer against {0}", file.FilePath));
 
-                    diagnosticRecords = powerShell.Invoke();
+                        powerShell
+                            .AddCommand("Invoke-ScriptAnalyzer")
+                            .AddParameter("ScriptDefinition", file.Contents);
+
+                        // Use a settings file if one is provided, otherwise use the default rule list.
+                        if (!string.IsNullOrWhiteSpace(this.SettingsPath))
+                        {
+                            powerShell.AddParameter("Settings", this.SettingsPath);
+                        }
+                        else
+                        {
+                            powerShell.AddParameter("IncludeRule", activeRules);
+                        }
+
+                        diagnosticRecords = powerShell.Invoke();
+                    }
                 }
             }
 
