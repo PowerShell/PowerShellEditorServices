@@ -12,7 +12,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public override void PauseDebugger(Runspace runspace)
         {
 #if !PowerShellv3 && !PowerShellv4
-            runspace.Debugger.SetDebuggerStepMode(true);
+            if (runspace.Debugger != null)
+            {
+                runspace.Debugger.SetDebuggerStepMode(true);
+            }
 #endif
         }
     }

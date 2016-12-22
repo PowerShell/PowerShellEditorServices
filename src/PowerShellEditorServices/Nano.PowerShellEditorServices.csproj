@@ -113,6 +113,7 @@
     <Compile Include="Session\SessionPSHost.cs" />
     <Compile Include="Session\SessionPSHostRawUserInterface.cs" />
     <Compile Include="Session\SessionPSHostUserInterface.cs" />
+    <Compile Include="Session\RunspaceChangedEventArgs.cs" />
     <Compile Include="Session\SessionStateChangedEventArgs.cs" />
     <Compile Include="Utility\AsyncContextThread.cs" />
     <Compile Include="Utility\AsyncDebouncer.cs" />
@@ -149,6 +150,7 @@
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\FindModuleRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\InstallModuleRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\PowerShellVersionRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\RunspaceChanged.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\NamedPipeClientChannel.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\NamedPipeServerChannel.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\MessageProtocol\Channel\TcpSocketClientChannel.cs" />

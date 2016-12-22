@@ -18,8 +18,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
+    using CSharp.RuntimeBinder;
     using Session;
     using System.Management.Automation;
+    using System.Management.Automation.Host;
     using System.Management.Automation.Runspaces;
     using System.Reflection;
 
@@ -28,15 +30,16 @@ namespace Microsoft.PowerShell.EditorServices
     /// Handles nested PowerShell prompts and also manages execution of 
     /// commands whether inside or outside of the debugger.
     /// </summary>
-    public class PowerShellContext : IDisposable
+    public class PowerShellContext : IDisposable, IHostSupportsInteractiveSession
     {
         #region Fields
 
         private PowerShell powerShell;
-        private IConsoleHost consoleHost;
         private bool ownsInitialRunspace;
+        private IConsoleHost consoleHost;
         private Runspace initialRunspace;
         private Runspace currentRunspace;
+        private RunspaceType runspaceType;
         private ProfilePaths profilePaths;
         private ConsoleServicePSHost psHost;
         private InitialSessionState initialSessionState;
@@ -49,6 +52,8 @@ namespace Microsoft.PowerShell.EditorServices
 
         private object runspaceMutex = new object();
         private AsyncQueue<RunspaceHandle> runspaceWaitQueue = new AsyncQueue<RunspaceHandle>();
+
+        private Stack<Runspace> runspaceStack = new Stack<Runspace>();
 
         #endregion
 
@@ -135,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             hostDetails = hostDetails ?? HostDetails.Default;
 
-            this.psHost = new ConsoleServicePSHost(hostDetails);
+            this.psHost = new ConsoleServicePSHost(hostDetails, this);
             this.initialSessionState = InitialSessionState.CreateDefault2();
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, this.initialSessionState);
@@ -187,16 +192,12 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.initialRunspace = initialRunspace;
             this.currentRunspace = initialRunspace;
-            this.psHost.Runspace = initialRunspace;
-
-            this.currentRunspace.Debugger.BreakpointUpdated += OnBreakpointUpdated;
-            this.currentRunspace.Debugger.DebuggerStop += OnDebuggerStop;
 
             this.powerShell = PowerShell.Create();
             this.powerShell.Runspace = this.currentRunspace;
 
             // Get the PowerShell runtime version
-            this.PowerShellVersionDetails = GetPowerShellVersion();
+            this.PowerShellVersionDetails = GetPowerShellVersion(this.currentRunspace);
 
             // Write out the PowerShell version for tracking purposes
             Logger.Write(
@@ -231,9 +232,8 @@ namespace Microsoft.PowerShell.EditorServices
                 this.SetExecutionPolicy(ExecutionPolicy.RemoteSigned);
             }
 
-            // Configure the runspace's debugger
-            this.versionSpecificOperations.ConfigureDebugger(
-                this.currentRunspace);
+            // Set up the runspace
+            this.ConfigureRunspace(this.currentRunspace, false);
 
             // Set the $profile variable in the runspace
             this.profilePaths = profilePaths;
@@ -248,11 +248,73 @@ namespace Microsoft.PowerShell.EditorServices
             this.SessionState = PowerShellContextState.Ready;
 
             // Now that the runspace is ready, enqueue it for first use
-            RunspaceHandle runspaceHandle = new RunspaceHandle(this.currentRunspace, this);
+            RunspaceHandle runspaceHandle = new RunspaceHandle(this);
             this.runspaceWaitQueue.EnqueueAsync(runspaceHandle).Wait();
         }
 
-        private PowerShellVersionDetails GetPowerShellVersion()
+        private void ConfigureRunspace(Runspace runspace, bool getVersion)
+        {
+            if (getVersion)
+            {
+                this.runspaceType = RunspaceType.Local;
+                this.PowerShellVersionDetails = this.GetPowerShellVersion(this.currentRunspace);
+
+                string connectionString = null;
+
+                if (runspace.ConnectionInfo != null)
+                {
+                    // Use 'dynamic' to avoid missing NamedPipeRunspaceConnectionInfo
+                    // on PS v3 and v4
+                    try
+                    {
+                        dynamic connectionInfo = runspace.ConnectionInfo;
+                        if (connectionInfo.ProcessId != null)
+                        {
+                            this.runspaceType = RunspaceType.Process;
+                            connectionString = connectionInfo.ProcessId.ToString();
+                        }
+                    }
+                    catch (RuntimeBinderException)
+                    {
+                        // ProcessId property isn't on the object, move on.
+                    }
+
+                    if (connectionString == null && runspace.ConnectionInfo.ComputerName != "localhost")
+                    {
+                        this.runspaceType = RunspaceType.Remote;
+                        connectionString = runspace.ConnectionInfo.ComputerName;
+                    }
+                }
+
+                this.OnRunspaceChanged(
+                    this,
+                    new RunspaceChangedEventArgs(
+                        this.PowerShellVersionDetails,
+                        this.runspaceType,
+                        connectionString));
+            }
+
+            // Subscribe to runspace events
+            if (runspace.Debugger != null)
+            {
+                runspace.Debugger.BreakpointUpdated += OnBreakpointUpdated;
+                runspace.Debugger.DebuggerStop += OnDebuggerStop;
+            }
+
+            // Configure the runspace's debugger
+            this.versionSpecificOperations.ConfigureDebugger(runspace);
+        }
+
+        private void CleanupRunspace(Runspace runspace)
+        {
+            if (runspace.Debugger != null)
+            {
+                runspace.Debugger.BreakpointUpdated -= OnBreakpointUpdated;
+                runspace.Debugger.DebuggerStop -= OnDebuggerStop;
+            }
+        }
+
+        private PowerShellVersionDetails GetPowerShellVersion(Runspace runspace)
         {
             Version powerShellVersion = new Version(5, 0);
             string versionString = null;
@@ -261,7 +323,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             try
             {
-                var psVersionTable = this.currentRunspace.SessionStateProxy.GetVariable("PSVersionTable") as Hashtable;
+                var psVersionTable = this.ExecuteScriptAndGetItem<Hashtable>("$PSVersionTable", runspace);
                 if (psVersionTable != null)
                 {
                     var edition = psVersionTable["PSEdition"] as string;
@@ -294,7 +356,7 @@ namespace Microsoft.PowerShell.EditorServices
                         versionString = powerShellVersion.ToString();
                     }
 
-                    var arch = this.currentRunspace.SessionStateProxy.GetVariable("env:PROCESSOR_ARCHITECTURE") as string;
+                    var arch = this.ExecuteScriptAndGetItem<string>("$env:PROCESSOR_ARCHITECTURE", runspace);
                     if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
                     {
                         architecture = PowerShellProcessArchitecture.X64;
@@ -614,6 +676,50 @@ namespace Microsoft.PowerShell.EditorServices
             await this.ExecuteCommand<object>(command, true);
         }
 
+        private TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default(TResult))
+        {
+            Pipeline pipeline = null;
+
+            try
+            {
+                if (runspace.RunspaceAvailability == RunspaceAvailability.AvailableForNestedCommand)
+                {
+                    pipeline = runspace.CreateNestedPipeline(scriptToExecute, false);
+                }
+                else
+                {
+                    pipeline = runspace.CreatePipeline(scriptToExecute, false);
+                }
+
+                Collection<PSObject> results = pipeline.Invoke();
+
+                if (results.Count == 0)
+                {
+                    return defaultValue;
+                }
+
+                if (typeof(TResult) != typeof(PSObject))
+                {
+                    return
+                       results
+                            .Select(pso => pso.BaseObject)
+                            .OfType<TResult>()
+                            .FirstOrDefault();
+                }
+                else
+                {
+                    return
+                        results
+                            .OfType<TResult>()
+                            .FirstOrDefault();
+                }
+            }
+            finally
+            {
+                pipeline.Dispose();
+            }
+        }
+
         /// <summary>
         /// Loads PowerShell profiles for the host from the specified
         /// profile locations.  Only the profile paths which exist are
@@ -728,7 +834,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (this.runspaceWaitQueue.IsEmpty)
             {
-                var newRunspaceHandle = new RunspaceHandle(this.currentRunspace, this);
+                var newRunspaceHandle = new RunspaceHandle(this);
                 this.runspaceWaitQueue.EnqueueAsync(newRunspaceHandle).Wait();
             }
             else
@@ -805,11 +911,17 @@ namespace Microsoft.PowerShell.EditorServices
                     e.ExecutionResult));
 
             this.SessionState = e.NewSessionState;
+            this.SessionStateChanged?.Invoke(sender, e);
+        }
 
-            if (this.SessionStateChanged != null)
-            {
-                this.SessionStateChanged(sender, e);
-            }
+        /// <summary>
+        /// Raised when the runspace changes by entering a remote session or one in a different process.
+        /// </summary>
+        public event EventHandler<RunspaceChangedEventArgs> RunspaceChanged;
+
+        private void OnRunspaceChanged(object sender, RunspaceChangedEventArgs e)
+        {
+            this.RunspaceChanged?.Invoke(sender, e);
         }
 
         #endregion
@@ -1097,12 +1209,25 @@ namespace Microsoft.PowerShell.EditorServices
             this.WritePromptToHost(
                 command =>
                 {
+                    this.powerShell.Runspace = runspace;
                     this.powerShell.Commands = command;
 
-                    return
+                    var promptString =
                         this.powerShell
                             .Invoke<string>()
                             .FirstOrDefault();
+
+                    if (this.runspaceType == RunspaceType.Remote)
+                    {
+                        promptString =
+                            string.Format(
+                                CultureInfo.InvariantCulture,
+                                "[{0}]: {1}",
+                                runspace.ConnectionInfo.ComputerName,
+                                promptString);
+                    }
+
+                    return promptString;
                 });
         }
 
@@ -1307,6 +1432,61 @@ namespace Microsoft.PowerShell.EditorServices
                         sendOutputToHost);
 
                 // TODO: Deal with errors?
+            }
+        }
+
+        #endregion
+
+        #region IHostSupportsInteractiveSession Implementation
+
+        bool IHostSupportsInteractiveSession.IsRunspacePushed
+        {
+            get
+            {
+                return this.runspaceStack.Count > 0;
+            }
+        }
+
+        Runspace IHostSupportsInteractiveSession.Runspace
+        {
+            get
+            {
+                return this.currentRunspace;
+            }
+        }
+
+        void IHostSupportsInteractiveSession.PushRunspace(Runspace runspace)
+        {
+            Logger.Write(
+                LogLevel.Verbose,
+                $"Pushing runspace {this.currentRunspace.Id}, new runspace is {runspace.Id} (remote: {runspace.ConnectionInfo != null})");
+
+            this.CleanupRunspace(this.currentRunspace);
+            this.runspaceStack.Push(this.currentRunspace);
+
+            this.currentRunspace = runspace;
+            this.ConfigureRunspace(runspace, true);
+        }
+
+        void IHostSupportsInteractiveSession.PopRunspace()
+        {
+            if (this.runspaceStack.Count > 0)
+            {
+                var oldRunspace = this.currentRunspace;
+                this.currentRunspace = this.runspaceStack.Pop();
+
+                Logger.Write(
+                    LogLevel.Verbose,
+                    $"Popping runspace {oldRunspace.Id}, new runspace is {this.currentRunspace.Id} (remote: {this.currentRunspace.ConnectionInfo != null})");
+
+                this.CleanupRunspace(oldRunspace);
+                this.ConfigureRunspace(this.currentRunspace, true);
+            }
+            else
+            {
+                Logger.Write(
+                    LogLevel.Error,
+                    "Caller attempted to pop a runspace when no runspaces are on the stack.");
             }
         }
 

@@ -52,6 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession = new EditorSession();
             this.editorSession.StartSession(hostDetails, profilePaths);
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
+            this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;
 
             // Attach to ExtensionService events
             this.editorSession.ExtensionService.CommandAdded += ExtensionService_ExtensionAdded;
@@ -910,10 +911,10 @@ function __Expand-Alias {
 
         protected async Task HandlePowerShellVersionRequest(
             object noParams,
-            RequestContext<PowerShellVersionResponse> requestContext)
+            RequestContext<PowerShellVersion> requestContext)
         {
             await requestContext.SendResult(
-                new PowerShellVersionResponse(
+                new PowerShellVersion(
                     this.editorSession.PowerShellContext.PowerShellVersionDetails));
         }
 
@@ -987,6 +988,13 @@ function __Expand-Alias {
         #endregion
 
         #region Event Handlers
+
+        private async void PowerShellContext_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
+        {
+            await this.SendEvent(
+                RunspaceChangedEvent.Type,
+                new RunspaceDetails(e));
+        }
 
         private async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
         {

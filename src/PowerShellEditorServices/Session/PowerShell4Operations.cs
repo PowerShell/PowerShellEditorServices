@@ -16,7 +16,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public void ConfigureDebugger(Runspace runspace)
         {
 #if !PowerShellv3
-            runspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
+            if (runspace.Debugger != null)
+            {
+                runspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
+            }
 #endif
         }
 

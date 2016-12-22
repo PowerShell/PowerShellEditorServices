@@ -11,11 +11,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class PowerShellVersionRequest
     {
         public static readonly
-            RequestType<object, PowerShellVersionResponse> Type =
-            RequestType<object, PowerShellVersionResponse>.Create("powerShell/getVersion");
+            RequestType<object, PowerShellVersion> Type =
+            RequestType<object, PowerShellVersion>.Create("powerShell/getVersion");
     }
 
-    public class PowerShellVersionResponse
+    public class PowerShellVersion
     {
         public string Version { get; set; }
 
@@ -25,11 +25,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 
         public string Architecture { get; set; }
 
-        public PowerShellVersionResponse()
+        public PowerShellVersion()
         {
         }
 
-        public PowerShellVersionResponse(PowerShellVersionDetails versionDetails)
+        public PowerShellVersion(PowerShellVersionDetails versionDetails)
         {
             this.Version = versionDetails.VersionString;
             this.DisplayVersion =  $"{versionDetails.Version.Major}.{versionDetails.Version.Minor}";

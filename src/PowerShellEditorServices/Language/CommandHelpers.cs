@@ -28,8 +28,8 @@ namespace Microsoft.PowerShell.EditorServices
             command.AddCommand(@"Microsoft.PowerShell.Core\Get-Command");
             command.AddArgument(commandName);
 
-            var results = await powerShellContext.ExecuteCommand<CommandInfo>(command, false, false);
-            return results.FirstOrDefault();
+            var results = await powerShellContext.ExecuteCommand<object>(command, false, false);
+            return results.OfType<CommandInfo>().FirstOrDefault();
         }
 
         /// <summary>
