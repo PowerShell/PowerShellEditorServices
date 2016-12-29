@@ -63,6 +63,7 @@
     <Compile Include="LanguageServer\InstallModuleRequest.cs" />
     <Compile Include="LanguageServer\PowerShellVersionRequest.cs" />
     <Compile Include="LanguageServer\RunspaceChanged.cs" />
+    <Compile Include="LanguageServer\ScriptFileMarkersRequest.cs" />
     <Compile Include="LanguageServer\SetPSSARulesRequest.cs" />
     <Compile Include="LanguageServer\ProjectTemplate.cs" />
     <Compile Include="MessageProtocol\Channel\NamedPipeClientChannel.cs" />

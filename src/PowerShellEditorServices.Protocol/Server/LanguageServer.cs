@@ -123,6 +123,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
             this.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
 
+            this.SetRequestHandler(ScriptFileMarkersRequest.Type, this.HandleScriptFileMarkersRequest);
+
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
             this.editorSession.ExtensionService.Initialize(
@@ -228,6 +230,21 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         editorSession,
                         requestContext.SendEvent);
             await sendresult;
+        }
+
+        private async Task HandleScriptFileMarkersRequest(
+            ScriptFileMarkerRequestParams requestParams,
+            RequestContext<ScriptFileMarkerRequestResultParams> requestContext)
+        {
+            var markers = editorSession.AnalysisService.GetSemanticMarkers(
+                editorSession.Workspace.GetFile(requestParams.filePath),
+                requestParams.rules,
+                null);
+            markers = markers.Reverse().ToArray();
+            //markers.OrderByDescending(x => x.Correction.Edits[0].StartLineNumber).ToArray()
+            await requestContext.SendResult(new ScriptFileMarkerRequestResultParams {
+                markers = markers
+            });
         }
 
         private async Task HandleGetPSSARulesRequest(

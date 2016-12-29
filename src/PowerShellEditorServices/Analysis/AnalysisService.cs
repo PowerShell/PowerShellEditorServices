@@ -127,13 +127,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Public Methods
 
-        /// <summary>
-        /// Performs semantic analysis on the given ScriptFile and returns
-        /// an array of ScriptFileMarkers.
-        /// </summary>
-        /// <param name="file">The ScriptFile which will be analyzed for semantic markers.</param>
-        /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
-        public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file)
+        public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file, string[] rules, string settingsPath)
         {
             if (this.scriptAnalyzerModuleInfo != null && file.IsAnalysisEnabled)
             {
@@ -145,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices
                         () =>
                         {
                             return
-                                 GetDiagnosticRecords(file)
+                                 GetDiagnosticRecords(file, rules, settingsPath)
                                 .Select(ScriptFileMarker.FromDiagnosticRecord)
                                 .ToArray();
                         },
@@ -160,6 +154,17 @@ namespace Microsoft.PowerShell.EditorServices
                 // Return an empty marker list
                 return new ScriptFileMarker[0];
             }
+        }
+
+        /// <summary>
+        /// Performs semantic analysis on the given ScriptFile and returns
+        /// an array of ScriptFileMarkers.
+        /// </summary>
+        /// <param name="file">The ScriptFile which will be analyzed for semantic markers.</param>
+        /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
+        public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file)
+        {
+            return GetSemanticMarkers(file, activeRules, settingsPath);
         }
 
         /// <summary>
@@ -292,6 +297,11 @@ namespace Microsoft.PowerShell.EditorServices
 
         private IEnumerable<PSObject> GetDiagnosticRecords(ScriptFile file)
         {
+            return GetDiagnosticRecords(file, this.activeRules, this.settingsPath);
+        }
+
+        private IEnumerable<PSObject> GetDiagnosticRecords(ScriptFile file, string[] rules, string settingsPath)
+        {
             IEnumerable<PSObject> diagnosticRecords = Enumerable.Empty<PSObject>();
 
             if (this.scriptAnalyzerModuleInfo != null)
@@ -310,13 +320,13 @@ namespace Microsoft.PowerShell.EditorServices
                             .AddParameter("ScriptDefinition", file.Contents);
 
                         // Use a settings file if one is provided, otherwise use the default rule list.
-                        if (!string.IsNullOrWhiteSpace(this.SettingsPath))
+                        if (!string.IsNullOrWhiteSpace(settingsPath))
                         {
-                            powerShell.AddParameter("Settings", this.SettingsPath);
+                            powerShell.AddParameter("Settings", settingsPath);
                         }
                         else
                         {
-                            powerShell.AddParameter("IncludeRule", activeRules);
+                            powerShell.AddParameter("IncludeRule", rules);
                         }
 
                         diagnosticRecords = powerShell.Invoke();
