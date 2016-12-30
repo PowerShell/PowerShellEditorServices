@@ -58,10 +58,20 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     outputCollection);
 #endif
 
-            return
-                outputCollection
-                    .Select(pso => pso.BaseObject)
-                    .Cast<TResult>();
+            IEnumerable<TResult> results = null;
+            if (typeof(TResult) != typeof(PSObject))
+            {
+                results =
+                    outputCollection
+                        .Select(pso => pso.BaseObject)
+                        .Cast<TResult>();
+            }
+            else
+            {
+                results = outputCollection.Cast<TResult>();
+            }
+
+            return results;
         }
     }
 }

@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.InstantiateAnalysisService();
 
             // Create a workspace to contain open files
-            this.Workspace = new Workspace(this.PowerShellContext.PowerShellVersion);
+            this.Workspace = new Workspace(this.PowerShellContext.LocalPowerShellVersion.Version);
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
 
             // Create a workspace to contain open files
-            this.Workspace = new Workspace(this.PowerShellContext.PowerShellVersion);
+            this.Workspace = new Workspace(this.PowerShellContext.LocalPowerShellVersion.Version);
         }
 
         internal void InstantiateAnalysisService(string settingsPath = null)

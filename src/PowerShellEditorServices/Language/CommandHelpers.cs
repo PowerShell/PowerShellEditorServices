@@ -28,8 +28,12 @@ namespace Microsoft.PowerShell.EditorServices
             command.AddCommand(@"Microsoft.PowerShell.Core\Get-Command");
             command.AddArgument(commandName);
 
-            var results = await powerShellContext.ExecuteCommand<object>(command, false, false);
-            return results.OfType<CommandInfo>().FirstOrDefault();
+            return
+                (await powerShellContext
+                    .ExecuteCommand<PSObject>(command, false, false))
+                    .Select(o => o.BaseObject)
+                    .OfType<CommandInfo>()
+                    .FirstOrDefault();
         }
 
         /// <summary>

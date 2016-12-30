@@ -63,11 +63,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     SupportsHitConditionalBreakpoints = true,
                     SupportsSetVariable = true
                 });
-
-            // Send the Initialized event so that we get breakpoints
-            await requestContext.SendEvent(
-                InitializedEvent.Type,
-                null);
         }
     }
 }

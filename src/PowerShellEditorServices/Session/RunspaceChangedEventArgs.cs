@@ -3,73 +3,63 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Utility;
+
 namespace Microsoft.PowerShell.EditorServices.Session
 {
     /// <summary>
-    /// Specifies the possible types of a runspace.
+    /// Defines the set of actions that will cause the runspace to be changed.
     /// </summary>
-    public enum RunspaceType
+    public enum RunspaceChangeAction
     {
         /// <summary>
-        /// A local runspace in the current process.
+        /// The runspace change was caused by entering a new session.
         /// </summary>
-        Local,
+        Enter,
 
         /// <summary>
-        /// A local runspace in a different process.
+        /// The runspace change was caused by exiting the current session.
         /// </summary>
-        Process,
-
-        /// <summary>
-        /// A runspace in a process on a another machine.
-        /// </summary>
-        Remote,
+        Exit
     }
 
     /// <summary>
-    /// Provides arguments for the PowerShellContext.RunspaceChanged
-    /// event.
+    /// Provides arguments for the PowerShellContext.RunspaceChanged event.
     /// </summary>
     public class RunspaceChangedEventArgs
     {
         /// <summary>
-        /// Gets the PowerShell version of the new runspace.
+        /// Gets the RunspaceChangeAction which caused this event.
         /// </summary>
-        public PowerShellVersionDetails RunspaceVersion { get; private set; }
+        public RunspaceChangeAction ChangeAction { get; private set; }
 
         /// <summary>
-        /// Gets the runspace type.
+        /// Gets a RunspaceDetails object describing the previous runspace.
         /// </summary>
-        public RunspaceType RunspaceType { get; private set; }
+        public RunspaceDetails PreviousRunspace { get; private set; }
 
         /// <summary>
-        /// Gets the "connection string" for the runspace, generally the
-        /// ComputerName for a remote runspace or the ProcessId of an
-        /// "Attach" runspace.
+        /// Gets a RunspaceDetails object describing the new runspace.
         /// </summary>
-        public string ConnectionString { get; private set; }
+        public RunspaceDetails NewRunspace { get; private set; }
 
         /// <summary>
-        /// Creates a new instance of the RunspaceChangedEventArgs
-        /// class.
+        /// Creates a new instance of the RunspaceChangedEventArgs class.
         /// </summary>
-        /// <param name="runspaceVersion">
-        /// The PowerShellVersionDetails of the new runspace.
-        /// </param>
-        /// <param name="runspaceType">
-        /// The RunspaceType of the new runspace.
-        /// </param>
-        /// <param name="connectionString">
-        /// The connection string of the new runspace.
-        /// </param>
+        /// <param name="changeAction">The action which caused the runspace to change.</param>
+        /// <param name="previousRunspace">The previously active runspace.</param>
+        /// <param name="newRunspace">The newly active runspace.</param>
         public RunspaceChangedEventArgs(
-            PowerShellVersionDetails runspaceVersion,
-            RunspaceType runspaceType,
-            string connectionString)
+            RunspaceChangeAction changeAction,
+            RunspaceDetails previousRunspace,
+            RunspaceDetails newRunspace)
         {
-            this.RunspaceVersion = runspaceVersion;
-            this.RunspaceType = runspaceType;
-            this.ConnectionString = connectionString;
+            Validate.IsNotNull(nameof(previousRunspace), previousRunspace);
+            Validate.IsNotNull(nameof(newRunspace), newRunspace);
+
+            this.ChangeAction = changeAction;
+            this.PreviousRunspace = previousRunspace;
+            this.NewRunspace = newRunspace;
         }
     }
 }

@@ -56,6 +56,7 @@
     <Compile Include="Debugging\BreakpointDetails.cs" />
     <Compile Include="Debugging\BreakpointDetailsBase.cs" />
     <Compile Include="Debugging\DebugService.cs" />
+    <Compile Include="Debugging\DebuggerStoppedEventArgs.cs" />
     <Compile Include="Debugging\CommandBreakpointDetails.cs" />
     <Compile Include="Debugging\InvalidPowerShellExpressionException.cs" />
     <Compile Include="Debugging\StackFrameDetails.cs" />
@@ -113,6 +114,7 @@
     <Compile Include="Session\SessionPSHost.cs" />
     <Compile Include="Session\SessionPSHostRawUserInterface.cs" />
     <Compile Include="Session\SessionPSHostUserInterface.cs" />
+    <Compile Include="Session\RunspaceDetails.cs" />
     <Compile Include="Session\RunspaceChangedEventArgs.cs" />
     <Compile Include="Session\SessionStateChangedEventArgs.cs" />
     <Compile Include="Utility\AsyncContextThread.cs" />
@@ -144,6 +146,7 @@
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\Breakpoint.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\ConfigurationDoneRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\ContinueRequest.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\ContinuedEvent.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\DebugAdapter\SetFunctionBreakpointsRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\EditorCommands.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\ProjectTemplate.cs" />

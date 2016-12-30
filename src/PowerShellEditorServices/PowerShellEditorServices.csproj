@@ -69,6 +69,7 @@
     <Compile Include="Console\PromptHandler.cs" />
     <Compile Include="Debugging\BreakpointDetails.cs" />
     <Compile Include="Debugging\BreakpointDetailsBase.cs" />
+    <Compile Include="Debugging\DebuggerStoppedEventArgs.cs" />
     <Compile Include="Debugging\DebugService.cs" />
     <Compile Include="Debugging\CommandBreakpointDetails.cs" />
     <Compile Include="Debugging\InvalidPowerShellExpressionException.cs" />
@@ -122,6 +123,7 @@
     <Compile Include="Session\ProfilePaths.cs" />
     <Compile Include="Session\ProgressDetails.cs" />
     <Compile Include="Session\RunspaceChangedEventArgs.cs" />
+    <Compile Include="Session\RunspaceDetails.cs" />
     <Compile Include="Session\RunspaceHandle.cs" />
     <Compile Include="Session\SessionPSHost.cs" />
     <Compile Include="Session\SessionPSHostRawUserInterface.cs" />

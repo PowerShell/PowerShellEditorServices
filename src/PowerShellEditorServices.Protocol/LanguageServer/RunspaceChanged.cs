@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     {
         public PowerShellVersion PowerShellVersion { get; set; }
 
-        public RunspaceType RunspaceType { get; set; }
+        public RunspaceLocation RunspaceType { get; set; }
 
         public string ConnectionString { get; set; }
 
@@ -27,10 +27,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         {
         }
 
-        public RunspaceDetails(RunspaceChangedEventArgs eventArgs)
+        public RunspaceDetails(Session.RunspaceDetails eventArgs)
         {
-            this.PowerShellVersion = new PowerShellVersion(eventArgs.RunspaceVersion);
-            this.RunspaceType = eventArgs.RunspaceType;
+            this.PowerShellVersion = new PowerShellVersion(eventArgs.PowerShellVersion);
+            this.RunspaceType = eventArgs.Location;
             this.ConnectionString = eventArgs.ConnectionString;
         }
     }

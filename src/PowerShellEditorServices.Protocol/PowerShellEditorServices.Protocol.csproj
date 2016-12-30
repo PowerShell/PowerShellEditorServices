@@ -52,6 +52,7 @@
     <Compile Include="DebugAdapter\AttachRequest.cs" />
     <Compile Include="DebugAdapter\Breakpoint.cs" />
     <Compile Include="DebugAdapter\ConfigurationDoneRequest.cs" />
+    <Compile Include="DebugAdapter\ContinuedEvent.cs" />
     <Compile Include="DebugAdapter\ContinueRequest.cs" />
     <Compile Include="DebugAdapter\SetFunctionBreakpointsRequest.cs" />
     <Compile Include="DebugAdapter\SetVariableRequest.cs" />

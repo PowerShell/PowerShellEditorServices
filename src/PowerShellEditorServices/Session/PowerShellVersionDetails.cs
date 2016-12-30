@@ -3,7 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Collections;
+using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices.Session
 {
@@ -33,6 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Session
     /// </summary>
     public class PowerShellVersionDetails
     {
+        #region Properties
+
         /// <summary>
         /// Gets the version of the PowerShell runtime.
         /// </summary>
@@ -54,6 +59,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// </summary>
         public PowerShellProcessArchitecture Architecture { get; private set; }
 
+        #endregion
+
+        #region Constructors
+
         /// <summary>
         /// Creates an instance of the PowerShellVersionDetails class.
         /// </summary>
@@ -72,5 +81,83 @@ namespace Microsoft.PowerShell.EditorServices.Session
             this.Edition = editionString;
             this.Architecture = architecture;
         }
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Gets the PowerShell version details for the given runspace.
+        /// </summary>
+        /// <param name="runspace">The runspace for which version details will be gathered.</param>
+        /// <returns>A new PowerShellVersionDetails instance.</returns>
+        public static PowerShellVersionDetails GetVersionDetails(Runspace runspace)
+        {
+            Version powerShellVersion = new Version(5, 0);
+            string versionString = null;
+            string powerShellEdition = "Desktop";
+            var architecture = PowerShellProcessArchitecture.Unknown;
+
+            try
+            {
+                var psVersionTable = PowerShellContext.ExecuteScriptAndGetItem<Hashtable>("$PSVersionTable", runspace);
+                if (psVersionTable != null)
+                {
+                    var edition = psVersionTable["PSEdition"] as string;
+                    if (edition != null)
+                    {
+                        powerShellEdition = edition;
+                    }
+
+                    // The PSVersion value will either be of Version or SemanticVersion.
+                    // In the former case, take the value directly.  In the latter case,
+                    // generate a Version from its string representation.
+                    var version = psVersionTable["PSVersion"];
+                    if (version is Version)
+                    {
+                        powerShellVersion = (Version)version;
+                    }
+                    else if (string.Equals(powerShellEdition, "Core", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        // Expected version string format is 6.0.0-alpha so build a simpler version from that
+                        powerShellVersion = new Version(version.ToString().Split('-')[0]);
+                    }
+
+                    var gitCommitId = psVersionTable["GitCommitId"] as string;
+                    if (gitCommitId != null)
+                    {
+                        versionString = gitCommitId;
+                    }
+                    else
+                    {
+                        versionString = powerShellVersion.ToString();
+                    }
+
+                    var arch = PowerShellContext.ExecuteScriptAndGetItem<string>("$env:PROCESSOR_ARCHITECTURE", runspace);
+                    if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        architecture = PowerShellProcessArchitecture.X64;
+                    }
+                    else if (string.Equals(arch, "x86", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        architecture = PowerShellProcessArchitecture.X86;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Write(
+                    LogLevel.Warning,
+                    "Failed to look up PowerShell version. Defaulting to version 5. " + ex.Message);
+            }
+
+            return new PowerShellVersionDetails(
+                powerShellVersion,
+                versionString,
+                powerShellEdition,
+                architecture);
+        }
+
+        #endregion
     }
 }

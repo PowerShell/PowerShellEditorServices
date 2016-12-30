@@ -51,6 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         {
             if (this.tcpListener != null)
             {
+                this.networkStream.Dispose();
                 this.tcpListener.Stop();
                 this.tcpListener = null;
 

@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -23,8 +24,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         private PowerShellContext powerShellContext;
         private SynchronizationContext runnerContext;
 
-        private AsyncQueue<DebuggerStopEventArgs> debuggerStoppedQueue =
-            new AsyncQueue<DebuggerStopEventArgs>();
+        private AsyncQueue<DebuggerStoppedEventArgs> debuggerStoppedQueue =
+            new AsyncQueue<DebuggerStoppedEventArgs>();
         private AsyncQueue<SessionStateChangedEventArgs> sessionStateQueue =
             new AsyncQueue<SessionStateChangedEventArgs>();
 
@@ -33,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.powerShellContext = new PowerShellContext();
             this.powerShellContext.SessionStateChanged += powerShellContext_SessionStateChanged;
 
-            this.workspace = new Workspace(this.powerShellContext.PowerShellVersion);
+            this.workspace = new Workspace(this.powerShellContext.LocalPowerShellVersion.Version);
 
             // Load the test debug file
             this.debugScriptFile =
@@ -69,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // TODO: Needed?
         }
 
-        async void debugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
+        async void debugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
         {
             await this.debuggerStoppedQueue.EnqueueAsync(e);
         }
@@ -889,13 +890,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         {
             SynchronizationContext syncContext = SynchronizationContext.Current;
 
-            DebuggerStopEventArgs eventArgs =
+            DebuggerStoppedEventArgs eventArgs =
                 await this.debuggerStoppedQueue.DequeueAsync();
 
-            Assert.Equal(scriptPath, eventArgs.InvocationInfo.ScriptName);
+            Assert.Equal(scriptPath, eventArgs.ScriptPath);
             if (lineNumber > -1)
             {
-                Assert.Equal(lineNumber, eventArgs.InvocationInfo.ScriptLineNumber);
+                Assert.Equal(lineNumber, eventArgs.LineNumber);
             }
         }
 

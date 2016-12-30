@@ -125,11 +125,11 @@ namespace Microsoft.PowerShell.EditorServices
             if (this.consoleHost != null)
             {
                 this.consoleHost.ExitSession(exitCode);
+            }
 
-                if (this.IsRunspacePushed)
-                {
-                    this.PopRunspace();
-                }
+            if (this.IsRunspacePushed)
+            {
+                this.PopRunspace();
             }
         }
 

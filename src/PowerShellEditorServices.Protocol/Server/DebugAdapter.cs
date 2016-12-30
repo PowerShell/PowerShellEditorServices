@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
@@ -22,9 +23,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private EditorSession editorSession;
         private OutputDebouncer outputDebouncer;
-        private bool isConfigurationDoneRequestComplete;
-        private bool isLaunchRequestComplete;
         private bool noDebug;
+        private bool waitingForAttach;
         private string scriptPathToLaunch;
         private string arguments;
 
@@ -38,6 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             this.editorSession = new EditorSession();
             this.editorSession.StartDebugSession(hostDetails, profilePaths);
+            this.editorSession.PowerShellContext.RunspaceChanged += this.powerShellContext_RunspaceChanged;
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
 
@@ -86,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                             await requestContext.SendEvent(
                                 TerminatedEvent.Type,
-                                null);
+                                new TerminatedEvent());
 
                             // Stop the server
                             await this.Stop();
@@ -113,15 +114,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object args,
             RequestContext<object> requestContext)
         {
-            // The order of debug protocol messages apparently isn't as guaranteed as we might like.
-            // Need to be able to handle the case where we get the configurationDone request after the 
-            // launch request.
-            if (this.isLaunchRequestComplete)
+            if (!string.IsNullOrEmpty(this.scriptPathToLaunch))
             {
-                this.LaunchScript(requestContext);
+                // Configuration is done, launch the script
+                var nonAwaitedTask =
+                    this.LaunchScript(requestContext)
+                        .ConfigureAwait(false);
             }
-
-            this.isConfigurationDoneRequestComplete = true;
 
             await requestContext.SendResult(null);
         }
@@ -133,19 +132,31 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Set the working directory for the PowerShell runspace to the cwd passed in via launch.json. 
             // In case that is null, use the the folder of the script to be executed.  If the resulting 
             // working dir path is a file path then extract the directory and use that.
-            string workingDir = launchParams.Cwd ?? launchParams.Script ?? launchParams.Program;
-            workingDir = PowerShellContext.UnescapePath(workingDir);
-            try
+            string workingDir =
+                launchParams.Cwd ??
+                launchParams.Script ??
+                launchParams.Program;
+
+            if (workingDir != null)
             {
-                if ((File.GetAttributes(workingDir) & FileAttributes.Directory) != FileAttributes.Directory)
+                workingDir = PowerShellContext.UnescapePath(workingDir);
+                try
                 {
-                    workingDir = Path.GetDirectoryName(workingDir);
+                    if ((File.GetAttributes(workingDir) & FileAttributes.Directory) != FileAttributes.Directory)
+                    {
+                        workingDir = Path.GetDirectoryName(workingDir);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Write(LogLevel.Error, "cwd path is invalid: " + ex.Message);
+
+                    workingDir = null;
                 }
             }
-            catch (Exception ex)
-            {
-                Logger.Write(LogLevel.Error, "cwd path is invalid: " + ex.Message);
 
+            if (workingDir == null)
+            {
 #if NanoServer
                 workingDir = AppContext.BaseDirectory;
 #else
@@ -164,37 +175,107 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 Logger.Write(LogLevel.Verbose, "Script arguments are: " + arguments);
             }
 
-            // We may not actually launch the script in response to this
-            // request unless it comes after the configurationDone request. 
-            // If the launch request comes first, then stash the launch
-            // params so that the subsequent configurationDone request handler 
-            // can launch the script. 
+            // Store the launch parameters so that they can be used later
             this.noDebug = launchParams.NoDebug;
             this.scriptPathToLaunch = launchParams.Script ?? launchParams.Program;
             this.arguments = arguments;
 
-            // The order of debug protocol messages apparently isn't as guaranteed as we might like.
-            // Need to be able to handle the case where we get the launch request after the 
-            // configurationDone request.
-            if (this.isConfigurationDoneRequestComplete)
+            await requestContext.SendResult(null);
+
+            // If no script is being launched, execute an empty script to
+            // cause the prompt string to be evaluated and displayed
+            if (!string.IsNullOrEmpty(this.scriptPathToLaunch))
             {
-                this.LaunchScript(requestContext);
+                await this.editorSession.PowerShellContext.ExecuteScriptString(
+                    "", false, true);
             }
 
-            this.isLaunchRequestComplete = true;
+            // Send the InitializedEvent so that the debugger will continue
+            // sending configuration requests
+            await requestContext.SendEvent(
+                InitializedEvent.Type,
+                null);
+        }
+
+        protected async Task HandleAttachRequest(
+            AttachRequestArguments attachParams,
+            RequestContext<object> requestContext)
+        {
+            StringBuilder errorMessages = new StringBuilder();
+
+            if (attachParams.ComputerName != null)
+            {
+                PowerShellVersionDetails runspaceVersion =
+                    this.editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
+
+                if (runspaceVersion.Version.Major < 4)
+                {
+                    await requestContext.SendError(
+                        $"Remote sessions are only available with PowerShell 4 and higher (current session is {runspaceVersion.Version}).");
+
+                    return;
+                }
+
+                await this.editorSession.PowerShellContext.ExecuteScriptString(
+                    $"Enter-PSSession -ComputerName \"{attachParams.ComputerName}\"",
+                    errorMessages);
+
+                if (errorMessages.Length > 0)
+                {
+                    await requestContext.SendError(
+                        $"Could not establish remote session to computer '{attachParams.ComputerName}'");
+
+                    return;
+                }
+            }
+
+            if (attachParams.ProcessId > 0)
+            {
+                PowerShellVersionDetails runspaceVersion =
+                    this.editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
+
+                if (runspaceVersion.Version.Major < 5)
+                {
+                    await requestContext.SendError(
+                        $"Attaching to a process is only available with PowerShell 5 and higher (current session is {runspaceVersion.Version}).");
+
+                    return;
+                }
+
+                await this.editorSession.PowerShellContext.ExecuteScriptString(
+                    $"Enter-PSHostProcess -Id {attachParams.ProcessId}",
+                    errorMessages);
+
+                if (errorMessages.Length > 0)
+                {
+                    await requestContext.SendError(
+                        $"Could not attach to process '{attachParams.ProcessId}'");
+
+                    return;
+                }
+
+                // Execute the Debug-Runspace command but don't await it because it
+                // will block the debug adapter initialization process.  The
+                // InitializedEvent will be sent as soon as the RunspaceChanged
+                // event gets fired with the attached runspace.
+                int runspaceId = attachParams.RunspaceId > 0 ? attachParams.RunspaceId : 1;
+                this.waitingForAttach = true;
+                Task nonAwaitedTask =
+                    this.editorSession.PowerShellContext.ExecuteScriptString(
+                        $"\nDebug-Runspace -Id {runspaceId}");
+            }
+            else
+            {
+                await requestContext.SendError(
+                    "A positive integer must be specified for the processId field.");
+
+                return;
+            }
 
             await requestContext.SendResult(null);
         }
 
-        protected Task HandleAttachRequest(
-            AttachRequestArguments attachParams,
-            RequestContext<object> requestContext)
-        {
-            // TODO: Implement this once we support attaching to processes
-            throw new NotImplementedException();
-        }
-
-        protected Task HandleDisconnectRequest(
+        protected async Task HandleDisconnectRequest(
             object disconnectParams,
             RequestContext<object> requestContext)
         {
@@ -217,11 +298,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // so we shouldn't try to abort because PowerShellContext will be null
             if (this.editorSession != null && this.editorSession.PowerShellContext != null)
             {
-                this.editorSession.PowerShellContext.SessionStateChanged += handler;
-                this.editorSession.PowerShellContext.AbortExecution();
+                if (this.editorSession.PowerShellContext.SessionState == PowerShellContextState.Running ||
+                    this.editorSession.PowerShellContext.IsDebuggerStopped)
+                {
+                    this.editorSession.PowerShellContext.SessionStateChanged += handler;
+                    this.editorSession.PowerShellContext.AbortExecution();
+                }
+                else
+                {
+                    await requestContext.SendResult(null);
+                    await this.Stop();
+                }
             }
-
-            return Task.FromResult(true);
         }
 
         protected async Task HandleSetBreakpointsRequest(
@@ -568,7 +656,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         #region Event Handlers
 
-        async void DebugService_DebuggerStopped(object sender, DebuggerStopEventArgs e)
+        async void DebugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
         {
             // Flush pending output before sending the event
             await this.outputDebouncer.Flush();
@@ -580,10 +668,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // We don't support exception breakpoints and for "pause", we can't distinguish 
             // between stepping and the user pressing the pause/break button in the debug toolbar.
             string debuggerStoppedReason = "step";
-            if (e.Breakpoints.Count > 0)
+            if (e.OriginalEvent.Breakpoints.Count > 0)
             {
                 debuggerStoppedReason =
-                    e.Breakpoints[0] is CommandBreakpoint
+                    e.OriginalEvent.Breakpoints[0] is CommandBreakpoint
                         ? "function breakpoint"
                         : "breakpoint";
             }
@@ -594,13 +682,37 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 {
                     Source = new Source
                     {
-                        Path = e.InvocationInfo.ScriptName,
+                        Path = e.ScriptPath,
                     },
-                    Line = e.InvocationInfo.ScriptLineNumber,
-                    Column = e.InvocationInfo.OffsetInLine,
-                    ThreadId = 1, // TODO: Change this based on context
+                    Line = e.LineNumber,
+                    Column = e.ColumnNumber,
+                    ThreadId = 1,
                     Reason = debuggerStoppedReason
                 });
+        }
+
+        async void powerShellContext_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
+        {
+            if (this.waitingForAttach && e.ChangeAction == RunspaceChangeAction.Enter && e.NewRunspace.IsAttached)
+            {
+                // Send the InitializedEvent so that the debugger will continue
+                // sending configuration requests
+                this.waitingForAttach = false;
+                await this.SendEvent(InitializedEvent.Type, null);
+            }
+            else if (e.ChangeAction == RunspaceChangeAction.Exit && this.editorSession.PowerShellContext.IsDebuggerStopped)
+            {
+                // Exited the session while the debugger is stopped,
+                // send a ContinuedEvent so that the client changes the
+                // UI to appear to be running again
+                await this.SendEvent<ContinuedEvent>(
+                    ContinuedEvent.Type,
+                    new ContinuedEvent
+                    {
+                        ThreadId = 1,
+                        AllThreadsContinued = true
+                    });
+            }
         }
 
         async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)

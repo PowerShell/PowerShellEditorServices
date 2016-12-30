@@ -915,7 +915,7 @@ function __Expand-Alias {
         {
             await requestContext.SendResult(
                 new PowerShellVersion(
-                    this.editorSession.PowerShellContext.PowerShellVersionDetails));
+                    this.editorSession.PowerShellContext.LocalPowerShellVersion));
         }
 
         private bool IsQueryMatch(string query, string symbolName)
@@ -989,11 +989,11 @@ function __Expand-Alias {
 
         #region Event Handlers
 
-        private async void PowerShellContext_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
+        private async void PowerShellContext_RunspaceChanged(object sender, Session.RunspaceChangedEventArgs e)
         {
             await this.SendEvent(
                 RunspaceChangedEvent.Type,
-                new RunspaceDetails(e));
+                new Protocol.LanguageServer.RunspaceDetails(e.NewRunspace));
         }
 
         private async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
