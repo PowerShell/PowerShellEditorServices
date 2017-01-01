@@ -240,8 +240,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 editorSession.Workspace.GetFile(requestParams.filePath),
                 requestParams.rules,
                 null);
-            markers = markers.Reverse().ToArray();
-            //markers.OrderByDescending(x => x.Correction.Edits[0].StartLineNumber).ToArray()
             await requestContext.SendResult(new ScriptFileMarkerRequestResultParams {
                 markers = markers
             });
