@@ -17,7 +17,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     class ScriptFileMarkerRequestParams
     {
         public string filePath;
-        public string[] rules;
         public string settings;
     }
 

@@ -139,14 +139,9 @@ namespace Microsoft.PowerShell.EditorServices
             return GetSemanticMarkers(file, activeRules, settingsPath);
         }
 
-        public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file, string[] rules, string settingsPath)
+        public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file, Hashtable settings)
         {
-            return GetSemanticMarkers<string>(file, rules, settingsPath);
-        }
-
-        public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file, string[] rules, Hashtable settings)
-        {
-            return GetSemanticMarkers<Hashtable>(file, rules, settings);
+            return GetSemanticMarkers<Hashtable>(file, null, settings);
         }
 
         private ScriptFileMarker[] GetSemanticMarkers<TSettings>(
@@ -156,8 +151,8 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (this.scriptAnalyzerModuleInfo != null
                 && file.IsAnalysisEnabled
-                && (typeof(TSettings) == typeof(string)
-                    || typeof(TSettings) == typeof(Hashtable)))
+                && (typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
+                && (rules != null || settings != null))
             {
                 // TODO: This is a temporary fix until we can change how
                 // ScriptAnalyzer invokes their async tasks.
