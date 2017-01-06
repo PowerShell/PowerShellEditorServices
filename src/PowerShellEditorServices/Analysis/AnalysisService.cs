@@ -13,6 +13,7 @@ using Microsoft.PowerShell.EditorServices.Console;
 using System.Management.Automation;
 using System.Collections.Generic;
 using System.Text;
+using System.Collections;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -127,9 +128,36 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Public Methods
 
+        /// <summary>
+        /// Performs semantic analysis on the given ScriptFile and returns
+        /// an array of ScriptFileMarkers.
+        /// </summary>
+        /// <param name="file">The ScriptFile which will be analyzed for semantic markers.</param>
+        /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
+        public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file)
+        {
+            return GetSemanticMarkers(file, activeRules, settingsPath);
+        }
+
         public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file, string[] rules, string settingsPath)
         {
-            if (this.scriptAnalyzerModuleInfo != null && file.IsAnalysisEnabled)
+            return GetSemanticMarkers<string>(file, rules, settingsPath);
+        }
+
+        public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file, string[] rules, Hashtable settings)
+        {
+            return GetSemanticMarkers<Hashtable>(file, rules, settings);
+        }
+
+        private ScriptFileMarker[] GetSemanticMarkers<TSettings>(
+            ScriptFile file,
+            string[] rules,
+            TSettings settings) where TSettings: class
+        {
+            if (this.scriptAnalyzerModuleInfo != null
+                && file.IsAnalysisEnabled
+                && (typeof(TSettings) == typeof(string)
+                    || typeof(TSettings) == typeof(Hashtable)))
             {
                 // TODO: This is a temporary fix until we can change how
                 // ScriptAnalyzer invokes their async tasks.
@@ -139,7 +167,7 @@ namespace Microsoft.PowerShell.EditorServices
                         () =>
                         {
                             return
-                                 GetDiagnosticRecords(file, rules, settingsPath)
+                                 GetDiagnosticRecords(file, rules, settings)
                                 .Select(ScriptFileMarker.FromDiagnosticRecord)
                                 .ToArray();
                         },
@@ -154,17 +182,6 @@ namespace Microsoft.PowerShell.EditorServices
                 // Return an empty marker list
                 return new ScriptFileMarker[0];
             }
-        }
-
-        /// <summary>
-        /// Performs semantic analysis on the given ScriptFile and returns
-        /// an array of ScriptFileMarkers.
-        /// </summary>
-        /// <param name="file">The ScriptFile which will be analyzed for semantic markers.</param>
-        /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
-        public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file)
-        {
-            return GetSemanticMarkers(file, activeRules, settingsPath);
         }
 
         /// <summary>
@@ -300,11 +317,18 @@ namespace Microsoft.PowerShell.EditorServices
             return GetDiagnosticRecords(file, this.activeRules, this.settingsPath);
         }
 
-        private IEnumerable<PSObject> GetDiagnosticRecords(ScriptFile file, string[] rules, string settingsPath)
+        // TSettings can either be of type Hashtable or string
+        // as scriptanalyzer settings parameter takes either a hashtable or string
+        private IEnumerable<PSObject> GetDiagnosticRecords<TSettings>(
+            ScriptFile file,
+            string[] rules,
+            TSettings settings) where TSettings: class
         {
             IEnumerable<PSObject> diagnosticRecords = Enumerable.Empty<PSObject>();
 
-            if (this.scriptAnalyzerModuleInfo != null)
+            if (this.scriptAnalyzerModuleInfo != null
+                && (typeof(TSettings) == typeof(string)
+                    || typeof(TSettings) == typeof(Hashtable)))
             {
                 lock (runspaceLock)
                 {
@@ -320,9 +344,9 @@ namespace Microsoft.PowerShell.EditorServices
                             .AddParameter("ScriptDefinition", file.Contents);
 
                         // Use a settings file if one is provided, otherwise use the default rule list.
-                        if (!string.IsNullOrWhiteSpace(settingsPath))
+                        if (settings != null)
                         {
-                            powerShell.AddParameter("Settings", settingsPath);
+                            powerShell.AddParameter("Settings", settings);
                         }
                         else
                         {

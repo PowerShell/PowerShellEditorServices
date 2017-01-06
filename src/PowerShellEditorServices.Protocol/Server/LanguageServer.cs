@@ -12,6 +12,7 @@ using Microsoft.PowerShell.EditorServices.Templates;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -239,7 +240,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             var markers = editorSession.AnalysisService.GetSemanticMarkers(
                 editorSession.Workspace.GetFile(requestParams.filePath),
                 requestParams.rules,
-                null);
+                editorSession.LanguageService.GetHashtableFromString(requestParams.settings));
             await requestContext.SendResult(new ScriptFileMarkerRequestResultParams {
                 markers = markers
             });

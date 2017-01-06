@@ -5,9 +5,11 @@
 
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -132,7 +134,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Finds command completion details for the script given a file location 
+        /// Finds command completion details for the script given a file location
         /// </summary>
         /// <param name="file">The details and contents of a open script file</param>
         /// <param name="entryName">The name of the suggestion that needs details</param>
@@ -144,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices
             // Makes sure the most recent completions request was the same line and column as this request
             if (file.Id.Equals(mostRecentRequestFile))
             {
-                CompletionDetails completionResult = 
+                CompletionDetails completionResult =
                     mostRecentCompletions.Completions.FirstOrDefault(
                         result => result.CompletionText.Equals(entryName));
 
@@ -163,7 +165,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="lineNumber">The line number of the cursor for the given script</param>
         /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
         /// <returns>A SymbolReference of the symbol found at the given location
-        /// or null if there is no symbol at that location 
+        /// or null if there is no symbol at that location
         /// </returns>
         public SymbolReference FindSymbolAtLocation(
             ScriptFile scriptFile,
@@ -255,7 +257,7 @@ namespace Microsoft.PowerShell.EditorServices
         public async Task<FindReferencesResult> FindReferencesOfSymbol(
             SymbolReference foundSymbol,
             ScriptFile[] referencedFiles)
-        {                
+        {
             if (foundSymbol != null)
             {
                 int symbolOffset = referencedFiles[0].GetOffsetAtPosition(
@@ -336,7 +338,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
             }
 
-            // if definition is not found in referenced files 
+            // if definition is not found in referenced files
             // look for it in the builtin commands
             if (foundDefinition == null)
             {
@@ -345,9 +347,9 @@ namespace Microsoft.PowerShell.EditorServices
                         foundSymbol.SymbolName,
                         this.powerShellContext);
 
-                foundDefinition = 
+                foundDefinition =
                     FindDeclarationForBuiltinCommand(
-                        cmdInfo, 
+                        cmdInfo,
                         foundSymbol,
                         workspace);
             }
@@ -448,6 +450,34 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        public Hashtable GetHashtableFromString(string hashtableString)
+        {
+            if (hashtableString == null)
+            {
+                return null;
+            }
+
+            ParseError[] parseErrors = null;
+            Token[] tokens = null;
+            try
+            {
+                var ast = Parser.ParseInput(hashtableString, out tokens, out parseErrors);
+                if (parseErrors.Length > 0)
+                {
+                    return null;
+                }
+
+                var hashtableAst = ast.Find(x => x is HashtableAst, false);
+                return hashtableAst == null
+                        ? null
+                        : (hashtableAst as HashtableAst).SafeGetValue() as Hashtable;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         #endregion
 
         #region Private Fields
@@ -533,7 +563,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         private SymbolReference FindDeclarationForBuiltinCommand(
-            CommandInfo commandInfo, 
+            CommandInfo commandInfo,
             SymbolReference foundSymbol,
             Workspace workspace)
         {
