@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.InstantiateAnalysisService();
 
             // Create a workspace to contain open files
-            this.Workspace = new Workspace(this.PowerShellContext.PowerShellVersion);
+            this.Workspace = new Workspace(this.PowerShellContext.LocalPowerShellVersion.Version);
         }
 
         /// <summary>
@@ -100,15 +100,24 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="profilePaths">
         /// An object containing the profile paths for the session.
         /// </param>
-        public void StartDebugSession(HostDetails hostDetails, ProfilePaths profilePaths)
+        /// <param name="editorOperations">
+        /// An IEditorOperations implementation used to interact with the editor.
+        /// </param>
+        public void StartDebugSession(
+            HostDetails hostDetails,
+            ProfilePaths profilePaths,
+            IEditorOperations editorOperations)
         {
             // Initialize all services
             this.PowerShellContext = new PowerShellContext(hostDetails, profilePaths);
-            this.DebugService = new DebugService(this.PowerShellContext);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
+            this.DebugService =
+                new DebugService(
+                    this.PowerShellContext,
+                    new RemoteFileManager(this.PowerShellContext, editorOperations));
 
             // Create a workspace to contain open files
-            this.Workspace = new Workspace(this.PowerShellContext.PowerShellVersion);
+            this.Workspace = new Workspace(this.PowerShellContext.LocalPowerShellVersion.Version);
         }
 
         internal void InstantiateAnalysisService(string settingsPath = null)

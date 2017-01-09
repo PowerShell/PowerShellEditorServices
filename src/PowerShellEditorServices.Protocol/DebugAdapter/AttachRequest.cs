@@ -16,8 +16,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 
     public class AttachRequestArguments
     {
-        public string Address { get; set; }
+        public string ComputerName { get; set; }
 
-        public int Port { get; set; }
+        public int ProcessId { get; set; }
+
+        public int RunspaceId { get; set; }
     }
 }

@@ -12,6 +12,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Utility;
+using System.IO;
+using Microsoft.PowerShell.EditorServices.Session;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -23,7 +25,10 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Fields
 
+        private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
+
         private PowerShellContext powerShellContext;
+        private RemoteFileManager remoteFileManager;
 
         // TODO: This needs to be managed per nested session
         private Dictionary<string, List<Breakpoint>> breakpointsPerFile = 
@@ -49,12 +54,31 @@ namespace Microsoft.PowerShell.EditorServices
         /// The PowerShellContext to use for all debugging operations.
         /// </param>
         public DebugService(PowerShellContext powerShellContext)
+            : this(powerShellContext, null)
         {
-            Validate.IsNotNull("powerShellContext", powerShellContext);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the DebugService class and uses
+        /// the given PowerShellContext for all future operations.
+        /// </summary>
+        /// <param name="powerShellContext">
+        /// The PowerShellContext to use for all debugging operations.
+        /// </param>
+        /// <param name="remoteFileManager">
+        /// A RemoteFileManager instance to use for accessing files in remote sessions.
+        /// </param>
+        public DebugService(
+            PowerShellContext powerShellContext,
+            RemoteFileManager remoteFileManager)
+        {
+            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
             this.powerShellContext = powerShellContext;
             this.powerShellContext.DebuggerStop += this.OnDebuggerStop;
             this.powerShellContext.BreakpointUpdated += this.OnBreakpointUpdated;
+
+            this.remoteFileManager = remoteFileManager;
         }
 
         #endregion
@@ -82,10 +106,32 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (breakpoints.Length > 0)
             {
+                // Make sure we're using the remote script path
+                string scriptPath = scriptFile.FilePath;
+                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                    this.remoteFileManager != null)
+                {
+                    string mappedPath =
+                        this.remoteFileManager.GetMappedPath(
+                            scriptPath,
+                            this.powerShellContext.CurrentRunspace);
+
+                    if (mappedPath == null)
+                    {
+                        Logger.Write(
+                            LogLevel.Error,
+                            $"Could not map local path '{scriptPath}' to a remote path.");
+
+                        return resultBreakpointDetails.ToArray();
+                    }
+
+                    scriptPath = mappedPath;
+                }
+
                 // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
                 // quoted and have those wildcard chars escaped.
                 string escapedScriptPath = 
-                    PowerShellContext.EscapePath(scriptFile.FilePath, escapeSpaces: false);
+                    PowerShellContext.EscapePath(scriptPath, escapeSpaces: false);
 
                 foreach (BreakpointDetails breakpoint in breakpoints)
                 {
@@ -556,7 +602,7 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     PSCommand psCommand = new PSCommand();
                     psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
-                    psCommand.AddParameter("Breakpoint", breakpoints.ToArray());
+                    psCommand.AddParameter("Id", breakpoints.Select(b => b.Id).ToArray());
 
                     await this.powerShellContext.ExecuteCommand<object>(psCommand);
 
@@ -612,16 +658,16 @@ namespace Microsoft.PowerShell.EditorServices
                 new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
             this.variables.Add(scopeVariableContainer);
 
-            var results = await this.powerShellContext.ExecuteCommand<PSVariable>(psCommand, sendErrorToHost: false);
+            var results = await this.powerShellContext.ExecuteCommand<PSObject>(psCommand, sendErrorToHost: false);
             if (results != null)
             {
-                foreach (PSVariable psvariable in results)
+                foreach (PSObject psVariableObject in results)
                 {
-                    var variableDetails = new VariableDetails(psvariable) {Id = this.nextVariableId++};
+                    var variableDetails = new VariableDetails(psVariableObject) {Id = this.nextVariableId++};
                     this.variables.Add(variableDetails);
                     scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
 
-                    if ((autoVariables != null) && AddToAutoVariables(psvariable, scope))
+                    if ((autoVariables != null) && AddToAutoVariables(psVariableObject, scope))
                     {
                         autoVariables.Children.Add(variableDetails.Name, variableDetails);
                     }
@@ -631,9 +677,30 @@ namespace Microsoft.PowerShell.EditorServices
             return scopeVariableContainer;
         }
 
-        private bool AddToAutoVariables(PSVariable psvariable, string scope)
+        private bool AddToAutoVariables(PSObject psvariable, string scope)
         {
-            if ((scope == VariableContainerDetails.GlobalScopeName) || 
+            string variableName = psvariable.Properties["Name"].Value as string;
+            object variableValue = psvariable.Properties["Value"].Value;
+
+            ScopedItemOptions variableScope = ScopedItemOptions.None;
+            PSPropertyInfo optionsProperty = psvariable.Properties["Options"];
+            if (string.Equals(optionsProperty.TypeNameOfValue, "System.String"))
+            {
+                if (!Enum.TryParse<ScopedItemOptions>(
+                        optionsProperty.Value as string,
+                        out variableScope))
+                {
+                    Logger.Write(
+                        LogLevel.Warning,
+                        $"Could not parse a variable's ScopedItemOptions value of '{optionsProperty.Value}'");
+                }
+            }
+            else if (optionsProperty.Value is ScopedItemOptions)
+            {
+                variableScope = (ScopedItemOptions)optionsProperty.Value;
+            }
+
+            if ((scope == VariableContainerDetails.GlobalScopeName) ||
                 (scope == VariableContainerDetails.ScriptScopeName))
             {
                 // We don't A) have a good way of distinguishing built-in from user created variables
@@ -646,36 +713,36 @@ namespace Microsoft.PowerShell.EditorServices
             var readonlyAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.ReadOnly;
 
             // Some local variables, if they exist, should be displayed by default
-            if (psvariable.GetType().Name == "LocalVariable")
+            if (psvariable.TypeNames.Any(typeName => typeName.EndsWith("LocalVariable")))
             {
-                if (psvariable.Name.Equals("_"))
+                if (variableName.Equals("_"))
                 {
                     return true;
                 }
-                else if (psvariable.Name.Equals("args", StringComparison.OrdinalIgnoreCase))
+                else if (variableName.Equals("args", StringComparison.OrdinalIgnoreCase))
                 {
-                    var array = psvariable.Value as Array;
+                    var array = variableValue as Array;
                     return array != null ? array.Length > 0 : false;
                 }
 
                 return false;
             }
-            else if (psvariable.GetType() != typeof(PSVariable))
+            else if (!psvariable.TypeNames.Any(typeName => typeName.EndsWith("PSVariable")))
             {
                 return false;
             }
 
-            if (((psvariable.Options | constantAllScope) == constantAllScope) ||
-                ((psvariable.Options | readonlyAllScope) == readonlyAllScope))
+            if (((variableScope | constantAllScope) == constantAllScope) ||
+                ((variableScope | readonlyAllScope) == readonlyAllScope))
             {
-                string prefixedVariableName = VariableDetails.DollarPrefix + psvariable.Name;
+                string prefixedVariableName = VariableDetails.DollarPrefix + variableName;
                 if (this.globalScopeVariables.Children.ContainsKey(prefixedVariableName))
                 {
                     return false;
                 }
             }
 
-            if ((psvariable.Value != null) && (psvariable.Value.GetType() == typeof(PSDebugContext)))
+            if (variableValue != null && variableValue.GetType().Name.EndsWith(nameof(PSDebugContext)))
             {
                 return false;
             }
@@ -686,9 +753,15 @@ namespace Microsoft.PowerShell.EditorServices
         private async Task FetchStackFrames()
         {
             PSCommand psCommand = new PSCommand();
-            psCommand.AddCommand("Get-PSCallStack");
 
-            var results = await this.powerShellContext.ExecuteCommand<CallStackFrame>(psCommand);
+            // This glorious hack ensures that Get-PSCallStack returns a list of CallStackFrame
+            // objects (or "deserialized" CallStackFrames) when attached to a runspace in another
+            // process.  Without the intermediate variable Get-PSCallStack inexplicably returns
+            // an array of strings containing the formatted output of the CallStackFrame list.
+            var callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
+            psCommand.AddScript($"{callStackVarName} = Get-PSCallStack; {callStackVarName}");
+
+            var results = await this.powerShellContext.ExecuteCommand<PSObject>(psCommand);
 
             var callStackFrames = results.ToArray();
             this.stackFrameDetails = new StackFrameDetails[callStackFrames.Length];
@@ -707,6 +780,17 @@ namespace Microsoft.PowerShell.EditorServices
 
                 this.stackFrameDetails[i] = 
                     StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables);
+
+                string stackFrameScriptPath = this.stackFrameDetails[i].ScriptPath;
+                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                    this.remoteFileManager != null &&
+                    !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
+                {
+                    this.stackFrameDetails[i].ScriptPath =
+                        this.remoteFileManager.GetMappedPath(
+                            stackFrameScriptPath,
+                            this.powerShellContext.CurrentRunspace);
+                }
             }
         }
 
@@ -784,7 +868,7 @@ namespace Microsoft.PowerShell.EditorServices
                         if (hitCount.HasValue)
                         {
                             string globalHitCountVarName =
-                                $"$global:__psEditorServices_BreakHitCounter_{breakpointHitCounter++}";
+                                $"$global:{PsesGlobalVariableNamePrefix}BreakHitCounter_{breakpointHitCounter++}";
 
                             wrappedCondition =
                                 $"if ({breakpoint.Condition}) {{ if (++{globalHitCountVarName} -eq {hitCount}) {{ break }} }}";
@@ -902,18 +986,31 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Raised when the debugger stops execution at a breakpoint or when paused.
         /// </summary>
-        public event EventHandler<DebuggerStopEventArgs> DebuggerStopped;
+        public event EventHandler<DebuggerStoppedEventArgs> DebuggerStopped;
 
         private async void OnDebuggerStop(object sender, DebuggerStopEventArgs e)
         {
             // Get call stack and variables.
             await this.FetchStackFramesAndVariables();
 
-            // Notify the host that the debugger is stopped
-            if (this.DebuggerStopped != null)
+            // If this is a remote connection, get the file content
+            string localScriptPath = e.InvocationInfo.ScriptName;
+            if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                this.remoteFileManager != null)
             {
-                this.DebuggerStopped(sender, e);
+                localScriptPath =
+                    await this.remoteFileManager.FetchRemoteFile(
+                        e.InvocationInfo.ScriptName,
+                        this.powerShellContext.CurrentRunspace);
             }
+
+            // Notify the host that the debugger is stopped
+            this.DebuggerStopped?.Invoke(
+                sender,
+                new DebuggerStoppedEventArgs(
+                    e,
+                    this.powerShellContext.CurrentRunspace,
+                    localScriptPath));
         }
 
         /// <summary>
@@ -933,8 +1030,29 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 List<Breakpoint> breakpoints;
 
+                string scriptPath = lineBreakpoint.Script;
+                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                    this.remoteFileManager != null)
+                {
+                    string mappedPath =
+                        this.remoteFileManager.GetMappedPath(
+                            scriptPath,
+                            this.powerShellContext.CurrentRunspace);
+
+                    if (mappedPath == null)
+                    {
+                        Logger.Write(
+                            LogLevel.Error,
+                            $"Could not map remote path '{scriptPath}' to a local path.");
+
+                        return;
+                    }
+
+                    scriptPath = mappedPath;
+                }
+
                 // Normalize the script filename for proper indexing
-                string normalizedScriptName = lineBreakpoint.Script.ToLower();
+                string normalizedScriptName = scriptPath.ToLower();
 
                 // Get the list of breakpoints for this file
                 if (!this.breakpointsPerFile.TryGetValue(normalizedScriptName, out breakpoints))

@@ -231,7 +231,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             IEnumerable<SymbolReference> symbolReferencesinFile =
                 AstOperations
-                    .FindSymbolsInDocument(scriptFile.ScriptAst, this.powerShellContext.PowerShellVersion)
+                    .FindSymbolsInDocument(scriptFile.ScriptAst, this.powerShellContext.LocalPowerShellVersion.Version)
                     .Select(
                         reference => {
                             reference.SourceLine =
@@ -346,7 +346,7 @@ namespace Microsoft.PowerShell.EditorServices
                         this.powerShellContext);
 
                 foundDefinition = 
-                    await FindDeclarationForBuiltinCommand(
+                    FindDeclarationForBuiltinCommand(
                         cmdInfo, 
                         foundSymbol,
                         workspace);
@@ -532,21 +532,16 @@ namespace Microsoft.PowerShell.EditorServices
             return new List<ScriptFile>().ToArray();
         }
 
-        private async Task<SymbolReference> FindDeclarationForBuiltinCommand(
-            CommandInfo cmdInfo, 
+        private SymbolReference FindDeclarationForBuiltinCommand(
+            CommandInfo commandInfo, 
             SymbolReference foundSymbol,
             Workspace workspace)
         {
             SymbolReference foundDefinition = null;
-            if (cmdInfo != null)
+            if (commandInfo != null)
             {
                 int index = 0;
                 ScriptFile[] nestedModuleFiles;
-
-                CommandInfo commandInfo =
-                    await CommandHelpers.GetCommandInfo(
-                        foundSymbol.SymbolName,
-                        this.powerShellContext);
 
                 nestedModuleFiles =
                     GetBuiltinCommandScriptFiles(

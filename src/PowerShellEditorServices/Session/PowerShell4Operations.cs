@@ -16,7 +16,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public void ConfigureDebugger(Runspace runspace)
         {
 #if !PowerShellv3
-            runspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
+            if (runspace.Debugger != null)
+            {
+                runspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
+            }
 #endif
         }
 
@@ -55,10 +58,20 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     outputCollection);
 #endif
 
-            return
-                outputCollection
-                    .Select(pso => pso.BaseObject)
-                    .Cast<TResult>();
+            IEnumerable<TResult> results = null;
+            if (typeof(TResult) != typeof(PSObject))
+            {
+                results =
+                    outputCollection
+                        .Select(pso => pso.BaseObject)
+                        .Cast<TResult>();
+            }
+            else
+            {
+                results = outputCollection.Cast<TResult>();
+            }
+
+            return results;
         }
     }
 }

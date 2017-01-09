@@ -6,7 +6,6 @@
 using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
-using System.Collections;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -20,6 +19,7 @@ namespace Microsoft.PowerShell.EditorServices
 {
     using Session;
     using System.Management.Automation;
+    using System.Management.Automation.Host;
     using System.Management.Automation.Runspaces;
     using System.Reflection;
 
@@ -28,27 +28,29 @@ namespace Microsoft.PowerShell.EditorServices
     /// Handles nested PowerShell prompts and also manages execution of 
     /// commands whether inside or outside of the debugger.
     /// </summary>
-    public class PowerShellContext : IDisposable
+    public class PowerShellContext : IDisposable, IHostSupportsInteractiveSession
     {
         #region Fields
 
         private PowerShell powerShell;
-        private IConsoleHost consoleHost;
         private bool ownsInitialRunspace;
-        private Runspace initialRunspace;
-        private Runspace currentRunspace;
+        private RunspaceDetails initialRunspace;
+
+        private IConsoleHost consoleHost;
         private ProfilePaths profilePaths;
         private ConsoleServicePSHost psHost;
-        private InitialSessionState initialSessionState;
-        private IVersionSpecificOperations versionSpecificOperations;
-        private int pipelineThreadId;
 
+        private IVersionSpecificOperations versionSpecificOperations;
+
+        private int pipelineThreadId;
         private TaskCompletionSource<DebuggerResumeAction> debuggerStoppedTask;
         private TaskCompletionSource<IPipelineExecutionRequest> pipelineExecutionTask;
         private TaskCompletionSource<IPipelineExecutionRequest> pipelineResultTask;
 
         private object runspaceMutex = new object();
         private AsyncQueue<RunspaceHandle> runspaceWaitQueue = new AsyncQueue<RunspaceHandle>();
+
+        private Stack<RunspaceDetails> runspaceStack = new Stack<RunspaceDetails>();
 
         #endregion
 
@@ -76,27 +78,12 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Gets the PowerShell version details for the current runspace.
+        /// Gets the PowerShell version details for the initial local runspace.
         /// </summary>
-        public PowerShellVersionDetails PowerShellVersionDetails
+        public PowerShellVersionDetails LocalPowerShellVersion
         {
-            get; private set;
-        }
-
-        /// <summary>
-        /// Gets the PowerShell version of the current runspace.
-        /// </summary>
-        public Version PowerShellVersion
-        {
-            get { return this.PowerShellVersionDetails.Version; }
-        }
-
-        /// <summary>
-        /// Gets the PowerShell edition of the current runspace.
-        /// </summary>
-        public string PowerShellEdition
-        {
-            get { return this.PowerShellVersionDetails.Edition; }
+            get;
+            private set;
         }
 
         /// <summary>
@@ -111,6 +98,15 @@ namespace Microsoft.PowerShell.EditorServices
                 this.consoleHost = value;
                 this.psHost.ConsoleHost = value;
             }
+        }
+
+        /// <summary>
+        /// Gets details pertaining to the current runspace.
+        /// </summary>
+        public RunspaceDetails CurrentRunspace
+        {
+            get;
+            private set;
         }
 
         #endregion
@@ -135,10 +131,10 @@ namespace Microsoft.PowerShell.EditorServices
         {
             hostDetails = hostDetails ?? HostDetails.Default;
 
-            this.psHost = new ConsoleServicePSHost(hostDetails);
-            this.initialSessionState = InitialSessionState.CreateDefault2();
+            this.psHost = new ConsoleServicePSHost(hostDetails, this);
+            var initialSessionState = InitialSessionState.CreateDefault2();
 
-            Runspace runspace = RunspaceFactory.CreateRunspace(psHost, this.initialSessionState);
+            Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 #if !NanoServer
             runspace.ApartmentState = ApartmentState.STA;
 #endif
@@ -185,36 +181,40 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.SessionState = PowerShellContextState.NotStarted;
 
-            this.initialRunspace = initialRunspace;
-            this.currentRunspace = initialRunspace;
-            this.psHost.Runspace = initialRunspace;
+            // Get the PowerShell runtime version
+            this.LocalPowerShellVersion =
+                PowerShellVersionDetails.GetVersionDetails(
+                    initialRunspace);
 
-            this.currentRunspace.Debugger.BreakpointUpdated += OnBreakpointUpdated;
-            this.currentRunspace.Debugger.DebuggerStop += OnDebuggerStop;
+            this.initialRunspace =
+                new RunspaceDetails(
+                    initialRunspace,
+                    this.LocalPowerShellVersion,
+                    RunspaceLocation.Local,
+                    null);
+            this.CurrentRunspace = this.initialRunspace;
 
             this.powerShell = PowerShell.Create();
-            this.powerShell.Runspace = this.currentRunspace;
-
-            // Get the PowerShell runtime version
-            this.PowerShellVersionDetails = GetPowerShellVersion();
+            this.powerShell.Runspace = initialRunspace;
 
             // Write out the PowerShell version for tracking purposes
             Logger.Write(
                 LogLevel.Normal,
                 string.Format(
                     "PowerShell runtime version: {0}, edition: {1}",
-                    this.PowerShellVersion,
-                    this.PowerShellEdition));
+                    this.LocalPowerShellVersion.Version,
+                    this.LocalPowerShellVersion.Edition));
 
-            if (PowerShellVersion >= new Version(5,0))
+            Version powerShellVersion = this.LocalPowerShellVersion.Version;
+            if (powerShellVersion >= new Version(5,0))
             {
                 this.versionSpecificOperations = new PowerShell5Operations();
             }
-            else if (PowerShellVersion.Major == 4)
+            else if (powerShellVersion.Major == 4)
             {
                 this.versionSpecificOperations = new PowerShell4Operations();
             }
-            else if (PowerShellVersion.Major == 3)
+            else if (powerShellVersion.Major == 3)
             {
                 this.versionSpecificOperations = new PowerShell3Operations();
             }
@@ -222,18 +222,17 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 throw new NotSupportedException(
                     "This computer has an unsupported version of PowerShell installed: " +
-                    PowerShellVersion.ToString());
+                    powerShellVersion.ToString());
             }
 
-            if (this.PowerShellEdition != "Linux")
+            if (this.LocalPowerShellVersion.Edition != "Linux")
             {
                 // TODO: Should this be configurable?
                 this.SetExecutionPolicy(ExecutionPolicy.RemoteSigned);
             }
 
-            // Configure the runspace's debugger
-            this.versionSpecificOperations.ConfigureDebugger(
-                this.currentRunspace);
+            // Set up the runspace
+            this.ConfigureRunspace(this.CurrentRunspace);
 
             // Set the $profile variable in the runspace
             this.profilePaths = profilePaths;
@@ -248,73 +247,36 @@ namespace Microsoft.PowerShell.EditorServices
             this.SessionState = PowerShellContextState.Ready;
 
             // Now that the runspace is ready, enqueue it for first use
-            RunspaceHandle runspaceHandle = new RunspaceHandle(this.currentRunspace, this);
+            RunspaceHandle runspaceHandle = new RunspaceHandle(this);
             this.runspaceWaitQueue.EnqueueAsync(runspaceHandle).Wait();
         }
 
-        private PowerShellVersionDetails GetPowerShellVersion()
+        private void ConfigureRunspace(RunspaceDetails runspaceDetails)
         {
-            Version powerShellVersion = new Version(5, 0);
-            string versionString = null;
-            string powerShellEdition = "Desktop";
-            var architecture = PowerShellProcessArchitecture.Unknown;
-
-            try
+            if (!runspaceDetails.IsAttached)
             {
-                var psVersionTable = this.currentRunspace.SessionStateProxy.GetVariable("PSVersionTable") as Hashtable;
-                if (psVersionTable != null)
+                runspaceDetails.Runspace.StateChanged += this.HandleRunspaceStateChanged;
+                if (runspaceDetails.Runspace.Debugger != null)
                 {
-                    var edition = psVersionTable["PSEdition"] as string;
-                    if (edition != null)
-                    {
-                        powerShellEdition = edition;
-                    }
+                    runspaceDetails.Runspace.Debugger.BreakpointUpdated += OnBreakpointUpdated;
+                    runspaceDetails.Runspace.Debugger.DebuggerStop += OnDebuggerStop;
+                }
 
-                    // The PSVersion value will either be of Version or SemanticVersion.
-                    // In the former case, take the value directly.  In the latter case,
-                    // generate a Version from its string representation.
-                    var version = psVersionTable["PSVersion"];
-                    if (version is Version)
-                    {
-                        powerShellVersion = (Version)version;
-                    }
-                    else if (string.Equals(powerShellEdition, "Core", StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        // Expected version string format is 6.0.0-alpha so build a simpler version from that
-                        powerShellVersion = new Version(version.ToString().Split('-')[0]);
-                    }
+                this.versionSpecificOperations.ConfigureDebugger(runspaceDetails.Runspace);
+            }
+        }
 
-                    var gitCommitId = psVersionTable["GitCommitId"] as string;
-                    if (gitCommitId != null)
-                    {
-                        versionString = gitCommitId;
-                    }
-                    else
-                    {
-                        versionString = powerShellVersion.ToString();
-                    }
-
-                    var arch = this.currentRunspace.SessionStateProxy.GetVariable("env:PROCESSOR_ARCHITECTURE") as string;
-                    if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        architecture = PowerShellProcessArchitecture.X64;
-                    }
-                    else if (string.Equals(arch, "x86", StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        architecture = PowerShellProcessArchitecture.X86;
-                    }
+        private void CleanupRunspace(RunspaceDetails runspaceDetails)
+        {
+            if (!runspaceDetails.IsAttached)
+            {
+                runspaceDetails.Runspace.StateChanged -= this.HandleRunspaceStateChanged;
+                if (runspaceDetails.Runspace.Debugger != null)
+                {
+                    runspaceDetails.Runspace.Debugger.BreakpointUpdated -= OnBreakpointUpdated;
+                    runspaceDetails.Runspace.Debugger.DebuggerStop -= OnDebuggerStop;
                 }
             }
-            catch (Exception ex)
-            {
-                Logger.Write(LogLevel.Warning, "Failed to look up PowerShell version. Defaulting to version 5. " + ex.Message);
-            }
-
-            return new PowerShellVersionDetails(
-                powerShellVersion,
-                versionString,
-                powerShellEdition,
-                architecture);
         }
 
         #endregion
@@ -374,8 +336,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <typeparam name="TResult">The expected result type.</typeparam>
         /// <param name="psCommand">The PSCommand to be executed.</param>
-        /// <param name="errorMessages">Error messages from PowerShell will be written to the StringBuilder. 
-        /// You must set sendErrorToHost to false for errors to be written to the StringBuilder. This value can be null.</param>
+        /// <param name="errorMessages">Error messages from PowerShell will be written to the StringBuilder.</param>
         /// <param name="sendOutputToHost">
         /// If true, causes any output written during command execution to be written to the host.
         /// </param>
@@ -429,15 +390,9 @@ namespace Microsoft.PowerShell.EditorServices
                                 endOfStatement: false));
                     }
 
-                    if (this.currentRunspace.RunspaceAvailability == RunspaceAvailability.AvailableForNestedCommand ||
+                    if (this.CurrentRunspace.Runspace.RunspaceAvailability == RunspaceAvailability.AvailableForNestedCommand ||
                         this.debuggerStoppedTask != null)
                     {
-                        Logger.Write(
-                            LogLevel.Verbose,
-                            string.Format(
-                                "Attempting to execute nested pipeline command(s):\r\n\r\n{0}",
-                                GetStringForPSCommand(psCommand)));
-
                         executionResult =
                             this.ExecuteCommandInDebugger<TResult>(
                                 psCommand,
@@ -464,8 +419,21 @@ namespace Microsoft.PowerShell.EditorServices
                             await Task.Factory.StartNew<IEnumerable<TResult>>(
                                 () =>
                                 {
-                                    this.powerShell.Commands = psCommand;
-                                    Collection<TResult> result = this.powerShell.Invoke<TResult>();
+                                    Collection<TResult> result = null;
+                                    try
+                                    {
+                                        this.powerShell.Commands = psCommand;
+                                        result = this.powerShell.Invoke<TResult>();
+                                    }
+                                    catch (RemoteException e)
+                                    {
+                                        if (!e.SerializedRemoteException.TypeNames[0].EndsWith("PipelineStoppedException"))
+                                        {
+                                            // Rethrow anything that isn't a PipelineStoppedException
+                                            throw e;
+                                        }
+                                    }
+
                                     return result;
                                 },
                                 CancellationToken.None, // Might need a cancellation token
@@ -495,6 +463,14 @@ namespace Microsoft.PowerShell.EditorServices
                         return executionResult;
                     }
                 }
+                catch (PipelineStoppedException e)
+                {
+                    Logger.Write(
+                        LogLevel.Error,
+                        "Popeline stopped while executing command:\r\n\r\n" + e.ToString());
+
+                    errorMessages?.Append(e.Message);
+                }
                 catch (RuntimeException e)
                 {
                     Logger.Write(
@@ -518,6 +494,12 @@ namespace Microsoft.PowerShell.EditorServices
                         if (runspaceHandle != null)
                         {
                             this.WritePromptWithRunspace(runspaceHandle.Runspace);
+                        }
+                        else if (this.IsDebuggerStopped)
+                        {
+                            // Check for RunspaceAvailability.RemoteDebug (4) in a way that's safe in PSv3
+                            //if ((int)this.currentRunspace.RunspaceAvailability == 4)
+                            this.WritePromptInDebugger();
                         }
                         else
                         {
@@ -565,11 +547,41 @@ namespace Microsoft.PowerShell.EditorServices
         /// Executes a script string in the session's runspace.
         /// </summary>
         /// <param name="scriptString">The script string to execute.</param>
+        /// <param name="errorMessages">Error messages from PowerShell will be written to the StringBuilder.</param>
+        /// <returns>A Task that can be awaited for the script completion.</returns>
+        public Task<IEnumerable<object>> ExecuteScriptString(
+            string scriptString,
+            StringBuilder errorMessages)
+        {
+            return this.ExecuteScriptString(scriptString, errorMessages, false, true);
+        }
+
+        /// <summary>
+        /// Executes a script string in the session's runspace.
+        /// </summary>
+        /// <param name="scriptString">The script string to execute.</param>
+        /// <param name="writeInputToHost">If true, causes the script string to be written to the host.</param>
+        /// <param name="writeOutputToHost">If true, causes the script output to be written to the host.</param>
+        /// <returns>A Task that can be awaited for the script completion.</returns>
+        public Task<IEnumerable<object>> ExecuteScriptString(
+            string scriptString,
+            bool writeInputToHost,
+            bool writeOutputToHost)
+        {
+            return this.ExecuteScriptString(scriptString, null, writeInputToHost, writeOutputToHost);
+        }
+
+        /// <summary>
+        /// Executes a script string in the session's runspace.
+        /// </summary>
+        /// <param name="scriptString">The script string to execute.</param>
+        /// <param name="errorMessages">Error messages from PowerShell will be written to the StringBuilder.</param>
         /// <param name="writeInputToHost">If true, causes the script string to be written to the host.</param>
         /// <param name="writeOutputToHost">If true, causes the script output to be written to the host.</param>
         /// <returns>A Task that can be awaited for the script completion.</returns>
         public async Task<IEnumerable<object>> ExecuteScriptString(
             string scriptString,
+            StringBuilder errorMessages,
             bool writeInputToHost,
             bool writeOutputToHost)
         {
@@ -583,7 +595,11 @@ namespace Microsoft.PowerShell.EditorServices
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript(scriptString);
 
-            return await this.ExecuteCommand<object>(psCommand, writeOutputToHost);
+            return
+                await this.ExecuteCommand<object>(
+                    psCommand,
+                    errorMessages,
+                    writeOutputToHost);
         }
 
         /// <summary>
@@ -612,6 +628,50 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             await this.ExecuteCommand<object>(command, true);
+        }
+
+        internal static TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default(TResult))
+        {
+            Pipeline pipeline = null;
+
+            try
+            {
+                if (runspace.RunspaceAvailability == RunspaceAvailability.AvailableForNestedCommand)
+                {
+                    pipeline = runspace.CreateNestedPipeline(scriptToExecute, false);
+                }
+                else
+                {
+                    pipeline = runspace.CreatePipeline(scriptToExecute, false);
+                }
+
+                Collection<PSObject> results = pipeline.Invoke();
+
+                if (results.Count == 0)
+                {
+                    return defaultValue;
+                }
+
+                if (typeof(TResult) != typeof(PSObject))
+                {
+                    return
+                       results
+                            .Select(pso => pso.BaseObject)
+                            .OfType<TResult>()
+                            .FirstOrDefault();
+                }
+                else
+                {
+                    return
+                        results
+                            .OfType<TResult>()
+                            .FirstOrDefault();
+                }
+            }
+            finally
+            {
+                pipeline.Dispose();
+            }
         }
 
         /// <summary>
@@ -674,7 +734,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             // Pause the debugger
             this.versionSpecificOperations.PauseDebugger(
-                this.currentRunspace);
+                this.CurrentRunspace.Runspace);
         }
 
         internal void ResumeDebugger(DebuggerResumeAction resumeAction)
@@ -713,12 +773,89 @@ namespace Microsoft.PowerShell.EditorServices
                 this.powerShell = null;
             }
 
+            // Clean up the active runspace
+            this.CleanupRunspace(this.CurrentRunspace);
+
+            // Drain the runspace stack if any have been pushed
+            if (this.runspaceStack.Count > 0)
+            {
+                // Push the active runspace so it will be included in the loop
+                this.runspaceStack.Push(this.CurrentRunspace);
+
+                while (this.runspaceStack.Count > 1)
+                {
+                    RunspaceDetails poppedRunspace = this.runspaceStack.Pop();
+                    this.CloseRunspace(poppedRunspace);
+
+                    this.OnRunspaceChanged(
+                        this,
+                        new RunspaceChangedEventArgs(
+                            RunspaceChangeAction.Shutdown,
+                            poppedRunspace,
+                            null));
+                }
+            }
+
             if (this.ownsInitialRunspace && this.initialRunspace != null)
             {
-                // TODO: Detach from events
-                this.initialRunspace.Close();
-                this.initialRunspace.Dispose();
+                this.CloseRunspace(this.initialRunspace);
                 this.initialRunspace = null;
+            }
+        }
+
+        private void CloseRunspace(RunspaceDetails runspaceDetails)
+        {
+            // An attached runspace will be detached when the
+            // running pipeline is aborted
+            if (!runspaceDetails.IsAttached)
+            {
+                string exitCommand = null;
+
+                switch (runspaceDetails.Location)
+                {
+                    case RunspaceLocation.Local:
+                        runspaceDetails.Runspace.Close();
+                        runspaceDetails.Runspace.Dispose();
+                        break;
+
+                    case RunspaceLocation.LocalProcess:
+                        exitCommand = "Exit-PSHostProcess";
+                        break;
+
+                    case RunspaceLocation.Remote:
+                        exitCommand = "Exit-PSSession";
+                        break;
+                }
+
+                if (exitCommand != null)
+                {
+                    Exception exitException = null;
+
+                    try
+                    {
+                        using (PowerShell ps = PowerShell.Create())
+                        {
+                            ps.Runspace = runspaceDetails.Runspace;
+                            ps.AddCommand(exitCommand);
+                            ps.Invoke();
+                        }
+                    }
+                    catch (RemoteException e)
+                    {
+                        exitException = e;
+                    }
+                    catch (RuntimeException e)
+                    {
+                        exitException = e;
+                    }
+
+                    if (exitException != null)
+                    {
+                        Logger.Write(
+                            LogLevel.Error,
+                            $"Caught {exitException.GetType().Name} while exiting {runspaceDetails.Location} runspace:\r\n{exitException.ToString()}");
+                    }
+                }
             }
         }
 
@@ -728,7 +865,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (this.runspaceWaitQueue.IsEmpty)
             {
-                var newRunspaceHandle = new RunspaceHandle(this.currentRunspace, this);
+                var newRunspaceHandle = new RunspaceHandle(this);
                 this.runspaceWaitQueue.EnqueueAsync(newRunspaceHandle).Wait();
             }
             else
@@ -747,7 +884,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="path"></param>
         public void SetWorkingDirectory(string path)
         {
-            this.currentRunspace.SessionStateProxy.Path.SetLocation(path);
+            this.CurrentRunspace.Runspace.SessionStateProxy.Path.SetLocation(path);
         }
 
         /// <summary>
@@ -796,20 +933,35 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void OnSessionStateChanged(object sender, SessionStateChangedEventArgs e)
         {
-            Logger.Write(
-                LogLevel.Verbose,
-                string.Format(
-                    "Session state changed --\r\n\r\n    Old state: {0}\r\n    New state: {1}\r\n    Result: {2}",
-                    this.SessionState.ToString(),
-                    e.NewSessionState.ToString(),
-                    e.ExecutionResult));
-
-            this.SessionState = e.NewSessionState;
-
-            if (this.SessionStateChanged != null)
+            if (this.SessionState != PowerShellContextState.Disposed)
             {
-                this.SessionStateChanged(sender, e);
+                Logger.Write(
+                    LogLevel.Verbose,
+                    string.Format(
+                        "Session state changed --\r\n\r\n    Old state: {0}\r\n    New state: {1}\r\n    Result: {2}",
+                        this.SessionState.ToString(),
+                        e.NewSessionState.ToString(),
+                        e.ExecutionResult));
+
+                this.SessionState = e.NewSessionState;
+                this.SessionStateChanged?.Invoke(sender, e);
             }
+            else
+            {
+                Logger.Write(
+                    LogLevel.Warning,
+                    $"Received session state change to {e.NewSessionState} when already disposed");
+            }
+        }
+
+        /// <summary>
+        /// Raised when the runspace changes by entering a remote session or one in a different process.
+        /// </summary>
+        public event EventHandler<RunspaceChangedEventArgs> RunspaceChanged;
+
+        private void OnRunspaceChanged(object sender, RunspaceChangedEventArgs e)
+        {
+            this.RunspaceChanged?.Invoke(sender, e);
         }
 
         #endregion
@@ -818,9 +970,15 @@ namespace Microsoft.PowerShell.EditorServices
 
         private IEnumerable<TResult> ExecuteCommandInDebugger<TResult>(PSCommand psCommand, bool sendOutputToHost)
         {
+            Logger.Write(
+                LogLevel.Verbose,
+                string.Format(
+                    "Attempting to execute command(s) in the debugger:\r\n\r\n{0}",
+                    GetStringForPSCommand(psCommand)));
+
             return this.versionSpecificOperations.ExecuteCommandInDebugger<TResult>(
                 this,
-                this.currentRunspace,
+                this.CurrentRunspace.Runspace,
                 psCommand,
                 sendOutputToHost);
         }
@@ -1097,18 +1255,42 @@ namespace Microsoft.PowerShell.EditorServices
             this.WritePromptToHost(
                 command =>
                 {
+                    this.powerShell.Runspace = runspace;
                     this.powerShell.Commands = command;
 
-                    return
+                    var promptString =
                         this.powerShell
                             .Invoke<string>()
+                            .FirstOrDefault();
+
+                    if (this.CurrentRunspace.Location == RunspaceLocation.Remote)
+                    {
+                        promptString =
+                            string.Format(
+                                CultureInfo.InvariantCulture,
+                                "[{0}]: {1}",
+                                runspace.ConnectionInfo.ComputerName,
+                                promptString);
+                    }
+
+                    return promptString;
+                });
+        }
+
+        private void WritePromptInDebugger()
+        {
+            this.WritePromptToHost(
+                command =>
+                {
+                    return
+                        this.ExecuteCommandInDebugger<string>(command, false)
                             .FirstOrDefault();
                 });
         }
 
         private void WritePromptWithNestedPipeline()
         {
-            using (var pipeline = this.currentRunspace.CreateNestedPipeline())
+            using (var pipeline = this.CurrentRunspace.Runspace.CreateNestedPipeline())
             {
                 this.WritePromptToHost(
                     command =>
@@ -1168,6 +1350,24 @@ namespace Microsoft.PowerShell.EditorServices
             this.powerShell.Commands.Clear();
         }
         
+        private void HandleRunspaceStateChanged(object sender, RunspaceStateEventArgs args)
+        {
+            switch (args.RunspaceStateInfo.State)
+            {
+                case RunspaceState.Opening:
+                case RunspaceState.Opened:
+                    // These cases don't matter, just return
+                    return;
+
+                case RunspaceState.Closing:
+                case RunspaceState.Closed:
+                case RunspaceState.Broken:
+                    // If the runspace closes or fails, pop the runspace
+                    ((IHostSupportsInteractiveSession)this).PopRunspace();
+                    break;
+            }
+        }
+
         #endregion
 
         #region Events
@@ -1196,15 +1396,34 @@ namespace Microsoft.PowerShell.EditorServices
                     PowerShellExecutionResult.Stopped,
                     null));
 
+            // Did we attach to a runspace?
+            if (this.CurrentRunspace.Location != RunspaceLocation.Local &&
+                this.CurrentRunspace.IsAttached == false)
+            {
+                // Check the current runspace ID
+                PSCommand command = new PSCommand();
+                command.AddScript("$host.Runspace.InstanceId");
+                Guid currentRunspaceId =
+                    this.ExecuteCommandInDebugger<Guid>(command, false)
+                        .FirstOrDefault();
+
+                // If the reported unspace ID is different it means we're
+                // attached to a different runspace in the process
+                if (currentRunspaceId != Guid.Empty && currentRunspaceId != this.CurrentRunspace.Id)
+                {
+                    // Push the details about the attached runspace
+                    this.PushRunspace(
+                        RunspaceDetails.CreateAttached(
+                            this.CurrentRunspace,
+                            currentRunspaceId));
+                }
+            }
+
             // Write out the debugger prompt
-            // TODO: Eventually re-enable this and put it behind a setting, #133
-            //this.WritePromptWithNestedPipeline();
+            this.WritePromptInDebugger();
 
             // Raise the event for the debugger service
-            if (this.DebuggerStop != null)
-            {
-                this.DebuggerStop(sender, e);
-            }
+            this.DebuggerStop?.Invoke(sender, e);
 
             Logger.Write(LogLevel.Verbose, "Starting pipeline thread message loop...");
 
@@ -1218,8 +1437,7 @@ namespace Microsoft.PowerShell.EditorServices
                 if (taskIndex == 0)
                 {
                     // Write a new output line before continuing
-                    // TODO: Re-enable this with fix for #133
-                    //this.WriteOutput("", true);
+                    this.WriteOutput("", true);
 
                     e.ResumeAction = this.debuggerStoppedTask.Task.Result;
                     Logger.Write(LogLevel.Verbose, "Received debugger resume action " + e.ResumeAction.ToString());
@@ -1240,6 +1458,19 @@ namespace Microsoft.PowerShell.EditorServices
                     Logger.Write(LogLevel.Verbose, "Pipeline thread execution completed.");
 
                     this.pipelineResultTask.SetResult(executionRequest);
+
+                    if (this.CurrentRunspace.Runspace.RunspaceAvailability == RunspaceAvailability.Available)
+                    {
+                        if (this.CurrentRunspace.IsAttached)
+                        {
+                            // We're detached from the runspace now, send a runspace update.
+                            this.PopRunspace();
+                        }
+
+                        // If the executed command caused the debugger to exit, break
+                        // from the pipeline loop
+                        break;
+                    }
                 }
                 else
                 {
@@ -1249,6 +1480,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             // Clear the task so that it won't be used again
             this.debuggerStoppedTask = null;
+            this.pipelineExecutionTask = null;
         }
 
         // NOTE: This event is 'internal' because the DebugService provides
@@ -1257,10 +1489,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)
         {
-            if (this.BreakpointUpdated != null)
-            {
-                this.BreakpointUpdated(sender, e);
-            }
+            this.BreakpointUpdated?.Invoke(sender, e);
         }
 
         #endregion
@@ -1308,6 +1537,105 @@ namespace Microsoft.PowerShell.EditorServices
 
                 // TODO: Deal with errors?
             }
+        }
+
+        private void PushRunspace(RunspaceDetails newRunspaceDetails)
+        {
+            Logger.Write(
+                LogLevel.Verbose,
+                $"Pushing {this.CurrentRunspace.Location} runspace {this.CurrentRunspace.Id}, new runspace is {newRunspaceDetails.Id} (connection: {newRunspaceDetails.ConnectionString})");
+
+            RunspaceDetails previousRunspace = this.CurrentRunspace;
+
+            // If the new runspace is just attaching to another runspace in
+            // the same process, don't clean up the previous runspace because
+            // we need to maintain its event handler registrations.
+            if (!newRunspaceDetails.IsAttached)
+            {
+                this.CleanupRunspace(previousRunspace);
+            }
+
+            this.runspaceStack.Push(previousRunspace);
+
+            this.CurrentRunspace = newRunspaceDetails;
+            this.ConfigureRunspace(newRunspaceDetails);
+
+            this.OnRunspaceChanged(
+                this,
+                new RunspaceChangedEventArgs(
+                    RunspaceChangeAction.Enter,
+                    previousRunspace,
+                    this.CurrentRunspace));
+        }
+
+        private void PopRunspace()
+        {
+            if (this.SessionState != PowerShellContextState.Disposed)
+            {
+                if (this.runspaceStack.Count > 0)
+                {
+                    RunspaceDetails previousRunspace = this.CurrentRunspace;
+                    this.CurrentRunspace = this.runspaceStack.Pop();
+
+                    Logger.Write(
+                        LogLevel.Verbose,
+                        $"Popping {previousRunspace.Location} runspace {previousRunspace.Id}, new runspace is {this.CurrentRunspace.Id} (connection: {this.CurrentRunspace.ConnectionString})");
+
+                    this.CleanupRunspace(previousRunspace);
+
+                    // If the old runspace is just attached to another runspace in
+                    // the same process, don't configure the popped runspace because
+                    // its event handlers are already registered.
+                    if (!previousRunspace.IsAttached)
+                    {
+                        this.ConfigureRunspace(this.CurrentRunspace);
+                    }
+
+                    this.OnRunspaceChanged(
+                        this,
+                        new RunspaceChangedEventArgs(
+                            RunspaceChangeAction.Exit,
+                            previousRunspace,
+                            this.CurrentRunspace));
+                }
+                else
+                {
+                    Logger.Write(
+                        LogLevel.Error,
+                        "Caller attempted to pop a runspace when no runspaces are on the stack.");
+                }
+            }
+        }
+
+        #endregion
+
+        #region IHostSupportsInteractiveSession Implementation
+
+        bool IHostSupportsInteractiveSession.IsRunspacePushed
+        {
+            get
+            {
+                return this.runspaceStack.Count > 0;
+            }
+        }
+
+        Runspace IHostSupportsInteractiveSession.Runspace
+        {
+            get
+            {
+                return this.CurrentRunspace.Runspace;
+            }
+        }
+
+        void IHostSupportsInteractiveSession.PushRunspace(Runspace runspace)
+        {
+            this.PushRunspace(
+                RunspaceDetails.Create(runspace));
+        }
+
+        void IHostSupportsInteractiveSession.PopRunspace()
+        {
+            this.PopRunspace();
         }
 
         #endregion

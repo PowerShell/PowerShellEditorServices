@@ -89,6 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             {
                 this.messageLoopCancellationToken.Cancel();
                 this.messageLoopThread.Stop();
+                SynchronizationContext.SetSynchronizationContext(null);
             }
         }
 

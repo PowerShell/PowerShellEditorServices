@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Text;
+using System.Diagnostics;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -94,12 +95,22 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Gets a new ScriptFile instance which is identified by the given file path.
+        /// </summary>
+        /// <param name="filePath">The file path for which a buffer will be retrieved.</param>
+        /// <returns>A ScriptFile instance if there is a buffer for the path, null otherwise.</returns>
+        public ScriptFile GetFileBuffer(string filePath)
+        {
+            return this.GetFileBuffer(filePath, null);
+        }
+
+        /// <summary>
         /// Gets a new ScriptFile instance which is identified by the given file
         /// path and initially contains the given buffer contents.
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <param name="initialBuffer"></param>
-        /// <returns></returns>
+        /// <param name="filePath">The file path for which a buffer will be retrieved.</param>
+        /// <param name="initialBuffer">The initial buffer contents if there is not an existing ScriptFile for this path.</param>
+        /// <returns>A ScriptFile instance for the specified path.</returns>
         public ScriptFile GetFileBuffer(string filePath, string initialBuffer)
         {
             Validate.IsNotNullOrEmptyString("filePath", filePath);
@@ -110,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             // Make sure the file isn't already loaded into the workspace
             ScriptFile scriptFile = null;
-            if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile))
+            if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile) && initialBuffer != null)
             {
                 scriptFile = 
                     new ScriptFile(

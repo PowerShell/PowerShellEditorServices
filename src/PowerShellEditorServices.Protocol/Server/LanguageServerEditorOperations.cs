@@ -110,6 +110,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     true);
         }
 
+        public Task CloseFile(string filePath)
+        {
+            return
+                this.messageSender.SendRequest(
+                    CloseFileRequest.Type,
+                    filePath,
+                    true);
+        }
+
         public string GetWorkspacePath()
         {
             return this.editorSession.Workspace.WorkspacePath;

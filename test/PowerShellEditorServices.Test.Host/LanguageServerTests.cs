@@ -705,7 +705,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task ServiceReturnsPowerShellVersionDetails()
         {
-            PowerShellVersionResponse versionDetails =
+            PowerShellVersion versionDetails =
                 await this.SendRequest(
                     PowerShellVersionRequest.Type,
                     new PowerShellVersionRequest());

@@ -32,8 +32,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private OutputDebouncer outputDebouncer;
         private LanguageServerEditorOperations editorOperations;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
+
         private Dictionary<string, Dictionary<string, MarkerCorrection>> codeActionsPerFile =
             new Dictionary<string, Dictionary<string, MarkerCorrection>>();
+
+        public IEditorOperations EditorOperations
+        {
+            get { return this.editorOperations; }
+        }
 
         /// <param name="hostDetails">
         /// Provides details about the host application.
@@ -52,6 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession = new EditorSession();
             this.editorSession.StartSession(hostDetails, profilePaths);
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
+            this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;
 
             // Attach to ExtensionService events
             this.editorSession.ExtensionService.CommandAdded += ExtensionService_ExtensionAdded;
@@ -910,11 +917,11 @@ function __Expand-Alias {
 
         protected async Task HandlePowerShellVersionRequest(
             object noParams,
-            RequestContext<PowerShellVersionResponse> requestContext)
+            RequestContext<PowerShellVersion> requestContext)
         {
             await requestContext.SendResult(
-                new PowerShellVersionResponse(
-                    this.editorSession.PowerShellContext.PowerShellVersionDetails));
+                new PowerShellVersion(
+                    this.editorSession.PowerShellContext.LocalPowerShellVersion));
         }
 
         private bool IsQueryMatch(string query, string symbolName)
@@ -987,6 +994,13 @@ function __Expand-Alias {
         #endregion
 
         #region Event Handlers
+
+        private async void PowerShellContext_RunspaceChanged(object sender, Session.RunspaceChangedEventArgs e)
+        {
+            await this.SendEvent(
+                RunspaceChangedEvent.Type,
+                new Protocol.LanguageServer.RunspaceDetails(e.NewRunspace));
+        }
 
         private async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
         {

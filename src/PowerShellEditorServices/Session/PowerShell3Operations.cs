@@ -39,11 +39,19 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     nestedPipeline.Commands.Add(command);
                 }
 
-                executionResult =
-                    nestedPipeline
-                        .Invoke()
-                        .Select(pso => pso.BaseObject)
-                        .Cast<TResult>();
+                var results = nestedPipeline.Invoke();
+
+                if (typeof(TResult) != typeof(PSObject))
+                {
+                    executionResult =
+                        results
+                            .Select(pso => pso.BaseObject)
+                            .Cast<TResult>();
+                }
+                else
+                {
+                    executionResult = results.Cast<TResult>();
+                }
             }
 
             // Write the output to the host if necessary

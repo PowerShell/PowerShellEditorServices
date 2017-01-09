@@ -49,6 +49,21 @@ namespace Microsoft.PowerShell.EditorServices
 
         /// <summary>
         /// Initializes an instance of the VariableDetails class from
+        /// the name and value pair stored inside of a PSObject which
+        /// represents a PSVariable.
+        /// </summary>
+        /// <param name="psVariableObject">
+        /// The PSObject which represents a PSVariable.
+        /// </param>
+        public VariableDetails(PSObject psVariableObject)
+            : this(
+                  DollarPrefix + psVariableObject.Properties["Name"].Value as string,
+                  psVariableObject.Properties["Value"].Value)
+        {
+        }
+
+        /// <summary>
+        /// Initializes an instance of the VariableDetails class from
         /// the details contained in a PSPropertyInfo instance.
         /// </summary>
         /// <param name="psProperty">

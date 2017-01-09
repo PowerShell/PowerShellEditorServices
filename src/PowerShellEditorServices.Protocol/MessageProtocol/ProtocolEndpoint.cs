@@ -335,7 +335,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             {
                 this.endpointExitedTask.SetException(e);
             }
-
             else if (this.originalSynchronizationContext != null)
             {
                 this.originalSynchronizationContext.Post(o => { throw e; }, null);

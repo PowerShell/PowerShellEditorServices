@@ -13,10 +13,22 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public class StackFrameDetails
     {
+        #region Fields
+
+        /// <summary>
+        /// A constant string used in the ScriptPath field to represent a
+        /// stack frame with no associated script file.
+        /// </summary>
+        public const string NoFileScriptPath = "<No File>";
+
+        #endregion
+
+        #region Properties
+
         /// <summary>
         /// Gets the path to the script where the stack frame occurred.
         /// </summary>
-        public string ScriptPath { get; private set; }
+        public string ScriptPath { get; internal set; }
 
         /// <summary>
         /// Gets the name of the function where the stack frame occurred.
@@ -43,12 +55,16 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public VariableContainerDetails LocalVariables { get; private set; }
 
+        #endregion
+
+        #region Constructors
+
         /// <summary>
         /// Creates an instance of the StackFrameDetails class from a
         /// CallStackFrame instance provided by the PowerShell engine.
         /// </summary>
-        /// <param name="callStackFrame">
-        /// The original CallStackFrame instance from which details will be obtained.
+        /// <param name="callStackFrameObject">
+        /// A PSObject representing the CallStackFrame instance from which details will be obtained.
         /// </param>
         /// <param name="autoVariables">
         /// A variable container with all the filtered, auto variables for this stack frame.
@@ -58,19 +74,21 @@ namespace Microsoft.PowerShell.EditorServices
         /// </param>
         /// <returns>A new instance of the StackFrameDetails class.</returns>
         static internal StackFrameDetails Create(
-            CallStackFrame callStackFrame,
+            PSObject callStackFrameObject,
             VariableContainerDetails autoVariables,
             VariableContainerDetails localVariables)
         {
             return new StackFrameDetails
             {
-                ScriptPath = callStackFrame.ScriptName ?? "<No File>",
-                FunctionName = callStackFrame.FunctionName,
-                LineNumber = callStackFrame.Position.StartLineNumber,
-                ColumnNumber = callStackFrame.Position.StartColumnNumber,
+                ScriptPath = (callStackFrameObject.Properties["ScriptName"].Value as string) ?? NoFileScriptPath,
+                FunctionName = callStackFrameObject.Properties["FunctionName"].Value as string,
+                LineNumber = (int)(callStackFrameObject.Properties["ScriptLineNumber"].Value ?? 0),
+                ColumnNumber = 0,   // Column number isn't given in PowerShell stack frames
                 AutoVariables = autoVariables,
                 LocalVariables = localVariables
             };
         }
+
+        #endregion
     }
 }

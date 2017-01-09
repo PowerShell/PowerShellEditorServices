@@ -25,6 +25,7 @@ namespace Microsoft.PowerShell.EditorServices
         private IConsoleHost consoleHost;
         private Guid instanceId = Guid.NewGuid();
         private ConsoleServicePSHostUserInterface hostUserInterface;
+        private IHostSupportsInteractiveSession hostSupportsInteractiveSession;
 
         #endregion
 
@@ -51,10 +52,16 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="hostDetails">
         /// Provides details about the host application.
         /// </param>
-        public ConsoleServicePSHost(HostDetails hostDetails)
+        /// <param name="hostSupportsInteractiveSession">
+        /// An implementation of IHostSupportsInteractiveSession for runspace management.
+        /// </param>
+        public ConsoleServicePSHost(
+            HostDetails hostDetails,
+            IHostSupportsInteractiveSession hostSupportsInteractiveSession)
         {
             this.hostDetails = hostDetails;
             this.hostUserInterface = new ConsoleServicePSHostUserInterface();
+            this.hostSupportsInteractiveSession = hostSupportsInteractiveSession;
         }
 
         #endregion
@@ -93,16 +100,6 @@ namespace Microsoft.PowerShell.EditorServices
             get { return this.hostUserInterface; }
         }
 
-        public bool IsRunspacePushed
-        {
-            get { return false; }
-        }
-
-        public Runspace Runspace
-        {
-            get; internal set;
-        }
-
         public override void EnterNestedPrompt()
         {
             Logger.Write(LogLevel.Verbose, "EnterNestedPrompt() called.");
@@ -129,16 +126,69 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 this.consoleHost.ExitSession(exitCode);
             }
+
+            if (this.IsRunspacePushed)
+            {
+                this.PopRunspace();
+            }
+        }
+
+        #endregion
+
+        #region IHostSupportsInteractiveSession Implementation
+
+        public bool IsRunspacePushed
+        {
+            get
+            {
+                if (this.hostSupportsInteractiveSession != null)
+                {
+                    return this.hostSupportsInteractiveSession.IsRunspacePushed;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+        }
+
+        public Runspace Runspace
+        {
+            get
+            {
+                if (this.hostSupportsInteractiveSession != null)
+                {
+                    return this.hostSupportsInteractiveSession.Runspace;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
         }
 
         public void PushRunspace(Runspace runspace)
         {
-            throw new NotImplementedException();
+            if (this.hostSupportsInteractiveSession != null)
+            {
+                this.hostSupportsInteractiveSession.PushRunspace(runspace);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
 
         public void PopRunspace()
         {
-            throw new NotImplementedException();
+            if (this.hostSupportsInteractiveSession != null)
+            {
+                this.hostSupportsInteractiveSession.PopRunspace();
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
 
         #endregion
