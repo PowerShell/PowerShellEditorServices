@@ -144,6 +144,7 @@
     <Compile Include="Workspace\FileChange.cs" />
     <Compile Include="Workspace\BufferPosition.cs" />
     <Compile Include="Workspace\FilePosition.cs" />
+    <Compile Include="Session\RemoteFileManager.cs" />
     <Compile Include="Workspace\ScriptFile.cs" />
     <Compile Include="Workspace\ScriptFileMarker.cs" />
     <Compile Include="Workspace\ScriptRegion.cs" />

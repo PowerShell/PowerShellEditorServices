@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Debugging;
+using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
@@ -23,21 +24,26 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private EditorSession editorSession;
         private OutputDebouncer outputDebouncer;
+
         private bool noDebug;
         private bool waitingForAttach;
         private string scriptPathToLaunch;
         private string arguments;
 
         public DebugAdapter(HostDetails hostDetails, ProfilePaths profilePaths)
-            : this(hostDetails, profilePaths, new StdioServerChannel())
+            : this(hostDetails, profilePaths, new StdioServerChannel(), null)
         {
         }
 
-        public DebugAdapter(HostDetails hostDetails, ProfilePaths profilePaths, ChannelBase serverChannel)
+        public DebugAdapter(
+            HostDetails hostDetails,
+            ProfilePaths profilePaths,
+            ChannelBase serverChannel,
+            IEditorOperations editorOperations)
             : base(serverChannel)
         {
             this.editorSession = new EditorSession();
-            this.editorSession.StartDebugSession(hostDetails, profilePaths);
+            this.editorSession.StartDebugSession(hostDetails, profilePaths, editorOperations);
             this.editorSession.PowerShellContext.RunspaceChanged += this.powerShellContext_RunspaceChanged;
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
             this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
@@ -184,7 +190,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // If no script is being launched, execute an empty script to
             // cause the prompt string to be evaluated and displayed
-            if (!string.IsNullOrEmpty(this.scriptPathToLaunch))
+            if (string.IsNullOrEmpty(this.scriptPathToLaunch))
             {
                 await this.editorSession.PowerShellContext.ExecuteScriptString(
                     "", false, true);

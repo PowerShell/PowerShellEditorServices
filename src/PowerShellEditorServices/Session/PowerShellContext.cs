@@ -786,6 +786,13 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     RunspaceDetails poppedRunspace = this.runspaceStack.Pop();
                     this.CloseRunspace(poppedRunspace);
+
+                    this.OnRunspaceChanged(
+                        this,
+                        new RunspaceChangedEventArgs(
+                            RunspaceChangeAction.Shutdown,
+                            poppedRunspace,
+                            null));
                 }
             }
 

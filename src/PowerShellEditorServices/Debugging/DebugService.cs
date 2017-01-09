@@ -28,13 +28,11 @@ namespace Microsoft.PowerShell.EditorServices
         private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
 
         private PowerShellContext powerShellContext;
+        private RemoteFileManager remoteFileManager;
 
         // TODO: This needs to be managed per nested session
         private Dictionary<string, List<Breakpoint>> breakpointsPerFile = 
             new Dictionary<string, List<Breakpoint>>();
-
-        private Dictionary<RunspaceDetails, Dictionary<string, string>> remoteFileMappings =
-            new Dictionary<RunspaceDetails, Dictionary<string, string>>();
 
         private int nextVariableId;
         private List<VariableDetailsBase> variables;
@@ -56,12 +54,31 @@ namespace Microsoft.PowerShell.EditorServices
         /// The PowerShellContext to use for all debugging operations.
         /// </param>
         public DebugService(PowerShellContext powerShellContext)
+            : this(powerShellContext, null)
         {
-            Validate.IsNotNull("powerShellContext", powerShellContext);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the DebugService class and uses
+        /// the given PowerShellContext for all future operations.
+        /// </summary>
+        /// <param name="powerShellContext">
+        /// The PowerShellContext to use for all debugging operations.
+        /// </param>
+        /// <param name="remoteFileManager">
+        /// A RemoteFileManager instance to use for accessing files in remote sessions.
+        /// </param>
+        public DebugService(
+            PowerShellContext powerShellContext,
+            RemoteFileManager remoteFileManager)
+        {
+            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
             this.powerShellContext = powerShellContext;
             this.powerShellContext.DebuggerStop += this.OnDebuggerStop;
             this.powerShellContext.BreakpointUpdated += this.OnBreakpointUpdated;
+
+            this.remoteFileManager = remoteFileManager;
         }
 
         #endregion
@@ -91,12 +108,13 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 // Make sure we're using the remote script path
                 string scriptPath = scriptFile.FilePath;
-                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                    this.remoteFileManager != null)
                 {
                     string mappedPath =
-                        this.GetRemotePathMapping(
-                            this.powerShellContext.CurrentRunspace,
-                            scriptPath);
+                        this.remoteFileManager.GetMappedPath(
+                            scriptPath,
+                            this.powerShellContext.CurrentRunspace);
 
                     if (mappedPath == null)
                     {
@@ -764,13 +782,14 @@ namespace Microsoft.PowerShell.EditorServices
                     StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables);
 
                 string stackFrameScriptPath = this.stackFrameDetails[i].ScriptPath;
-                if (this.powerShellContext.CurrentRunspace.Location == Session.RunspaceLocation.Remote &&
+                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                    this.remoteFileManager != null &&
                     !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
                     this.stackFrameDetails[i].ScriptPath =
-                        Workspace.MapRemotePathToLocal(
+                        this.remoteFileManager.GetMappedPath(
                             stackFrameScriptPath,
-                            this.powerShellContext.CurrentRunspace.ConnectionString);
+                            this.powerShellContext.CurrentRunspace);
                 }
             }
         }
@@ -960,34 +979,6 @@ namespace Microsoft.PowerShell.EditorServices
             return $"'{condition}' is not a valid PowerShell expression. {message}";
         }
 
-        private void AddRemotePathMapping(RunspaceDetails runspaceDetails, string remotePath, string localPath)
-        {
-            Dictionary<string, string> runspaceMappings = null;
-
-            if (!this.remoteFileMappings.TryGetValue(runspaceDetails, out runspaceMappings))
-            {
-                runspaceMappings = new Dictionary<string, string>();
-                this.remoteFileMappings.Add(runspaceDetails, runspaceMappings);
-            }
-
-            // Add mappings in both directions
-            runspaceMappings[localPath.ToLower()] = remotePath;
-            runspaceMappings[remotePath.ToLower()] = localPath;
-        }
-
-        private string GetRemotePathMapping(RunspaceDetails runspaceDetails, string localPath)
-        {
-            string remotePath = null;
-            Dictionary<string, string> runspaceMappings = null;
-
-            if (this.remoteFileMappings.TryGetValue(runspaceDetails, out runspaceMappings))
-            {
-                runspaceMappings.TryGetValue(localPath.ToLower(), out remotePath);
-            }
-
-            return remotePath;
-        }
-
         #endregion
 
         #region Events
@@ -1003,56 +994,14 @@ namespace Microsoft.PowerShell.EditorServices
             await this.FetchStackFramesAndVariables();
 
             // If this is a remote connection, get the file content
-            string localScriptPath = null;
-            if (this.powerShellContext.CurrentRunspace.Location == Session.RunspaceLocation.Remote)
+            string localScriptPath = e.InvocationInfo.ScriptName;
+            if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                this.remoteFileManager != null)
             {
-                string remoteScriptPath = e.InvocationInfo.ScriptName;
-                if (!string.IsNullOrEmpty(remoteScriptPath))
-                {
-                    localScriptPath =
-                        Workspace.MapRemotePathToLocal(
-                            remoteScriptPath,
-                            this.powerShellContext.CurrentRunspace.ConnectionString);
-
-                    // TODO: Catch filesystem exceptions!
-
-                    // Does the local file already exist?
-                    if (!File.Exists(localScriptPath))
-                    {
-                        // Load the file contents from the remote machine and create the buffer
-                        PSCommand command = new PSCommand();
-                        command.AddCommand("Microsoft.PowerShell.Management\\Get-Content");
-                        command.AddParameter("Path", remoteScriptPath);
-                        command.AddParameter("Raw");
-                        command.AddParameter("Encoding", "Byte");
-
-                        byte[] fileContent =
-                            (await this.powerShellContext.ExecuteCommand<byte[]>(command, false, false))
-                                .FirstOrDefault();
-
-                        if (fileContent != null)
-                        {
-                            File.WriteAllBytes(localScriptPath, fileContent);
-                        }
-                        else
-                        {
-                            Logger.Write(
-                                LogLevel.Warning,
-                                $"Could not load contents of remote file '{remoteScriptPath}'");
-                        }
-
-                        // Add the file mapping so that breakpoints can be passed through
-                        // to the real file in the remote session
-                        this.AddRemotePathMapping(
-                            this.powerShellContext.CurrentRunspace,
-                            remoteScriptPath,
-                            localScriptPath);
-                        this.AddRemotePathMapping(
-                            this.powerShellContext.CurrentRunspace,
-                            localScriptPath,
-                            remoteScriptPath);
-                    }
-                }
+                localScriptPath =
+                    await this.remoteFileManager.FetchRemoteFile(
+                        e.InvocationInfo.ScriptName,
+                        this.powerShellContext.CurrentRunspace);
             }
 
             // Notify the host that the debugger is stopped
@@ -1082,12 +1031,13 @@ namespace Microsoft.PowerShell.EditorServices
                 List<Breakpoint> breakpoints;
 
                 string scriptPath = lineBreakpoint.Script;
-                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                    this.remoteFileManager != null)
                 {
                     string mappedPath =
-                        this.GetRemotePathMapping(
-                            this.powerShellContext.CurrentRunspace,
-                            scriptPath);
+                        this.remoteFileManager.GetMappedPath(
+                            scriptPath,
+                            this.powerShellContext.CurrentRunspace);
 
                     if (mappedPath == null)
                     {

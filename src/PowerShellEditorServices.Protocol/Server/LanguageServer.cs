@@ -32,8 +32,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private OutputDebouncer outputDebouncer;
         private LanguageServerEditorOperations editorOperations;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
+
         private Dictionary<string, Dictionary<string, MarkerCorrection>> codeActionsPerFile =
             new Dictionary<string, Dictionary<string, MarkerCorrection>>();
+
+        public IEditorOperations EditorOperations
+        {
+            get { return this.editorOperations; }
+        }
 
         /// <param name="hostDetails">
         /// Provides details about the host application.

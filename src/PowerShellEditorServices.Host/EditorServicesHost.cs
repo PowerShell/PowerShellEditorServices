@@ -164,7 +164,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 new DebugAdapter(
                     hostDetails,
                     profilePaths,
-                    new TcpSocketServerChannel(debugServicePort));
+                    new TcpSocketServerChannel(debugServicePort),
+                    this.languageServer?.EditorOperations);
 
             this.debugAdapter.SessionEnded +=
                 (obj, args) =>

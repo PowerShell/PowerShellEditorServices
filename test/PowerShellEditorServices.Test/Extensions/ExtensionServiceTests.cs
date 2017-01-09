@@ -183,6 +183,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
             throw new NotImplementedException();
         }
 
+        public Task CloseFile(string filePath)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task InsertText(string filePath, string text, BufferRange insertRange)
         {
             throw new NotImplementedException();

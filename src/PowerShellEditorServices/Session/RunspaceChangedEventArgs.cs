@@ -20,7 +20,12 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <summary>
         /// The runspace change was caused by exiting the current session.
         /// </summary>
-        Exit
+        Exit,
+
+        /// <summary>
+        /// The runspace change was caused by shutting down the service.
+        /// </summary>
+        Shutdown
     }
 
     /// <summary>
@@ -55,7 +60,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
             RunspaceDetails newRunspace)
         {
             Validate.IsNotNull(nameof(previousRunspace), previousRunspace);
-            Validate.IsNotNull(nameof(newRunspace), newRunspace);
 
             this.ChangeAction = changeAction;
             this.PreviousRunspace = previousRunspace;
