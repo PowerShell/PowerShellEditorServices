@@ -117,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     {
                         powerShellVersion = (Version)version;
                     }
-                    else if (string.Equals(powerShellEdition, "Core", StringComparison.CurrentCultureIgnoreCase))
+                    else if (version != null)
                     {
                         // Expected version string format is 6.0.0-alpha so build a simpler version from that
                         powerShellVersion = new Version(version.ToString().Split('-')[0]);
@@ -148,7 +148,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             {
                 Logger.Write(
                     LogLevel.Warning,
-                    "Failed to look up PowerShell version. Defaulting to version 5. " + ex.Message);
+                    "Failed to look up PowerShell version, defaulting to version 5.\r\n\r\n" + ex.ToString());
             }
 
             return new PowerShellVersionDetails(
