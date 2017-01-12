@@ -776,31 +776,29 @@ namespace Microsoft.PowerShell.EditorServices
             // Clean up the active runspace
             this.CleanupRunspace(this.CurrentRunspace);
 
-            // Drain the runspace stack if any have been pushed
-            if (this.runspaceStack.Count > 0)
-            {
-                // Push the active runspace so it will be included in the loop
-                this.runspaceStack.Push(this.CurrentRunspace);
+            // Push the active runspace so it will be included in the loop
+            this.runspaceStack.Push(this.CurrentRunspace);
 
-                while (this.runspaceStack.Count > 1)
+            while (this.runspaceStack.Count > 0)
+            {
+                RunspaceDetails poppedRunspace = this.runspaceStack.Pop();
+
+                // Close the popped runspace if it isn't the initial runspace
+                // or if it is the initial runspace and we own that runspace
+                if (this.initialRunspace != poppedRunspace || this.ownsInitialRunspace)
                 {
-                    RunspaceDetails poppedRunspace = this.runspaceStack.Pop();
                     this.CloseRunspace(poppedRunspace);
-
-                    this.OnRunspaceChanged(
-                        this,
-                        new RunspaceChangedEventArgs(
-                            RunspaceChangeAction.Shutdown,
-                            poppedRunspace,
-                            null));
                 }
+
+                this.OnRunspaceChanged(
+                    this,
+                    new RunspaceChangedEventArgs(
+                        RunspaceChangeAction.Shutdown,
+                        poppedRunspace,
+                        null));
             }
 
-            if (this.ownsInitialRunspace && this.initialRunspace != null)
-            {
-                this.CloseRunspace(this.initialRunspace);
-                this.initialRunspace = null;
-            }
+            this.initialRunspace = null;
         }
 
         private void CloseRunspace(RunspaceDetails runspaceDetails)

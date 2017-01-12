@@ -12,7 +12,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Utility;
-using System.IO;
 using Microsoft.PowerShell.EditorServices.Session;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -26,6 +25,7 @@ namespace Microsoft.PowerShell.EditorServices
         #region Fields
 
         private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
+        private const string TemporaryScriptFileName = "TemporaryScript.ps1";
 
         private PowerShellContext powerShellContext;
         private RemoteFileManager remoteFileManager;
@@ -35,6 +35,7 @@ namespace Microsoft.PowerShell.EditorServices
             new Dictionary<string, List<Breakpoint>>();
 
         private int nextVariableId;
+        private string temporaryScriptListingPath;
         private List<VariableDetailsBase> variables;
         private VariableContainerDetails globalScopeVariables;
         private VariableContainerDetails scriptScopeVariables;
@@ -93,8 +94,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
         public async Task<BreakpointDetails[]> SetLineBreakpoints(
-            ScriptFile scriptFile, 
-            BreakpointDetails[] breakpoints, 
+            ScriptFile scriptFile,
+            BreakpointDetails[] breakpoints,
             bool clearExisting = true)
         {
             var resultBreakpointDetails = new List<BreakpointDetails>();
@@ -111,21 +112,31 @@ namespace Microsoft.PowerShell.EditorServices
                 if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
                     this.remoteFileManager != null)
                 {
+                    if (!this.remoteFileManager.IsUnderRemoteTempPath(scriptPath))
+                    {
+                        Logger.Write(
+                            LogLevel.Verbose,
+                            $"Could not set breakpoints for local path '{scriptPath}' in a remote session.");
+
+                        return resultBreakpointDetails.ToArray();
+                    }
+
                     string mappedPath =
                         this.remoteFileManager.GetMappedPath(
                             scriptPath,
                             this.powerShellContext.CurrentRunspace);
 
-                    if (mappedPath == null)
-                    {
-                        Logger.Write(
-                            LogLevel.Error,
-                            $"Could not map local path '{scriptPath}' to a remote path.");
-
-                        return resultBreakpointDetails.ToArray();
-                    }
-
                     scriptPath = mappedPath;
+                }
+                else if (
+                    this.temporaryScriptListingPath != null &&
+                    this.temporaryScriptListingPath.Equals(scriptPath, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    Logger.Write(
+                        LogLevel.Verbose,
+                        $"Could not set breakpoint on temporary script listing path '{scriptPath}'.");
+
+                    return resultBreakpointDetails.ToArray();
                 }
 
                 // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
@@ -622,7 +633,7 @@ namespace Microsoft.PowerShell.EditorServices
             await this.powerShellContext.ExecuteCommand<object>(psCommand);
         }
 
-        private async Task FetchStackFramesAndVariables()
+        private async Task FetchStackFramesAndVariables(string scriptNameOverride)
         {
             this.nextVariableId = VariableDetailsBase.FirstVariableId;
             this.variables = new List<VariableDetailsBase>();
@@ -633,7 +644,7 @@ namespace Microsoft.PowerShell.EditorServices
             // Must retrieve global/script variales before stack frame variables
             // as we check stack frame variables against globals.
             await FetchGlobalAndScriptVariables();
-            await FetchStackFrames();
+            await FetchStackFrames(scriptNameOverride);
         }
 
         private async Task FetchGlobalAndScriptVariables()
@@ -750,7 +761,7 @@ namespace Microsoft.PowerShell.EditorServices
             return true;
         }
 
-        private async Task FetchStackFrames()
+        private async Task FetchStackFrames(string scriptNameOverride)
         {
             PSCommand psCommand = new PSCommand();
 
@@ -782,7 +793,12 @@ namespace Microsoft.PowerShell.EditorServices
                     StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables);
 
                 string stackFrameScriptPath = this.stackFrameDetails[i].ScriptPath;
-                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                if (scriptNameOverride != null &&
+                    string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
+                {
+                    this.stackFrameDetails[i].ScriptPath = scriptNameOverride;
+                }
+                else if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
                     this.remoteFileManager != null &&
                     !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
@@ -979,6 +995,25 @@ namespace Microsoft.PowerShell.EditorServices
             return $"'{condition}' is not a valid PowerShell expression. {message}";
         }
 
+        private string TrimScriptListingLine(PSObject scriptLineObj, ref int prefixLength)
+        {
+            string scriptLine = scriptLineObj.ToString();
+
+            if (!string.IsNullOrWhiteSpace(scriptLine))
+            {
+                if (prefixLength == 0)
+                {
+                    // The prefix is a padded integer ending with ':', an asterisk '*'
+                    // if this is the current line, and one character of padding
+                    prefixLength = scriptLine.IndexOf(':') + 2;
+                }
+
+                return scriptLine.Substring(prefixLength);
+            }
+
+            return null;
+        }
+
         #endregion
 
         #region Events
@@ -990,11 +1025,56 @@ namespace Microsoft.PowerShell.EditorServices
 
         private async void OnDebuggerStop(object sender, DebuggerStopEventArgs e)
         {
+            bool noScriptName = false;
+            string localScriptPath = e.InvocationInfo.ScriptName;
+
+            // If there's no ScriptName, get the "list" of the current source
+            if (this.remoteFileManager != null && string.IsNullOrEmpty(localScriptPath))
+            {
+                // Get the current script listing and create the buffer
+                PSCommand command = new PSCommand();
+                command.AddScript($"list 1 {int.MaxValue}");
+
+                IEnumerable<PSObject> scriptListingLines =
+                    await this.powerShellContext.ExecuteCommand<PSObject>(
+                        command, false, false);
+
+                if (scriptListingLines != null)
+                {
+                    int linePrefixLength = 0;
+
+                    string scriptListing =
+                        string.Join(
+                            Environment.NewLine,
+                            scriptListingLines
+                                .Select(o => this.TrimScriptListingLine(o, ref linePrefixLength))
+                                .Where(s => s != null));
+
+                    this.temporaryScriptListingPath =
+                        this.remoteFileManager.CreateTemporaryFile(
+                            TemporaryScriptFileName,
+                            scriptListing,
+                            this.powerShellContext.CurrentRunspace);
+
+                    localScriptPath =
+                        this.temporaryScriptListingPath
+                        ?? StackFrameDetails.NoFileScriptPath;
+
+                    noScriptName = localScriptPath != null;
+                }
+                else
+                {
+                    Logger.Write(
+                        LogLevel.Warning,
+                        $"Could not load script context");
+                }
+            }
+
             // Get call stack and variables.
-            await this.FetchStackFramesAndVariables();
+            await this.FetchStackFramesAndVariables(
+                noScriptName ? localScriptPath : null);
 
             // If this is a remote connection, get the file content
-            string localScriptPath = e.InvocationInfo.ScriptName;
             if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
                 this.remoteFileManager != null)
             {
