@@ -129,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices
         #region Public Methods
 
         /// <summary>
-        /// Performs semantic analysis on the given ScriptFile and returns
+        /// Perform semantic analysis on the given ScriptFile and returns
         /// an array of ScriptFileMarkers.
         /// </summary>
         /// <param name="file">The ScriptFile which will be analyzed for semantic markers.</param>
@@ -139,44 +139,15 @@ namespace Microsoft.PowerShell.EditorServices
             return GetSemanticMarkers(file, activeRules, settingsPath);
         }
 
+        /// <summary>
+        /// Perform semantic analysis on the given ScriptFile with the given settings.
+        /// </summary>
+        /// <param name="file">The ScriptFile to be analyzed.</param>
+        /// <param name="settings">ScriptAnalyzer settings</param>
+        /// <returns></returns>
         public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file, Hashtable settings)
         {
             return GetSemanticMarkers<Hashtable>(file, null, settings);
-        }
-
-        private ScriptFileMarker[] GetSemanticMarkers<TSettings>(
-            ScriptFile file,
-            string[] rules,
-            TSettings settings) where TSettings: class
-        {
-            if (this.scriptAnalyzerModuleInfo != null
-                && file.IsAnalysisEnabled
-                && (typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
-                && (rules != null || settings != null))
-            {
-                // TODO: This is a temporary fix until we can change how
-                // ScriptAnalyzer invokes their async tasks.
-                // TODO: Make this async
-                Task<ScriptFileMarker[]> analysisTask =
-                    Task.Factory.StartNew<ScriptFileMarker[]>(
-                        () =>
-                        {
-                            return
-                                 GetDiagnosticRecords(file, rules, settings)
-                                .Select(ScriptFileMarker.FromDiagnosticRecord)
-                                .ToArray();
-                        },
-                        CancellationToken.None,
-                        TaskCreationOptions.None,
-                        TaskScheduler.Default);
-                analysisTask.Wait();
-                return analysisTask.Result;
-            }
-            else
-            {
-                // Return an empty marker list
-                return new ScriptFileMarker[0];
-            }
         }
 
         /// <summary>
@@ -220,6 +191,42 @@ namespace Microsoft.PowerShell.EditorServices
         #endregion // public methods
 
         #region Private Methods
+
+        private ScriptFileMarker[] GetSemanticMarkers<TSettings>(
+            ScriptFile file,
+            string[] rules,
+            TSettings settings) where TSettings : class
+        {
+            if (this.scriptAnalyzerModuleInfo != null
+                && file.IsAnalysisEnabled
+                && (typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
+                && (rules != null || settings != null))
+            {
+                // TODO: This is a temporary fix until we can change how
+                // ScriptAnalyzer invokes their async tasks.
+                // TODO: Make this async
+                Task<ScriptFileMarker[]> analysisTask =
+                    Task.Factory.StartNew<ScriptFileMarker[]>(
+                        () =>
+                        {
+                            return
+                                 GetDiagnosticRecords(file, rules, settings)
+                                .Select(ScriptFileMarker.FromDiagnosticRecord)
+                                .ToArray();
+                        },
+                        CancellationToken.None,
+                        TaskCreationOptions.None,
+                        TaskScheduler.Default);
+                analysisTask.Wait();
+                return analysisTask.Result;
+            }
+            else
+            {
+                // Return an empty marker list
+                return new ScriptFileMarker[0];
+            }
+        }
+
         private void FindPSScriptAnalyzer()
         {
             lock (runspaceLock)
