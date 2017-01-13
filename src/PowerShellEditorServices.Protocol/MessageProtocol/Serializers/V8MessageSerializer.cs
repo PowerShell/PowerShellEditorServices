@@ -34,8 +34,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serialize
             }
             else if (message.MessageType == MessageType.Response)
             {
+                int messageId = 0;
+                int.TryParse(message.Id, out messageId);
+
                 messageObject.Add("type", JToken.FromObject("response"));
-                messageObject.Add("request_seq", JToken.FromObject(message.Id));
+                messageObject.Add("request_seq", JToken.FromObject(messageId));
                 messageObject.Add("command", message.Method);
 
                 if (message.Error != null)
