@@ -343,7 +343,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             SetBreakpointsRequestArguments setBreakpointsParams,
             RequestContext<SetBreakpointsResponseBody> requestContext)
         {
-            ScriptFile scriptFile;
+            ScriptFile scriptFile = null;
+            Exception notFoundException = null;
 
             // Fix for issue #195 - user can change name of file outside of VSCode in which case
             // VSCode sends breakpoint requests with the original filename that doesn't exist anymore.
@@ -351,7 +352,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             {
                 scriptFile = editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
             }
-            catch (FileNotFoundException)
+            catch (DirectoryNotFoundException e)
+            {
+                notFoundException = e;
+            }
+            catch (FileNotFoundException e)
+            {
+                notFoundException = e;
+            }
+
+            if (notFoundException != null)
             {
                 Logger.Write(
                     LogLevel.Warning, 

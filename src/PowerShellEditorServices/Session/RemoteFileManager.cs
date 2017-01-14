@@ -5,19 +5,20 @@
 
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Utility;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Session
 {
     /// <summary>
     /// Manages files that are accessed from a remote PowerShell session.
-    /// Also manages the registration and handling of the 'psedit' function
-    /// in 'LocalProcess' and 'Remote' runspaces.
+    /// Also manages the registration and handling of the 'psedit' function.
     /// </summary>
     public class RemoteFileManager
     {
@@ -30,6 +31,51 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private Dictionary<RunspaceDetails, RemotePathMappings> filesPerRunspace =
             new Dictionary<RunspaceDetails, RemotePathMappings>();
+
+        private const string RemoteSessionOpenFile = "PSESRemoteSessionOpenFile";
+
+        private const string PSEditFunctionScript = @"
+            param (
+                [Parameter(Mandatory=$true)] [String[]] $FileNames
+            )
+
+            foreach ($fileName in $FileNames)
+            {
+                dir $fileName | where { ! $_.PSIsContainer } | foreach {
+                    $filePathName = $_.FullName
+
+                    # Get file contents
+                    $contentBytes = Get-Content -Path $filePathName -Raw -Encoding Byte
+
+                    # Notify client for file open.
+                    New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($filePathName, $contentBytes) > $null
+                }
+            }
+        ";
+
+        // This script is templated so that the '-Forward' parameter can be added
+        // to the script when in non-local sessions
+        private const string CreatePSEditFunctionScript = @"
+            param (
+                [string] $PSEditFunction
+            )
+
+            Register-EngineEvent -SourceIdentifier PSESRemoteSessionOpenFile {0}
+
+            if ((Test-Path -Path 'function:\global:PSEdit') -eq $false)
+            {{
+                Set-Item -Path 'function:\global:PSEdit' -Value $PSEditFunction
+            }}
+        ";
+
+        private const string RemovePSEditFunctionScript = @"
+            if ((Test-Path -Path 'function:\global:PSEdit') -eq $true)
+            {
+                Remove-Item -Path 'function:\global:PSEdit' -Force
+            }
+
+            Get-EventSubscriber -SourceIdentifier PSESRemoteSessionOpenFile -EA Ignore | Remove-Event
+        ";
 
         #endregion
 
@@ -52,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             Validate.IsNotNull(nameof(editorOperations), editorOperations);
 
             this.powerShellContext = powerShellContext;
-            this.powerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;
+            this.powerShellContext.RunspaceChanged += HandleRunspaceChanged;
 
             this.editorOperations = editorOperations;
 
@@ -65,6 +111,9 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             // Delete existing temporary file cache path if it already exists
             this.TryDeleteTemporaryPath();
+
+            // Register the psedit function in the current runspace
+            this.RegisterPSEditFunction(this.powerShellContext.CurrentRunspace);
         }
 
         #endregion
@@ -114,7 +163,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
                             if (fileContent != null)
                             {
-                                File.WriteAllBytes(localFilePath, fileContent);
+                                this.StoreRemoteFile(localFilePath, fileContent, pathMappings);
                             }
                             else
                             {
@@ -122,8 +171,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
                                     LogLevel.Warning,
                                     $"Could not load contents of remote file '{remoteFilePath}'");
                             }
-
-                            pathMappings.AddOpenedLocalPath(localFilePath);
                         }
                     }
                 }
@@ -213,6 +260,31 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         #region Private Methods
 
+        private string StoreRemoteFile(
+            string remoteFilePath,
+            byte[] fileContent,
+            RunspaceDetails runspaceDetails)
+        {
+            RemotePathMappings pathMappings = this.GetPathMappings(runspaceDetails);
+            string localFilePath = pathMappings.GetMappedPath(remoteFilePath);
+
+            this.StoreRemoteFile(
+                localFilePath,
+                fileContent,
+                pathMappings);
+
+            return localFilePath;
+        }
+
+        private void StoreRemoteFile(
+            string localFilePath,
+            byte[] fileContent,
+            RemotePathMappings pathMappings)
+        {
+            File.WriteAllBytes(localFilePath, fileContent);
+            pathMappings.AddOpenedLocalPath(localFilePath);
+        }
+
         private RemotePathMappings GetPathMappings(RunspaceDetails runspaceDetails)
         {
             RemotePathMappings remotePathMappings = null;
@@ -226,11 +298,12 @@ namespace Microsoft.PowerShell.EditorServices.Session
             return remotePathMappings;
         }
 
-        private async void PowerShellContext_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
+        private async void HandleRunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
+
             if (e.ChangeAction == RunspaceChangeAction.Enter)
             {
-                // TODO: Register psedit function and event handler
+                this.RegisterPSEditFunction(e.NewRunspace);
             }
             else
             {
@@ -244,13 +317,116 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     }
                 }
 
-                // TODO: Clean up psedit registration
+                if (e.PreviousRunspace != null)
+                {
+                    this.RemovePSEditFunction(e.PreviousRunspace);
+                }
             }
         }
 
-        #endregion
+        private void HandlePSEventReceived(object sender, PSEventArgs args)
+        {
+            if (string.Equals(RemoteSessionOpenFile, args.SourceIdentifier, StringComparison.CurrentCultureIgnoreCase))
+            {
+                try
+                {
+                    if (args.SourceArgs.Length >= 1)
+                    {
+                        string localFilePath = string.Empty;
+                        string remoteFilePath = args.SourceArgs[0] as string;
 
-        #region Private Methods
+                        // Is this a local process runspace?  Treat as a local file
+                        if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Local ||
+                            this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.LocalProcess)
+                        {
+                            localFilePath = remoteFilePath;
+                        }
+                        else
+                        {
+                            byte[] fileContent =
+                                args.SourceArgs.Length == 2
+                                ? (byte[])((args.SourceArgs[1] as PSObject).BaseObject)
+                                : new byte[0];
+
+                            localFilePath =
+                                this.StoreRemoteFile(
+                                    remoteFilePath,
+                                    fileContent,
+                                    this.powerShellContext.CurrentRunspace);
+                        }
+
+                        // Open the file in the editor
+                        this.editorOperations.OpenFile(localFilePath);
+                    }
+                }
+                catch (NullReferenceException e)
+                {
+                    Logger.WriteException("Could not store null remote file content", e);
+                }
+            }
+        }
+
+        private void RegisterPSEditFunction(RunspaceDetails runspaceDetails)
+        {
+            try
+            {
+                runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived += HandlePSEventReceived;
+
+                var createScript =
+                    string.Format(
+                        CreatePSEditFunctionScript,
+                        (runspaceDetails.Location == RunspaceLocation.Local && !runspaceDetails.IsAttached)
+                            ? string.Empty : "-Forward");
+
+                PSCommand createCommand = new PSCommand();
+                createCommand
+                    .AddScript(createScript)
+                    .AddParameter("PSEditFunction", PSEditFunctionScript);
+
+                if (runspaceDetails.IsAttached)
+                {
+                    this.powerShellContext.ExecuteCommand(createCommand).Wait();
+                }
+                else
+                {
+                    using (var powerShell = System.Management.Automation.PowerShell.Create())
+                    {
+                        powerShell.Runspace = runspaceDetails.Runspace;
+                        powerShell.Commands = createCommand;
+                        powerShell.Invoke();
+                    }
+                }
+            }
+            catch (RemoteException e)
+            {
+                Logger.WriteException("Could not create psedit function.", e);
+            }
+        }
+
+        private void RemovePSEditFunction(RunspaceDetails runspaceDetails)
+        {
+            try
+            {
+                if (runspaceDetails.Runspace.Events != null)
+                {
+                    runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived -= HandlePSEventReceived;
+                }
+
+                if (runspaceDetails.Runspace.RunspaceStateInfo.State == RunspaceState.Opened)
+                {
+                    using (var powerShell = System.Management.Automation.PowerShell.Create())
+                    {
+                        powerShell.Runspace = runspaceDetails.Runspace;
+                        powerShell.Commands.AddScript(RemovePSEditFunctionScript);
+                        powerShell.Invoke();
+                    }
+                }
+            }
+            catch (RemoteException e)
+            {
+                Logger.WriteException("Could not remove psedit function.", e);
+            }
+        }
 
         private void TryDeleteTemporaryPath()
         {
@@ -265,9 +441,8 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
             catch (IOException e)
             {
-                Logger.Write(
-                    LogLevel.Error,
-                    $"Could not delete temporary folder for current process: {this.processTempPath}\r\n\r\n{e.ToString()}");
+                Logger.WriteException(
+                    $"Could not delete temporary folder for current process: {this.processTempPath}", e);
             }
         }
 
