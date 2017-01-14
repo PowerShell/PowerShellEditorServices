@@ -39,17 +39,10 @@ how to use this project. You can also read our plans for future feature developm
 
 ## Cloning the Code
 
-To clone the repository and initialize all the submodules at once you can run:
+To clone the repository execute:
 
 ```
-git clone --recursive https://github.com/PowerShell/PowerShellEditorServices.git
-```
-
-If you have already cloned the repository without `--recursive` option, you can run following commands to initialize the submodules:
-
-```
-git submodule init
-git submodule update
+git clone https://github.com/PowerShell/PowerShellEditorServices.git
 ```
 
 ## Contributions Welcome!
