@@ -239,7 +239,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             var markers = editorSession.AnalysisService.GetSemanticMarkers(
                 editorSession.Workspace.GetFile(requestParams.filePath),
-                editorSession.LanguageService.GetHashtableFromString(requestParams.settings));
+                editorSession.AnalysisService.GetPSSASettingsHashtable(requestParams.settings));
             await requestContext.SendResult(new ScriptFileMarkerRequestResultParams {
                 markers = markers
             });

@@ -176,6 +176,27 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Construct a PSScriptAnalyzer settings hashtable
+        /// </summary>
+        /// <param name="ruleSettingsMap">A settings hashtable</param>
+        /// <returns></returns>
+        public Hashtable GetPSSASettingsHashtable(IDictionary<string, Hashtable> ruleSettingsMap)
+        {
+            var hashtable = new Hashtable();
+            var ruleSettingsHashtable = new Hashtable();
+
+            hashtable["IncludeRules"] = ruleSettingsMap.Keys.ToArray<object>();
+            hashtable["Rules"] = ruleSettingsHashtable;
+
+            foreach (var kvp in ruleSettingsMap)
+            {
+                ruleSettingsHashtable.Add(kvp.Key, kvp.Value);
+            }
+
+            return hashtable;
+        }
+
+        /// <summary>
         /// Disposes the runspace being used by the analysis service.
         /// </summary>
         public void Dispose()
