@@ -344,7 +344,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<SetBreakpointsResponseBody> requestContext)
         {
             ScriptFile scriptFile = null;
-            Exception notFoundException = null;
 
             // Fix for issue #195 - user can change name of file outside of VSCode in which case
             // VSCode sends breakpoint requests with the original filename that doesn't exist anymore.
@@ -352,16 +351,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             {
                 scriptFile = editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
             }
-            catch (DirectoryNotFoundException e)
-            {
-                notFoundException = e;
-            }
-            catch (FileNotFoundException e)
-            {
-                notFoundException = e;
-            }
-
-            if (notFoundException != null)
+            catch (Exception e) when (e is FileNotFoundException || e is DirectoryNotFoundException)
             {
                 Logger.Write(
                     LogLevel.Warning, 
@@ -659,10 +649,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             if (isFromRepl)
             {
-                // Send the input through the console service
-                editorSession.ConsoleService.ExecuteCommand(
-                    evaluateParams.Expression,
-                    false);
+                // Check for special commands
+                if (string.Equals("!ctrlc", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    editorSession.PowerShellContext.AbortExecution();
+                }
+                else if (string.Equals("!break", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    editorSession.DebugService.Break();
+                }
+                else
+                {
+                    // Send the input through the console service
+                    editorSession.ConsoleService.ExecuteCommand(
+                        evaluateParams.Expression,
+                        false);
+                }
             }
             else
             {
