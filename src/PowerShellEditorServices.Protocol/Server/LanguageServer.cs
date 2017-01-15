@@ -932,27 +932,30 @@ function __Expand-Alias {
         {
             var psHostProcesses = new List<GetPSHostProcessesResponse>();
 
-            int processId = System.Diagnostics.Process.GetCurrentProcess().Id;
-            var psCommand = new PSCommand();
-            psCommand.AddCommand("Get-PSHostProcessInfo");
-            psCommand.AddCommand("Where-Object")
-                .AddParameter("Property", "ProcessId")
-                .AddParameter("NE")
-                .AddParameter("Value", processId.ToString());
-
-            var processes = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
-            if (processes != null)
+            if (this.editorSession.PowerShellContext.LocalPowerShellVersion.Version.Major >= 5)
             {
-                foreach (dynamic p in processes)
+                int processId = System.Diagnostics.Process.GetCurrentProcess().Id;
+                var psCommand = new PSCommand();
+                psCommand.AddCommand("Get-PSHostProcessInfo");
+                psCommand.AddCommand("Where-Object")
+                    .AddParameter("Property", "ProcessId")
+                    .AddParameter("NE")
+                    .AddParameter("Value", processId.ToString());
+
+                var processes = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+                if (processes != null)
                 {
-                    psHostProcesses.Add(
-                        new GetPSHostProcessesResponse
-                        {
-                            ProcessName = p.ProcessName,
-                            ProcessId = p.ProcessId,
-                            AppDomainName = p.AppDomainName,
-                            MainWindowTitle = p.MainWindowTitle
-                        });
+                    foreach (dynamic p in processes)
+                    {
+                        psHostProcesses.Add(
+                            new GetPSHostProcessesResponse
+                            {
+                                ProcessName = p.ProcessName,
+                                ProcessId = p.ProcessId,
+                                AppDomainName = p.AppDomainName,
+                                MainWindowTitle = p.MainWindowTitle
+                            });
+                    }
                 }
             }
 
