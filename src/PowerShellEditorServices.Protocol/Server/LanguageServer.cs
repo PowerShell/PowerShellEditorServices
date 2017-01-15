@@ -123,6 +123,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
             this.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
 
+            this.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequest);
+
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
             this.editorSession.ExtensionService.Initialize(
@@ -922,6 +924,39 @@ function __Expand-Alias {
             await requestContext.SendResult(
                 new PowerShellVersion(
                     this.editorSession.PowerShellContext.LocalPowerShellVersion));
+        }
+
+        protected async Task HandleGetPSHostProcessesRequest(
+            object noParams,
+            RequestContext<GetPSHostProcessesResponse[]> requestContext)
+        {
+            var psHostProcesses = new List<GetPSHostProcessesResponse>();
+
+            int processId = System.Diagnostics.Process.GetCurrentProcess().Id;
+            var psCommand = new PSCommand();
+            psCommand.AddCommand("Get-PSHostProcessInfo");
+            psCommand.AddCommand("Where-Object")
+                .AddParameter("Property", "ProcessId")
+                .AddParameter("NE")
+                .AddParameter("Value", processId.ToString());
+
+            var processes = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+            if (processes != null)
+            {
+                foreach (dynamic p in processes)
+                {
+                    psHostProcesses.Add(
+                        new GetPSHostProcessesResponse
+                        {
+                            ProcessName = p.ProcessName,
+                            ProcessId = p.ProcessId,
+                            AppDomainName = p.AppDomainName,
+                            MainWindowTitle = p.MainWindowTitle
+                        });
+                }
+            }
+
+            await requestContext.SendResult(psHostProcesses.ToArray());
         }
 
         private bool IsQueryMatch(string query, string symbolName)
