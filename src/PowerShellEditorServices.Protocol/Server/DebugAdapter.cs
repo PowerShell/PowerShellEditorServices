@@ -294,7 +294,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     $"Attach request failed, '{attachParams.ProcessId}' is an invalid value for the processId.");
 
                 await requestContext.SendError(
-                    $"A positive integer must be specified for the processId field.");
+                    "A positive integer must be specified for the processId field.");
 
                 return;
             }
