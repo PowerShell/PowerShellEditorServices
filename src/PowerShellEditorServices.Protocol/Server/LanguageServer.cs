@@ -12,6 +12,7 @@ using Microsoft.PowerShell.EditorServices.Templates;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -123,6 +124,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
             this.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
 
+            this.SetRequestHandler(ScriptFileMarkersRequest.Type, this.HandleScriptFileMarkersRequest);
+
             this.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequest);
 
             // Initialize the extension service
@@ -230,6 +233,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         editorSession,
                         requestContext.SendEvent);
             await sendresult;
+        }
+
+        private async Task HandleScriptFileMarkersRequest(
+            ScriptFileMarkerRequestParams requestParams,
+            RequestContext<ScriptFileMarkerRequestResultParams> requestContext)
+        {
+            var markers = editorSession.AnalysisService.GetSemanticMarkers(
+                editorSession.Workspace.GetFile(requestParams.filePath),
+                editorSession.AnalysisService.GetPSSASettingsHashtable(requestParams.settings));
+            await requestContext.SendResult(new ScriptFileMarkerRequestResultParams {
+                markers = markers
+            });
         }
 
         private async Task HandleGetPSSARulesRequest(
