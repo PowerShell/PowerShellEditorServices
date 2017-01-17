@@ -450,41 +450,6 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        /// <summary>
-        /// Returns a hashtable from its literal representation in PowerShell.
-        ///
-        /// If the input is null or If the method encounter any error during the conversion it returns null.
-        /// </summary>
-        /// <param name="hashtableString"></param>
-        /// <returns></returns>
-        public Hashtable GetHashtableFromString(string hashtableString)
-        {
-            if (hashtableString == null)
-            {
-                return null;
-            }
-
-            ParseError[] parseErrors = null;
-            Token[] tokens = null;
-            try
-            {
-                var ast = Parser.ParseInput(hashtableString, out tokens, out parseErrors);
-                if (parseErrors.Length > 0)
-                {
-                    return null;
-                }
-
-                var hashtableAst = ast.Find(x => x is HashtableAst, false);
-                return hashtableAst == null
-                        ? null
-                        : (hashtableAst as HashtableAst).SafeGetValue() as Hashtable;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
         #endregion
 
         #region Private Fields
