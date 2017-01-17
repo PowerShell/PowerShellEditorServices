@@ -347,38 +347,44 @@ namespace Microsoft.PowerShell.EditorServices
             string[] rules,
             TSettings settings) where TSettings: class
         {
+            var task = GetDiagnosticRecordsAsync(file, rules, settings);
+            task.Wait();
+            return task.Result;
+        }
+
+        private async Task<IEnumerable<PSObject>> GetDiagnosticRecordsAsync<TSettings>(
+            ScriptFile file,
+            string[] rules,
+            TSettings settings) where TSettings : class
+        {
             IEnumerable<PSObject> diagnosticRecords = Enumerable.Empty<PSObject>();
 
             if (this.scriptAnalyzerModuleInfo != null
                 && (typeof(TSettings) == typeof(string)
                     || typeof(TSettings) == typeof(Hashtable)))
             {
-                lock (runspaceLock)
+                //Use a settings file if one is provided, otherwise use the default rule list.
+                string settingParameter;
+                object settingArgument;
+                if (settings != null)
                 {
-                    using (var powerShell = System.Management.Automation.PowerShell.Create())
-                    {
-                        powerShell.Runspace = this.analysisRunspace;
-                        Logger.Write(
-                            LogLevel.Verbose,
-                            String.Format("Running PSScriptAnalyzer against {0}", file.FilePath));
-
-                        powerShell
-                            .AddCommand("Invoke-ScriptAnalyzer")
-                            .AddParameter("ScriptDefinition", file.Contents);
-
-                        // Use a settings file if one is provided, otherwise use the default rule list.
-                        if (settings != null)
-                        {
-                            powerShell.AddParameter("Settings", settings);
-                        }
-                        else
-                        {
-                            powerShell.AddParameter("IncludeRule", rules);
-                        }
-
-                        diagnosticRecords = powerShell.Invoke();
-                    }
+                    settingParameter = "Settings";
+                    settingArgument = settings;
                 }
+                else
+                {
+                    settingParameter = "IncludeRule";
+                    settingArgument = rules;
+                }
+
+
+                diagnosticRecords = await InvokePowerShellAsync(
+                    "Invoke-ScriptAnalyzer",
+                    new Dictionary<string, object>
+                    {
+                        { "ScriptDefinition", file.Contents },
+                        { settingParameter, settingArgument }
+                    });
             }
 
             Logger.Write(
@@ -386,6 +392,35 @@ namespace Microsoft.PowerShell.EditorServices
                 String.Format("Found {0} violations", diagnosticRecords.Count()));
 
             return diagnosticRecords;
+        }
+
+        private async Task<IEnumerable<PSObject>> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
+        {
+            var task = Task.Run(() =>
+            {
+                using (var powerShell = System.Management.Automation.PowerShell.Create())
+                {
+                    powerShell.Runspace = this.analysisRunspace;
+                    powerShell.AddCommand(command);
+                    foreach (var kvp in paramArgMap)
+                    {
+                        powerShell.AddParameter(kvp.Key, kvp.Value);
+                    }
+
+                    var powerShellCommandResult = powerShell.BeginInvoke();
+                    var result = powerShell.EndInvoke(powerShellCommandResult);
+
+                    if (result == null)
+                    {
+                        return Enumerable.Empty<PSObject>();
+                    }
+
+                    return result;
+                }
+            });
+
+            await task;
+            return task.Result;
         }
 
         #endregion //private methods
