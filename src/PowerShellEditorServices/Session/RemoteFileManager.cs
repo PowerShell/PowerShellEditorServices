@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
     {
         #region Fields
 
+        private string remoteFilesPath;
         private string processTempPath;
         private PowerShellContext powerShellContext;
         private IEditorOperations editorOperations;
@@ -58,23 +59,12 @@ namespace Microsoft.PowerShell.EditorServices.Session
             this.processTempPath =
                 Path.Combine(
                     Path.GetTempPath(),
-                    "PSES-" + Process.GetCurrentProcess().Id,
-                    "RemoteFiles");
+                    "PSES-" + Process.GetCurrentProcess().Id);
 
-            // Delete existing session file cache path if it already exists
-            try
-            {
-                if (Directory.Exists(this.processTempPath))
-                {
-                    Directory.Delete(this.processTempPath, true);
-                }
-            }
-            catch (IOException e)
-            {
-                Logger.Write(
-                    LogLevel.Error,
-                    $"Could not delete existing remote files folder for current session: {this.processTempPath}\r\n\r\n{e.ToString()}");
-            }
+            this.remoteFilesPath = Path.Combine(this.processTempPath, "RemoteFiles");
+
+            // Delete existing temporary file cache path if it already exists
+            this.TryDeleteTemporaryPath();
         }
 
         #endregion
@@ -148,6 +138,42 @@ namespace Microsoft.PowerShell.EditorServices.Session
             return localFilePath;
         }
 
+        /// <summary>
+        /// Creates a temporary file with the given name and contents
+        /// corresponding to the specified runspace.
+        /// </summary>
+        /// <param name="fileName">
+        /// The name of the file to be created under the session path.
+        /// </param>
+        /// <param name="fileContents">
+        /// The contents of the file to be created.
+        /// </param>
+        /// <param name="runspaceDetails">
+        /// The runspace for which the temporary file relates.
+        /// </param>
+        /// <returns>The full temporary path of the file if successful, null otherwise.</returns>
+        public string CreateTemporaryFile(string fileName, string fileContents, RunspaceDetails runspaceDetails)
+        {
+            string temporaryFilePath = Path.Combine(this.processTempPath, fileName);
+
+            try
+            {
+                File.WriteAllText(temporaryFilePath, fileContents);
+
+                RemotePathMappings pathMappings = this.GetPathMappings(runspaceDetails);
+                pathMappings.AddOpenedLocalPath(temporaryFilePath);
+            }
+            catch (IOException e)
+            {
+                Logger.Write(
+                    LogLevel.Error,
+                    $"Caught {e.GetType().Name} while attempting to write temporary file at path '{temporaryFilePath}'\r\n\r\n{e.ToString()}");
+
+                temporaryFilePath = null;
+            }
+
+            return temporaryFilePath;
+        }
 
         /// <summary>
         /// For a remote or local cache path, get the corresponding local or
@@ -166,6 +192,21 @@ namespace Microsoft.PowerShell.EditorServices.Session
         {
             RemotePathMappings remotePathMappings = this.GetPathMappings(runspaceDetails);
             return remotePathMappings.GetMappedPath(filePath);
+        }
+
+        /// <summary>
+        /// Returns true if the given file path is under the remote files
+        /// path in the temporary folder.
+        /// </summary>
+        /// <param name="filePath">The local file path to check.</param>
+        /// <returns>
+        /// True if the file path is under the temporary remote files path.
+        /// </returns>
+        public bool IsUnderRemoteTempPath(string filePath)
+        {
+            return filePath.StartsWith(
+                this.remoteFilesPath,
+                System.StringComparison.CurrentCultureIgnoreCase);
         }
 
         #endregion
@@ -204,6 +245,29 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 }
 
                 // TODO: Clean up psedit registration
+            }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void TryDeleteTemporaryPath()
+        {
+            try
+            {
+                if (Directory.Exists(this.processTempPath))
+                {
+                    Directory.Delete(this.processTempPath, true);
+                }
+
+                Directory.CreateDirectory(this.processTempPath);
+            }
+            catch (IOException e)
+            {
+                Logger.Write(
+                    LogLevel.Error,
+                    $"Could not delete temporary folder for current process: {this.processTempPath}\r\n\r\n{e.ToString()}");
             }
         }
 
@@ -255,7 +319,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 if (!this.pathMappings.TryGetValue(filePath.ToLower(), out mappedPath))
                 {
                     // If the path isn't mapped yet, generate it
-                    if (!filePath.StartsWith(this.remoteFileManager.processTempPath))
+                    if (!filePath.StartsWith(this.remoteFileManager.remoteFilesPath))
                     {
                         mappedPath =
                             this.MapRemotePathToLocal(
@@ -280,7 +344,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 // as the differentiator string in editors like VS Code when more than
                 // one tab has the same filename.
 
-                var sessionDir = Directory.CreateDirectory(this.remoteFileManager.processTempPath);
+                var sessionDir = Directory.CreateDirectory(this.remoteFileManager.remoteFilesPath);
                 var pathHashDir =
                     sessionDir.CreateSubdirectory(
                         Path.GetDirectoryName(remotePath).GetHashCode().ToString());

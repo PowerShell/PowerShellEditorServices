@@ -104,8 +104,41 @@ namespace Microsoft.PowerShell.EditorServices.Session
             PowerShellVersionDetails powerShellVersion,
             RunspaceLocation runspaceLocation,
             string connectionString)
+                : this(
+                      runspace.InstanceId,
+                      runspace,
+                      powerShellVersion,
+                      runspaceLocation,
+                      connectionString)
         {
-            this.Id = runspace.InstanceId;
+        }
+
+        /// <summary>
+        /// Creates a new instance of the RunspaceDetails class.
+        /// </summary>
+        /// <param name="instanceId">
+        /// The InstanceId Guid for the runspace.
+        /// </param>
+        /// <param name="runspace">
+        /// The runspace for which this instance contains details.
+        /// </param>
+        /// <param name="powerShellVersion">
+        /// The PowerShellVersionDetails of the runspace.
+        /// </param>
+        /// <param name="runspaceLocation">
+        /// The RunspaceLocale of the runspace.
+        /// </param>
+        /// <param name="connectionString">
+        /// The connection string of the runspace.
+        /// </param>
+        public RunspaceDetails(
+            Guid instanceId,
+            Runspace runspace,
+            PowerShellVersionDetails powerShellVersion,
+            RunspaceLocation runspaceLocation,
+            string connectionString)
+        {
+            this.Id = instanceId;
             this.Runspace = runspace;
             this.PowerShellVersion = powerShellVersion;
             this.Location = runspaceLocation;
@@ -125,6 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         {
             Validate.IsNotNull(nameof(runspace), runspace);
 
+            var runspaceId = runspace.InstanceId;
             var runspaceLocation = RunspaceLocation.Local;
             var versionDetails = PowerShellVersionDetails.GetVersionDetails(runspace);
 
@@ -150,6 +184,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
                 if (runspace.ConnectionInfo.ComputerName != "localhost")
                 {
+                    runspaceId =
+                        PowerShellContext.ExecuteScriptAndGetItem<Guid>(
+                            "$host.Runspace.InstanceId",
+                            runspace);
+
                     runspaceLocation = RunspaceLocation.Remote;
                     connectionString =
                         runspace.ConnectionInfo.ComputerName +
@@ -159,6 +198,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             return
                 new RunspaceDetails(
+                    runspaceId,
                     runspace,
                     versionDetails,
                     runspaceLocation,
@@ -185,6 +225,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         {
             RunspaceDetails newRunspace =
                 new RunspaceDetails(
+                    attachedRunspaceId,
                     runspaceDetails.Runspace,
                     runspaceDetails.PowerShellVersion,
                     runspaceDetails.Location,

@@ -207,6 +207,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             AttachRequestArguments attachParams,
             RequestContext<object> requestContext)
         {
+            // If there are no host processes to attach to or the user cancels selection, we get a null for the process id.
+            // This is not an error, just a request to stop the original "attach to" request.
+            // Testing against "undefined" is a HACK because I don't know how to make "Cancel" on quick pick loading 
+            // to cancel on the VSCode side without sending an attachRequest with processId set to "undefined".
+            if (string.IsNullOrEmpty(attachParams.ProcessId) || (attachParams.ProcessId == "undefined"))
+            {
+                Logger.Write(
+                    LogLevel.Normal,
+                    $"Attach request aborted, received {attachParams.ProcessId} for processId.");
+
+                await requestContext.SendError(
+                    "User aborted attach to PowerShell host process.");
+
+                return;
+            }
+
             StringBuilder errorMessages = new StringBuilder();
 
             if (attachParams.ComputerName != null)
@@ -235,7 +251,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
             }
 
-            if (attachParams.ProcessId > 0)
+            int processId;
+            if (int.TryParse(attachParams.ProcessId, out processId) && (processId > 0))
             {
                 PowerShellVersionDetails runspaceVersion =
                     this.editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
@@ -249,13 +266,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
 
                 await this.editorSession.PowerShellContext.ExecuteScriptString(
-                    $"Enter-PSHostProcess -Id {attachParams.ProcessId}",
+                    $"Enter-PSHostProcess -Id {processId}",
                     errorMessages);
 
                 if (errorMessages.Length > 0)
                 {
                     await requestContext.SendError(
-                        $"Could not attach to process '{attachParams.ProcessId}'");
+                        $"Could not attach to process '{processId}'");
 
                     return;
                 }
@@ -272,6 +289,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
             else
             {
+                Logger.Write(
+                    LogLevel.Error,
+                    $"Attach request failed, '{attachParams.ProcessId}' is an invalid value for the processId.");
+
                 await requestContext.SendError(
                     "A positive integer must be specified for the processId field.");
 

@@ -56,6 +56,7 @@
     <Compile Include="DebugAdapter\ContinueRequest.cs" />
     <Compile Include="DebugAdapter\SetFunctionBreakpointsRequest.cs" />
     <Compile Include="DebugAdapter\SetVariableRequest.cs" />
+    <Compile Include="LanguageServer\GetPSHostProcessesRequest.cs" />
     <Compile Include="LanguageServer\GetPSSARulesRequest.cs" />
     <Compile Include="LanguageServer\EditorCommands.cs" />
     <Compile Include="LanguageServer\CodeAction.cs" />
