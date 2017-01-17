@@ -14,17 +14,17 @@ namespace Microsoft.PowerShell.EditorServices
         /// The symbol type is unknown
         /// </summary>
         Unknown = 0,
-        
+
         /// <summary>
         /// The symbol is a vairable
         /// </summary>
         Variable,
-        
+
         /// <summary>
         /// The symbol is a function
         /// </summary>
         Function,
-        
+
         /// <summary>
         /// The symbol is a parameter
         /// </summary>
@@ -39,6 +39,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// The symbol is a workflow
         /// </summary>
         Workflow,
+
+        /// <summary>
+        /// The symbol is a hashtable key
+        /// </summary>
+        HashtableKey
     }
 }
-

@@ -209,12 +209,72 @@ namespace Microsoft.PowerShell.EditorServices
 //            }
 //            else
             {
-                FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
-                scriptAst.Visit(findSymbolsVisitor);
-                symbolReferences = findSymbolsVisitor.SymbolReferences;
+                if (IsPowerShellDataFileAst(scriptAst))
+                {
+                    var findHashtableSymbolsVisitor = new FindHashtableSymbolsVisitor();
+                    scriptAst.Visit(findHashtableSymbolsVisitor);
+                    symbolReferences = findHashtableSymbolsVisitor.SymbolReferences;
+                }
+                else
+                {
+                    FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
+                    scriptAst.Visit(findSymbolsVisitor);
+                    symbolReferences = findSymbolsVisitor.SymbolReferences;
+                }
             }
 
             return symbolReferences;
+        }
+
+        static private bool IsPowerShellDataFileAst(Ast ast)
+        {
+            // sometimes we don't have reliable access to the filename
+            // so we employ heuristics to check if the contents are
+            // part of a psd1 file.
+            return (ast.Extent.File != null
+                        && ast.Extent.File.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase))
+                    || IsPowerShellDataFileAstNode(
+                        new { Item = ast, Children = new List<dynamic>() },
+                        new Type[] {
+                            typeof(ScriptBlockAst),
+                            typeof(NamedBlockAst),
+                            typeof(PipelineAst),
+                            typeof(CommandExpressionAst),
+                            typeof(HashtableAst) },
+                        0);
+        }
+
+        static private bool IsPowerShellDataFileAstNode(dynamic node, Type[] levelAstMap, int level)
+        {
+            var levelAstTypeMatch = node.Item.GetType().Equals(levelAstMap[level]);
+            if (!levelAstTypeMatch)
+            {
+                return false;
+            }
+
+            if (level == levelAstMap.Length - 1)
+            {
+                return levelAstTypeMatch;
+            }
+
+            var astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
+            if (astsFound != null)
+            {
+                foreach (var astFound in astsFound)
+                {
+                    if (!astFound.Equals(node.Item)
+                        && node.Item.Equals(astFound.Parent)
+                        && IsPowerShellDataFileAstNode(
+                            new { Item = astFound, Children = new List<dynamic>() },
+                            levelAstMap,
+                            level + 1))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

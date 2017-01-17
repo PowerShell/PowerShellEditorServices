@@ -89,4 +89,60 @@ namespace Microsoft.PowerShell.EditorServices
             return false;
         }
     }
+
+    /// <summary>
+    /// Visitor to find all the keys in Hashtable AST
+    /// </summary>
+    internal class FindHashtableSymbolsVisitor : AstVisitor
+    {
+        /// <summary>
+        /// List of symbols (keys) found in the hashtable
+        /// </summary>
+        public List<SymbolReference> SymbolReferences { get; private set; }
+
+        /// <summary>
+        /// Initializes a new instance of FindHashtableSymbolsVisitor class
+        /// </summary>
+        public FindHashtableSymbolsVisitor()
+        {
+            SymbolReferences = new List<SymbolReference>();
+        }
+
+        /// <summary>
+        /// Adds keys in the input hashtable to the symbol reference
+        /// </summary>
+        public override AstVisitAction VisitHashtable(HashtableAst hashtableAst)
+        {
+            if (hashtableAst.KeyValuePairs == null)
+            {
+                return AstVisitAction.Continue;
+            }
+
+            foreach (var kvp in hashtableAst.KeyValuePairs)
+            {
+                var keyStrConstExprAst = kvp.Item1 as StringConstantExpressionAst;
+                if (keyStrConstExprAst != null)
+                {
+                    IScriptExtent nameExtent = new ScriptExtent()
+                    {
+                        Text = keyStrConstExprAst.Value,
+                        StartLineNumber = kvp.Item1.Extent.StartLineNumber,
+                        EndLineNumber = kvp.Item2.Extent.EndLineNumber,
+                        StartColumnNumber = kvp.Item1.Extent.StartColumnNumber,
+                        EndColumnNumber = kvp.Item2.Extent.EndColumnNumber
+                    };
+
+                    SymbolType symbolType = SymbolType.HashtableKey;
+
+                    this.SymbolReferences.Add(
+                        new SymbolReference(
+                            symbolType,
+                            nameExtent));
+
+                }
+            }
+
+            return AstVisitAction.Continue;
+        }
+    }
 }
