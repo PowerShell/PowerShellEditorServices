@@ -158,17 +158,10 @@ namespace Microsoft.PowerShell.EditorServices
             List<string> ruleNames = new List<string>();
             if (scriptAnalyzerModuleInfo != null)
             {
-                lock (runspaceLock)
+                var ruleObjects = InvokePowerShell("Get-ScriptAnalyzerRule", new Dictionary<string, object>());
+                foreach (var rule in ruleObjects)
                 {
-                    using (var ps = System.Management.Automation.PowerShell.Create())
-                    {
-                        ps.Runspace = this.analysisRunspace;
-                        var ruleObjects = ps.AddCommand("Get-ScriptAnalyzerRule").Invoke();
-                        foreach (var rule in ruleObjects)
-                        {
-                            ruleNames.Add((string)rule.Members["RuleName"].Value);
-                        }
-                    }
+                    ruleNames.Add((string)rule.Members["RuleName"].Value);
                 }
             }
 
@@ -250,34 +243,28 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void FindPSScriptAnalyzer()
         {
-            lock (runspaceLock)
-            {
-                using (var ps = System.Management.Automation.PowerShell.Create())
+            var modules = InvokePowerShell(
+                "Get-Module",
+                new Dictionary<string, object>
                 {
-                    ps.Runspace = this.analysisRunspace;
-
-                    var modules = ps.AddCommand("Get-Module")
-                        .AddParameter("List")
-                        .AddParameter("Name", "PSScriptAnalyzer")
-                        .Invoke();
-
-                    var psModule = modules == null ? null : modules.FirstOrDefault();
-                    if (psModule != null)
-                    {
-                        scriptAnalyzerModuleInfo = psModule.ImmediateBaseObject as PSModuleInfo;
-                        Logger.Write(
-                            LogLevel.Normal,
-                                string.Format(
-                                    "PSScriptAnalyzer found at {0}",
-                                    scriptAnalyzerModuleInfo.Path));
-                    }
-                    else
-                    {
-                        Logger.Write(
-                            LogLevel.Normal,
-                            "PSScriptAnalyzer module was not found.");
-                    }
-                }
+                    { "ListAvailable", true },
+                    { "Name", "PSScriptAnalyzer" }
+                });
+            var psModule = modules.Count() == 0 ? null : modules.FirstOrDefault();
+            if (psModule != null)
+            {
+                scriptAnalyzerModuleInfo = psModule.ImmediateBaseObject as PSModuleInfo;
+                Logger.Write(
+                    LogLevel.Normal,
+                        string.Format(
+                            "PSScriptAnalyzer found at {0}",
+                            scriptAnalyzerModuleInfo.Path));
+            }
+            else
+            {
+                Logger.Write(
+                    LogLevel.Normal,
+                    "PSScriptAnalyzer module was not found.");
             }
         }
 
@@ -285,29 +272,24 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (scriptAnalyzerModuleInfo != null)
             {
-                lock (runspaceLock)
-                {
-                    using (var ps = System.Management.Automation.PowerShell.Create())
+                var module = InvokePowerShell(
+                    "Import-Module",
+                    new Dictionary<string, object>
                     {
-                        ps.Runspace = this.analysisRunspace;
+                        { "ModuleInfo", scriptAnalyzerModuleInfo },
+                        { "PassThru", true },
+                    });
 
-                        var module = ps.AddCommand("Import-Module")
-                            .AddParameter("ModuleInfo", scriptAnalyzerModuleInfo)
-                            .AddParameter("PassThru")
-                            .Invoke();
-
-                        if (module == null)
-                        {
-                            this.scriptAnalyzerModuleInfo = null;
-                            Logger.Write(LogLevel.Warning,
-                                String.Format("Cannot Import PSScriptAnalyzer: {0}"));
-                        }
-                        else
-                        {
-                            Logger.Write(LogLevel.Normal,
-                                String.Format("Successfully imported PSScriptAnalyzer"));
-                        }
-                    }
+                if (module.Count() == 0)
+                {
+                    this.scriptAnalyzerModuleInfo = null;
+                    Logger.Write(LogLevel.Warning,
+                        String.Format("Cannot Import PSScriptAnalyzer: {0}"));
+                }
+                else
+                {
+                    Logger.Write(LogLevel.Normal,
+                        String.Format("Successfully imported PSScriptAnalyzer"));
                 }
             }
         }
@@ -345,7 +327,7 @@ namespace Microsoft.PowerShell.EditorServices
         private IEnumerable<PSObject> GetDiagnosticRecords<TSettings>(
             ScriptFile file,
             string[] rules,
-            TSettings settings) where TSettings: class
+            TSettings settings) where TSettings : class
         {
             var task = GetDiagnosticRecordsAsync(file, rules, settings);
             task.Wait();
@@ -392,6 +374,13 @@ namespace Microsoft.PowerShell.EditorServices
                 String.Format("Found {0} violations", diagnosticRecords.Count()));
 
             return diagnosticRecords;
+        }
+
+        private IEnumerable<PSObject> InvokePowerShell(string command, IDictionary<string, object> paramArgMap)
+        {
+            var task = InvokePowerShellAsync(command, paramArgMap);
+            task.Wait();
+            return task.Result;
         }
 
         private async Task<IEnumerable<PSObject>> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
