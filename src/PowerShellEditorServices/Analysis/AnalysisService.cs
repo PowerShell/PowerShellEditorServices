@@ -27,7 +27,6 @@ namespace Microsoft.PowerShell.EditorServices
 
         private Runspace analysisRunspace;
         private PSModuleInfo scriptAnalyzerModuleInfo;
-        private Object runspaceLock;
         private string[] activeRules;
         private string settingsPath;
 
@@ -67,10 +66,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             set
             {
-                lock (runspaceLock)
-                {
-                    activeRules = value;
-                }
+                activeRules = value;
             }
         }
 
@@ -86,10 +82,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             set
             {
-                lock (runspaceLock)
-                {
-                    settingsPath = value;
-                }
+                settingsPath = value;
             }
         }
 
@@ -107,7 +100,6 @@ namespace Microsoft.PowerShell.EditorServices
         {
             try
             {
-                this.runspaceLock = new Object();
                 this.SettingsPath = settingsPath;
                 this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
                 this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
