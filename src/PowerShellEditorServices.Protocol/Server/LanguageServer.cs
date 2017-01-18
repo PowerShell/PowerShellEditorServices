@@ -27,6 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     public class LanguageServer : LanguageServerBase
     {
         private static CancellationTokenSource existingRequestCancellation;
+        private readonly static string DiagnosticSourceName = "PowerShellEditorServices";
 
         private bool profilesLoaded;
         private EditorSession editorSession;
@@ -994,7 +995,9 @@ function __Expand-Alias {
             {
                 foreach (var diagnostic in codeActionParams.Context.Diagnostics)
                 {
-                    if (markerIndex.TryGetValue(diagnostic.Code, out correction))
+                    if (string.Equals(diagnostic.Source, DiagnosticSourceName, StringComparison.CurrentCultureIgnoreCase) &&
+                        !string.IsNullOrEmpty(diagnostic.Code) &&
+                        markerIndex.TryGetValue(diagnostic.Code, out correction))
                     {
                         codeActionCommands.Add(
                             new CodeActionCommand
@@ -1333,9 +1336,9 @@ function __Expand-Alias {
                 Severity = MapDiagnosticSeverity(scriptFileMarker.Level),
                 Message = scriptFileMarker.Message,
                 Code = Guid.NewGuid().ToString(),
+                Source = DiagnosticSourceName,
                 Range = new Range
                 {
-                    // TODO: What offsets should I use?
                     Start = new Position
                     {
                         Line = scriptFileMarker.ScriptRegion.StartLineNumber - 1,

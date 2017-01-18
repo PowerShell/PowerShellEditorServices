@@ -71,6 +71,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// Gets or sets the diagnostic message.
         /// </summary>
         public string Message { get; set; }
+
+        /// <summary>
+        /// Gets or sets the source of the diagnostic message.
+        /// </summary>
+        public string Source { get; set; }
     }
 }
 

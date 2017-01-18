@@ -301,13 +301,15 @@ namespace Microsoft.PowerShell.EditorServices
             // When viewing PowerShell files in the Git diff viewer, VS Code
             // sends the contents of the file at HEAD with a URI that starts
             // with 'inmemory'.  Untitled files which have been marked of
-            // type PowerShell have a path starting with 'untitled'.  Files
-            // opened from the find/replace view will be prefixed with
-            // 'private'.
+            // type PowerShell have a path starting with 'untitled'.
             return
                 filePath.StartsWith("inmemory") ||
                 filePath.StartsWith("untitled") ||
-                filePath.StartsWith("private");
+                filePath.StartsWith("private")  ||
+                filePath.StartsWith("git");
+
+            // TODO #342: Remove 'private' and 'git' and then add logic to
+            // throw when any unsupported file URI scheme is encountered.
         }
 
         private string GetBaseFilePath(string filePath)
