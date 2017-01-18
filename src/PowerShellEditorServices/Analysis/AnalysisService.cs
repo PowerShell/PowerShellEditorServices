@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private Runspace analysisRunspace;
+        private RunspacePool analysisRunspacePool;
         private PSModuleInfo scriptAnalyzerModuleInfo;
         private string[] activeRules;
         private string settingsPath;
@@ -101,9 +101,19 @@ namespace Microsoft.PowerShell.EditorServices
             try
             {
                 this.SettingsPath = settingsPath;
-                this.analysisRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault2());
-                this.analysisRunspace.ThreadOptions = PSThreadOptions.ReuseThread;
-                this.analysisRunspace.Open();
+                var sessionState = InitialSessionState.CreateDefault2();
+
+                // import PSScriptAnalyzer in all runspaces
+                sessionState.ImportPSModule(new string[] { "PSScriptAnalyzer" });
+
+                // runspacepool takes care of queuing commands for us so we do not
+                // need to worry about executing concurrent commands
+                this.analysisRunspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
+
+                // one runspace for code formatting and the other for markers
+                this.analysisRunspacePool.SetMaxRunspaces(2);
+                this.analysisRunspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
+                this.analysisRunspacePool.Open();
                 ActiveRules = IncludedRules.ToArray();
                 InitializePSScriptAnalyzer();
             }
@@ -186,11 +196,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void Dispose()
         {
-            if (this.analysisRunspace != null)
+            if (this.analysisRunspacePool != null)
             {
-                this.analysisRunspace.Close();
-                this.analysisRunspace.Dispose();
-                this.analysisRunspace = null;
+                this.analysisRunspacePool.Close();
+                this.analysisRunspacePool.Dispose();
+                this.analysisRunspacePool = null;
             }
         }
 
@@ -305,7 +315,12 @@ namespace Microsoft.PowerShell.EditorServices
         private void InitializePSScriptAnalyzer()
         {
             FindPSScriptAnalyzer();
+
+            // this import is redundant if we are importing the
+            // module while creating the runspace, but it helps
+            // us log the import related messages.
             ImportPSScriptAnalyzer();
+
             EnumeratePSScriptAnalyzerRules();
         }
 
@@ -381,7 +396,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 using (var powerShell = System.Management.Automation.PowerShell.Create())
                 {
-                    powerShell.Runspace = this.analysisRunspace;
+                    powerShell.RunspacePool = this.analysisRunspacePool;
                     powerShell.AddCommand(command);
                     foreach (var kvp in paramArgMap)
                     {
