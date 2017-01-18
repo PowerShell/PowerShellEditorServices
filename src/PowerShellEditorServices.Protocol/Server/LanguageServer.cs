@@ -239,7 +239,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             ScriptFileMarkerRequestParams requestParams,
             RequestContext<ScriptFileMarkerRequestResultParams> requestContext)
         {
-            var markers = editorSession.AnalysisService.GetSemanticMarkers(
+            var markers = await editorSession.AnalysisService.GetSemanticMarkersAsync(
                 editorSession.Workspace.GetFile(requestParams.filePath),
                 editorSession.AnalysisService.GetPSSASettingsHashtable(requestParams.settings));
             await requestContext.SendResult(new ScriptFileMarkerRequestResultParams {
@@ -1247,9 +1247,7 @@ function __Expand-Alias {
                 {
                     Logger.Write(LogLevel.Verbose, "Analyzing script file: " + scriptFile.FilePath);
 
-                    semanticMarkers =
-                        editorSession.AnalysisService.GetSemanticMarkers(
-                            scriptFile);
+                    semanticMarkers = await editorSession.AnalysisService.GetSemanticMarkersAsync(scriptFile);
 
                     Logger.Write(LogLevel.Verbose, "Analysis complete.");
                 }
