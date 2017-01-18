@@ -1212,7 +1212,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private void WritePromptToHost(Func<PSCommand, string> invokeAction)
+        private string GetPromptString(Func<PSCommand, string> invokeAction)
         {
             string promptString = null;
 
@@ -1228,24 +1228,40 @@ namespace Microsoft.PowerShell.EditorServices
                     LogLevel.Verbose,
                     "Runtime exception occurred while executing prompt command:\r\n\r\n" + e.ToString());
             }
+            catch (InvalidCastException e)
+            {
+                Logger.WriteException(
+                    LogLevel.Verbose,
+                    "Prompt function returned a result which is not a string.",
+                    e);
+            }
             finally
             {
-                promptString = promptString ?? "PS >";
+                promptString = promptString ?? "PS>";
             }
-
-            this.WriteOutput(
-                Environment.NewLine,
-                false);
 
             // Trim the '>' off the end of the prompt string to reduce
             // user confusion about where they can type.
             // TODO: Eventually put this behind a setting, #133
-            promptString = promptString.TrimEnd(' ', '>', '\r', '\n');
+            return promptString.TrimEnd(' ', '>', '\r', '\n');
+        }
+
+        private void WritePromptStringToHost(string promptString)
+        {
+            this.WriteOutput(
+                Environment.NewLine,
+                false);
 
             // Write the prompt string
             this.WriteOutput(
                 promptString,
                 true);
+        }
+
+        private void WritePromptToHost(Func<PSCommand, string> invokeAction)
+        {
+            this.WritePromptStringToHost(
+                this.GetPromptString(invokeAction));
         }
 
         private void WritePromptWithRunspace(Runspace runspace)
@@ -1275,15 +1291,55 @@ namespace Microsoft.PowerShell.EditorServices
                 });
         }
 
-        private void WritePromptInDebugger()
+        private string GetPromptInDebugger()
         {
-            this.WritePromptToHost(
+            return this.GetPromptString(
                 command =>
                 {
                     return
                         this.ExecuteCommandInDebugger<string>(command, false)
                             .FirstOrDefault();
                 });
+        }
+
+        private void WritePromptInDebugger(DebuggerStopEventArgs eventArgs = null)
+        {
+            string promptPrefix = string.Empty;
+            string promptString = this.GetPromptInDebugger();
+
+            if (eventArgs != null)
+            {
+                // Is there a prompt prefix worth keeping?
+                const string promptSeparator = "]: ";
+                if (promptString != null && promptString[0] == ('['))
+                {
+                    int separatorIndex = promptString.LastIndexOf(promptSeparator);
+                    if (separatorIndex > 0)
+                    {
+                        promptPrefix =
+                            promptString.Substring(
+                                0,
+                                separatorIndex + promptSeparator.Length);
+                    }
+                }
+
+                // This was called from OnDebuggerStop, write a different prompt
+                if (eventArgs.Breakpoints.Count > 0)
+                {
+                    // The breakpoint classes have nice ToString output so use that
+                    promptString = $"Hit {eventArgs.Breakpoints[0].ToString()}";
+                }
+                else
+                {
+                    // TODO: What do we display when we don't know why we stopped?
+                    promptString = null;
+                }
+            }
+
+            if (promptString != null)
+            {
+                this.WritePromptStringToHost(promptPrefix + promptString);
+            }
         }
 
         private void WritePromptWithNestedPipeline()
@@ -1418,7 +1474,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             // Write out the debugger prompt
-            this.WritePromptInDebugger();
+            this.WritePromptInDebugger(e);
 
             // Raise the event for the debugger service
             this.DebuggerStop?.Invoke(sender, e);
