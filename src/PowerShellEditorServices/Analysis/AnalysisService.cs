@@ -110,7 +110,8 @@ namespace Microsoft.PowerShell.EditorServices
                 // need to worry about executing concurrent commands
                 this.analysisRunspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
 
-                // one runspace for code formatting and the other for markers
+                // having more than one runspace doesn't block code formatting if one
+                // runspace is occupied for diagnostics
                 this.analysisRunspacePool.SetMaxRunspaces(2);
                 this.analysisRunspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
                 this.analysisRunspacePool.Open();
@@ -136,9 +137,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="file">The ScriptFile which will be analyzed for semantic markers.</param>
         /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
-        public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file)
+        public async Task<ScriptFileMarker[]> GetSemanticMarkersAsync(ScriptFile file)
         {
-            return GetSemanticMarkers(file, activeRules, settingsPath);
+            return await GetSemanticMarkersAsync(file, activeRules, settingsPath);
         }
 
         /// <summary>
@@ -147,9 +148,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="file">The ScriptFile to be analyzed.</param>
         /// <param name="settings">ScriptAnalyzer settings</param>
         /// <returns></returns>
-        public ScriptFileMarker[] GetSemanticMarkers(ScriptFile file, Hashtable settings)
+        public async Task<ScriptFileMarker[]> GetSemanticMarkersAsync(ScriptFile file, Hashtable settings)
         {
-            return GetSemanticMarkers<Hashtable>(file, null, settings);
+            return await GetSemanticMarkersAsync<Hashtable>(file, null, settings);
         }
 
         /// <summary>
@@ -208,7 +209,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Private Methods
 
-        private ScriptFileMarker[] GetSemanticMarkers<TSettings>(
+        private async Task<ScriptFileMarker[]> GetSemanticMarkersAsync<TSettings>(
             ScriptFile file,
             string[] rules,
             TSettings settings) where TSettings : class
@@ -218,23 +219,8 @@ namespace Microsoft.PowerShell.EditorServices
                 && (typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
                 && (rules != null || settings != null))
             {
-                // TODO: This is a temporary fix until we can change how
-                // ScriptAnalyzer invokes their async tasks.
-                // TODO: Make this async
-                Task<ScriptFileMarker[]> analysisTask =
-                    Task.Factory.StartNew<ScriptFileMarker[]>(
-                        () =>
-                        {
-                            return
-                                 GetDiagnosticRecords(file, rules, settings)
-                                .Select(ScriptFileMarker.FromDiagnosticRecord)
-                                .ToArray();
-                        },
-                        CancellationToken.None,
-                        TaskCreationOptions.None,
-                        TaskScheduler.Default);
-                analysisTask.Wait();
-                return analysisTask.Result;
+                var scriptFileMarkers = await GetDiagnosticRecordsAsync(file, rules, settings);
+                return scriptFileMarkers.Select(ScriptFileMarker.FromDiagnosticRecord).ToArray();
             }
             else
             {
@@ -324,23 +310,6 @@ namespace Microsoft.PowerShell.EditorServices
             EnumeratePSScriptAnalyzerRules();
         }
 
-        private IEnumerable<PSObject> GetDiagnosticRecords(ScriptFile file)
-        {
-            return GetDiagnosticRecords(file, this.activeRules, this.settingsPath);
-        }
-
-        // TSettings can either be of type Hashtable or string
-        // as scriptanalyzer settings parameter takes either a hashtable or string
-        private IEnumerable<PSObject> GetDiagnosticRecords<TSettings>(
-            ScriptFile file,
-            string[] rules,
-            TSettings settings) where TSettings : class
-        {
-            var task = GetDiagnosticRecordsAsync(file, rules, settings);
-            task.Wait();
-            return task.Result;
-        }
-
         private async Task<IEnumerable<PSObject>> GetDiagnosticRecordsAsync<TSettings>(
             ScriptFile file,
             string[] rules,
@@ -365,7 +334,6 @@ namespace Microsoft.PowerShell.EditorServices
                     settingParameter = "IncludeRule";
                     settingArgument = rules;
                 }
-
 
                 diagnosticRecords = await InvokePowerShellAsync(
                     "Invoke-ScriptAnalyzer",
@@ -392,31 +360,23 @@ namespace Microsoft.PowerShell.EditorServices
 
         private async Task<IEnumerable<PSObject>> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
         {
-            var task = Task.Run(() =>
+            using (var powerShell = System.Management.Automation.PowerShell.Create())
             {
-                using (var powerShell = System.Management.Automation.PowerShell.Create())
+                powerShell.RunspacePool = this.analysisRunspacePool;
+                powerShell.AddCommand(command);
+                foreach (var kvp in paramArgMap)
                 {
-                    powerShell.RunspacePool = this.analysisRunspacePool;
-                    powerShell.AddCommand(command);
-                    foreach (var kvp in paramArgMap)
-                    {
-                        powerShell.AddParameter(kvp.Key, kvp.Value);
-                    }
-
-                    var powerShellCommandResult = powerShell.BeginInvoke();
-                    var result = powerShell.EndInvoke(powerShellCommandResult);
-
-                    if (result == null)
-                    {
-                        return Enumerable.Empty<PSObject>();
-                    }
-
-                    return result;
+                    powerShell.AddParameter(kvp.Key, kvp.Value);
                 }
-            });
 
-            await task;
-            return task.Result;
+                var result = await Task.Factory.FromAsync(powerShell.BeginInvoke(), powerShell.EndInvoke);
+                if (result == null)
+                {
+                    return Enumerable.Empty<PSObject>();
+                }
+
+                return result;
+            }
         }
 
         #endregion //private methods
