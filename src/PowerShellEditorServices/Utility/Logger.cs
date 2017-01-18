@@ -96,6 +96,69 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = 0)
         {
+            InnerWrite(
+                logLevel,
+                logMessage,
+                callerName,
+                callerSourceFile,
+                callerLineNumber);
+        }
+
+        /// <summary>
+        /// Writes an error message and exception to the log file.
+        /// </summary>
+        /// <param name="errorMessage">The error message text to be written.</param>
+        /// <param name="errorException">The exception to be written..</param>
+        /// <param name="callerName">The name of the calling method.</param>
+        /// <param name="callerSourceFile">The source file path where the calling method exists.</param>
+        /// <param name="callerLineNumber">The line number of the calling method.</param>
+        public static void WriteException(
+            string errorMessage,
+            Exception errorException,
+            [CallerMemberName] string callerName = null, 
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = 0)
+        {
+            InnerWrite(
+                LogLevel.Error,
+                $"{errorMessage}\r\n\r\n{errorException.ToString()}",
+                callerName,
+                callerSourceFile,
+                callerLineNumber);
+        }
+
+        /// <summary>
+        /// Writes an error message and exception to the log file.
+        /// </summary>
+        /// <param name="logLevel">The level at which the message will be written.</param>
+        /// <param name="errorMessage">The error message text to be written.</param>
+        /// <param name="errorException">The exception to be written..</param>
+        /// <param name="callerName">The name of the calling method.</param>
+        /// <param name="callerSourceFile">The source file path where the calling method exists.</param>
+        /// <param name="callerLineNumber">The line number of the calling method.</param>
+        public static void WriteException(
+            LogLevel logLevel,
+            string errorMessage,
+            Exception errorException,
+            [CallerMemberName] string callerName = null, 
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = 0)
+        {
+            InnerWrite(
+                logLevel,
+                $"{errorMessage}\r\n\r\n{errorException.ToString()}",
+                callerName,
+                callerSourceFile,
+                callerLineNumber);
+        }
+
+        private static void InnerWrite(
+            LogLevel logLevel,
+            string logMessage,
+            string callerName,
+            string callerSourceFile,
+            int callerLineNumber)
+        {
             if (logWriter != null)
             {
                 logWriter.Write(
