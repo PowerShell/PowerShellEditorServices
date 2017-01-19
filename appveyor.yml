@@ -5,7 +5,7 @@ clone_depth: 10
 skip_tags: true
 
 environment:
-  core_version: '0.8.0'
+  core_version: '0.9.0'
   prerelease_name: '-beta'
 
 branches:
