@@ -134,13 +134,16 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     }
 
                     var arch = PowerShellContext.ExecuteScriptAndGetItem<string>("$env:PROCESSOR_ARCHITECTURE", runspace);
-                    if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
+                    if (arch != null)
                     {
-                        architecture = PowerShellProcessArchitecture.X64;
-                    }
-                    else if (string.Equals(arch, "x86", StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        architecture = PowerShellProcessArchitecture.X86;
+                        if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            architecture = PowerShellProcessArchitecture.X64;
+                        }
+                        else if (string.Equals(arch, "x86", StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            architecture = PowerShellProcessArchitecture.X86;
+                        }
                     }
                 }
             }
