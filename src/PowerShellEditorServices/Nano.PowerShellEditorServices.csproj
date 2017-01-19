@@ -202,6 +202,7 @@
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\DocumentHighlight.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\ExpandAliasRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\Hover.cs" />
+    <Compile Include="..\PowerShellEditorServices.Protocol\LanguageServer\GetPSHostProcessesRequest.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\Client\LanguageClientBase.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\Server\LanguageServer.cs" />
     <Compile Include="..\PowerShellEditorServices.Protocol\Server\LanguageServerBase.cs" />
