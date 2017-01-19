@@ -464,6 +464,41 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 signatureHelp.Signatures[0].Label);
         }
 
+        [Theory]
+        [InlineData(14, 13, 6, 0, 0)] // Get-Process -
+        [InlineData(16, 14, 6, 0, 0)] // Get-Process -N
+        [InlineData(18, 31, 6, 0, 1)] // Get-Process -Name powershell -C
+        [InlineData(20, 31, 6, 1, 1)] // Get-Process -Name powershell -I
+        public async Task GetParamterHintsWithActiveSignatureAndParamter(
+            int line,
+            int column,
+            int expectectNumSignatures,
+            int? expectedActiveSignature,
+            int? expectedActiveParameter
+            )
+        {
+            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+
+            SignatureHelp signatureHelp =
+                await this.SendRequest(
+                    SignatureHelpRequest.Type,
+                    new TextDocumentPosition
+                    {
+                        Uri = "TestFiles\\FindReferences.ps1",
+                        Position = new Position
+                        {
+                            Line = line,
+                            Character = column
+                        }
+                    });
+
+            Assert.NotNull(signatureHelp);
+            Assert.Equal(expectectNumSignatures, signatureHelp.Signatures.Length);
+            Assert.Equal(expectedActiveParameter, signatureHelp.ActiveParameter);
+            Assert.Equal(expectedActiveSignature, signatureHelp.ActiveSignature);            
+        }
+
+
         [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesOutput()
         {

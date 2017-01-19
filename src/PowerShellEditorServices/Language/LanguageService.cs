@@ -31,6 +31,9 @@ namespace Microsoft.PowerShell.EditorServices
         private string mostRecentRequestFile;
         private Dictionary<String, List<String>> CmdletToAliasDictionary;
         private Dictionary<String, String> AliasToCmdletDictionary;
+        private string mostRecentActiveCommand;
+        private int? mostRecentActiveSignature;
+        private int? mostRecentActiveParameter;
 
         const int DefaultWaitTimeoutMilliseconds = 5000;
 
@@ -448,6 +451,84 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 return null;
             }
+        }
+
+        private void ResetMostRecentSignatureParam()
+        {
+            mostRecentActiveSignature = 0;
+            mostRecentActiveParameter = 0;
+        }
+
+        /// <summary>
+        /// Find the active signature and parameter
+        /// </summary>
+        /// <param name="paramSetSigs">ParameterSetSignatures of the symbol under consideration</param>
+        /// <param name="curSymbol">Symbol at the current cursor</param>
+        /// <returns>A 2-tuple of integers such that the first item is the active parameter and the second item is the active signature</returns>
+        public Tuple<int?,int?> GetActiveParameterAndSignature(
+            ParameterSetSignatures paramSetSigs, string curSymbol)
+        {
+            if (paramSetSigs == null)
+            {
+                ResetMostRecentSignatureParam();
+            }
+            else
+            {
+                if (mostRecentActiveCommand != paramSetSigs.CommandName)
+                {
+                    ResetMostRecentSignatureParam();
+                    mostRecentActiveCommand = paramSetSigs.CommandName;
+                }
+
+                int activeSig = 0;
+                bool matchFound = false;
+                if (curSymbol != null)
+                {
+                    foreach (var signature in paramSetSigs.Signatures)
+                    {
+                        int activeParam = 0;
+                        foreach (var parameter in signature.Parameters)
+                        {
+                            if (parameter.Name.StartsWith(curSymbol, StringComparison.OrdinalIgnoreCase))
+                            {
+                                mostRecentActiveParameter = activeParam;
+                                mostRecentActiveSignature = activeSig;
+                                matchFound = true;
+                            }
+                            activeParam++;
+                        }
+                        if (matchFound)
+                        {
+                            break;
+                        }
+                        activeSig++;
+                    }
+                }
+
+                // no match found
+                // or current symbol is null
+                // check if the most recent active parameter is the last one in the current signature.
+                // if so, we can expand common parameters or for now set it to null
+                if (!matchFound
+                    && mostRecentActiveSignature.HasValue
+                    && mostRecentActiveSignature < paramSetSigs.Signatures.Length
+                    && mostRecentActiveParameter.HasValue
+                    && mostRecentActiveParameter.Value == paramSetSigs.Signatures[mostRecentActiveSignature.Value].Parameters.Count() - 1)
+                {
+                    mostRecentActiveParameter = null;
+                }
+            }
+
+            Logger.Write(
+                LogLevel.Verbose,
+                string.Format(
+                    "current symbol:{0}; active command:{1}; active parameter:{2}; active signature:{3}",
+                    curSymbol ?? "null",
+                    mostRecentActiveCommand ?? "null",
+                    mostRecentActiveParameter ?? -1,
+                    mostRecentActiveSignature ?? -1));
+
+            return new Tuple<int?, int?>(mostRecentActiveParameter, mostRecentActiveSignature);
         }
 
         #endregion
