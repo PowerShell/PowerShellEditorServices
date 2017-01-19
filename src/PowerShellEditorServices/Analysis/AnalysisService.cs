@@ -25,6 +25,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
+        private const int NumRunspaces = 2;
         private RunspacePool analysisRunspacePool;
         private PSModuleInfo scriptAnalyzerModuleInfo;
         private string[] activeRules;
@@ -103,18 +104,16 @@ namespace Microsoft.PowerShell.EditorServices
                 this.SettingsPath = settingsPath;
                 var sessionState = InitialSessionState.CreateDefault2();
 
-                // import PSScriptAnalyzer in all runspaces
-                sessionState.ImportPSModule(new string[] { "PSScriptAnalyzer" });
-
                 // runspacepool takes care of queuing commands for us so we do not
                 // need to worry about executing concurrent commands
                 this.analysisRunspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
 
                 // having more than one runspace doesn't block code formatting if one
                 // runspace is occupied for diagnostics
-                this.analysisRunspacePool.SetMaxRunspaces(2);
+                this.analysisRunspacePool.SetMaxRunspaces(NumRunspaces);
                 this.analysisRunspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
                 this.analysisRunspacePool.Open();
+
                 ActiveRules = IncludedRules.ToArray();
                 InitializePSScriptAnalyzer();
             }
@@ -231,55 +230,75 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void FindPSScriptAnalyzer()
         {
-            var modules = InvokePowerShell(
-                "Get-Module",
-                new Dictionary<string, object>
+            using (var ps = System.Management.Automation.PowerShell.Create())
+            {
+                ps.RunspacePool = this.analysisRunspacePool;
+
+                ps.AddCommand("Get-Module")
+                  .AddParameter("ListAvailable")
+                  .AddParameter("Name", "PSScriptAnalyzer");
+
+                ps.AddCommand("Sort-Object")
+                  .AddParameter("Descending")
+                  .AddParameter("Property", "Version");
+
+                ps.AddCommand("Select-Object")
+                  .AddParameter("First", 1);
+
+                var modules = ps.Invoke();
+
+                var psModule = modules == null ? null : modules.FirstOrDefault();
+                if (psModule != null)
                 {
-                    { "ListAvailable", true },
-                    { "Name", "PSScriptAnalyzer" }
-                });
-            var psModule = modules.Count() == 0 ? null : modules.FirstOrDefault();
-            if (psModule != null)
-            {
-                scriptAnalyzerModuleInfo = psModule.ImmediateBaseObject as PSModuleInfo;
-                Logger.Write(
-                    LogLevel.Normal,
-                        string.Format(
-                            "PSScriptAnalyzer found at {0}",
-                            scriptAnalyzerModuleInfo.Path));
-            }
-            else
-            {
-                Logger.Write(
-                    LogLevel.Normal,
-                    "PSScriptAnalyzer module was not found.");
+                    scriptAnalyzerModuleInfo = psModule.ImmediateBaseObject as PSModuleInfo;
+                    Logger.Write(
+                        LogLevel.Normal,
+                            string.Format(
+                                "PSScriptAnalyzer found at {0}",
+                                scriptAnalyzerModuleInfo.Path));
+                }
+                else
+                {
+                    Logger.Write(
+                        LogLevel.Normal,
+                        "PSScriptAnalyzer module was not found.");
+                }
             }
         }
 
-        private void ImportPSScriptAnalyzer()
+        private async Task<bool> ImportPSScriptAnalyzerAsync()
         {
             if (scriptAnalyzerModuleInfo != null)
             {
-                var module = InvokePowerShell(
-                    "Import-Module",
-                    new Dictionary<string, object>
-                    {
-                        { "ModuleInfo", scriptAnalyzerModuleInfo },
-                        { "PassThru", true },
-                    });
+                var module =
+                    await InvokePowerShellAsync(
+                        "Import-Module",
+                        new Dictionary<string, object>
+                        {
+                            { "ModuleInfo", scriptAnalyzerModuleInfo },
+                            { "PassThru", true },
+                        });
 
                 if (module.Count() == 0)
                 {
                     this.scriptAnalyzerModuleInfo = null;
                     Logger.Write(LogLevel.Warning,
                         String.Format("Cannot Import PSScriptAnalyzer: {0}"));
+
+                    return false;
                 }
                 else
                 {
                     Logger.Write(LogLevel.Normal,
-                        String.Format("Successfully imported PSScriptAnalyzer"));
+                        String.Format(
+                            "Successfully imported PSScriptAnalyzer {0}",
+                            scriptAnalyzerModuleInfo.Version));
+
+                    return true;
                 }
             }
+
+            return false;
         }
 
         private void EnumeratePSScriptAnalyzerRules()
@@ -302,10 +321,15 @@ namespace Microsoft.PowerShell.EditorServices
         {
             FindPSScriptAnalyzer();
 
-            // this import is redundant if we are importing the
-            // module while creating the runspace, but it helps
-            // us log the import related messages.
-            ImportPSScriptAnalyzer();
+            List<Task> importTasks = new List<Task>();
+            for (int i = 0; i < NumRunspaces; i++)
+            {
+                importTasks.Add(
+                    ImportPSScriptAnalyzerAsync());
+            }
+
+            // Wait for the import requests to complete or fail
+            Task.WaitAll(importTasks.ToArray());
 
             EnumeratePSScriptAnalyzerRules();
         }
