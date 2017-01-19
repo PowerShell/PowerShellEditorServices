@@ -1,5 +1,34 @@
 # PowerShell Editor Services Release History
 
+## 0.9.0
+### Thursday, January 19, 2017
+
+These improvements are described in detail in the [vscode-powershell changelog](https://github.com/PowerShell/vscode-powershell/blob/master/CHANGELOG.md#090)
+for its 0.9.0 release.
+
+#### Language feature improvements
+
+- Added PowerShell code formatting integration with PSScriptAnalyzer
+- Improved PSScriptAnalyzer execution, now runs asynchronously
+- Added Document symbol support for .psd1 files
+
+#### Debugging improvements
+
+- Remote session and debugging support via Enter-PSSession (PowerShell v4+)
+- "Attach to process/runspace" debugging support via Enter-PSHostProcess and Debug-Runspace (PowerShell v5+)
+- Initial `psedit` command support for loading files from remote sessions
+- Added language server protocol request for gathering PowerShell host processes for debugging
+- Many minor improvements to the debugging experience
+
+#### $psEditor API improvements
+
+- Added `FileContext.Close()` method to close an open file
+
+#### Other fixes and improvements
+
+- Fixed [#339](https://github.com/PowerShell/PowerShellEditorServices/issues/339):
+  Prompt functions that return something other than string cause the debugger to crash
+
 ## 0.8.0
 ### Friday, December 16, 2016
 
