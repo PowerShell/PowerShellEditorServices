@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// <summary>
         /// Path of the file for which the markers are requested.
         /// </summary>
-        public string filePath;
+        public string fileUri;
 
         /// <summary>
         /// Settings to be provided to ScriptAnalyzer to get the markers.
