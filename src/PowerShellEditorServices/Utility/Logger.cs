@@ -185,7 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             {
                 logFilePath =
                     Path.Combine(
-#if NanoServer
+#if CoreCLR
                         AppContext.BaseDirectory,
 #else
                         AppDomain.CurrentDomain.BaseDirectory,
@@ -199,7 +199,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 // try opening it in a more reliable path
                 this.TryOpenLogFile(
                     Path.Combine(
-#if NanoServer
+#if CoreCLR
                         Environment.GetEnvironmentVariable("TEMP"),
 #else
                         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

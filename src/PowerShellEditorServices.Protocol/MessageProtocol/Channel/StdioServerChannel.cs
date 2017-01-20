@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         protected override void Initialize(IMessageSerializer messageSerializer)
         {
-#if !NanoServer
+#if !CoreCLR
             // Ensure that the console is using UTF-8 encoding
             System.Console.InputEncoding = Encoding.UTF8;
             System.Console.OutputEncoding = Encoding.UTF8;

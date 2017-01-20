@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         public override async Task WaitForConnection()
         {
-#if NanoServer
+#if CoreCLR
             await this.pipeServer.WaitForConnectionAsync();
 #else
             await Task.Factory.FromAsync(this.pipeServer.BeginWaitForConnection, this.pipeServer.EndWaitForConnection, null);

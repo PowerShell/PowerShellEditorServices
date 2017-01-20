@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <DefineConstants>$(DefineConstants);NanoServer</DefineConstants>
+    <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">

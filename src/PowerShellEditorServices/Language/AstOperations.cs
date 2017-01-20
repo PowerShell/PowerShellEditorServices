@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             var type = scriptAst.Extent.StartScriptPosition.GetType();
             var method = 
-#if NanoServer
+#if CoreCLR
                 type.GetMethod(
                     "CloneWithNewOffset",
                     BindingFlags.Instance | BindingFlags.NonPublic);

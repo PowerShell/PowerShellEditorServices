@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
             if (this.tcpClient != null)
             {
-#if NanoServer
+#if CoreCLR
                 this.tcpClient.Dispose();
 #else
                 this.tcpClient.Close();

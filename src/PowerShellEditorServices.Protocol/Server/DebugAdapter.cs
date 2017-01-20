@@ -163,7 +163,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             if (workingDir == null)
             {
-#if NanoServer
+#if CoreCLR
                 workingDir = AppContext.BaseDirectory;
 #else
                 workingDir = Environment.CurrentDirectory;

@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-#if !NanoServer
+#if !CoreCLR
 
 using Microsoft.Win32;
 using System;
