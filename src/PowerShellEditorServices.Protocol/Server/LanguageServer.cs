@@ -241,7 +241,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<ScriptFileMarkerRequestResultParams> requestContext)
         {
             var markers = await editorSession.AnalysisService.GetSemanticMarkersAsync(
-                editorSession.Workspace.GetFile(requestParams.filePath),
+                editorSession.Workspace.GetFile(requestParams.fileUri),
                 editorSession.AnalysisService.GetPSSASettingsHashtable(requestParams.settings));
             await requestContext.SendResult(new ScriptFileMarkerRequestResultParams {
                 markers = markers
