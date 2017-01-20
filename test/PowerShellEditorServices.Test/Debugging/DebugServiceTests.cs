@@ -39,11 +39,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Load the test debug file
             this.debugScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
+                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
 
             this.variableScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
+                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
 
             this.debugService = new DebugService(this.powerShellContext);
             this.debugService.DebuggerStopped += debugService_DebuggerStopped;
@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Load the test debug file
             this.debugScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
+                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
         }
 
         async void powerShellContext_SessionStateChanged(object sender, SessionStateChangedEventArgs e)
@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // it should not escape already escaped chars.
             ScriptFile debugWithParamsFile =
                 this.workspace.GetFile(
-                    @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\Debug` With Params `[Test].ps1");
+                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\Debug` With Params `[Test].ps1");
 
             await this.debugService.SetLineBreakpoints(
                 debugWithParamsFile,

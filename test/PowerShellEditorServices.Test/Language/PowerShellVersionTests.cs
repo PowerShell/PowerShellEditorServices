@@ -3,6 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+#if !NanoServer
+
 using Microsoft.Win32;
 using System;
 using System.Diagnostics;
@@ -15,28 +17,32 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 {
     public class PowerShellVersionTests 
     {
-        [Theory]
-        [InlineData("3", "4")]
-        [InlineData("4", "4")]
-        [InlineData("5", "5r1")]
+        // TODO: Convert this to a build step
+        // dotnet restore -- /p:PowerShellVersion=v3
+        // dotnet build -f net451 -- /p:PowerShellVersion=v3
+
+        // [Theory]
+        // [InlineData("3", "4")]
+        // [InlineData("4", "4")]
+        // [InlineData("5", "5r1")]
         public void CompilesWithPowerShellVersion(string version, string versionSuffix)
         {
-            var assemblyPath = 
-                Path.GetFullPath(
-                    string.Format(
-                        @"..\..\..\..\packages\Microsoft.PowerShell.{0}.ReferenceAssemblies.1.0.0\lib\net4\System.Management.Automation.dll", 
-                        version));
+            // var assemblyPath = 
+            //     Path.GetFullPath(
+            //         string.Format(
+            //             @"..\..\..\..\packages\Microsoft.PowerShell.{0}.ReferenceAssemblies.1.0.0\lib\net4\System.Management.Automation.dll", 
+            //             version));
 
-            var projectPath = @"..\..\..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj";
+            var projectPath = @"..\..\..\..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj";
             FileInfo fi = new FileInfo(projectPath);
             var projectVersion = Path.Combine(fi.DirectoryName, version + ".PowerShellEditorServices.csproj");
 
-            var doc = XDocument.Load(projectPath);
-            var references = doc.Root.Descendants().Where(m => m.Name.LocalName == "Reference");
-            var reference = references.First(m => m.Attribute("Include").Value.StartsWith("System.Management.Automation"));
-            reference.Add(new XElement("{http://schemas.microsoft.com/developer/msbuild/2003}HintPath", assemblyPath));
+            // var doc = XDocument.Load(projectPath);
+            // var references = doc.Root.Descendants().Where(m => m.Name.LocalName == "Reference");
+            // var reference = references.First(m => m.Attribute("Include").Value.StartsWith("System.Management.Automation"));
+            // reference.Add(new XElement("{http://schemas.microsoft.com/developer/msbuild/2003}HintPath", assemblyPath));
 
-            doc.Save(projectVersion);
+            // doc.Save(projectVersion);
 
             try
             {
@@ -44,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             }
             finally
             {
-                File.Delete(projectVersion);
+                // File.Delete(projectVersion);
             }
         }
 
@@ -92,3 +98,4 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
     }
 }
 
+#endif

@@ -1,173 +1,48 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />  
+  
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F8A0946A-5D25-4651-8079-B8D5776916FB}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.PowerShell.EditorServices.Protocol</RootNamespace>
+    <AssemblyTitle>PowerShell Editor Services Host Protocol Library</AssemblyTitle>
+    <Description>Provides message types and client/server APIs for the PowerShell Editor Services JSON protocol.</Description>
+    <TargetFrameworks>net451;netstandard1.6</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Protocol</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
-    <RestorePackages>true</RestorePackages>
-    <TargetFrameworkProfile />
+    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>
-    </DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
+    <Compile Include="**\*.cs" />
+    <EmbeddedResource Include="**\*.resx" />
+    <EmbeddedResource Include="compiler\resources\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PowerShellEditorServices\PowerShellEditorServices.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>9.0.1</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Sdk">
+      <Version>1.0.0-alpha-20161104-2</Version>
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="NETStandard.Library">
+      <Version>1.6.1</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.PowerShell.SDK">
+      <Version>6.0.0-alpha13</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
+    <DefineConstants>$(DefineConstants);NanoServer</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
     <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Management.Automation" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="DebugAdapter\AttachRequest.cs" />
-    <Compile Include="DebugAdapter\Breakpoint.cs" />
-    <Compile Include="DebugAdapter\ConfigurationDoneRequest.cs" />
-    <Compile Include="DebugAdapter\ContinuedEvent.cs" />
-    <Compile Include="DebugAdapter\ContinueRequest.cs" />
-    <Compile Include="DebugAdapter\SetFunctionBreakpointsRequest.cs" />
-    <Compile Include="DebugAdapter\SetVariableRequest.cs" />
-    <Compile Include="LanguageServer\GetPSHostProcessesRequest.cs" />
-    <Compile Include="LanguageServer\GetPSSARulesRequest.cs" />
-    <Compile Include="LanguageServer\EditorCommands.cs" />
-    <Compile Include="LanguageServer\CodeAction.cs" />
-    <Compile Include="LanguageServer\FindModuleRequest.cs" />
-    <Compile Include="LanguageServer\InstallModuleRequest.cs" />
-    <Compile Include="LanguageServer\PowerShellVersionRequest.cs" />
-    <Compile Include="LanguageServer\RunspaceChanged.cs" />
-    <Compile Include="LanguageServer\ScriptFileMarkersRequest.cs" />
-    <Compile Include="LanguageServer\SetPSSARulesRequest.cs" />
-    <Compile Include="LanguageServer\ProjectTemplate.cs" />
-    <Compile Include="MessageProtocol\Channel\NamedPipeClientChannel.cs" />
-    <Compile Include="MessageProtocol\Channel\NamedPipeServerChannel.cs" />
-    <Compile Include="MessageProtocol\Channel\TcpSocketClientChannel.cs" />
-    <Compile Include="MessageProtocol\Channel\TcpSocketServerChannel.cs" />
-    <Compile Include="MessageProtocol\IMessageSender.cs" />
-    <Compile Include="MessageProtocol\ProtocolEndpoint.cs" />
-    <Compile Include="Messages\PromptEvents.cs" />
-    <Compile Include="Server\DebugAdapter.cs" />
-    <Compile Include="Server\DebugAdapterBase.cs" />
-    <Compile Include="Client\DebugAdapterClientBase.cs" />
-    <Compile Include="DebugAdapter\DisconnectRequest.cs" />
-    <Compile Include="DebugAdapter\EvaluateRequest.cs" />
-    <Compile Include="DebugAdapter\ExitedEvent.cs" />
-    <Compile Include="DebugAdapter\InitializedEvent.cs" />
-    <Compile Include="DebugAdapter\InitializeRequest.cs" />
-    <Compile Include="DebugAdapter\LaunchRequest.cs" />
-    <Compile Include="DebugAdapter\NextRequest.cs" />
-    <Compile Include="DebugAdapter\OutputEvent.cs" />
-    <Compile Include="DebugAdapter\PauseRequest.cs" />
-    <Compile Include="DebugAdapter\Scope.cs" />
-    <Compile Include="DebugAdapter\ScopesRequest.cs" />
-    <Compile Include="DebugAdapter\SetBreakpointsRequest.cs" />
-    <Compile Include="DebugAdapter\SetExceptionBreakpointsRequest.cs" />
-    <Compile Include="DebugAdapter\Source.cs" />
-    <Compile Include="DebugAdapter\SourceRequest.cs" />
-    <Compile Include="DebugAdapter\StackFrame.cs" />
-    <Compile Include="DebugAdapter\StackTraceRequest.cs" />
-    <Compile Include="DebugAdapter\StartedEvent.cs" />
-    <Compile Include="DebugAdapter\StepInRequest.cs" />
-    <Compile Include="DebugAdapter\StepOutRequest.cs" />
-    <Compile Include="DebugAdapter\StoppedEvent.cs" />
-    <Compile Include="DebugAdapter\TerminatedEvent.cs" />
-    <Compile Include="DebugAdapter\Thread.cs" />
-    <Compile Include="DebugAdapter\ThreadsRequest.cs" />
-    <Compile Include="Client\LanguageServiceClient.cs" />
-    <Compile Include="MessageProtocol\Serializers\V8MessageSerializer.cs" />
-    <Compile Include="DebugAdapter\Variable.cs" />
-    <Compile Include="DebugAdapter\VariablesRequest.cs" />
-    <Compile Include="LanguageServer\Configuration.cs" />
-    <Compile Include="LanguageServer\Definition.cs" />
-    <Compile Include="LanguageServer\DocumentHighlight.cs" />
-    <Compile Include="LanguageServer\ExpandAliasRequest.cs" />
-    <Compile Include="LanguageServer\Hover.cs" />
-    <Compile Include="Client\LanguageClientBase.cs" />
-    <Compile Include="Server\LanguageServer.cs" />
-    <Compile Include="Server\LanguageServerBase.cs" />
-    <Compile Include="LanguageServer\ShowOnlineHelpRequest.cs" />
-    <Compile Include="LanguageServer\SignatureHelp.cs" />
-    <Compile Include="LanguageServer\WorkspaceSymbols.cs" />
-    <Compile Include="MessageProtocol\Channel\StdioClientChannel.cs" />
-    <Compile Include="MessageProtocol\EventContext.cs" />
-    <Compile Include="MessageProtocol\EventType.cs" />
-    <Compile Include="LanguageServer\ClientCapabilities.cs" />
-    <Compile Include="LanguageServer\Completion.cs" />
-    <Compile Include="LanguageServer\Diagnostics.cs" />
-    <Compile Include="MessageProtocol\Serializers\JsonRpcMessageSerializer.cs" />
-    <Compile Include="LanguageServer\Initialize.cs" />
-    <Compile Include="LanguageServer\ServerCapabilities.cs" />
-    <Compile Include="LanguageServer\Shutdown.cs" />
-    <Compile Include="LanguageServer\TextDocument.cs" />
-    <Compile Include="MessageProtocol\Constants.cs" />
-    <Compile Include="MessageProtocol\IMessageSerializer.cs" />
-    <Compile Include="MessageProtocol\Message.cs" />
-    <Compile Include="MessageProtocol\MessageDispatcher.cs" />
-    <Compile Include="MessageProtocol\MessageParseException.cs" />
-    <Compile Include="MessageProtocol\MessageProtocolType.cs" />
-    <Compile Include="MessageProtocol\MessageReader.cs" />
-    <Compile Include="MessageProtocol\MessageWriter.cs" />
-    <Compile Include="MessageProtocol\RequestContext.cs" />
-    <Compile Include="MessageProtocol\RequestType.cs" />
-    <Compile Include="MessageProtocol\Channel\ChannelBase.cs" />
-    <Compile Include="MessageProtocol\Channel\StdioServerChannel.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="LanguageServer\References.cs" />
-    <Compile Include="Server\LanguageServerEditorOperations.cs" />
-    <Compile Include="Server\LanguageServerSettings.cs" />
-    <Compile Include="Server\OutputDebouncer.cs" />
-    <Compile Include="Server\PromptHandlers.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\PowerShellEditorServices\PowerShellEditorServices.csproj">
-      <Project>{81e8cbcd-6319-49e7-9662-0475bd0791f4}</Project>
-      <Name>PowerShellEditorServices</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-  </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

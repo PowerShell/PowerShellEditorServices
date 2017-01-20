@@ -636,7 +636,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             string testProfilePath =
                 Path.Combine(
                     Path.GetFullPath(
-                        @"..\..\..\PowerShellEditorServices.Test.Shared\Profile\"),
+                        @"..\..\..\..\PowerShellEditorServices.Test.Shared\Profile\"),
                     profileName);
 
             string currentUserCurrentHostPath =
