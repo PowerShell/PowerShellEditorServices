@@ -1,6 +1,5 @@
 version: '$(core_version).{build}'
 os: WMF 5
-configuration: Release
 clone_depth: 10
 skip_tags: true
 
@@ -21,28 +20,12 @@ branches:
 #init:
 #- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
-assembly_info:
-  patch: true
-  file: '**\AssemblyInfo.*'
-  assembly_version: '{version}'
-  assembly_file_version: '{version}'
-  assembly_informational_version: '$(core_version)$(prerelease_name)+{build}'
+# TODO: Work build number into build!
 
 install:
-- git submodule -q update --init
+  - ps: |
+      Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force | Out-Null
+      Install-Module InvokeBuild -RequiredVersion 3.2.1 -Scope CurrentUser -Force | Out-Null
 
-before_build:
-- ps: if (Test-Path 'C:\Tools\NuGet3') { $nugetDir = 'C:\Tools\NuGet3' } else { $nugetDir = 'C:\Tools\NuGet' }; (New-Object Net.WebClient).DownloadFile('https://dist.nuget.org/win-x86-commandline/v3.3.0/nuget.exe', "$nugetDir\NuGet.exe")
-- nuget restore PowerShellEditorServices.sln
-
-build:
-  project: PowerShellEditorServices.NoNano.sln
-  publish_nuget: true
-  verbosity: minimal
-
-test:
-  assemblies:
-  - Microsoft.PowerShell.EditorServices.Test.dll
-  - Microsoft.PowerShell.EditorServices.Test.Protocol.dll
-  - Microsoft.PowerShell.EditorServices.Test.Host.dll
-  - Microsoft.PowerShell.EditorServices.Test.Channel.WebSockets.dll
+build_script:
+  - ps: Invoke-Build -Configuration Release
