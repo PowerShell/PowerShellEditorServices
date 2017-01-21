@@ -5,44 +5,93 @@ param(
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
-task EnsureDotNet -Before Clean, Build, BuildHost, Test, TestPowerShellApi {
-    # TODO: Download if it doesn't exist in known paths
-    if (!(Test-Path 'c:\Program Files\dotnet\dotnet.exe')) {
-        Write-Error "dotnet is not installed"
-    }
+if ($env:APPVEYOR -ne $null) {
+    dotnet --info
+}
 
-    exec {
-        if (!((& dotnet --version) -like "*preview4*")) {
-            Write-Error "You must have at least preview4 of the dotnet tools installed."
+task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellApi {
+
+    # Bail out early if we've already found the exe path
+    if ($script:dotnetExe -ne $null) { return }
+
+    $requiredDotnetVersion = "1.0.0-preview4-004233"
+    $needsInstall = $true
+    $dotnetPath = "$PSScriptRoot/.dotnet"
+    $dotnetExePath = "$dotnetPath/dotnet.exe"
+
+    if (Test-Path $dotnetExePath) {
+        $script:dotnetExe = $dotnetExePath
+    }
+    else {
+        $installedDotnet = Get-Command dotnet -ErrorAction Ignore
+        if ($installedDotnet) {
+            $dotnetExePath = $installedDotnet.Source
+
+            exec {
+                if ((& $dotnetExePath --version) -eq $requiredDotnetVersion) {
+                    $script:dotnetExe = $dotnetExePath
+                }
+            }
+        }
+
+        if ($script:dotnetExe -eq $null) {
+
+            Write-Host "`n### Installing .NET CLI $requiredDotnetVersion...`n" -ForegroundColor Green
+
+            # Download the official installation script and run it
+            $installScriptPath = "$($env:TEMP)\dotnet-install.ps1"
+            Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview4/scripts/obtain/dotnet-install.ps1" -OutFile $installScriptPath
+            $env:DOTNET_INSTALL_DIR = "$PSScriptRoot\.dotnet"
+            & $installScriptPath -Version $requiredDotnetVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
+
+            Write-Host "`n### Installation complete." -ForegroundColor Green
+            $script:dotnetExe = $dotnetExePath
         }
     }
+
+    # This variable is used internally by 'dotnet' to know where it's installed
+    $script:dotnetExe = Resolve-Path $script:dotnetExe
+    if (!$env:DOTNET_INSTALL_DIR)
+    {
+        $dotnetExeDir = [System.IO.Path]::GetDirectoryName($script:dotnetExe)
+        $env:PATH = $dotnetExeDir + [System.IO.Path]::PathSeparator + $env:PATH
+        $env:DOTNET_INSTALL_DIR = $dotnetExeDir
+    }
+
+    Write-Host "`n### Using dotnet at path $script:dotnetExe`n" -ForegroundColor Green
+}
+
+task Restore {
+    exec { & dotnet restore }
 }
 
 task Clean {
-    exec { & dotnet clean .\PowerShellEditorServices.sln }
+    exec { & dotnet clean }
 }
 
 function BuildForPowerShellVersion($version) {
+    # Restore packages for the specified version
     exec { & dotnet restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -- /p:PowerShellVersion=$version }
 
     Write-Host -ForegroundColor Green "`n### Testing API usage for PowerShell $version...`n"
-    exec { & dotnet build -f net451 .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -- /p:PowerShellVersion=$version}
+    exec { & dotnet build -f net451 .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -- /p:PowerShellVersion=$version }
 }
 
 task TestPowerShellApi {
     BuildForPowerShellVersion v3
     BuildForPowerShellVersion v4
     BuildForPowerShellVersion v5r1
-    BuildForPowerShellVersion v5r2
+
+    # Do a final restore to put everything back to normal
+    exec { & dotnet restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj }
 }
 
-task BuildHost EnsureDotNet, {
+task BuildHost {
     # This task is meant to be used in a quick dev cycle so no 'restore' is done first
     exec { & dotnet build -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj }
 }
 
 task Build {
-    exec { & dotnet restore -v:m .\PowerShellEditorServices.sln }
     exec { & dotnet build -c $Configuration .\PowerShellEditorServices.sln }
 }
 
@@ -67,4 +116,5 @@ task LayoutModule -After Build, BuildHost {
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
 }
 
-task . Clean, Build, Test, TestPowerShellApi
+# The default task is to run the entire CI build
+task . Restore, Clean, Build, TestPowerShellApi, Test

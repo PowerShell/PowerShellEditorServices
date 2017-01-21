@@ -26,6 +26,7 @@ lock
 .corext/gen
 registered_data.ini
 .vs/
+.dotnet/
 module/
 
 docs/_site/
