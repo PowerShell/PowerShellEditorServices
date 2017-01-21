@@ -29,3 +29,9 @@ install:
 
 build_script:
   - ps: Invoke-Build -Configuration Release
+
+test:
+  assemblies:
+    - Microsoft.PowerShell.EditorServices.Test.dll
+    - Microsoft.PowerShell.EditorServices.Test.Protocol.dll
+    - Microsoft.PowerShell.EditorServices.Test.Host.dll
