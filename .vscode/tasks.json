@@ -2,18 +2,20 @@
 	"version": "0.1.0",
 
     "windows": {
-        "command": "${env.windir}\\sysnative\\windowspowershell\\v1.0\\PowerShell.exe"
+        "command": "${env.windir}\\sysnative\\windowspowershell\\v1.0\\PowerShell.exe",
+        "args": [ "-NoProfile", "-ExecutionPolicy", "Bypass" ]
     },
     "linux": {
-        "command": "/usr/bin/powershell"
+        "command": "/usr/bin/powershell",
+        "args": [ "-NoProfile" ]
     },
     "osx": {
-        "command": "/usr/local/bin/powershell"
+        "command": "/usr/local/bin/powershell",
+        "args": [ "-NoProfile" ]
     },
 
 	"isShellCommand": true,
 	"showOutput": "always",
-    "args": [ "-NoProfile", "-ExecutionPolicy", "Bypass" ],
 
     // Associate with test task runner
     "tasks": [
