@@ -1,13 +1,11 @@
 param(
     [ValidateSet("Debug", "Release")]
-    $Configuration = "Debug"
+    [string]$Configuration = "Debug"
 )
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
-if ($env:APPVEYOR -ne $null) {
-    dotnet --info
-}
+$script:IsCIBuild = $env:APPVEYOR -ne $null
 
 task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellApi {
 
@@ -67,6 +65,25 @@ task Restore {
 
 task Clean {
     exec { & dotnet clean }
+    Get-ChildItem -Recurse src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
+    Get-ChildItem module\*.zip | Remove-Item -Force -ErrorAction Ignore
+}
+
+task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
+    if ($script:BaseVersion) { return }
+    [xml]$props = Get-Content .\PowerShellEditorServices.Common.props
+
+    $script:VersionSuffix = $props.Project.PropertyGroup.VersionSuffix
+    $script:BaseVersion = "$($props.Project.PropertyGroup.VersionPrefix)-$($props.Project.PropertyGroup.VersionSuffix)"
+    $script:FullVersion = "$($props.Project.PropertyGroup.VersionPrefix)-$($props.Project.PropertyGroup.VersionSuffix)"
+
+    if ($env:APPVEYOR) {
+        $script:BuildNumber = $env:APPVEYOR_BUILD_NUMBER
+        $script:FullVersion = "$script:FullVersion-$script:BuildNumber"
+        $script:VersionSuffix = "$script:VersionSuffix-$script:BuildNumber"
+    }
+
+    Write-Host "`n### Product Version: $script:FullVersion`n" -ForegroundColor Green
 }
 
 function BuildForPowerShellVersion($version) {
@@ -87,7 +104,6 @@ task TestPowerShellApi {
 }
 
 task BuildHost {
-    # This task is meant to be used in a quick dev cycle so no 'restore' is done first
     exec { & dotnet build -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj }
 }
 
@@ -116,5 +132,40 @@ task LayoutModule -After Build, BuildHost {
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
 }
 
+task PackageNuGet {
+    exec { & dotnet pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj }
+    exec { & dotnet pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj }
+    exec { & dotnet pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj }
+}
+
+task PackageModule {
+    Add-Type -Assembly System.IO.Compression.FileSystem -ErrorAction Ignore
+    [System.IO.Compression.ZipFile]::CreateFromDirectory(
+        "$PSScriptRoot/module/PowerShellEditorServices",
+        "$PSScriptRoot/module/PowerShellEditorServices-$($script:FullVersion).zip",
+        [System.IO.Compression.CompressionLevel]::Optimal,
+        $true)
+}
+
+task UploadArtifacts -If ($script:IsCIBuild) {
+    if ($env:APPVEYOR) {
+        Push-AppveyorArtifact .\src\PowerShellEditorServices\bin\$Configuration\Microsoft.PowerShell.EditorServices.$($script:FullVersion).nupkg
+        Push-AppveyorArtifact .\src\PowerShellEditorServices.Protocol\bin\$Configuration\Microsoft.PowerShell.EditorServices.Protocol.$($script:FullVersion).nupkg
+        Push-AppveyorArtifact .\src\PowerShellEditorServices.Host\bin\$Configuration\Microsoft.PowerShell.EditorServices.Host.$($script:FullVersion).nupkg
+        Push-AppveyorArtifact .\module\PowerShellEditorServices-$($script:FullVersion).zip
+    }
+}
+
+task UploadTestLogs -If ($script:IsCIBuild) {
+    $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
+
+    Add-Type -Assembly System.IO.Compression.FileSystem -ErrorAction Ignore
+    [System.IO.Compression.ZipFile]::CreateFromDirectory(
+        "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net451/logs",
+        $testLogsZipPath)
+
+    Push-AppveyorArtifact $testLogsZipPath
+}
+
 # The default task is to run the entire CI build
-task . Restore, Clean, Build, TestPowerShellApi, Test
+task . GetProductVersion, Restore, Clean, Build, TestPowerShellApi, Test, PackageNuGet, PackageModule, UploadArtifacts
