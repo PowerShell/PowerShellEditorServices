@@ -6,6 +6,12 @@ param(
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
 $script:IsCIBuild = $env:APPVEYOR -ne $null
+$script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
+$script:TargetFrameworksParam = "/p:TargetFrameworks=\`"$(if (!$script:IsUnix) { "net451;" })netstandard1.6\`""
+
+if ($PSVersionTable.PSEdition -ne "Core") {
+    Add-Type -Assembly System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
+}
 
 task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellApi {
 
@@ -15,7 +21,7 @@ task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellA
     $requiredDotnetVersion = "1.0.0-preview4-004233"
     $needsInstall = $true
     $dotnetPath = "$PSScriptRoot/.dotnet"
-    $dotnetExePath = "$dotnetPath/dotnet.exe"
+    $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
 
     if (Test-Path $dotnetExePath) {
         $script:dotnetExe = $dotnetExePath
@@ -36,11 +42,21 @@ task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellA
 
             Write-Host "`n### Installing .NET CLI $requiredDotnetVersion...`n" -ForegroundColor Green
 
+            # The install script is platform-specific
+            $installScriptExt = if ($script:IsUnix) { "sh" } else { "ps1" }
+
             # Download the official installation script and run it
-            $installScriptPath = "$($env:TEMP)\dotnet-install.ps1"
-            Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview4/scripts/obtain/dotnet-install.ps1" -OutFile $installScriptPath
-            $env:DOTNET_INSTALL_DIR = "$PSScriptRoot\.dotnet"
-            & $installScriptPath -Version $requiredDotnetVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
+            $installScriptPath = "$([System.IO.Path]::GetTempPath())dotnet-install.$installScriptExt"
+            Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview4/scripts/obtain/dotnet-install.$installScriptExt" -OutFile $installScriptPath
+            $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
+
+            if (!$script:IsUnix) {
+                & $installScriptPath -Version $requiredDotnetVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
+            }
+            else {
+                & /bin/bash $installScriptPath -Version $requiredDotnetVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
+                $env:PATH = $dotnetExeDir + [System.IO.Path]::PathSeparator + $env:PATH
+            }
 
             Write-Host "`n### Installation complete." -ForegroundColor Green
             $script:dotnetExe = $dotnetExePath
@@ -60,11 +76,11 @@ task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellA
 }
 
 task Restore {
-    exec { & dotnet restore }
+    exec { & $script:dotnetExe restore }
 }
 
 task Clean {
-    exec { & dotnet clean }
+    exec { & $script:dotnetExe clean }
     Get-ChildItem -Recurse src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem module\*.zip | Remove-Item -Force -ErrorAction Ignore
 }
@@ -88,38 +104,38 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
 
 function BuildForPowerShellVersion($version) {
     # Restore packages for the specified version
-    exec { & dotnet restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -- /p:PowerShellVersion=$version }
+    exec { & $script:dotnetExe restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -- /p:PowerShellVersion=$version }
 
     Write-Host -ForegroundColor Green "`n### Testing API usage for PowerShell $version...`n"
-    exec { & dotnet build -f net451 .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -- /p:PowerShellVersion=$version }
+    exec { & $script:dotnetExe build -f net451 .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -- /p:PowerShellVersion=$version }
 }
 
-task TestPowerShellApi {
+task TestPowerShellApi -If { !$script:IsUnix } {
     BuildForPowerShellVersion v3
     BuildForPowerShellVersion v4
     BuildForPowerShellVersion v5r1
 
     # Do a final restore to put everything back to normal
-    exec { & dotnet restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj }
+    exec { & $script:dotnetExe restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj }
 }
 
 task BuildHost {
-    exec { & dotnet build -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj }
+    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -- $script:TargetFrameworksParam }
 }
 
 task Build {
-    exec { & dotnet build -c $Configuration .\PowerShellEditorServices.sln }
+    exec { & $script:dotnetExe build -c $Configuration .\PowerShellEditorServices.sln -- $script:TargetFrameworksParam }
 }
 
-task Test {
+task Test -If { !$script:IsUnix } {
     $testParams = @{}
     if ($env:APPVEYOR -ne $null) {
         $testParams = @{"l" = "appveyor"}
     }
 
-    exec { & dotnet test -c $Configuration @testParams .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
-    exec { & dotnet test -c $Configuration @testParams .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
-    exec { & dotnet test -c $Configuration @testParams .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
+    exec { & $script:dotnetExe test -c $Configuration @testParams .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
+    exec { & $script:dotnetExe test -c $Configuration @testParams .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
+    exec { & $script:dotnetExe test -c $Configuration @testParams .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
 }
 
 task LayoutModule -After Build, BuildHost {
@@ -127,19 +143,20 @@ task LayoutModule -After Build, BuildHost {
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop -Type Directory | Out-Null
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Core -Type Directory | Out-Null
 
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+    if (!$script:IsUnix) {
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+    }
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
 }
 
 task PackageNuGet {
-    exec { & dotnet pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj }
-    exec { & dotnet pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj }
-    exec { & dotnet pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj }
+    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -- $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj -- $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -- $script:TargetFrameworksParam }
 }
 
 task PackageModule {
-    Add-Type -Assembly System.IO.Compression.FileSystem -ErrorAction Ignore
     [System.IO.Compression.ZipFile]::CreateFromDirectory(
         "$PSScriptRoot/module/PowerShellEditorServices",
         "$PSScriptRoot/module/PowerShellEditorServices-$($script:FullVersion).zip",
@@ -159,7 +176,6 @@ task UploadArtifacts -If ($script:IsCIBuild) {
 task UploadTestLogs -If ($script:IsCIBuild) {
     $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
 
-    Add-Type -Assembly System.IO.Compression.FileSystem -ErrorAction Ignore
     [System.IO.Compression.ZipFile]::CreateFromDirectory(
         "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net451/logs",
         $testLogsZipPath)

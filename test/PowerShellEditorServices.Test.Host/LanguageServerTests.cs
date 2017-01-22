@@ -27,7 +27,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         {
             string testLogPath =
                 Path.Combine(
+#if CoreCLR
+                    AppContext.BaseDirectory,
+#else
                     AppDomain.CurrentDomain.BaseDirectory,
+#endif
                     "logs",
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8) + ".log");
@@ -69,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             await this.SendOpenFileEvent("TestFiles\\SimpleSyntaxError.ps1", false);
 
             // Wait for the diagnostic event
-            PublishDiagnosticsNotification diagnostics = 
+            PublishDiagnosticsNotification diagnostics =
                 await this.WaitForEvent(
                     PublishDiagnosticsNotification.Type);
 
@@ -86,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             await this.SendOpenFileEvent("TestFiles\\SimpleSemanticError.ps1", false);
 
             // Wait for the diagnostic event
-            PublishDiagnosticsNotification diagnostics = 
+            PublishDiagnosticsNotification diagnostics =
                 await this.WaitForEvent(
                     PublishDiagnosticsNotification.Type);
 
@@ -102,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             await this.SendOpenFileEvent("TestFiles\\Module.psm1", false);
 
             // Wait for the diagnostic event
-            PublishDiagnosticsNotification diagnostics = 
+            PublishDiagnosticsNotification diagnostics =
                 await this.WaitForEvent(
                     PublishDiagnosticsNotification.Type);
 
@@ -469,7 +473,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         {
             OutputReader outputReader = new OutputReader(this.protocolClient);
 
-            await 
+            await
                 this.SendRequest(
                     EvaluateRequest.Type,
                     new EvaluateRequestArguments
@@ -568,7 +572,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         Expression = promptScript,
                         Context = "repl"
                     });
-            
+
             // Wait for the input prompt request and check expected values
             Tuple<ShowInputPromptRequest, RequestContext<ShowInputPromptResponse>> requestResponseContext = await inputPromptTask;
             ShowInputPromptRequest showInputPromptRequest = requestResponseContext.Item1;
@@ -641,8 +645,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             string currentUserCurrentHostPath =
                 Path.Combine(
+#if !CoreCLR
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     "WindowsPowerShell",
+#else
+                    // TODO: This will need to be improved once we are running tests on CoreCLR
+                    "~/.powershell",
+#endif
                     profileName);
 
             // Copy the test profile to the current user's host profile path
@@ -727,7 +736,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             if (waitForDiagnostics)
             {
                 // Wait for the diagnostic event
-                diagnosticWaitTask = 
+                diagnosticWaitTask =
                     this.WaitForEvent(
                         PublishDiagnosticsNotification.Type);
             }

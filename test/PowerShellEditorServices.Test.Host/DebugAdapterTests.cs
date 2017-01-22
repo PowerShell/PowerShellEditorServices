@@ -16,14 +16,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
     public class DebugAdapterTests : ServerTestsBase, IAsyncLifetime
     {
         private DebugAdapterClient debugAdapterClient;
-        private string DebugScriptPath = 
+        private string DebugScriptPath =
             Path.GetFullPath(@"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
 
         public async Task InitializeAsync()
         {
             string testLogPath =
                 Path.Combine(
+#if CoreCLR
+                    AppContext.BaseDirectory,
+#else
                     AppDomain.CurrentDomain.BaseDirectory,
+#endif
                     "logs",
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8) + ".log");
@@ -91,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             // Abort script execution
             Task terminatedEvent = this.WaitForEvent(TerminatedEvent.Type);
-            await 
+            await
                 Task.WhenAll(
                     this.SendRequest(DisconnectRequest.Type, new object()),
                     terminatedEvent);
