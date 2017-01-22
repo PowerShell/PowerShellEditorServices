@@ -128,14 +128,9 @@ task Build {
 }
 
 task Test -If { !$script:IsUnix } {
-    $testParams = @{}
-    if ($env:APPVEYOR -ne $null) {
-        $testParams = @{"l" = "appveyor"}
-    }
-
-    exec { & $script:dotnetExe test -c $Configuration @testParams .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
-    exec { & $script:dotnetExe test -c $Configuration @testParams .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
-    exec { & $script:dotnetExe test -c $Configuration @testParams .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
+    exec { & $script:dotnetExe test -c $Configuration .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
+    exec { & $script:dotnetExe test -c $Configuration .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
+    exec { & $script:dotnetExe test -c $Configuration .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
 }
 
 task LayoutModule -After Build, BuildHost {
@@ -173,14 +168,20 @@ task UploadArtifacts -If ($script:IsCIBuild) {
     }
 }
 
-task UploadTestLogs -If ($script:IsCIBuild) {
+task UploadTestLogs -After Test -If ($script:IsCIBuild) {
+    $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net451/logs"
     $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
 
-    [System.IO.Compression.ZipFile]::CreateFromDirectory(
-        "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net451/logs",
-        $testLogsZipPath)
+    if (Test-Path $testLogsPath) {
+        [System.IO.Compression.ZipFile]::CreateFromDirectory(
+            $testLogsPath,
+            $testLogsZipPath)
 
-    Push-AppveyorArtifact $testLogsZipPath
+        Push-AppveyorArtifact $testLogsZipPath
+    }
+    else {
+        Write-Host "`n### WARNING: Test logs could not be found!`n" -ForegroundColor Yellow
+    }
 }
 
 # The default task is to run the entire CI build
