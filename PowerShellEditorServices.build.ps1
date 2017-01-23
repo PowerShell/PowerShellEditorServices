@@ -86,7 +86,7 @@ task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellA
         $env:DOTNET_INSTALL_DIR = $dotnetExeDir
     }
 
-    Write-Host "`n### Using dotnet at path $script:dotnetExe`n" -ForegroundColor Green
+    Write-Host "`n### Using dotnet v$requiredSDKVersion at path $script:dotnetExe`n" -ForegroundColor Green
 }
 
 task Restore {
