@@ -89,7 +89,15 @@ task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellA
     Write-Host "`n### Using dotnet v$requiredSDKVersion at path $script:dotnetExe`n" -ForegroundColor Green
 }
 
-task Restore {
+function NeedsRestore($rootPath) {
+    # This checks to see if the number of folders under a given
+    # path (like "src" or "test") is greater than the number of
+    # obj\project.assets.json files found under that path, implying
+    # that those folders have not yet been restored.
+    return (Get-ChildItem $rootPath).Length -gt (Get-ChildItem "$rootPath\*\obj\project.assets.json").Length
+}
+
+task Restore -If { "Restore" -in $BuildTask -or (NeedsRestore(".\src")) -or (NeedsRestore(".\test")) } -Before Clean, Build, BuildHost, Test {
     exec { & $script:dotnetExe restore }
 }
 
@@ -199,4 +207,4 @@ task UploadTestLogs -After Test -If ($script:IsCIBuild) {
 }
 
 # The default task is to run the entire CI build
-task . GetProductVersion, Restore, Clean, Build, TestPowerShellApi, Test, PackageNuGet, PackageModule, UploadArtifacts
+task . GetProductVersion, Clean, Build, TestPowerShellApi, Test, PackageNuGet, PackageModule, UploadArtifacts
