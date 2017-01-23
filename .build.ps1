@@ -1,3 +1,8 @@
+#
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+#
+
 param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Debug"
@@ -10,13 +15,10 @@ $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "C
 $script:TargetFrameworksParam = "/p:TargetFrameworks=\`"$(if (!$script:IsUnix) { "net451;" })netstandard1.6\`""
 
 if ($PSVersionTable.PSEdition -ne "Core") {
-    Add-Type -Assembly System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
+    Add-Type -Assembly System.IO.Compression.FileSystem
 }
 
 task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellApi, PackageNuGet {
-
-    # Bail out early if we've already found the exe path
-    if ($script:dotnetExe -ne $null) { return }
 
     # Fetch the SDK version from global.json
     $globalJson = Get-Content $PSScriptRoot/global.json | ConvertFrom-Json
@@ -93,12 +95,12 @@ task Restore {
 
 task Clean {
     exec { & $script:dotnetExe clean }
+    Remove-Item .\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
     Get-ChildItem -Recurse src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
-    Get-ChildItem module\*.zip | Remove-Item -Force -ErrorAction Ignore
+    Get-ChildItem .\module\PowerShellEditorServices\*.zip | Remove-Item -Force -ErrorAction Ignore
 }
 
 task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
-    if ($script:BaseVersion) { return }
     [xml]$props = Get-Content .\PowerShellEditorServices.Common.props
 
     $script:VersionSuffix = $props.Project.PropertyGroup.VersionSuffix
