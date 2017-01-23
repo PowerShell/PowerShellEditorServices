@@ -13,54 +13,66 @@ if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
 }
 
-task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellApi {
+task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellApi, PackageNuGet {
 
     # Bail out early if we've already found the exe path
     if ($script:dotnetExe -ne $null) { return }
 
-    $requiredDotnetVersion = "1.0.0-preview4-004233"
+    # Fetch the SDK version from global.json
+    $globalJson = Get-Content $PSScriptRoot/global.json | ConvertFrom-Json
+    $requiredSdkVersion = $globalJson.sdk.version
+
+    # Alternative versions:
+    # "version": "1.0.0-rc4-004598"
+    # "version": "1.0.0-rc3-004517"
+    # "version": "1.0.0-preview4-004233"
+
     $needsInstall = $true
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
+    $originalDotNetExePath = $dotnetExePath
 
-    if (Test-Path $dotnetExePath) {
-        $script:dotnetExe = $dotnetExePath
-    }
-    else {
+    if (!(Test-Path $dotnetExePath)) {
         $installedDotnet = Get-Command dotnet -ErrorAction Ignore
         if ($installedDotnet) {
             $dotnetExePath = $installedDotnet.Source
+        }
+        else {
+            $dotnetExePath = $null
+        }
+    }
 
-            exec {
-                if ((& $dotnetExePath --version) -eq $requiredDotnetVersion) {
-                    $script:dotnetExe = $dotnetExePath
-                }
-            }
+    # Make sure the dotnet we found is the right version
+    if ($dotnetExePath -and (& $dotnetExePath --version) -eq $requiredSdkVersion) {
+        $script:dotnetExe = $dotnetExePath
+    }
+    else {
+        # Clear the path so that we invoke installation
+        $script:dotnetExe = $null
+    }
+
+    if ($script:dotnetExe -eq $null) {
+
+        Write-Host "`n### Installing .NET CLI $requiredSdkVersion...`n" -ForegroundColor Green
+
+        # The install script is platform-specific
+        $installScriptExt = if ($script:IsUnix) { "sh" } else { "ps1" }
+
+        # Download the official installation script and run it
+        $installScriptPath = "$([System.IO.Path]::GetTempPath())dotnet-install.$installScriptExt"
+        Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview4/scripts/obtain/dotnet-install.$installScriptExt" -OutFile $installScriptPath
+        $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
+
+        if (!$script:IsUnix) {
+            & $installScriptPath -Version $requiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
+        }
+        else {
+            & /bin/bash $installScriptPath -Version $requiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
+            $env:PATH = $dotnetExeDir + [System.IO.Path]::PathSeparator + $env:PATH
         }
 
-        if ($script:dotnetExe -eq $null) {
-
-            Write-Host "`n### Installing .NET CLI $requiredDotnetVersion...`n" -ForegroundColor Green
-
-            # The install script is platform-specific
-            $installScriptExt = if ($script:IsUnix) { "sh" } else { "ps1" }
-
-            # Download the official installation script and run it
-            $installScriptPath = "$([System.IO.Path]::GetTempPath())dotnet-install.$installScriptExt"
-            Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview4/scripts/obtain/dotnet-install.$installScriptExt" -OutFile $installScriptPath
-            $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
-
-            if (!$script:IsUnix) {
-                & $installScriptPath -Version $requiredDotnetVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
-            }
-            else {
-                & /bin/bash $installScriptPath -Version $requiredDotnetVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
-                $env:PATH = $dotnetExeDir + [System.IO.Path]::PathSeparator + $env:PATH
-            }
-
-            Write-Host "`n### Installation complete." -ForegroundColor Green
-            $script:dotnetExe = $dotnetExePath
-        }
+        Write-Host "`n### Installation complete." -ForegroundColor Green
+        $script:dotnetExe = $originalDotnetExePath
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
@@ -104,10 +116,10 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
 
 function BuildForPowerShellVersion($version) {
     # Restore packages for the specified version
-    exec { & $script:dotnetExe restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -- /p:PowerShellVersion=$version }
+    exec { & $script:dotnetExe restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj /p:PowerShellVersion=$version }
 
     Write-Host -ForegroundColor Green "`n### Testing API usage for PowerShell $version...`n"
-    exec { & $script:dotnetExe build -f net451 .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -- /p:PowerShellVersion=$version }
+    exec { & $script:dotnetExe build -f net451 .\src\PowerShellEditorServices\PowerShellEditorServices.csproj /p:PowerShellVersion=$version }
 }
 
 task TestPowerShellApi -If { !$script:IsUnix } {
@@ -120,17 +132,17 @@ task TestPowerShellApi -If { !$script:IsUnix } {
 }
 
 task BuildHost {
-    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -- $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
 }
 
 task Build {
-    exec { & $script:dotnetExe build -c $Configuration .\PowerShellEditorServices.sln -- $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe build -c $Configuration .\PowerShellEditorServices.sln $script:TargetFrameworksParam }
 }
 
 task Test -If { !$script:IsUnix } {
-    exec { & $script:dotnetExe test -c $Configuration .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
-    exec { & $script:dotnetExe test -c $Configuration .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
-    exec { & $script:dotnetExe test -c $Configuration .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
+    exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
+    exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
+    exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
 }
 
 task LayoutModule -After Build, BuildHost {
@@ -146,9 +158,9 @@ task LayoutModule -After Build, BuildHost {
 }
 
 task PackageNuGet {
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -- $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj -- $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -- $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
 }
 
 task PackageModule {
