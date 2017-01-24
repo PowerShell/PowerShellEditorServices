@@ -78,7 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 #endif
 
             // Catch unhandled exceptions for logging purposes
-#if !NanoServer
+#if !CoreCLR
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 #endif
         }
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         {
             Logger.Initialize(logFilePath, logLevel);
 
-#if NanoServer
+#if CoreCLR
             FileVersionInfo fileVersionInfo =
                 FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
 
@@ -122,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     $"    Name:      {this.hostDetails.Name}" + newLine +
                     $"    ProfileId: {this.hostDetails.ProfileId}" + newLine +
                     $"    Version:   {this.hostDetails.Version}" + newLine +
-#if !NanoServer
+#if !CoreCLR
                     $"    Arch:      {processArchitecture}" + newLine + newLine +
                      "  Operating system details:" + newLine + newLine +
                     $"    Version: {osVersionString}" + newLine +
@@ -220,7 +220,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         #region Private Methods
 
-#if !NanoServer
+#if !CoreCLR
         static void CurrentDomain_UnhandledException(
             object sender, 
             UnhandledExceptionEventArgs e)

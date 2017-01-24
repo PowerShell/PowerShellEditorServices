@@ -1,171 +1,95 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{81E8CBCD-6319-49E7-9662-0475BD0791F4}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.PowerShell.EditorServices</RootNamespace>
+    <AssemblyTitle>PowerShell Editor Services</AssemblyTitle>
+    <Description>Provides common PowerShell editor capabilities as a .NET library.</Description>
+    <TargetFrameworks>net451;netstandard1.6</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
-    <RestorePackages>true</RestorePackages>
-    <DefineConstants Condition="'$(PowerShellVersion)' == 'v3'">$(DefineConstants);PowerShellv3</DefineConstants>
-    <DefineConstants Condition="'$(PowerShellVersion)' == 'v4'">$(DefineConstants);PowerShellv4</DefineConstants>
+    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="**\*.cs" />
+    <EmbeddedResource Include="**\*.resx" />
+    <EmbeddedResource Include="compiler\resources\**\*" />
+    <EmbeddedResource Include="Extensions\CmdletInterface.ps1">
+      <LogicalName>Microsoft.PowerShell.EditorServices.Extensions.CmdletInterface.ps1</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <PropertyGroup>
     <!-- NOTE: -->
     <!-- For PowerShell v5 there are some differences between the APIs released with -->
     <!-- Windows 10 RTM and Windows 10 Update 1, thus we need to distinguish between -->
     <!-- the two in our code.  v5r1 indicates Win 10 RTM (10240) and v5r2 indicates  -->
     <!-- Win10 Update 1 (10586).  The PowerShellv5 constant will be defined for both -->
     <!-- of these versions for anything that should work against both APIs.          -->
+    <DefineConstants Condition="'$(PowerShellVersion)' == 'v3'">$(DefineConstants);PowerShellv3</DefineConstants>
+    <DefineConstants Condition="'$(PowerShellVersion)' == 'v4'">$(DefineConstants);PowerShellv4</DefineConstants>
     <DefineConstants Condition="'$(PowerShellVersion)' == 'v5r1'">$(DefineConstants);PowerShellv5r1;PowerShellv5</DefineConstants>
     <DefineConstants Condition="'$(PowerShellVersion)' == 'v5r2' Or '$(PowerShellVersion)' == ''">$(DefineConstants);PowerShellv5r2;PowerShellv5</DefineConstants>
-    <TargetFrameworkProfile />
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;$(DefineConstants)</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\Microsoft.PowerShell.EditorServices.XML</DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;$(DefineConstants)</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+
+  <!-- Fail the release build if there are missing public API documentation comments -->
+  <!-- TODO #353: Re-enable this once dotnet doesn't hang on these errors anymore -->
+  <!--<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <WarningsAsErrors>1591,1573,1572</WarningsAsErrors>
-    <DocumentationFile>bin\Release\Microsoft.PowerShell.EditorServices.XML</DocumentationFile>
-  </PropertyGroup>
+    <DocumentationFile>bin\$(TargetFramework)\$(Configuration)\Microsoft.PowerShell.EditorServices.xml</DocumentationFile>
+  </PropertyGroup>-->
+
   <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Sdk">
+      <Version>1.0.0-alpha-20161104-2</Version>
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="NETStandard.Library">
+      <Version>1.6.1</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <Target Name="PowerShellVersionOutput" BeforeTargets="Compile">
+    <Message
+      Condition=" '$(TargetFramework)' == 'net451' And '$(PowerShellVersion)' != '' "
+      Text="Target PowerShell Version: $(PowerShellVersion) -- Constants: $(DefineConstants)"
+      Importance="High" />
+  </Target>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' And '$(PowerShellVersion)' == 'v3' ">
+    <PackageReference Include="Microsoft.PowerShell.3.ReferenceAssemblies" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' And '$(PowerShellVersion)' == 'v4' ">
+    <PackageReference Include="Microsoft.PowerShell.4.ReferenceAssemblies" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' And ('$(PowerShellVersion)' == 'v5r2' Or '$(PowerShellVersion)' == 'v5r1')">
+    <PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(PowerShellVersion)' == '' Or '$(PowerShellVersion)' == 'v5r2'">
+    <PackageReference Include="Microsoft.PowerShell.SDK">
+      <Version>6.0.0-alpha13</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
     <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Management.Automation" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Analysis\AnalysisOutputWriter.cs" />
-    <Compile Include="Analysis\AnalysisService.cs" />
-    <Compile Include="Console\ChoicePromptHandler.cs" />
-    <Compile Include="Console\ConsoleChoicePromptHandler.cs" />
-    <Compile Include="Console\ConsoleInputPromptHandler.cs" />
-    <Compile Include="Console\ConsolePromptHandlerContext.cs" />
-    <Compile Include="Console\ConsoleService.cs" />
-    <Compile Include="Console\FieldDetails.cs" />
-    <Compile Include="Console\InputPromptHandler.cs" />
-    <Compile Include="Console\IPromptHandlerContext.cs" />
-    <Compile Include="Console\PromptHandler.cs" />
-    <Compile Include="Debugging\BreakpointDetails.cs" />
-    <Compile Include="Debugging\BreakpointDetailsBase.cs" />
-    <Compile Include="Debugging\DebuggerStoppedEventArgs.cs" />
-    <Compile Include="Debugging\DebugService.cs" />
-    <Compile Include="Debugging\CommandBreakpointDetails.cs" />
-    <Compile Include="Debugging\InvalidPowerShellExpressionException.cs" />
-    <Compile Include="Debugging\StackFrameDetails.cs" />
-    <Compile Include="Debugging\VariableDetails.cs" />
-    <Compile Include="Debugging\VariableDetailsBase.cs" />
-    <Compile Include="Debugging\VariableScope.cs" />
-    <Compile Include="Debugging\VariableContainerDetails.cs" />
-    <Compile Include="Extensions\EditorContext.cs" />
-    <Compile Include="Extensions\EditorObject.cs" />
-    <Compile Include="Extensions\EditorWindow.cs" />
-    <Compile Include="Extensions\EditorWorkspace.cs" />
-    <Compile Include="Extensions\EditorCommand.cs" />
-    <Compile Include="Extensions\ExtensionService.cs" />
-    <Compile Include="Extensions\FileContext.cs" />
-    <Compile Include="Extensions\IEditorOperations.cs" />
-    <Compile Include="Language\AstOperations.cs" />
-    <Compile Include="Language\CommandHelpers.cs" />
-    <Compile Include="Language\CompletionResults.cs" />
-    <Compile Include="Language\FindCommandVisitor.cs" />
-    <Compile Include="Language\FindDeclartionVisitor.cs" />
-    <Compile Include="Language\FindDotSourcedVisitor.cs" />
-    <Compile Include="Language\FindOccurrencesResult.cs" />
-    <Compile Include="Language\FindReferencesResult.cs" />
-    <Compile Include="Language\FindReferencesVisitor.cs" />
-    <Compile Include="Language\FindSymbolsVisitor.cs" />
-    <Compile Include="Language\FindSymbolsVisitor2.cs" />
-    <Compile Include="Language\FindSymbolVisitor.cs" />
-    <Compile Include="Language\GetDefinitionResult.cs" />
-    <Compile Include="Language\LanguageService.cs" />
-    <Compile Include="Language\ParameterSetSignatures.cs" />
-    <Compile Include="Language\ScriptExtent.cs" />
-    <Compile Include="Language\SymbolDetails.cs" />
-    <Compile Include="Language\SymbolReference.cs" />
-    <Compile Include="Language\SymbolType.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Console\ChoiceDetails.cs" />
-    <Compile Include="Session\EditorSession.cs" />
-    <Compile Include="Console\IConsoleHost.cs" />
-    <Compile Include="Session\HostDetails.cs" />
-    <Compile Include="Session\IVersionSpecificOperations.cs" />
-    <Compile Include="Session\OutputType.cs" />
-    <Compile Include="Session\OutputWrittenEventArgs.cs" />
-    <Compile Include="Session\PowerShell3Operations.cs" />
-    <Compile Include="Session\PowerShell4Operations.cs" />
-    <Compile Include="Session\PowerShell5Operations.cs" />
-    <Compile Include="Session\PowerShellExecutionResult.cs" />
-    <Compile Include="Session\PowerShellContext.cs" />
-    <Compile Include="Session\PowerShellContextState.cs" />
-    <Compile Include="Session\PowerShellVersionDetails.cs" />
-    <Compile Include="Session\ProfilePaths.cs" />
-    <Compile Include="Session\ProgressDetails.cs" />
-    <Compile Include="Session\RunspaceChangedEventArgs.cs" />
-    <Compile Include="Session\RunspaceDetails.cs" />
-    <Compile Include="Session\RunspaceHandle.cs" />
-    <Compile Include="Session\SessionPSHost.cs" />
-    <Compile Include="Session\SessionPSHostRawUserInterface.cs" />
-    <Compile Include="Session\SessionPSHostUserInterface.cs" />
-    <Compile Include="Session\SessionStateChangedEventArgs.cs" />
-    <Compile Include="Templates\TemplateDetails.cs" />
-    <Compile Include="Templates\TemplateService.cs" />
-    <Compile Include="Utility\AsyncContextThread.cs" />
-    <Compile Include="Utility\AsyncDebouncer.cs" />
-    <Compile Include="Utility\AsyncLock.cs" />
-    <Compile Include="Utility\AsyncQueue.cs" />
-    <Compile Include="Utility\AsyncContext.cs" />
-    <Compile Include="Utility\Extensions.cs" />
-    <Compile Include="Utility\Logger.cs" />
-    <Compile Include="Utility\ThreadSynchronizationContext.cs" />
-    <Compile Include="Utility\Validate.cs" />
-    <Compile Include="Workspace\BufferRange.cs" />
-    <Compile Include="Workspace\FileChange.cs" />
-    <Compile Include="Workspace\BufferPosition.cs" />
-    <Compile Include="Workspace\FilePosition.cs" />
-    <Compile Include="Session\RemoteFileManager.cs" />
-    <Compile Include="Workspace\ScriptFile.cs" />
-    <Compile Include="Workspace\ScriptFileMarker.cs" />
-    <Compile Include="Workspace\ScriptRegion.cs" />
-    <Compile Include="Workspace\Workspace.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Extensions\CmdletInterface.ps1" />
-  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
+    <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
+  </PropertyGroup>
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-  </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

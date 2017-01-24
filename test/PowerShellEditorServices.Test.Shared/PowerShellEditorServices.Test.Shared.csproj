@@ -1,105 +1,41 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.PowerShell.EditorServices.Test.Shared</RootNamespace>
+    <VersionPrefix>0.9.0-beta</VersionPrefix>
+    <TargetFrameworks>net451;netstandard1.6</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Test.Shared</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
+    <Compile Include="**\*.cs" />
+    <EmbeddedResource Include="**\*.resx" />
+    <EmbeddedResource Include="compiler\resources\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Sdk">
+      <Version>1.0.0-alpha-20161104-2</Version>
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="NETStandard.Library">
+      <Version>1.6.1</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
+    <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
     <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Completion\CompleteAttributeValue.cs" />
-    <Compile Include="Completion\CompleteCommandFromModule.cs" />
-    <Compile Include="Completion\CompleteCommandInFile.cs" />
-    <Compile Include="Completion\CompleteFilePath.cs" />
-    <Compile Include="Completion\CompleteVariableInFile.cs" />
-    <Compile Include="Definition\FindsFunctionDefinitionInDotSourceReference.cs" />
-    <Compile Include="Definition\FindsFunctionDefinition.cs" />
-    <Compile Include="Definition\FindsVariableDefinition.cs" />
-    <Compile Include="Occurrences\FindOccurrencesOnParameter.cs" />
-    <Compile Include="Occurrences\FindsOccurrencesOnFunction.cs" />
-    <Compile Include="ParameterHints\FindsParameterSetsOnCommand.cs" />
-    <Compile Include="ParameterHints\FindsParameterSetsOnCommandWithSpaces.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="References\FindsReferencesOnBuiltInCommandWithAlias.cs" />
-    <Compile Include="References\FindsReferencesOnFunction.cs" />
-    <Compile Include="References\FindsReferencesOnFunctionMultiFileDotSource.cs" />
-    <Compile Include="References\FindsReferencesOnVariable.cs" />
-    <Compile Include="SymbolDetails\FindsDetailsForBuiltInCommand.cs" />
-    <Compile Include="Symbols\FindSymbolsInMultiSymbolFile.cs" />
-    <Compile Include="Symbols\FindSymbolsInNoSymbolsFile.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Completion\CompletionExamples.psm1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Debugging\Debug With Params [Test].ps1" />
-    <None Include="Debugging\VariableTest.ps1" />
-    <None Include="Profile\ProfileTest.ps1" />
-    <None Include="Profile\Test.PowerShellEditorServices_profile.ps1" />
-    <None Include="SymbolDetails\SymbolDetails.ps1" />
-    <None Include="Symbols\MultipleSymbols.ps1" />
-    <None Include="Symbols\NoSymbols.ps1" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj">
-      <Project>{81e8cbcd-6319-49e7-9662-0475bd0791f4}</Project>
-      <Name>PowerShellEditorServices</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Debugging\DebugTest.ps1" />
-    <None Include="ParameterHints\ParamHints.ps1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="References\FileWithReferences.ps1" />
-    <None Include="References\ReferenceFileA.ps1" />
-    <None Include="References\ReferenceFileB.ps1" />
-    <None Include="References\ReferenceFileC.ps1" />
-    <None Include="References\SimpleFile.ps1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup />
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

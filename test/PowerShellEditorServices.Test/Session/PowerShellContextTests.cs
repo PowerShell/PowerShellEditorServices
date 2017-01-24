@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         private AsyncQueue<SessionStateChangedEventArgs> stateChangeQueue;
 
         private const string DebugTestFilePath =
-            @"..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1";
+            @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1";
 
         private static readonly HostDetails TestHostDetails =
             new HostDetails(
@@ -36,9 +36,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             new ProfilePaths(
                 TestHostDetails.ProfileId, 
                     Path.GetFullPath(
-                        @"..\..\..\PowerShellEditorServices.Test.Shared\Profile"),
+                        @"..\..\..\..\PowerShellEditorServices.Test.Shared\Profile"),
                     Path.GetFullPath(
-                        @"..\..\..\PowerShellEditorServices.Test.Shared"));
+                        @"..\..\..\..\PowerShellEditorServices.Test.Shared"));
 
         public PowerShellContextTests()
         {

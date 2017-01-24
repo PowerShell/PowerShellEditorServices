@@ -1,48 +1,20 @@
-version: '$(core_version).{build}'
-os: WMF 5
-configuration: Release
+version: '0.9.0.{build}'
+image: Visual Studio 2017 RC
 clone_depth: 10
 skip_tags: true
-
-environment:
-  core_version: '0.9.0'
-  prerelease_name: '-beta'
 
 branches:
   only:
   - master
   - develop
 
-# NOTE: If you need to debug a problem with the AppVeyor build, uncomment the
-#       following two lines and push them to your PR branch.  Once the next
-#       build starts you will see RDP connection details written out to the
-#       build console.  **DON'T FORGET TO REMOVE THIS COMMIT BEFORE MERGING!**
-
-#init:
-#- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-
-assembly_info:
-  patch: true
-  file: '**\AssemblyInfo.*'
-  assembly_version: '{version}'
-  assembly_file_version: '{version}'
-  assembly_informational_version: '$(core_version)$(prerelease_name)+{build}'
-
 install:
-- git submodule -q update --init
+  - ps: |
+      Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force | Out-Null
+      Install-Module InvokeBuild -RequiredVersion 3.2.1 -Scope CurrentUser -Force | Out-Null
 
-before_build:
-- ps: if (Test-Path 'C:\Tools\NuGet3') { $nugetDir = 'C:\Tools\NuGet3' } else { $nugetDir = 'C:\Tools\NuGet' }; (New-Object Net.WebClient).DownloadFile('https://dist.nuget.org/win-x86-commandline/v3.3.0/nuget.exe', "$nugetDir\NuGet.exe")
-- nuget restore PowerShellEditorServices.sln
+build_script:
+  - ps: Invoke-Build -Configuration Release
 
-build:
-  project: PowerShellEditorServices.NoNano.sln
-  publish_nuget: true
-  verbosity: minimal
-
-test:
-  assemblies:
-  - Microsoft.PowerShell.EditorServices.Test.dll
-  - Microsoft.PowerShell.EditorServices.Test.Protocol.dll
-  - Microsoft.PowerShell.EditorServices.Test.Host.dll
-  - Microsoft.PowerShell.EditorServices.Test.Channel.WebSockets.dll
+# The build script takes care of the tests
+test: off

@@ -37,13 +37,41 @@ how to use this project. You can also read our plans for future feature developm
 
 **TODO**: Add information about acquiring packages from NuGet and npm once those are available.
 
-## Cloning the Code
+## Development
 
-To clone the repository execute:
+
+### 1. Install PowerShell if necessary
+
+If you are using Windows, skip this step.  If you are using Linux or macOS, you will need to
+install PowerShell by following [these instructions](https://github.com/PowerShell/PowerShell#get-powershell).
+
+### 2. Clone the GitHub repository:
 
 ```
 git clone https://github.com/PowerShell/PowerShellEditorServices.git
 ```
+
+### 3. Install [Invoke-Build](https://github.com/nightroman/Invoke-Build)
+
+This step requires PowerShellGet, included by default with PowerShell v5 and up
+but installable on [PowerShell v3 and v4](https://github.com/PowerShell/PowerShellGet#get-powershellget-module-for-powershell-versions-30-and-40).
+
+```powershell
+Install-Module InvokeBuild -Scope CurrentUser
+```
+
+Now you're ready to build the code.  You can do so in one of two ways:
+
+### Building the code from PowerShell
+
+```powershell
+PS C:\path\to\PowerShellEditorServices> Invoke-Build Build
+```
+
+### Building the code from Visual Studio Code
+
+Open the PowerShellEditorServices folder that you cloned locally and press <kbd>Ctrl+Shift+B</kbd>
+(or <kbd>Cmd+Shift+B</kbd> on macOS).
 
 ## Contributions Welcome!
 

@@ -3,6 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+// EnvDTE assembly references currently don't seem to be working
+// with the new dotnet cli tools, disabling this temporarily.
+#if UseEnvDTE
+
 using EnvDTE;
 using System;
 using System.Linq;
@@ -109,3 +113,5 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         private static extern int CoRegisterMessageFilter(IOleMessageFilter newFilter, out IOleMessageFilter oldFilter);
     }
 }
+
+#endif

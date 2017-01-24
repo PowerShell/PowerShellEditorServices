@@ -1,0 +1,45 @@
+{
+	"version": "0.1.0",
+
+    "windows": {
+        "command": "${env.windir}\\sysnative\\windowspowershell\\v1.0\\PowerShell.exe",
+        "args": [ "-NoProfile", "-ExecutionPolicy", "Bypass" ]
+    },
+    "linux": {
+        "command": "/usr/bin/powershell",
+        "args": [ "-NoProfile" ]
+    },
+    "osx": {
+        "command": "/usr/local/bin/powershell",
+        "args": [ "-NoProfile" ]
+    },
+
+	"isShellCommand": true,
+	"showOutput": "always",
+
+    // Associate with test task runner
+    "tasks": [
+        {
+            "taskName": "Clean",
+            "suppressTaskName": true,
+            "args": [ "Invoke-Build Clean" ]
+        },
+        {
+            "taskName": "Build",
+            "suppressTaskName": true,
+            "isBuildCommand": true,
+            "args": [ "Invoke-Build BuildHost" ]
+        },
+        {
+            "taskName": "Full Build",
+            "suppressTaskName": true,
+            "args": [ "Invoke-Build" ]
+        },
+        {
+            "taskName": "Test",
+            "suppressTaskName": true,
+            "isTestCommand": true,
+            "args": [ "Invoke-Build Test" ]
+        }
+	]
+}
