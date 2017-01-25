@@ -118,6 +118,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.analysisRunspacePool.Open();
 
                 ActiveRules = IncludedRules.ToArray();
+                EnumeratePSScriptAnalyzerRules();
             }
             catch (Exception e)
             {
