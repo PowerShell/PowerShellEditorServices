@@ -27,6 +27,15 @@ namespace Microsoft.PowerShell.EditorServices
         private const int NumRunspaces = 2;
         private RunspacePool analysisRunspacePool;
         private PSModuleInfo scriptAnalyzerModuleInfo;
+
+        private bool hasScriptAnalyzerModule
+        {
+            get
+            {
+                return scriptAnalyzerModuleInfo != null;
+            }
+        }
+
         private string[] activeRules;
         private string settingsPath;
 
@@ -160,7 +169,7 @@ namespace Microsoft.PowerShell.EditorServices
         public IEnumerable<string> GetPSScriptAnalyzerRules()
         {
             List<string> ruleNames = new List<string>();
-            if (scriptAnalyzerModuleInfo != null)
+            if (hasScriptAnalyzerModule)
             {
                 var ruleObjects = InvokePowerShell("Get-ScriptAnalyzerRule", new Dictionary<string, object>());
                 foreach (var rule in ruleObjects)
@@ -215,7 +224,7 @@ namespace Microsoft.PowerShell.EditorServices
             string[] rules,
             TSettings settings) where TSettings : class
         {
-            if (this.scriptAnalyzerModuleInfo != null
+            if (hasScriptAnalyzerModule
                 && file.IsAnalysisEnabled
                 && (typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
                 && (rules != null || settings != null))
@@ -246,16 +255,16 @@ namespace Microsoft.PowerShell.EditorServices
                   .AddParameter("First", 1);
 
                 var modules = ps.Invoke<PSModuleInfo>();
-                var scriptAnalyzerModuleInfo = modules == null ? null : modules.FirstOrDefault();
-                if (scriptAnalyzerModuleInfo != null)
+                var psModuleInfo = modules == null ? null : modules.FirstOrDefault();
+                if (psModuleInfo != null)
                 {
                     Logger.Write(
                         LogLevel.Normal,
                             string.Format(
                                 "PSScriptAnalyzer found at {0}",
-                                scriptAnalyzerModuleInfo.Path));
+                                psModuleInfo.Path));
 
-                    return scriptAnalyzerModuleInfo;
+                    return psModuleInfo;
                 }
 
                 Logger.Write(
@@ -267,7 +276,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void EnumeratePSScriptAnalyzerRules()
         {
-            if (scriptAnalyzerModuleInfo != null)
+            if (hasScriptAnalyzerModule)
             {
                 var rules = GetPSScriptAnalyzerRules();
                 var sb = new StringBuilder();
@@ -288,7 +297,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             var diagnosticRecords = new PSObject[0];
 
-            if (this.scriptAnalyzerModuleInfo != null
+            if (hasScriptAnalyzerModule
                 && (typeof(TSettings) == typeof(string)
                     || typeof(TSettings) == typeof(Hashtable)))
             {
