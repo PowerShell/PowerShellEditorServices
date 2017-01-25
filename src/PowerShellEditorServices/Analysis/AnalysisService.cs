@@ -334,12 +334,12 @@ namespace Microsoft.PowerShell.EditorServices
             EnumeratePSScriptAnalyzerRules();
         }
 
-        private async Task<IEnumerable<PSObject>> GetDiagnosticRecordsAsync<TSettings>(
+        private async Task<PSObject[]> GetDiagnosticRecordsAsync<TSettings>(
             ScriptFile file,
             string[] rules,
             TSettings settings) where TSettings : class
         {
-            IEnumerable<PSObject> diagnosticRecords = Enumerable.Empty<PSObject>();
+            var diagnosticRecords = new PSObject[0];
 
             if (this.scriptAnalyzerModuleInfo != null
                 && (typeof(TSettings) == typeof(string)
@@ -375,14 +375,14 @@ namespace Microsoft.PowerShell.EditorServices
             return diagnosticRecords;
         }
 
-        private IEnumerable<PSObject> InvokePowerShell(string command, IDictionary<string, object> paramArgMap)
+        private PSObject[] InvokePowerShell(string command, IDictionary<string, object> paramArgMap)
         {
             var task = InvokePowerShellAsync(command, paramArgMap);
             task.Wait();
             return task.Result;
         }
 
-        private async Task<IEnumerable<PSObject>> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
+        private async Task<PSObject[]> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
         {
             using (var powerShell = System.Management.Automation.PowerShell.Create())
             {
@@ -396,10 +396,10 @@ namespace Microsoft.PowerShell.EditorServices
                 var result = await Task.Factory.FromAsync(powerShell.BeginInvoke(), powerShell.EndInvoke);
                 if (result == null)
                 {
-                    return Enumerable.Empty<PSObject>();
+                    return new PSObject[0];
                 }
 
-                return result;
+                return result.ToArray();;
             }
         }
 
