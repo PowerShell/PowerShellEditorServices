@@ -7,7 +7,6 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Linq;
 using System.Management.Automation.Runspaces;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Console;
 using System.Management.Automation;
@@ -28,6 +27,15 @@ namespace Microsoft.PowerShell.EditorServices
         private const int NumRunspaces = 2;
         private RunspacePool analysisRunspacePool;
         private PSModuleInfo scriptAnalyzerModuleInfo;
+
+        private bool hasScriptAnalyzerModule
+        {
+            get
+            {
+                return scriptAnalyzerModuleInfo != null;
+            }
+        }
+
         private string[] activeRules;
         private string settingsPath;
 
@@ -102,7 +110,10 @@ namespace Microsoft.PowerShell.EditorServices
             try
             {
                 this.SettingsPath = settingsPath;
+
+                scriptAnalyzerModuleInfo = FindPSScriptAnalyzerModule();
                 var sessionState = InitialSessionState.CreateDefault2();
+                sessionState.ImportPSModulesFromPath(scriptAnalyzerModuleInfo.ModuleBase);
 
                 // runspacepool takes care of queuing commands for us so we do not
                 // need to worry about executing concurrent commands
@@ -115,7 +126,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.analysisRunspacePool.Open();
 
                 ActiveRules = IncludedRules.ToArray();
-                InitializePSScriptAnalyzer();
+                EnumeratePSScriptAnalyzerRules();
             }
             catch (Exception e)
             {
@@ -158,7 +169,7 @@ namespace Microsoft.PowerShell.EditorServices
         public IEnumerable<string> GetPSScriptAnalyzerRules()
         {
             List<string> ruleNames = new List<string>();
-            if (scriptAnalyzerModuleInfo != null)
+            if (hasScriptAnalyzerModule)
             {
                 var ruleObjects = InvokePowerShell("Get-ScriptAnalyzerRule", new Dictionary<string, object>());
                 foreach (var rule in ruleObjects)
@@ -213,7 +224,7 @@ namespace Microsoft.PowerShell.EditorServices
             string[] rules,
             TSettings settings) where TSettings : class
         {
-            if (this.scriptAnalyzerModuleInfo != null
+            if (hasScriptAnalyzerModule
                 && file.IsAnalysisEnabled
                 && (typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
                 && (rules != null || settings != null))
@@ -228,12 +239,10 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private void FindPSScriptAnalyzer()
+        private static PSModuleInfo FindPSScriptAnalyzerModule()
         {
             using (var ps = System.Management.Automation.PowerShell.Create())
             {
-                ps.RunspacePool = this.analysisRunspacePool;
-
                 ps.AddCommand("Get-Module")
                   .AddParameter("ListAvailable")
                   .AddParameter("Name", "PSScriptAnalyzer");
@@ -245,65 +254,29 @@ namespace Microsoft.PowerShell.EditorServices
                 ps.AddCommand("Select-Object")
                   .AddParameter("First", 1);
 
-                var modules = ps.Invoke();
-
-                var psModule = modules == null ? null : modules.FirstOrDefault();
-                if (psModule != null)
+                var modules = ps.Invoke<PSModuleInfo>();
+                var psModuleInfo = modules == null ? null : modules.FirstOrDefault();
+                if (psModuleInfo != null)
                 {
-                    scriptAnalyzerModuleInfo = psModule.ImmediateBaseObject as PSModuleInfo;
                     Logger.Write(
                         LogLevel.Normal,
                             string.Format(
                                 "PSScriptAnalyzer found at {0}",
-                                scriptAnalyzerModuleInfo.Path));
+                                psModuleInfo.Path));
+
+                    return psModuleInfo;
                 }
-                else
-                {
-                    Logger.Write(
-                        LogLevel.Normal,
-                        "PSScriptAnalyzer module was not found.");
-                }
+
+                Logger.Write(
+                    LogLevel.Normal,
+                    "PSScriptAnalyzer module was not found.");
+                return null;
             }
-        }
-
-        private async Task<bool> ImportPSScriptAnalyzerAsync()
-        {
-            if (scriptAnalyzerModuleInfo != null)
-            {
-                var module =
-                    await InvokePowerShellAsync(
-                        "Import-Module",
-                        new Dictionary<string, object>
-                        {
-                            { "ModuleInfo", scriptAnalyzerModuleInfo },
-                            { "PassThru", true },
-                        });
-
-                if (module.Count() == 0)
-                {
-                    this.scriptAnalyzerModuleInfo = null;
-                    Logger.Write(LogLevel.Warning,
-                        String.Format("Cannot Import PSScriptAnalyzer: {0}"));
-
-                    return false;
-                }
-                else
-                {
-                    Logger.Write(LogLevel.Normal,
-                        String.Format(
-                            "Successfully imported PSScriptAnalyzer {0}",
-                            scriptAnalyzerModuleInfo.Version));
-
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private void EnumeratePSScriptAnalyzerRules()
         {
-            if (scriptAnalyzerModuleInfo != null)
+            if (hasScriptAnalyzerModule)
             {
                 var rules = GetPSScriptAnalyzerRules();
                 var sb = new StringBuilder();
@@ -317,31 +290,14 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private void InitializePSScriptAnalyzer()
-        {
-            FindPSScriptAnalyzer();
-
-            List<Task> importTasks = new List<Task>();
-            for (int i = 0; i < NumRunspaces; i++)
-            {
-                importTasks.Add(
-                    ImportPSScriptAnalyzerAsync());
-            }
-
-            // Wait for the import requests to complete or fail
-            Task.WaitAll(importTasks.ToArray());
-
-            EnumeratePSScriptAnalyzerRules();
-        }
-
-        private async Task<IEnumerable<PSObject>> GetDiagnosticRecordsAsync<TSettings>(
+        private async Task<PSObject[]> GetDiagnosticRecordsAsync<TSettings>(
             ScriptFile file,
             string[] rules,
             TSettings settings) where TSettings : class
         {
-            IEnumerable<PSObject> diagnosticRecords = Enumerable.Empty<PSObject>();
+            var diagnosticRecords = new PSObject[0];
 
-            if (this.scriptAnalyzerModuleInfo != null
+            if (hasScriptAnalyzerModule
                 && (typeof(TSettings) == typeof(string)
                     || typeof(TSettings) == typeof(Hashtable)))
             {
@@ -375,14 +331,14 @@ namespace Microsoft.PowerShell.EditorServices
             return diagnosticRecords;
         }
 
-        private IEnumerable<PSObject> InvokePowerShell(string command, IDictionary<string, object> paramArgMap)
+        private PSObject[] InvokePowerShell(string command, IDictionary<string, object> paramArgMap)
         {
             var task = InvokePowerShellAsync(command, paramArgMap);
             task.Wait();
             return task.Result;
         }
 
-        private async Task<IEnumerable<PSObject>> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
+        private async Task<PSObject[]> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
         {
             using (var powerShell = System.Management.Automation.PowerShell.Create())
             {
@@ -396,10 +352,10 @@ namespace Microsoft.PowerShell.EditorServices
                 var result = await Task.Factory.FromAsync(powerShell.BeginInvoke(), powerShell.EndInvoke);
                 if (result == null)
                 {
-                    return Enumerable.Empty<PSObject>();
+                    return new PSObject[0];
                 }
 
-                return result;
+                return result.ToArray(); ;
             }
         }
 
