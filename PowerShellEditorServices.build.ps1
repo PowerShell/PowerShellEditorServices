@@ -95,7 +95,7 @@ function NeedsRestore($rootPath) {
     # obj\project.assets.json files found under that path, implying
     # that those folders have not yet been restored.
     $projectAssets = (Get-ChildItem "$rootPath\*\obj\project.assets.json")
-    return ($projectAssets -eq $null) -or ((Get-ChildItem $rootPath).Length -gt $projectAssests.Length)
+    return ($projectAssets -eq $null) -or ((Get-ChildItem $rootPath).Length -gt $projectAssets.Length)
 }
 
 task Restore -If { "Restore" -in $BuildTask -or (NeedsRestore(".\src")) -or (NeedsRestore(".\test")) } -Before Clean, Build, BuildHost, Test {
