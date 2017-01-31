@@ -21,13 +21,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
 task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellApi, PackageNuGet {
 
     # Fetch the SDK version from global.json
-    $globalJson = Get-Content $PSScriptRoot/global.json | ConvertFrom-Json
-    $requiredSdkVersion = $globalJson.sdk.version
-
-    # Alternative versions:
-    # "version": "1.0.0-rc4-004598"
-    # "version": "1.0.0-rc3-004517"
-    # "version": "1.0.0-preview4-004233"
+    $requiredSdkVersion = "1.0.0-rc3-004530"
 
     $needsInstall = $true
     $dotnetPath = "$PSScriptRoot/.dotnet"
@@ -62,7 +56,7 @@ task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellA
 
         # Download the official installation script and run it
         $installScriptPath = "$([System.IO.Path]::GetTempPath())dotnet-install.$installScriptExt"
-        Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview4/scripts/obtain/dotnet-install.$installScriptExt" -OutFile $installScriptPath
+        Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-rc3/scripts/obtain/dotnet-install.$installScriptExt" -OutFile $installScriptPath
         $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
         if (!$script:IsUnix) {

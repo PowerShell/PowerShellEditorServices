@@ -1,6 +1,6 @@
-﻿<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />  
-  
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
+
   <PropertyGroup>
     <AssemblyTitle>PowerShell Editor Services Host Process</AssemblyTitle>
     <Description>Provides a process for hosting the PowerShell Editor Services library exposed by a JSON message protocol.</Description>
@@ -10,12 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="**\*.cs" />
-    <EmbeddedResource Include="**\*.resx" />
-    <EmbeddedResource Include="compiler\resources\**\*" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\PowerShellEditorServices\PowerShellEditorServices.csproj" />
     <ProjectReference Include="..\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj" />
   </ItemGroup>
@@ -23,13 +17,6 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json">
       <Version>9.0.1</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.NET.Sdk">
-      <Version>1.0.0-alpha-20161104-2</Version>
-      <PrivateAssets>All</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="NETStandard.Library">
-      <Version>1.6.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.PowerShell.SDK">
       <Version>6.0.0-alpha13</Version>
@@ -44,25 +31,4 @@
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
-
-  <!--<PropertyGroup>
-    <PostBuildEvent>
-      if not exist "$(SolutionDir)module\PowerShellEditorServices\bin" (
-          mkdir "$(SolutionDir)module\PowerShellEditorServices\bin"
-      )
-      if not exist "$(SolutionDir)module\PowerShellEditorServices\bin\Desktop" (
-          mkdir "$(SolutionDir)module\PowerShellEditorServices\bin\Desktop"
-      )
-
-      echo(
-      echo Copying files to module path: $(SolutionDir)module\PowerShellEditorServices\bin\Desktop
-      copy /y /v "$(ProjectDir)bin\$(Configuration)\Newtonsoft.Json.dll" "$(SolutionDir)module\PowerShellEditorServices\bin\Desktop"
-      copy /y /v "$(ProjectDir)bin\$(Configuration)\Microsoft.PowerShell.EditorServices.dll" "$(SolutionDir)module\PowerShellEditorServices\bin\Desktop"
-      copy /y /v "$(ProjectDir)bin\$(Configuration)\Microsoft.PowerShell.EditorServices.Protocol.dll" "$(SolutionDir)module\PowerShellEditorServices\bin\Desktop"
-      copy /y /v "$(ProjectDir)bin\$(Configuration)\Microsoft.PowerShell.EditorServices.Host.dll" "$(SolutionDir)module\PowerShellEditorServices\bin\Desktop"
-      echo(
-    </PostBuildEvent>
-  </PropertyGroup>-->
-
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
