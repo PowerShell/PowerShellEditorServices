@@ -122,10 +122,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             if (!string.IsNullOrEmpty(this.scriptPathToLaunch))
             {
-                // Configuration is done, launch the script
-                var nonAwaitedTask =
-                    this.LaunchScript(requestContext)
-                        .ConfigureAwait(false);
+                if (this.editorSession.PowerShellContext.SessionState == PowerShellContextState.Ready)
+                {
+                    // Configuration is done, launch the script
+                    var nonAwaitedTask =
+                        this.LaunchScript(requestContext)
+                            .ConfigureAwait(false);
+                }
+                else
+                {
+                    Logger.Write(
+                        LogLevel.Verbose,
+                        "configurationDone request called after script was already launched, skipping it.");
+                }
             }
 
             await requestContext.SendResult(null);

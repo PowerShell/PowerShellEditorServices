@@ -122,7 +122,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         private async Task LaunchScript(string scriptPath)
         {
             await this.debugAdapterClient.LaunchScript(scriptPath);
-            await this.SendRequest(ConfigurationDoneRequest.Type, null);
         }
     }
 }
