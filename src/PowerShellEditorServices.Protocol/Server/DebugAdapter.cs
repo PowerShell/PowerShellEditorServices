@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                             // Make sure remaining output is flushed before exiting
                             await this.outputDebouncer.Flush();
 
-                            await requestContext.SendEvent(
+                            await this.SendEvent(
                                 TerminatedEvent.Type,
                                 new TerminatedEvent());
 
@@ -198,7 +198,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // Send the InitializedEvent so that the debugger will continue
             // sending configuration requests
-            await requestContext.SendEvent(
+            await this.SendEvent(
                 InitializedEvent.Type,
                 null);
         }
