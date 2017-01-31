@@ -324,9 +324,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     {
                         await requestContext.SendResult(null);
                         this.editorSession.PowerShellContext.SessionStateChanged -= handler;
-
-                        // Stop the server
-                        await this.Stop();
                     }
                 };
 
