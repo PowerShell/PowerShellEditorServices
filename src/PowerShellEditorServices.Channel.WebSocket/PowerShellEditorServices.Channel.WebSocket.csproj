@@ -1,19 +1,12 @@
-﻿<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
     <AssemblyTitle>PowerShell Editor Services WebSocket Protocol Channel</AssemblyTitle>
-    <TargetFrameworks>net451;netstandard1.6</TargetFrameworks>
+    <TargetFramework>net451</TargetFramework>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Channel.WebSocket</AssemblyName>
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
-
-  <!-- This project currently doesn't work on netstandard1.6 so don't compile its source -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
-    <Compile Include="**\*.cs" />
-    <EmbeddedResource Include="**\*.resx" />
-    <EmbeddedResource Include="compiler\resources\**\*" />
-  </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
     <ProjectReference Include="..\PowerShellEditorServices\PowerShellEditorServices.csproj" />
@@ -23,13 +16,6 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json">
       <Version>9.0.1</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.NET.Sdk">
-      <Version>1.0.0-alpha-20161104-2</Version>
-      <PrivateAssets>All</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="NETStandard.Library">
-      <Version>1.6.1</Version>
     </PackageReference>
   </ItemGroup>
 
@@ -48,6 +34,4 @@
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
-
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
