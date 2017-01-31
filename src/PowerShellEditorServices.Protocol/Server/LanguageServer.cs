@@ -232,7 +232,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await RunScriptDiagnostics(
                     new ScriptFile[] { scripFile },
                         editorSession,
-                        requestContext.SendEvent);
+                        this.SendEvent);
             await sendresult;
         }
 
@@ -1136,7 +1136,7 @@ function __Expand-Alias {
             EditorSession editorSession,
             EventContext eventContext)
         {
-            return RunScriptDiagnostics(filesToAnalyze, editorSession, eventContext.SendEvent);
+            return RunScriptDiagnostics(filesToAnalyze, editorSession, this.SendEvent);
         }
 
         private Task RunScriptDiagnostics(
