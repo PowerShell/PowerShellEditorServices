@@ -1,6 +1,5 @@
-﻿<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
-
   <PropertyGroup>
     <AssemblyTitle>PowerShell Editor Services</AssemblyTitle>
     <Description>Provides common PowerShell editor capabilities as a .NET library.</Description>
@@ -10,9 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="**\*.cs" />
-    <EmbeddedResource Include="**\*.resx" />
-    <EmbeddedResource Include="compiler\resources\**\*" />
     <EmbeddedResource Include="Extensions\CmdletInterface.ps1">
       <LogicalName>Microsoft.PowerShell.EditorServices.Extensions.CmdletInterface.ps1</LogicalName>
     </EmbeddedResource>
@@ -37,16 +33,6 @@
     <WarningsAsErrors>1591,1573,1572</WarningsAsErrors>
     <DocumentationFile>bin\$(TargetFramework)\$(Configuration)\Microsoft.PowerShell.EditorServices.xml</DocumentationFile>
   </PropertyGroup>-->
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Sdk">
-      <Version>1.0.0-alpha-20161104-2</Version>
-      <PrivateAssets>All</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="NETStandard.Library">
-      <Version>1.6.1</Version>
-    </PackageReference>
-  </ItemGroup>
 
   <Target Name="PowerShellVersionOutput" BeforeTargets="Compile">
     <Message
@@ -90,6 +76,4 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
   </PropertyGroup>
-
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
