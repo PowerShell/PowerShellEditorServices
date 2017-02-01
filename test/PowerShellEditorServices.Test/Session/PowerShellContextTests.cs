@@ -73,10 +73,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public async Task CanQueueParallelRunspaceRequests()
         {
             // Concurrently initiate 4 requests in the session
-            this.powerShellContext.ExecuteScriptString("$x = 100");
+            Task taskOne = this.powerShellContext.ExecuteScriptString("$x = 100");
             Task<RunspaceHandle> handleTask = this.powerShellContext.GetRunspaceHandle();
-            this.powerShellContext.ExecuteScriptString("$x += 200");
-            this.powerShellContext.ExecuteScriptString("$x = $x / 100");
+            Task taskTwo = this.powerShellContext.ExecuteScriptString("$x += 200");
+            Task taskThree = this.powerShellContext.ExecuteScriptString("$x = $x / 100");
 
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript("$x");
@@ -86,8 +86,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             RunspaceHandle handle = await handleTask;
             handle.Dispose();
 
+            // Wait for all of the executes to complete
+            await Task.WhenAll(taskOne, taskTwo, taskThree, resultTask);
+
             // At this point, the remaining command executions should execute and complete
-            int result = (await resultTask).FirstOrDefault();
+            int result = resultTask.Result.FirstOrDefault();
 
             // 100 + 200 = 300, then divided by 100 is 3.  We are ensuring that
             // the commands were executed in the sequence they were called.

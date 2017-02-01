@@ -12,9 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public abstract class LanguageServerBase : ProtocolEndpoint
     {
-        private bool isStarted;
         private ChannelBase serverChannel;
-        private TaskCompletionSource<bool> serverExitedTask;
 
         public LanguageServerBase(ChannelBase serverChannel) : 
             base(serverChannel, MessageProtocolType.LanguageServer)
@@ -72,12 +70,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             // Stop the server channel
             await this.Stop();
-
-            // Notify any waiter that the server has exited
-            if (this.serverExitedTask != null)
-            {
-                this.serverExitedTask.SetResult(true);
-            }
         }
     }
 }
