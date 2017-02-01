@@ -144,10 +144,37 @@ task Build {
     exec { & $script:dotnetExe build -c $Configuration .\PowerShellEditorServices.sln $script:TargetFrameworksParam }
 }
 
+function UploadTestLogs {
+    if ($script:IsCIBuild) {
+        $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net451/logs"
+        $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
+
+        if (Test-Path $testLogsPath) {
+            [System.IO.Compression.ZipFile]::CreateFromDirectory(
+                $testLogsPath,
+                $testLogsZipPath)
+
+            Push-AppveyorArtifact $testLogsZipPath
+        }
+        else {
+            Write-Host "`n### WARNING: Test logs could not be found!`n" -ForegroundColor Yellow
+        }
+    }
+}
+
 task Test -If { !$script:IsUnix } {
     exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
     exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
     exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
+}
+
+task CITest (job Test -Safe), {
+    # This task is used to ensure we have a chance to upload
+    # test logs as a CI artifact when the tests fail
+    if (error Test) {
+        UploadTestLogs
+        Write-Error "Failing build due to test failure."
+    }
 }
 
 task LayoutModule -After Build, BuildHost {
@@ -185,21 +212,5 @@ task UploadArtifacts -If ($script:IsCIBuild) {
     }
 }
 
-task UploadTestLogs -After Test -If ($script:IsCIBuild) {
-    $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net451/logs"
-    $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
-
-    if (Test-Path $testLogsPath) {
-        [System.IO.Compression.ZipFile]::CreateFromDirectory(
-            $testLogsPath,
-            $testLogsZipPath)
-
-        Push-AppveyorArtifact $testLogsZipPath
-    }
-    else {
-        Write-Host "`n### WARNING: Test logs could not be found!`n" -ForegroundColor Yellow
-    }
-}
-
 # The default task is to run the entire CI build
-task . GetProductVersion, Clean, Build, TestPowerShellApi, Test, PackageNuGet, PackageModule, UploadArtifacts
+task . GetProductVersion, Clean, Build, TestPowerShellApi, CITest, PackageNuGet, PackageModule, UploadArtifacts

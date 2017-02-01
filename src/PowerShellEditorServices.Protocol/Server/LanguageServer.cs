@@ -12,7 +12,6 @@ using Microsoft.PowerShell.EditorServices.Templates;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -232,7 +231,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await RunScriptDiagnostics(
                     new ScriptFile[] { scripFile },
                         editorSession,
-                        requestContext.SendEvent);
+                        this.SendEvent);
             await sendresult;
         }
 
@@ -1136,7 +1135,7 @@ function __Expand-Alias {
             EditorSession editorSession,
             EventContext eventContext)
         {
-            return RunScriptDiagnostics(filesToAnalyze, editorSession, eventContext.SendEvent);
+            return RunScriptDiagnostics(filesToAnalyze, editorSession, this.SendEvent);
         }
 
         private Task RunScriptDiagnostics(

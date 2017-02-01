@@ -706,13 +706,16 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 Logger.Write(LogLevel.Verbose, "Execution abort requested...");
 
-                this.powerShell.BeginStop(null, null);
-                this.SessionState = PowerShellContextState.Aborting;
-
                 if (this.IsDebuggerStopped)
                 {
                     this.ResumeDebugger(DebuggerResumeAction.Stop);
                 }
+                else
+                {
+                    this.powerShell.BeginStop(null, null);
+                }
+
+                this.SessionState = PowerShellContextState.Aborting;
             }
             else
             {
@@ -1114,7 +1117,6 @@ namespace Microsoft.PowerShell.EditorServices
                     break;
 
                 case PSInvocationState.Stopping:
-                    // TODO: Collapse this so that the result shows that execution was aborted
                     newState = PowerShellContextState.Aborting;
                     break;
 

@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                             // Make sure remaining output is flushed before exiting
                             await this.outputDebouncer.Flush();
 
-                            await requestContext.SendEvent(
+                            await this.SendEvent(
                                 TerminatedEvent.Type,
                                 new TerminatedEvent());
 
@@ -122,10 +122,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             if (!string.IsNullOrEmpty(this.scriptPathToLaunch))
             {
-                // Configuration is done, launch the script
-                var nonAwaitedTask =
-                    this.LaunchScript(requestContext)
-                        .ConfigureAwait(false);
+                if (this.editorSession.PowerShellContext.SessionState == PowerShellContextState.Ready)
+                {
+                    // Configuration is done, launch the script
+                    var nonAwaitedTask =
+                        this.LaunchScript(requestContext)
+                            .ConfigureAwait(false);
+                }
+                else
+                {
+                    Logger.Write(
+                        LogLevel.Verbose,
+                        "configurationDone request called after script was already launched, skipping it.");
+                }
             }
 
             await requestContext.SendResult(null);
@@ -141,7 +150,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             string workingDir =
                 launchParams.Cwd ??
                 launchParams.Script ??
+#pragma warning disable 618
                 launchParams.Program;
+#pragma warning restore 618
 
             if (workingDir != null)
             {
@@ -183,7 +194,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // Store the launch parameters so that they can be used later
             this.noDebug = launchParams.NoDebug;
+#pragma warning disable 618
             this.scriptPathToLaunch = launchParams.Script ?? launchParams.Program;
+#pragma warning restore 618
             this.arguments = arguments;
 
             await requestContext.SendResult(null);
@@ -198,7 +211,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // Send the InitializedEvent so that the debugger will continue
             // sending configuration requests
-            await requestContext.SendEvent(
+            await this.SendEvent(
                 InitializedEvent.Type,
                 null);
         }
@@ -315,9 +328,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     {
                         await requestContext.SendResult(null);
                         this.editorSession.PowerShellContext.SessionStateChanged -= handler;
-
-                        // Stop the server
-                        await this.Stop();
                     }
                 };
 
