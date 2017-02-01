@@ -28,11 +28,10 @@
   </PropertyGroup>
 
   <!-- Fail the release build if there are missing public API documentation comments -->
-  <!-- TODO #353: Re-enable this once dotnet doesn't hang on these errors anymore -->
-  <!--<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <WarningsAsErrors>1591,1573,1572</WarningsAsErrors>
     <DocumentationFile>bin\$(TargetFramework)\$(Configuration)\Microsoft.PowerShell.EditorServices.xml</DocumentationFile>
-  </PropertyGroup>-->
+  </PropertyGroup>
 
   <Target Name="PowerShellVersionOutput" BeforeTargets="Compile">
     <Message
