@@ -168,19 +168,22 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact(Skip = "Skipped until variable documentation gathering is added back.")]
         public async Task CompletesDetailOnVariableDocSuggestion()
         {
-            //await this.SendOpenFileEvent("TestFiles\\CompleteFunctionName.ps1");
+            await this.SendOpenFileEvent("TestFiles\\CompleteFunctionName.ps1");
 
-            //await this.SendRequest(
-            //    CompletionRequest.Type,
-            //    new TextDocumentPosition
-            //    {
-            //        Uri = "TestFiles\\CompleteFunctionName.ps1",
-            //        Position = new Position
-            //        {
-            //            Line = 7,
-            //            Character = 5
-            //        }
-            //    });
+            await this.SendRequest(
+                CompletionRequest.Type,
+                new TextDocumentPosition
+                {
+                    Uri = "TestFiles\\CompleteFunctionName.ps1",
+                    Position = new Position
+                    {
+                        Line = 7,
+                        Character = 5
+                    }
+                });
+
+            // TODO: This section needs to be updated, seems that
+            // CompletionsResponse is missing.
 
             //CompletionsResponse completion = this.WaitForMessage<CompletionsResponse>();
             //List<string> entryName = new List<string>();

@@ -150,7 +150,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             string workingDir =
                 launchParams.Cwd ??
                 launchParams.Script ??
+#pragma warning disable 618
                 launchParams.Program;
+#pragma warning restore 618
 
             if (workingDir != null)
             {
@@ -192,7 +194,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // Store the launch parameters so that they can be used later
             this.noDebug = launchParams.NoDebug;
+#pragma warning disable 618
             this.scriptPathToLaunch = launchParams.Script ?? launchParams.Program;
+#pragma warning restore 618
             this.arguments = arguments;
 
             await requestContext.SendResult(null);
