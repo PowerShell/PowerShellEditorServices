@@ -1366,8 +1366,11 @@ function __Expand-Alias {
                 case CompletionType.ParameterName:
                     return CompletionItemKind.Variable;
 
-                case CompletionType.Path:
+                case CompletionType.File:
                     return CompletionItemKind.File;
+
+                case CompletionType.Folder:
+                    return CompletionItemKind.Folder;
 
                 default:
                     return CompletionItemKind.Text;
