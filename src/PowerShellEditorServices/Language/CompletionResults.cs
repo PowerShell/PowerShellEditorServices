@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices
         #region Properties
 
         /// <summary>
-        /// Gets the completions that were found during the 
+        /// Gets the completions that were found during the
         /// completion request.
         /// </summary>
         public CompletionDetails[] Completions { get; private set; }
@@ -141,9 +141,14 @@ namespace Microsoft.PowerShell.EditorServices
         Keyword,
 
         /// <summary>
-        /// Identifies a completion for a provider path (like a file system path).
+        /// Identifies a completion for a provider path (like a file system path) to a leaf item.
         /// </summary>
-        Path
+        File,
+
+        /// <summary>
+        /// Identifies a completion for a provider path (like a file system path) to a container.
+        /// </summary>
+        Folder
     }
 
     /// <summary>
@@ -204,7 +209,7 @@ namespace Microsoft.PowerShell.EditorServices
                 ListItemText = completionResult.ListItemText,
                 ToolTipText = toolTipText,
                 SymbolTypeName = ExtractSymbolTypeNameFromToolTip(completionResult.ToolTip),
-                CompletionType = 
+                CompletionType =
                     ConvertCompletionResultType(
                         completionResult.ResultType)
             };
@@ -306,8 +311,10 @@ namespace Microsoft.PowerShell.EditorServices
 #endif
 
                 case CompletionResultType.ProviderContainer:
+                    return CompletionType.Folder;
+
                 case CompletionResultType.ProviderItem:
-                    return CompletionType.Path;
+                    return CompletionType.File;
 
                 default:
                     // TODO: Trace the unsupported CompletionResultType
@@ -322,7 +329,7 @@ namespace Microsoft.PowerShell.EditorServices
             var matches = Regex.Matches(toolTipText, @"^\[(.+)\]");
 
             if (matches.Count > 0 && matches[0].Groups.Count > 1)
-            {         
+            {
                 // Return the symbol type name
                 return matches[0].Groups[1].Value;
             }

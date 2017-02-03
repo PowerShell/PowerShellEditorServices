@@ -41,11 +41,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
             Snippet = 15,
             Color = 16,
             File = 17,
-            Reference = 18
+            Reference = 18,
+            Folder = 19
     }
 
     [DebuggerDisplay("NewText = {NewText}, Range = {Range.Start.Line}:{Range.Start.Character} - {Range.End.Line}:{Range.End.Character}")]
-    public class TextEdit 
+    public class TextEdit
     {
         public Range Range { get; set; }
 
