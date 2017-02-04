@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private const int NumRunspaces = 2;
+        private const int NumRunspaces = 1;
         private RunspacePool analysisRunspacePool;
         private PSModuleInfo scriptAnalyzerModuleInfo;
 
