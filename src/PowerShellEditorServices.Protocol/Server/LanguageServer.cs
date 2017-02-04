@@ -218,9 +218,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 var ruleInfos = dynParams.ruleInfos;
                 foreach (dynamic ruleInfo in ruleInfos)
                 {
-                    if ((Boolean) ruleInfo.isEnabled)
+                    if ((Boolean)ruleInfo.isEnabled)
                     {
-                        activeRules.Add((string) ruleInfo.name);
+                        activeRules.Add((string)ruleInfo.name);
                     }
                 }
                 editorSession.AnalysisService.ActiveRules = activeRules.ToArray();
@@ -242,7 +242,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             var markers = await editorSession.AnalysisService.GetSemanticMarkersAsync(
                 editorSession.Workspace.GetFile(requestParams.fileUri),
                 editorSession.AnalysisService.GetPSSASettingsHashtable(requestParams.settings));
-            await requestContext.SendResult(new ScriptFileMarkerRequestResultParams {
+            await requestContext.SendResult(new ScriptFileMarkerRequestResultParams
+            {
                 markers = markers
             });
         }
@@ -487,7 +488,7 @@ function __Expand-Alias {
         {
             bool oldLoadProfiles = this.currentSettings.EnableProfileLoading;
             bool oldScriptAnalysisEnabled =
-                this.currentSettings.ScriptAnalysis.Enable.HasValue ? this.currentSettings.ScriptAnalysis.Enable.Value : false ;
+                this.currentSettings.ScriptAnalysis.Enable.HasValue ? this.currentSettings.ScriptAnalysis.Enable.Value : false;
             string oldScriptAnalysisSettingsPath =
                 this.currentSettings.ScriptAnalysis.SettingsPath;
 
@@ -990,7 +991,9 @@ function __Expand-Alias {
             Dictionary<string, MarkerCorrection> markerIndex = null;
             List<CodeActionCommand> codeActionCommands = new List<CodeActionCommand>();
 
-            if (this.codeActionsPerFile.TryGetValue(codeActionParams.TextDocument.Uri, out markerIndex))
+            var currentFile = codeActionParams.TextDocument.Uri;
+            var allEdits = new List<object>();
+            if (this.codeActionsPerFile.TryGetValue(currentFile, out markerIndex))
             {
                 foreach (var diagnostic in codeActionParams.Context.Diagnostics)
                 {
@@ -1009,8 +1012,20 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(
-                codeActionCommands.ToArray());
+            foreach (var item in codeActionsPerFile[currentFile])
+            {
+                allEdits.Add(JArray.FromObject(item.Value.Edits));
+            }
+
+            codeActionCommands.Add(
+                new CodeActionCommand
+                {
+                    Title = "Apply all suggested changes",
+                    Command = "PowerShell.ApplyAllCodeActionEdits",
+                    Arguments = allEdits.ToArray()
+                });
+
+            await requestContext.SendResult(codeActionCommands.ToArray());
         }
 
         protected Task HandleEvaluateRequest(

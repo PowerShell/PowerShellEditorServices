@@ -27,6 +27,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 
         public string Command { get; set; }
 
-        public JArray Arguments { get; set; }
+        public object Arguments { get; set; }
     }
 }
