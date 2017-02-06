@@ -6,9 +6,9 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Linq;
-using System.Management.Automation.Runspaces;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Console;
+using System.Management.Automation.Runspaces;
 using System.Management.Automation;
 using System.Collections.Generic;
 using System.Text;
@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private const int NumRunspaces = 2;
+        private const int NumRunspaces = 1;
         private RunspacePool analysisRunspacePool;
         private PSModuleInfo scriptAnalyzerModuleInfo;
 
@@ -333,13 +333,6 @@ namespace Microsoft.PowerShell.EditorServices
 
         private PSObject[] InvokePowerShell(string command, IDictionary<string, object> paramArgMap)
         {
-            var task = InvokePowerShellAsync(command, paramArgMap);
-            task.Wait();
-            return task.Result;
-        }
-
-        private async Task<PSObject[]> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
-        {
             using (var powerShell = System.Management.Automation.PowerShell.Create())
             {
                 powerShell.RunspacePool = this.analysisRunspacePool;
@@ -349,14 +342,31 @@ namespace Microsoft.PowerShell.EditorServices
                     powerShell.AddParameter(kvp.Key, kvp.Value);
                 }
 
-                var result = await Task.Factory.FromAsync(powerShell.BeginInvoke(), powerShell.EndInvoke);
-                if (result == null)
+                var result = new PSObject[0];
+                try
                 {
-                    return new PSObject[0];
+                    result = powerShell.Invoke()?.ToArray();
+                }
+                catch (CmdletInvocationException ex)
+                {
+                    // We do not want to crash EditorServices for exceptions caused by cmdlet invocation.
+                    // Two main reasons that cause the exception are:
+                    // * PSCmdlet.WriteOutput being called from another thread than Begin/Process
+                    // * CompositionContainer.ComposeParts complaining that "...Only one batch can be composed at a time"
+                    Logger.Write(LogLevel.Error, ex.Message);
                 }
 
-                return result.ToArray(); ;
+                return result;
             }
+        }
+
+        private async Task<PSObject[]> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
+        {
+            var task = Task.Run(() => {
+                return InvokePowerShell(command, paramArgMap);
+            });
+
+            return await task;
         }
 
         #endregion //private methods
