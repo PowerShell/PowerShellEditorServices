@@ -22,8 +22,6 @@ namespace Microsoft.PowerShell.EditorServices
         private const int DefaultConsoleHeight = 100;
         private const int DefaultConsoleWidth = 120;
 
-        private Size currentBufferSize = new Size(DefaultConsoleWidth, DefaultConsoleHeight);
-
         #endregion
 
         #region Properties
@@ -44,8 +42,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public ConsoleServicePSHostRawUserInterface()
         {
-            this.ForegroundColor = ConsoleColor.White;
-            this.BackgroundColor = ConsoleColor.Black;
         }
 
         #endregion
@@ -57,8 +53,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override ConsoleColor BackgroundColor
         {
-            get;
-            set;
+            get { return System.Console.BackgroundColor; }
+            set { System.Console.BackgroundColor = value; }
         }
 
         /// <summary>
@@ -66,8 +62,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override ConsoleColor ForegroundColor
         {
-            get;
-            set;
+            get { return System.Console.ForegroundColor; }
+            set { System.Console.ForegroundColor = value; }
         }
 
         /// <summary>
@@ -77,11 +73,15 @@ namespace Microsoft.PowerShell.EditorServices
         {
             get
             {
-                return this.currentBufferSize;
+                return
+                    new Size(
+                        System.Console.BufferWidth,
+                        System.Console.BufferHeight);
             }
             set
             {
-                this.currentBufferSize = value;
+                System.Console.BufferWidth = value.Width;
+                System.Console.BufferHeight = value.Height;
             }
         }
 
@@ -90,8 +90,18 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Coordinates CursorPosition
         {
-            get;
-            set;
+            get
+            {
+                return
+                    new Coordinates(
+                        System.Console.CursorLeft,
+                        System.Console.CursorTop);
+            }
+            set
+            {
+                System.Console.CursorLeft = value.X;
+                System.Console.CursorTop = value.Y;
+            }
         }
 
         /// <summary>
@@ -108,8 +118,18 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Coordinates WindowPosition
         {
-            get;
-            set;
+            get
+            {
+                return
+                    new Coordinates(
+                        System.Console.WindowLeft,
+                        System.Console.WindowTop);
+            }
+            set
+            {
+                System.Console.WindowLeft = value.X;
+                System.Console.WindowTop = value.Y;
+            }
         }
 
         /// <summary>
@@ -117,8 +137,18 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Size WindowSize
         {
-            get;
-            set;
+            get
+            {
+                return
+                    new Size(
+                        System.Console.WindowWidth,
+                        System.Console.WindowHeight);
+            }
+            set
+            {
+                System.Console.WindowWidth = value.Width;
+                System.Console.WindowHeight = value.Height;
+            }
         }
 
         /// <summary>
@@ -135,7 +165,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override bool KeyAvailable
         {
-            get { return false; }
+            get { return System.Console.KeyAvailable; }
         }
 
         /// <summary>
@@ -219,9 +249,20 @@ namespace Microsoft.PowerShell.EditorServices
             Rectangle rectangle, 
             BufferCell fill)
         {
-            Logger.Write(
-                LogLevel.Warning,
-                "PSHostRawUserInterface.SetBufferContents was called");
+            // If the rectangle is all -1s then it means clear the visible buffer
+            if (rectangle.Top == -1 &&
+                rectangle.Bottom == -1 &&
+                rectangle.Left == -1 &&
+                rectangle.Right == -1)
+            {
+                System.Console.Clear();
+            }
+            else
+            {
+                Logger.Write(
+                    LogLevel.Warning,
+                    "PSHostRawUserInterface.SetBufferContents was called with a specific region");
+            }
         }
 
         /// <summary>

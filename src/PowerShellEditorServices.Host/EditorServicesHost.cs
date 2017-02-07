@@ -158,23 +158,41 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// Starts the debug service with the specified TCP socket port.
         /// </summary>
         /// <param name="debugServicePort">The port number for the debug service.</param>
-        public void StartDebugService(int debugServicePort, ProfilePaths profilePaths)
+        public void StartDebugService(
+            int debugServicePort,
+            ProfilePaths profilePaths,
+            bool useExistingSession)
         {
-            this.debugAdapter =
-                new DebugAdapter(
-                    hostDetails,
-                    profilePaths,
-                    new TcpSocketServerChannel(debugServicePort),
-                    this.languageServer?.EditorOperations);
+            if (useExistingSession)
+            {
+                this.debugAdapter =
+                    new DebugAdapter(
+                        this.languageServer.EditorSession,
+                        new TcpSocketServerChannel(debugServicePort));
+            }
+            else
+            {
+                this.debugAdapter =
+                    new DebugAdapter(
+                        hostDetails,
+                        profilePaths,
+                        new TcpSocketServerChannel(debugServicePort),
+                        this.languageServer?.EditorOperations);
+            }
 
             this.debugAdapter.SessionEnded +=
                 (obj, args) =>
                 {
-                    Logger.Write(
-                        LogLevel.Normal,
-                        "Previous debug session ended, restarting debug service...");
+                    // Only restart if we're reusing the existing session,
+                    // otherwise the process should terminate
+                    if (useExistingSession)
+                    {
+                        Logger.Write(
+                            LogLevel.Normal,
+                            "Previous debug session ended, restarting debug service...");
 
-                    this.StartDebugService(debugServicePort, profilePaths);
+                        this.StartDebugService(debugServicePort, profilePaths, true);
+                    }
                 };
 
             this.debugAdapter.Start().Wait();

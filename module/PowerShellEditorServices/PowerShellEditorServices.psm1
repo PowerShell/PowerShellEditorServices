@@ -46,6 +46,9 @@ function Start-EditorServicesHost {
         [ValidateSet("Normal", "Verbose", "Error")]
         $LogLevel = "Normal",
 
+        [string]
+        $DebugServiceOnly,
+
         [switch]
         $WaitForDebugger
     )
@@ -67,8 +70,14 @@ function Start-EditorServicesHost {
             [System.IO.Path]::GetDirectoryName($profile.CurrentUserAllHosts));
 
         $editorServicesHost.StartLogging($LogPath, $LogLevel);
-        $editorServicesHost.StartLanguageService($LanguageServicePort, $profilePaths);
-        $editorServicesHost.StartDebugService($DebugServicePort, $profilePaths);
+
+        if ($DebugServiceOnly.IsPresent) {
+            $editorServicesHost.StartDebugService($DebugServicePort, $profilePaths, $false);
+        }
+        else {
+            $editorServicesHost.StartLanguageService($LanguageServicePort, $profilePaths);
+            $editorServicesHost.StartDebugService($DebugServicePort, $profilePaths, $true);
+        }
     }
     catch {
         Write-Error "PowerShell Editor Services host initialization failed, terminating."

@@ -29,6 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private readonly static string DiagnosticSourceName = "PowerShellEditorServices";
 
         private bool profilesLoaded;
+        private bool consoleReplStarted;
         private EditorSession editorSession;
         private OutputDebouncer outputDebouncer;
         private LanguageServerEditorOperations editorOperations;
@@ -40,6 +41,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public IEditorOperations EditorOperations
         {
             get { return this.editorOperations; }
+        }
+
+        public EditorSession EditorSession
+        {
+            get { return this.editorSession; }
         }
 
         /// <param name="hostDetails">
@@ -58,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             this.editorSession = new EditorSession();
             this.editorSession.StartSession(hostDetails, profilePaths);
-            this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
+            //this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
             this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;
 
             // Attach to ExtensionService events
@@ -137,6 +143,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         protected override async Task Shutdown()
         {
+            // Stop the interactive terminal
+            this.editorSession.ConsoleService.StopInteractiveConsole();
+
             // Make sure remaining output is flushed before exiting
             await this.outputDebouncer.Flush();
 
@@ -544,6 +553,15 @@ function __Expand-Alias {
             {
                 await this.editorSession.PowerShellContext.LoadHostProfiles();
                 this.profilesLoaded = true;
+            }
+
+            // Wait until after profiles are loaded (or not, if that's the
+            // case) before starting the interactive console.
+            if (!this.consoleReplStarted)
+            {
+                // Start the interactive terminal
+                this.editorSession.ConsoleService.StartReadLoop();
+                this.consoleReplStarted = true;
             }
 
             // If there is a new settings file path, restart the analyzer with the new settigs.

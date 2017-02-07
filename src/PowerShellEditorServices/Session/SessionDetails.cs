@@ -51,11 +51,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
             this.ProcessId = (int)innerHashtable["processId"] as int?;
             this.ComputerName = innerHashtable["computerName"] as string;
             this.InstanceId = innerHashtable["instanceId"] as Guid?;
-
-            // Trim the '>' off the end of the prompt string to reduce
-            // user confusion about where they can type.
-            // TODO: Eventually put this behind a setting, #133
-            this.PromptString = this.PromptString.TrimEnd(' ', '>', '\r', '\n');
         }
 
         /// <summary>

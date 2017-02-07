@@ -4,11 +4,15 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Utility;
-using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
+    using System;
+    using System.Management.Automation;
+
     /// <summary>
     /// Provides a high-level service for exposing an interactive
     /// PowerShell console (REPL) to the user.
@@ -17,7 +21,10 @@ namespace Microsoft.PowerShell.EditorServices.Console
     {
         #region Fields
 
+        private ConsoleReadLine consoleReadLine;
         private PowerShellContext powerShellContext;
+
+        CancellationTokenSource readLineCancellationToken;
 
         private PromptHandler activePromptHandler;
         private Stack<IPromptHandlerContext> promptHandlerContextStack =
@@ -57,6 +64,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
             // Register this instance as the IConsoleHost for the PowerShellContext
             this.powerShellContext = powerShellContext;
             this.powerShellContext.ConsoleHost = this;
+            this.powerShellContext.DebuggerStop += PowerShellContext_DebuggerStop;
+            this.powerShellContext.DebuggerResumed += PowerShellContext_DebuggerResumed;
 
             // Set the default prompt handler factory or create
             // a default if one is not provided
@@ -68,11 +77,59 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             this.promptHandlerContextStack.Push(
                 defaultPromptHandlerContext);
+
+            this.consoleReadLine = new ConsoleReadLine(powerShellContext);
+
+            // TODO: Move this to the PSHost implementation
+
+            Console.CancelKeyPress +=
+                (obj, args) =>
+                {
+                    // TODO: Don't abort if we're in a native app, let the native app
+                    // handle the ctrl+c
+
+                    // We'll handle Ctrl+C
+                    args.Cancel = true;
+                    this.powerShellContext.AbortExecution();
+                };
         }
 
         #endregion
 
         #region Public Methods
+
+        /// <summary>
+        /// Starts a terminal-based interactive console loop in the current process.
+        /// </summary>
+        public void StartReadLoop()
+        {
+            this.readLineCancellationToken = new CancellationTokenSource();
+
+            var terminalThreadTask =
+                Task.Factory.StartNew(
+                    async () =>
+                    {
+                        // Set the thread's name to help with debugging
+                        Thread.CurrentThread.Name = "Terminal Input Loop Thread";
+
+                        await this.StartReplLoop(this.readLineCancellationToken.Token);
+                    },
+                    CancellationToken.None,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default);
+        }
+
+        /// <summary>
+        /// Stops the current terminal-based interactive console.
+        /// </summary>
+        public void StopInteractiveConsole()
+        {
+            if (this.readLineCancellationToken != null)
+            {
+                this.readLineCancellationToken.Cancel();
+                this.readLineCancellationToken = null;
+            }
+        }
 
         /// <summary>
         /// Called when a command string is received from the user.
@@ -109,6 +166,30 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             true)
                         .ConfigureAwait(false);
             }
+        }
+
+        /// <summary>
+        /// Executes a script file at the specified path.
+        /// </summary>
+        /// <param name="scriptPath">The path to the script file to execute.</param>
+        /// <param name="arguments">Arguments to pass to the script.</param>
+        /// <returns>A Task that can be awaited for completion.</returns>
+        public async Task ExecuteScriptAtPath(string scriptPath, string arguments = null)
+        {
+            this.CancelReadLoop();
+
+            // If we don't escape wildcard characters in the script path, the script can
+            // fail to execute if say the script name was foo][.ps1.
+            // Related to issue #123.
+            string escapedScriptPath = PowerShellContext.EscapePath(scriptPath, escapeSpaces: true);
+
+            await this.powerShellContext.ExecuteScriptString(
+                $"{escapedScriptPath} {arguments}",
+                true,
+                true,
+                false);
+
+            this.StartReadLoop();
         }
 
         /// <summary>
@@ -177,6 +258,80 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #endregion
 
+        #region Private Methods
+
+        private void WritePromptStringToHost()
+        {
+            // Write the prompt string
+            this.WriteOutput(
+                this.powerShellContext.PromptString,
+                false);
+        }
+
+        private void WriteDebuggerBanner(DebuggerStopEventArgs eventArgs)
+        {
+            // TODO: What do we display when we don't know why we stopped?
+
+            if (eventArgs.Breakpoints.Count > 0)
+            {
+                // The breakpoint classes have nice ToString output so use that
+                this.WriteOutput(
+                    $"Hit {eventArgs.Breakpoints[0].ToString()}\n",
+                    true,
+                    OutputType.Normal,
+                    ConsoleColor.Blue);
+            }
+        }
+
+        private async Task StartReplLoop(CancellationToken cancellationToken)
+        {
+            do
+            {
+                string commandString = null;
+
+                this.WritePromptStringToHost();
+
+                try
+                {
+                    commandString =
+                        await this.consoleReadLine.ReadCommandLine(
+                            cancellationToken);
+                }
+                catch (Exception e) // Narrow this if possible
+                {
+                    this.WriteOutput(
+                        $"\n\nAn error occurred while accepting input:\n\n{e.ToString()}\n",
+                        true,
+                        OutputType.Error);
+
+                    Logger.WriteException("Caught exception while reading command line", e);
+                }
+
+                if (commandString != null)
+                {
+                    Console.Write(Environment.NewLine);
+
+                    await this.powerShellContext.ExecuteScriptString(
+                        commandString,
+                        false,
+                        true,
+                        true);
+                }
+            }
+            while (!cancellationToken.IsCancellationRequested);
+        }
+
+        private void CancelReadLoop()
+        {
+            if (this.readLineCancellationToken != null)
+            {
+                this.readLineCancellationToken.Cancel();
+                this.readLineCancellationToken = null;
+            }
+        }
+
+        #endregion
+
         #region Events
 
         /// <summary>
@@ -191,6 +346,17 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         void IConsoleHost.WriteOutput(string outputString, bool includeNewLine, OutputType outputType, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
         {
+            ConsoleColor oldForegroundColor = Console.ForegroundColor;
+            ConsoleColor oldBackgroundColor = Console.BackgroundColor;
+
+            Console.ForegroundColor = foregroundColor;
+            Console.BackgroundColor = backgroundColor;
+
+            Console.Write(outputString + (includeNewLine ? Environment.NewLine : ""));
+
+            Console.ForegroundColor = oldForegroundColor;
+            Console.BackgroundColor = oldBackgroundColor;
+
             if (this.OutputWritten != null)
             {
                 this.OutputWritten(
@@ -257,6 +423,17 @@ namespace Microsoft.PowerShell.EditorServices.Console
             // Clean up the existing prompt
             this.activePromptHandler.PromptCancelled -= activePromptHandler_PromptCancelled;
             this.activePromptHandler = null;
+        }
+
+        private void PowerShellContext_DebuggerStop(object sender, System.Management.Automation.DebuggerStopEventArgs e)
+        {
+            this.WriteDebuggerBanner(e);
+            this.StartReadLoop();
+        }
+
+        private void PowerShellContext_DebuggerResumed(object sender, System.Management.Automation.DebuggerResumeAction e)
+        {
+            this.CancelReadLoop();
         }
 
         #endregion

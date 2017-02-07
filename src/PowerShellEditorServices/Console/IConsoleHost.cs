@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 outputString,
                 includeNewLine,
                 outputType,
-                ConsoleColor.White,
+                ConsoleColor.Gray,
                 ConsoleColor.Black);
         }
 
