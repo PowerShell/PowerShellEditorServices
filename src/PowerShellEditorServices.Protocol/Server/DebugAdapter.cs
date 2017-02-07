@@ -742,7 +742,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         async void powerShellContext_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
-            if (this.waitingForAttach && e.ChangeAction == RunspaceChangeAction.Enter && e.NewRunspace.IsAttached)
+            if (this.waitingForAttach &&
+                e.ChangeAction == RunspaceChangeAction.Enter &&
+                e.NewRunspace.Context == RunspaceContext.DebuggedRunspace)
             {
                 // Send the InitializedEvent so that the debugger will continue
                 // sending configuration requests
