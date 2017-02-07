@@ -29,8 +29,8 @@ namespace Microsoft.PowerShell.EditorServices.Session
         private PowerShellContext powerShellContext;
         private IEditorOperations editorOperations;
 
-        private Dictionary<RunspaceDetails, RemotePathMappings> filesPerRunspace =
-            new Dictionary<RunspaceDetails, RemotePathMappings>();
+        private Dictionary<string, RemotePathMappings> filesPerComputer =
+            new Dictionary<string, RemotePathMappings>();
 
         private const string RemoteSessionOpenFile = "PSESRemoteSessionOpenFile";
 
@@ -288,11 +288,12 @@ namespace Microsoft.PowerShell.EditorServices.Session
         private RemotePathMappings GetPathMappings(RunspaceDetails runspaceDetails)
         {
             RemotePathMappings remotePathMappings = null;
+            string computerName = runspaceDetails.SessionDetails.ComputerName;
 
-            if (!this.filesPerRunspace.TryGetValue(runspaceDetails, out remotePathMappings))
+            if (!this.filesPerComputer.TryGetValue(computerName, out remotePathMappings))
             {
                 remotePathMappings = new RemotePathMappings(runspaceDetails, this);
-                this.filesPerRunspace.Add(runspaceDetails, remotePathMappings);
+                this.filesPerComputer.Add(computerName, remotePathMappings);
             }
 
             return remotePathMappings;
@@ -300,7 +301,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private async void HandleRunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
-
             if (e.ChangeAction == RunspaceChangeAction.Enter)
             {
                 this.RegisterPSEditFunction(e.NewRunspace);
@@ -308,12 +308,20 @@ namespace Microsoft.PowerShell.EditorServices.Session
             else
             {
                 // Close any remote files that were opened
-                RemotePathMappings remotePathMappings;
-                if (this.filesPerRunspace.TryGetValue(e.PreviousRunspace, out remotePathMappings))
+                if (e.PreviousRunspace.Location == RunspaceLocation.Remote &&
+                    (e.ChangeAction == RunspaceChangeAction.Shutdown ||
+                     !string.Equals(
+                         e.NewRunspace.SessionDetails.ComputerName,
+                         e.PreviousRunspace.SessionDetails.ComputerName,
+                         StringComparison.CurrentCultureIgnoreCase)))
                 {
-                    foreach (string remotePath in remotePathMappings.OpenedPaths)
+                    RemotePathMappings remotePathMappings;
+                    if (this.filesPerComputer.TryGetValue(e.PreviousRunspace.SessionDetails.ComputerName, out remotePathMappings))
                     {
-                        await this.editorOperations.CloseFile(remotePath);
+                        foreach (string remotePath in remotePathMappings.OpenedPaths)
+                        {
+                            await this.editorOperations.CloseFile(remotePath);
+                        }
                     }
                 }
 
@@ -336,8 +344,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                         string remoteFilePath = args.SourceArgs[0] as string;
 
                         // Is this a local process runspace?  Treat as a local file
-                        if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Local ||
-                            this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.LocalProcess)
+                        if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Local)
                         {
                             localFilePath = remoteFilePath;
                         }
@@ -375,7 +382,8 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 var createScript =
                     string.Format(
                         CreatePSEditFunctionScript,
-                        (runspaceDetails.Location == RunspaceLocation.Local && !runspaceDetails.IsAttached)
+                        (runspaceDetails.Location == RunspaceLocation.Local &&
+                         runspaceDetails.Context == RunspaceContext.Original)
                             ? string.Empty : "-Forward");
 
                 PSCommand createCommand = new PSCommand();
@@ -383,7 +391,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     .AddScript(createScript)
                     .AddParameter("PSEditFunction", PSEditFunctionScript);
 
-                if (runspaceDetails.IsAttached)
+                if (runspaceDetails.Context == RunspaceContext.DebuggedRunspace)
                 {
                     this.powerShellContext.ExecuteCommand(createCommand).Wait();
                 }
@@ -422,7 +430,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     }
                 }
             }
-            catch (RemoteException e)
+            catch (Exception e) when (e is RemoteException || e is PSInvalidOperationException)
             {
                 Logger.WriteException("Could not remove psedit function.", e);
             }
@@ -499,7 +507,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                         mappedPath =
                             this.MapRemotePathToLocal(
                                 filePath,
-                                runspaceDetails.ConnectionString);
+                                runspaceDetails.SessionDetails.ComputerName);
 
                         this.AddPathMapping(filePath, mappedPath);
                     }

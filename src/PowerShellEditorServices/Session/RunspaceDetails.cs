@@ -16,27 +16,35 @@ namespace Microsoft.PowerShell.EditorServices.Session
     public enum RunspaceLocation
     {
         /// <summary>
-        /// A runspace in the current process on the same machine.
+        /// A runspace on the local machine.
         /// </summary>
         Local,
 
         /// <summary>
-        /// A runspace in a different process on the same machine.
-        /// </summary>
-        LocalProcess,
-
-        /// <summary>
         /// A runspace on a different machine.
         /// </summary>
-        Remote,
+        Remote
+    }
 
-        // NOTE: We don't have a RemoteProcess variable here because there's
-        // no reliable way to know when the user has used Enter-PSHostProcess
-        // to jump into a different PowerShell process on the remote machine.
-        // Even if we check the PID every time the prompt gets written, there's
-        // still a chance the user is running a script that contains the
-        // Enter-PSHostProcess command and it won't be caught until after the
-        // script finishes.
+    /// <summary>
+    /// Specifies the context in which the runspace was encountered.
+    /// </summary>
+    public enum RunspaceContext
+    {
+        /// <summary>
+        /// The original runspace in a local or remote session.
+        /// </summary>
+        Original,
+
+        /// <summary>
+        /// A runspace in a process that was entered with Enter-PSHostProcess.
+        /// </summary>
+        EnteredProcess,
+
+        /// <summary>
+        /// A runspace that is being debugged with Debug-Runspace.
+        /// </summary>
+        DebuggedRunspace
     }
 
     /// <summary>
@@ -46,11 +54,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
     public class RunspaceDetails
     {
         #region Properties
-
-        /// <summary>
-        /// Gets the id of the underlying Runspace object.
-        /// </summary>
-        public Guid Id { get; private set; }
 
         /// <summary>
         /// Gets the Runspace instance for which this class contains details.
@@ -68,10 +71,9 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public RunspaceLocation Location { get; private set; }
 
         /// <summary>
-        /// Gets a boolean which indicates whether this runspace is the result
-        /// of attaching with Debug-Runspace.
+        /// Gets the context in which the runspace was encountered.
         /// </summary>
-        public bool IsAttached { get; private set; }
+        public RunspaceContext Context { get; private set; }
 
         /// <summary>
         /// Gets the "connection string" for the runspace, generally the
@@ -79,6 +81,12 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// "Attach" runspace.
         /// </summary>
         public string ConnectionString { get; private set; }
+
+        /// <summary>
+        /// Gets the details of the runspace's session at the time this
+        /// RunspaceDetails object was created.
+        /// </summary>
+        public SessionDetails SessionDetails { get; private set; }
 
         #endregion
 
@@ -90,58 +98,34 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <param name="runspace">
         /// The runspace for which this instance contains details.
         /// </param>
+        /// <param name="sessionDetails">
+        /// The SessionDetails for the runspace.
+        /// </param>
         /// <param name="powerShellVersion">
         /// The PowerShellVersionDetails of the runspace.
         /// </param>
         /// <param name="runspaceLocation">
-        /// The RunspaceLocale of the runspace.
+        /// The RunspaceLocation of the runspace.
+        /// </param>
+        /// <param name="runspaceContext">
+        /// The RunspaceContext of the runspace.
         /// </param>
         /// <param name="connectionString">
         /// The connection string of the runspace.
         /// </param>
         public RunspaceDetails(
             Runspace runspace,
+            SessionDetails sessionDetails,
             PowerShellVersionDetails powerShellVersion,
             RunspaceLocation runspaceLocation,
-            string connectionString)
-                : this(
-                      runspace.InstanceId,
-                      runspace,
-                      powerShellVersion,
-                      runspaceLocation,
-                      connectionString)
-        {
-        }
-
-        /// <summary>
-        /// Creates a new instance of the RunspaceDetails class.
-        /// </summary>
-        /// <param name="instanceId">
-        /// The InstanceId Guid for the runspace.
-        /// </param>
-        /// <param name="runspace">
-        /// The runspace for which this instance contains details.
-        /// </param>
-        /// <param name="powerShellVersion">
-        /// The PowerShellVersionDetails of the runspace.
-        /// </param>
-        /// <param name="runspaceLocation">
-        /// The RunspaceLocale of the runspace.
-        /// </param>
-        /// <param name="connectionString">
-        /// The connection string of the runspace.
-        /// </param>
-        public RunspaceDetails(
-            Guid instanceId,
-            Runspace runspace,
-            PowerShellVersionDetails powerShellVersion,
-            RunspaceLocation runspaceLocation,
+            RunspaceContext runspaceContext,
             string connectionString)
         {
-            this.Id = instanceId;
             this.Runspace = runspace;
+            this.SessionDetails = sessionDetails;
             this.PowerShellVersion = powerShellVersion;
             this.Location = runspaceLocation;
+            this.Context = runspaceContext;
             this.ConnectionString = connectionString;
         }
 
@@ -152,11 +136,19 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <summary>
         /// Creates and populates a new RunspaceDetails instance for the given runspace.
         /// </summary>
-        /// <param name="runspace">The runspace for which details will be gathered.</param>
+        /// <param name="runspace">
+        /// The runspace for which details will be gathered.
+        /// </param>
+        /// <param name="sessionDetails">
+        /// The SessionDetails for the runspace.
+        /// </param>
         /// <returns>A new RunspaceDetails instance.</returns>
-        public static RunspaceDetails Create(Runspace runspace)
+        internal static RunspaceDetails CreateFromRunspace(
+            Runspace runspace,
+            SessionDetails sessionDetails)
         {
             Validate.IsNotNull(nameof(runspace), runspace);
+            Validate.IsNotNull(nameof(sessionDetails), sessionDetails);
 
             var runspaceId = runspace.InstanceId;
             var runspaceLocation = RunspaceLocation.Local;
@@ -173,7 +165,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     dynamic connectionInfo = runspace.ConnectionInfo;
                     if (connectionInfo.ProcessId != null)
                     {
-                        runspaceLocation = RunspaceLocation.LocalProcess;
                         connectionString = connectionInfo.ProcessId.ToString();
                     }
                 }
@@ -198,10 +189,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             return
                 new RunspaceDetails(
-                    runspaceId,
                     runspace,
+                    sessionDetails,
                     versionDetails,
                     runspaceLocation,
+                    RunspaceContext.Original,
                     connectionString);
         }
 
@@ -213,32 +205,67 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <param name="runspaceDetails">
         /// The RunspaceDetails object which the new object based.
         /// </param>
-        /// <param name="attachedRunspaceId">
-        /// The id of the runspace that has been attached.
+        /// <param name="runspaceContext">
+        /// The RunspaceContext of the runspace.
+        /// </param>
+        /// <param name="sessionDetails">
+        /// The SessionDetails for the runspace.
         /// </param>
         /// <returns>
         /// A new RunspaceDetails instance for the attached runspace.
         /// </returns>
-        public static RunspaceDetails CreateAttached(
+        public static RunspaceDetails CreateFromContext(
             RunspaceDetails runspaceDetails,
-            Guid attachedRunspaceId)
+            RunspaceContext runspaceContext,
+            SessionDetails sessionDetails)
         {
-            RunspaceDetails newRunspace =
+            return
                 new RunspaceDetails(
-                    attachedRunspaceId,
                     runspaceDetails.Runspace,
+                    sessionDetails,
                     runspaceDetails.PowerShellVersion,
                     runspaceDetails.Location,
+                    runspaceContext,
                     runspaceDetails.ConnectionString);
+        }
 
-            // Since this is an attached runspace, set the IsAttached
-            // property and carry forward the ID of the attached runspace
-            newRunspace.IsAttached = true;
-            newRunspace.Id = attachedRunspaceId;
-
-            return newRunspace;
+        /// <summary>
+        /// Creates a new RunspaceDetails object from a remote
+        /// debugging session.
+        /// </summary>
+        /// <param name="runspaceDetails">
+        /// The RunspaceDetails object which the new object based.
+        /// </param>
+        /// <param name="runspaceLocation">
+        /// The RunspaceLocation of the runspace.
+        /// </param>
+        /// <param name="runspaceContext">
+        /// The RunspaceContext of the runspace.
+        /// </param>
+        /// <param name="sessionDetails">
+        /// The SessionDetails for the runspace.
+        /// </param>
+        /// <returns>
+        /// A new RunspaceDetails instance for the attached runspace.
+        /// </returns>
+        public static RunspaceDetails CreateFromDebugger(
+            RunspaceDetails runspaceDetails,
+            RunspaceLocation runspaceLocation,
+            RunspaceContext runspaceContext,
+            SessionDetails sessionDetails)
+        {
+            // TODO: Get the PowerShellVersion correctly!
+            return
+                new RunspaceDetails(
+                    runspaceDetails.Runspace,
+                    sessionDetails,
+                    runspaceDetails.PowerShellVersion,
+                    runspaceLocation,
+                    runspaceContext,
+                    runspaceDetails.ConnectionString);
         }
 
         #endregion
     }
+
 }
