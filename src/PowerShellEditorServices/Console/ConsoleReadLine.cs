@@ -210,13 +210,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     {
                         historyIndex = -1;
 
-                        using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandle())
-                        using (PowerShell powerShell = PowerShell.Create())
-                        {
-                            powerShell.Runspace = runspaceHandle.Runspace;
-                            powerShell.AddCommand("Get-History");
-                            currentHistory = powerShell.Invoke();
-                        }
+                        PSCommand command = new PSCommand();
+                        command.AddCommand("Get-History");
+
+                        currentHistory =
+                            await this.powerShellContext.ExecuteCommand<PSObject>(
+                                command,
+                                false,
+                                false) as Collection<PSObject>;
 
                         if (currentHistory != null)
                         {

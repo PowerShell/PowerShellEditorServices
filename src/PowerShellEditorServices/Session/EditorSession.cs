@@ -60,6 +60,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public TemplateService TemplateService { get; private set; }
 
+        /// <summary>
+        /// Gets the RemoteFileManager instance for this session.
+        /// </summary>
+        public RemoteFileManager RemoteFileManager { get; private set; }
+
         #endregion
 
         #region Public Methods
@@ -74,12 +79,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="profilePaths">
         /// An object containing the profile paths for the session.
         /// </param>
-        public void StartSession(HostDetails hostDetails, ProfilePaths profilePaths)
+        public void StartSession(
+            HostDetails hostDetails,
+            ProfilePaths profilePaths)
         {
             // Initialize all services
             this.PowerShellContext = new PowerShellContext(hostDetails, profilePaths);
             this.LanguageService = new LanguageService(this.PowerShellContext);
-            this.DebugService = new DebugService(this.PowerShellContext);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
             this.ExtensionService = new ExtensionService(this.PowerShellContext);
             this.TemplateService = new TemplateService(this.PowerShellContext);
@@ -111,13 +117,26 @@ namespace Microsoft.PowerShell.EditorServices
             // Initialize all services
             this.PowerShellContext = new PowerShellContext(hostDetails, profilePaths);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
-            this.DebugService =
-                new DebugService(
-                    this.PowerShellContext,
-                    new RemoteFileManager(this.PowerShellContext, editorOperations));
+            this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations);
+            this.DebugService = new DebugService(this.PowerShellContext, this.RemoteFileManager);
 
             // Create a workspace to contain open files
             this.Workspace = new Workspace(this.PowerShellContext.LocalPowerShellVersion.Version);
+        }
+
+        /// <summary>
+        /// Starts the DebugService if it's not already strated
+        /// </summary>
+        /// <param name="editorOperations">
+        /// An IEditorOperations implementation used to interact with the editor.
+        /// </param>
+        public void StartDebugService(IEditorOperations editorOperations)
+        {
+            if (this.DebugService == null)
+            {
+                this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations);
+                this.DebugService = new DebugService(this.PowerShellContext, this.RemoteFileManager);
+            }
         }
 
         internal void InstantiateAnalysisService(string settingsPath = null)

@@ -120,6 +120,18 @@ namespace Microsoft.PowerShell.EditorServices.Console
         }
 
         /// <summary>
+        /// Cancels an active read loop.
+        /// </summary>
+        public void CancelReadLoop()
+        {
+            if (this.readLineCancellationToken != null)
+            {
+                this.readLineCancellationToken.Cancel();
+                this.readLineCancellationToken = null;
+            }
+        }
+
+        /// <summary>
         /// Stops the current terminal-based interactive console.
         /// </summary>
         public void StopInteractiveConsole()
@@ -141,6 +153,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <param name="echoToConsole">If true, the input will be echoed to the console.</param>
         public void ExecuteCommand(string inputString, bool echoToConsole)
         {
+            this.CancelReadLoop();
+
             if (this.activePromptHandler != null)
             {
                 if (echoToConsole)
@@ -321,15 +335,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
             while (!cancellationToken.IsCancellationRequested);
         }
 
-        private void CancelReadLoop()
-        {
-            if (this.readLineCancellationToken != null)
-            {
-                this.readLineCancellationToken.Cancel();
-                this.readLineCancellationToken = null;
-            }
-        }
-
         #endregion
 
         #region Events
@@ -427,6 +432,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private void PowerShellContext_DebuggerStop(object sender, System.Management.Automation.DebuggerStopEventArgs e)
         {
+            // Cancel any existing prompt first
+            this.CancelReadLoop();
+
             this.WriteDebuggerBanner(e);
             this.StartReadLoop();
         }

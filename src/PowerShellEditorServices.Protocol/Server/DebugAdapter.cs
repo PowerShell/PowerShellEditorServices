@@ -25,6 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private EditorSession editorSession;
 
         private bool noDebug;
+        private bool isAttachSession;
         private bool waitingForAttach;
         private string scriptToLaunch;
         private bool ownsEditorSession;
@@ -187,8 +188,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 #endif
             }
 
-            editorSession.PowerShellContext.SetWorkingDirectory(workingDir);
-            Logger.Write(LogLevel.Verbose, "Working dir set to: " + workingDir);
+            // TODO: What's the right approach here?
+            if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local)
+            {
+                editorSession.PowerShellContext.SetWorkingDirectory(workingDir);
+                Logger.Write(LogLevel.Verbose, "Working dir set to: " + workingDir);
+            }
 
             // Prepare arguments to the script - if specified
             string arguments = null;
@@ -204,6 +209,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.scriptToLaunch = launchParams.Script ?? launchParams.Program;
 #pragma warning restore 618
             this.arguments = arguments;
+
+            // If the current session is remote, map the script path to the remote
+            // machine if necessary
+            if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+            {
+                this.scriptPathToLaunch =
+                    this.editorSession.RemoteFileManager.GetMappedPath(
+                        this.scriptPathToLaunch,
+                        this.editorSession.PowerShellContext.CurrentRunspace);
+            }
 
             await requestContext.SendResult(null);
 
@@ -226,6 +241,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             AttachRequestArguments attachParams,
             RequestContext<object> requestContext)
         {
+            this.isAttachSession = true;
+
             // If there are no host processes to attach to or the user cancels selection, we get a null for the process id.
             // This is not an error, just a request to stop the original "attach to" request.
             // Testing against "undefined" is a HACK because I don't know how to make "Cancel" on quick pick loading
@@ -270,8 +287,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
             }
 
-            int processId;
-            if (int.TryParse(attachParams.ProcessId, out processId) && (processId > 0))
+            if (int.TryParse(attachParams.ProcessId, out int processId) && (processId > 0))
             {
                 PowerShellVersionDetails runspaceVersion =
                     this.editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
@@ -295,6 +311,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                     return;
                 }
+
+                // Stop the current read loop because the debugger
+                // will start its own
+                //this.editorSession.ConsoleService.CancelReadLoop();
 
                 // Execute the Debug-Runspace command but don't await it because it
                 // will block the debug adapter initialization process.  The
@@ -327,6 +347,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             EventHandler<SessionStateChangedEventArgs> handler = null;
 
+            // Define a handler that encapsulates the RequestContext so
+            // that it can be completed once the executed script is
+            // shutting down.
             handler =
                 async (o, e) =>
                 {
@@ -334,6 +357,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     {
                         await requestContext.SendResult(null);
                         this.editorSession.PowerShellContext.SessionStateChanged -= handler;
+
+                        if (this.isAttachSession)
+                        {
+                            // Start up the read loop again if this is a shared session
+                            if (!this.ownsEditorSession)
+                            {
+                                this.editorSession.ConsoleService.StartReadLoop();
+                            }
+
+                            await this.Stop();
+                        }
                     }
                 };
 
@@ -741,7 +775,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 this.waitingForAttach = false;
                 await this.SendEvent(InitializedEvent.Type, null);
             }
-            else if (e.ChangeAction == RunspaceChangeAction.Exit && this.editorSession.PowerShellContext.IsDebuggerStopped)
+            else if (
+                e.ChangeAction == RunspaceChangeAction.Exit && 
+                (this.editorSession == null ||
+                 this.editorSession.PowerShellContext.IsDebuggerStopped))
             {
                 // Exited the session while the debugger is stopped,
                 // send a ContinuedEvent so that the client changes the

@@ -78,6 +78,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     this.editorSession,
                     this);
 
+            this.editorSession.StartDebugService(this.editorOperations);
+
             // Always send console prompts through the UI in the language service
             // TODO: This will change later once we have a general REPL available
             // in VS Code.

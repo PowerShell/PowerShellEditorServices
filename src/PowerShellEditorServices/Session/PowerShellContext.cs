@@ -22,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices
     using System.Management.Automation;
     using System.Management.Automation.Host;
     using System.Management.Automation.Runspaces;
+    using Microsoft.PowerShell.EditorServices.Session.Capabilities;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -771,10 +772,10 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     this.ResumeDebugger(DebuggerResumeAction.Stop);
                 }
-                else
-                {
+                //else
+                //{
                     this.powerShell.BeginStop(null, null);
-                }
+                //}
 
                 this.SessionState = PowerShellContextState.Aborting;
             }
@@ -1498,6 +1499,24 @@ namespace Microsoft.PowerShell.EditorServices
 
                     // Notify listeners that the debugger has resumed
                     this.DebuggerResumed?.Invoke(this, e.ResumeAction);
+
+                    // Pop the current RunspaceDetails if we were attached
+                    // to a runspace and the resume action is Stop
+                    if (this.CurrentRunspace.Context == RunspaceContext.DebuggedRunspace &&
+                        e.ResumeAction == DebuggerResumeAction.Stop)
+                    {
+                        this.PopRunspace();
+                    }
+                    else if (e.ResumeAction != DebuggerResumeAction.Stop)
+                    {
+                        // Update the session state
+                        this.OnSessionStateChanged(
+                            this,
+                            new SessionStateChangedEventArgs(
+                                PowerShellContextState.Running,
+                                PowerShellExecutionResult.NotFinished,
+                                null));
+                    }
 
                     break;
                 }
