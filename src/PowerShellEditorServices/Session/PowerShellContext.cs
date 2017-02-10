@@ -415,6 +415,16 @@ namespace Microsoft.PowerShell.EditorServices
                                 "Attempting to execute command(s):\r\n\r\n{0}",
                                 GetStringForPSCommand(psCommand)));
 
+                        // This runspace gets occupied when we start debugging a script. When we define a watch
+                        // vscode sends a request to evaluate the watched expression after the user resumes the
+                        // debugger. Since the runspace is already occupied, the watch evaluation gets stuck here,
+                        // which causes a deadlock - VSCode never receives the result of the watch evaluation request
+                        // and it therefore never fires the chain of events that finishes the process of stopping the
+                        // debugger at the next breakpoint.
+                        // This is in contrast to how vscode requests variables, stack frames and threads
+                        // which are requested when the debuggers hits a stop. Those requests get honored
+                        // in the first if condition in this method.
+
                         // Set the runspace
                         runspaceHandle = await this.GetRunspaceHandle();
                         if (runspaceHandle.Runspace.RunspaceAvailability != RunspaceAvailability.AvailableForNestedCommand)

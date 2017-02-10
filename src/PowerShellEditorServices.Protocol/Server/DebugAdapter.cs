@@ -678,11 +678,23 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
             else
             {
-                VariableDetails result =
-                    await editorSession.DebugService.EvaluateExpression(
+                VariableDetailsBase result;
+                if (evaluateParams.Context.Equals("watch", StringComparison.OrdinalIgnoreCase))
+                {
+                    // If we evaluate an expression from a watch context then the server goes into a deadlock.
+                    // So instead, we retrieve the value from already evaluated variables.
+                    result = editorSession.DebugService.GetVariableFromExpression(
                         evaluateParams.Expression,
-                        evaluateParams.FrameId,
-                        isFromRepl);
+                        evaluateParams.FrameId);
+                }
+                else
+                {
+                    result =
+                        await editorSession.DebugService.EvaluateExpression(
+                            evaluateParams.Expression,
+                            evaluateParams.FrameId,
+                            isFromRepl);
+                }
 
                 if (result != null)
                 {
