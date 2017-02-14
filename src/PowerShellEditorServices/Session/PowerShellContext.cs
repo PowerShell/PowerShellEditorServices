@@ -520,7 +520,7 @@ namespace Microsoft.PowerShell.EditorServices
 
 
                         // Check if the runspace has changed
-                        this.PushRunspaceIfSessionChanged(sessionDetails);
+                        this.UpdateRunspaceDetailsIfSessionChanged(sessionDetails);
                     }
 
                     // Dispose of the execution context
@@ -1290,9 +1290,12 @@ namespace Microsoft.PowerShell.EditorServices
             return this.GetSessionDetails(
                 command =>
                 {
+                    // Use LastOrDefault to get the last item returned.  This
+                    // is necessary because advanced prompt functions (like those
+                    // in posh-git) may return multiple objects in the result.
                     return
                         this.ExecuteCommandInDebugger<PSObject>(command, false)
-                            .FirstOrDefault();
+                            .LastOrDefault();
                 });
         }
 
@@ -1331,7 +1334,7 @@ namespace Microsoft.PowerShell.EditorServices
             string promptPrefix = string.Empty;
             string promptString = sessionDetails.PromptString;
 
-            if (eventArgs != null)
+            if (eventArgs != null && promptString.Length > 0)
             {
                 // Is there a prompt prefix worth keeping?
                 const string promptSeparator = "]: ";
@@ -1459,7 +1462,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.WritePromptInDebugger(sessionDetails, e);
 
             // Push the current runspace if the session has changed
-            this.PushRunspaceIfSessionChanged(sessionDetails);
+            this.UpdateRunspaceDetailsIfSessionChanged(sessionDetails, isDebuggerStop: true);
 
             // Raise the event for the debugger service
             this.DebuggerStop?.Invoke(sender, e);
@@ -1586,6 +1589,13 @@ namespace Microsoft.PowerShell.EditorServices
 
             RunspaceDetails previousRunspace = this.CurrentRunspace;
 
+            if (newRunspaceDetails.Context == RunspaceContext.DebuggedRunspace)
+            {
+                this.WriteOutput(
+                    $"Entering debugged runspace on {newRunspaceDetails.Location.ToString().ToLower()} machine {newRunspaceDetails.SessionDetails.ComputerName}",
+                    true);
+            }
+
             // Switch out event handlers if necessary
             if (CheckIfRunspaceNeedsEventHandlers(newRunspaceDetails))
             {
@@ -1604,119 +1614,63 @@ namespace Microsoft.PowerShell.EditorServices
                     this.CurrentRunspace));
         }
 
-        private void PushRunspaceIfSessionChanged(SessionDetails sessionDetails, bool isDebuggerStop = false)
+        private void UpdateRunspaceDetailsIfSessionChanged(SessionDetails sessionDetails, bool isDebuggerStop = false)
         {
-            bool needsPop = false;
-            RunspaceContext? newRunspaceContext = null;
+            RunspaceDetails newRunspaceDetails = null;
 
-            if (this.CurrentRunspace.Location == RunspaceLocation.Local &&
-                !string.Equals(
-                    this.CurrentRunspace.SessionDetails.ComputerName,
-                    sessionDetails.ComputerName,
-                    StringComparison.CurrentCultureIgnoreCase))
+            // If we've exited an entered process or debugged runspace, pop what we've
+            // got before we evaluate where we're at
+            if (
+                (this.CurrentRunspace.Context == RunspaceContext.DebuggedRunspace &&
+                 this.CurrentRunspace.SessionDetails.InstanceId != sessionDetails.InstanceId) ||
+                (this.CurrentRunspace.Context == RunspaceContext.EnteredProcess &&
+                 this.CurrentRunspace.SessionDetails.ProcessId != sessionDetails.ProcessId))
             {
-                // This is a special case scenario when debugging remote ScriptBlocks.
-                // Normally entering a remote session will cause PushRunspace to be
-                // called.  If we suddenly find ourselves in a different machine without
-                // a prior PushRunspace call it means that the debugger has stepped into
-                // the execution of a remote ScriptBlock.
-                this.PushRunspace(
-                    RunspaceDetails.CreateFromDebugger(
-                        this.CurrentRunspace,
-                        RunspaceLocation.Remote,
-                        RunspaceContext.DebuggedRunspace,
-                        sessionDetails));
-            }
-            else if (
-                this.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                !string.Equals(
-                    this.CurrentRunspace.SessionDetails.ComputerName,
-                    sessionDetails.ComputerName,
-                    StringComparison.CurrentCultureIgnoreCase))
-            {
-                // This is the "exit" case of the previous case.  If we hit a breakpoint
-                // and we're suddenly in a different runspace, react accordingly.  This can
-                // happen if we are now debugging the same ScriptBlock on another machine or
-                // if we are now back in the original local runspace.
-
-                // First, pop the remote runspace in either case
                 this.PopRunspace();
+            }
 
-                // If the new computer name doesn't match that of the current machine, we're
-                // on another remote computer
-                if (!string.Equals(
+            // Are we in a new session that the PushRunspace command won't
+            // notify us about?
+            //
+            // Possible cases:
+            // - Debugged runspace in a local or remote session
+            // - Entered process in a remote session
+            //
+            // We don't need additional logic to check for the cases that
+            // PowerShell would have notified us about because the CurrentRunspace
+            // will already be updated by PowerShell by the time we reach
+            // these checks.
+
+            if (this.CurrentRunspace.SessionDetails.InstanceId != sessionDetails.InstanceId && isDebuggerStop)
+            {
+                // Are we on a local or remote computer?
+                bool differentComputer =
+                    !string.Equals(
                         sessionDetails.ComputerName,
                         this.initialRunspace.SessionDetails.ComputerName,
-                        StringComparison.CurrentCultureIgnoreCase))
-                {
-                    // Push the runspace for another remote session
-                    this.PushRunspace(
-                        RunspaceDetails.CreateFromDebugger(
-                            this.CurrentRunspace,
-                            RunspaceLocation.Remote,
-                            RunspaceContext.DebuggedRunspace,
-                            sessionDetails));
-                }
-            }
+                        StringComparison.CurrentCultureIgnoreCase);
 
-            // This logic checks for any session change that is never communicated
-            // via a call to PushRunspace:
-            // - Remote session entering a different process
-            // - Local or remote session debugging a runspace in the current process
-            // - Local or remote session debugging a runspace in the current process
-
-            if (this.CurrentRunspace.Location == RunspaceLocation.Local &&
-                this.CurrentRunspace.SessionDetails.InstanceId != sessionDetails.InstanceId)
-            {
-                // Did we start or stop debugging a runspace?
-                if (this.CurrentRunspace.Context != RunspaceContext.DebuggedRunspace)
-                {
-                    newRunspaceContext = RunspaceContext.DebuggedRunspace;
-                }
-                else
-                {
-                    needsPop = true;
-                }
+                // We started debugging a runspace
+                newRunspaceDetails =
+                    RunspaceDetails.CreateFromDebugger(
+                        this.CurrentRunspace,
+                        differentComputer ? RunspaceLocation.Remote : RunspaceLocation.Local,
+                        RunspaceContext.DebuggedRunspace,
+                        sessionDetails);
             }
-            else if (this.CurrentRunspace.Location == RunspaceLocation.Remote)
+            else if (this.CurrentRunspace.SessionDetails.ProcessId != sessionDetails.ProcessId)
             {
-                if (this.CurrentRunspace.SessionDetails.ProcessId != sessionDetails.ProcessId)
-                {
-                    // Did we attach to or detach from a process?
-                    if (this.CurrentRunspace.Context != RunspaceContext.EnteredProcess)
-                    {
-                        newRunspaceContext = RunspaceContext.EnteredProcess;
-                    }
-                    else
-                    {
-                        needsPop = true;
-                    }
-                }
-                else if (this.CurrentRunspace.SessionDetails.InstanceId != sessionDetails.InstanceId)
-                {
-                    // Debugging a different runspace
-                    if (this.CurrentRunspace.Context != RunspaceContext.DebuggedRunspace)
-                    {
-                        newRunspaceContext = RunspaceContext.DebuggedRunspace;
-                    }
-                    else
-                    {
-                        needsPop = true;
-                    }
-                }
-            }
-
-            if (newRunspaceContext.HasValue)
-            {
-                this.PushRunspace(
+                // We entered a different PowerShell host process
+                newRunspaceDetails =
                     RunspaceDetails.CreateFromContext(
                         this.CurrentRunspace,
-                        newRunspaceContext.Value,
-                        sessionDetails));
+                        RunspaceContext.EnteredProcess,
+                        sessionDetails);
             }
-            else if (needsPop)
+
+            if (newRunspaceDetails != null)
             {
-                this.PopRunspace();
+                this.PushRunspace(newRunspaceDetails);
             }
         }
 
@@ -1732,6 +1686,13 @@ namespace Microsoft.PowerShell.EditorServices
                     Logger.Write(
                         LogLevel.Verbose,
                         $"Popping {previousRunspace.Location} ({previousRunspace.Context}), new runspace is {this.CurrentRunspace.Location} ({this.CurrentRunspace.Context}), connection: {this.CurrentRunspace.ConnectionString}");
+
+                    if (previousRunspace.Context == RunspaceContext.DebuggedRunspace)
+                    {
+                        this.WriteOutput(
+                            $"Leaving debugged runspace on {previousRunspace.Location.ToString().ToLower()} machine {previousRunspace.SessionDetails.ComputerName}",
+                            true);
+                    }
 
                     // Switch out event handlers if necessary
                     if (CheckIfRunspaceNeedsEventHandlers(previousRunspace))

@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices
         #region Fields
 
         private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
-        private const string TemporaryScriptFileName = "TemporaryScript.ps1";
+        private const string TemporaryScriptFileName = "Script Listing.ps1";
 
         private PowerShellContext powerShellContext;
         private RemoteFileManager remoteFileManager;
@@ -1052,7 +1052,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                     this.temporaryScriptListingPath =
                         this.remoteFileManager.CreateTemporaryFile(
-                            TemporaryScriptFileName,
+                            $"[{this.powerShellContext.CurrentRunspace.SessionDetails.ComputerName}] {TemporaryScriptFileName}",
                             scriptListing,
                             this.powerShellContext.CurrentRunspace);
 
