@@ -12,17 +12,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     /// <summary>
     /// Class to encapsulate the request type.
     /// </summary>
-    class FormattingScriptRegionRequest
+    class ScriptRegionRequest
     {
         public static readonly
-            RequestType<FormattingScriptRegionRequestParams, FormattingScriptRegionRequestResult> Type =
-                RequestType<FormattingScriptRegionRequestParams, FormattingScriptRegionRequestResult>.Create("powerShell/getFormattingScriptRegion");
+            RequestType<ScriptRegionRequestParams, ScriptRegionRequestResult> Type =
+                RequestType<ScriptRegionRequestParams, ScriptRegionRequestResult>.Create("powerShell/getScriptRegion");
     }
 
     /// <summary>
     /// Class to encapsulate the request parameters.
     /// </summary>
-    class FormattingScriptRegionRequestParams
+    class ScriptRegionRequestParams
     {
         /// <summary>
         /// Path of the file for which the markers are requested.
@@ -35,15 +35,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public string character;
 
         /// <summary>
-        /// Character position
+        /// 1-based line number of the character
         /// </summary>
-        public FilePosition filePosition;
+        public int line;
+
+        /// <summary>
+        /// 1-based column number of the character
+        /// </summary>
+        public int column;
     }
 
     /// <summary>
     /// Class to encapsulate the result of marker request.
     /// </summary>
-    class FormattingScriptRegionRequestResult
+    class ScriptRegionRequestResult
     {
         /// <summary>
         /// A region in the script that encapsulates the given character/position which is suitable for
