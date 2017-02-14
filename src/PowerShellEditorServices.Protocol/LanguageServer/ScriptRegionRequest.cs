@@ -23,33 +23,33 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     class ScriptRegionRequestParams
     {
         /// <summary>
-        /// Path of the file for which the markers are requested.
+        /// Path of the file for which the formatting region is requested.
         /// </summary>
         public string fileUri;
 
         /// <summary>
-        /// Hint character
+        /// Hint character.
         /// </summary>
         public string character;
 
         /// <summary>
-        /// 1-based line number of the character
+        /// 1-based line number of the character.
         /// </summary>
         public int line;
 
         /// <summary>
-        /// 1-based column number of the character
+        /// 1-based column number of the character.
         /// </summary>
         public int column;
     }
 
     /// <summary>
-    /// Class to encapsulate the result of marker request.
+    /// Class to encapsulate the result of ScriptRegionRequest.
     /// </summary>
     class ScriptRegionRequestResult
     {
         /// <summary>
-        /// A region in the script that encapsulates the given character/position which is suitable for
+        /// A region in the script that encapsulates the given character/position which is suitable
         /// for formatting
         /// </summary>
         public ScriptRegion scriptRegion;
