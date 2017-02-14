@@ -458,12 +458,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="lineNumber">1-based line number of the position.</param>
         /// <param name="columnNumber">1-based column number of the position.</param>
         /// <returns></returns>
-        public ScriptRegion GetSmallestStatementAstRegion(
+        public ScriptRegion FindSmallestStatementAstRegion(
             ScriptFile scriptFile,
             int lineNumber,
             int columnNumber)
         {
-            var ast = GetSmallestStatementAst(scriptFile, lineNumber, columnNumber);
+            var ast = FindSmallestStatementAst(scriptFile, lineNumber, columnNumber);
             if (ast == null)
             {
                 return null;
@@ -591,7 +591,7 @@ namespace Microsoft.PowerShell.EditorServices
             return foundDefinition;
         }
 
-        private Ast GetSmallestStatementAst(ScriptFile scriptFile, int lineNumber, int columnNumber)
+        private Ast FindSmallestStatementAst(ScriptFile scriptFile, int lineNumber, int columnNumber)
         {
             var asts = scriptFile.ScriptAst.FindAll(ast =>
             {

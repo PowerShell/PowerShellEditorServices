@@ -254,7 +254,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     var line = scriptFile.GetLine(lineNumber);
                     if (!String.IsNullOrEmpty(line))
                     {
-                        scriptRegion = this.editorSession.LanguageService.GetSmallestStatementAstRegion(
+                        scriptRegion = this.editorSession.LanguageService.FindSmallestStatementAstRegion(
                             scriptFile,
                             lineNumber,
                             line.Length);
@@ -262,7 +262,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     break;
 
                 case "}":
-                    scriptRegion = this.editorSession.LanguageService.GetSmallestStatementAstRegion(
+                    scriptRegion = this.editorSession.LanguageService.FindSmallestStatementAstRegion(
                             scriptFile,
                             lineNumber,
                             columnNumber);
