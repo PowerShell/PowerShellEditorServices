@@ -450,6 +450,28 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        /// Gets the smallest statment ast that contains the given script position as
+        /// indicated by lineNumber and columnNumber parameters.
+        /// </summary>
+        /// <param name="scriptFile">Open script file.</param>
+        /// <param name="lineNumber">1-based line number of the position.</param>
+        /// <param name="columnNumber">1-based column number of the position.</param>
+        /// <returns></returns>
+        public ScriptRegion GetSmallestStatementAstRegion(
+            ScriptFile scriptFile,
+            int lineNumber,
+            int columnNumber)
+        {
+            var ast = GetSmallestStatementAst(scriptFile, lineNumber, columnNumber);
+            if (ast == null)
+            {
+                return null;
+            }
+
+            return ScriptRegion.Create(ast.Extent);
+        }
+
         #endregion
 
         #region Private Fields
@@ -567,6 +589,55 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return foundDefinition;
+        }
+
+        private Ast GetSmallestStatementAst(ScriptFile scriptFile, int lineNumber, int columnNumber)
+        {
+            var asts = scriptFile.ScriptAst.FindAll(ast =>
+            {
+                if (!(ast is StatementAst))
+                {
+                    return false;
+                }
+
+                var scriptExtent = ast.Extent;
+                if (scriptExtent.StartLineNumber > lineNumber || scriptExtent.EndLineNumber < lineNumber)
+                {
+                    return false;
+                }
+
+                if (scriptExtent.StartLineNumber == lineNumber)
+                {
+                    return scriptExtent.StartColumnNumber <= columnNumber;
+                }
+
+                if (scriptExtent.EndLineNumber == lineNumber)
+                {
+                    return scriptExtent.EndColumnNumber >= columnNumber;
+                }
+
+                return true;
+            }, true);
+
+            if (asts == null || asts.Count() == 0)
+            {
+                return null;
+            }
+
+            Func<IScriptExtent, int> getExtentWitdh = extent => extent.EndOffset - extent.StartOffset;
+            var minDiff = getExtentWitdh(scriptFile.ScriptAst.Extent);
+            Ast minAst = scriptFile.ScriptAst;
+            foreach (var ast in asts)
+            {
+                var diff = getExtentWitdh(ast.Extent);
+                if (diff < minDiff)
+                {
+                    minDiff = diff;
+                    minAst = ast;
+                }
+            }
+
+            return minAst;
         }
 
         #endregion
