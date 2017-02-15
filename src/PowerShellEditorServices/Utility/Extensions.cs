@@ -62,5 +62,10 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
             return maxElement;
         }
+
+        public static T MinElement<T>(this IEnumerable<T> elements, Func<T, T, int> comparer) where T : class
+        {
+            return MaxElement<T>(elements, (elementX, elementY) => -1 * comparer(elementX, elementY));
+        }
     }
 }
