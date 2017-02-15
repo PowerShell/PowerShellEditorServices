@@ -624,20 +624,8 @@ namespace Microsoft.PowerShell.EditorServices
                 return null;
             }
 
-            Func<IScriptExtent, int> getExtentWitdh = extent => extent.EndOffset - extent.StartOffset;
-            var minDiff = getExtentWitdh(scriptFile.ScriptAst.Extent);
-            Ast minAst = scriptFile.ScriptAst;
-            foreach (var ast in asts)
-            {
-                var diff = getExtentWitdh(ast.Extent);
-                if (diff < minDiff)
-                {
-                    minDiff = diff;
-                    minAst = ast;
-                }
-            }
-
-            return minAst;
+            // Find ast with the smallest extent
+            return asts.MinElement((astX, astY) => astX.Extent.ExtentWitdhComparer(astY.Extent));
         }
 
         #endregion
