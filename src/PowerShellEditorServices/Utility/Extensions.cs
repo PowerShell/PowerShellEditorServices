@@ -4,6 +4,9 @@
 //
 
 using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
@@ -29,6 +32,35 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             return str;
+        }
+
+        public static T MaxElement<T>(this IEnumerable<T> elements, Func<T,T,int> comparer) where T:class
+        {
+            if (elements == null)
+            {
+                throw new ArgumentNullException(nameof(elements));
+            }
+
+            if (comparer == null)
+            {
+                throw new ArgumentNullException(nameof(comparer));
+            }
+
+            if (!elements.Any())
+            {
+                return null;
+            }
+
+            var maxElement = elements.First();
+            foreach(var element in elements.Skip(1))
+            {
+                if (element != null && comparer(element, maxElement) > 0)
+                {
+                    maxElement = element;
+                }
+            }
+
+            return maxElement;
         }
     }
 }
