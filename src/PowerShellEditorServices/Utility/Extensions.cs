@@ -109,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             var extentWidthX = extentX.EndOffset - extentX.StartOffset;
-            var extentWidthY = extentY.EndOffset - extentY.EndOffset;
+            var extentWidthY = extentY.EndOffset - extentY.StartOffset;
             if (extentWidthX > extentWidthY)
             {
                 return 1;
