@@ -619,7 +619,7 @@ namespace Microsoft.PowerShell.EditorServices
                 return true;
             }, true);
 
-            if (asts == null || asts.Count() == 0)
+            if (asts == null || !asts.Any())
             {
                 return null;
             }
