@@ -421,12 +421,17 @@ namespace Microsoft.PowerShell.EditorServices
                         // which causes a deadlock - VSCode never receives the result of the watch evaluation request
                         // and it therefore never fires the chain of events that finishes the process of stopping the
                         // debugger at the next breakpoint.
+                        //
                         // This is in contrast to how vscode requests variables, stack frames and threads
                         // which are requested when the debuggers hits a stop. Those requests get honored
                         // in the first if condition in this method.
-
+                        //
+                        // DefaultWaitTimeoutMilliseconds is 5000 ms which is too high for this case as it would
+                        // deteriorate experience while debugging. We need to set it some value which is not very noticeable
+                        // but is reasonably long enough for the debugger to move to "stopped" state.
+                        //
                         // Set the runspace
-                        runspaceHandle = await this.GetRunspaceHandle();
+                        runspaceHandle = await this.GetRunspaceHandle(new CancellationTokenSource(200).Token);
                         if (runspaceHandle.Runspace.RunspaceAvailability != RunspaceAvailability.AvailableForNestedCommand)
                         {
                             this.powerShell.Runspace = runspaceHandle.Runspace;
