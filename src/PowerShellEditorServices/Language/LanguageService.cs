@@ -599,7 +599,7 @@ namespace Microsoft.PowerShell.EditorServices
             }, true);
 
             // Find ast with the smallest extent
-            return asts.MinElement((astX, astY) => astX.Extent.ExtentWitdhComparer(astY.Extent));
+            return asts.MinElement((astX, astY) => astX.Extent.ExtentWidthComparer(astY.Extent));
         }
 
         #endregion

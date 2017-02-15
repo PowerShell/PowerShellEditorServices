@@ -34,6 +34,13 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             return str;
         }
 
+        /// <summary>
+        /// Get the maximum of the elements from the given enumerable.
+        /// </summary>
+        /// <typeparam name="T">Type of object for which the enumerable is defined.</typeparam>
+        /// <param name="elements">An enumerable object of type T</param>
+        /// <param name="comparer">A comparer for ordering elements of type T. The comparer should handle null values.</param>
+        /// <returns>An object of type T. If the enumerable is empty or has all null elements, then the method returns null.</returns>
         public static T MaxElement<T>(this IEnumerable<T> elements, Func<T,T,int> comparer) where T:class
         {
             if (elements == null)
@@ -63,12 +70,27 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             return maxElement;
         }
 
+        /// <summary>
+        /// Get the minimum of the elements from the given enumerable.
+        /// </summary>
+        /// <typeparam name="T">Type of object for which the enumerable is defined.</typeparam>
+        /// <param name="elements">An enumerable object of type T</param>
+        /// <param name="comparer">A comparer for ordering elements of type T. The comparer should handle null values.</param>
+        /// <returns>An object of type T. If the enumerable is empty or has all null elements, then the method returns null.</returns>
         public static T MinElement<T>(this IEnumerable<T> elements, Func<T, T, int> comparer) where T : class
         {
             return MaxElement<T>(elements, (elementX, elementY) => -1 * comparer(elementX, elementY));
         }
 
-        public static int ExtentWitdhComparer(this IScriptExtent extentX, IScriptExtent extentY)
+        /// <summary>
+        /// Compare extents with respect to their widths.
+        ///
+        /// Width of an extent is defined as the difference between its EndOffset and StartOffest properties.
+        /// </summary>
+        /// <param name="extentX">Extent of type IScriptExtent.</param>
+        /// <param name="extentY">Extent of type IScriptExtent.</param>
+        /// <returns>0 if extentX and extentY are equal in width. 1 if width of extent X is greater than that of extent Y. Otherwise, -1.</returns>
+        public static int ExtentWidthComparer(this IScriptExtent extentX, IScriptExtent extentY)
         {
 
             if (extentX == null && extentY == null)
@@ -102,6 +124,13 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
         }
 
+        /// <summary>
+        /// Check if the given coordinates are wholly contained in the instance's extent.
+        /// </summary>
+        /// <param name="scriptExtent">Extent of type IScriptExtent.</param>
+        /// <param name="line">1-based line number.</param>
+        /// <param name="column">1-based column number</param>
+        /// <returns>True if the coordinates are wholly contained in the instance's extent, otherwise, false.</returns>
         public static bool Contains(this IScriptExtent scriptExtent, int line, int column)
         {
             if (scriptExtent.StartLineNumber > line || scriptExtent.EndLineNumber < line)
