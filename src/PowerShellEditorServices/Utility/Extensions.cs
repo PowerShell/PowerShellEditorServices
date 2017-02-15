@@ -67,5 +67,39 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         {
             return MaxElement<T>(elements, (elementX, elementY) => -1 * comparer(elementX, elementY));
         }
+
+        public static int ExtentWitdhComparer(this IScriptExtent extentX, IScriptExtent extentY)
+        {
+
+            if (extentX == null && extentY == null)
+            {
+                return 0;
+            }
+
+            if (extentX != null && extentY == null)
+            {
+                return 1;
+            }
+
+            if (extentX == null)
+            {
+                return -1;
+            }
+
+            var extentWidthX = extentX.EndOffset - extentX.StartOffset;
+            var extentWidthY = extentY.EndOffset - extentY.EndOffset;
+            if (extentWidthX > extentWidthY)
+            {
+                return 1;
+            }
+            else if (extentWidthX < extentWidthY)
+            {
+                return -1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
     }
 }
