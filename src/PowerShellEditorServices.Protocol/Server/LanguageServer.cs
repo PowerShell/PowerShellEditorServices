@@ -125,6 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
 
             this.SetRequestHandler(ScriptFileMarkersRequest.Type, this.HandleScriptFileMarkersRequest);
+            this.SetRequestHandler(ScriptRegionRequest.Type, this.HandleGetFormatScriptRegionRequest);
 
             this.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequest);
 
@@ -233,6 +234,48 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         editorSession,
                         this.SendEvent);
             await sendresult;
+        }
+
+        private async Task HandleGetFormatScriptRegionRequest(
+            ScriptRegionRequestParams requestParams,
+            RequestContext<ScriptRegionRequestResult> requestContext)
+        {
+            var scriptFile = this.editorSession.Workspace.GetFile(requestParams.FileUri);
+            var lineNumber = requestParams.Line;
+            var columnNumber = requestParams.Column;
+            ScriptRegion scriptRegion = null;
+
+            switch (requestParams.Character)
+            {
+                case "\n":
+                    // find the smallest statement ast that occupies
+                    // the element before \n or \r\n and return the extent.
+                    --lineNumber; // vscode sends the next line when pressed enter
+                    var line = scriptFile.GetLine(lineNumber);
+                    if (!String.IsNullOrEmpty(line))
+                    {
+                        scriptRegion = this.editorSession.LanguageService.FindSmallestStatementAstRegion(
+                            scriptFile,
+                            lineNumber,
+                            line.Length);
+                    }
+                    break;
+
+                case "}":
+                    scriptRegion = this.editorSession.LanguageService.FindSmallestStatementAstRegion(
+                            scriptFile,
+                            lineNumber,
+                            columnNumber);
+                    break;
+
+                default:
+                    break;
+            }
+
+            await requestContext.SendResult(new ScriptRegionRequestResult
+            {
+                scriptRegion = scriptRegion
+            });
         }
 
         private async Task HandleScriptFileMarkersRequest(

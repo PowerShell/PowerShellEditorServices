@@ -450,6 +450,28 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        /// Gets the smallest statment ast that contains the given script position as
+        /// indicated by lineNumber and columnNumber parameters.
+        /// </summary>
+        /// <param name="scriptFile">Open script file.</param>
+        /// <param name="lineNumber">1-based line number of the position.</param>
+        /// <param name="columnNumber">1-based column number of the position.</param>
+        /// <returns></returns>
+        public ScriptRegion FindSmallestStatementAstRegion(
+            ScriptFile scriptFile,
+            int lineNumber,
+            int columnNumber)
+        {
+            var ast = FindSmallestStatementAst(scriptFile, lineNumber, columnNumber);
+            if (ast == null)
+            {
+                return null;
+            }
+
+            return ScriptRegion.Create(ast.Extent);
+        }
+
         #endregion
 
         #region Private Fields
@@ -567,6 +589,17 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return foundDefinition;
+        }
+
+        private Ast FindSmallestStatementAst(ScriptFile scriptFile, int lineNumber, int columnNumber)
+        {
+            var asts = scriptFile.ScriptAst.FindAll(ast =>
+            {
+                return ast is StatementAst && ast.Extent.Contains(lineNumber, columnNumber);
+            }, true);
+
+            // Find ast with the smallest extent
+            return asts.MinElement((astX, astY) => astX.Extent.ExtentWidthComparer(astY.Extent));
         }
 
         #endregion
