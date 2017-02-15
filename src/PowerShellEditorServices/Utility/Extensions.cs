@@ -101,5 +101,25 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 return 0;
             }
         }
+
+        public static bool Contains(this IScriptExtent scriptExtent, int line, int column)
+        {
+            if (scriptExtent.StartLineNumber > line || scriptExtent.EndLineNumber < line)
+            {
+                return false;
+            }
+
+            if (scriptExtent.StartLineNumber == line)
+            {
+                return scriptExtent.StartColumnNumber <= column;
+            }
+
+            if (scriptExtent.EndLineNumber == line)
+            {
+                return scriptExtent.EndColumnNumber >= column;
+            }
+
+            return true;
+        }
     }
 }
