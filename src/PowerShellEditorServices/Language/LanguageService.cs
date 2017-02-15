@@ -595,34 +595,8 @@ namespace Microsoft.PowerShell.EditorServices
         {
             var asts = scriptFile.ScriptAst.FindAll(ast =>
             {
-                if (!(ast is StatementAst))
-                {
-                    return false;
-                }
-
-                var scriptExtent = ast.Extent;
-                if (scriptExtent.StartLineNumber > lineNumber || scriptExtent.EndLineNumber < lineNumber)
-                {
-                    return false;
-                }
-
-                if (scriptExtent.StartLineNumber == lineNumber)
-                {
-                    return scriptExtent.StartColumnNumber <= columnNumber;
-                }
-
-                if (scriptExtent.EndLineNumber == lineNumber)
-                {
-                    return scriptExtent.EndColumnNumber >= columnNumber;
-                }
-
-                return true;
+                return ast is StatementAst && ast.Extent.Contains(lineNumber, columnNumber);
             }, true);
-
-            if (asts == null || !asts.Any())
-            {
-                return null;
-            }
 
             // Find ast with the smallest extent
             return asts.MinElement((astX, astY) => astX.Extent.ExtentWitdhComparer(astY.Extent));
