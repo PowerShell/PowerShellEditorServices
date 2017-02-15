@@ -25,22 +25,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// <summary>
         /// Path of the file for which the formatting region is requested.
         /// </summary>
-        public string fileUri;
+        public string FileUri;
 
         /// <summary>
         /// Hint character.
         /// </summary>
-        public string character;
+        public string Character;
 
         /// <summary>
         /// 1-based line number of the character.
         /// </summary>
-        public int line;
+        public int Line;
 
         /// <summary>
         /// 1-based column number of the character.
         /// </summary>
-        public int column;
+        public int Column;
     }
 
     /// <summary>

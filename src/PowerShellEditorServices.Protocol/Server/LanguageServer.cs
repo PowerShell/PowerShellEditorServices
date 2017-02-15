@@ -240,12 +240,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             ScriptRegionRequestParams requestParams,
             RequestContext<ScriptRegionRequestResult> requestContext)
         {
-            var scriptFile = this.editorSession.Workspace.GetFile(requestParams.fileUri);
-            var lineNumber = requestParams.line;
-            var columnNumber = requestParams.column;
+            var scriptFile = this.editorSession.Workspace.GetFile(requestParams.FileUri);
+            var lineNumber = requestParams.Line;
+            var columnNumber = requestParams.Column;
             ScriptRegion scriptRegion = null;
 
-            switch (requestParams.character)
+            switch (requestParams.Character)
             {
                 case "\n":
                     // find the smallest statement ast that occupies
