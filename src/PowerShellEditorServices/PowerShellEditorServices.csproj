@@ -34,10 +34,7 @@
   </PropertyGroup>
 
   <Target Name="PowerShellVersionOutput" BeforeTargets="Compile">
-    <Message
-      Condition=" '$(TargetFramework)' == 'net451' And '$(PowerShellVersion)' != '' "
-      Text="Target PowerShell Version: $(PowerShellVersion) -- Constants: $(DefineConstants)"
-      Importance="High" />
+    <Message Condition=" '$(TargetFramework)' == 'net451' And '$(PowerShellVersion)' != '' " Text="Target PowerShell Version: $(PowerShellVersion) -- Constants: $(DefineConstants)" Importance="High" />
   </Target>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net451' And '$(PowerShellVersion)' == 'v3' ">
