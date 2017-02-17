@@ -22,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices
     using System.Management.Automation.Host;
     using System.Management.Automation.Runspaces;
     using System.Reflection;
+    using Microsoft.PowerShell.EditorServices.Session.Capabilities;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -208,7 +209,7 @@ namespace Microsoft.PowerShell.EditorServices
                     this.LocalPowerShellVersion.Edition));
 
             Version powerShellVersion = this.LocalPowerShellVersion.Version;
-            if (powerShellVersion >= new Version(5,0))
+            if (powerShellVersion >= new Version(5, 0))
             {
                 this.versionSpecificOperations = new PowerShell5Operations();
             }
@@ -235,6 +236,9 @@ namespace Microsoft.PowerShell.EditorServices
 
             // Set up the runspace
             this.ConfigureRunspace(this.CurrentRunspace);
+
+            // Add runspace capabilities
+            this.ConfigureRunspaceCapabilities(this.CurrentRunspace);
 
             // Set the $profile variable in the runspace
             this.profilePaths = profilePaths;
@@ -1242,7 +1246,7 @@ namespace Microsoft.PowerShell.EditorServices
                     invokeAction(
                         SessionDetails.GetDetailsCommand()));
             }
-            catch(RuntimeException e)
+            catch (RuntimeException e)
             {
                 Logger.Write(
                     LogLevel.Verbose,
@@ -1581,6 +1585,11 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        private void ConfigureRunspaceCapabilities(RunspaceDetails runspaceDetails)
+        {
+            DscBreakpointCapability.CheckForCapability(this.CurrentRunspace, this);
+        }
+
         private void PushRunspace(RunspaceDetails newRunspaceDetails)
         {
             Logger.Write(
@@ -1605,6 +1614,9 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.runspaceStack.Push(previousRunspace);
             this.CurrentRunspace = newRunspaceDetails;
+
+            // Check for runspace capabilities
+            this.ConfigureRunspaceCapabilities(newRunspaceDetails);
 
             this.OnRunspaceChanged(
                 this,
@@ -1756,4 +1768,3 @@ namespace Microsoft.PowerShell.EditorServices
         #endregion
     }
 }
-

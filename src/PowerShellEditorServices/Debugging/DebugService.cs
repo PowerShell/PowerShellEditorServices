@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Session.Capabilities;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -31,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices
         private RemoteFileManager remoteFileManager;
 
         // TODO: This needs to be managed per nested session
-        private Dictionary<string, List<Breakpoint>> breakpointsPerFile = 
+        private Dictionary<string, List<Breakpoint>> breakpointsPerFile =
             new Dictionary<string, List<Breakpoint>>();
 
         private int nextVariableId;
@@ -100,50 +101,55 @@ namespace Microsoft.PowerShell.EditorServices
         {
             var resultBreakpointDetails = new List<BreakpointDetails>();
 
-            if (clearExisting)
+            var dscBreakpoints =
+                this.powerShellContext
+                    .CurrentRunspace
+                    .GetCapability<DscBreakpointCapability>();
+
+            if (clearExisting && dscBreakpoints == null)
             {
                 await this.ClearBreakpointsInFile(scriptFile);
             }
 
-            if (breakpoints.Length > 0)
+            // Make sure we're using the remote script path
+            string scriptPath = scriptFile.FilePath;
+            if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                this.remoteFileManager != null)
             {
-                // Make sure we're using the remote script path
-                string scriptPath = scriptFile.FilePath;
-                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                    this.remoteFileManager != null)
-                {
-                    if (!this.remoteFileManager.IsUnderRemoteTempPath(scriptPath))
-                    {
-                        Logger.Write(
-                            LogLevel.Verbose,
-                            $"Could not set breakpoints for local path '{scriptPath}' in a remote session.");
-
-                        return resultBreakpointDetails.ToArray();
-                    }
-
-                    string mappedPath =
-                        this.remoteFileManager.GetMappedPath(
-                            scriptPath,
-                            this.powerShellContext.CurrentRunspace);
-
-                    scriptPath = mappedPath;
-                }
-                else if (
-                    this.temporaryScriptListingPath != null &&
-                    this.temporaryScriptListingPath.Equals(scriptPath, StringComparison.CurrentCultureIgnoreCase))
+                if (!this.remoteFileManager.IsUnderRemoteTempPath(scriptPath))
                 {
                     Logger.Write(
                         LogLevel.Verbose,
-                        $"Could not set breakpoint on temporary script listing path '{scriptPath}'.");
+                        $"Could not set breakpoints for local path '{scriptPath}' in a remote session.");
 
                     return resultBreakpointDetails.ToArray();
                 }
 
-                // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
-                // quoted and have those wildcard chars escaped.
-                string escapedScriptPath = 
-                    PowerShellContext.EscapePath(scriptPath, escapeSpaces: false);
+                string mappedPath =
+                    this.remoteFileManager.GetMappedPath(
+                        scriptPath,
+                        this.powerShellContext.CurrentRunspace);
 
+                scriptPath = mappedPath;
+            }
+            else if (
+                this.temporaryScriptListingPath != null &&
+                this.temporaryScriptListingPath.Equals(scriptPath, StringComparison.CurrentCultureIgnoreCase))
+            {
+                Logger.Write(
+                    LogLevel.Verbose,
+                    $"Could not set breakpoint on temporary script listing path '{scriptPath}'.");
+
+                return resultBreakpointDetails.ToArray();
+            }
+
+            // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
+            // quoted and have those wildcard chars escaped.
+            string escapedScriptPath =
+                PowerShellContext.EscapePath(scriptPath, escapeSpaces: false);
+
+            if (dscBreakpoints == null || !dscBreakpoints.IsDscResourcePath(escapedScriptPath))
+            {
                 foreach (BreakpointDetails breakpoint in breakpoints)
                 {
                     PSCommand psCommand = new PSCommand();
@@ -167,7 +173,7 @@ namespace Microsoft.PowerShell.EditorServices
                         ScriptBlock actionScriptBlock =
                             GetBreakpointActionScriptBlock(breakpoint);
 
-                        // If there was a problem with the condition string, 
+                        // If there was a problem with the condition string,
                         // move onto the next breakpoint.
                         if (actionScriptBlock == null)
                         {
@@ -181,18 +187,26 @@ namespace Microsoft.PowerShell.EditorServices
                     IEnumerable<Breakpoint> configuredBreakpoints =
                         await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
 
-                    // The order in which the breakpoints are returned is significant to the 
+                    // The order in which the breakpoints are returned is significant to the
                     // VSCode client and should match the order in which they are passed in.
                     resultBreakpointDetails.AddRange(
                         configuredBreakpoints.Select(BreakpointDetails.Create));
                 }
+            }
+            else
+            {
+                resultBreakpointDetails =
+                    await dscBreakpoints.SetLineBreakpoints(
+                        this.powerShellContext,
+                        escapedScriptPath,
+                        breakpoints);
             }
 
             return resultBreakpointDetails.ToArray();
         }
 
         /// <summary>
-        /// Sets the list of command breakpoints for the current debugging session. 
+        /// Sets the list of command breakpoints for the current debugging session.
         /// </summary>
         /// <param name="breakpoints">CommandBreakpointDetails for each command breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing function breakpoints to be cleared before setting new ones.</param>
@@ -222,7 +236,7 @@ namespace Microsoft.PowerShell.EditorServices
                     {
                         ScriptBlock actionScriptBlock = GetBreakpointActionScriptBlock(breakpoint);
 
-                        // If there was a problem with the condition string, 
+                        // If there was a problem with the condition string,
                         // move onto the next breakpoint.
                         if (actionScriptBlock == null)
                         {
@@ -236,7 +250,7 @@ namespace Microsoft.PowerShell.EditorServices
                     IEnumerable<Breakpoint> configuredBreakpoints =
                         await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
 
-                    // The order in which the breakpoints are returned is significant to the 
+                    // The order in which the breakpoints are returned is significant to the
                     // VSCode client and should match the order in which they are passed in.
                     resultBreakpointDetails.AddRange(
                         configuredBreakpoints.Select(CommandBreakpointDetails.Create));
@@ -256,7 +270,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Sends a "step over" action to the debugger when stopped. 
+        /// Sends a "step over" action to the debugger when stopped.
         /// </summary>
         public void StepOver()
         {
@@ -284,7 +298,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         /// <summary>
         /// Causes the debugger to break execution wherever it currently
-        /// is at the time.  This is equivalent to clicking "Pause" in a 
+        /// is at the time.  This is equivalent to clicking "Pause" in a
         /// debugger UI.
         /// </summary>
         public void Break()
@@ -380,7 +394,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Sets the specified variable by container variableReferenceId and variable name to the
         /// specified new value.  If the variable cannot be set or converted to that value this
-        /// method will throw InvalidPowerShellExpressionException, ArgumentTransformationMetadataException, or 
+        /// method will throw InvalidPowerShellExpressionException, ArgumentTransformationMetadataException, or
         /// SessionStateUnauthorizedAccessException.
         /// </summary>
         /// <param name="variableContainerReferenceId">The container (Autos, Local, Script, Global) that holds the variable.</param>
@@ -405,11 +419,11 @@ namespace Microsoft.PowerShell.EditorServices
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript(value);
             var errorMessages = new StringBuilder();
-            var results = 
+            var results =
                 await this.powerShellContext.ExecuteCommand<object>(
-                    psCommand, 
-                    errorMessages, 
-                    false, 
+                    psCommand,
+                    errorMessages,
+                    false,
                     false);
 
             // Check if PowerShell's evaluation of the expression resulted in an error.
@@ -419,8 +433,8 @@ namespace Microsoft.PowerShell.EditorServices
                 throw new InvalidPowerShellExpressionException(errorMessages.ToString());
             }
 
-            // If PowerShellContext.ExecuteCommand returns an ErrorRecord as output, the expression failed evaluation.  
-            // Ideally we would have a separate means from communicating error records apart from normal output. 
+            // If PowerShellContext.ExecuteCommand returns an ErrorRecord as output, the expression failed evaluation.
+            // Ideally we would have a separate means from communicating error records apart from normal output.
             ErrorRecord errorRecord = psobject as ErrorRecord;
             if (errorRecord != null)
             {
@@ -479,9 +493,9 @@ namespace Microsoft.PowerShell.EditorServices
             // We have the PSVariable object for the variable the user wants to set and an object to assign to that variable.
             // The last step is to determine whether the PSVariable is "strongly typed" which may require a conversion.
             // If it is not strongly typed, we simply assign the object directly to the PSVariable potentially changing its type.
-            // Turns out ArgumentTypeConverterAttribute is not public. So we call the attribute through it's base class - 
+            // Turns out ArgumentTypeConverterAttribute is not public. So we call the attribute through it's base class -
             // ArgumentTransformationAttribute.
-            var argTypeConverterAttr = 
+            var argTypeConverterAttr =
                 psVariable.Attributes
                           .OfType<ArgumentTransformationAttribute>()
                           .FirstOrDefault(a => a.GetType().Name.Equals("ArgumentTypeConverterAttribute"));
@@ -497,10 +511,10 @@ namespace Microsoft.PowerShell.EditorServices
 
                 errorMessages.Clear();
 
-                var getExecContextResults = 
+                var getExecContextResults =
                     await this.powerShellContext.ExecuteCommand<object>(
-                        psCommand, 
-                        errorMessages, 
+                        psCommand,
+                        errorMessages,
                         sendErrorToHost: false);
 
                 EngineIntrinsics executionContext = getExecContextResults.OfType<EngineIntrinsics>().FirstOrDefault();
@@ -541,7 +555,7 @@ namespace Microsoft.PowerShell.EditorServices
             int stackFrameId,
             bool writeResultAsOutput)
         {
-            var results = 
+            var results =
                 await this.powerShellContext.ExecuteScriptString(
                     expressionString,
                     false,
@@ -594,7 +608,7 @@ namespace Microsoft.PowerShell.EditorServices
                 new VariableScope(autoVariablesId, VariableContainerDetails.AutoVariablesName),
                 new VariableScope(localStackFrameVariableId, VariableContainerDetails.LocalScopeName),
                 new VariableScope(this.scriptScopeVariables.Id, VariableContainerDetails.ScriptScopeName),
-                new VariableScope(this.globalScopeVariables.Id, VariableContainerDetails.GlobalScopeName),  
+                new VariableScope(this.globalScopeVariables.Id, VariableContainerDetails.GlobalScopeName),
             };
         }
 
@@ -650,22 +664,22 @@ namespace Microsoft.PowerShell.EditorServices
         private async Task FetchGlobalAndScriptVariables()
         {
             // Retrieve globals first as script variable retrieval needs to search globals.
-            this.globalScopeVariables = 
+            this.globalScopeVariables =
                 await FetchVariableContainer(VariableContainerDetails.GlobalScopeName, null);
 
-            this.scriptScopeVariables = 
+            this.scriptScopeVariables =
                 await FetchVariableContainer(VariableContainerDetails.ScriptScopeName, null);
         }
 
         private async Task<VariableContainerDetails> FetchVariableContainer(
-            string scope, 
+            string scope,
             VariableContainerDetails autoVariables)
         {
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand("Get-Variable");
             psCommand.AddParameter("Scope", scope);
 
-            var scopeVariableContainer = 
+            var scopeVariableContainer =
                 new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
             this.variables.Add(scopeVariableContainer);
 
@@ -674,7 +688,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 foreach (PSObject psVariableObject in results)
                 {
-                    var variableDetails = new VariableDetails(psVariableObject) {Id = this.nextVariableId++};
+                    var variableDetails = new VariableDetails(psVariableObject) { Id = this.nextVariableId++ };
                     this.variables.Add(variableDetails);
                     scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
 
@@ -781,7 +795,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 VariableContainerDetails autoVariables =
                     new VariableContainerDetails(
-                        this.nextVariableId++, 
+                        this.nextVariableId++,
                         VariableContainerDetails.AutoVariablesName);
 
                 this.variables.Add(autoVariables);
@@ -789,7 +803,7 @@ namespace Microsoft.PowerShell.EditorServices
                 VariableContainerDetails localVariables =
                     await FetchVariableContainer(i.ToString(), autoVariables);
 
-                this.stackFrameDetails[i] = 
+                this.stackFrameDetails[i] =
                     StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables);
 
                 string stackFrameScriptPath = this.stackFrameDetails[i].ScriptPath;
@@ -811,8 +825,8 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Inspects the condition, putting in the appropriate scriptblock template 
-        /// "if (expression) { break }".  If errors are found in the condition, the 
+        /// Inspects the condition, putting in the appropriate scriptblock template
+        /// "if (expression) { break }".  If errors are found in the condition, the
         /// breakpoint passed in is updated to set Verified to false and an error
         /// message is put into the breakpoint.Message property.
         /// </summary>
@@ -847,7 +861,7 @@ namespace Microsoft.PowerShell.EditorServices
                 // Create an Action scriptblock based on condition and/or hit count passed in.
                 if (hitCount.HasValue && String.IsNullOrWhiteSpace(breakpoint.Condition))
                 {
-                    // In the HitCount only case, this is simple as we can just use the HitCount 
+                    // In the HitCount only case, this is simple as we can just use the HitCount
                     // property on the breakpoint object which is represented by $_.
                     string action = $"if ($_.HitCount -eq {hitCount}) {{ break }}";
                     actionScriptBlock = ScriptBlock.Create(action);
@@ -857,7 +871,7 @@ namespace Microsoft.PowerShell.EditorServices
                     // Must be either condition only OR condition and hit count.
                     actionScriptBlock = ScriptBlock.Create(breakpoint.Condition);
 
-                    // Check for simple, common errors that ScriptBlock parsing will not catch 
+                    // Check for simple, common errors that ScriptBlock parsing will not catch
                     // e.g. $i == 3 and $i > 3
                     string message;
                     if (!ValidateBreakpointConditionAst(actionScriptBlock.Ast, out message))
@@ -908,7 +922,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             catch (ParseException ex)
             {
-                // Failed to create conditional breakpoint likely because the user provided an 
+                // Failed to create conditional breakpoint likely because the user provided an
                 // invalid PowerShell expression. Let the user know why.
                 breakpoint.Verified = false;
                 breakpoint.Message = ExtractAndScrubParseExceptionMessage(ex, breakpoint.Condition);
@@ -922,10 +936,10 @@ namespace Microsoft.PowerShell.EditorServices
 
             // We are only inspecting a few simple scenarios in the EndBlock only.
             ScriptBlockAst scriptBlockAst = conditionAst as ScriptBlockAst;
-            if ((scriptBlockAst != null) && 
-                (scriptBlockAst.BeginBlock == null) && 
-                (scriptBlockAst.ProcessBlock == null) && 
-                (scriptBlockAst.EndBlock != null) && 
+            if ((scriptBlockAst != null) &&
+                (scriptBlockAst.BeginBlock == null) &&
+                (scriptBlockAst.ProcessBlock == null) &&
+                (scriptBlockAst.EndBlock != null) &&
                 (scriptBlockAst.EndBlock.Statements.Count == 1))
             {
                 StatementAst statementAst = scriptBlockAst.EndBlock.Statements[0];
@@ -1074,9 +1088,11 @@ namespace Microsoft.PowerShell.EditorServices
             await this.FetchStackFramesAndVariables(
                 noScriptName ? localScriptPath : null);
 
-            // If this is a remote connection, get the file content
+            // If this is a remote connection and the debugger stopped at a line
+            // in a script file, get the file contents
             if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                this.remoteFileManager != null)
+                this.remoteFileManager != null &&
+                !noScriptName)
             {
                 localScriptPath =
                     await this.remoteFileManager.FetchRemoteFile(
