@@ -9,6 +9,7 @@ using System;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -625,26 +626,46 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Executes a script file at the specified path.
         /// </summary>
-        /// <param name="scriptPath">The path to the script file to execute.</param>
+        /// <param name="script">The script execute.</param>
         /// <param name="arguments">Arguments to pass to the script.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
-        public async Task ExecuteScriptAtPath(string scriptPath, string arguments = null)
+        public async Task ExecuteScriptWithArgs(string script, string arguments = null)
         {
             PSCommand command = new PSCommand();
 
             if (arguments != null)
             {
-                // If we don't escape wildcard characters in the script path, the script can
-                // fail to execute if say the script name was foo][.ps1.
-                // Related to issue #123.
-                string escapedScriptPath = EscapePath(scriptPath, escapeSpaces: true);
-                string scriptWithArgs = escapedScriptPath + " " + arguments;
+                // Need to determine If the script string is a path to a script file.
+                string scriptAbsPath = string.Empty;
+                try
+                {
+                    // Assume we can only debug scripts from the FileSystem provider
+                    string workingDir =
+                        this.CurrentRunspace.Runspace.SessionStateProxy.Path.CurrentFileSystemLocation.ProviderPath;
+                    workingDir = workingDir.TrimEnd(Path.DirectorySeparatorChar);
+                    scriptAbsPath = workingDir + Path.DirectorySeparatorChar + script;
+                }
+                catch (System.Management.Automation.DriveNotFoundException e)
+                {
+                    Logger.Write(
+                        LogLevel.Error,
+                        "Could not determine current filesystem location:\r\n\r\n" + e.ToString());
+                }
 
+                // If we don't escape wildcard characters in a path to a script file, the script can
+                // fail to execute if say the script filename was foo][.ps1.
+                // Related to issue #123.
+                if (File.Exists(script) || File.Exists(scriptAbsPath))
+                {
+                    script = EscapePath(script, escapeSpaces: true);
+                }
+
+                string scriptWithArgs = script + " " + arguments;
                 command.AddScript(scriptWithArgs);
             }
             else
             {
-                command.AddCommand(scriptPath);
+                command.AddCommand(script);
             }
 
             await this.ExecuteCommand<object>(command, true);

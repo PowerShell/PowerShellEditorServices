@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private bool noDebug;
         private bool waitingForAttach;
-        private string scriptPathToLaunch;
+        private string scriptToLaunch;
         private string arguments;
 
         public DebugAdapter(HostDetails hostDetails, ProfilePaths profilePaths)
@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         protected Task LaunchScript(RequestContext<object> requestContext)
         {
             return editorSession.PowerShellContext
-                    .ExecuteScriptAtPath(this.scriptPathToLaunch, this.arguments)
+                    .ExecuteScriptWithArgs(this.scriptToLaunch, this.arguments)
                     .ContinueWith(
                         async (t) => {
                             Logger.Write(LogLevel.Verbose, "Execution completed, flushing output then terminating...");
@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object args,
             RequestContext<object> requestContext)
         {
-            if (!string.IsNullOrEmpty(this.scriptPathToLaunch))
+            if (!string.IsNullOrEmpty(this.scriptToLaunch))
             {
                 if (this.editorSession.PowerShellContext.SessionState == PowerShellContextState.Ready)
                 {
@@ -144,8 +144,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             LaunchRequestArguments launchParams,
             RequestContext<object> requestContext)
         {
-            // Set the working directory for the PowerShell runspace to the cwd passed in via launch.json. 
-            // In case that is null, use the the folder of the script to be executed.  If the resulting 
+            // Set the working directory for the PowerShell runspace to the cwd passed in via launch.json.
+            // In case that is null, use the the folder of the script to be executed.  If the resulting
             // working dir path is a file path then extract the directory and use that.
             string workingDir =
                 launchParams.Cwd ??
@@ -195,7 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Store the launch parameters so that they can be used later
             this.noDebug = launchParams.NoDebug;
 #pragma warning disable 618
-            this.scriptPathToLaunch = launchParams.Script ?? launchParams.Program;
+            this.scriptToLaunch = launchParams.Script ?? launchParams.Program;
 #pragma warning restore 618
             this.arguments = arguments;
 
@@ -203,7 +203,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // If no script is being launched, execute an empty script to
             // cause the prompt string to be evaluated and displayed
-            if (string.IsNullOrEmpty(this.scriptPathToLaunch))
+            if (string.IsNullOrEmpty(this.scriptToLaunch))
             {
                 await this.editorSession.PowerShellContext.ExecuteScriptString(
                     "", false, true);
@@ -222,7 +222,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             // If there are no host processes to attach to or the user cancels selection, we get a null for the process id.
             // This is not an error, just a request to stop the original "attach to" request.
-            // Testing against "undefined" is a HACK because I don't know how to make "Cancel" on quick pick loading 
+            // Testing against "undefined" is a HACK because I don't know how to make "Cancel" on quick pick loading
             // to cancel on the VSCode side without sending an attachRequest with processId set to "undefined".
             if (string.IsNullOrEmpty(attachParams.ProcessId) || (attachParams.ProcessId == "undefined"))
             {
@@ -364,7 +364,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             catch (Exception e) when (e is FileNotFoundException || e is DirectoryNotFoundException)
             {
                 Logger.Write(
-                    LogLevel.Warning, 
+                    LogLevel.Warning,
                     $"Attempted to set breakpoints on a non-existing file: {setBreakpointsParams.Source.Path}");
 
                 string message = this.noDebug ? string.Empty : "Source does not exist, breakpoint not set.";
@@ -387,9 +387,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             {
                 SourceBreakpoint srcBreakpoint = setBreakpointsParams.Breakpoints[i];
                 breakpointDetails[i] = BreakpointDetails.Create(
-                    scriptFile.FilePath, 
-                    srcBreakpoint.Line, 
-                    srcBreakpoint.Column, 
+                    scriptFile.FilePath,
+                    srcBreakpoint.Line,
+                    srcBreakpoint.Column,
                     srcBreakpoint.Condition,
                     srcBreakpoint.HitCondition);
             }
@@ -541,7 +541,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // be referenced back to the current list of stack frames
                 newStackFrames.Add(
                     StackFrame.Create(
-                        stackFrames[i], 
+                        stackFrames[i],
                         i));
             }
 
@@ -712,9 +712,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // Provide the reason for why the debugger has stopped script execution.
             // See https://github.com/Microsoft/vscode/issues/3648
-            // The reason is displayed in the breakpoints viewlet.  Some recommended reasons are: 
+            // The reason is displayed in the breakpoints viewlet.  Some recommended reasons are:
             // "step", "breakpoint", "function breakpoint", "exception" and "pause".
-            // We don't support exception breakpoints and for "pause", we can't distinguish 
+            // We don't support exception breakpoints and for "pause", we can't distinguish
             // between stepping and the user pressing the pause/break button in the debug toolbar.
             string debuggerStoppedReason = "step";
             if (e.OriginalEvent.Breakpoints.Count > 0)
