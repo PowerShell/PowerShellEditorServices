@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         private readonly ProfilePaths TestProfilePaths =
             new ProfilePaths(
-                TestHostDetails.ProfileId, 
+                TestHostDetails.ProfileId,
                     Path.GetFullPath(
                         @"..\..\..\..\PowerShellEditorServices.Test.Shared\Profile"),
                     Path.GetFullPath(
@@ -104,7 +104,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 Task.Run(
                     async () =>
                     {
-                        var unusedTask = this.powerShellContext.ExecuteScriptAtPath(DebugTestFilePath);
+                        var unusedTask = this.powerShellContext.ExecuteScriptWithArgs(DebugTestFilePath);
                         await Task.Delay(50);
                         this.powerShellContext.AbortExecution();
                     });

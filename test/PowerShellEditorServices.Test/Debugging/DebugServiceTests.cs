@@ -113,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // Execute the script and wait for the breakpoint to be hit
             Task executeTask =
-                this.powerShellContext.ExecuteScriptAtPath(
+                this.powerShellContext.ExecuteScriptWithArgs(
                     debugWithParamsFile.FilePath, arguments);
 
             await this.AssertDebuggerStopped(debugWithParamsFile.FilePath);
@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             var = variables.FirstOrDefault(v => v.Name == "$Param2");
             Assert.NotNull(var);
             Assert.True(var.IsExpandable);
-            
+
             var childVars = debugService.GetVariables(var.Id);
             Assert.Equal(9, childVars.Length);
             Assert.Equal("\"Bar\"", childVars[0].ValueString);
@@ -194,7 +194,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             Task executeTask =
-                this.powerShellContext.ExecuteScriptAtPath(
+                this.powerShellContext.ExecuteScriptWithArgs(
                     this.debugScriptFile.FilePath);
 
             // Wait for function breakpoint to hit
@@ -273,7 +273,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             Task executeTask =
-                this.powerShellContext.ExecuteScriptAtPath(
+                this.powerShellContext.ExecuteScriptWithArgs(
                     this.debugScriptFile.FilePath);
 
             // Wait for a couple breakpoints
@@ -303,7 +303,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             Task executeTask =
-                this.powerShellContext.ExecuteScriptAtPath(
+                this.powerShellContext.ExecuteScriptWithArgs(
                     this.debugScriptFile.FilePath);
 
             // Wait for conditional breakpoint to hit
@@ -353,7 +353,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             Task executeTask =
-                this.powerShellContext.ExecuteScriptAtPath(
+                this.powerShellContext.ExecuteScriptWithArgs(
                     this.debugScriptFile.FilePath);
 
             // Wait for conditional breakpoint to hit
@@ -389,7 +389,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             Task executeTask =
-                this.powerShellContext.ExecuteScriptAtPath(
+                this.powerShellContext.ExecuteScriptWithArgs(
                     this.debugScriptFile.FilePath);
 
             // Wait for conditional breakpoint to hit
@@ -466,7 +466,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.debugService.Break();
 
             // File path is an empty string when paused while running
-            await this.AssertDebuggerStopped(string.Empty); 
+            await this.AssertDebuggerStopped(string.Empty);
             await this.AssertStateChange(
                 PowerShellContextState.Ready,
                 PowerShellExecutionResult.Stopped);
@@ -545,7 +545,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             StackFrameDetails[] stackFrames = debugService.GetStackFrames();
 
-            VariableDetailsBase[] variables = 
+            VariableDetailsBase[] variables =
                 debugService.GetVariables(stackFrames[0].LocalVariables.Id);
 
             // TODO: Add checks for correct value strings as well
@@ -604,7 +604,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal(newStrValue, setStrValue);
 
             VariableScope[] scopes = this.debugService.GetVariableScopes(0);
-            
+
             // Test set of script scope int variable (not strongly typed)
             VariableScope scriptScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.ScriptScopeName);
             string newIntValue = "49";
