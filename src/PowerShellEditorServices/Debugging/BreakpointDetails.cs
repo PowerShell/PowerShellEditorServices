@@ -45,9 +45,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="hitCondition"></param>
         /// <returns></returns>
         public static BreakpointDetails Create(
-            string source, 
-            int line, 
-            int? column = null, 
+            string source,
+            int line,
+            int? column = null,
             string condition = null,
             string hitCondition = null)
         {
@@ -86,6 +86,7 @@ namespace Microsoft.PowerShell.EditorServices
                 Verified = true,
                 Source = lineBreakpoint.Script,
                 LineNumber = lineBreakpoint.Line,
+                ColumnNumber = lineBreakpoint.Column,
                 Condition = lineBreakpoint.Action?.ToString()
             };
 

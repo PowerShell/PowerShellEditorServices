@@ -20,6 +20,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 
         public bool LinesStartAt1 { get; set; }
 
+        public bool ColumnsStartAt1 { get; set; }
+
         public string PathFormat { get; set; }
 
         public bool SourceMaps { get; set; }
@@ -30,31 +32,31 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class InitializeResponseBody
     {
         /// <summary>
-        /// Gets or sets a boolean value that determines whether the debug adapter 
+        /// Gets or sets a boolean value that determines whether the debug adapter
         /// supports the configurationDoneRequest.
         /// </summary>
         public bool SupportsConfigurationDoneRequest { get; set; }
 
         /// <summary>
-        /// Gets or sets a boolean value that determines whether the debug adapter 
+        /// Gets or sets a boolean value that determines whether the debug adapter
         /// supports functionBreakpoints.
         /// </summary>
         public bool SupportsFunctionBreakpoints { get; set; }
 
         /// <summary>
-        /// Gets or sets a boolean value that determines whether the debug adapter 
+        /// Gets or sets a boolean value that determines whether the debug adapter
         /// supports conditionalBreakpoints.
         /// </summary>
         public bool SupportsConditionalBreakpoints { get; set; }
 
         /// <summary>
-        /// Gets or sets a boolean value that determines whether the debug adapter 
+        /// Gets or sets a boolean value that determines whether the debug adapter
         /// supports breakpoints that break execution after a specified number of hits.
         /// </summary>
         public bool SupportsHitConditionalBreakpoints { get; set; }
 
         /// <summary>
-        /// Gets or sets a boolean value that determines whether the debug adapter 
+        /// Gets or sets a boolean value that determines whether the debug adapter
         /// supports a (side effect free) evaluate request for data hovers.
         /// </summary>
         public bool SupportsEvaluateForHovers { get; set; }

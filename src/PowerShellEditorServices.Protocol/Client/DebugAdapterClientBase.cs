@@ -40,7 +40,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
                 InitializeRequest.Type,
                 new InitializeRequestArguments
                 {
-                    LinesStartAt1 = true
+                    LinesStartAt1 = true,
+                    ColumnsStartAt1 = true
                 });
         }
     }
