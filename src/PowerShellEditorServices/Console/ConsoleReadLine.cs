@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
+    using Microsoft.PowerShell.EditorServices.Utility;
     using System;
     using System.Management.Automation;
     using System.Management.Automation.Language;
@@ -21,6 +22,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         #region Private Fields
 
         private PowerShellContext powerShellContext;
+        private AsyncQueue<ConsoleKeyInfo> readKeyQueue = new AsyncQueue<ConsoleKeyInfo>();
+        private CancellationTokenSource readLoopCancellationToken;
 
         #endregion
 
@@ -53,6 +56,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
             int initialWindowTop = Console.WindowTop;
 
             int currentCursorIndex = 0;
+
+            this.StartReadLoop();
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -382,19 +387,41 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Private Methods
 
+        private void StartReadLoop()
+        {
+            if (this.readLoopCancellationToken == null)
+            {
+                this.readLoopCancellationToken = new CancellationTokenSource();
+
+                var terminalThreadTask =
+                    Task.Factory.StartNew(
+                        async () =>
+                        {
+                                    // Set the thread's name to help with debugging
+                                    Thread.CurrentThread.Name = "ConsoleReadLine Thread";
+
+                            while (!this.readLoopCancellationToken.IsCancellationRequested)
+                            {
+                                await this.readKeyQueue.EnqueueAsync(
+                                    Console.ReadKey(true));
+                            }
+                        },
+                        CancellationToken.None,
+                        TaskCreationOptions.LongRunning,
+                        TaskScheduler.Default);
+            }
+        }
+
         private async Task<ConsoleKeyInfo?> ReadKeyAsync(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                if (Console.KeyAvailable)
-                {
-                    return Console.ReadKey(true);
-               }
-
-                await Task.Delay(50);
+                return await this.readKeyQueue.DequeueAsync(cancellationToken);
             }
-
-            return null;
+            catch (TaskCanceledException)
+            {
+                return null;
+            }
         }
 
         private int CalculateIndexFromCursor(
