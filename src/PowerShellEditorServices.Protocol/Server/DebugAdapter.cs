@@ -312,10 +312,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     return;
                 }
 
-                // Stop the current read loop because the debugger
-                // will start its own
-                //this.editorSession.ConsoleService.CancelReadLoop();
-
                 // Execute the Debug-Runspace command but don't await it because it
                 // will block the debug adapter initialization process.  The
                 // InitializedEvent will be sent as soon as the RunspaceChanged

@@ -1539,6 +1539,9 @@ namespace Microsoft.PowerShell.EditorServices
                     {
                         if (this.CurrentRunspace.Context == RunspaceContext.DebuggedRunspace)
                         {
+                            // Notify listeners that the debugger has resumed
+                            this.DebuggerResumed?.Invoke(this, DebuggerResumeAction.Stop);
+
                             // We're detached from the runspace now, send a runspace update.
                             this.PopRunspace();
                         }

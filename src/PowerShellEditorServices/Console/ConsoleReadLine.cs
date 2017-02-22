@@ -397,8 +397,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     Task.Factory.StartNew(
                         async () =>
                         {
-                                    // Set the thread's name to help with debugging
-                                    Thread.CurrentThread.Name = "ConsoleReadLine Thread";
+                            // Set the thread's name to help with debugging
+                            Thread.CurrentThread.Name = "ConsoleReadLine Thread";
 
                             while (!this.readLoopCancellationToken.IsCancellationRequested)
                             {
