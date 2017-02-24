@@ -103,20 +103,27 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         public void StartReadLoop()
         {
-            this.readLineCancellationToken = new CancellationTokenSource();
+            if (this.readLineCancellationToken == null)
+            {
+                this.readLineCancellationToken = new CancellationTokenSource();
 
-            var terminalThreadTask =
-                Task.Factory.StartNew(
-                    async () =>
-                    {
-                        // Set the thread's name to help with debugging
-                        Thread.CurrentThread.Name = "Terminal Input Loop Thread";
+                var terminalThreadTask =
+                    Task.Factory.StartNew(
+                        async () =>
+                        {
+                            // Set the thread's name to help with debugging
+                            Thread.CurrentThread.Name = "Terminal Input Loop Thread";
 
-                        await this.StartReplLoop(this.readLineCancellationToken.Token);
-                    },
-                    CancellationToken.None,
-                    TaskCreationOptions.LongRunning,
-                    TaskScheduler.Default);
+                            await this.StartReplLoop(this.readLineCancellationToken.Token);
+                        },
+                        CancellationToken.None,
+                        TaskCreationOptions.LongRunning,
+                        TaskScheduler.Default);
+            }
+            else
+            {
+                Logger.Write(LogLevel.Verbose, "StartReadLoop called while read loop is already running");
+            }
         }
 
         /// <summary>

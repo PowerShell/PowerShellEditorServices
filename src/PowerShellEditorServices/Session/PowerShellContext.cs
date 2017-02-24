@@ -66,7 +66,9 @@ namespace Microsoft.PowerShell.EditorServices
         {
             get
             {
-                return this.debuggerStoppedTask != null;
+                return
+                    this.debuggerStoppedTask != null &&
+                    this.CurrentRunspace.Runspace.RunspaceAvailability != RunspaceAvailability.Available;
             }
         }
 
@@ -504,8 +506,16 @@ namespace Microsoft.PowerShell.EditorServices
                         SessionDetails sessionDetails = null;
 
                         // Get the SessionDetails and then write the prompt
-                        if (runspaceHandle != null)
+                        if (this.CurrentRunspace.Runspace.RunspaceAvailability == RunspaceAvailability.Available)
                         {
+                            // This state can happen if the user types a command that causes the
+                            // debugger to exit before we reach this point.  No RunspaceHandle
+                            // will exist already so we need to create one and then use it
+                            if (runspaceHandle == null)
+                            {
+                                runspaceHandle = await this.GetRunspaceHandle();
+                            }
+
                             sessionDetails = this.GetSessionDetailsInRunspace(runspaceHandle.Runspace);
                         }
                         else if (this.IsDebuggerStopped)
@@ -768,14 +778,16 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 Logger.Write(LogLevel.Verbose, "Execution abort requested...");
 
+                // Clean up the debugger
                 if (this.IsDebuggerStopped)
                 {
                     this.ResumeDebugger(DebuggerResumeAction.Stop);
+                    this.debuggerStoppedTask = null;
+                    this.pipelineExecutionTask = null;
                 }
-                //else
-                //{
-                    this.powerShell.BeginStop(null, null);
-                //}
+
+                // Stop the running pipeline
+                this.powerShell.BeginStop(null, null);
 
                 this.SessionState = PowerShellContextState.Aborting;
             }
@@ -1448,7 +1460,7 @@ namespace Microsoft.PowerShell.EditorServices
         // NOTE: This event is 'internal' because the DebugService provides
         //       the publicly consumable event.
         internal event EventHandler<DebuggerStopEventArgs> DebuggerStop;
-        internal event EventHandler<DebuggerResumeAction> DebuggerResumed;
+        public event EventHandler<DebuggerResumeAction> DebuggerResumed;
 
         private void OnDebuggerStop(object sender, DebuggerStopEventArgs e)
         {
@@ -1461,6 +1473,10 @@ namespace Microsoft.PowerShell.EditorServices
             // Save the pipeline thread ID and create the pipeline execution task
             this.pipelineThreadId = Thread.CurrentThread.ManagedThreadId;
             this.pipelineExecutionTask = new TaskCompletionSource<IPipelineExecutionRequest>();
+
+            // Hold on to local task vars so that the fields can be cleared independently
+            Task<DebuggerResumeAction> localDebuggerStoppedTask = this.debuggerStoppedTask.Task;
+            Task<IPipelineExecutionRequest> localPipelineExecutionTask = this.pipelineExecutionTask.Task;
 
             // Update the session state
             this.OnSessionStateChanged(
@@ -1486,15 +1502,15 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 int taskIndex =
                     Task.WaitAny(
-                        this.debuggerStoppedTask.Task,
-                        this.pipelineExecutionTask.Task);
+                        localDebuggerStoppedTask,
+                        localPipelineExecutionTask);
 
                 if (taskIndex == 0)
                 {
                     // Write a new output line before continuing
                     this.WriteOutput("", true);
 
-                    e.ResumeAction = this.debuggerStoppedTask.Task.Result;
+                    e.ResumeAction = localDebuggerStoppedTask.Result;
                     Logger.Write(LogLevel.Verbose, "Received debugger resume action " + e.ResumeAction.ToString());
 
                     // Notify listeners that the debugger has resumed
@@ -1524,10 +1540,10 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     Logger.Write(LogLevel.Verbose, "Received pipeline thread execution request.");
 
-                    IPipelineExecutionRequest executionRequest =
-                        this.pipelineExecutionTask.Task.Result;
+                    IPipelineExecutionRequest executionRequest = localPipelineExecutionTask.Result;
 
                     this.pipelineExecutionTask = new TaskCompletionSource<IPipelineExecutionRequest>();
+                    localPipelineExecutionTask = this.pipelineExecutionTask.Task;
 
                     executionRequest.Execute().Wait();
 

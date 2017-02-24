@@ -25,11 +25,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private EditorSession editorSession;
 
         private bool noDebug;
+        private bool isRemoteAttach;
         private bool isAttachSession;
         private bool waitingForAttach;
         private string scriptToLaunch;
         private bool ownsEditorSession;
+        private bool executionCompleted;
         private string arguments;
+        private RequestContext<object> disconnectRequestContext = null;
 
         public DebugAdapter(HostDetails hostDetails, ProfilePaths profilePaths)
             : this(hostDetails, profilePaths, new StdioServerChannel(), null)
@@ -90,17 +93,57 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             return editorSession.PowerShellContext
                     .ExecuteScriptWithArgs(this.scriptToLaunch, this.arguments)
-                    .ContinueWith(
-                        async (t) => {
-                            Logger.Write(LogLevel.Verbose, "Execution completed, flushing output then terminating...");
+                    .ContinueWith(this.OnExecutionCompleted);
+        }
 
-                            await this.SendEvent(
-                                TerminatedEvent.Type,
-                                new TerminatedEvent());
+        private async Task OnExecutionCompleted(Task executeTask)
+        {
+            Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
 
-                            // Stop the server
-                            await this.Stop();
-                        });
+            this.executionCompleted = true;
+
+            if (this.isAttachSession)
+            {
+                // Ensure the read loop is stopped
+                this.editorSession.ConsoleService.CancelReadLoop();
+
+                // Pop the sessions
+                if (this.editorSession.PowerShellContext.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
+                {
+                    try
+                    {
+                        await this.editorSession.PowerShellContext.ExecuteScriptString("Exit-PSHostProcess");
+
+                        if (this.isRemoteAttach &&
+                            this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+                        {
+                            await this.editorSession.PowerShellContext.ExecuteScriptString("Exit-PSSession");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.WriteException("Caught exception while popping attached process after debugging", e);
+                    }
+                }
+
+                if (!this.ownsEditorSession)
+                {
+                    this.editorSession.ConsoleService.StartReadLoop();
+                }
+            }
+
+            if (this.disconnectRequestContext != null)
+            {
+                // Respond to the disconnect request and stop the server
+                await this.disconnectRequestContext.SendResult(null);
+                await this.Stop();
+            }
+            else
+            {
+                await this.SendEvent(
+                    TerminatedEvent.Type,
+                    new TerminatedEvent());
+            }
         }
 
         protected override void Shutdown()
@@ -214,9 +257,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // machine if necessary
             if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
             {
-                this.scriptPathToLaunch =
+                this.scriptToLaunch =
                     this.editorSession.RemoteFileManager.GetMappedPath(
-                        this.scriptPathToLaunch,
+                        this.scriptToLaunch,
                         this.editorSession.PowerShellContext.CurrentRunspace);
             }
 
@@ -273,6 +316,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                     return;
                 }
+                else if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+                {
+                    await requestContext.SendError(
+                        $"Cannot attach to a process in a remote session when already in a remote session.");
+
+                    return;
+                }
 
                 await this.editorSession.PowerShellContext.ExecuteScriptString(
                     $"Enter-PSSession -ComputerName \"{attachParams.ComputerName}\"",
@@ -285,6 +335,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                     return;
                 }
+
+                this.isRemoteAttach = true;
             }
 
             if (int.TryParse(attachParams.ProcessId, out int processId) && (processId > 0))
@@ -319,8 +371,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 int runspaceId = attachParams.RunspaceId > 0 ? attachParams.RunspaceId : 1;
                 this.waitingForAttach = true;
                 Task nonAwaitedTask =
-                    this.editorSession.PowerShellContext.ExecuteScriptString(
-                        $"\nDebug-Runspace -Id {runspaceId}");
+                    this.editorSession.PowerShellContext
+                        .ExecuteScriptString($"\nDebug-Runspace -Id {runspaceId}")
+                        .ContinueWith(this.OnExecutionCompleted);
             }
             else
             {
@@ -341,40 +394,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object disconnectParams,
             RequestContext<object> requestContext)
         {
-            EventHandler<SessionStateChangedEventArgs> handler = null;
-
-            // Define a handler that encapsulates the RequestContext so
-            // that it can be completed once the executed script is
-            // shutting down.
-            handler =
-                async (o, e) =>
-                {
-                    if (e.NewSessionState == PowerShellContextState.Ready)
-                    {
-                        await requestContext.SendResult(null);
-                        this.editorSession.PowerShellContext.SessionStateChanged -= handler;
-
-                        if (this.isAttachSession)
-                        {
-                            // Start up the read loop again if this is a shared session
-                            if (!this.ownsEditorSession)
-                            {
-                                this.editorSession.ConsoleService.StartReadLoop();
-                            }
-
-                            await this.Stop();
-                        }
-                    }
-                };
-
             // In some rare cases, the EditorSession will already be disposed
             // so we shouldn't try to abort because PowerShellContext will be null
             if (this.editorSession != null && this.editorSession.PowerShellContext != null)
             {
-                if (this.editorSession.PowerShellContext.SessionState == PowerShellContextState.Running ||
-                    this.editorSession.PowerShellContext.IsDebuggerStopped)
+                if (this.executionCompleted == false)
                 {
-                    this.editorSession.PowerShellContext.SessionStateChanged += handler;
+                    this.disconnectRequestContext = requestContext;
                     this.editorSession.PowerShellContext.AbortExecution();
                 }
                 else
@@ -772,7 +798,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 await this.SendEvent(InitializedEvent.Type, null);
             }
             else if (
-                e.ChangeAction == RunspaceChangeAction.Exit && 
+                e.ChangeAction == RunspaceChangeAction.Exit &&
                 (this.editorSession == null ||
                  this.editorSession.PowerShellContext.IsDebuggerStopped))
             {
