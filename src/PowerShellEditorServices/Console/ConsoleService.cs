@@ -80,18 +80,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             this.consoleReadLine = new ConsoleReadLine(powerShellContext);
 
-            // TODO: Move this to the PSHost implementation
-
-            Console.CancelKeyPress +=
-                (obj, args) =>
-                {
-                    // TODO: Don't abort if we're in a native app, let the native app
-                    // handle the ctrl+c
-
-                    // We'll handle Ctrl+C
-                    args.Cancel = true;
-                    this.powerShellContext.AbortExecution();
-                };
         }
 
         #endregion
@@ -130,18 +118,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// Cancels an active read loop.
         /// </summary>
         public void CancelReadLoop()
-        {
-            if (this.readLineCancellationToken != null)
-            {
-                this.readLineCancellationToken.Cancel();
-                this.readLineCancellationToken = null;
-            }
-        }
-
-        /// <summary>
-        /// Stops the current terminal-based interactive console.
-        /// </summary>
-        public void StopInteractiveConsole()
         {
             if (this.readLineCancellationToken != null)
             {
@@ -321,7 +297,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 catch (Exception e) // Narrow this if possible
                 {
                     this.WriteOutput(
-                        $"\n\nAn error occurred while accepting input:\n\n{e.ToString()}\n",
+                        $"\n\nAn error occurred while reading input:\n\n{e.ToString()}\n",
                         true,
                         OutputType.Error);
 

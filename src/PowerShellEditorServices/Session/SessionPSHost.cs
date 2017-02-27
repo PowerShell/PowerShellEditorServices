@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private HostDetails hostDetails;
         private IConsoleHost consoleHost;
+        private bool isNativeApplicationRunning;
         private Guid instanceId = Guid.NewGuid();
         private ConsoleServicePSHostUserInterface hostUserInterface;
         private IHostSupportsInteractiveSession hostSupportsInteractiveSession;
@@ -62,6 +63,20 @@ namespace Microsoft.PowerShell.EditorServices
             this.hostDetails = hostDetails;
             this.hostUserInterface = new ConsoleServicePSHostUserInterface();
             this.hostSupportsInteractiveSession = hostSupportsInteractiveSession;
+
+            System.Console.CancelKeyPress +=
+                (obj, args) =>
+                {
+                    if (!this.isNativeApplicationRunning)
+                    {
+                        // We'll handle Ctrl+C
+                        if (this.ConsoleHost != null)
+                        {
+                            args.Cancel = true;
+                            this.consoleHost.SendControlC();
+                        }
+                    }
+                };
         }
 
         #endregion
@@ -113,11 +128,13 @@ namespace Microsoft.PowerShell.EditorServices
         public override void NotifyBeginApplication()
         {
             Logger.Write(LogLevel.Verbose, "NotifyBeginApplication() called.");
+            this.isNativeApplicationRunning = true;
         }
 
         public override void NotifyEndApplication()
         {
             Logger.Write(LogLevel.Verbose, "NotifyEndApplication() called.");
+            this.isNativeApplicationRunning = false;
         }
 
         public override void SetShouldExit(int exitCode)

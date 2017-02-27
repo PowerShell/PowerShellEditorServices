@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         protected override async Task Shutdown()
         {
             // Stop the interactive terminal
-            this.editorSession.ConsoleService.StopInteractiveConsole();
+            this.editorSession.ConsoleService.CancelReadLoop();
 
             // Make sure remaining output is flushed before exiting
             await this.outputDebouncer.Flush();
@@ -1080,6 +1080,9 @@ function __Expand-Alias {
             DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
             RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
         {
+            // Cancel the read loop before executing
+            this.editorSession.ConsoleService.CancelReadLoop();
+
             // We don't await the result of the execution here because we want
             // to be able to receive further messages while the current script
             // is executing.  This important in cases where the pipeline thread
@@ -1095,6 +1098,9 @@ function __Expand-Alias {
             executeTask.ContinueWith(
                 (task) =>
                 {
+                    // Start the command loop again
+                    this.editorSession.ConsoleService.StartReadLoop();
+
                     // Return an empty result since the result value is irrelevant
                     // for this request in the LanguageServer
                     return
