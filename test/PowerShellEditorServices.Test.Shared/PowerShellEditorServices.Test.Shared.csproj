@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <VersionPrefix>0.9.0-beta</VersionPrefix>
-    <TargetFrameworks>net451;netstandard1.6</TargetFrameworks>
+    <TargetFrameworks>net452;netstandard1.6</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Test.Shared</AssemblyName>
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
@@ -16,7 +16,7 @@
     <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net452' ">
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>

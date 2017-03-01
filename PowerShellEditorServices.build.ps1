@@ -146,7 +146,7 @@ task Build {
 
 function UploadTestLogs {
     if ($script:IsCIBuild) {
-        $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net451/logs"
+        $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net452/logs"
         $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
 
         if (Test-Path $testLogsPath) {
@@ -163,9 +163,9 @@ function UploadTestLogs {
 }
 
 task Test -If { !$script:IsUnix } {
-    exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
-    exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
-    exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
+    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
+    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
+    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
 }
 
 task CITest (job Test -Safe), {
