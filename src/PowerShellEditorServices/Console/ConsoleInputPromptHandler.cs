@@ -4,6 +4,9 @@
 //
 
 using System;
+using System.Security;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -87,6 +90,16 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 e.Message,
                 true,
                 OutputType.Error);
+        }
+
+        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
+        {
+            return this.consoleHost.ReadSimpleLine(cancellationToken);
+        }
+
+        protected override Task<SecureString> ReadSecureString(CancellationToken cancellationToken)
+        {
+            return this.consoleHost.ReadSecureLine(cancellationToken);
         }
 
         #endregion

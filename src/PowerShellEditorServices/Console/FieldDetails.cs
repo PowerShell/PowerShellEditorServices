@@ -6,11 +6,9 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Reflection;
-using System.Security;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -21,12 +19,23 @@ namespace Microsoft.PowerShell.EditorServices.Console
     /// </summary>
     public class FieldDetails
     {
+        #region Private Fields
+
+        private object fieldValue;
+
+        #endregion
+
         #region Properties
 
         /// <summary>
         /// Gets or sets the name of the field.
         /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the original name of the field before it was manipulated.
+        /// </summary>
+        public string OriginalName { get; set; }
 
         /// <summary>
         /// Gets or sets the descriptive label for the field.
@@ -54,18 +63,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         public object DefaultValue { get; set; }
 
-        /// <summary>
-        /// Gets or sets a boolean that is true if the field
-        /// represents a collection of values.
-        /// </summary>
-        public bool IsCollection { get; set; }
-
-        /// <summary>
-        /// Gets or sets the expected type for individual items 
-        /// in the field's collection.
-        /// </summary>
-        public Type ElementType { get; set; }
-
         #endregion
 
         #region Constructors
@@ -85,33 +82,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
             bool isMandatory,
             object defaultValue)
         {
+            this.OriginalName = name;
             this.Name = name;
             this.Label = label;
             this.FieldType = fieldType;
             this.IsMandatory = isMandatory;
             this.DefaultValue = defaultValue;
 
-            if (typeof(SecureString) == fieldType)
-            {
-                throw new NotSupportedException(
-                    "Input fields of type 'SecureString' are currently not supported.");
-            }
-            else if (typeof(PSCredential) == fieldType)
-            {
-                throw new NotSupportedException(
-                    "Input fields of type 'PSCredential' are currently not supported.");
-            }
-            else if (typeof(IList).GetTypeInfo().IsAssignableFrom(fieldType.GetTypeInfo()))
-            {
-                this.IsCollection = true;
-                this.ElementType = typeof(object);
-
-                if (fieldType.IsArray)
-                {
-                    this.ElementType = fieldType.GetElementType();
-                }
-            }
-            else if (fieldType.GetTypeInfo().IsGenericType)
+            if (fieldType.GetTypeInfo().IsGenericType)
             {
                 throw new PSArgumentException(
                     "Generic types are not supported for input fields at this time.");
@@ -120,16 +98,92 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #endregion
 
+        #region Public Methods
+
+        public virtual void SetValue(object fieldValue, bool hasValue)
+        {
+            if (hasValue)
+            {
+                this.fieldValue = fieldValue;
+            }
+        }
+
+        public object GetValue()
+        {
+            object fieldValue = this.OnGetValue();
+
+            if (fieldValue == null)
+            {
+                if (!this.IsMandatory)
+                {
+                    fieldValue = this.DefaultValue;
+                }
+                else
+                {
+                    // This "shoudln't" happen, so log in case it does
+                    Logger.Write(
+                        LogLevel.Error,
+                        $"Cannot retrieve value for field {this.Label}");
+                }
+            }
+
+            return fieldValue;
+        }
+
+        protected virtual object OnGetValue()
+        {
+            return this.fieldValue;
+        }
+
+        /// <summary>
+        /// Gets the next field if this field can accept multiple
+        /// values, like a collection or an object with multiple
+        /// properties.
+        /// </summary>
+        /// <returns>
+        /// A new FieldDetails instance if there is a next field
+        /// or null otherwise.
+        /// </returns>
+        public virtual FieldDetails GetNextField()
+        {
+            return null;
+        }
+
+        #endregion
+
         #region Internal Methods
 
         internal static FieldDetails Create(FieldDescription fieldDescription)
         {
-            return new FieldDetails(
-                fieldDescription.Name,
-                fieldDescription.Label,
-                GetFieldTypeFromTypeName(fieldDescription.ParameterAssemblyFullName),
-                fieldDescription.IsMandatory,
-                fieldDescription.DefaultValue);
+            Type fieldType = GetFieldTypeFromTypeName(fieldDescription.ParameterAssemblyFullName);
+
+            if (typeof(IList).GetTypeInfo().IsAssignableFrom(fieldType.GetTypeInfo()))
+            {
+                return new CollectionFieldDetails(
+                    fieldDescription.Name,
+                    fieldDescription.Label,
+                    fieldType,
+                    fieldDescription.IsMandatory,
+                    fieldDescription.DefaultValue);
+            }
+            else if (typeof(PSCredential) == fieldType)
+            {
+                return new CredentialFieldDetails(
+                    fieldDescription.Name,
+                    fieldDescription.Label,
+                    fieldType,
+                    fieldDescription.IsMandatory,
+                    fieldDescription.DefaultValue);
+            }
+            else
+            {
+                return new FieldDetails(
+                    fieldDescription.Name,
+                    fieldDescription.Label,
+                    fieldType,
+                    fieldDescription.IsMandatory,
+                    fieldDescription.DefaultValue);
+            }
         }
 
         private static Type GetFieldTypeFromTypeName(string assemblyFullName)

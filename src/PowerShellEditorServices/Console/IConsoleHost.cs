@@ -4,6 +4,9 @@
 //
 
 using System;
+using System.Security;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -53,6 +56,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         /// <returns>A new InputPromptHandler instance.</returns>
         InputPromptHandler GetInputPromptHandler();
+
+        Task<string> ReadSimpleLine(CancellationToken cancellationToken);
+
+        Task<SecureString> ReadSecureLine(CancellationToken cancellationToken);
+
+        void SendControlC();
 
         /// <summary>
         /// Sends a progress update event to the user.

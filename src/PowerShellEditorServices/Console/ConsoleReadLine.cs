@@ -38,7 +38,104 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Public Methods
 
-        public async Task<string> ReadCommandLine(CancellationToken cancellationToken)
+        public Task<string> ReadCommandLine(CancellationToken cancellationToken)
+        {
+            return this.ReadLine(true, cancellationToken);
+        }
+
+        public Task<string> ReadSimpleLine(CancellationToken cancellationToken)
+        {
+            return this.ReadLine(false, cancellationToken);
+        }
+
+        public async Task<SecureString> ReadSecureLine(CancellationToken cancellationToken)
+        {
+            SecureString secureString = new SecureString();
+            ConsoleKeyInfo? typedKey = null;
+
+            int initialPromptRow = Console.CursorTop;
+            int initialPromptCol = Console.CursorLeft;
+            int previousInputLength = 0;
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                typedKey = await this.ReadKeyAsync(cancellationToken);
+
+                if (typedKey.HasValue)
+                {
+                    ConsoleKeyInfo keyInfo = typedKey.Value;
+
+                    if (keyInfo.Key == ConsoleKey.Enter)
+                    {
+                        // Break to return the completed string
+                        break;
+                    }
+                    if ((keyInfo.Modifiers & ConsoleModifiers.Alt) == ConsoleModifiers.Alt)
+                    {
+                        continue;
+                    }
+                    if ((keyInfo.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control)
+                    {
+                        continue;
+                    }
+                    if (keyInfo.Key == ConsoleKey.Tab)
+                    {
+                        continue;
+                    }
+                    if (keyInfo.Key == ConsoleKey.Backspace)
+                    {
+                        if (secureString.Length > 0)
+                        {
+                            secureString.RemoveAt(secureString.Length - 1);
+                        }
+                    }
+                    else if (keyInfo.KeyChar != 0)
+                    {
+                        secureString.AppendChar(typedKey.Value.KeyChar);
+                    }
+
+                    // Re-render the secure string characters
+                    int currentInputLength = secureString.Length;
+                    int consoleWidth = Console.WindowWidth;
+
+                    if (currentInputLength > previousInputLength)
+                    {
+                        Console.Write('*');
+                    }
+                    else if (previousInputLength > 0)
+                    {
+                        int row = Console.CursorTop, col = Console.CursorLeft;
+
+                        // Back up the cursor before clearing the character
+                        col--;
+                        if (col < 0)
+                        {
+                            col = consoleWidth - 1;
+                            row--;
+                        }
+
+                        Console.SetCursorPosition(col, row);
+                        Console.Write(' ');
+                        Console.SetCursorPosition(col, row);
+                    }
+
+                    previousInputLength = currentInputLength;
+                }
+                else
+                {
+                    // Read was cancelled, return null
+                    return null;
+                }
+            }
+
+            return secureString;
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private async Task<string> ReadLine(bool isCommandLine, CancellationToken cancellationToken)
         {
             string inputBeforeCompletion = null;
             string inputAfterCompletion = null;
@@ -56,8 +153,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
             int initialWindowTop = Console.WindowTop;
 
             int currentCursorIndex = 0;
-
-            this.StartReadLoop();
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -88,7 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     // TODO: What about word movements?
                     continue;
                 }
-                else if (keyInfo.Key == ConsoleKey.Tab)
+                else if (keyInfo.Key == ConsoleKey.Tab && isCommandLine)
                 {
                     if (currentCompletion == null)
                     {
@@ -205,7 +300,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                         consoleWidth,
                         currentCursorIndex);
                 }
-                else if (keyInfo.Key == ConsoleKey.UpArrow)
+                else if (keyInfo.Key == ConsoleKey.UpArrow && isCommandLine)
                 {
                     currentCompletion = null;
 
@@ -244,7 +339,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                                 replaceLength: inputLine.Length);
                     }
                 }
-                else if (keyInfo.Key == ConsoleKey.DownArrow)
+                else if (keyInfo.Key == ConsoleKey.DownArrow && isCommandLine)
                 {
                     currentCompletion = null;
 
@@ -371,57 +466,19 @@ namespace Microsoft.PowerShell.EditorServices.Console
             return null;
         }
 
-        public Task<string> ReadSimpleLine()
-        {
-            // TODO: Implement this!
-            return Task.FromResult(string.Empty);
-        }
-
-        public Task<SecureString> ReadSecureLine()
-        {
-            // TODO: Implement this!
-            return Task.FromResult(new SecureString());
-        }
-
-        #endregion
-
-        #region Private Methods
-
-        private void StartReadLoop()
-        {
-            if (this.readLoopCancellationToken == null)
-            {
-                this.readLoopCancellationToken = new CancellationTokenSource();
-
-                var terminalThreadTask =
-                    Task.Factory.StartNew(
-                        async () =>
-                        {
-                            // Set the thread's name to help with debugging
-                            Thread.CurrentThread.Name = "ConsoleReadLine Thread";
-
-                            while (!this.readLoopCancellationToken.IsCancellationRequested)
-                            {
-                                await this.readKeyQueue.EnqueueAsync(
-                                    Console.ReadKey(true));
-                            }
-                        },
-                        CancellationToken.None,
-                        TaskCreationOptions.LongRunning,
-                        TaskScheduler.Default);
-            }
-        }
-
         private async Task<ConsoleKeyInfo?> ReadKeyAsync(CancellationToken cancellationToken)
         {
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                return await this.readKeyQueue.DequeueAsync(cancellationToken);
+                if (Console.KeyAvailable)
+                {
+                    return Console.ReadKey(true);
+                }
+
+                await Task.Delay(25);
             }
-            catch (TaskCanceledException)
-            {
-                return null;
-            }
+
+            return null;
         }
 
         private int CalculateIndexFromCursor(

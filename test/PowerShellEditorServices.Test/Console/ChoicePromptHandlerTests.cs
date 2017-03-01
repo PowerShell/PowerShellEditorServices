@@ -4,8 +4,6 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Console;
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -36,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     DefaultChoice,
                     CancellationToken.None);
 
-            choicePromptHandler.HandleResponse("apple");
+            choicePromptHandler.ReturnInputString("apple");
 
             // Wait briefly for the prompt task to complete
             promptTask.Wait(1000);
@@ -59,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     CancellationToken.None);
 
             // Try adding whitespace to ensure it works
-            choicePromptHandler.HandleResponse(" N  ");
+            choicePromptHandler.ReturnInputString(" N  ");
 
             // Wait briefly for the prompt task to complete
             promptTask.Wait(1000);
@@ -84,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     CancellationToken.None);
 
             // Choice is invalid, should reprompt
-            choicePromptHandler.HandleResponse("INVALID");
+            choicePromptHandler.ReturnInputString("INVALID");
 
             Assert.Equal(TaskStatus.WaitingForActivation, promptTask.Status);
             Assert.Equal(2, choicePromptHandler.TimesPrompted);
@@ -93,7 +91,20 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
     internal class TestChoicePromptHandler : ChoicePromptHandler
     {
+        private TaskCompletionSource<string> linePromptTask;
+
         public int TimesPrompted { get; private set; }
+
+        public void ReturnInputString(string inputString)
+        {
+            this.linePromptTask.SetResult(inputString);
+        }
+
+        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
+        {
+            this.linePromptTask = new TaskCompletionSource<string>();
+            return this.linePromptTask.Task;
+        }
 
         protected override void ShowPrompt(PromptStyle promptStyle)
         {

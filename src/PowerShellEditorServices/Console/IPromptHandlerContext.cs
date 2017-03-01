@@ -28,8 +28,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A new InputPromptHandler instance.
         /// </returns>
         InputPromptHandler GetInputPromptHandler();
-
-        CredentialPromptHandler GetCredentialPromptHandler();
     }
 }
 

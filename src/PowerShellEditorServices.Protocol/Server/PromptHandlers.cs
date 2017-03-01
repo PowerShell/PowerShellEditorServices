@@ -9,6 +9,8 @@ using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System.Threading.Tasks;
+using System.Threading;
+using System.Security;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
@@ -44,6 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private IMessageSender messageSender;
         private ConsoleService consoleService;
+        private TaskCompletionSource<string> readLineTask;
 
         public ProtocolChoicePromptHandler(
             IMessageSender messageSender,
@@ -73,6 +76,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 .ConfigureAwait(false);
         }
 
+        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
+        {
+            this.readLineTask = new TaskCompletionSource<string>();
+            return this.readLineTask.Task;
+        }
+
         private void HandlePromptResponse(
             Task<ShowChoicePromptResponse> responseTask)
         {
@@ -82,9 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                 if (!response.PromptCancelled)
                 {
-                    this.consoleService.ReceivePromptResponse(
-                        response.ResponseText,
-                        false);
+                    this.readLineTask.TrySetResult(response.ResponseText);
                 }
                 else
                 {
@@ -106,6 +113,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // Cancel the current prompt
                 this.consoleService.SendControlC();
             }
+
+            this.readLineTask = null;
         }
     }
 
@@ -113,6 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private IMessageSender messageSender;
         private ConsoleService consoleService;
+        private TaskCompletionSource<string> readLineTask;
 
         public ProtocolInputPromptHandler(
             IMessageSender messageSender,
@@ -153,6 +163,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 .ConfigureAwait(false);
         }
 
+        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
+        {
+            this.readLineTask = new TaskCompletionSource<string>();
+            return this.readLineTask.Task;
+        }
+
         private void HandlePromptResponse(
             Task<ShowInputPromptResponse> responseTask)
         {
@@ -162,9 +178,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                 if (!response.PromptCancelled)
                 {
-                    this.consoleService.ReceivePromptResponse(
-                        response.ResponseText,
-                        true);
+                    this.readLineTask.TrySetResult(response.ResponseText);
                 }
                 else
                 {
@@ -186,6 +200,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // Cancel the current prompt
                 this.consoleService.SendControlC();
             }
+
+            this.readLineTask = null;
         }
     }
 }

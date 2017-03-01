@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,7 +39,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
     {
         #region Private Fields
 
-        private TaskCompletionSource<int[]> promptTask;
+        private CancellationTokenSource promptCancellationTokenSource =
+            new CancellationTokenSource();
 
         #endregion
 
@@ -110,7 +110,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
             this.Caption = promptCaption;
             this.Message = promptMessage;
             this.Choices = choices;
-            this.promptTask = new TaskCompletionSource<int[]>();
 
             this.DefaultChoices =
                 defaultChoice == -1
@@ -120,12 +119,23 @@ namespace Microsoft.PowerShell.EditorServices.Console
             // Cancel the TaskCompletionSource if the caller cancels the task
             cancellationToken.Register(this.CancelPrompt, true);
 
-            // Show the prompt to the user
-            this.ShowPrompt(PromptStyle.Full);
-
             // Convert the int[] result to int
-            return this.promptTask.Task.ContinueWith(
-                t => t.Result.DefaultIfEmpty(-1).First());
+            return
+                this.StartPromptLoop(this.promptCancellationTokenSource.Token)
+                    .ContinueWith(
+                        task =>
+                        {
+                            if (task.IsFaulted)
+                            {
+                                throw task.Exception;
+                            }
+                            else if (task.IsCanceled)
+                            {
+                                throw new TaskCanceledException(task);
+                            }
+
+                            return this.GetSingleResult(task.Result);
+                        });
         }
 
         /// <summary>
@@ -165,16 +175,51 @@ namespace Microsoft.PowerShell.EditorServices.Console
             this.Choices = choices;
             this.DefaultChoices = defaultChoices;
             this.IsMultiChoice = true;
-            this.promptTask = new TaskCompletionSource<int[]>();
 
             // Cancel the TaskCompletionSource if the caller cancels the task
             cancellationToken.Register(this.CancelPrompt, true);
 
+            return this.StartPromptLoop(this.promptCancellationTokenSource.Token);
+        }
+
+        private async Task<int[]> StartPromptLoop(
+            CancellationToken cancellationToken)
+        {
+            int[] choiceIndexes = null;
+
             // Show the prompt to the user
             this.ShowPrompt(PromptStyle.Full);
 
-            return this.promptTask.Task;
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                string responseString = await this.ReadInputString(cancellationToken);
+                if (responseString == null)
+                {
+                    // If the response string is null, the prompt has been cancelled
+                    break;
+                }
+
+                // If the handler returns null it means we should prompt again
+                choiceIndexes = this.HandleResponse(responseString);
+                if (choiceIndexes != null)
+                {
+                    break;
+                }
+
+                // The user did not respond with a valid choice,
+                // show the prompt again to give another chance
+                this.ShowPrompt(PromptStyle.Minimal);
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                // Throw a TaskCanceledException to stop the pipeline
+                throw new TaskCanceledException();
+            }
+
+            return choiceIndexes?.ToArray();
         }
+
         /// <summary>
         /// Implements behavior to handle the user's response.
         /// </summary>
@@ -183,7 +228,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// True if the prompt is complete, false if the prompt is 
         /// still waiting for a valid response.
         /// </returns>
-        public override bool HandleResponse(string responseString)
+        protected virtual int[] HandleResponse(string responseString)
         {
             List<int> choiceIndexes = new List<int>();
 
@@ -215,12 +260,10 @@ namespace Microsoft.PowerShell.EditorServices.Console
             {
                 // The user did not respond with a valid choice,
                 // show the prompt again to give another chance
-                this.ShowPrompt(PromptStyle.Minimal);
-                return false;
+                return null;
             }
 
-            this.promptTask.SetResult(choiceIndexes.ToArray());
-            return true;
+            return choiceIndexes.ToArray();
         }
 
         /// <summary>
@@ -229,7 +272,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         protected override void OnPromptCancelled()
         {
             // Cancel the prompt task
-            this.promptTask.TrySetCanceled();
+            this.promptCancellationTokenSource.Cancel();
         }
 
         #endregion
@@ -243,6 +286,30 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// Indicates the prompt style to use when showing the prompt.
         /// </param>
         protected abstract void ShowPrompt(PromptStyle promptStyle);
+
+        /// <summary>
+        /// Reads an input string asynchronously from the console.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A CancellationToken that can be used to cancel the read.
+        /// </param>
+        /// <returns>
+        /// A Task instance that can be monitored for completion to get
+        /// the user's input.
+        /// </returns>
+        protected abstract Task<string> ReadInputString(CancellationToken cancellationToken);
+
+        #endregion
+
+        #region Private Methods
+
+        private int GetSingleResult(int[] choiceArray)
+        {
+            return
+                choiceArray != null
+                ? choiceArray.DefaultIfEmpty(-1).First()
+                : -1;
+        }
 
         #endregion
     }

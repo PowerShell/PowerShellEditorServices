@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -89,11 +89,17 @@ namespace Microsoft.PowerShell.EditorServices
 
                 // Convert all values to PSObjects
                 var psObjectDict = new Dictionary<string, PSObject>();
-                foreach (var keyValuePair in promptTask.Result)
+
+                // The result will be null if the prompt was cancelled
+                if (promptTask.Result != null)
                 {
-                    psObjectDict.Add(
-                        keyValuePair.Key,
-                        PSObject.AsPSObject(keyValuePair.Value));
+                    // Convert all values to PSObjects
+                    foreach (var keyValuePair in promptTask.Result)
+                    {
+                        psObjectDict.Add(
+                            keyValuePair.Key,
+                            PSObject.AsPSObject(keyValuePair.Value));
+                    }
                 }
 
                 // Return the result
@@ -147,15 +153,57 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         public override PSCredential PromptForCredential(
-            string caption, 
-            string message, 
+            string promptCaption, 
+            string promptMessage, 
             string userName, 
             string targetName, 
             PSCredentialTypes allowedCredentialTypes, 
             PSCredentialUIOptions options)
         {
-            throw new NotSupportedException(
-                "'Get-Credential' is not yet supported.");
+            if (this.consoleHost != null)
+            {
+                CancellationTokenSource cancellationToken = new CancellationTokenSource();
+
+                Task<Dictionary<string, object>> promptTask =
+                    this.consoleHost
+                        .GetInputPromptHandler()
+                        .PromptForInput(
+                            promptCaption,
+                            promptMessage,
+                            new FieldDetails[] { new CredentialFieldDetails("Credential", "Credential", userName) },
+                            cancellationToken.Token);
+
+                Task<PSCredential> unpackTask =
+                    promptTask.ContinueWith(
+                        task =>
+                        {
+                            if (task.IsFaulted)
+                            {
+                                throw task.Exception;
+                            }
+                            else if (task.IsCanceled)
+                            {
+                                throw new TaskCanceledException(task);
+                            }
+                            
+                            // Return the value of the sole field
+                            return (PSCredential)task.Result?["Credential"];
+                        });
+
+                // Run the prompt task and wait for it to return
+                this.WaitForPromptCompletion(
+                    unpackTask,
+                    "PromptForCredential",
+                    cancellationToken);
+
+                return unpackTask.Result;
+            }
+            else
+            {
+                // Notify the caller that there's no implementation
+                throw new NotImplementedException(
+                    "'Get-Credential' is not yet supported in this editor.");
+            }
         }
 
         public override PSCredential PromptForCredential(
@@ -183,6 +231,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (this.consoleHost != null)
             {
                 CancellationTokenSource cancellationToken = new CancellationTokenSource();
+
                 Task<string> promptTask =
                     this.consoleHost
                         .GetInputPromptHandler()
@@ -205,8 +254,28 @@ namespace Microsoft.PowerShell.EditorServices
 
         public override SecureString ReadLineAsSecureString()
         {
-            throw new NotSupportedException(
-                "'Read-Host -AsSecureString' is not yet supported.");
+            if (this.consoleHost != null)
+            {
+                CancellationTokenSource cancellationToken = new CancellationTokenSource();
+
+                Task<SecureString> promptTask =
+                    this.consoleHost
+                        .GetInputPromptHandler()
+                        .PromptForSecureInput(cancellationToken.Token);
+
+                // Run the prompt task and wait for it to return
+                this.WaitForPromptCompletion(
+                    promptTask,
+                    "ReadLineAsSecureString",
+                    cancellationToken);
+
+                return promptTask.Result;
+            }
+            else
+            {
+                // Notify the caller that there's no implementation
+                throw new NotImplementedException();
+            }
         }
 
         public override void Write(

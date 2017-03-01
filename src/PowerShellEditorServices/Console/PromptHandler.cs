@@ -13,27 +13,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
     public abstract class PromptHandler
     {
         /// <summary>
-        /// Implements behavior to handle the user's response.
-        /// </summary>
-        /// <param name="responseString">The string representing the user's response.</param>
-        /// <returns>
-        /// True if the prompt is complete, false if the prompt is 
-        /// still waiting for a valid response.
-        /// </returns>
-        public abstract bool HandleResponse(string responseString);
-
-        /// <summary>
         /// Called when the active prompt should be cancelled.
         /// </summary>
         public void CancelPrompt()
         {
             // Allow the implementation to clean itself up
             this.OnPromptCancelled();
-
-            if (this.PromptCancelled != null)
-            {
-                this.PromptCancelled(this, new EventArgs());
-            }
+            this.PromptCancelled?.Invoke(this, new EventArgs());
         }
 
         /// <summary>

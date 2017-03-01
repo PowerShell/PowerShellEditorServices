@@ -4,6 +4,8 @@
 //
 
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -90,6 +92,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
         }
 
+        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
+        {
+            return this.consoleHost.ReadSimpleLine(cancellationToken);
+        }
+
         /// <summary>
         /// Implements behavior to handle the user's response.
         /// </summary>
@@ -98,7 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// True if the prompt is complete, false if the prompt is 
         /// still waiting for a valid response.
         /// </returns>
-        public override bool HandleResponse(string responseString)
+        protected override int[] HandleResponse(string responseString)
         {
             if (responseString.Trim() == "?")
             {
@@ -114,10 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             choice.HelpMessage));
                 }
 
-                // Redisplay the prompt
-                this.ShowPrompt(PromptStyle.Minimal);
-
-                return false;
+                return null;
             }
 
             return base.HandleResponse(responseString);
