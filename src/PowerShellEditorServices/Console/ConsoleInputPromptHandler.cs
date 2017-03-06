@@ -92,11 +92,21 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 OutputType.Error);
         }
 
+        /// <summary>
+        /// Reads an input string from the user.
+        /// </summary>
+        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
+        /// <returns>A Task that can be awaited to get the user's response.</returns>
         protected override Task<string> ReadInputString(CancellationToken cancellationToken)
         {
             return this.consoleHost.ReadSimpleLine(cancellationToken);
         }
 
+        /// <summary>
+        /// Reads a SecureString from the user.
+        /// </summary>
+        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
+        /// <returns>A Task that can be awaited to get the user's response.</returns>
         protected override Task<SecureString> ReadSecureString(CancellationToken cancellationToken)
         {
             return this.consoleHost.ReadSecureLine(cancellationToken);

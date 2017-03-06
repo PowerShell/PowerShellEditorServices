@@ -57,10 +57,23 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <returns>A new InputPromptHandler instance.</returns>
         InputPromptHandler GetInputPromptHandler();
 
+        /// <summary>
+        /// Reads an input string from the user.
+        /// </summary>
+        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
+        /// <returns>A Task that can be awaited to get the user's response.</returns>
         Task<string> ReadSimpleLine(CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Reads a SecureString from the user.
+        /// </summary>
+        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
+        /// <returns>A Task that can be awaited to get the user's response.</returns>
         Task<SecureString> ReadSecureLine(CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Cancels the currently executing command or prompt.
+        /// </summary>
         void SendControlC();
 
         /// <summary>

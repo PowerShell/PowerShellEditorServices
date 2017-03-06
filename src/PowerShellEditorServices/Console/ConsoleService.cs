@@ -219,7 +219,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         }
 
         /// <summary>
-        /// Cancels the currently executing command.
+        /// Cancels the currently executing command or prompt.
         /// </summary>
         public void SendControlC()
         {
@@ -234,6 +234,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
         }
 
+        /// <summary>
+        /// Reads an input string from the user.
+        /// </summary>
+        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
+        /// <returns>A Task that can be awaited to get the user's response.</returns>
         public async Task<string> ReadSimpleLine(CancellationToken cancellationToken)
         {
             string inputLine = await this.consoleReadLine.ReadSimpleLine(cancellationToken);
@@ -241,6 +246,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
             return inputLine;
         }
 
+        /// <summary>
+        /// Reads a SecureString from the user.
+        /// </summary>
+        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
+        /// <returns>A Task that can be awaited to get the user's response.</returns>
         public async Task<SecureString> ReadSecureLine(CancellationToken cancellationToken)
         {
             SecureString secureString = await this.consoleReadLine.ReadSecureLine(cancellationToken);

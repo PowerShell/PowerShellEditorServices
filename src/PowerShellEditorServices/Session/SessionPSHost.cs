@@ -56,6 +56,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="hostSupportsInteractiveSession">
         /// An implementation of IHostSupportsInteractiveSession for runspace management.
         /// </param>
+        /// <param name="enableConsoleRepl">
+        /// Enables a terminal-based REPL for this session.
+        /// </param>
         public ConsoleServicePSHost(
             HostDetails hostDetails,
             IHostSupportsInteractiveSession hostSupportsInteractiveSession,

@@ -9,11 +9,22 @@ using System.Security;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
+    /// <summary>
+    /// Contains the details of a PSCredential field shown
+    /// from an InputPromptHandler.  This class is meant to
+    /// be serializable to the user's UI.
+    /// </summary>
     public class CredentialFieldDetails : FieldDetails
     {
         private string userName;
         private SecureString password;
 
+        /// <summary>
+        /// Creates an instance of the CredentialFieldDetails class.
+        /// </summary>
+        /// <param name="name">The field's name.</param>
+        /// <param name="label">The field's label.</param>
+        /// <param name="userName">The initial value of the userName field.</param>
         public CredentialFieldDetails(
             string name,
             string label,
@@ -28,6 +39,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
         }
 
+        /// <summary>
+        /// Creates an instance of the CredentialFieldDetails class.
+        /// </summary>
+        /// <param name="name">The field's name.</param>
+        /// <param name="label">The field's label.</param>
+        /// <param name="fieldType">The field's value type.</param>
+        /// <param name="isMandatory">If true, marks the field as mandatory.</param>
+        /// <param name="defaultValue">The field's default value.</param>
         public CredentialFieldDetails(
             string name,
             string label,
@@ -42,6 +61,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Public Methods
 
+        /// <summary>
+        /// Gets the next field to display if this is a complex
+        /// field, otherwise returns null.
+        /// </summary>
+        /// <returns>
+        /// A FieldDetails object if there's another field to
+        /// display or if this field is complete.
+        /// </returns>
         public override FieldDetails GetNextField()
         {
             if (this.password != null)
@@ -58,6 +85,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
             return this;
         }
 
+        /// <summary>
+        /// Sets the field's value.
+        /// </summary>
+        /// <param name="fieldValue">The field's value.</param>
+        /// <param name="hasValue">
+        /// True if a value has been supplied by the user, false if the user supplied no value.
+        /// </param>
         public override void SetValue(object fieldValue, bool hasValue)
         {
             if (hasValue)
@@ -73,6 +107,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
         }
 
+        /// <summary>
+        /// Gets the field's final value after the prompt is
+        /// complete.
+        /// </summary>
+        /// <returns>The field's final value.</returns>
         protected override object OnGetValue()
         {
             return new PSCredential(this.userName, this.password);

@@ -79,6 +79,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="profilePaths">
         /// An object containing the profile paths for the session.
         /// </param>
+        /// <param name="enableConsoleRepl">
+        /// Enables a terminal-based REPL for this session.
+        /// </param>
         public void StartSession(
             HostDetails hostDetails,
             ProfilePaths profilePaths,

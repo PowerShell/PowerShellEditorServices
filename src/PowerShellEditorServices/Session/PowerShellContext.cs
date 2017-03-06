@@ -149,6 +149,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="hostDetails">Provides details about the host application.</param>
         /// <param name="profilePaths">An object containing the profile paths for the session.</param>
+        /// <param name="enableConsoleRepl">
+        /// Enables a terminal-based REPL for this session.
+        /// </param>
         public PowerShellContext(
             HostDetails hostDetails,
             ProfilePaths profilePaths,
@@ -1435,6 +1438,10 @@ namespace Microsoft.PowerShell.EditorServices
         // NOTE: This event is 'internal' because the DebugService provides
         //       the publicly consumable event.
         internal event EventHandler<DebuggerStopEventArgs> DebuggerStop;
+
+        /// <summary>
+        /// Raised when the debugger is resumed after it was previously stopped.
+        /// </summary>
         public event EventHandler<DebuggerResumeAction> DebuggerResumed;
 
         private void OnDebuggerStop(object sender, DebuggerStopEventArgs e)

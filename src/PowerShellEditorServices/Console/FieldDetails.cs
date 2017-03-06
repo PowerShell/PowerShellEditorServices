@@ -100,6 +100,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Public Methods
 
+        /// <summary>
+        /// Sets the field's value.
+        /// </summary>
+        /// <param name="fieldValue">The field's value.</param>
+        /// <param name="hasValue">
+        /// True if a value has been supplied by the user, false if the user supplied no value.
+        /// </param>
         public virtual void SetValue(object fieldValue, bool hasValue)
         {
             if (hasValue)
@@ -108,6 +115,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
         }
 
+        /// <summary>
+        /// Gets the field's final value after the prompt is
+        /// complete.
+        /// </summary>
+        /// <returns>The field's final value.</returns>
         public object GetValue()
         {
             object fieldValue = this.OnGetValue();
@@ -130,6 +142,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
             return fieldValue;
         }
 
+        /// <summary>
+        /// Gets the field's final value after the prompt is
+        /// complete.
+        /// </summary>
+        /// <returns>The field's final value.</returns>
         protected virtual object OnGetValue()
         {
             return this.fieldValue;
