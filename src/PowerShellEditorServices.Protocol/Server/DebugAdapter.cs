@@ -764,11 +764,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
             else
             {
-                VariableDetails result =
-                await editorSession.DebugService.EvaluateExpression(
-                    evaluateParams.Expression,
-                    evaluateParams.FrameId,
-                    isFromRepl);
+                VariableDetails result = null;
+
+                // VS Code might send this request after the debugger
+                // has been resumed, return an empty result in this case.
+                if (editorSession.PowerShellContext.IsDebuggerStopped)
+                {
+                    await editorSession.DebugService.EvaluateExpression(
+                        evaluateParams.Expression,
+                        evaluateParams.FrameId,
+                        isFromRepl);
+                }
 
                 if (result != null)
                 {
