@@ -170,10 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 int promptStartCol = initialCursorCol;
                 int promptStartRow = initialCursorRow;
 
-                // The effective width of the console is 1 less than
-                // Console.WindowWidth, all calculations should be
-                // with respect to that
-                int consoleWidth = Console.WindowWidth - 1;
+                int consoleWidth = Console.WindowWidth;
 
                 if ((keyInfo.Modifiers & ConsoleModifiers.Alt) == ConsoleModifiers.Alt ||
                     (keyInfo.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control)
@@ -222,6 +219,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
                                         cursorColumn,
                                         null,
                                         powerShell);
+
+                                if (currentCompletion.CompletionMatches.Count == 0)
+                                {
+                                    // No completion matches, skip the rest
+                                    // TODO: Need to re-render on *NIX?
+                                    continue;
+                                }
 
                                 int replacementEndIndex =
                                         currentCompletion.ReplacementIndex +
@@ -512,7 +516,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
             int replaceLength = 0,
             int finalCursorIndex = -1)
         {
-            int consoleWidth = Console.WindowWidth - 1;
+            // TODO: Right change?
+            int consoleWidth = Console.WindowWidth;
             int previousInputLength = inputLine.Length;
 
             int startCol = -1;
@@ -566,28 +571,17 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
 
             // Re-render affected section
-            // TODO: Render this in chunks for perf
-            for (int i = insertIndex;
-                 i < Math.Max(inputLine.Length, previousInputLength);
-                 i++)
+            Console.Write(
+                inputLine.ToString(
+                    insertIndex,
+                    inputLine.Length - insertIndex));
+
+            if (inputLine.Length < previousInputLength)
             {
-                if (i < inputLine.Length)
-                {
-                    Console.Write(inputLine[i]);
-                }
-                else
-                {
-                    Console.Write(' ');
-                }
-
-                writeCursorCol++;
-
-                if (writeCursorCol == consoleWidth)
-                {
-                    writeCursorCol = 0;
-                    Console.CursorTop += 1;
-                    Console.CursorLeft = 0;
-                }
+                Console.Write(
+                    new string(
+                        ' ',
+                        previousInputLength - inputLine.Length));
             }
 
             // Automatically set the final cursor position to the end
@@ -608,11 +602,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     consoleWidth,
                     finalCursorIndex);
             }
-
-            //Console.Write(
-            //    inputLine.ToString(
-            //        insertIndex,
-            //        inputLine.Length - insertIndex));
 
             // Return the updated cursor index
             return finalCursorIndex != -1 ? finalCursorIndex : inputLine.Length;
