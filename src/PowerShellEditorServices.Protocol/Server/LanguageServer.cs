@@ -1100,8 +1100,9 @@ function __Expand-Alias {
             var executeTask =
                 this.editorSession.PowerShellContext.ExecuteScriptString(
                     evaluateParams.Expression,
-                    true,
-                    true);
+                    writeInputToHost: true,
+                    writeOutputToHost: true,
+                    addToHistory: true);
 
             // Return the execution result after the task completes so that the
             // caller knows when command execution completed.

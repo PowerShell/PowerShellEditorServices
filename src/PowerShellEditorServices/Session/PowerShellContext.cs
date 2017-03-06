@@ -707,7 +707,11 @@ namespace Microsoft.PowerShell.EditorServices
                 command.AddCommand(script);
             }
 
-            await this.ExecuteCommand<object>(command, true);
+            await this.ExecuteCommand<object>(
+                command,
+                null,
+                sendOutputToHost: true,
+                addToHistory: true);
         }
 
         internal static TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default(TResult))
