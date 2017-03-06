@@ -97,6 +97,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         protected Task LaunchScript(RequestContext<object> requestContext)
         {
+            // Ensure the read loop is stopped
+            this.editorSession.ConsoleService.CancelReadLoop();
+
             return editorSession.PowerShellContext
                     .ExecuteScriptWithArgs(this.scriptToLaunch, this.arguments)
                     .ContinueWith(this.OnExecutionCompleted);
@@ -138,10 +141,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     }
                 }
 
-                if (!this.ownsEditorSession)
-                {
-                    this.editorSession.ConsoleService.StartReadLoop();
-                }
+            }
+
+            if (!this.ownsEditorSession)
+            {
+                this.editorSession.ConsoleService.StartReadLoop();
             }
 
             if (this.disconnectRequestContext != null)
