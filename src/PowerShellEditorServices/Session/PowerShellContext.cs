@@ -140,10 +140,24 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="hostDetails">Provides details about the host application.</param>
         /// <param name="profilePaths">An object containing the profile paths for the session.</param>
         public PowerShellContext(HostDetails hostDetails, ProfilePaths profilePaths)
+            : this(hostDetails, profilePaths, false)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the PowerShellContext class and
+        /// opens a runspace to be used for the session.
+        /// </summary>
+        /// <param name="hostDetails">Provides details about the host application.</param>
+        /// <param name="profilePaths">An object containing the profile paths for the session.</param>
+        public PowerShellContext(
+            HostDetails hostDetails,
+            ProfilePaths profilePaths,
+            bool enableConsoleRepl)
         {
             hostDetails = hostDetails ?? HostDetails.Default;
 
-            this.psHost = new ConsoleServicePSHost(hostDetails, this);
+            this.psHost = new ConsoleServicePSHost(hostDetails, this, enableConsoleRepl);
             var initialSessionState = InitialSessionState.CreateDefault2();
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);

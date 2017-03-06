@@ -4,10 +4,13 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Console;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -79,9 +82,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                         new string[] { Environment.NewLine },
                         StringSplitOptions.None);
 
-            // The output should be 4 lines: the expected string, an
-            // empty line, the prompt string, and another empty line.
-            Assert.Equal(4, normalOutputLines.Length);
+            // The output should be 2 lines: the expected string and
+            // an empty line.
+            Assert.Equal(2, normalOutputLines.Length);
             Assert.Equal(
                 TestOutputString,
                 normalOutputLines[0]);
@@ -161,14 +164,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     PromptChoices,
                     PromptDefault);
 
-            var promptTask = this.promptHandlerContext.WaitForPrompt();
+            var promptTask = this.promptHandlerContext.WaitForChoicePrompt();
             var executeTask = this.powerShellContext.ExecuteScriptString(choiceScript);
 
             // Wait for the prompt to be shown
-            await promptTask;
+            var promptHandler = await promptTask;
 
             // Respond to the prompt and wait for the prompt to complete
-            this.consoleService.ExecuteCommand("apple", false);
+            await promptHandler.ReturnInputString("apple");
             await executeTask;
 
             string[] outputLines =
@@ -179,7 +182,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
             Assert.Equal(PromptCaption, outputLines[0]);
             Assert.Equal(PromptMessage, outputLines[1]);
-            Assert.Equal("[A] Apple [N] Banana [] Orange [?] Help (default is \"Banana\"):", outputLines[2]);
+            Assert.Equal("[A] Apple [N] Banana [] Orange [?] Help (default is \"Banana\"): apple", outputLines[2]);
             Assert.Equal("0", outputLines[3]);
         }
 
@@ -193,7 +196,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     PromptChoices,
                     PromptDefault);
 
-            var promptTask = this.promptHandlerContext.WaitForPrompt();
+            var promptTask = this.promptHandlerContext.WaitForChoicePrompt();
             var executeTask = this.powerShellContext.ExecuteScriptString(choiceScript);
 
             // Wait for the prompt to be shown
@@ -208,12 +211,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     .Split(
                         new string[] { Environment.NewLine },
                         StringSplitOptions.None);
-
+            
             Assert.Equal(PromptCaption, outputLines[0]);
             Assert.Equal(PromptMessage, outputLines[1]);
-            Assert.Equal("[A] Apple [N] Banana [] Orange [?] Help (default is \"Banana\"):", outputLines[2]);
-            Assert.Equal("", outputLines[3]);
-            Assert.True(outputLines[4].StartsWith("PS "));
+            Assert.Equal("[A] Apple [N] Banana [] Orange [?] Help (default is \"Banana\"): ", outputLines[2]);
         }
 
         [Fact]
@@ -226,15 +227,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     PromptChoices,
                     PromptDefault);
 
-            var promptTask = this.promptHandlerContext.WaitForPrompt();
+            var promptTask = this.promptHandlerContext.WaitForChoicePrompt();
             var executeTask = this.powerShellContext.ExecuteScriptString(choiceScript);
 
             // Wait for the prompt to be shown
-            await promptTask;
+            var promptHandler = await promptTask;
 
             // Respond to the prompt and wait for the help prompt to appear
-            this.consoleService.ExecuteCommand("?", false);
-            this.consoleService.ExecuteCommand("A", false);
+            await promptHandler.ReturnInputString("?");
+            await promptHandler.ReturnInputString("A");
             await executeTask;
 
             string[] outputLines =
@@ -258,17 +259,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     PromptMessage,
                     PromptFields);
 
-            var promptTask = this.promptHandlerContext.WaitForPrompt();
+            var promptTask = this.promptHandlerContext.WaitForInputPrompt();
             var executeTask = this.powerShellContext.ExecuteScriptString(inputScript);
 
             // Wait for the prompt to be shown
-            await promptTask;
+            var promptHandler = await promptTask;
 
             // Respond to the prompt and wait for execution to complete
-            this.consoleService.ExecuteCommand("John", true);
-            this.consoleService.ExecuteCommand("40", true);
-            this.consoleService.ExecuteCommand("Windows PowerShell In Action", true);
-            this.consoleService.ExecuteCommand("", false);
+            await promptHandler.ReturnInputString("John");
+            await promptHandler.ReturnInputString("40");
+            await promptHandler.ReturnInputString("Windows PowerShell In Action");
+            await promptHandler.ReturnInputString("");
             await executeTask;
 
             string[] outputLines =
@@ -283,9 +284,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             Assert.Equal("Age: 40", outputLines[3]);
             Assert.Equal("Books[0]: Windows PowerShell In Action", outputLines[4]);
             Assert.Equal("Books[1]: ", outputLines[5]);
-            Assert.Equal("Name  John", outputLines[8].Trim());
-            Assert.Equal("Age   40", outputLines[9].Trim());
-            Assert.Equal("Books {Windows PowerShell In Action}", outputLines[10].Trim());
+            Assert.Equal("Name  John", outputLines[9].Trim());
+            Assert.Equal("Age   40", outputLines[10].Trim());
+            Assert.Equal("Books {Windows PowerShell In Action}", outputLines[11].Trim());
         }
 
         [Fact]
@@ -297,7 +298,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     PromptMessage,
                     PromptFields);
 
-            var promptTask = this.promptHandlerContext.WaitForPrompt();
+            var promptTask = this.promptHandlerContext.WaitForInputPrompt();
             var executeTask = this.powerShellContext.ExecuteScriptString(inputScript);
 
             // Wait for the prompt to be shown
@@ -316,20 +317,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             Assert.Equal(PromptCaption, outputLines[0]);
             Assert.Equal(PromptMessage, outputLines[1]);
             Assert.Equal("Name: ", outputLines[2]);
-            Assert.True(outputLines[3].StartsWith("PS "));
         }
 
         [Fact]
         public async Task ReceivesReadHostPrompt()
         {
-            var promptTask = this.promptHandlerContext.WaitForPrompt();
+            var promptTask = this.promptHandlerContext.WaitForInputPrompt();
             var executeTask = this.powerShellContext.ExecuteScriptString("Read-Host");
 
             // Wait for the prompt to be shown
-            await promptTask;
+            TestConsoleInputPromptHandler promptHandler = await promptTask;
 
             // Respond to the prompt and wait for execution to complete
-            this.consoleService.ExecuteCommand("John", true);
+            await promptHandler.ReturnInputString("John");
             await executeTask;
 
             string[] outputLines =
@@ -345,7 +345,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task CancelsReadHostPrompt()
         {
-            var promptTask = this.promptHandlerContext.WaitForPrompt();
+            var promptTask = this.promptHandlerContext.WaitForInputPrompt();
             var executeTask = this.powerShellContext.ExecuteScriptString("Read-Host");
 
             // Wait for the prompt to be shown
@@ -355,27 +355,21 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             this.consoleService.SendControlC();
             await executeTask;
 
-            string[] outputLines =
-                this.GetOutputForType(OutputType.Normal)
-                    .Split(
-                        new string[] { Environment.NewLine },
-                        StringSplitOptions.None);
-
-            Assert.Equal("", outputLines[0]);
-            Assert.True(outputLines[1].StartsWith("PS "));
+            // No output will be written from a cancelled Read-Host prompt
+            Assert.Null(this.GetOutputForType(OutputType.Normal));
         }
 
         [Fact]
         public async Task ReceivesReadHostPromptWithFieldName()
         {
-            var promptTask = this.promptHandlerContext.WaitForPrompt();
+            var promptTask = this.promptHandlerContext.WaitForInputPrompt();
             var executeTask = this.powerShellContext.ExecuteScriptString("Read-Host -Prompt \"Name\"");
 
             // Wait for the prompt to be shown
-            await promptTask;
+            TestConsoleInputPromptHandler promptHandler = await promptTask;
 
             // Respond to the prompt and wait for execution to complete
-            this.consoleService.ExecuteCommand("John", true);
+            await promptHandler.ReturnInputString("John");
             await executeTask;
 
             string[] outputLines =
@@ -512,7 +506,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
     internal class TestConsolePromptHandlerContext : IPromptHandlerContext
     {
-        private TaskCompletionSource<bool> promptShownTask;
+        private TaskCompletionSource<TestConsoleChoicePromptHandler> choicePromptShownTask;
+        private TaskCompletionSource<TestConsoleInputPromptHandler> inputPromptShownTask;
 
         public IConsoleHost ConsoleHost { get; set; }
 
@@ -520,33 +515,67 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         {
             return new TestConsoleChoicePromptHandler(
                 this.ConsoleHost,
-                this.promptShownTask);
+                this.choicePromptShownTask);
         }
 
         public InputPromptHandler GetInputPromptHandler()
         {
             return new TestConsoleInputPromptHandler(
                 this.ConsoleHost,
-                this.promptShownTask);
+                this.inputPromptShownTask);
         }
 
-        public Task<bool> WaitForPrompt()
+        public Task<TestConsoleChoicePromptHandler> WaitForChoicePrompt()
         {
-            this.promptShownTask = new TaskCompletionSource<bool>();
-            return this.promptShownTask.Task;
+            this.choicePromptShownTask = new TaskCompletionSource<TestConsoleChoicePromptHandler>();
+            return this.choicePromptShownTask.Task;
+        }
+
+        public Task<TestConsoleInputPromptHandler> WaitForInputPrompt()
+        {
+            this.inputPromptShownTask = new TaskCompletionSource<TestConsoleInputPromptHandler>();
+            return this.inputPromptShownTask.Task;
         }
     }
 
     internal class TestConsoleChoicePromptHandler : ConsoleChoicePromptHandler
     {
-        private TaskCompletionSource<bool> promptShownTask;
+        private IConsoleHost consoleHost;
+        private TaskCompletionSource<TestConsoleChoicePromptHandler> promptShownTask;
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+        private TaskCompletionSource<string> linePromptTask;
+        private AsyncQueue<TaskCompletionSource<string>> linePromptQueue =
+            new AsyncQueue<TaskCompletionSource<string>>();
 
         public TestConsoleChoicePromptHandler(
             IConsoleHost consoleHost,
-            TaskCompletionSource<bool> promptShownTask) 
+            TaskCompletionSource<TestConsoleChoicePromptHandler> promptShownTask) 
             : base(consoleHost)
         {
+            this.consoleHost = consoleHost;
             this.promptShownTask = promptShownTask;
+        }
+
+        public async Task ReturnInputString(string inputString)
+        {
+            var promptTask = await this.linePromptQueue.DequeueAsync();
+            this.consoleHost.WriteOutput(inputString);
+            promptTask.SetResult(inputString);
+        }
+
+        protected override async Task<string> ReadInputString(CancellationToken cancellationToken)
+        {
+            TaskCompletionSource<string> promptTask = new TaskCompletionSource<string>();
+            await this.linePromptQueue.EnqueueAsync(promptTask);
+
+            if (this.cancellationTokenSource.IsCancellationRequested)
+            {
+                this.linePromptTask.TrySetCanceled();
+            }
+
+            this.linePromptTask = promptTask;
+            return await promptTask.Task;
         }
 
         protected override void ShowPrompt(PromptStyle promptStyle)
@@ -556,21 +585,59 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             if (this.promptShownTask != null &&
                 this.promptShownTask.Task.Status != TaskStatus.RanToCompletion)
             {
-                this.promptShownTask.SetResult(true);
+                this.promptShownTask.SetResult(this);
+            }
+        }
+
+        protected override void OnPromptCancelled()
+        {
+            this.cancellationTokenSource.Cancel();
+
+            if (this.linePromptTask != null)
+            {
+                this.linePromptTask.TrySetCanceled();
             }
         }
     }
 
     internal class TestConsoleInputPromptHandler : ConsoleInputPromptHandler
     {
-        private TaskCompletionSource<bool> promptShownTask;
+        private IConsoleHost consoleHost;
+        private TaskCompletionSource<TestConsoleInputPromptHandler> promptShownTask;
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+        private TaskCompletionSource<string> linePromptTask;
+        private AsyncQueue<TaskCompletionSource<string>> linePromptQueue =
+            new AsyncQueue<TaskCompletionSource<string>>();
 
         public TestConsoleInputPromptHandler(
             IConsoleHost consoleHost,
-            TaskCompletionSource<bool> promptShownTask) 
+            TaskCompletionSource<TestConsoleInputPromptHandler> promptShownTask) 
             : base(consoleHost)
         {
+            this.consoleHost = consoleHost;
             this.promptShownTask = promptShownTask;
+        }
+
+        public async Task ReturnInputString(string inputString)
+        {
+            var promptTask = await this.linePromptQueue.DequeueAsync();
+            this.consoleHost.WriteOutput(inputString);
+            promptTask.SetResult(inputString);
+        }
+
+        protected override async Task<string> ReadInputString(CancellationToken cancellationToken)
+        {
+            TaskCompletionSource<string> promptTask = new TaskCompletionSource<string>();
+            await this.linePromptQueue.EnqueueAsync(promptTask);
+
+            if (this.cancellationTokenSource.IsCancellationRequested)
+            {
+                this.linePromptTask.TrySetCanceled();
+            }
+
+            this.linePromptTask = promptTask;
+            return await promptTask.Task;
         }
 
         protected override void ShowFieldPrompt(FieldDetails fieldDetails)
@@ -581,7 +648,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             if (this.promptShownTask != null &&
                 this.promptShownTask.Task.Status == TaskStatus.WaitingForActivation)
             {
-                this.promptShownTask.SetResult(true);
+                this.promptShownTask.SetResult(this);
+            }
+        }
+
+        protected override void OnPromptCancelled()
+        {
+            this.cancellationTokenSource.Cancel();
+
+            if (this.linePromptTask != null)
+            {
+                this.linePromptTask.TrySetCanceled();
             }
         }
     }

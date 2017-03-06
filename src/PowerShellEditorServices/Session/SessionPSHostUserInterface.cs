@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices
         #region Private Fields
 
         private IConsoleHost consoleHost;
-        private ConsoleServicePSHostRawUserInterface rawUserInterface;
+        private PSHostRawUserInterface rawUserInterface;
 
         #endregion
 
@@ -38,7 +38,6 @@ namespace Microsoft.PowerShell.EditorServices
             set
             {
                 this.consoleHost = value;
-                this.rawUserInterface.ConsoleHost = value;
             }
         }
 
@@ -50,9 +49,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates a new instance of the ConsoleServicePSHostUserInterface
         /// class with the given IConsoleHost implementation.
         /// </summary>
-        public ConsoleServicePSHostUserInterface()
+        public ConsoleServicePSHostUserInterface(bool enableConsoleRepl)
         {
-            this.rawUserInterface = new ConsoleServicePSHostRawUserInterface();
+            this.rawUserInterface =
+                enableConsoleRepl
+                    ? (PSHostRawUserInterface)new ConsoleServicePSHostRawUserInterface()
+                    : new SimplePSHostRawUserInterface();
         }
 
         #endregion
@@ -113,9 +115,9 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         public override int PromptForChoice(
-            string promptCaption, 
-            string promptMessage, 
-            Collection<ChoiceDescription> choiceDescriptions, 
+            string promptCaption,
+            string promptMessage,
+            Collection<ChoiceDescription> choiceDescriptions,
             int defaultChoice)
         {
             if (this.consoleHost != null)
@@ -153,11 +155,11 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         public override PSCredential PromptForCredential(
-            string promptCaption, 
-            string promptMessage, 
-            string userName, 
-            string targetName, 
-            PSCredentialTypes allowedCredentialTypes, 
+            string promptCaption,
+            string promptMessage,
+            string userName,
+            string targetName,
+            PSCredentialTypes allowedCredentialTypes,
             PSCredentialUIOptions options)
         {
             if (this.consoleHost != null)
@@ -185,7 +187,7 @@ namespace Microsoft.PowerShell.EditorServices
                             {
                                 throw new TaskCanceledException(task);
                             }
-                            
+
                             // Return the value of the sole field
                             return (PSCredential)task.Result?["Credential"];
                         });
@@ -207,9 +209,9 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         public override PSCredential PromptForCredential(
-            string caption, 
-            string message, 
-            string userName, 
+            string caption,
+            string message,
+            string userName,
             string targetName)
         {
             return this.PromptForCredential(
@@ -279,8 +281,8 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         public override void Write(
-            ConsoleColor foregroundColor, 
-            ConsoleColor backgroundColor, 
+            ConsoleColor foregroundColor,
+            ConsoleColor backgroundColor,
             string value)
         {
             if (this.consoleHost != null)
@@ -358,7 +360,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (this.consoleHost != null)
             {
                 this.consoleHost.WriteOutput(
-                    value, 
+                    value,
                     true,
                     OutputType.Error,
                     ConsoleColor.Red);
@@ -366,7 +368,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         public override void WriteProgress(
-            long sourceId, 
+            long sourceId,
             ProgressRecord record)
         {
             if (this.consoleHost != null)

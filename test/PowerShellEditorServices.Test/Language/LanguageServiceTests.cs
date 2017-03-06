@@ -10,15 +10,10 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
-using Microsoft.Win32;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Management.Automation.Runspaces;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Language

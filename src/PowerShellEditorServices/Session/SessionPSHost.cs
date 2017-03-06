@@ -58,10 +58,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </param>
         public ConsoleServicePSHost(
             HostDetails hostDetails,
-            IHostSupportsInteractiveSession hostSupportsInteractiveSession)
+            IHostSupportsInteractiveSession hostSupportsInteractiveSession,
+            bool enableConsoleRepl)
         {
             this.hostDetails = hostDetails;
-            this.hostUserInterface = new ConsoleServicePSHostUserInterface();
+            this.hostUserInterface = new ConsoleServicePSHostUserInterface(enableConsoleRepl);
             this.hostSupportsInteractiveSession = hostSupportsInteractiveSession;
 
             System.Console.CancelKeyPress +=

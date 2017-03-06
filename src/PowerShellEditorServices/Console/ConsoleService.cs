@@ -32,6 +32,16 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #endregion
 
+        #region Properties
+
+        /// <summary>
+        /// Gets or sets a boolean determining whether the console (terminal)
+        /// REPL should be used in this session.
+        /// </summary>
+        public bool EnableConsoleRepl { get; set; }
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
@@ -91,26 +101,29 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         public void StartReadLoop()
         {
-            if (this.readLineCancellationToken == null)
+            if (this.EnableConsoleRepl)
             {
-                this.readLineCancellationToken = new CancellationTokenSource();
+                if (this.readLineCancellationToken == null)
+                {
+                    this.readLineCancellationToken = new CancellationTokenSource();
 
-                var terminalThreadTask =
-                    Task.Factory.StartNew(
-                        async () =>
-                        {
-                            // Set the thread's name to help with debugging
-                            Thread.CurrentThread.Name = "Terminal Input Loop Thread";
+                    var terminalThreadTask =
+                        Task.Factory.StartNew(
+                            async () =>
+                            {
+                                // Set the thread's name to help with debugging
+                                Thread.CurrentThread.Name = "Terminal Input Loop Thread";
 
-                            await this.StartReplLoop(this.readLineCancellationToken.Token);
-                        },
-                        CancellationToken.None,
-                        TaskCreationOptions.LongRunning,
-                        TaskScheduler.Default);
-            }
-            else
-            {
-                Logger.Write(LogLevel.Verbose, "StartReadLoop called while read loop is already running");
+                                await this.StartReplLoop(this.readLineCancellationToken.Token);
+                            },
+                            CancellationToken.None,
+                            TaskCreationOptions.LongRunning,
+                            TaskScheduler.Default);
+                }
+                else
+                {
+                    Logger.Write(LogLevel.Verbose, "StartReadLoop called while read loop is already running");
+                }
             }
         }
 
@@ -334,20 +347,22 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         void IConsoleHost.WriteOutput(string outputString, bool includeNewLine, OutputType outputType, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
         {
-            ConsoleColor oldForegroundColor = Console.ForegroundColor;
-            ConsoleColor oldBackgroundColor = Console.BackgroundColor;
-
-            Console.ForegroundColor = foregroundColor;
-            Console.BackgroundColor = backgroundColor;
-
-            Console.Write(outputString + (includeNewLine ? Environment.NewLine : ""));
-
-            Console.ForegroundColor = oldForegroundColor;
-            Console.BackgroundColor = oldBackgroundColor;
-
-            if (this.OutputWritten != null)
+            if (this.EnableConsoleRepl)
             {
-                this.OutputWritten(
+                ConsoleColor oldForegroundColor = Console.ForegroundColor;
+                ConsoleColor oldBackgroundColor = Console.BackgroundColor;
+
+                Console.ForegroundColor = foregroundColor;
+                Console.BackgroundColor = backgroundColor;
+
+                Console.Write(outputString + (includeNewLine ? Environment.NewLine : ""));
+
+                Console.ForegroundColor = oldForegroundColor;
+                Console.BackgroundColor = oldBackgroundColor;
+            }
+            else
+            {
+                this.OutputWritten?.Invoke(
                     this,
                     new OutputWrittenEventArgs(
                         outputString,

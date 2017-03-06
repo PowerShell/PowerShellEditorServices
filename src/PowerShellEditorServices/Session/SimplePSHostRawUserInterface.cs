@@ -1,8 +1,9 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Management.Automation.Host;
@@ -10,16 +11,40 @@ using System.Management.Automation.Host;
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// Provides an implementation of the PSHostRawUserInterface class
-    /// for the ConsoleService and routes its calls to an IConsoleHost
-    /// implementation.
+    /// Provides an simple implementation of the PSHostRawUserInterface class.
     /// </summary>
-    internal class ConsoleServicePSHostRawUserInterface : PSHostRawUserInterface
+    internal class SimplePSHostRawUserInterface : PSHostRawUserInterface
     {
         #region Private Fields
 
         private const int DefaultConsoleHeight = 100;
         private const int DefaultConsoleWidth = 120;
+
+        private Size currentBufferSize = new Size(DefaultConsoleWidth, DefaultConsoleHeight);
+
+        #endregion
+
+        #region Properties
+
+        internal IConsoleHost ConsoleHost
+        {
+            get;
+            set;
+        }
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Creates a new instance of the SimplePSHostRawUserInterface
+        /// class with the given IConsoleHost implementation.
+        /// </summary>
+        public SimplePSHostRawUserInterface()
+        {
+            this.ForegroundColor = ConsoleColor.White;
+            this.BackgroundColor = ConsoleColor.Black;
+        }
 
         #endregion
 
@@ -30,8 +55,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override ConsoleColor BackgroundColor
         {
-            get { return System.Console.BackgroundColor; }
-            set { System.Console.BackgroundColor = value; }
+            get;
+            set;
         }
 
         /// <summary>
@@ -39,8 +64,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override ConsoleColor ForegroundColor
         {
-            get { return System.Console.ForegroundColor; }
-            set { System.Console.ForegroundColor = value; }
+            get;
+            set;
         }
 
         /// <summary>
@@ -50,15 +75,11 @@ namespace Microsoft.PowerShell.EditorServices
         {
             get
             {
-                return
-                    new Size(
-                        System.Console.BufferWidth,
-                        System.Console.BufferHeight);
+                return this.currentBufferSize;
             }
             set
             {
-                System.Console.BufferWidth = value.Width;
-                System.Console.BufferHeight = value.Height;
+                this.currentBufferSize = value;
             }
         }
 
@@ -67,18 +88,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Coordinates CursorPosition
         {
-            get
-            {
-                return
-                    new Coordinates(
-                        System.Console.CursorLeft,
-                        System.Console.CursorTop);
-            }
-            set
-            {
-                System.Console.CursorLeft = value.X;
-                System.Console.CursorTop = value.Y;
-            }
+            get;
+            set;
         }
 
         /// <summary>
@@ -95,18 +106,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Coordinates WindowPosition
         {
-            get
-            {
-                return
-                    new Coordinates(
-                        System.Console.WindowLeft,
-                        System.Console.WindowTop);
-            }
-            set
-            {
-                System.Console.WindowLeft = value.X;
-                System.Console.WindowTop = value.Y;
-            }
+            get;
+            set;
         }
 
         /// <summary>
@@ -114,18 +115,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Size WindowSize
         {
-            get
-            {
-                return
-                    new Size(
-                        System.Console.WindowWidth,
-                        System.Console.WindowHeight);
-            }
-            set
-            {
-                System.Console.WindowWidth = value.Width;
-                System.Console.WindowHeight = value.Height;
-            }
+            get;
+            set;
         }
 
         /// <summary>
@@ -142,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override bool KeyAvailable
         {
-            get { return System.Console.KeyAvailable; }
+            get { return false; }
         }
 
         /// <summary>
@@ -226,20 +217,9 @@ namespace Microsoft.PowerShell.EditorServices
             Rectangle rectangle,
             BufferCell fill)
         {
-            // If the rectangle is all -1s then it means clear the visible buffer
-            if (rectangle.Top == -1 &&
-                rectangle.Bottom == -1 &&
-                rectangle.Left == -1 &&
-                rectangle.Right == -1)
-            {
-                System.Console.Clear();
-            }
-            else
-            {
-                Logger.Write(
-                    LogLevel.Warning,
-                    "PSHostRawUserInterface.SetBufferContents was called with a specific region");
-            }
+            Logger.Write(
+                LogLevel.Warning,
+                "PSHostRawUserInterface.SetBufferContents was called");
         }
 
         /// <summary>

@@ -29,6 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
     {
         #region Private Fields
 
+        private bool enableConsoleRepl;
         private HostDetails hostDetails;
         private string bundledModulesPath;
         private DebugAdapter debugAdapter;
@@ -58,11 +59,13 @@ namespace Microsoft.PowerShell.EditorServices.Host
         public EditorServicesHost(
             HostDetails hostDetails,
             string bundledModulesPath,
+            bool enableConsoleRepl,
             bool waitForDebugger)
         {
             Validate.IsNotNull(nameof(hostDetails), hostDetails);
 
             this.hostDetails = hostDetails;
+            this.enableConsoleRepl = enableConsoleRepl;
             this.bundledModulesPath = bundledModulesPath;
 
 #if DEBUG
@@ -143,6 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 new LanguageServer(
                     hostDetails,
                     profilePaths,
+                    this.enableConsoleRepl,
                     new TcpSocketServerChannel(languageServicePort));
 
             this.languageServer.Start().Wait();
@@ -163,7 +167,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             ProfilePaths profilePaths,
             bool useExistingSession)
         {
-            if (useExistingSession)
+            if (this.enableConsoleRepl && useExistingSession)
             {
                 this.debugAdapter =
                     new DebugAdapter(
@@ -183,8 +187,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.debugAdapter.SessionEnded +=
                 (obj, args) =>
                 {
-                    // Only restart if we're reusing the existing session,
-                    // otherwise the process should terminate
+                    // Only restart if we're reusing the existing session
+                    // or if we're not using the console REPL, otherwise
+                    // the process should terminate
                     if (useExistingSession)
                     {
                         Logger.Write(
@@ -192,6 +197,10 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             "Previous debug session ended, restarting debug service...");
 
                         this.StartDebugService(debugServicePort, profilePaths, true);
+                    }
+                    else if (!this.enableConsoleRepl)
+                    {
+                        this.StartDebugService(debugServicePort, profilePaths, false);
                     }
                 };
 
@@ -240,7 +249,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
 #if !CoreCLR
         static void CurrentDomain_UnhandledException(
-            object sender, 
+            object sender,
             UnhandledExceptionEventArgs e)
         {
             // Log the exception

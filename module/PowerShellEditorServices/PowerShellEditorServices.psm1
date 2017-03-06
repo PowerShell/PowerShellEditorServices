@@ -46,6 +46,9 @@ function Start-EditorServicesHost {
         [ValidateSet("Normal", "Verbose", "Error")]
         $LogLevel = "Normal",
 
+        [switch]
+        $EnableConsoleRepl,
+
         [string]
         $DebugServiceOnly,
 
@@ -61,6 +64,7 @@ function Start-EditorServicesHost {
             New-Object Microsoft.PowerShell.EditorServices.Host.EditorServicesHost @(
                 $hostDetails,
                 $BundledModulesPath,
+                $EnableConsoleRepl.IsPresent,
                 $WaitForDebugger.IsPresent)
 
         # Build the profile paths using the root paths of the current $profile variable

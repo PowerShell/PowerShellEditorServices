@@ -13,7 +13,7 @@ using System.IO;
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// Manages a single session for all editor services.  This 
+    /// Manages a single session for all editor services.  This
     /// includes managing all open script files for the session.
     /// </summary>
     public class EditorSession
@@ -81,10 +81,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </param>
         public void StartSession(
             HostDetails hostDetails,
-            ProfilePaths profilePaths)
+            ProfilePaths profilePaths,
+            bool enableConsoleRepl)
         {
             // Initialize all services
-            this.PowerShellContext = new PowerShellContext(hostDetails, profilePaths);
+            this.PowerShellContext = new PowerShellContext(hostDetails, profilePaths, enableConsoleRepl);
             this.LanguageService = new LanguageService(this.PowerShellContext);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
             this.ExtensionService = new ExtensionService(this.PowerShellContext);

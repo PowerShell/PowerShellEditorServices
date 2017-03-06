@@ -52,19 +52,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         /// Provides details about the host application.
         /// </param>
         public LanguageServer(HostDetails hostDetails, ProfilePaths profilePaths)
-            : this(hostDetails, profilePaths, new StdioServerChannel())
+            : this(hostDetails, profilePaths, false, new StdioServerChannel())
         {
         }
 
         /// <param name="hostDetails">
         /// Provides details about the host application.
         /// </param>
-        public LanguageServer(HostDetails hostDetails, ProfilePaths profilePaths, ChannelBase serverChannel)
+        public LanguageServer(
+            HostDetails hostDetails,
+            ProfilePaths profilePaths,
+            bool enableConsoleRepl,
+            ChannelBase serverChannel)
             : base(serverChannel)
         {
             this.editorSession = new EditorSession();
-            this.editorSession.StartSession(hostDetails, profilePaths);
-            //this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
+            this.editorSession.StartSession(hostDetails, profilePaths, enableConsoleRepl);
             this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;
 
             // Attach to ExtensionService events
@@ -80,13 +83,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.editorSession.StartDebugService(this.editorOperations);
 
-            // Always send console prompts through the UI in the language service
-            // TODO: This will change later once we have a general REPL available
-            // in VS Code.
-            this.editorSession.ConsoleService.PushPromptHandlerContext(
-                new ProtocolPromptHandlerContext(
-                    this,
-                    this.editorSession.ConsoleService));
+            if (enableConsoleRepl)
+            {
+                this.editorSession.ConsoleService.EnableConsoleRepl = true;
+            }
+            else
+            {
+                this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
+
+                // Always send console prompts through the UI in the language service
+                this.editorSession.ConsoleService.PushPromptHandlerContext(
+                    new ProtocolPromptHandlerContext(
+                        this,
+                        this.editorSession.ConsoleService));
+            }
 
             // Set up the output debouncer to throttle output event writes
             this.outputDebouncer = new OutputDebouncer(this);

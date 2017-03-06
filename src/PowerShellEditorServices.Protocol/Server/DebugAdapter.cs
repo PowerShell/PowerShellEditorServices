@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     public class DebugAdapter : DebugAdapterBase
     {
         private EditorSession editorSession;
+        private OutputDebouncer outputDebouncer;
 
         private bool noDebug;
         private bool isRemoteAttach;
@@ -59,7 +60,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession.StartDebugSession(hostDetails, profilePaths, editorOperations);
             this.editorSession.PowerShellContext.RunspaceChanged += this.powerShellContext_RunspaceChanged;
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
-        }
+
+            // The assumption in this overload is that the debugger
+            // is running in UI-hosted mode, no terminal interface
+            this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
+            this.outputDebouncer = new OutputDebouncer(this);
+       }
 
         protected override void Initialize()
         {
@@ -101,6 +107,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
 
             this.executionCompleted = true;
+
+            // Make sure remaining output is flushed before exiting
+            if (this.outputDebouncer != null)
+            {
+                await this.outputDebouncer.Flush();
+            }
 
             if (this.isAttachSession)
             {
@@ -149,6 +161,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         protected override void Shutdown()
         {
             Logger.Write(LogLevel.Normal, "Debug adapter is shutting down...");
+
+            // Make sure remaining output is flushed before exiting
+            if (this.outputDebouncer != null)
+            {
+                this.outputDebouncer.Flush().Wait();
+            }
 
             if (this.editorSession != null)
             {
@@ -719,13 +737,34 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     "repl",
                     StringComparison.CurrentCultureIgnoreCase);
 
-            if (!isFromRepl)
+            if (isFromRepl)
+            {
+                // Check for special commands
+                if (string.Equals("!ctrlc", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    editorSession.PowerShellContext.AbortExecution();
+                }
+                else if (string.Equals("!break", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    editorSession.DebugService.Break();
+                }
+                else
+                {
+                    // Send the input through the console service
+                    var notAwaited =
+                        this.editorSession
+                            .PowerShellContext
+                            .ExecuteScriptString(evaluateParams.Expression, false, true)
+                            .ConfigureAwait(false);
+                }
+            }
+            else
             {
                 VariableDetails result =
-                    await editorSession.DebugService.EvaluateExpression(
-                        evaluateParams.Expression,
-                        evaluateParams.FrameId,
-                        isFromRepl);
+                await editorSession.DebugService.EvaluateExpression(
+                    evaluateParams.Expression,
+                    evaluateParams.FrameId,
+                    isFromRepl);
 
                 if (result != null)
                 {
@@ -734,12 +773,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         result.IsExpandable ?
                             result.Id : 0;
                 }
-            }
-            else
-            {
-                Logger.Write(
-                    LogLevel.Verbose,
-                    $"Debug adapter client attempted to evaluate command in REPL: {evaluateParams.Expression}");
             }
 
             await requestContext.SendResult(
@@ -753,6 +786,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         #endregion
 
         #region Event Handlers
+
+        private async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
+        {
+            if (this.outputDebouncer != null)
+            {
+                // Queue the output for writing
+                await this.outputDebouncer.Invoke(e);
+            }
+        }
 
         async void DebugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
         {
