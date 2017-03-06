@@ -88,7 +88,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             .Select(choice => this.Choices[choice].Label));
 
                 this.consoleHost.WriteOutput(
-                    $" (default is \"{choiceString}\"):");
+                    $" (default is \"{choiceString}\"): ",
+                    false);
             }
         }
 
@@ -102,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         /// <param name="responseString">The string representing the user's response.</param>
         /// <returns>
-        /// True if the prompt is complete, false if the prompt is 
+        /// True if the prompt is complete, false if the prompt is
         /// still waiting for a valid response.
         /// </returns>
         protected override int[] HandleResponse(string responseString)

@@ -23,7 +23,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private PowerShellContext powerShellContext;
         private AsyncQueue<ConsoleKeyInfo> readKeyQueue = new AsyncQueue<ConsoleKeyInfo>();
-        private CancellationTokenSource readLoopCancellationToken;
 
         #endregion
 

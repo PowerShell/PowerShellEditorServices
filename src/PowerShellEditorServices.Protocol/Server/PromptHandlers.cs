@@ -91,6 +91,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                 if (!response.PromptCancelled)
                 {
+                    this.consoleService.WriteOutput(
+                        response.ResponseText,
+                        OutputType.Normal);
+
                     this.readLineTask.TrySetResult(response.ResponseText);
                 }
                 else
@@ -178,6 +182,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                 if (!response.PromptCancelled)
                 {
+                    this.consoleService.WriteOutput(
+                        response.ResponseText,
+                        OutputType.Normal);
+
                     this.readLineTask.TrySetResult(response.ResponseText);
                 }
                 else

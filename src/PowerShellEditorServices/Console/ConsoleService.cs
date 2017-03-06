@@ -12,6 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 {
     using System;
     using System.Management.Automation;
+    using System.Security;
 
     /// <summary>
     /// Provides a high-level service for exposing an interactive
@@ -151,21 +152,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             this.CancelReadLoop();
 
-            if (this.activePromptHandler != null)
-            {
-                if (echoToConsole)
-                {
-                    this.WriteOutput(inputString, true);
-                }
-
-                if (this.activePromptHandler.HandleResponse(inputString))
-                {
-                    // If the prompt handler is finished, clear it for
-                    // future input events
-                    this.activePromptHandler = null;
-                }
-            }
-            else
+            if (this.activePromptHandler == null)
             {
                 // Execute the script string but don't wait for completion
                 var executeTask =
@@ -200,25 +187,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 false);
 
             this.StartReadLoop();
-        }
-
-        /// <summary>
-        /// Provides a direct path for a caller that just wants to provide
-        /// user response to a prompt without executing a command if there
-        /// is no active prompt.
-        /// </summary>
-        /// <param name="promptResponse">The user's response to the active prompt.</param>
-        /// <param name="echoToConsole">If true, the input will be echoed to the console.</param>
-        /// <returns>True if there was a prompt, false otherwise.</returns>
-        public bool ReceivePromptResponse(string promptResponse, bool echoToConsole)
-        {
-            if (this.activePromptHandler != null)
-            {
-                this.ExecuteCommand(promptResponse, echoToConsole);
-                return true;
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -266,6 +234,20 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
         }
 
+        public async Task<string> ReadSimpleLine(CancellationToken cancellationToken)
+        {
+            string inputLine = await this.consoleReadLine.ReadSimpleLine(cancellationToken);
+            this.WriteOutput(string.Empty, true);
+            return inputLine;
+        }
+
+        public async Task<SecureString> ReadSecureLine(CancellationToken cancellationToken)
+        {
+            SecureString secureString = await this.consoleReadLine.ReadSecureLine(cancellationToken);
+            this.WriteOutput(string.Empty, true);
+            return secureString;
+        }
+
         #endregion
 
         #region Private Methods
@@ -286,7 +268,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             {
                 // The breakpoint classes have nice ToString output so use that
                 this.WriteOutput(
-                    $"Hit {eventArgs.Breakpoints[0].ToString()}\n",
+                    Environment.NewLine + $"Hit {eventArgs.Breakpoints[0].ToString()}\n",
                     true,
                     OutputType.Normal,
                     ConsoleColor.Blue);
