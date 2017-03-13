@@ -101,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession.ConsoleService.CancelReadLoop();
 
             return editorSession.PowerShellContext
-                    .ExecuteScriptWithArgs(this.scriptToLaunch, this.arguments)
+                    .ExecuteScriptWithArgs(this.scriptToLaunch, this.arguments, writeInputToHost: true)
                     .ContinueWith(this.OnExecutionCompleted);
         }
 

@@ -668,9 +668,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="script">The script execute.</param>
         /// <param name="arguments">Arguments to pass to the script.</param>
+        /// <param name="writeInputToHost">Writes the executed script path and arguments to the host.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
-        public async Task ExecuteScriptWithArgs(string script, string arguments = null)
+        public async Task ExecuteScriptWithArgs(string script, string arguments = null, bool writeInputToHost = false)
         {
+            string launchedScript = script;
             PSCommand command = new PSCommand();
 
             if (arguments != null)
@@ -699,12 +701,20 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     script = EscapePath(script, escapeSpaces: true);
                 }
-                string scriptWithArgs = script + " " + arguments;
-                command.AddScript(scriptWithArgs);
+
+                launchedScript = script + " " + arguments;
+                command.AddScript(launchedScript);
             }
             else
             {
                 command.AddCommand(script);
+            }
+
+            if (writeInputToHost)
+            {
+                this.WriteOutput(
+                    launchedScript + Environment.NewLine,
+                    true);
             }
 
             await this.ExecuteCommand<object>(
