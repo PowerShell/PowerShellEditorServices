@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
-    using Microsoft.PowerShell.EditorServices.Utility;
     using System;
     using System.Management.Automation;
     using System.Management.Automation.Language;
@@ -19,10 +18,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
     internal class ConsoleReadLine
     {
-        #region Private Fields
+        #region Private Field
 
         private PowerShellContext powerShellContext;
-        private AsyncQueue<ConsoleKeyInfo> readKeyQueue = new AsyncQueue<ConsoleKeyInfo>();
 
         #endregion
 
@@ -169,14 +167,21 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 // because the window could have been resized before then
                 int promptStartCol = initialCursorCol;
                 int promptStartRow = initialCursorRow;
-
                 int consoleWidth = Console.WindowWidth;
+
+                // Overwrite any control character if necessary
+                this.OverwriteControlCharacter(
+                    keyInfo,
+                    inputLine,
+                    promptStartCol,
+                    promptStartRow,
+                    consoleWidth,
+                    currentCursorIndex);
 
                 if ((keyInfo.Modifiers & ConsoleModifiers.Alt) == ConsoleModifiers.Alt ||
                     (keyInfo.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control)
                 {
                     // Ignore any Ctrl or Alt key combinations
-                    // TODO: What about word movements?
                     continue;
                 }
                 else if (keyInfo.Key == ConsoleKey.Tab && isCommandLine)
@@ -186,12 +191,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
                         inputBeforeCompletion = inputLine.ToString();
                         inputAfterCompletion = null;
 
-                        int cursorColumn =
-                            this.CalculateIndexFromCursor(
-                                promptStartCol,
-                                promptStartRow,
-                                consoleWidth);
-
                         // TODO: This logic should be moved to AstOperations or similar!
 
                         if (this.powerShellContext.IsDebuggerStopped)
@@ -199,7 +198,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             PSCommand command = new PSCommand();
                             command.AddCommand("TabExpansion2");
                             command.AddParameter("InputScript", inputBeforeCompletion);
-                            command.AddParameter("CursorColumn", cursorColumn);
+                            command.AddParameter("CursorColumn", currentCursorIndex);
                             command.AddParameter("Options", null);
 
                             var results =
@@ -216,31 +215,31 @@ namespace Microsoft.PowerShell.EditorServices.Console
                                 currentCompletion =
                                     CommandCompletion.CompleteInput(
                                         inputBeforeCompletion,
-                                        cursorColumn,
+                                        currentCursorIndex,
                                         null,
                                         powerShell);
 
-                                if (currentCompletion.CompletionMatches.Count == 0)
+                                if (currentCompletion.CompletionMatches.Count > 0)
                                 {
-                                    // No completion matches, skip the rest
-                                    // TODO: Need to re-render on *NIX?
-                                    continue;
+                                    int replacementEndIndex =
+                                            currentCompletion.ReplacementIndex +
+                                            currentCompletion.ReplacementLength;
+
+                                    inputAfterCompletion =
+                                        inputLine.ToString(
+                                            replacementEndIndex,
+                                            inputLine.Length - replacementEndIndex);
                                 }
-
-                                int replacementEndIndex =
-                                        currentCompletion.ReplacementIndex +
-                                        currentCompletion.ReplacementLength;
-
-                                inputAfterCompletion =
-                                    inputLine.ToString(
-                                        replacementEndIndex,
-                                        inputLine.Length - replacementEndIndex);
+                                else
+                                {
+                                    currentCompletion = null;
+                                }
                             }
                         }
                     }
 
                     CompletionResult completion =
-                        currentCompletion.GetNextResult(
+                        currentCompletion?.GetNextResult(
                             !keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift));
 
                     if (completion != null)
@@ -251,8 +250,10 @@ namespace Microsoft.PowerShell.EditorServices.Console
                                 promptStartCol,
                                 promptStartRow,
                                 $"{completion.CompletionText}{inputAfterCompletion}",
+                                currentCursorIndex,
                                 insertIndex: currentCompletion.ReplacementIndex,
-                                replaceLength: inputLine.Length - currentCompletion.ReplacementIndex);
+                                replaceLength: inputLine.Length - currentCompletion.ReplacementIndex,
+                                finalCursorIndex: currentCompletion.ReplacementIndex + completion.CompletionText.Length);
                     }
                 }
                 else if (keyInfo.Key == ConsoleKey.LeftArrow)
@@ -261,23 +262,24 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
                     if (currentCursorIndex > 0)
                     {
-                        this.MoveCursorToIndex(
-                            promptStartCol,
-                            promptStartRow,
-                            consoleWidth,
-                            --currentCursorIndex);
+                        currentCursorIndex =
+                            this.MoveCursorToIndex(
+                                promptStartCol,
+                                promptStartRow,
+                                consoleWidth,
+                                currentCursorIndex - 1);
                     }
                 }
                 else if (keyInfo.Key == ConsoleKey.Home)
                 {
                     currentCompletion = null;
-                    currentCursorIndex = 0;
 
-                    this.MoveCursorToIndex(
-                        promptStartCol,
-                        promptStartRow,
-                        consoleWidth,
-                        currentCursorIndex);
+                    currentCursorIndex =
+                        this.MoveCursorToIndex(
+                            promptStartCol,
+                            promptStartRow,
+                            consoleWidth,
+                            0);
                 }
                 else if (keyInfo.Key == ConsoleKey.RightArrow)
                 {
@@ -285,23 +287,24 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
                     if (currentCursorIndex < inputLine.Length)
                     {
-                        this.MoveCursorToIndex(
-                            promptStartCol,
-                            promptStartRow,
-                            consoleWidth,
-                            ++currentCursorIndex);
+                        currentCursorIndex =
+                            this.MoveCursorToIndex(
+                                promptStartCol,
+                                promptStartRow,
+                                consoleWidth,
+                                currentCursorIndex + 1);
                     }
                 }
                 else if (keyInfo.Key == ConsoleKey.End)
                 {
                     currentCompletion = null;
-                    currentCursorIndex = inputLine.Length;
 
-                    this.MoveCursorToIndex(
-                        promptStartCol,
-                        promptStartRow,
-                        consoleWidth,
-                        currentCursorIndex);
+                    currentCursorIndex =
+                        this.MoveCursorToIndex(
+                            promptStartCol,
+                            promptStartRow,
+                            consoleWidth,
+                            inputLine.Length);
                 }
                 else if (keyInfo.Key == ConsoleKey.UpArrow && isCommandLine)
                 {
@@ -338,6 +341,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                                 promptStartCol,
                                 promptStartRow,
                                 (string)currentHistory[historyIndex].Properties["CommandLine"].Value,
+                                currentCursorIndex,
                                 insertIndex: 0,
                                 replaceLength: inputLine.Length);
                     }
@@ -362,6 +366,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                                     promptStartCol,
                                     promptStartRow,
                                     (string)currentHistory[historyIndex].Properties["CommandLine"].Value,
+                                    currentCursorIndex,
                                     insertIndex: 0,
                                     replaceLength: inputLine.Length);
                         }
@@ -373,6 +378,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                                     promptStartCol,
                                     promptStartRow,
                                     string.Empty,
+                                    currentCursorIndex,
                                     insertIndex: 0,
                                     replaceLength: inputLine.Length);
                         }
@@ -389,6 +395,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             promptStartCol,
                             promptStartRow,
                             string.Empty,
+                            currentCursorIndex,
                             insertIndex: 0,
                             replaceLength: inputLine.Length);
                 }
@@ -404,7 +411,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
                                 promptStartCol,
                                 promptStartRow,
                                 string.Empty,
-                                currentCursorIndex - 1,
+                                currentCursorIndex,
+                                insertIndex: currentCursorIndex - 1,
                                 replaceLength: 1,
                                 finalCursorIndex: currentCursorIndex - 1);
                     }
@@ -462,6 +470,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             promptStartCol,
                             promptStartRow,
                             keyInfo.KeyChar.ToString(),
+                            currentCursorIndex,
                             finalCursorIndex: currentCursorIndex + 1);
                 }
             }
@@ -512,39 +521,27 @@ namespace Microsoft.PowerShell.EditorServices.Console
             int promptStartCol,
             int promptStartRow,
             string insertedInput,
+            int cursorIndex,
             int insertIndex = -1,
             int replaceLength = 0,
             int finalCursorIndex = -1)
         {
-            // TODO: Right change?
             int consoleWidth = Console.WindowWidth;
             int previousInputLength = inputLine.Length;
 
-            int startCol = -1;
-            int startRow = -1;
-
             if (insertIndex == -1)
             {
-                // Find the insertion index based on the position of the
-                // cursor relative to the initial position
-                insertIndex =
-                    this.CalculateIndexFromCursor(
-                        promptStartCol,
-                        promptStartRow,
-                        consoleWidth);
-            }
-            else
-            {
-                // Calculate the starting position based on the insert index
-                this.CalculateCursorFromIndex(
-                    promptStartCol,
-                    promptStartRow,
-                    consoleWidth,
-                    insertIndex,
-                    out startCol,
-                    out startRow);
+                insertIndex = cursorIndex;
             }
 
+            // Move the cursor to the new insertion point
+            this.MoveCursorToIndex(
+                promptStartCol,
+                promptStartRow,
+                consoleWidth,
+                insertIndex);
+
+            // Edit the input string based on the insertion
             if (insertIndex < inputLine.Length)
             {
                 if (replaceLength > 0)
@@ -557,17 +554,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
             else
             {
                 inputLine.Append(insertedInput);
-            }
-
-            // Set the cursor position if necessary
-            int writeCursorCol = startCol;
-            if (startCol > -1)
-            {
-                Console.SetCursorPosition(startCol, startRow);
-            }
-            else
-            {
-                writeCursorCol = Console.CursorLeft;
             }
 
             // Re-render affected section
@@ -596,32 +582,101 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             if (finalCursorIndex > -1)
             {
-                this.MoveCursorToIndex(
-                    promptStartCol,
-                    promptStartRow,
-                    consoleWidth,
-                    finalCursorIndex);
+                // Move the cursor to the final position
+                return
+                    this.MoveCursorToIndex(
+                        promptStartCol,
+                        promptStartRow,
+                        consoleWidth,
+                        finalCursorIndex);
             }
-
-            // Return the updated cursor index
-            return finalCursorIndex != -1 ? finalCursorIndex : inputLine.Length;
+            else
+            {
+                return inputLine.Length;
+            }
         }
 
-        private void MoveCursorToIndex(
+        private int MoveCursorToIndex(
             int promptStartCol,
             int promptStartRow,
             int consoleWidth,
-            int cursorIndex)
+            int newCursorIndex)
         {
             this.CalculateCursorFromIndex(
                 promptStartCol,
                 promptStartRow,
                 consoleWidth,
-                cursorIndex,
-                out int newCol,
-                out int newRow);
+                newCursorIndex,
+                out int newCursorCol,
+                out int newCursorRow);
 
-            Console.SetCursorPosition(newCol, newRow);
+            Console.SetCursorPosition(newCursorCol, newCursorRow);
+
+            return newCursorIndex;
+        }
+
+        private void OverwriteControlCharacter(
+            ConsoleKeyInfo keyInfo,
+            StringBuilder inputLine,
+            int promptStartCol,
+            int promptStartRow,
+            int consoleWidth,
+            int cursorIndex)
+        {
+            bool overwriteNeeded = false;
+
+            switch (keyInfo.Key)
+            {
+                case ConsoleKey.LeftArrow:
+                case ConsoleKey.RightArrow:
+                case ConsoleKey.Delete:
+                case ConsoleKey.Backspace:
+                case ConsoleKey.Home:
+                case ConsoleKey.End:
+                case ConsoleKey.Escape:
+                case ConsoleKey.Tab:
+                    overwriteNeeded = true;
+                    break;
+            }
+
+            if (overwriteNeeded)
+            {
+                // TODO: Adjust this based on actual escape char length
+                const int overwriteCount = 5;
+
+                this.CalculateCursorFromIndex(
+                    promptStartCol,
+                    promptStartRow,
+                    consoleWidth,
+                    cursorIndex,
+                    out int cursorCol,
+                    out int cursorRow);
+
+                Console.SetCursorPosition(cursorCol, cursorRow);
+
+                // Calculate the index of the input line to overwrite
+                // plus any extra padding that's needed to cover characters
+                // that extend outside the length of the input string
+                int overwriteIndex = cursorIndex + overwriteCount;
+                int padLength = Math.Max(0, overwriteIndex - inputLine.Length);
+                if (padLength > 0)
+                {
+                    overwriteIndex -= padLength;
+                }
+
+                // Re-render affected input string and padding characters
+                Console.Write(
+                    inputLine.ToString(
+                        cursorIndex,
+                        overwriteIndex - cursorIndex));
+
+                Console.Write(
+                    new string(
+                        ' ',
+                        padLength));
+
+                Console.SetCursorPosition(cursorCol, cursorRow);
+            }
         }
 
         #endregion
