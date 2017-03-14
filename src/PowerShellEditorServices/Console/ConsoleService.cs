@@ -10,7 +10,9 @@ using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
+    using Microsoft.PowerShell.EditorServices.Session;
     using System;
+    using System.Globalization;
     using System.Management.Automation;
     using System.Security;
 
@@ -264,10 +266,23 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private void WritePromptStringToHost()
         {
+            string promptString = this.powerShellContext.PromptString;
+
+            // Update the stored prompt string if the session is remote
+            if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+            {
+                promptString =
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "[{0}]: {1}",
+                        this.powerShellContext.CurrentRunspace.Runspace.ConnectionInfo != null
+                            ? this.powerShellContext.CurrentRunspace.Runspace.ConnectionInfo.ComputerName
+                            : this.powerShellContext.CurrentRunspace.SessionDetails.ComputerName,
+                        promptString);
+            }
+
             // Write the prompt string
-            this.WriteOutput(
-                this.powerShellContext.PromptString,
-                false);
+            this.WriteOutput(promptString, false);
         }
 
         private void WriteDebuggerBanner(DebuggerStopEventArgs eventArgs)

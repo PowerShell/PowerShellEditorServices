@@ -1367,17 +1367,6 @@ namespace Microsoft.PowerShell.EditorServices
                         }
                     });
 
-            if (this.CurrentRunspace != null &&
-                this.CurrentRunspace.Location == RunspaceLocation.Remote)
-            {
-                sessionDetails.PromptString =
-                    string.Format(
-                        CultureInfo.InvariantCulture,
-                        "[{0}]: {1}",
-                        runspace.ConnectionInfo.ComputerName,
-                        sessionDetails.PromptString);
-            }
-
             return sessionDetails;
         }
 
