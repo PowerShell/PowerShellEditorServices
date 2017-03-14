@@ -106,11 +106,6 @@ namespace Microsoft.PowerShell.EditorServices
                     .CurrentRunspace
                     .GetCapability<DscBreakpointCapability>();
 
-            if (clearExisting && dscBreakpoints == null)
-            {
-                await this.ClearBreakpointsInFile(scriptFile);
-            }
-
             // Make sure we're using the remote script path
             string scriptPath = scriptFile.FilePath;
             if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
@@ -150,6 +145,11 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (dscBreakpoints == null || !dscBreakpoints.IsDscResourcePath(escapedScriptPath))
             {
+                if (clearExisting)
+                {
+                    await this.ClearBreakpointsInFile(scriptFile);
+                }
+
                 foreach (BreakpointDetails breakpoint in breakpoints)
                 {
                     PSCommand psCommand = new PSCommand();

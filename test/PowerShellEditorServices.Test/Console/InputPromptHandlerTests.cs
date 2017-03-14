@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Xunit;
 using System;
 using System.Threading;
+using System.Security;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
@@ -29,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             {
                 new FieldDetails(NameField, "Name", typeof(string), false, "Default Name"),
                 new FieldDetails(AgeField, "Age", typeof(int), true, 30),
-                new FieldDetails(BooksField, "Favorite Books", typeof(IList), false, null)
+                new CollectionFieldDetails(BooksField, "Favorite Books", typeof(IList), false, null)
             };
 
         [Fact]
@@ -44,17 +45,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     CancellationToken.None);
 
             Assert.Equal(NameField, inputPromptHandler.LastField.Name);
-            inputPromptHandler.HandleResponse(NameValue);
+            inputPromptHandler.ReturnInputString(NameValue);
 
             Assert.Equal(AgeField, inputPromptHandler.LastField.Name);
-            inputPromptHandler.HandleResponse(AgeValue.ToString());
+            inputPromptHandler.ReturnInputString(AgeValue.ToString());
 
             Assert.Equal(BooksField + "[0]", inputPromptHandler.LastField.Name);
-            inputPromptHandler.HandleResponse((string)BookItems[0]);
+            inputPromptHandler.ReturnInputString((string)BookItems[0]);
             Assert.Equal(BooksField + "[1]", inputPromptHandler.LastField.Name);
-            inputPromptHandler.HandleResponse((string)BookItems[1]);
+            inputPromptHandler.ReturnInputString((string)BookItems[1]);
             Assert.Equal(BooksField + "[2]", inputPromptHandler.LastField.Name);
-            inputPromptHandler.HandleResponse("");
+            inputPromptHandler.ReturnInputString("");
 
             // Make sure the right results are returned
             Assert.Equal(TaskStatus.RanToCompletion, promptTask.Status);
@@ -74,13 +75,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     "Message is irrelevant",
                     new FieldDetails[]
                     {
-                        new FieldDetails("Numbers", "Numbers", typeof(int[]), false, null)
+                        new CollectionFieldDetails("Numbers", "Numbers", typeof(int[]), false, null)
                     },
                     CancellationToken.None);
 
             Assert.Equal("Numbers[0]", inputPromptHandler.LastField.Name);
-            inputPromptHandler.HandleResponse("1");
-            inputPromptHandler.HandleResponse("");
+            inputPromptHandler.ReturnInputString("1");
+            inputPromptHandler.ReturnInputString("");
 
             // Make sure the right results are returned
             Assert.Equal(TaskStatus.RanToCompletion, promptTask.Status);
@@ -100,19 +101,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     CancellationToken.None);
 
             Assert.Equal(NameField, inputPromptHandler.LastField.Name);
-            inputPromptHandler.HandleResponse(NameValue);
+            inputPromptHandler.ReturnInputString(NameValue);
 
             // Intentionally give a non-integer string to cause an error
             Assert.Equal(AgeField, inputPromptHandler.LastField.Name);
-            inputPromptHandler.HandleResponse(NameValue);
+            inputPromptHandler.ReturnInputString(NameValue);
             Assert.NotNull(inputPromptHandler.LastError);
 
             // Give the right value the next time
             Assert.Equal(AgeField, inputPromptHandler.LastField.Name);
-            inputPromptHandler.HandleResponse(AgeValue.ToString());
+            inputPromptHandler.ReturnInputString(AgeValue.ToString());
 
             Assert.Equal(BooksField + "[0]", inputPromptHandler.LastField.Name);
-            inputPromptHandler.HandleResponse("");
+            inputPromptHandler.ReturnInputString("");
 
             // Make sure the right results are returned
             Assert.Equal(TaskStatus.RanToCompletion, promptTask.Status);
@@ -123,9 +124,34 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
     internal class TestInputPromptHandler : InputPromptHandler
     {
+        private TaskCompletionSource<string> linePromptTask;
+        private TaskCompletionSource<SecureString> securePromptTask;
+
         public FieldDetails LastField { get; private set; }
 
         public Exception LastError { get; private set; }
+
+        public void ReturnInputString(string inputString)
+        {
+            this.linePromptTask.SetResult(inputString);
+        }
+
+        public void ReturnSecureString(SecureString secureString)
+        {
+            this.securePromptTask.SetResult(secureString);
+        }
+
+        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
+        {
+            this.linePromptTask = new TaskCompletionSource<string>();
+            return this.linePromptTask.Task;
+        }
+
+        protected override Task<SecureString> ReadSecureString(CancellationToken cancellationToken)
+        {
+            this.securePromptTask = new TaskCompletionSource<SecureString>();
+            return this.securePromptTask.Task;
+        }
 
         protected override void ShowPromptMessage(string caption, string message)
         {

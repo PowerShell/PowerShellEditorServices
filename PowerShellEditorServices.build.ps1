@@ -18,9 +18,8 @@ if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
 }
 
-task SetupDotNet -Before Restore, Clean, Build, BuildHost, Test, TestPowerShellApi, PackageNuGet {
+task SetupDotNet -Before Restore, Clean, Build, Test, TestPowerShellApi, PackageNuGet {
 
-    # Fetch the SDK version from global.json
     $requiredSdkVersion = "1.0.0-rc4-004771"
 
     $needsInstall = $true
@@ -92,7 +91,7 @@ function NeedsRestore($rootPath) {
     return ($projectAssets -eq $null) -or ((Get-ChildItem $rootPath).Length -gt $projectAssets.Length)
 }
 
-task Restore -If { "Restore" -in $BuildTask -or (NeedsRestore(".\src")) -or (NeedsRestore(".\test")) } -Before Clean, Build, BuildHost, Test {
+task Restore -If { "Restore" -in $BuildTask -or (NeedsRestore(".\src")) -or (NeedsRestore(".\test")) } -Before Clean, Build, Test {
     exec { & $script:dotnetExe restore }
 }
 
@@ -136,17 +135,13 @@ task TestPowerShellApi -If { !$script:IsUnix } {
     exec { & $script:dotnetExe restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj }
 }
 
-task BuildHost {
-    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
-}
-
 task Build {
-    exec { & $script:dotnetExe build -c $Configuration .\PowerShellEditorServices.sln $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
 }
 
 function UploadTestLogs {
     if ($script:IsCIBuild) {
-        $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net451/logs"
+        $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net452/logs"
         $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
 
         if (Test-Path $testLogsPath) {
@@ -163,9 +158,9 @@ function UploadTestLogs {
 }
 
 task Test -If { !$script:IsUnix } {
-    exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
-    exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
-    exec { & $script:dotnetExe test -c $Configuration -f net451 .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
+    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
+    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
+    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
 }
 
 task CITest (job Test -Safe), {
@@ -177,7 +172,7 @@ task CITest (job Test -Safe), {
     }
 }
 
-task LayoutModule -After Build, BuildHost {
+task LayoutModule -After Build {
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\ -Type Directory | Out-Null
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop -Type Directory | Out-Null
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Core -Type Directory | Out-Null

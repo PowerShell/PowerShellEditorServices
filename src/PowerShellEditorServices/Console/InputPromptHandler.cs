@@ -4,11 +4,10 @@
 //
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Management.Automation;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,14 +22,10 @@ namespace Microsoft.PowerShell.EditorServices.Console
     {
         #region Private Fields
 
-        private int currentFieldIndex;
+        private int currentFieldIndex = -1;
         private FieldDetails currentField;
-        private TaskCompletionSource<Dictionary<string, object>> promptTask;
-        private Dictionary<string, object> fieldValues = new Dictionary<string, object>();
-
-        private int currentCollectionIndex;
-        private FieldDetails currentCollectionField;
-        private ArrayList currentCollectionItems;
+        private CancellationTokenSource promptCancellationTokenSource =
+            new CancellationTokenSource();
 
         #endregion
 
@@ -106,97 +101,49 @@ namespace Microsoft.PowerShell.EditorServices.Console
             FieldDetails[] fields,
             CancellationToken cancellationToken)
         {
-            this.promptTask = new TaskCompletionSource<Dictionary<string, object>>();
-
-            // Cancel the TaskCompletionSource if the caller cancels the task
+            // Cancel the prompt if the caller cancels the task
             cancellationToken.Register(this.CancelPrompt, true);
 
             this.Fields = fields;
 
             this.ShowPromptMessage(promptCaption, promptMessage);
-            this.ShowNextPrompt();
 
-            return this.promptTask.Task;
+            return this.StartPromptLoop(this.promptCancellationTokenSource.Token);
         }
 
         /// <summary>
-        /// Implements behavior to handle the user's response.
+        /// Prompts the user for a SecureString without writing any message or caption.
         /// </summary>
-        /// <param name="responseString">The string representing the user's response.</param>
         /// <returns>
-        /// True if the prompt is complete, false if the prompt is 
-        /// still waiting for a valid response.
+        /// A Task instance that can be monitored for completion to get
+        /// the user's input.
         /// </returns>
-        public override bool HandleResponse(string responseString)
+        public Task<SecureString> PromptForSecureInput(
+            CancellationToken cancellationToken)
         {
-            if (this.currentField == null)
-            {
-                // TODO: Assert
-            }
+            Task<Dictionary<string, object>> innerTask =
+                this.PromptForInput(
+                    null,
+                    null,
+                    new FieldDetails[] { new FieldDetails("", "", typeof(SecureString), false, "") },
+                    cancellationToken);
 
-            // TODO: Is string empty?  Use default or finish prompt?
-            object responseValue = responseString;
-
-            try
-            {
-                responseValue = 
-                    LanguagePrimitives.ConvertTo(
-                        responseString,
-                        this.currentField.FieldType,
-                        CultureInfo.CurrentCulture);
-            }
-            catch (PSInvalidCastException e)
-            {
-                // Show an error and redisplay the same field
-                this.ShowErrorMessage(e.InnerException);
-                this.ShowFieldPrompt(this.currentField);
-                return false;
-            }
-
-            if (this.currentCollectionField != null)
-            {
-                if (responseString.Length == 0)
-                {
-                    object collection = this.currentCollectionItems;
-
-                    // Should the result collection be an array?
-                    if (this.currentCollectionField.FieldType.IsArray)
+            return 
+                innerTask.ContinueWith(
+                    task =>
                     {
-                        // Convert the ArrayList to an array
-                        collection =
-                            this.currentCollectionItems.ToArray(
-                                this.currentCollectionField.ElementType);
-                    }
-
-                    // Collection entry is done, save the items and clean up state
-                    this.fieldValues.Add(
-                        this.currentCollectionField.Name,
-                        collection);
-
-                    this.currentField = this.currentCollectionField;
-                    this.currentCollectionField = null;
-                    this.currentCollectionItems = null;
-                }
-                else
-                {
-                    // Add the item to the collection
-                    this.currentCollectionItems.Add(responseValue);
-                }
-            }
-            else
-            {
-                this.fieldValues.Add(this.currentField.Name, responseValue);
-            }
-
-            // If there are no more fields to show the prompt is complete
-            if (this.ShowNextPrompt() == false)
-            {
-                this.promptTask.SetResult(this.fieldValues);
-                return true;
-            }
-
-            // Prompt is still active
-            return false;
+                        if (task.IsFaulted)
+                        {
+                            throw task.Exception;
+                        }
+                        else if (task.IsCanceled)
+                        {
+                            throw new TaskCanceledException(task);
+                        }
+                        
+                        // Return the value of the sole field
+                        return (SecureString)task.Result?[""];
+                    });
         }
 
         /// <summary>
@@ -205,7 +152,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         protected override void OnPromptCancelled()
         {
             // Cancel the prompt task
-            this.promptTask.TrySetCanceled();
+            this.promptCancellationTokenSource.Cancel();
         }
 
         #endregion
@@ -228,6 +175,30 @@ namespace Microsoft.PowerShell.EditorServices.Console
         protected abstract void ShowFieldPrompt(FieldDetails fieldDetails);
 
         /// <summary>
+        /// Reads an input string asynchronously from the console.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A CancellationToken that can be used to cancel the read.
+        /// </param>
+        /// <returns>
+        /// A Task instance that can be monitored for completion to get
+        /// the user's input.
+        /// </returns>
+        protected abstract Task<string> ReadInputString(CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Reads a SecureString asynchronously from the console.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A CancellationToken that can be used to cancel the read.
+        /// </param>
+        /// <returns>
+        /// A Task instance that can be monitored for completion to get
+        /// the user's input.
+        /// </returns>
+        protected abstract Task<SecureString> ReadSecureString(CancellationToken cancellationToken);
+
+        /// <summary>
         /// Called when an error should be displayed, such as when the
         /// user types in a string with an incorrect format for the
         /// current field.
@@ -241,51 +212,94 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Private Methods
 
-        private bool ShowNextPrompt()
+        private async Task<Dictionary<string, object>> StartPromptLoop(
+            CancellationToken cancellationToken)
         {
-            if (this.currentCollectionField != null)
+            this.GetNextField();
+
+            // Loop until there are no more prompts to process
+            while (this.currentField != null && !cancellationToken.IsCancellationRequested)
             {
-                // Continuing collection entry
-                this.currentCollectionIndex++;
-                this.currentField.Name =
-                    string.Format(
-                        "{0}[{1}]",
-                        this.currentCollectionField.Name,
-                        this.currentCollectionIndex);
+                // Show current prompt
+                this.ShowFieldPrompt(this.currentField);
+
+                bool enteredValue = false;
+                object responseValue = null;
+                string responseString = null;
+
+                // Read input depending on field type
+                if (this.currentField.FieldType == typeof(SecureString))
+                {
+                    SecureString secureString = await this.ReadSecureString(cancellationToken);
+                    responseValue = secureString;
+                    enteredValue = secureString != null;
+                }
+                else
+                {
+                    responseString = await this.ReadInputString(cancellationToken);
+                    responseValue = responseString;
+                    enteredValue = responseString != null && responseString.Length > 0;
+
+                    try
+                    {
+                        responseValue =
+                            LanguagePrimitives.ConvertTo(
+                                responseString,
+                                this.currentField.FieldType,
+                                CultureInfo.CurrentCulture);
+                    }
+                    catch (PSInvalidCastException e)
+                    {
+                        this.ShowErrorMessage(e.InnerException);
+
+                        continue;
+                    }
+                }
+
+                // Set the field's value and get the next field
+                this.currentField.SetValue(responseValue, enteredValue);
+                this.GetNextField();
             }
-            else
+
+            if (cancellationToken.IsCancellationRequested)
             {
-                // Have we shown all the prompts already?
-                if (this.currentFieldIndex >= this.Fields.Length)
-                {
-                    return false;
-                }
+                // Throw a TaskCanceledException to stop the pipeline
+                throw new TaskCanceledException();
+            }
 
-                this.currentField = this.Fields[this.currentFieldIndex];
+            // Return the field values
+            return this.GetFieldValues();
+        }
 
-                if (this.currentField.IsCollection)
-                {
-                    this.currentCollectionIndex = 0;
-                    this.currentCollectionField = this.currentField;
-                    this.currentCollectionItems = new ArrayList();
+        private FieldDetails GetNextField()
+        {
+            FieldDetails nextField = this.currentField?.GetNextField();
 
-                    this.currentField =
-                        new FieldDetails(
-                            string.Format(
-                                "{0}[{1}]",
-                                this.currentCollectionField.Name,
-                                this.currentCollectionIndex),
-                            this.currentCollectionField.Label,
-                            this.currentCollectionField.ElementType,
-                            true,
-                            null);
-                }
-
+            if (nextField == null)
+            {
                 this.currentFieldIndex++;
+
+                // Have we shown all the prompts already?
+                if (this.currentFieldIndex < this.Fields.Length)
+                {
+                    nextField = this.Fields[this.currentFieldIndex];
+                }
             }
 
-            this.ShowFieldPrompt(this.currentField);
-            return true;
+            this.currentField = nextField;
+            return nextField;
+        }
+
+        private Dictionary<string, object> GetFieldValues()
+        {
+            Dictionary<string, object> fieldValues = new Dictionary<string, object>();
+
+            foreach (FieldDetails field in this.Fields)
+            {
+                fieldValues.Add(field.OriginalName, field.GetValue());
+            }
+
+            return fieldValues;
         }
 
         #endregion

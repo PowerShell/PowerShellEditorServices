@@ -475,7 +475,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.debugService.Abort();
             await this.AssertStateChange(
                 PowerShellContextState.Ready,
-                PowerShellExecutionResult.Completed);
+                PowerShellExecutionResult.Aborted);
         }
 
         [Fact]
@@ -498,7 +498,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.debugService.Abort();
             await this.AssertStateChange(
                 PowerShellContextState.Ready,
-                PowerShellExecutionResult.Completed);
+                PowerShellExecutionResult.Aborted);
         }
 
         [Fact]

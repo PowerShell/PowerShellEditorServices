@@ -193,6 +193,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             var runspaceId = runspace.InstanceId;
             var runspaceLocation = RunspaceLocation.Local;
+            var runspaceContext = RunspaceContext.Original;
             var versionDetails = PowerShellVersionDetails.GetVersionDetails(runspace);
 
             string connectionString = null;
@@ -207,6 +208,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     if (connectionInfo.ProcessId != null)
                     {
                         connectionString = connectionInfo.ProcessId.ToString();
+                        runspaceContext = RunspaceContext.EnteredProcess;
                     }
                 }
                 catch (RuntimeBinderException)
@@ -234,7 +236,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     sessionDetails,
                     versionDetails,
                     runspaceLocation,
-                    RunspaceContext.Original,
+                    runspaceContext,
                     connectionString);
         }
 

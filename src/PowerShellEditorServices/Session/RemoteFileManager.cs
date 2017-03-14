@@ -497,7 +497,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             public string GetMappedPath(string filePath)
             {
-                string mappedPath = null;
+                string mappedPath = filePath;
 
                 if (!this.pathMappings.TryGetValue(filePath.ToLower(), out mappedPath))
                 {

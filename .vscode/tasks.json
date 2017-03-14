@@ -28,12 +28,7 @@
             "taskName": "Build",
             "suppressTaskName": true,
             "isBuildCommand": true,
-            "args": [ "Invoke-Build BuildHost" ]
-        },
-        {
-            "taskName": "Full Build",
-            "suppressTaskName": true,
-            "args": [ "Invoke-Build" ]
+            "args": [ "Invoke-Build Build" ]
         },
         {
             "taskName": "Test",

@@ -29,6 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
     {
         #region Private Fields
 
+        private bool enableConsoleRepl;
         private HostDetails hostDetails;
         private string bundledModulesPath;
         private DebugAdapter debugAdapter;
@@ -58,11 +59,13 @@ namespace Microsoft.PowerShell.EditorServices.Host
         public EditorServicesHost(
             HostDetails hostDetails,
             string bundledModulesPath,
+            bool enableConsoleRepl,
             bool waitForDebugger)
         {
             Validate.IsNotNull(nameof(hostDetails), hostDetails);
 
             this.hostDetails = hostDetails;
+            this.enableConsoleRepl = enableConsoleRepl;
             this.bundledModulesPath = bundledModulesPath;
 
 #if DEBUG
@@ -143,6 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 new LanguageServer(
                     hostDetails,
                     profilePaths,
+                    this.enableConsoleRepl,
                     new TcpSocketServerChannel(languageServicePort));
 
             this.languageServer.Start().Wait();
@@ -158,23 +162,46 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// Starts the debug service with the specified TCP socket port.
         /// </summary>
         /// <param name="debugServicePort">The port number for the debug service.</param>
-        public void StartDebugService(int debugServicePort, ProfilePaths profilePaths)
+        public void StartDebugService(
+            int debugServicePort,
+            ProfilePaths profilePaths,
+            bool useExistingSession)
         {
-            this.debugAdapter =
-                new DebugAdapter(
-                    hostDetails,
-                    profilePaths,
-                    new TcpSocketServerChannel(debugServicePort),
-                    this.languageServer?.EditorOperations);
+            if (this.enableConsoleRepl && useExistingSession)
+            {
+                this.debugAdapter =
+                    new DebugAdapter(
+                        this.languageServer.EditorSession,
+                        new TcpSocketServerChannel(debugServicePort));
+            }
+            else
+            {
+                this.debugAdapter =
+                    new DebugAdapter(
+                        hostDetails,
+                        profilePaths,
+                        new TcpSocketServerChannel(debugServicePort),
+                        this.languageServer?.EditorOperations);
+            }
 
             this.debugAdapter.SessionEnded +=
                 (obj, args) =>
                 {
-                    Logger.Write(
-                        LogLevel.Normal,
-                        "Previous debug session ended, restarting debug service...");
+                    // Only restart if we're reusing the existing session
+                    // or if we're not using the console REPL, otherwise
+                    // the process should terminate
+                    if (useExistingSession)
+                    {
+                        Logger.Write(
+                            LogLevel.Normal,
+                            "Previous debug session ended, restarting debug service...");
 
-                    this.StartDebugService(debugServicePort, profilePaths);
+                        this.StartDebugService(debugServicePort, profilePaths, true);
+                    }
+                    else if (!this.enableConsoleRepl)
+                    {
+                        this.StartDebugService(debugServicePort, profilePaths, false);
+                    }
                 };
 
             this.debugAdapter.Start().Wait();
@@ -222,7 +249,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
 #if !CoreCLR
         static void CurrentDomain_UnhandledException(
-            object sender, 
+            object sender,
             UnhandledExceptionEventArgs e)
         {
             // Log the exception

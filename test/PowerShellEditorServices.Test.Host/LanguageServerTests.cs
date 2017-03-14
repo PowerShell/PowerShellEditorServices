@@ -607,7 +607,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             await evaluateTask;
         }
 
-        [Fact]
+        [Fact(Skip = "Native command output in the legacy host has been disabled for now, may re-enable later")]
         public async Task ServiceExecutesNativeCommandAndReceivesCommand()
         {
             OutputReader outputReader = new OutputReader(this.protocolClient);

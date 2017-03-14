@@ -94,11 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal(7, stoppedDetails.Line);
 
             // Abort script execution
-            Task terminatedEvent = this.WaitForEvent(TerminatedEvent.Type);
-            await
-                Task.WhenAll(
-                    this.SendRequest(DisconnectRequest.Type, new object()),
-                    terminatedEvent);
+            await this.SendRequest(DisconnectRequest.Type, new object());
         }
 
         [Fact]
@@ -108,15 +104,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             await this.LaunchScript(DebugScriptPath);
 
+            // Skip the first 2 lines which just report the script
+            // that is being executed
+            await outputReader.ReadLines(2);
+
             // Make sure we're getting output from the script
             Assert.Equal("Output 1", await outputReader.ReadLine());
 
             // Abort script execution
-            Task terminatedEvent = this.WaitForEvent(TerminatedEvent.Type);
-            await
-                Task.WhenAll(
-                    this.SendRequest(DisconnectRequest.Type, new object()),
-                    terminatedEvent);
+            await this.SendRequest(DisconnectRequest.Type, new object());
         }
 
         private async Task LaunchScript(string scriptPath)
