@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             string scriptPath = Path.Combine(modulePath, "Start-EditorServices.ps1");
 
             // TODO: Need to determine the right module version programmatically!
-            string editorServicesModuleVersion = "0.9.0";
+            string editorServicesModuleVersion = "0.10.0";
 
             string scriptArgs =
                 string.Format(
@@ -135,18 +135,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         protected Task<TResult> SendRequest<TParams, TResult>(
-            RequestType<TParams, TResult> requestType, 
+            RequestType<TParams, TResult> requestType,
             TParams requestParams)
         {
-            return 
+            return
                 this.protocolClient.SendRequest(
-                    requestType, 
+                    requestType,
                     requestParams);
         }
 
         protected Task SendEvent<TParams>(EventType<TParams> eventType, TParams eventParams)
         {
-            return 
+            return
                 this.protocolClient.SendEvent(
                     eventType,
                     eventParams);
@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 eventType,
                 (p, ctx) =>
                 {
-                    return eventQueue.EnqueueAsync(p);   
+                    return eventQueue.EnqueueAsync(p);
                 });
         }
 
@@ -204,7 +204,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 eventTask = eventTaskSource.Task;
             }
 
-            await 
+            await
                 Task.WhenAny(
                     eventTask,
                     Task.Delay(timeoutMilliseconds));
@@ -257,7 +257,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 requestTask = requestTaskSource.Task;
             }
 
-            await 
+            await
                 Task.WhenAny(
                     requestTask,
                     Task.Delay(timeoutMilliseconds));

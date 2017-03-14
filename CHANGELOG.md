@@ -1,5 +1,23 @@
 # PowerShell Editor Services Release History
 
+## 0.10.0
+### Tuesday, March 14, 2017
+
+These improvements are described in detail in the [vscode-powershell changelog](https://github.com/PowerShell/vscode-powershell/blob/master/CHANGELOG.md#0100)
+for its 0.10.0 release.
+
+#### Language feature improvements
+
+- Added new terminal-based integrated console
+- Added new code formatting settings with additional rules
+- Added Get-Credential, SecureString, and PSCredential support
+
+#### Debugging improvements
+
+- Connected primary debugging experience with integrated console
+- Added column number breakpoints
+- Added support for step-in debugging of remote ScriptBlocks with [PowerShell Core 6.0.0-alpha.17](https://github.com/PowerShell/PowerShell/releases/tag/v6.0.0-alpha.17)
+
 ## 0.9.0
 ### Thursday, January 19, 2017
 
