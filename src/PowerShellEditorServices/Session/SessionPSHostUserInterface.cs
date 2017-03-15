@@ -51,6 +51,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public ConsoleServicePSHostUserInterface(bool enableConsoleRepl)
         {
+            if (enableConsoleRepl)
+            {
+                // Set the output encoding to Unicode so that all
+                // Unicode characters are written correctly
+                System.Console.OutputEncoding = System.Text.Encoding.Unicode;
+            }
+
             this.rawUserInterface =
                 enableConsoleRepl
                     ? (PSHostRawUserInterface)new ConsoleServicePSHostRawUserInterface()
