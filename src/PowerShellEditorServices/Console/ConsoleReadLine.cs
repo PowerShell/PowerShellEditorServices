@@ -67,14 +67,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
                         // Break to return the completed string
                         break;
                     }
-                    if ((keyInfo.Modifiers & ConsoleModifiers.Alt) == ConsoleModifiers.Alt)
-                    {
-                        continue;
-                    }
-                    if ((keyInfo.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control)
-                    {
-                        continue;
-                    }
                     if (keyInfo.Key == ConsoleKey.Tab)
                     {
                         continue;
@@ -178,13 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     consoleWidth,
                     currentCursorIndex);
 
-                if ((keyInfo.Modifiers & ConsoleModifiers.Alt) == ConsoleModifiers.Alt ||
-                    (keyInfo.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control)
-                {
-                    // Ignore any Ctrl or Alt key combinations
-                    continue;
-                }
-                else if (keyInfo.Key == ConsoleKey.Tab && isCommandLine)
+                if (keyInfo.Key == ConsoleKey.Tab && isCommandLine)
                 {
                     if (currentCompletion == null)
                     {
