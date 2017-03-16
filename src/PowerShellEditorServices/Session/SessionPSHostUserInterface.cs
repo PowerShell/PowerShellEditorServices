@@ -41,6 +41,10 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+#if !PowerShellv3 && !PowerShellv4 && !PowerShellv5r1 // Only available in Windows 10 Update 1 or higher
+        public override bool SupportsVirtualTerminal => true;
+#endif
+
         #endregion
 
         #region Constructors
