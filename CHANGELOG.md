@@ -1,5 +1,17 @@
 # PowerShell Editor Services Release History
 
+## 0.10.1
+### Thursday, March 16, 2017
+
+#### Fixes and improvements
+
+- Fixed [#387](https://github.com/PowerShell/PowerShellEditorServices/issues/387) -
+  Write-(Warning, Verbose, Debug) are missing message prefixes and foreground colors
+- Fixed [#382](https://github.com/PowerShell/PowerShellEditorServices/issues/382) -
+  PSHostUserInterface implementation should set SupportsVirtualTerminal to true
+- Fixed [#192](https://github.com/PowerShell/PowerShellEditorServices/issues/192) -
+  System-wide ExecutionPolicy of Bypass causes host process crash
+
 ## 0.10.0
 ### Tuesday, March 14, 2017
 
