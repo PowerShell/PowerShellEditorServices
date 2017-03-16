@@ -5,5 +5,6 @@
 
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Microsoft.PowerShell.EditorServices.Test")]
 [assembly: InternalsVisibleTo("Microsoft.PowerShell.EditorServices.Test.Shared")]
 
