@@ -65,9 +65,9 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (enableConsoleRepl)
             {
-                // Set the output encoding to Unicode so that all
-                // Unicode characters are written correctly
-                System.Console.OutputEncoding = System.Text.Encoding.Unicode;
+                // Set the output encoding to UTF-8 so that special
+                // characters are written to the console correctly
+                System.Console.OutputEncoding = System.Text.Encoding.UTF8;
             }
 
             this.rawUserInterface =
