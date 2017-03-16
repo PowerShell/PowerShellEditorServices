@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices
     using System.Management.Automation.Runspaces;
     using Microsoft.PowerShell.EditorServices.Session.Capabilities;
     using System.IO;
+    using System.Security;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -1302,10 +1303,18 @@ namespace Microsoft.PowerShell.EditorServices
                     .AddParameter("Scope", ExecutionPolicyScope.Process)
                     .AddParameter("Force");
 
-                this.powerShell.Invoke();
-                this.powerShell.Commands.Clear();
+                try
+                {
+                    this.powerShell.Invoke();
+                }
+                catch (CmdletInvocationException e)
+                {
+                    Logger.WriteException(
+                        $"An error occurred while calling Set-ExecutionPolicy, the desired policy of {desiredExecutionPolicy} may not be set.",
+                        e);
+                }
 
-                // TODO: Ensure there were no errors?
+                this.powerShell.Commands.Clear();
             }
             else
             {
