@@ -7,13 +7,16 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Management.Automation;
-using System.Management.Automation.Language;
-using System.Management.Automation.Runspaces;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
+    using System.Management.Automation;
+    using System.Management.Automation.Language;
+    using System.Management.Automation.Runspaces;
+
     /// <summary>
     /// Provides common operations for the syntax tree of a parsed script.
     /// </summary>
@@ -32,18 +35,22 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="fileOffset">
         /// The 1-based file offset at which a symbol will be located.
         /// </param>
-        /// <param name="runspace">
-        /// The Runspace to use for gathering completions.
+        /// <param name="powerShellContext">
+        /// The PowerShellContext to use for gathering completions.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// A CancellationToken to cancel completion requests.
         /// </param>
         /// <returns>
         /// A CommandCompletion instance that contains completions for the
         /// symbol at the given offset.
         /// </returns>
-        static public CommandCompletion GetCompletions(
+        static public async Task<CommandCompletion> GetCompletions(
             Ast scriptAst, 
             Token[] currentTokens, 
             int fileOffset,
-            Runspace runspace)
+            PowerShellContext powerShellContext,
+            CancellationToken cancellationToken)
         {
             var type = scriptAst.Extent.StartScriptPosition.GetType();
             var method = 
@@ -73,20 +80,34 @@ namespace Microsoft.PowerShell.EditorServices
                     cursorPosition.ColumnNumber));
 
             CommandCompletion commandCompletion = null;
-            if (runspace.RunspaceAvailability == RunspaceAvailability.Available)
+            if (powerShellContext.IsDebuggerStopped)
             {
-                using (System.Management.Automation.PowerShell powerShell = 
-                        System.Management.Automation.PowerShell.Create())
-                {
-                    powerShell.Runspace = runspace;
+                PSCommand command = new PSCommand();
+                command.AddCommand("TabExpansion2");
+                command.AddParameter("Ast", scriptAst);
+                command.AddParameter("Tokens", currentTokens);
+                command.AddParameter("PositionOfCursor", cursorPosition);
+                command.AddParameter("Options", null);
 
-                    commandCompletion = 
+                commandCompletion =
+                    (await powerShellContext.ExecuteCommand<CommandCompletion>(command, false, false))
+                        .FirstOrDefault();
+            }
+            else if (powerShellContext.CurrentRunspace.Runspace.RunspaceAvailability ==
+                        RunspaceAvailability.Available)
+            {
+                using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandle(cancellationToken))
+                using (PowerShell powerShell = PowerShell.Create())
+                {
+                    powerShell.Runspace = runspaceHandle.Runspace;
+
+                    commandCompletion =
                         CommandCompletion.CompleteInput(
-                            scriptAst, 
-                            currentTokens, 
-                            cursorPosition, 
-                            null, 
-                            powerShell); 
+                            scriptAst,
+                            currentTokens,
+                            cursorPosition,
+                            null,
+                            powerShell);
                 }
             }
 
