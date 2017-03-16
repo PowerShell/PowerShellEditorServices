@@ -239,7 +239,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                         BreakpointDetails.Create("", 10)
                     });
 
-            Assert.Equal(2, breakpoints.Length);
+            var confirmedBreakpoints = await this.GetConfirmedBreakpoints(this.debugScriptFile);
+
+            Assert.Equal(2, confirmedBreakpoints.Count());
             Assert.Equal(5, breakpoints[0].LineNumber);
             Assert.Equal(10, breakpoints[1].LineNumber);
 
@@ -248,15 +250,20 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                     this.debugScriptFile,
                     new[] { BreakpointDetails.Create("", 2) });
 
-            Assert.Equal(1, breakpoints.Length);
+            confirmedBreakpoints = await this.GetConfirmedBreakpoints(this.debugScriptFile);
+
+            Assert.Equal(1, confirmedBreakpoints.Count());
             Assert.Equal(2, breakpoints[0].LineNumber);
 
-            breakpoints =
-                await this.debugService.SetLineBreakpoints(
-                    this.debugScriptFile,
-                    new[] { BreakpointDetails.Create("", 0) });
+            await this.debugService.SetLineBreakpoints(
+                this.debugScriptFile,
+                new[] { BreakpointDetails.Create("", 0) });
 
-            Assert.Equal(0, breakpoints.Length);
+            var remainingBreakpoints = await this.GetConfirmedBreakpoints(this.debugScriptFile);
+
+            Assert.False(
+                remainingBreakpoints.Any(),
+                "Breakpoints in the script file were not cleared");
         }
 
         [Fact]
@@ -458,6 +465,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerBreaksWhenRequested()
         {
+            var confirmedBreakpoints = await this.GetConfirmedBreakpoints(this.debugScriptFile);
+
+            await this.AssertStateChange(
+                PowerShellContextState.Ready,
+                PowerShellExecutionResult.Completed);
+
+            Assert.False(
+                confirmedBreakpoints.Any(),
+                "Unexpected breakpoint found in script file");
+
             Task executeTask =
                 this.powerShellContext.ExecuteScriptString(
                     this.debugScriptFile.FilePath);
@@ -465,8 +482,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Break execution and wait for the debugger to stop
             this.debugService.Break();
 
-            // File path is an empty string when paused while running
-            await this.AssertDebuggerStopped(string.Empty);
+            await this.AssertDebuggerPaused();
             await this.AssertStateChange(
                 PowerShellContextState.Ready,
                 PowerShellExecutionResult.Stopped);
@@ -885,6 +901,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.powerShellContext.AbortExecution();
         }
 
+        public async Task AssertDebuggerPaused()
+        {
+            SynchronizationContext syncContext = SynchronizationContext.Current;
+
+            DebuggerStoppedEventArgs eventArgs =
+                await this.debuggerStoppedQueue.DequeueAsync();
+
+            Assert.Equal(0, eventArgs.OriginalEvent.Breakpoints.Count);
+        }
+
         public async Task AssertDebuggerStopped(
             string scriptPath,
             int lineNumber = -1)
@@ -893,6 +919,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             DebuggerStoppedEventArgs eventArgs =
                 await this.debuggerStoppedQueue.DequeueAsync();
+
+
 
             Assert.Equal(scriptPath, eventArgs.ScriptPath);
             if (lineNumber > -1)
@@ -910,6 +938,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             Assert.Equal(expectedState, newState.NewSessionState);
             Assert.Equal(expectedResult, newState.ExecutionResult);
+        }
+
+        private async Task<IEnumerable<LineBreakpoint>> GetConfirmedBreakpoints(ScriptFile scriptFile)
+        {
+            return
+                await this.powerShellContext.ExecuteCommand<LineBreakpoint>(
+                    new PSCommand()
+                        .AddCommand("Get-PSBreakpoint")
+                        .AddParameter("Script", scriptFile.FilePath));
         }
     }
 }
