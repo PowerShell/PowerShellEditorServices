@@ -89,18 +89,13 @@ namespace Microsoft.PowerShell.EditorServices
                     lineNumber,
                     columnNumber);
 
-            RunspaceHandle runspaceHandle =
-                await this.powerShellContext.GetRunspaceHandle(
-                    new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
-
             CommandCompletion commandCompletion =
-                AstOperations.GetCompletions(
+                await AstOperations.GetCompletions(
                     scriptFile.ScriptAst,
                     scriptFile.ScriptTokens,
                     fileOffset,
-                    runspaceHandle.Runspace);
-
-            runspaceHandle.Dispose();
+                    this.powerShellContext,
+                    new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
 
             if (commandCompletion != null)
             {
