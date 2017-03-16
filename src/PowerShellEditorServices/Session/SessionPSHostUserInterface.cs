@@ -30,6 +30,14 @@ namespace Microsoft.PowerShell.EditorServices
 
         #endregion
 
+        #region Public Constants
+
+        public const string DebugMessagePrefix = "DEBUG: ";
+        public const string WarningMessagePrefix = "WARNING: ";
+        public const string VerboseMessagePrefix = "VERBOSE: ";
+
+        #endregion
+
         #region Properties
 
         internal IConsoleHost ConsoleHost
@@ -338,9 +346,10 @@ namespace Microsoft.PowerShell.EditorServices
             if (this.consoleHost != null)
             {
                 this.consoleHost.WriteOutput(
-                    message,
+                    DebugMessagePrefix + message,
                     true,
-                    OutputType.Debug);
+                    OutputType.Debug,
+                    foregroundColor: ConsoleColor.Yellow);
             }
         }
 
@@ -349,9 +358,10 @@ namespace Microsoft.PowerShell.EditorServices
             if (this.consoleHost != null)
             {
                 this.consoleHost.WriteOutput(
-                    message,
+                    VerboseMessagePrefix + message,
                     true,
-                    OutputType.Verbose);
+                    OutputType.Verbose,
+                    foregroundColor: ConsoleColor.Blue);
             }
         }
 
@@ -360,9 +370,10 @@ namespace Microsoft.PowerShell.EditorServices
             if (this.consoleHost != null)
             {
                 this.consoleHost.WriteOutput(
-                    message,
+                    WarningMessagePrefix + message,
                     true,
-                    OutputType.Warning);
+                    OutputType.Warning,
+                    foregroundColor: ConsoleColor.Yellow);
             }
         }
 

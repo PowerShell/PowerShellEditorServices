@@ -119,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     TestOutputString));
 
             Assert.Equal(
-                TestOutputString + Environment.NewLine,
+                ConsoleServicePSHostUserInterface.VerboseMessagePrefix + TestOutputString + Environment.NewLine,
                 this.GetOutputForType(OutputType.Verbose));
         }
 
@@ -137,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     TestOutputString));
 
             Assert.Equal(
-                TestOutputString + Environment.NewLine,
+                ConsoleServicePSHostUserInterface.DebugMessagePrefix + TestOutputString + Environment.NewLine,
                 this.GetOutputForType(OutputType.Debug));
         }
 
@@ -150,7 +150,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     TestOutputString));
 
             Assert.Equal(
-                TestOutputString + Environment.NewLine,
+                ConsoleServicePSHostUserInterface.WarningMessagePrefix + TestOutputString + Environment.NewLine,
                 this.GetOutputForType(OutputType.Warning));
         }
 
