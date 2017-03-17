@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26127.0
+VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F594E7FD-1E72-4E51-A496-B019C2BA3180}"
 EndProject
@@ -38,16 +38,16 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|x64.ActiveCfg = Debug|x64
-		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|x64.Build.0 = Debug|x64
-		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|x86.ActiveCfg = Debug|x86
-		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|x86.Build.0 = Debug|x86
+		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|x64.Build.0 = Debug|Any CPU
+		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Debug|x86.Build.0 = Debug|Any CPU
 		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Release|x64.ActiveCfg = Release|x64
-		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Release|x64.Build.0 = Release|x64
-		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Release|x86.ActiveCfg = Release|x86
-		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Release|x86.Build.0 = Release|x86
+		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Release|x64.ActiveCfg = Release|Any CPU
+		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Release|x64.Build.0 = Release|Any CPU
+		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Release|x86.ActiveCfg = Release|Any CPU
+		{81E8CBCD-6319-49E7-9662-0475BD0791F4}.Release|x86.Build.0 = Release|Any CPU
 		{B2F6369A-D737-4AFD-8B81-9B094DB07DA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B2F6369A-D737-4AFD-8B81-9B094DB07DA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2F6369A-D737-4AFD-8B81-9B094DB07DA7}.Debug|x64.ActiveCfg = Debug|Any CPU
