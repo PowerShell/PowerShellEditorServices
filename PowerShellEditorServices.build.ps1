@@ -20,7 +20,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
 
 task SetupDotNet -Before Restore, Clean, Build, Test, TestPowerShellApi, PackageNuGet {
 
-    $requiredSdkVersion = "1.0.0-rc4-004771"
+    $requiredSdkVersion = "1.0.0"
 
     $needsInstall = $true
     $dotnetPath = "$PSScriptRoot/.dotnet"
