@@ -23,7 +23,6 @@ namespace Microsoft.PowerShell.EditorServices
     using System.Management.Automation.Runspaces;
     using Microsoft.PowerShell.EditorServices.Session.Capabilities;
     using System.IO;
-    using System.Security;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -847,11 +846,18 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 // Set the result so that the execution thread resumes.
                 // The execution thread will clean up the task.
-                this.debuggerStoppedTask.SetResult(resumeAction);
+                if (!this.debuggerStoppedTask.TrySetResult(resumeAction))
+                {
+                    Logger.Write(
+                        LogLevel.Error,
+                        $"Tried to resume debugger with action {resumeAction} but the task was already completed.");
+                }
             }
             else
             {
-                // TODO: Throw InvalidOperationException?
+                Logger.Write(
+                    LogLevel.Error,
+                    $"Tried to resume debugger with action {resumeAction} but there was no debuggerStoppedTask.");
             }
         }
 
