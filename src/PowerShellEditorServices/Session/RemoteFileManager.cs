@@ -375,64 +375,72 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private void RegisterPSEditFunction(RunspaceDetails runspaceDetails)
         {
-            try
+            if (runspaceDetails.Location == RunspaceLocation.Remote &&
+                runspaceDetails.Context == RunspaceContext.Original)
             {
-                runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived += HandlePSEventReceived;
-
-                var createScript =
-                    string.Format(
-                        CreatePSEditFunctionScript,
-                        (runspaceDetails.Location == RunspaceLocation.Local &&
-                         runspaceDetails.Context == RunspaceContext.Original)
-                            ? string.Empty : "-Forward");
-
-                PSCommand createCommand = new PSCommand();
-                createCommand
-                    .AddScript(createScript)
-                    .AddParameter("PSEditFunction", PSEditFunctionScript);
-
-                if (runspaceDetails.Context == RunspaceContext.DebuggedRunspace)
+                try
                 {
-                    this.powerShellContext.ExecuteCommand(createCommand).Wait();
-                }
-                else
-                {
-                    using (var powerShell = System.Management.Automation.PowerShell.Create())
+                    runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived += HandlePSEventReceived;
+
+                    var createScript =
+                        string.Format(
+                            CreatePSEditFunctionScript,
+                            (runspaceDetails.Location == RunspaceLocation.Local &&
+                             runspaceDetails.Context == RunspaceContext.Original)
+                                ? string.Empty : "-Forward");
+
+                    PSCommand createCommand = new PSCommand();
+                    createCommand
+                        .AddScript(createScript)
+                        .AddParameter("PSEditFunction", PSEditFunctionScript);
+
+                    if (runspaceDetails.Context == RunspaceContext.DebuggedRunspace)
                     {
-                        powerShell.Runspace = runspaceDetails.Runspace;
-                        powerShell.Commands = createCommand;
-                        powerShell.Invoke();
+                        this.powerShellContext.ExecuteCommand(createCommand).Wait();
+                    }
+                    else
+                    {
+                        using (var powerShell = System.Management.Automation.PowerShell.Create())
+                        {
+                            powerShell.Runspace = runspaceDetails.Runspace;
+                            powerShell.Commands = createCommand;
+                            powerShell.Invoke();
+                        }
                     }
                 }
-            }
-            catch (RemoteException e)
-            {
-                Logger.WriteException("Could not create psedit function.", e);
+                catch (RemoteException e)
+                {
+                    Logger.WriteException("Could not create psedit function.", e);
+                }
             }
         }
 
         private void RemovePSEditFunction(RunspaceDetails runspaceDetails)
         {
-            try
+            if (runspaceDetails.Location == RunspaceLocation.Remote &&
+                runspaceDetails.Context == RunspaceContext.Original)
             {
-                if (runspaceDetails.Runspace.Events != null)
+                try
                 {
-                    runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived -= HandlePSEventReceived;
-                }
-
-                if (runspaceDetails.Runspace.RunspaceStateInfo.State == RunspaceState.Opened)
-                {
-                    using (var powerShell = System.Management.Automation.PowerShell.Create())
+                    if (runspaceDetails.Runspace.Events != null)
                     {
-                        powerShell.Runspace = runspaceDetails.Runspace;
-                        powerShell.Commands.AddScript(RemovePSEditFunctionScript);
-                        powerShell.Invoke();
+                        runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived -= HandlePSEventReceived;
+                    }
+
+                    if (runspaceDetails.Runspace.RunspaceStateInfo.State == RunspaceState.Opened)
+                    {
+                        using (var powerShell = System.Management.Automation.PowerShell.Create())
+                        {
+                            powerShell.Runspace = runspaceDetails.Runspace;
+                            powerShell.Commands.AddScript(RemovePSEditFunctionScript);
+                            powerShell.Invoke();
+                        }
                     }
                 }
-            }
-            catch (Exception e) when (e is RemoteException || e is PSInvalidOperationException)
-            {
-                Logger.WriteException("Could not remove psedit function.", e);
+                catch (Exception e) when (e is RemoteException || e is PSInvalidOperationException)
+                {
+                    Logger.WriteException("Could not remove psedit function.", e);
+                }
             }
         }
 
