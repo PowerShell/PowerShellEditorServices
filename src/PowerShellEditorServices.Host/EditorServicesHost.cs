@@ -8,6 +8,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
@@ -33,6 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private HostDetails hostDetails;
         private string bundledModulesPath;
         private DebugAdapter debugAdapter;
+        private HashSet<string> featureFlags;
         private LanguageServer languageServer;
 
         #endregion
@@ -60,13 +62,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
             HostDetails hostDetails,
             string bundledModulesPath,
             bool enableConsoleRepl,
-            bool waitForDebugger)
+            bool waitForDebugger,
+            string[] featureFlags)
         {
             Validate.IsNotNull(nameof(hostDetails), hostDetails);
 
             this.hostDetails = hostDetails;
             this.enableConsoleRepl = enableConsoleRepl;
             this.bundledModulesPath = bundledModulesPath;
+            this.featureFlags = new HashSet<string>(featureFlags ?? new string[0]);
 
 #if DEBUG
             int waitsRemaining = 10;
