@@ -52,6 +52,10 @@ function Start-EditorServicesHost {
         [string]
         $DebugServiceOnly,
 
+        [string[]]
+        [ValidateNotNull()]
+        $FeatureFlags = @(),
+
         [switch]
         $WaitForDebugger
     )
@@ -65,7 +69,8 @@ function Start-EditorServicesHost {
                 $hostDetails,
                 $BundledModulesPath,
                 $EnableConsoleRepl.IsPresent,
-                $WaitForDebugger.IsPresent)
+                $WaitForDebugger.IsPresent,
+                $FeatureFlags)
 
         # Build the profile paths using the root paths of the current $profile variable
         $profilePaths = New-Object Microsoft.PowerShell.EditorServices.Session.ProfilePaths @(
