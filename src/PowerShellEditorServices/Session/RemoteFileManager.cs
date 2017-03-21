@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Session
@@ -75,6 +76,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
 
             Get-EventSubscriber -SourceIdentifier PSESRemoteSessionOpenFile -EA Ignore | Remove-Event
+        ";
+
+        private const string SetRemoteContentsScript = @"
+            param(
+                [string] $RemoteFilePath,
+                [byte[]] $Content
+            )
+
+            Set-Content -Path $RemoteFilePath -Value $Content -Encoding Byte -Force 2>&1
         ";
 
         #endregion
@@ -183,6 +193,61 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
 
             return localFilePath;
+        }
+
+        /// <summary>
+        /// Saves the contents of the file under the temporary local
+        /// file cache to its corresponding remote file.
+        /// </summary>
+        /// <param name="localFilePath">
+        /// The local file whose contents will be saved.  It is assumed
+        /// that the editor has saved the contents of the local cache
+        /// file to disk before this method is called.
+        /// </param>
+        /// <returns>A Task to be awaited for completion.</returns>
+        public async Task SaveRemoteFile(string localFilePath)
+        {
+            string remoteFilePath =
+                this.GetMappedPath(
+                    localFilePath,
+                    this.powerShellContext.CurrentRunspace);
+
+            Logger.Write(
+                LogLevel.Verbose,
+                $"Saving remote file {remoteFilePath} (local path: {localFilePath})");
+
+            byte[] localFileContents = null;
+            try
+            {
+                localFileContents = File.ReadAllBytes(localFilePath);
+            }
+            catch (IOException e)
+            {
+                Logger.WriteException(
+                    "Failed to read contents of local copy of remote file",
+                    e);
+
+                return;
+            }
+
+            PSCommand saveCommand = new PSCommand();
+            saveCommand
+                .AddScript(SetRemoteContentsScript)
+                .AddParameter("RemoteFilePath", remoteFilePath)
+                .AddParameter("Content", localFileContents);
+
+            StringBuilder errorMessages = new StringBuilder();
+
+            await this.powerShellContext.ExecuteCommand<object>(
+                saveCommand,
+                errorMessages,
+                false,
+                false);
+
+            if (errorMessages.Length > 0)
+            {
+                Logger.Write(LogLevel.Error, $"Remote file save failed due to an error:\r\n\r\n{errorMessages}");
+            }
         }
 
         /// <summary>

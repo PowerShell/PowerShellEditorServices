@@ -52,6 +52,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
             EventType<TextDocumentIdentifier>.Create("textDocument/didClose");
     }
 
+    public class DidSaveTextDocumentNotification
+    {
+        public static readonly
+            EventType<DidSaveTextDocumentParams> Type =
+            EventType<DidSaveTextDocumentParams>.Create("textDocument/didSave");
+    }
+
+    public class DidSaveTextDocumentParams
+    {
+        public TextDocumentIdentifier TextDocument { get; set; }
+    }
+
     public class DidChangeTextDocumentNotification
     {
         public static readonly

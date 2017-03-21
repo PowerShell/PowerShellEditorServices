@@ -110,6 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.SetEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotification);
             this.SetEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotification);
+            this.SetEventHandler(DidSaveTextDocumentNotification.Type, this.HandleDidSaveTextDocumentNotification);
             this.SetEventHandler(DidChangeTextDocumentNotification.Type, this.HandleDidChangeTextDocumentNotification);
             this.SetEventHandler(DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
 
@@ -515,6 +516,23 @@ function __Expand-Alias {
             }
 
             Logger.Write(LogLevel.Verbose, "Finished closing document.");
+        }
+        protected async Task HandleDidSaveTextDocumentNotification(
+            DidSaveTextDocumentParams saveParams,
+            EventContext eventContext)
+        {
+            ScriptFile savedFile =
+                this.editorSession.Workspace.GetFile(
+                    saveParams.TextDocument.Uri);
+
+            if (savedFile != null)
+            {
+                if (this.editorSession.RemoteFileManager.IsUnderRemoteTempPath(savedFile.FilePath))
+                {
+                    await this.editorSession.RemoteFileManager.SaveRemoteFile(
+                        savedFile.FilePath);
+                }
+            }
         }
 
         protected Task HandleDidChangeTextDocumentNotification(
