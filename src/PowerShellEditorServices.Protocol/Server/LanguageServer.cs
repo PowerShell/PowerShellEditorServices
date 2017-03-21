@@ -1506,17 +1506,12 @@ function __Expand-Alias {
                 }
             }
 
-            // We want a special "sort order" for parameters that is not lexicographical.
-            // Fortunately, PowerShell returns parameters in the preferred sort order by
-            // default (with common params at the end). We just need to make sure the default
-            // order also be the lexicographical order which we do by prefixig the ListItemText
-            // with a leading 0's four digit index.  This would not sort correctly for a list
-            // > 999 parameters but surely we won't have so many items in the "parameter name"
-            // completion list. Technically we don't need the ListItemText at all but it may come
-            // in handy during debug.
-            var sortText = (completionDetails.CompletionType == CompletionType.ParameterName)
-                ? $"{sortIndex:D3}{completionDetails.ListItemText}"
-                : null;
+            // Force the client to maintain the sort order in which the
+            // original completion results were returned. We just need to
+            // make sure the default order also be the lexicographical order
+            // which we do by prefixing the ListItemText with a leading 0's
+            // four digit index.
+            var sortText = $"{sortIndex:D4}{completionDetails.ListItemText}";
 
             return new CompletionItem
             {
