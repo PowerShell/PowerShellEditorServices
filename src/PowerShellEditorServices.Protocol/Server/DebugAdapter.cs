@@ -46,6 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession = editorSession;
             this.editorSession.PowerShellContext.RunspaceChanged += this.powerShellContext_RunspaceChanged;
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
+            this.editorSession.PowerShellContext.DebuggerResumed += this.powerShellContext_DebuggerResumed;
         }
 
         public DebugAdapter(
@@ -60,6 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession.StartDebugSession(hostDetails, profilePaths, editorOperations);
             this.editorSession.PowerShellContext.RunspaceChanged += this.powerShellContext_RunspaceChanged;
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
+            this.editorSession.PowerShellContext.DebuggerResumed += this.powerShellContext_DebuggerResumed;
 
             // The assumption in this overload is that the debugger
             // is running in UI-hosted mode, no terminal interface
@@ -889,6 +891,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         AllThreadsContinued = true
                     });
             }
+        }
+
+        private async void powerShellContext_DebuggerResumed(object sender, DebuggerResumeAction e)
+        {
+            await this.SendEvent(
+                ContinuedEvent.Type,
+                new ContinuedEvent
+                {
+                    AllThreadsContinued = true,
+                    ThreadId = 1
+                });
         }
 
         #endregion

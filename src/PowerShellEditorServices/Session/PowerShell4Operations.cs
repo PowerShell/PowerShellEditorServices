@@ -33,8 +33,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
             PowerShellContext powerShellContext,
             Runspace currentRunspace,
             PSCommand psCommand,
-            bool sendOutputToHost)
+            bool sendOutputToHost,
+            out DebuggerResumeAction? debuggerResumeAction)
         {
+            debuggerResumeAction = null;
             PSDataCollection<PSObject> outputCollection = new PSDataCollection<PSObject>();
 
 #if !PowerShellv3
@@ -56,6 +58,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 currentRunspace.Debugger.ProcessCommand(
                     psCommand,
                     outputCollection);
+
+            // Pass along the debugger's resume action if the user's
+            // command caused one to be returned
+            debuggerResumeAction = commandResults.ResumeAction;
 #endif
 
             IEnumerable<TResult> results = null;

@@ -19,7 +19,8 @@ namespace Microsoft.PowerShell.EditorServices.Session
             PowerShellContext powerShellContext,
             Runspace currentRunspace,
             PSCommand psCommand,
-            bool sendOutputToHost);
+            bool sendOutputToHost,
+            out DebuggerResumeAction? debuggerResumeAction);
     }
 }
 
