@@ -699,15 +699,16 @@ namespace Microsoft.PowerShell.EditorServices
                 // Related to issue #123.
                 if (File.Exists(script) || File.Exists(scriptAbsPath))
                 {
-                    script = EscapePath(script, escapeSpaces: true);
+                    // Dot-source the launched script path
+                    script = ". " + EscapePath(script, escapeSpaces: true);
                 }
 
                 launchedScript = script + " " + arguments;
-                command.AddScript(launchedScript);
+                command.AddScript(launchedScript, false);
             }
             else
             {
-                command.AddCommand(script);
+                command.AddCommand(script, false);
             }
 
             if (writeInputToHost)
