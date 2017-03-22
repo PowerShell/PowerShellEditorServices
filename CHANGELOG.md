@@ -1,5 +1,31 @@
 # PowerShell Editor Services Release History
 
+## 0.11.0
+### Wednesday, March 22, 2017
+
+#### Fixes and improvements
+
+- Added [PowerShell/vscode-powershell#583](https://github.com/PowerShell/vscode-powershell/issues/583) -
+  When you open files in a remote PowerShell session with the `psedit` command,
+  their updated contents are now saved back to the remote machine when you save
+  them in the editor.
+- Added [PowerShell/vscode-powershell#540](https://github.com/PowerShell/vscode-powershell/issues/540) -
+  The scripts that you debug are now dot-sourced into the integrated console's
+  session, allowing you to experiment with the results of your last execution.
+- Added [PowerShell/vscode-powershell#600](https://github.com/PowerShell/vscode-powershell/issues/600) -
+  Debugger commands like `stepInto`, `continue`, and `quit` are now available
+  in the integrated console while debugging a script.
+- Fixed [PowerShell/vscode-powershell#533](https://github.com/PowerShell/vscode-powershell/issues/533) -
+  The backspace key now works in the integrated console on Linux and macOS.  This
+  fix also resolves a few usability problems with the integrated console on all
+  supported OSes.
+- Fixed [PowerShell/vscode-powershell#542](https://github.com/PowerShell/vscode-powershell/issues/542) -
+  Get-Credential now hides keystrokes correctly on Linux and macOS.
+- Fixed [PowerShell/vscode-powershell#579](https://github.com/PowerShell/vscode-powershell/issues/579) -
+  Sorting of IntelliSense results is now consistent with the PowerShell ISE
+- Fixed [PowerShell/vscode-powershell#575](https://github.com/PowerShell/vscode-powershell/issues/575) -
+  The interactive console no longer starts up with errors in the `$Error` variable.
+
 ## 0.10.1
 ### Thursday, March 16, 2017
 
