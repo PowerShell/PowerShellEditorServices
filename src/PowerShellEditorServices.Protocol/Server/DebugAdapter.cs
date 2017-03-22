@@ -295,6 +295,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     "", false, true);
             }
 
+            if (this.editorSession.ConsoleService.EnableConsoleRepl)
+            {
+                await this.WriteUseIntegratedConsoleMessage();
+            }
+
             // Send the InitializedEvent so that the debugger will continue
             // sending configuration requests
             await this.SendEvent(
@@ -743,23 +748,30 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             if (isFromRepl)
             {
-                // Check for special commands
-                if (string.Equals("!ctrlc", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
+                if (!this.editorSession.ConsoleService.EnableConsoleRepl)
                 {
-                    editorSession.PowerShellContext.AbortExecution();
-                }
-                else if (string.Equals("!break", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
-                {
-                    editorSession.DebugService.Break();
+                    // Check for special commands
+                    if (string.Equals("!ctrlc", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        editorSession.PowerShellContext.AbortExecution();
+                    }
+                    else if (string.Equals("!break", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        editorSession.DebugService.Break();
+                    }
+                    else
+                    {
+                        // Send the input through the console service
+                        var notAwaited =
+                            this.editorSession
+                                .PowerShellContext
+                                .ExecuteScriptString(evaluateParams.Expression, false, true)
+                                .ConfigureAwait(false);
+                    }
                 }
                 else
                 {
-                    // Send the input through the console service
-                    var notAwaited =
-                        this.editorSession
-                            .PowerShellContext
-                            .ExecuteScriptString(evaluateParams.Expression, false, true)
-                            .ConfigureAwait(false);
+                    await this.WriteUseIntegratedConsoleMessage();
                 }
             }
             else
@@ -770,10 +782,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // has been resumed, return an empty result in this case.
                 if (editorSession.PowerShellContext.IsDebuggerStopped)
                 {
-                    await editorSession.DebugService.EvaluateExpression(
-                        evaluateParams.Expression,
-                        evaluateParams.FrameId,
-                        isFromRepl);
+                    result =
+                        await editorSession.DebugService.EvaluateExpression(
+                            evaluateParams.Expression,
+                            evaluateParams.FrameId,
+                            isFromRepl);
                 }
 
                 if (result != null)
@@ -790,6 +803,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 {
                     Result = valueString,
                     VariablesReference = variableId
+                });
+        }
+
+        private async Task WriteUseIntegratedConsoleMessage()
+        {
+            await this.SendEvent(
+                OutputEvent.Type,
+                new OutputEventBody
+                {
+                    Output = "\nThe Debug Console is no longer used for PowerShell debugging.  Please use the 'PowerShell Integrated Console' to execute commands in the debugger.  Run the 'PowerShell: Show Integrated Console' command to open it.",
+                    Category = "stderr"
                 });
         }
 
