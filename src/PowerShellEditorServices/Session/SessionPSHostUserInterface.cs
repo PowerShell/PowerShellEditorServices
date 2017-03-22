@@ -471,11 +471,23 @@ namespace Microsoft.PowerShell.EditorServices
             }
             catch (AggregateException e)
             {
+                // Find the right InnerException
+                Exception innerException = e.InnerException;
+                if (innerException is AggregateException)
+                {
+                    innerException = innerException.InnerException;
+                }
+
                 // Was the task cancelled?
-                if (e.InnerExceptions[0] is TaskCanceledException)
+                if (innerException is TaskCanceledException)
                 {
                     // Stop the pipeline if the prompt was cancelled
                     throw new PipelineStoppedException();
+                }
+                else if (innerException is PipelineStoppedException)
+                {
+                    // The prompt is being cancelled, rethrow the exception
+                    throw innerException;
                 }
                 else
                 {
@@ -484,7 +496,7 @@ namespace Microsoft.PowerShell.EditorServices
                         string.Format(
                             "{0} failed, check inner exception for details",
                             promptFunctionName),
-                        e.InnerException);
+                        innerException);
                 }
             }
         }

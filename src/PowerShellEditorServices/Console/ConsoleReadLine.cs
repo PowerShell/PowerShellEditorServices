@@ -20,6 +20,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
     {
         #region Private Field
 
+        private object readKeyLock = new object();
+        private ConsoleKeyInfo? bufferedKey;
         private PowerShellContext powerShellContext;
 
         #endregion
@@ -48,20 +50,24 @@ namespace Microsoft.PowerShell.EditorServices.Console
         public async Task<SecureString> ReadSecureLine(CancellationToken cancellationToken)
         {
             SecureString secureString = new SecureString();
-            ConsoleKeyInfo? typedKey = null;
 
             int initialPromptRow = Console.CursorTop;
             int initialPromptCol = Console.CursorLeft;
             int previousInputLength = 0;
 
-            while (!cancellationToken.IsCancellationRequested)
+            Console.TreatControlCAsInput = true;
+
+            try
             {
-                typedKey = await this.ReadKeyAsync(cancellationToken);
-
-                if (typedKey.HasValue)
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    ConsoleKeyInfo keyInfo = typedKey.Value;
+                    ConsoleKeyInfo keyInfo = await this.ReadKeyAsync(cancellationToken);
 
+                    if ((int)keyInfo.Key == 3 ||
+                        keyInfo.Key == ConsoleKey.C && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+                    {
+                        throw new PipelineStoppedException();
+                    }
                     if (keyInfo.Key == ConsoleKey.Enter)
                     {
                         // Break to return the completed string
@@ -78,9 +84,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             secureString.RemoveAt(secureString.Length - 1);
                         }
                     }
-                    else if (keyInfo.KeyChar != 0)
+                    else if (keyInfo.KeyChar != 0 && !char.IsControl(keyInfo.KeyChar))
                     {
-                        secureString.AppendChar(typedKey.Value.KeyChar);
+                        secureString.AppendChar(keyInfo.KeyChar);
                     }
 
                     // Re-render the secure string characters
@@ -91,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     {
                         Console.Write('*');
                     }
-                    else if (previousInputLength > 0)
+                    else if (previousInputLength > 0 && currentInputLength < previousInputLength)
                     {
                         int row = Console.CursorTop, col = Console.CursorLeft;
 
@@ -110,11 +116,10 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
                     previousInputLength = currentInputLength;
                 }
-                else
-                {
-                    // Read was cancelled, return null
-                    return null;
-                }
+            }
+            finally
+            {
+                Console.TreatControlCAsInput = false;
             }
 
             return secureString;
@@ -143,209 +148,176 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             int currentCursorIndex = 0;
 
-            while (!cancellationToken.IsCancellationRequested)
+            Console.TreatControlCAsInput = true;
+
+            try
             {
-                ConsoleKeyInfo? possibleKeyInfo = await this.ReadKeyAsync(cancellationToken);
-
-                if (!possibleKeyInfo.HasValue)
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    // The read operation was cancelled
-                    return null;
-                }
+                    ConsoleKeyInfo keyInfo = await this.ReadKeyAsync(cancellationToken);
 
-                ConsoleKeyInfo keyInfo = possibleKeyInfo.Value;
+                    // Do final position calculation after the key has been pressed
+                    // because the window could have been resized before then
+                    int promptStartCol = initialCursorCol;
+                    int promptStartRow = initialCursorRow;
+                    int consoleWidth = Console.WindowWidth;
 
-                // Do final position calculation after the key has been pressed
-                // because the window could have been resized before then
-                int promptStartCol = initialCursorCol;
-                int promptStartRow = initialCursorRow;
-                int consoleWidth = Console.WindowWidth;
-
-                // Overwrite any control character if necessary
-                this.OverwriteControlCharacter(
-                    keyInfo,
-                    inputLine,
-                    promptStartCol,
-                    promptStartRow,
-                    consoleWidth,
-                    currentCursorIndex);
-
-                if (keyInfo.Key == ConsoleKey.Tab && isCommandLine)
-                {
-                    if (currentCompletion == null)
+                    if ((int)keyInfo.Key == 3 ||
+                        keyInfo.Key == ConsoleKey.C && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
                     {
-                        inputBeforeCompletion = inputLine.ToString();
-                        inputAfterCompletion = null;
-
-                        // TODO: This logic should be moved to AstOperations or similar!
-
-                        if (this.powerShellContext.IsDebuggerStopped)
+                        throw new PipelineStoppedException();
+                    }
+                    else if (keyInfo.Key == ConsoleKey.Tab && isCommandLine)
+                    {
+                        if (currentCompletion == null)
                         {
-                            PSCommand command = new PSCommand();
-                            command.AddCommand("TabExpansion2");
-                            command.AddParameter("InputScript", inputBeforeCompletion);
-                            command.AddParameter("CursorColumn", currentCursorIndex);
-                            command.AddParameter("Options", null);
+                            inputBeforeCompletion = inputLine.ToString();
+                            inputAfterCompletion = null;
 
-                            var results =
-                                await this.powerShellContext.ExecuteCommand<CommandCompletion>(command, false, false);
+                            // TODO: This logic should be moved to AstOperations or similar!
 
-                            currentCompletion = results.FirstOrDefault();
-                        }
-                        else
-                        {
-                            using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandle())
-                            using (PowerShell powerShell = PowerShell.Create())
+                            if (this.powerShellContext.IsDebuggerStopped)
                             {
-                                powerShell.Runspace = runspaceHandle.Runspace;
-                                currentCompletion =
-                                    CommandCompletion.CompleteInput(
-                                        inputBeforeCompletion,
-                                        currentCursorIndex,
-                                        null,
-                                        powerShell);
+                                PSCommand command = new PSCommand();
+                                command.AddCommand("TabExpansion2");
+                                command.AddParameter("InputScript", inputBeforeCompletion);
+                                command.AddParameter("CursorColumn", currentCursorIndex);
+                                command.AddParameter("Options", null);
 
-                                if (currentCompletion.CompletionMatches.Count > 0)
-                                {
-                                    int replacementEndIndex =
-                                            currentCompletion.ReplacementIndex +
-                                            currentCompletion.ReplacementLength;
+                                var results =
+                                    await this.powerShellContext.ExecuteCommand<CommandCompletion>(command, false, false);
 
-                                    inputAfterCompletion =
-                                        inputLine.ToString(
-                                            replacementEndIndex,
-                                            inputLine.Length - replacementEndIndex);
-                                }
-                                else
+                                currentCompletion = results.FirstOrDefault();
+                            }
+                            else
+                            {
+                                using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandle())
+                                using (PowerShell powerShell = PowerShell.Create())
                                 {
-                                    currentCompletion = null;
+                                    powerShell.Runspace = runspaceHandle.Runspace;
+                                    currentCompletion =
+                                        CommandCompletion.CompleteInput(
+                                            inputBeforeCompletion,
+                                            currentCursorIndex,
+                                            null,
+                                            powerShell);
+
+                                    if (currentCompletion.CompletionMatches.Count > 0)
+                                    {
+                                        int replacementEndIndex =
+                                                currentCompletion.ReplacementIndex +
+                                                currentCompletion.ReplacementLength;
+
+                                        inputAfterCompletion =
+                                            inputLine.ToString(
+                                                replacementEndIndex,
+                                                inputLine.Length - replacementEndIndex);
+                                    }
+                                    else
+                                    {
+                                        currentCompletion = null;
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    CompletionResult completion =
-                        currentCompletion?.GetNextResult(
-                            !keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift));
+                        CompletionResult completion =
+                            currentCompletion?.GetNextResult(
+                                !keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift));
 
-                    if (completion != null)
-                    {
-                        currentCursorIndex =
-                            this.InsertInput(
-                                inputLine,
-                                promptStartCol,
-                                promptStartRow,
-                                $"{completion.CompletionText}{inputAfterCompletion}",
-                                currentCursorIndex,
-                                insertIndex: currentCompletion.ReplacementIndex,
-                                replaceLength: inputLine.Length - currentCompletion.ReplacementIndex,
-                                finalCursorIndex: currentCompletion.ReplacementIndex + completion.CompletionText.Length);
-                    }
-                }
-                else if (keyInfo.Key == ConsoleKey.LeftArrow)
-                {
-                    currentCompletion = null;
-
-                    if (currentCursorIndex > 0)
-                    {
-                        currentCursorIndex =
-                            this.MoveCursorToIndex(
-                                promptStartCol,
-                                promptStartRow,
-                                consoleWidth,
-                                currentCursorIndex - 1);
-                    }
-                }
-                else if (keyInfo.Key == ConsoleKey.Home)
-                {
-                    currentCompletion = null;
-
-                    currentCursorIndex =
-                        this.MoveCursorToIndex(
-                            promptStartCol,
-                            promptStartRow,
-                            consoleWidth,
-                            0);
-                }
-                else if (keyInfo.Key == ConsoleKey.RightArrow)
-                {
-                    currentCompletion = null;
-
-                    if (currentCursorIndex < inputLine.Length)
-                    {
-                        currentCursorIndex =
-                            this.MoveCursorToIndex(
-                                promptStartCol,
-                                promptStartRow,
-                                consoleWidth,
-                                currentCursorIndex + 1);
-                    }
-                }
-                else if (keyInfo.Key == ConsoleKey.End)
-                {
-                    currentCompletion = null;
-
-                    currentCursorIndex =
-                        this.MoveCursorToIndex(
-                            promptStartCol,
-                            promptStartRow,
-                            consoleWidth,
-                            inputLine.Length);
-                }
-                else if (keyInfo.Key == ConsoleKey.UpArrow && isCommandLine)
-                {
-                    currentCompletion = null;
-
-                    // TODO: Ctrl+Up should allow navigation in multi-line input
-
-                    if (currentHistory == null)
-                    {
-                        historyIndex = -1;
-
-                        PSCommand command = new PSCommand();
-                        command.AddCommand("Get-History");
-
-                        currentHistory =
-                            await this.powerShellContext.ExecuteCommand<PSObject>(
-                                command,
-                                false,
-                                false) as Collection<PSObject>;
-
-                        if (currentHistory != null)
+                        if (completion != null)
                         {
-                            historyIndex = currentHistory.Count;
+                            currentCursorIndex =
+                                this.InsertInput(
+                                    inputLine,
+                                    promptStartCol,
+                                    promptStartRow,
+                                    $"{completion.CompletionText}{inputAfterCompletion}",
+                                    currentCursorIndex,
+                                    insertIndex: currentCompletion.ReplacementIndex,
+                                    replaceLength: inputLine.Length - currentCompletion.ReplacementIndex,
+                                    finalCursorIndex: currentCompletion.ReplacementIndex + completion.CompletionText.Length);
                         }
                     }
-
-                    if (currentHistory != null && currentHistory.Count > 0 && historyIndex > 0)
+                    else if (keyInfo.Key == ConsoleKey.LeftArrow)
                     {
-                        historyIndex--;
+                        currentCompletion = null;
+
+                        if (currentCursorIndex > 0)
+                        {
+                            currentCursorIndex =
+                                this.MoveCursorToIndex(
+                                    promptStartCol,
+                                    promptStartRow,
+                                    consoleWidth,
+                                    currentCursorIndex - 1);
+                        }
+                    }
+                    else if (keyInfo.Key == ConsoleKey.Home)
+                    {
+                        currentCompletion = null;
 
                         currentCursorIndex =
-                            this.InsertInput(
-                                inputLine,
+                            this.MoveCursorToIndex(
                                 promptStartCol,
                                 promptStartRow,
-                                (string)currentHistory[historyIndex].Properties["CommandLine"].Value,
-                                currentCursorIndex,
-                                insertIndex: 0,
-                                replaceLength: inputLine.Length);
+                                consoleWidth,
+                                0);
                     }
-                }
-                else if (keyInfo.Key == ConsoleKey.DownArrow && isCommandLine)
-                {
-                    currentCompletion = null;
-
-                    // The down arrow shouldn't cause history to be loaded,
-                    // it's only for navigating an active history array
-
-                    if (historyIndex > -1 && historyIndex < currentHistory.Count &&
-                        currentHistory != null && currentHistory.Count > 0)
+                    else if (keyInfo.Key == ConsoleKey.RightArrow)
                     {
-                        historyIndex++;
+                        currentCompletion = null;
 
-                        if (historyIndex < currentHistory.Count)
+                        if (currentCursorIndex < inputLine.Length)
                         {
+                            currentCursorIndex =
+                                this.MoveCursorToIndex(
+                                    promptStartCol,
+                                    promptStartRow,
+                                    consoleWidth,
+                                    currentCursorIndex + 1);
+                        }
+                    }
+                    else if (keyInfo.Key == ConsoleKey.End)
+                    {
+                        currentCompletion = null;
+
+                        currentCursorIndex =
+                            this.MoveCursorToIndex(
+                                promptStartCol,
+                                promptStartRow,
+                                consoleWidth,
+                                inputLine.Length);
+                    }
+                    else if (keyInfo.Key == ConsoleKey.UpArrow && isCommandLine)
+                    {
+                        currentCompletion = null;
+
+                        // TODO: Ctrl+Up should allow navigation in multi-line input
+
+                        if (currentHistory == null)
+                        {
+                            historyIndex = -1;
+
+                            PSCommand command = new PSCommand();
+                            command.AddCommand("Get-History");
+
+                            currentHistory =
+                                await this.powerShellContext.ExecuteCommand<PSObject>(
+                                    command,
+                                    false,
+                                    false) as Collection<PSObject>;
+
+                            if (currentHistory != null)
+                            {
+                                historyIndex = currentHistory.Count;
+                            }
+                        }
+
+                        if (currentHistory != null && currentHistory.Count > 0 && historyIndex > 0)
+                        {
+                            historyIndex--;
+
                             currentCursorIndex =
                                 this.InsertInput(
                                     inputLine,
@@ -356,7 +328,65 @@ namespace Microsoft.PowerShell.EditorServices.Console
                                     insertIndex: 0,
                                     replaceLength: inputLine.Length);
                         }
-                        else if (historyIndex == currentHistory.Count)
+                    }
+                    else if (keyInfo.Key == ConsoleKey.DownArrow && isCommandLine)
+                    {
+                        currentCompletion = null;
+
+                        // The down arrow shouldn't cause history to be loaded,
+                        // it's only for navigating an active history array
+
+                        if (historyIndex > -1 && historyIndex < currentHistory.Count &&
+                            currentHistory != null && currentHistory.Count > 0)
+                        {
+                            historyIndex++;
+
+                            if (historyIndex < currentHistory.Count)
+                            {
+                                currentCursorIndex =
+                                    this.InsertInput(
+                                        inputLine,
+                                        promptStartCol,
+                                        promptStartRow,
+                                        (string)currentHistory[historyIndex].Properties["CommandLine"].Value,
+                                        currentCursorIndex,
+                                        insertIndex: 0,
+                                        replaceLength: inputLine.Length);
+                            }
+                            else if (historyIndex == currentHistory.Count)
+                            {
+                                currentCursorIndex =
+                                    this.InsertInput(
+                                        inputLine,
+                                        promptStartCol,
+                                        promptStartRow,
+                                        string.Empty,
+                                        currentCursorIndex,
+                                        insertIndex: 0,
+                                        replaceLength: inputLine.Length);
+                            }
+                        }
+                    }
+                    else if (keyInfo.Key == ConsoleKey.Escape)
+                    {
+                        currentCompletion = null;
+                        historyIndex = currentHistory != null ? currentHistory.Count : -1;
+
+                        currentCursorIndex =
+                            this.InsertInput(
+                                inputLine,
+                                promptStartCol,
+                                promptStartRow,
+                                string.Empty,
+                                currentCursorIndex,
+                                insertIndex: 0,
+                                replaceLength: inputLine.Length);
+                    }
+                    else if (keyInfo.Key == ConsoleKey.Backspace)
+                    {
+                        currentCompletion = null;
+
+                        if (currentCursorIndex > 0)
                         {
                             currentCursorIndex =
                                 this.InsertInput(
@@ -365,118 +395,106 @@ namespace Microsoft.PowerShell.EditorServices.Console
                                     promptStartRow,
                                     string.Empty,
                                     currentCursorIndex,
-                                    insertIndex: 0,
-                                    replaceLength: inputLine.Length);
+                                    insertIndex: currentCursorIndex - 1,
+                                    replaceLength: 1,
+                                    finalCursorIndex: currentCursorIndex - 1);
                         }
                     }
-                }
-                else if (keyInfo.Key == ConsoleKey.Escape)
-                {
-                    currentCompletion = null;
-                    historyIndex = currentHistory != null ? currentHistory.Count : -1;
-
-                    currentCursorIndex =
-                        this.InsertInput(
-                            inputLine,
-                            promptStartCol,
-                            promptStartRow,
-                            string.Empty,
-                            currentCursorIndex,
-                            insertIndex: 0,
-                            replaceLength: inputLine.Length);
-                }
-                else if (keyInfo.Key == ConsoleKey.Backspace)
-                {
-                    currentCompletion = null;
-
-                    if (currentCursorIndex > 0)
+                    else if (keyInfo.Key == ConsoleKey.Delete)
                     {
+                        currentCompletion = null;
+
+                        if (currentCursorIndex < inputLine.Length)
+                        {
+                            currentCursorIndex =
+                                this.InsertInput(
+                                    inputLine,
+                                    promptStartCol,
+                                    promptStartRow,
+                                    string.Empty,
+                                    currentCursorIndex,
+                                    replaceLength: 1,
+                                    finalCursorIndex: currentCursorIndex);
+                        }
+                    }
+                    else if (keyInfo.Key == ConsoleKey.Enter)
+                    {
+                        string completedInput = inputLine.ToString();
+                        currentCompletion = null;
+                        currentHistory = null;
+
+                        //if ((keyInfo.Modifiers & ConsoleModifiers.Shift) == ConsoleModifiers.Shift)
+                        //{
+                        //    // TODO: Start a new line!
+                        //    continue;
+                        //}
+
+                        Parser.ParseInput(
+                            completedInput,
+                            out Token[] tokens,
+                            out ParseError[] parseErrors);
+
+                        //if (parseErrors.Any(e => e.IncompleteInput))
+                        //{
+                        //    // TODO: Start a new line!
+                        //    continue;
+                        //}
+
+                        return completedInput;
+                    }
+                    else if (keyInfo.KeyChar != 0 && !char.IsControl(keyInfo.KeyChar))
+                    {
+                        // Normal character input
+                        currentCompletion = null;
+
                         currentCursorIndex =
                             this.InsertInput(
                                 inputLine,
                                 promptStartCol,
                                 promptStartRow,
-                                string.Empty,
+                                keyInfo.KeyChar.ToString(),
                                 currentCursorIndex,
-                                insertIndex: currentCursorIndex - 1,
-                                replaceLength: 1,
-                                finalCursorIndex: currentCursorIndex - 1);
+                                finalCursorIndex: currentCursorIndex + 1);
                     }
                 }
-                else if (keyInfo.Key == ConsoleKey.Delete)
-                {
-                    currentCompletion = null;
-
-                    if (currentCursorIndex < inputLine.Length)
-                    {
-                        currentCursorIndex =
-                            this.InsertInput(
-                                inputLine,
-                                promptStartCol,
-                                promptStartRow,
-                                string.Empty,
-                                currentCursorIndex,
-                                replaceLength: 1,
-                                finalCursorIndex: currentCursorIndex);
-                    }
-                }
-                else if (keyInfo.Key == ConsoleKey.Enter)
-                {
-                    string completedInput = inputLine.ToString();
-                    currentCompletion = null;
-                    currentHistory = null;
-
-                    //if ((keyInfo.Modifiers & ConsoleModifiers.Shift) == ConsoleModifiers.Shift)
-                    //{
-                    //    // TODO: Start a new line!
-                    //    continue;
-                    //}
-
-                    Parser.ParseInput(
-                        completedInput,
-                        out Token[] tokens,
-                        out ParseError[] parseErrors);
-
-                    //if (parseErrors.Any(e => e.IncompleteInput))
-                    //{
-                    //    // TODO: Start a new line!
-                    //    continue;
-                    //}
-
-                    return completedInput;
-                }
-                else if (keyInfo.KeyChar != 0)
-                {
-                    // Normal character input
-                    currentCompletion = null;
-
-                    currentCursorIndex =
-                        this.InsertInput(
-                            inputLine,
-                            promptStartCol,
-                            promptStartRow,
-                            keyInfo.KeyChar.ToString(),
-                            currentCursorIndex,
-                            finalCursorIndex: currentCursorIndex + 1);
-                }
+            }
+            finally
+            {
+                Console.TreatControlCAsInput = false;
             }
 
             return null;
         }
 
-        private async Task<ConsoleKeyInfo?> ReadKeyAsync(CancellationToken cancellationToken)
+        private async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                if (Console.KeyAvailable)
-                {
-                    return Console.ReadKey(true);
-                }
+            return await
+                Task.Factory.StartNew(
+                    () =>
+                    {
+                        ConsoleKeyInfo keyInfo;
 
-                await Task.Delay(25);
-            }
+                        lock (this.readKeyLock)
+                        {
+                            if (this.bufferedKey.HasValue)
+                            {
+                                keyInfo = this.bufferedKey.Value;
+                                this.bufferedKey = null;
+                            }
+                            else
+                            {
+                                keyInfo = Console.ReadKey(true);
 
-            return null;
+                                if (cancellationToken.IsCancellationRequested)
+                                {
+                                    this.bufferedKey = keyInfo;
+                                    throw new TaskCanceledException();
+                                }
+                            }
+                        }
+
+                        return keyInfo;
+                    });
         }
 
         private int CalculateIndexFromCursor(
@@ -599,70 +617,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
             Console.SetCursorPosition(newCursorCol, newCursorRow);
 
             return newCursorIndex;
-        }
-
-        private void OverwriteControlCharacter(
-            ConsoleKeyInfo keyInfo,
-            StringBuilder inputLine,
-            int promptStartCol,
-            int promptStartRow,
-            int consoleWidth,
-            int cursorIndex)
-        {
-            bool overwriteNeeded = false;
-
-            switch (keyInfo.Key)
-            {
-                case ConsoleKey.LeftArrow:
-                case ConsoleKey.RightArrow:
-                case ConsoleKey.Delete:
-                case ConsoleKey.Backspace:
-                case ConsoleKey.Home:
-                case ConsoleKey.End:
-                case ConsoleKey.Escape:
-                case ConsoleKey.Tab:
-                    overwriteNeeded = true;
-                    break;
-            }
-
-            if (overwriteNeeded)
-            {
-                // TODO: Adjust this based on actual escape char length
-                const int overwriteCount = 5;
-
-                this.CalculateCursorFromIndex(
-                    promptStartCol,
-                    promptStartRow,
-                    consoleWidth,
-                    cursorIndex,
-                    out int cursorCol,
-                    out int cursorRow);
-
-                Console.SetCursorPosition(cursorCol, cursorRow);
-
-                // Calculate the index of the input line to overwrite
-                // plus any extra padding that's needed to cover characters
-                // that extend outside the length of the input string
-                int overwriteIndex = cursorIndex + overwriteCount;
-                int padLength = Math.Max(0, overwriteIndex - inputLine.Length);
-                if (padLength > 0)
-                {
-                    overwriteIndex -= padLength;
-                }
-
-                // Re-render affected input string and padding characters
-                Console.Write(
-                    inputLine.ToString(
-                        cursorIndex,
-                        overwriteIndex - cursorIndex));
-
-                Console.Write(
-                    new string(
-                        ' ',
-                        padLength));
-
-                Console.SetCursorPosition(cursorCol, cursorRow);
-            }
         }
 
         #endregion

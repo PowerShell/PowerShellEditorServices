@@ -114,14 +114,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
                         Task.Factory.StartNew(
                             async () =>
                             {
-                                // Set the thread's name to help with debugging
-                                Thread.CurrentThread.Name = "Terminal Input Loop Thread";
-
                                 await this.StartReplLoop(this.readLineCancellationToken.Token);
-                            },
-                            CancellationToken.None,
-                            TaskCreationOptions.LongRunning,
-                            TaskScheduler.Default);
+                            });
                 }
                 else
                 {
@@ -313,6 +307,18 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     commandString =
                         await this.consoleReadLine.ReadCommandLine(
                             cancellationToken);
+                }
+                catch (PipelineStoppedException)
+                {
+                    this.WriteOutput(
+                        "^C",
+                        true,
+                        OutputType.Normal,
+                        foregroundColor: ConsoleColor.Red);
+                }
+                catch (TaskCanceledException)
+                {
+                    // Do nothing here, the while loop condition will exit.
                 }
                 catch (Exception e) // Narrow this if possible
                 {
