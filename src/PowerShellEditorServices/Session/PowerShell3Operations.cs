@@ -28,7 +28,8 @@ namespace Microsoft.PowerShell.EditorServices.Session
             PowerShellContext powerShellContext,
             Runspace currentRunspace,
             PSCommand psCommand,
-            bool sendOutputToHost)
+            bool sendOutputToHost,
+            out DebuggerResumeAction? debuggerResumeAction)
         {
             IEnumerable<TResult> executionResult = null;
 
@@ -62,6 +63,9 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     powerShellContext.WriteOutput(line.ToString(), true);
                 }
             }
+
+            // No DebuggerResumeAction result for PowerShell v3
+            debuggerResumeAction = null;
 
             return executionResult;
         }

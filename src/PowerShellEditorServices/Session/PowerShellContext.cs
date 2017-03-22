@@ -699,15 +699,16 @@ namespace Microsoft.PowerShell.EditorServices
                 // Related to issue #123.
                 if (File.Exists(script) || File.Exists(scriptAbsPath))
                 {
-                    script = EscapePath(script, escapeSpaces: true);
+                    // Dot-source the launched script path
+                    script = ". " + EscapePath(script, escapeSpaces: true);
                 }
 
                 launchedScript = script + " " + arguments;
-                command.AddScript(launchedScript);
+                command.AddScript(launchedScript, false);
             }
             else
             {
-                command.AddCommand(script);
+                command.AddCommand(script, false);
             }
 
             if (writeInputToHost)
@@ -1088,11 +1089,21 @@ namespace Microsoft.PowerShell.EditorServices
                     "Attempting to execute command(s) in the debugger:\r\n\r\n{0}",
                     GetStringForPSCommand(psCommand)));
 
-            return this.versionSpecificOperations.ExecuteCommandInDebugger<TResult>(
-                this,
-                this.CurrentRunspace.Runspace,
-                psCommand,
-                sendOutputToHost);
+            IEnumerable<TResult> output =
+                this.versionSpecificOperations.ExecuteCommandInDebugger<TResult>(
+                    this,
+                    this.CurrentRunspace.Runspace,
+                    psCommand,
+                    sendOutputToHost,
+                    out DebuggerResumeAction? debuggerResumeAction);
+
+            if (debuggerResumeAction.HasValue)
+            {
+                // Resume the debugger with the specificed action
+                this.ResumeDebugger(debuggerResumeAction.Value);
+            }
+
+            return output;
         }
 
         internal void WriteOutput(string outputString, bool includeNewLine)
