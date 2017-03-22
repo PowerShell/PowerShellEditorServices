@@ -131,6 +131,10 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             if (this.readLineCancellationToken != null)
             {
+                // Set this to false so that Ctrl+C isn't trapped by any
+                // lingering ReadKey
+                Console.TreatControlCAsInput = false;
+
                 this.readLineCancellationToken.Cancel();
                 this.readLineCancellationToken = null;
             }
