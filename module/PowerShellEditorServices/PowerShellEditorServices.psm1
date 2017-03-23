@@ -95,3 +95,32 @@ function Start-EditorServicesHost {
 
     return $editorServicesHost
 }
+
+function Get-PowerShellEditorServicesVersion {
+    $nl = [System.Environment]::NewLine
+
+    $versionInfo = "PSVersionTable:`n$($PSVersionTable | Out-String)" -replace '\n$', ''
+
+    if ($IsLinux) {
+        $versionInfo += "Linux version: $(lsb_release -d)$nl"
+    }
+    elseif ($IsOSX) {
+        $versionInfo += "macOS version: $(lsb_release -d)$nl"
+    }
+    else {
+        $versionInfo += "Windows version: $(Get-CimInstance Win32_OperatingSystem | Foreach-Object Version)$nl"
+    }
+
+    $versionInfo += $nl
+
+    $OFS = ", "
+    $versionInfo += "VSCode version: $(code -v)$nl"
+    $OFS = "$nl    "
+    $versionInfo += "VSCode extensions:$nl    $(code --list-extensions --show-versions)"
+
+    if (!$IsLinux -and !$IsOSX) {
+        $versionInfo | Microsoft.PowerShell.Management\Set-Clipboard
+    }
+
+    $versionInfo
+}
