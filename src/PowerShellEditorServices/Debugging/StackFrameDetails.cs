@@ -36,14 +36,24 @@ namespace Microsoft.PowerShell.EditorServices
         public string FunctionName { get; private set; }
 
         /// <summary>
-        /// Gets the line number of the script where the stack frame occurred.
+        /// Gets the start line number of the script where the stack frame occurred.
         /// </summary>
-        public int LineNumber { get; private set; }
+        public int StartLineNumber { get; internal set; }
 
         /// <summary>
-        /// Gets the column number of the line where the stack frame occurred.
+        /// Gets the line number of the script where the stack frame occurred.
         /// </summary>
-        public int ColumnNumber { get; private set; }
+        public int EndLineNumber { get; internal set; }
+
+        /// <summary>
+        /// Gets the start column number of the line where the stack frame occurred.
+        /// </summary>
+        public int StartColumnNumber { get; internal set; }
+
+        /// <summary>
+        /// Gets the end column number of the line where the stack frame occurred.
+        /// </summary>
+        public int EndColumnNumber { get; internal set; }
 
         /// <summary>
         /// Gets or sets the VariableContainerDetails that contains the auto variables.
@@ -82,8 +92,8 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 ScriptPath = (callStackFrameObject.Properties["ScriptName"].Value as string) ?? NoFileScriptPath,
                 FunctionName = callStackFrameObject.Properties["FunctionName"].Value as string,
-                LineNumber = (int)(callStackFrameObject.Properties["ScriptLineNumber"].Value ?? 0),
-                ColumnNumber = 0,   // Column number isn't given in PowerShell stack frames
+                StartLineNumber = (int)(callStackFrameObject.Properties["ScriptLineNumber"].Value ?? 0),
+                StartColumnNumber = 0,   // Column number isn't given in PowerShell stack frames
                 AutoVariables = autoVariables,
                 LocalVariables = localVariables
             };

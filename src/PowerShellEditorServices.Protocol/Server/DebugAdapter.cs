@@ -857,8 +857,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     {
                         Path = e.ScriptPath,
                     },
-                    Line = e.LineNumber,
-                    Column = e.ColumnNumber,
                     ThreadId = 1,
                     Reason = debuggerStoppedReason
                 });

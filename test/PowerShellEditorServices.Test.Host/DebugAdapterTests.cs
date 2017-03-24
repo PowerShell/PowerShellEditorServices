@@ -85,13 +85,25 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             // Wait for a couple breakpoints
             StoppedEventBody stoppedDetails = await breakEventTask;
             Assert.Equal(DebugScriptPath, stoppedDetails.Source.Path);
-            Assert.Equal(5, stoppedDetails.Line);
+
+            var stackTraceResponse =
+                await this.SendRequest(
+                    StackTraceRequest.Type,
+                    new StackTraceRequestArguments());
+
+            Assert.Equal(5, stackTraceResponse.StackFrames[0].Line);
 
             breakEventTask = this.WaitForEvent(StoppedEvent.Type);
             await this.SendRequest(ContinueRequest.Type, new object());
             stoppedDetails = await breakEventTask;
             Assert.Equal(DebugScriptPath, stoppedDetails.Source.Path);
-            Assert.Equal(7, stoppedDetails.Line);
+
+            stackTraceResponse =
+                await this.SendRequest(
+                    StackTraceRequest.Type,
+                    new StackTraceRequestArguments());
+
+            Assert.Equal(7, stackTraceResponse.StackFrames[0].Line);
 
             // Abort script execution
             await this.SendRequest(DisconnectRequest.Type, new object());

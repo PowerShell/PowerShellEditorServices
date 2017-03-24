@@ -15,7 +15,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 
         public int Line { get; set; }
 
+        public int? EndLine { get; set; }
+
         public int Column { get; set; }
+
+        public int? EndColumn { get; set; }
 
         //        /** An identifier for the stack frame. */
         //id: number;
@@ -38,8 +42,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
             {
                 Id = id,
                 Name = stackFrame.FunctionName,
-                Line = stackFrame.LineNumber,
-                Column = stackFrame.ColumnNumber,
+                Line = stackFrame.StartLineNumber,
+                EndLine = stackFrame.EndLineNumber > 0 ? (int?)stackFrame.EndLineNumber : null,
+                Column = stackFrame.StartColumnNumber,
+                EndColumn = stackFrame.EndColumnNumber > 0 ? (int?)stackFrame.EndColumnNumber : null,
                 Source = new Source
                 {
                     Path = stackFrame.ScriptPath
