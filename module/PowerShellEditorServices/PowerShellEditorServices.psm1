@@ -96,6 +96,50 @@ function Start-EditorServicesHost {
     return $editorServicesHost
 }
 
+function Compress-LogDir {
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param (
+        [Parameter(Mandatory=$true, Position=0, HelpMessage="Literal path to a log directory.")]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    begin {
+        function LegacyZipFolder($Path, $ZipPath) {
+            if (!(Test-Path($ZipPath))) {
+                Set-Content -LiteralPath $ZipPath -Value ("PK" + [char]5 + [char]6 + ("$([char]0)" * 18))
+                (Get-Item $ZipPath).IsReadOnly = $false
+            }
+
+            $shellApplication = New-Object -ComObject Shell.Application
+            $zipPackage = $shellApplication.NameSpace($ZipPath)
+
+            foreach ($file in (Get-ChildItem -LiteralPath $Path)) {
+                $zipPackage.CopyHere($file.FullName)
+                Start-Sleep -MilliSeconds 500
+            }
+        }
+    }
+
+    end {
+        $zipPath = ((Convert-Path $Path) -replace '(\\|/)$','') + ".zip"
+
+        if (Get-Command Microsoft.PowerShell.Archive\Compress-Archive) {
+            if ($PSCmdlet.ShouldProcess($zipPath, "Create ZIP")) {
+                Microsoft.PowerShell.Archive\Compress-Archive -LiteralPath $Path -DestinationPath $zipPath -Force -CompressionLevel Optimal
+                $zipPath
+            }
+        }
+        else {
+            if ($PSCmdlet.ShouldProcess($zipPath, "Create Legacy ZIP")) {
+                LegacyZipFolder $Path $zipPath
+                $zipPath
+            }
+        }
+    }
+}
+
 function Get-PowerShellEditorServicesVersion {
     $nl = [System.Environment]::NewLine
 
