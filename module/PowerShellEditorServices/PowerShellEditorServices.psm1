@@ -99,27 +99,25 @@ function Start-EditorServicesHost {
 function Get-PowerShellEditorServicesVersion {
     $nl = [System.Environment]::NewLine
 
-    $versionInfo = "PSVersionTable:`n$($PSVersionTable | Out-String)" -replace '\n$', ''
+    $versionInfo = "PSES module version: $($MyInvocation.MyCommand.Module.Version)$nl"
 
+    $versionInfo += "PSVersion:           $($PSVersionTable.PSVersion)$nl"
+    if ($PSVersionTable.PSEdition) {
+        $versionInfo += "PSEdition:           $($PSVersionTable.PSEdition)$nl"
+    }
+    $versionInfo += "PSBuildVersion:      $($PSVersionTable.BuildVersion)$nl"
+    $versionInfo += "CLRVersion:          $($PSVersionTable.CLRVersion)$nl"
+
+    $versionInfo += "Operating system:    "
     if ($IsLinux) {
-        $versionInfo += "Linux version: $(lsb_release -d)$nl"
+        $versionInfo += "Linux $(lsb_release -d -s)$nl"
     }
     elseif ($IsOSX) {
-        $versionInfo += "macOS version: $(lsb_release -d)$nl"
+        $versionInfo += "macOS $(lsb_release -d -s)$nl"
     }
     else {
-        $versionInfo += "Windows version: $(Get-CimInstance Win32_OperatingSystem | Foreach-Object Version)$nl"
-    }
-
-    $versionInfo += $nl
-
-    $OFS = ", "
-    $versionInfo += "VSCode version: $(code -v)$nl"
-    $OFS = "$nl    "
-    $versionInfo += "VSCode extensions:$nl    $(code --list-extensions --show-versions)"
-
-    if (!$IsLinux -and !$IsOSX) {
-        $versionInfo | Microsoft.PowerShell.Management\Set-Clipboard
+        $osInfo = Get-CimInstance Win32_OperatingSystem
+        $versionInfo += "Windows $($osInfo.OSArchitecture) $($osInfo.Version)$nl"
     }
 
     $versionInfo
