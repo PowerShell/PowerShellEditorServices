@@ -28,10 +28,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 
         public Source Source { get; set; } 
 
-        public int Line { get; set; }
-
-        public int Column { get; set; }
-
         /// <summary>
         /// Gets or sets additional information such as an error message.
         /// </summary>

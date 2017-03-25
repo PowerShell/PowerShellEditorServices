@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Debugging;
@@ -41,6 +42,7 @@ namespace Microsoft.PowerShell.EditorServices
         private VariableContainerDetails globalScopeVariables;
         private VariableContainerDetails scriptScopeVariables;
         private StackFrameDetails[] stackFrameDetails;
+        private PropertyInfo invocationTypeScriptPositionProperty;
 
         private static int breakpointHitCounter = 0;
 
@@ -81,6 +83,12 @@ namespace Microsoft.PowerShell.EditorServices
             this.powerShellContext.BreakpointUpdated += this.OnBreakpointUpdated;
 
             this.remoteFileManager = remoteFileManager;
+
+            this.invocationTypeScriptPositionProperty =
+                typeof(InvocationInfo)
+                    .GetProperty(
+                        "ScriptPosition",
+                        BindingFlags.NonPublic | BindingFlags.Instance);
         }
 
         #endregion
@@ -1098,6 +1106,22 @@ namespace Microsoft.PowerShell.EditorServices
                     await this.remoteFileManager.FetchRemoteFile(
                         e.InvocationInfo.ScriptName,
                         this.powerShellContext.CurrentRunspace);
+            }
+
+            if (this.stackFrameDetails.Length > 0)
+            {
+                // Augment the top stack frame with details from the stop event
+                IScriptExtent scriptExtent =
+                    this.invocationTypeScriptPositionProperty
+                        .GetValue(e.InvocationInfo) as IScriptExtent;
+
+                if (scriptExtent != null)
+                {
+                    this.stackFrameDetails[0].StartLineNumber = scriptExtent.StartLineNumber;
+                    this.stackFrameDetails[0].EndLineNumber = scriptExtent.EndLineNumber;
+                    this.stackFrameDetails[0].StartColumnNumber = scriptExtent.StartColumnNumber;
+                    this.stackFrameDetails[0].EndColumnNumber = scriptExtent.EndColumnNumber;
+                }
             }
 
             // Notify the host that the debugger is stopped
