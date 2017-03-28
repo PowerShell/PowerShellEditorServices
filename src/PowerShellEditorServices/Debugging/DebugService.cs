@@ -712,8 +712,24 @@ namespace Microsoft.PowerShell.EditorServices
 
         private bool AddToAutoVariables(PSObject psvariable, string scope)
         {
+            if ((scope == VariableContainerDetails.GlobalScopeName) ||
+                (scope == VariableContainerDetails.ScriptScopeName))
+            {
+                // We don't A) have a good way of distinguishing built-in from user created variables
+                // and B) globalScopeVariables.Children.ContainsKey() doesn't work for built-in variables
+                // stored in a child variable container within the globals variable container.
+                return false;
+            }
+
             string variableName = psvariable.Properties["Name"].Value as string;
             object variableValue = psvariable.Properties["Value"].Value;
+
+            // Don't put any variables created by PSES in the Auto variable container.
+            if (variableName.StartsWith(PsesGlobalVariableNamePrefix) ||
+                variableName.Equals("PSDebugContext"))
+            {
+                return false;
+            }
 
             ScopedItemOptions variableScope = ScopedItemOptions.None;
             PSPropertyInfo optionsProperty = psvariable.Properties["Options"];
@@ -733,20 +749,8 @@ namespace Microsoft.PowerShell.EditorServices
                 variableScope = (ScopedItemOptions)optionsProperty.Value;
             }
 
-            if ((scope == VariableContainerDetails.GlobalScopeName) ||
-                (scope == VariableContainerDetails.ScriptScopeName))
-            {
-                // We don't A) have a good way of distinguishing built-in from user created variables
-                // and B) globalScopeVariables.Children.ContainsKey() doesn't work for built-in variables
-                // stored in a child variable container within the globals variable container.
-                return false;
-            }
-
-            var constantAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.Constant;
-            var readonlyAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.ReadOnly;
-
             // Some local variables, if they exist, should be displayed by default
-            if (psvariable.TypeNames.Any(typeName => typeName.EndsWith("LocalVariable")))
+            if (psvariable.TypeNames[0].EndsWith("LocalVariable"))
             {
                 if (variableName.Equals("_"))
                 {
@@ -760,24 +764,22 @@ namespace Microsoft.PowerShell.EditorServices
 
                 return false;
             }
-            else if (!psvariable.TypeNames.Any(typeName => typeName.EndsWith("PSVariable")))
+            else if (!psvariable.TypeNames[0].EndsWith(nameof(PSVariable)))
             {
                 return false;
             }
 
-            if (((variableScope | constantAllScope) == constantAllScope) ||
-                ((variableScope | readonlyAllScope) == readonlyAllScope))
+            var constantAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.Constant;
+            var readonlyAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.ReadOnly;
+
+            if (((variableScope & constantAllScope) == constantAllScope) ||
+                ((variableScope & readonlyAllScope) == readonlyAllScope))
             {
                 string prefixedVariableName = VariableDetails.DollarPrefix + variableName;
                 if (this.globalScopeVariables.Children.ContainsKey(prefixedVariableName))
                 {
                     return false;
                 }
-            }
-
-            if (variableValue != null && variableValue.GetType().Name.EndsWith(nameof(PSDebugContext)))
-            {
-                return false;
             }
 
             return true;
