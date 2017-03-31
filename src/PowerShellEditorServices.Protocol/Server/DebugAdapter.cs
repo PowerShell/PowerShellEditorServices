@@ -102,9 +102,29 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Ensure the read loop is stopped
             this.editorSession.ConsoleService.CancelReadLoop();
 
-            return editorSession.PowerShellContext
-                    .ExecuteScriptWithArgs(this.scriptToLaunch, this.arguments, writeInputToHost: true)
-                    .ContinueWith(this.OnExecutionCompleted);
+            // Is this an untitled script?
+            Task launchTask = null;
+
+            if (this.scriptToLaunch.StartsWith("untitled"))
+            {
+                ScriptFile untitledScript =
+                    this.editorSession.Workspace.GetFile(
+                        this.scriptToLaunch);
+
+                launchTask =
+                    this.editorSession
+                        .PowerShellContext
+                        .ExecuteScriptString(untitledScript.Contents, true, true);
+            }
+            else
+            {
+                launchTask =
+                    this.editorSession
+                        .PowerShellContext
+                        .ExecuteScriptWithArgs(this.scriptToLaunch, this.arguments, writeInputToHost: true);
+            }
+
+            return launchTask.ContinueWith(this.OnExecutionCompleted);
         }
 
         private async Task OnExecutionCompleted(Task executeTask)
