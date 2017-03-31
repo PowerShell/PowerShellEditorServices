@@ -30,6 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private bool isAttachSession;
         private bool waitingForAttach;
         private string scriptToLaunch;
+        private bool enableConsoleRepl;
         private bool ownsEditorSession;
         private bool executionCompleted;
         private string arguments;
@@ -44,9 +45,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             : base(serverChannel)
         {
             this.editorSession = editorSession;
-            this.editorSession.PowerShellContext.RunspaceChanged += this.powerShellContext_RunspaceChanged;
-            this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
-            this.editorSession.PowerShellContext.DebuggerResumed += this.powerShellContext_DebuggerResumed;
         }
 
         public DebugAdapter(
@@ -54,19 +52,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             ProfilePaths profilePaths,
             ChannelBase serverChannel,
             IEditorOperations editorOperations)
+            : this(hostDetails, profilePaths, serverChannel, editorOperations, false)
+        {
+        }
+
+        public DebugAdapter(
+            HostDetails hostDetails,
+            ProfilePaths profilePaths,
+            ChannelBase serverChannel,
+            IEditorOperations editorOperations,
+            bool enableConsoleRepl)
             : base(serverChannel)
         {
             this.ownsEditorSession = true;
             this.editorSession = new EditorSession();
             this.editorSession.StartDebugSession(hostDetails, profilePaths, editorOperations);
-            this.editorSession.PowerShellContext.RunspaceChanged += this.powerShellContext_RunspaceChanged;
-            this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
-            this.editorSession.PowerShellContext.DebuggerResumed += this.powerShellContext_DebuggerResumed;
-
-            // The assumption in this overload is that the debugger
-            // is running in UI-hosted mode, no terminal interface
-            this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
-            this.outputDebouncer = new OutputDebouncer(this);
+            this.enableConsoleRepl = enableConsoleRepl;
        }
 
         protected override void Initialize()
@@ -139,6 +140,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 await this.outputDebouncer.Flush();
             }
 
+            this.UnregisterEventHandlers();
+
             if (this.isAttachSession)
             {
                 // Ensure the read loop is stopped
@@ -198,6 +201,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             {
                 this.editorSession.PowerShellContext.RunspaceChanged -= this.powerShellContext_RunspaceChanged;
                 this.editorSession.DebugService.DebuggerStopped -= this.DebugService_DebuggerStopped;
+                this.editorSession.PowerShellContext.DebuggerResumed -= this.powerShellContext_DebuggerResumed;
 
                 if (this.ownsEditorSession)
                 {
@@ -238,6 +242,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             LaunchRequestArguments launchParams,
             RequestContext<object> requestContext)
         {
+            this.RegisterEventHandlers();
+
             // Set the working directory for the PowerShell runspace to the cwd passed in via launch.json.
             // In case that is null, use the the folder of the script to be executed.  If the resulting
             // working dir path is a file path then extract the directory and use that.
@@ -334,6 +340,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<object> requestContext)
         {
             this.isAttachSession = true;
+
+            this.RegisterEventHandlers();
 
             // If there are no host processes to attach to or the user cancels selection, we get a null for the process id.
             // This is not an error, just a request to stop the original "attach to" request.
@@ -454,6 +462,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
                 else
                 {
+                    this.UnregisterEventHandlers();
+
                     await requestContext.SendResult(null);
                     await this.Stop();
                 }
@@ -837,6 +847,31 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     Output = "\nThe Debug Console is no longer used for PowerShell debugging.  Please use the 'PowerShell Integrated Console' to execute commands in the debugger.  Run the 'PowerShell: Show Integrated Console' command to open it.",
                     Category = "stderr"
                 });
+        }
+
+        private void RegisterEventHandlers()
+        {
+            this.editorSession.PowerShellContext.RunspaceChanged += this.powerShellContext_RunspaceChanged;
+            this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
+            this.editorSession.PowerShellContext.DebuggerResumed += this.powerShellContext_DebuggerResumed;
+
+            if (!this.enableConsoleRepl)
+            {
+                this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
+                this.outputDebouncer = new OutputDebouncer(this);
+            }
+        }
+
+        private void UnregisterEventHandlers()
+        {
+            this.editorSession.PowerShellContext.RunspaceChanged -= this.powerShellContext_RunspaceChanged;
+            this.editorSession.DebugService.DebuggerStopped -= this.DebugService_DebuggerStopped;
+            this.editorSession.PowerShellContext.DebuggerResumed -= this.powerShellContext_DebuggerResumed;
+
+            if (!this.enableConsoleRepl)
+            {
+                this.editorSession.ConsoleService.OutputWritten -= this.powerShellContext_OutputWritten;
+            }
         }
 
         #endregion
