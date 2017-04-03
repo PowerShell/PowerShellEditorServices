@@ -174,7 +174,14 @@ namespace Microsoft.PowerShell.EditorServices.Templates
 
             var errorString = new System.Text.StringBuilder();
             await this.powerShellContext.ExecuteCommand<PSObject>(
-                command, errorString, false, true);
+                command,
+                errorString,
+                new ExecutionOptions
+                {
+                    WriteOutputToHost = false,
+                    WriteErrorsToHost = true,
+                    InterruptCommandPrompt = true
+                });
 
             // If any errors were written out, creation was not successful
             return errorString.Length == 0;

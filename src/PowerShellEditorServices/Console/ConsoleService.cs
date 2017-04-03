@@ -79,6 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             this.powerShellContext.ConsoleHost = this;
             this.powerShellContext.DebuggerStop += PowerShellContext_DebuggerStop;
             this.powerShellContext.DebuggerResumed += PowerShellContext_DebuggerResumed;
+            this.powerShellContext.ExecutionStatusChanged += PowerShellContext_ExecutionStatusChanged;
 
             // Set the default prompt handler factory or create
             // a default if one is not provided
@@ -137,31 +138,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
                 this.readLineCancellationToken.Cancel();
                 this.readLineCancellationToken = null;
-            }
-        }
-
-        /// <summary>
-        /// Called when a command string is received from the user.
-        /// If a prompt is currently active, the prompt handler is
-        /// asked to handle the string.  Otherwise the string is
-        /// executed in the PowerShellContext.
-        /// </summary>
-        /// <param name="inputString">The input string to evaluate.</param>
-        /// <param name="echoToConsole">If true, the input will be echoed to the console.</param>
-        public void ExecuteCommand(string inputString, bool echoToConsole)
-        {
-            this.CancelReadLoop();
-
-            if (this.activePromptHandler == null)
-            {
-                // Execute the script string but don't wait for completion
-                var executeTask =
-                    this.powerShellContext
-                        .ExecuteScriptString(
-                            inputString,
-                            echoToConsole,
-                            true)
-                        .ConfigureAwait(false);
             }
         }
 
@@ -338,11 +314,16 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 {
                     Console.Write(Environment.NewLine);
 
-                    await this.powerShellContext.ExecuteScriptString(
-                        commandString,
-                        false,
-                        true,
-                        true);
+                    var unusedTask =
+                        this.powerShellContext
+                            .ExecuteScriptString(
+                                commandString,
+                                false,
+                                true,
+                                true)
+                            .ConfigureAwait(false);
+
+                    break;
                 }
             }
             while (!cancellationToken.IsCancellationRequested);
@@ -457,6 +438,37 @@ namespace Microsoft.PowerShell.EditorServices.Console
         private void PowerShellContext_DebuggerResumed(object sender, System.Management.Automation.DebuggerResumeAction e)
         {
             this.CancelReadLoop();
+        }
+
+        private void PowerShellContext_ExecutionStatusChanged(object sender, ExecutionStatusChangedEventArgs eventArgs)
+        {
+            if (this.EnableConsoleRepl)
+            {
+                // Any command which writes output to the host will affect
+                // the display of the prompt
+                if (eventArgs.ExecutionOptions.WriteOutputToHost ||
+                    eventArgs.ExecutionOptions.InterruptCommandPrompt)
+                {
+                    if (eventArgs.ExecutionStatus != ExecutionStatus.Running)
+                    {
+                        // Execution has completed, start the input prompt
+                        this.StartReadLoop();
+                    }
+                    else
+                    {
+                        // A new command was started, cancel the input prompt
+                        this.CancelReadLoop();
+                    }
+                }
+                else if (
+                    eventArgs.ExecutionOptions.WriteErrorsToHost &&
+                    (eventArgs.ExecutionStatus == ExecutionStatus.Failed ||
+                     eventArgs.HadErrors))
+                {
+                    this.CancelReadLoop();
+                    this.StartReadLoop();
+                }
+            }
         }
 
         #endregion

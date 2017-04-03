@@ -373,13 +373,43 @@ namespace Microsoft.PowerShell.EditorServices
         /// An awaitable Task which will provide results once the command
         /// execution completes.
         /// </returns>
-        public async Task<IEnumerable<TResult>> ExecuteCommand<TResult>(
+        public Task<IEnumerable<TResult>> ExecuteCommand<TResult>(
             PSCommand psCommand,
             StringBuilder errorMessages,
             bool sendOutputToHost = false,
             bool sendErrorToHost = true,
             bool addToHistory = false)
         {
+            return
+                this.ExecuteCommand<TResult>(
+                    psCommand,
+                    errorMessages,
+                    new ExecutionOptions
+                    {
+                        WriteOutputToHost = sendOutputToHost,
+                        WriteErrorsToHost = sendErrorToHost,
+                        AddToHistory = addToHistory
+                    });
+        }
+
+        /// <summary>
+        /// Executes a PSCommand against the session's runspace and returns
+        /// a collection of results of the expected type.
+        /// </summary>
+        /// <typeparam name="TResult">The expected result type.</typeparam>
+        /// <param name="psCommand">The PSCommand to be executed.</param>
+        /// <param name="errorMessages">Error messages from PowerShell will be written to the StringBuilder.</param>
+        /// <param name="executionOptions">Specifies options to be used when executing this command.</param>
+        /// <returns>
+        /// An awaitable Task which will provide results once the command
+        /// execution completes.
+        /// </returns>
+        public async Task<IEnumerable<TResult>> ExecuteCommand<TResult>(
+            PSCommand psCommand,
+            StringBuilder errorMessages,
+            ExecutionOptions executionOptions)
+        {
+            bool hadErrors = false;
             RunspaceHandle runspaceHandle = null;
             IEnumerable<TResult> executionResult = Enumerable.Empty<TResult>();
 
@@ -392,7 +422,10 @@ namespace Microsoft.PowerShell.EditorServices
 
                 PipelineExecutionRequest<TResult> executionRequest =
                     new PipelineExecutionRequest<TResult>(
-                        this, psCommand, errorMessages, sendOutputToHost);
+                        this,
+                        psCommand,
+                        errorMessages,
+                        executionOptions.WriteOutputToHost);
 
                 // Send the pipeline execution request to the pipeline thread
                 this.pipelineResultTask = new TaskCompletionSource<IPipelineExecutionRequest>();
@@ -406,7 +439,7 @@ namespace Microsoft.PowerShell.EditorServices
                 try
                 {
                     // Instruct PowerShell to send output and errors to the host
-                    if (sendOutputToHost)
+                    if (executionOptions.WriteOutputToHost)
                     {
                         psCommand.Commands[0].MergeMyResults(
                             PipelineResultTypes.Error,
@@ -417,13 +450,18 @@ namespace Microsoft.PowerShell.EditorServices
                                 endOfStatement: false));
                     }
 
+                    this.OnExecutionStatusChanged(
+                        ExecutionStatus.Running,
+                        executionOptions,
+                        false);
+
                     if (this.CurrentRunspace.Runspace.RunspaceAvailability == RunspaceAvailability.AvailableForNestedCommand ||
                         this.debuggerStoppedTask != null)
                     {
                         executionResult =
                             this.ExecuteCommandInDebugger<TResult>(
                                 psCommand,
-                                sendOutputToHost);
+                                executionOptions.WriteOutputToHost);
                     }
                     else
                     {
@@ -452,7 +490,7 @@ namespace Microsoft.PowerShell.EditorServices
                                         this.powerShell.Commands = psCommand;
 
                                         PSInvocationSettings invocationSettings = new PSInvocationSettings();
-                                        invocationSettings.AddToHistory = addToHistory;
+                                        invocationSettings.AddToHistory = executionOptions.AddToHistory;
                                         result = this.powerShell.Invoke<TResult>(null, invocationSettings);
                                     }
                                     catch (RemoteException e)
@@ -482,6 +520,8 @@ namespace Microsoft.PowerShell.EditorServices
 
                             errorMessages?.Append(errorMessage);
                             Logger.Write(LogLevel.Error, errorMessage);
+
+                            hadErrors = true;
                         }
                         else
                         {
@@ -489,15 +529,13 @@ namespace Microsoft.PowerShell.EditorServices
                                 LogLevel.Verbose,
                                 "Execution completed successfully.");
                         }
-
-                        return executionResult;
                     }
                 }
                 catch (PipelineStoppedException e)
                 {
                     Logger.Write(
                         LogLevel.Error,
-                        "Popeline stopped while executing command:\r\n\r\n" + e.ToString());
+                        "Pipeline stopped while executing command:\r\n\r\n" + e.ToString());
 
                     errorMessages?.Append(e.Message);
                 }
@@ -507,18 +545,28 @@ namespace Microsoft.PowerShell.EditorServices
                         LogLevel.Error,
                         "Runtime exception occurred while executing command:\r\n\r\n" + e.ToString());
 
+                    hadErrors = true;
                     errorMessages?.Append(e.Message);
 
-                    if (sendErrorToHost)
+                    if (executionOptions.WriteErrorsToHost)
                     {
                         // Write the error to the host
                         this.WriteExceptionToHost(e);
                     }
                 }
+                catch (Exception e)
+                {
+                    this.OnExecutionStatusChanged(
+                        ExecutionStatus.Failed,
+                        executionOptions,
+                        true);
+
+                    throw e;
+                }
                 finally
                 {
                     // Get the new prompt before releasing the runspace handle
-                    if (sendOutputToHost)
+                    if (executionOptions.WriteOutputToHost)
                     {
                         SessionDetails sessionDetails = null;
 
@@ -555,6 +603,11 @@ namespace Microsoft.PowerShell.EditorServices
                     }
                 }
             }
+
+            this.OnExecutionStatusChanged(
+                ExecutionStatus.Completed,
+                executionOptions,
+                hadErrors);
 
             return executionResult;
         }
@@ -1075,6 +1128,24 @@ namespace Microsoft.PowerShell.EditorServices
         private void OnRunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
             this.RunspaceChanged?.Invoke(sender, e);
+        }
+
+        /// <summary>
+        /// Raised when the status of an executed command changes.
+        /// </summary>
+        public event EventHandler<ExecutionStatusChangedEventArgs> ExecutionStatusChanged;
+
+        private void OnExecutionStatusChanged(
+            ExecutionStatus executionStatus,
+            ExecutionOptions executionOptions,
+            bool hadErrors)
+        {
+            this.ExecutionStatusChanged?.Invoke(
+                this,
+                new ExecutionStatusChangedEventArgs(
+                    executionStatus,
+                    executionOptions,
+                    hadErrors));
         }
 
         #endregion
