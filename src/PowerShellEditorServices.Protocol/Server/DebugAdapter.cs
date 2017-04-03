@@ -100,9 +100,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         protected Task LaunchScript(RequestContext<object> requestContext)
         {
-            // Ensure the read loop is stopped
-            this.editorSession.ConsoleService.CancelReadLoop();
-
             // Is this an untitled script?
             Task launchTask = null;
 
@@ -144,9 +141,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             if (this.isAttachSession)
             {
-                // Ensure the read loop is stopped
-                this.editorSession.ConsoleService.CancelReadLoop();
-
                 // Pop the sessions
                 if (this.editorSession.PowerShellContext.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
                 {
@@ -165,12 +159,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         Logger.WriteException("Caught exception while popping attached process after debugging", e);
                     }
                 }
-
-            }
-
-            if (!this.ownsEditorSession)
-            {
-                this.editorSession.ConsoleService.StartReadLoop();
             }
 
             if (this.disconnectRequestContext != null)

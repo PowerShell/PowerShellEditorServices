@@ -1108,9 +1108,6 @@ function __Expand-Alias {
             DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
             RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
         {
-            // Cancel the read loop before executing
-            this.editorSession.ConsoleService.CancelReadLoop();
-
             // We don't await the result of the execution here because we want
             // to be able to receive further messages while the current script
             // is executing.  This important in cases where the pipeline thread
