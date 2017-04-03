@@ -199,8 +199,15 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     break;
                 }
 
-                // If the handler returns null it means we should prompt again
                 choiceIndexes = this.HandleResponse(responseString);
+
+                // Return the default choice values if no choices were entered
+                if (choiceIndexes == null && string.IsNullOrEmpty(responseString))
+                {
+                    choiceIndexes = this.DefaultChoices;
+                }
+
+                // If the user provided no choices, we should prompt again
                 if (choiceIndexes != null)
                 {
                     break;

@@ -119,7 +119,9 @@ namespace Microsoft.PowerShell.EditorServices
                     {
                         psObjectDict.Add(
                             keyValuePair.Key,
-                            PSObject.AsPSObject(keyValuePair.Value));
+                            keyValuePair.Value != null
+                                ? PSObject.AsPSObject(keyValuePair.Value)
+                                : null);
                     }
                 }
 
