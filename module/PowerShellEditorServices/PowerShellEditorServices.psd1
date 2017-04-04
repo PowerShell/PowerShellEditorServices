@@ -12,7 +12,7 @@
 RootModule = 'PowerShellEditorServices.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.11.0'
+ModuleVersion = '0.12.0'
 
 # ID used to uniquely identify this module
 GUID = '9ca15887-53a2-479a-9cda-48d26bcb6c47'

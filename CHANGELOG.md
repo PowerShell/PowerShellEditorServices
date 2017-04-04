@@ -1,5 +1,32 @@
 # PowerShell Editor Services Release History
 
+## 0.12.0
+### Tuesday, April 4, 2017
+
+#### Fixes and improvements
+
+- Added [#408](https://github.com/PowerShell/PowerShellEditorServices/pull/408) -
+  Enabled debugging of untitled script files
+
+- Added [#405](https://github.com/PowerShell/PowerShellEditorServices/pull/405) -
+  Script column number is now reported in the top stack frame when the debugger
+  stops to aid in displaying a column indicator in Visual Studio Code
+
+- Fixed [#411](https://github.com/PowerShell/PowerShellEditorServices/issues/411) -
+  Commands executed internally now interrupt the integrated console's command
+  prompt
+
+- Fixed [#409](https://github.com/PowerShell/PowerShellEditorServices/pull/409) -
+  PowerShell session now does not crash when a breakpoint is hit outside of
+  debug mode
+
+- Fixed [#614](https://github.com/PowerShell/vscode-powershell/issues/614) -
+  Auto variables are now populating correctly in the debugger.  **NOTE**: There is
+  a known issue where all of a script's variables begin to show up in the
+  Auto list after running a script for the first time.  This is caused by
+  a change in 0.11.0 where we now dot-source all debugged scripts.  We will
+  provide an option for this behavior in the future
+
 ## 0.11.0
 ### Wednesday, March 22, 2017
 
