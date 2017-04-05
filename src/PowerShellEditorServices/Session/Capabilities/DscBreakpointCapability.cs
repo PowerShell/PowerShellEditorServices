@@ -50,11 +50,11 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
                         .Select(file => $"@{{Path=\"{file.Key}\";Line=@({string.Join(",", file.Value)})}}"));
 
             // Run Enable-DscDebug as a script because running it as a PSCommand
-            // causes an error which states that the Breakpoints parameter has not
+            // causes an error which states that the Breakpoint parameter has not
             // been passed.
             await powerShellContext.ExecuteScriptString(
                 hashtableString.Length > 0
-                    ? $"Enable-DscDebug -Breakpoints {hashtableString}"
+                    ? $"Enable-DscDebug -Breakpoint {hashtableString}"
                     : "Disable-DscDebug",
                 false,
                 false);
