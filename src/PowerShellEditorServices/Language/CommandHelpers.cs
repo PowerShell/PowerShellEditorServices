@@ -21,12 +21,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="powerShellContext">The PowerShellContext to use for running Get-Command.</param>
         /// <returns>A CommandInfo object with details about the specified command.</returns>
         public static async Task<CommandInfo> GetCommandInfo(
-            string commandName, 
+            string commandName,
             PowerShellContext powerShellContext)
         {
             PSCommand command = new PSCommand();
             command.AddCommand(@"Microsoft.PowerShell.Core\Get-Command");
             command.AddArgument(commandName);
+            command.AddParameter("ErrorAction", "Ignore");
 
             return
                 (await powerShellContext
@@ -43,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="powerShellContext">The PowerShellContext to use for getting command documentation.</param>
         /// <returns></returns>
         public static async Task<string> GetCommandSynopsis(
-            CommandInfo commandInfo, 
+            CommandInfo commandInfo,
             PowerShellContext powerShellContext)
         {
             string synopsisString = string.Empty;
@@ -58,6 +59,7 @@ namespace Microsoft.PowerShell.EditorServices
                 PSCommand command = new PSCommand();
                 command.AddCommand(@"Microsoft.PowerShell.Core\Get-Help");
                 command.AddArgument(commandInfo);
+                command.AddParameter("ErrorAction", "Ignore");
 
                 var results = await powerShellContext.ExecuteCommand<PSObject>(command, false, false);
                 helpObject = results.FirstOrDefault();
