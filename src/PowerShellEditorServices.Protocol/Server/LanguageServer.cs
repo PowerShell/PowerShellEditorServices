@@ -653,7 +653,7 @@ function __Expand-Alias {
                     definitionLocations.Add(
                         new Location
                         {
-                            Uri = new Uri("file://" + definition.FoundDefinition.FilePath).AbsoluteUri,
+                            Uri = GetFileUri(definition.FoundDefinition.FilePath),
                             Range = GetRangeFromScriptRegion(definition.FoundDefinition.ScriptRegion)
                         });
                 }
@@ -692,7 +692,7 @@ function __Expand-Alias {
                             {
                                 return new Location
                                 {
-                                    Uri = new Uri("file://" + r.FilePath).AbsoluteUri,
+                                    Uri = GetFileUri(r.FilePath),
                                     Range = GetRangeFromScriptRegion(r.ScriptRegion)
                                 };
                             })
@@ -936,7 +936,7 @@ function __Expand-Alias {
                                     Kind = GetSymbolKind(r.SymbolType),
                                     Location = new Location
                                     {
-                                        Uri = new Uri("file://" + r.FilePath).AbsolutePath,
+                                        Uri = GetFileUri(r.FilePath),
                                         Range = GetRangeFromScriptRegion(r.ScriptRegion)
                                     },
                                     Name = GetDecoratedSymbolName(r)
@@ -1009,7 +1009,7 @@ function __Expand-Alias {
                                         Kind = r.SymbolType == SymbolType.Variable ? SymbolKind.Variable : SymbolKind.Function,
                                         Location = new Location
                                         {
-                                            Uri = new Uri("file://" + r.FilePath).AbsoluteUri,
+                                            Uri = GetFileUri(r.FilePath),
                                             Range = GetRangeFromScriptRegion(r.ScriptRegion)
                                         },
                                         Name = GetDecoratedSymbolName(r)
@@ -1193,6 +1193,15 @@ function __Expand-Alias {
         #endregion
 
         #region Helper Methods
+
+        private static string GetFileUri(string filePath)
+        {
+            // If the file isn't untitled, return a URI-style path
+            return
+                !filePath.StartsWith("untitled")
+                    ? new Uri("file://" + filePath).AbsoluteUri
+                    : filePath;
+        }
 
         private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
         {
