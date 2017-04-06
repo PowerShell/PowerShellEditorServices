@@ -26,6 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private OutputDebouncer outputDebouncer;
 
         private bool noDebug;
+        private string arguments;
         private bool isRemoteAttach;
         private bool isAttachSession;
         private bool waitingForAttach;
@@ -33,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private bool enableConsoleRepl;
         private bool ownsEditorSession;
         private bool executionCompleted;
-        private string arguments;
+        private bool isInteractiveDebugSession;
         private RequestContext<object> disconnectRequestContext = null;
 
         public DebugAdapter(HostDetails hostDetails, ProfilePaths profilePaths)
@@ -303,13 +304,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             await requestContext.SendResult(null);
 
-            // If no script is being launched, execute an empty script to
-            // cause the prompt string to be evaluated and displayed
-            if (string.IsNullOrEmpty(this.scriptToLaunch))
-            {
-                await this.editorSession.PowerShellContext.ExecuteScriptString(
-                    "", false, true);
-            }
+            // If no script is being launched, mark this as an interactive
+            // debugging session
+            this.isInteractiveDebugSession = string.IsNullOrEmpty(this.scriptToLaunch);
 
             if (this.editorSession.ConsoleService.EnableConsoleRepl)
             {
@@ -447,6 +444,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 {
                     this.disconnectRequestContext = requestContext;
                     this.editorSession.PowerShellContext.AbortExecution();
+
+                    if (this.isInteractiveDebugSession)
+                    {
+                        await this.OnExecutionCompleted(null);
+                    }
                 }
                 else
                 {
