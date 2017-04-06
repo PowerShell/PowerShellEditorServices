@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices
 {
+    using System.Diagnostics;
     using System.Management.Automation;
     using System.Management.Automation.Language;
     using System.Management.Automation.Runspaces;
@@ -101,6 +102,9 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     powerShell.Runspace = runspaceHandle.Runspace;
 
+                    Stopwatch stopwatch = new Stopwatch();
+                    stopwatch.Start();
+
                     commandCompletion =
                         CommandCompletion.CompleteInput(
                             scriptAst,
@@ -108,6 +112,10 @@ namespace Microsoft.PowerShell.EditorServices
                             cursorPosition,
                             null,
                             powerShell);
+
+                    stopwatch.Stop();
+
+                    Logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
                 }
             }
 
