@@ -73,14 +73,16 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.featureFlags = new HashSet<string>(featureFlags ?? new string[0]);
 
 #if DEBUG
-            int waitsRemaining = 10;
             if (waitForDebugger)
             {
-                while (waitsRemaining > 0 && !Debugger.IsAttached)
+                if (Debugger.IsAttached)
                 {
-                    Thread.Sleep(1000);
-                    waitsRemaining--;
+                    Debugger.Break();
                 }
+                else
+                {
+                    Debugger.Launch();
+                }                
             }
 #endif
 
