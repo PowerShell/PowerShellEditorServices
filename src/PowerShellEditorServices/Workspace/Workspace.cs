@@ -213,6 +213,18 @@ namespace Microsoft.PowerShell.EditorServices
             return resolvedPath;
         }
 
+        public IEnumerable<string> EnumeratePSFiles()
+        {
+            var patterns = new string[] { @"*.ps1", @"*.psm1", @"*.psd1" };
+            foreach(var pattern in patterns)
+            {
+                foreach (var file in Directory.EnumerateFiles(WorkspacePath, pattern, SearchOption.AllDirectories))
+                {
+                    yield return file;
+                }
+            }
+        }
+
         #endregion
 
         #region Private Methods
