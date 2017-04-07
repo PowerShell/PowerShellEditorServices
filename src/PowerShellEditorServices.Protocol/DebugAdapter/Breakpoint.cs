@@ -9,19 +9,21 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
     public class Breakpoint
     {
+        public int? Id { get; set; }
+
         /// <summary>
-        /// Gets an boolean indicator that if true, breakpoint could be set 
-        /// (but not necessarily at the desired location).  
+        /// Gets an boolean indicator that if true, breakpoint could be set
+        /// (but not necessarily at the desired location).
         /// </summary>
         public bool Verified { get; set; }
 
         /// <summary>
-        /// Gets an optional message about the state of the breakpoint. This is shown to the user 
+        /// Gets an optional message about the state of the breakpoint. This is shown to the user
         /// and can be used to explain why a breakpoint could not be verified.
         /// </summary>
         public string Message { get; set; }
 
-        public string Source { get; set; }
+        public Source Source { get; set; }
 
         public int? Line { get; set; }
 
@@ -38,9 +40,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 
             return new Breakpoint
             {
+                Id = breakpointDetails.Id,
                 Verified = breakpointDetails.Verified,
                 Message = breakpointDetails.Message,
-                Source = breakpointDetails.Source,
+                Source = new Source { Path = breakpointDetails.Source },
                 Line = breakpointDetails.LineNumber,
                 Column = breakpointDetails.ColumnNumber
             };
@@ -70,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
             return new Breakpoint {
                 Verified = verified,
                 Message = message,
-                Source = source,
+                Source = new Source { Path = source },
                 Line = sourceBreakpoint.Line,
                 Column = sourceBreakpoint.Column
             };
