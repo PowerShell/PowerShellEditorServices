@@ -251,7 +251,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>FindReferencesResult</returns>
         public async Task<FindReferencesResult> FindReferencesOfSymbol(
             SymbolReference foundSymbol,
-            ScriptFile[] referencedFiles)
+            ScriptFile[] referencedFiles,
+            Workspace workspace)
         {
             if (foundSymbol != null)
             {

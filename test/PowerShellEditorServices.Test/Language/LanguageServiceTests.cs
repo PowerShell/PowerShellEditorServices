@@ -363,11 +363,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             return
                 await this.languageService.FindReferencesOfSymbol(
                     symbolReference,
-                    this.workspace.ExpandScriptReferences(scriptFile));
+                    this.workspace.ExpandScriptReferences(scriptFile),
+                    this.workspace);
         }
 
         private FindOccurrencesResult GetOccurrences(ScriptRegion scriptRegion)
-        { 
+        {
             return
                 this.languageService.FindOccurrencesInFile(
                     GetScriptFile(scriptRegion),
