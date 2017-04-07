@@ -195,7 +195,7 @@ namespace Microsoft.PowerShell.EditorServices
                     psCommand.AddParameter("Line", breakpoint.LineNumber);
 
                     // Check if the user has specified the column number for the breakpoint.
-                    if (breakpoint.ColumnNumber.HasValue)
+                    if (breakpoint.ColumnNumber.HasValue && breakpoint.ColumnNumber.Value > 0)
                     {
                         // It bums me out that PowerShell will silently ignore a breakpoint
                         // where either the line or the column is invalid.  I'd rather have an
@@ -368,7 +368,7 @@ namespace Microsoft.PowerShell.EditorServices
                 logger.Write(LogLevel.Warning, $"Received request for variableReferenceId {variableReferenceId} that is out of range of valid indices.");
                 return new VariableDetailsBase[0];
             }
-            
+
             VariableDetailsBase parentVariable = this.variables[variableReferenceId];
             if (parentVariable.IsExpandable)
             {

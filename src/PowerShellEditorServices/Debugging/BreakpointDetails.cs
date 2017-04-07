@@ -16,6 +16,12 @@ namespace Microsoft.PowerShell.EditorServices
     public class BreakpointDetails : BreakpointDetailsBase
     {
         /// <summary>
+        /// Gets the unique ID of the breakpoint.
+        /// </summary>
+        /// <returns></returns>
+        public int Id { get; private set; }
+
+        /// <summary>
         /// Gets the source where the breakpoint is located.  Used only for debug purposes.
         /// </summary>
         public string Source { get; private set; }
@@ -83,6 +89,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             var breakpointDetails = new BreakpointDetails
             {
+                Id = breakpoint.Id,
                 Verified = true,
                 Source = lineBreakpoint.Script,
                 LineNumber = lineBreakpoint.Line,

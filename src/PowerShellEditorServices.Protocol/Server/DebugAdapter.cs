@@ -36,6 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private IMessageSender messageSender;
         private IMessageHandlers messageHandlers;
         private bool isInteractiveDebugSession;
+        private bool setBreakpointInProgress;
         private RequestContext<object> disconnectRequestContext = null;
 
         public DebugAdapter(
@@ -522,10 +523,24 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             BreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
             if (!this.noDebug)
             {
-                updatedBreakpointDetails =
-                    await editorSession.DebugService.SetLineBreakpoints(
-                        scriptFile,
-                        breakpointDetails);
+                this.setBreakpointInProgress = true;
+
+                try
+                {
+                    updatedBreakpointDetails =
+                        await editorSession.DebugService.SetLineBreakpoints(
+                            scriptFile,
+                            breakpointDetails);
+                }
+                catch (Exception e)
+                {
+                    // Log whatever the error is
+                    Logger.WriteException("Caught error while setting breakpoints in SetBreakpoints handler", e);
+                }
+                finally
+                {
+                    this.setBreakpointInProgress = false;
+                }
             }
 
             await requestContext.SendResult(
@@ -855,6 +870,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private void RegisterEventHandlers()
         {
             this.editorSession.PowerShellContext.RunspaceChanged += this.powerShellContext_RunspaceChanged;
+            this.editorSession.DebugService.BreakpointUpdated += DebugService_BreakpointUpdated;
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
             this.editorSession.PowerShellContext.DebuggerResumed += this.powerShellContext_DebuggerResumed;
         }
@@ -862,6 +878,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private void UnregisterEventHandlers()
         {
             this.editorSession.PowerShellContext.RunspaceChanged -= this.powerShellContext_RunspaceChanged;
+            this.editorSession.DebugService.BreakpointUpdated -= DebugService_BreakpointUpdated;
             this.editorSession.DebugService.DebuggerStopped -= this.DebugService_DebuggerStopped;
             this.editorSession.PowerShellContext.DebuggerResumed -= this.powerShellContext_DebuggerResumed;
         }
@@ -937,6 +954,42 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 {
                     AllThreadsContinued = true,
                     ThreadId = 1
+                });
+        }
+
+        private async void DebugService_BreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)
+        {
+            string reason = "changed";
+
+            if (this.setBreakpointInProgress)
+            {
+                // Don't send breakpoint update notifications when setting
+                // breakpoints on behalf of the client.
+                return;
+            }
+
+            switch (e.UpdateType)
+            {
+                case BreakpointUpdateType.Set:
+                    reason = "new";
+                    break;
+
+                case BreakpointUpdateType.Removed:
+                    reason = "removed";
+                    break;
+            }
+
+            var breakpoint = Protocol.DebugAdapter.Breakpoint.Create(
+                BreakpointDetails.Create(e.Breakpoint));
+
+            breakpoint.Verified = e.UpdateType != BreakpointUpdateType.Disabled;
+
+            await this.messageSender.SendEvent(
+                BreakpointEvent.Type,
+                new BreakpointEvent
+                {
+                    Reason = reason,
+                    Breakpoint = breakpoint
                 });
         }
 
