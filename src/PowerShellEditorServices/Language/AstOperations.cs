@@ -90,9 +90,24 @@ namespace Microsoft.PowerShell.EditorServices
                 command.AddParameter("PositionOfCursor", cursorPosition);
                 command.AddParameter("Options", null);
 
-                commandCompletion =
-                    (await powerShellContext.ExecuteCommand<CommandCompletion>(command, false, false))
+                PSObject outputObject =
+                    (await powerShellContext.ExecuteCommand<PSObject>(command, false, false))
                         .FirstOrDefault();
+
+                if (outputObject != null)
+                {
+                    ErrorRecord errorRecord = outputObject.BaseObject as ErrorRecord;
+                    if (errorRecord != null)
+                    {
+                        Logger.WriteException(
+                            "Encountered an error while invoking TabExpansion2 in the debugger",
+                            errorRecord.Exception);
+                    }
+                    else
+                    {
+                        commandCompletion = outputObject.BaseObject as CommandCompletion;
+                    }
+                }
             }
             else if (powerShellContext.CurrentRunspace.Runspace.RunspaceAvailability ==
                         RunspaceAvailability.Available)
