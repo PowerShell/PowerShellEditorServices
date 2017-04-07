@@ -1,5 +1,25 @@
 # PowerShell Editor Services Release History
 
+## 0.12.1
+### Friday, April 7, 2017
+
+- Fixed [vscode-powershell #645](https://github.com/PowerShell/vscode-powershell/issues/645) -
+  "Go to Definition" or "Find References" now work in untitled scripts without
+  crashing the session
+- Fixed [vscode-powershell #632](https://github.com/PowerShell/vscode-powershell/issues/632) -
+  Debugger no longer hangs when launched while PowerShell session is still
+  initializing
+- Fixed [#430](https://github.com/PowerShell/PowerShellEditorServices/issues/430) -
+  Resolved occasional IntelliSense slowness by preventing the implicit loading
+  of the PowerShellGet and PackageManagement modules.  This change will be reverted
+  once a bug in PackageManagement is fixed.
+- Fixed [#427](https://github.com/PowerShell/PowerShellEditorServices/issues/427) -
+  Fixed an occasional crash when requesting editor IntelliSense while running
+  a script in the debugger
+- Fixed [#416](https://github.com/PowerShell/PowerShellEditorServices/issues/416) -
+  Cleaned up errors that would appear in the `$Errors` variable from the use
+  of `Get-Command` and `Get-Help` in IntelliSense results
+
 ## 0.12.0
 ### Tuesday, April 4, 2017
 
