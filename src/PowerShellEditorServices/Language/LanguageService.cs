@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
@@ -263,9 +264,26 @@ namespace Microsoft.PowerShell.EditorServices
                 // Make sure aliases have been loaded
                 await GetAliases();
 
-                List<SymbolReference> symbolReferences = new List<SymbolReference>();
-                foreach (ScriptFile file in referencedFiles)
+                // We want to look for references first in referenced files, hence we use ordered dictionary
+                var fileMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
+                foreach(ScriptFile file in referencedFiles)
                 {
+                    fileMap.Add(file.FilePath, file);
+                }
+
+                var allFiles = workspace.EnumeratePSFiles();
+                foreach (var file in allFiles)
+                {
+                    if (!fileMap.Contains(file))
+                    {
+                        fileMap.Add(file, new ScriptFile(file, null, this.powerShellContext.LocalPowerShellVersion.Version));
+                    }
+                }
+
+                List<SymbolReference> symbolReferences = new List<SymbolReference>();
+                foreach (var fileName in fileMap.Keys)
+                {
+                    var file = (ScriptFile)fileMap[fileName];
                     IEnumerable<SymbolReference> symbolReferencesinFile =
                     AstOperations
                         .FindReferencesOfSymbol(
