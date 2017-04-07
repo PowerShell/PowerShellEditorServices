@@ -161,13 +161,13 @@ namespace Microsoft.PowerShell.EditorServices
             string clientFilePath,
             string initialBuffer,
             Version powerShellVersion)
+            : this(
+                  filePath,
+                  clientFilePath,
+                  new StringReader(initialBuffer),
+                  powerShellVersion)
         {
-            this.FilePath = filePath;
-            this.ClientFilePath = clientFilePath;
-            this.IsAnalysisEnabled = true;
-            this.powerShellVersion = powerShellVersion;
 
-            this.SetFileContents(initialBuffer);
         }
 
         #endregion
