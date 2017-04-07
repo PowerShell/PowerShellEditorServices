@@ -316,6 +316,8 @@ namespace Microsoft.PowerShell.EditorServices
                 workspace.ExpandScriptReferences(
                     sourceFile);
 
+            var filesSearched = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             // look through the referenced files until definition is found
             // or there are no more file to look through
             SymbolReference foundDefinition = null;
@@ -326,10 +328,42 @@ namespace Microsoft.PowerShell.EditorServices
                         referencedFiles[i].ScriptAst,
                         foundSymbol);
 
+                filesSearched.Add(referencedFiles[i].FilePath);
                 if (foundDefinition != null)
                 {
                     foundDefinition.FilePath = referencedFiles[i].FilePath;
                     break;
+                }
+            }
+
+            // if the definition the not found in referenced files
+            // look for it in all the files in the workspace
+            if (foundDefinition == null)
+            {
+                // Get a list of all powershell files in the workspace path
+                var allFiles = System.IO.Directory.EnumerateFiles(workspace.WorkspacePath, @"*.ps1", System.IO.SearchOption.AllDirectories);
+                allFiles = allFiles.Concat(System.IO.Directory.EnumerateFiles(workspace.WorkspacePath, @"*.psm1", System.IO.SearchOption.AllDirectories));
+                foreach (var file in allFiles)
+                {
+                    if (filesSearched.Contains(file))
+                    {
+                        continue;
+                    }
+
+                    Token[] tokens = null;
+                    ParseError[] parseErrors = null;
+                    foundDefinition =
+                        AstOperations.FindDefinitionOfSymbol(
+                            Parser.ParseFile(file, out tokens, out parseErrors),
+                            foundSymbol);
+
+                    filesSearched.Add(file);
+                    if (foundDefinition != null)
+                    {
+                        foundDefinition.FilePath = file;
+                        break;
+                    }
+
                 }
             }
 
