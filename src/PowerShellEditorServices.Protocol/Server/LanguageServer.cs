@@ -758,10 +758,13 @@ function __Expand-Alias {
                         completionItem.Label,
                         this.editorSession.PowerShellContext);
 
-                completionItem.Documentation =
-                    await CommandHelpers.GetCommandSynopsis(
-                        commandInfo,
-                        this.editorSession.PowerShellContext);
+                if (commandInfo != null)
+                {
+                    completionItem.Documentation =
+                        await CommandHelpers.GetCommandSynopsis(
+                            commandInfo,
+                            this.editorSession.PowerShellContext);
+                }
             }
 
             // Send back the updated CompletionItem
