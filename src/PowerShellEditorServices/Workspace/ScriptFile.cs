@@ -170,6 +170,19 @@ namespace Microsoft.PowerShell.EditorServices
 
         }
 
+        public ScriptFile (
+            string filePath,
+            string clientFilePath,
+            Version powerShellVersion)
+            : this(
+                  filePath,
+                  clientFilePath,
+                  new StreamReader(new FileStream(filePath, FileMode.Open)),
+                  powerShellVersion)
+            {
+
+            }
+
         #endregion
 
         #region Public Methods
