@@ -1048,9 +1048,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// unescaped before calling this method.
         /// </summary>
         /// <param name="path"></param>
-        public void SetWorkingDirectory(string path)
+        public async Task SetWorkingDirectory(string path)
         {
-            this.CurrentRunspace.Runspace.SessionStateProxy.Path.SetLocation(path);
+            using (RunspaceHandle runspaceHandle = await this.GetRunspaceHandle())
+            {
+                runspaceHandle.Runspace.SessionStateProxy.Path.SetLocation(path);
+            }
         }
 
         /// <summary>

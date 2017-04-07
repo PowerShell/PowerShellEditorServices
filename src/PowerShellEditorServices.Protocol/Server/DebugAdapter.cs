@@ -273,7 +273,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // TODO: What's the right approach here?
             if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local)
             {
-                editorSession.PowerShellContext.SetWorkingDirectory(workingDir);
+                await editorSession.PowerShellContext.SetWorkingDirectory(workingDir);
                 Logger.Write(LogLevel.Verbose, "Working dir set to: " + workingDir);
             }
 
