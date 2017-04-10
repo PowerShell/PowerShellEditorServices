@@ -360,8 +360,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (foundDefinition == null)
             {
                 // Get a list of all powershell files in the workspace path
-                var allFiles = System.IO.Directory.EnumerateFiles(workspace.WorkspacePath, @"*.ps1", System.IO.SearchOption.AllDirectories);
-                allFiles = allFiles.Concat(System.IO.Directory.EnumerateFiles(workspace.WorkspacePath, @"*.psm1", System.IO.SearchOption.AllDirectories));
+                var allFiles = workspace.EnumeratePSFiles();
                 foreach (var file in allFiles)
                 {
                     if (filesSearched.Contains(file))
@@ -386,7 +385,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
             }
 
-            // if definition is not found in referenced files
+            // if definition is not found in file in the workspace
             // look for it in the builtin commands
             if (foundDefinition == null)
             {
