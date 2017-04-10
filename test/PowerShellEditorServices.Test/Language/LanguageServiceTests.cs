@@ -23,7 +23,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private Workspace workspace;
         private LanguageService languageService;
         private PowerShellContext powerShellContext;
-       
+        private const string baseSharedScriptPath = @"..\..\..\..\PowerShellEditorServices.Test.Shared\";
+
 
         public LanguageServiceTests()
         {
@@ -297,12 +298,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion)
         {
-            const string baseSharedScriptPath = 
-                @"..\..\..\..\PowerShellEditorServices.Test.Shared\";
-
             string resolvedPath =
                 Path.Combine(
-                    baseSharedScriptPath, 
+                    baseSharedScriptPath,
                     scriptRegion.File);
 
             return
