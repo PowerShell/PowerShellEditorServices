@@ -215,6 +215,11 @@ namespace Microsoft.PowerShell.EditorServices
 
         public IEnumerable<string> EnumeratePSFiles()
         {
+            if (WorkspacePath == null)
+            {
+                yield break;
+            }
+
             var patterns = new string[] { @"*.ps1", @"*.psm1", @"*.psd1" };
             foreach(var pattern in patterns)
             {
