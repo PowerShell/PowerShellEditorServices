@@ -177,7 +177,7 @@ namespace Microsoft.PowerShell.EditorServices
             : this(
                   filePath,
                   clientFilePath,
-                  new StreamReader(new FileStream(filePath, FileMode.Open)),
+                  new StreamReader(new FileStream(filePath, FileMode.Open, FileAccess.Read)),
                   powerShellVersion)
             {
 
