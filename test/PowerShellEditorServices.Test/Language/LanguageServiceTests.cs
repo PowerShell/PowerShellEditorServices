@@ -158,6 +158,21 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
+        public async Task LanguageServiceFindsFunctionDefinitionInWorkspace()
+        {
+            var definitionResult =
+                await this.GetDefinition(
+                    FindsFunctionDefinitionInWorkspace.SourceDetails,
+                    new Workspace(this.powerShellContext.LocalPowerShellVersion.Version)
+                    {
+                        WorkspacePath = Path.Combine(baseSharedScriptPath, @"References")
+                    });
+            var definition = definitionResult.FoundDefinition;
+            Assert.EndsWith("ReferenceFileE.ps1", definition.FilePath);
+            Assert.Equal("My-FunctionInFileE", definition.SymbolName);
+        }
+
+        [Fact]
         public async Task LanguageServiceFindsVariableDefinition()
         {
             GetDefinitionResult definitionResult =
@@ -228,7 +243,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             Assert.Equal(4, refsResult.FoundReferences.Count());
         }
-        
+
         [Fact]
         public async Task LanguageServiceFindsReferencesOnFileWithReferencesFileC()
         {
@@ -327,7 +342,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     scriptRegion.StartColumnNumber);
         }
 
-        private async Task<GetDefinitionResult> GetDefinition(ScriptRegion scriptRegion)
+        private async Task<GetDefinitionResult> GetDefinition(ScriptRegion scriptRegion, Workspace workspace)
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
@@ -343,7 +358,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.languageService.GetDefinitionOfSymbol(
                     scriptFile,
                     symbolReference,
-                    this.workspace);
+                    workspace);
+        }
+
+        private async Task<GetDefinitionResult> GetDefinition(ScriptRegion scriptRegion)
+        {
+            return await GetDefinition(scriptRegion, this.workspace);
         }
 
         private async Task<FindReferencesResult> GetReferences(ScriptRegion scriptRegion)
