@@ -169,7 +169,12 @@ namespace Microsoft.PowerShell.EditorServices
         {
 
         }
-
+        /// <summary>
+        /// Creates a new ScriptFile instance with the specified filepath.
+        /// </summary>
+        /// <param name="filePath">The path at which the script file resides.</param>
+        /// <param name="clientFilePath">The path which the client uses to identify the file.</param>
+        /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
         public ScriptFile (
             string filePath,
             string clientFilePath,

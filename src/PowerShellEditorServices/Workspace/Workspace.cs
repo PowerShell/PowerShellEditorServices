@@ -213,6 +213,10 @@ namespace Microsoft.PowerShell.EditorServices
             return resolvedPath;
         }
 
+        /// <summary>
+        /// Enumerate all the PowerShell (ps1, psm1, psd1) files in the workspace in a recursive manner
+        /// </summary>
+        /// <returns>An enumerator over the PowerShell files found in the workspace</returns>
         public IEnumerable<string> EnumeratePSFiles()
         {
             if (WorkspacePath == null)

@@ -249,6 +249,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="foundSymbol">The symbol to find all references for</param>
         /// <param name="referencedFiles">An array of scriptFiles too search for references in</param>
+        /// <param name="workspace">The workspace that will be searched for symbols</param>
         /// <returns>FindReferencesResult</returns>
         public async Task<FindReferencesResult> FindReferencesOfSymbol(
             SymbolReference foundSymbol,
