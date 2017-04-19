@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
@@ -248,10 +249,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="foundSymbol">The symbol to find all references for</param>
         /// <param name="referencedFiles">An array of scriptFiles too search for references in</param>
+        /// <param name="workspace">The workspace that will be searched for symbols</param>
         /// <returns>FindReferencesResult</returns>
         public async Task<FindReferencesResult> FindReferencesOfSymbol(
             SymbolReference foundSymbol,
-            ScriptFile[] referencedFiles)
+            ScriptFile[] referencedFiles,
+            Workspace workspace)
         {
             if (foundSymbol != null)
             {
@@ -262,9 +265,26 @@ namespace Microsoft.PowerShell.EditorServices
                 // Make sure aliases have been loaded
                 await GetAliases();
 
-                List<SymbolReference> symbolReferences = new List<SymbolReference>();
-                foreach (ScriptFile file in referencedFiles)
+                // We want to look for references first in referenced files, hence we use ordered dictionary
+                var fileMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
+                foreach(ScriptFile file in referencedFiles)
                 {
+                    fileMap.Add(file.FilePath, file);
+                }
+
+                var allFiles = workspace.EnumeratePSFiles();
+                foreach (var file in allFiles)
+                {
+                    if (!fileMap.Contains(file))
+                    {
+                        fileMap.Add(file, new ScriptFile(file, null, this.powerShellContext.LocalPowerShellVersion.Version));
+                    }
+                }
+
+                List<SymbolReference> symbolReferences = new List<SymbolReference>();
+                foreach (var fileName in fileMap.Keys)
+                {
+                    var file = (ScriptFile)fileMap[fileName];
                     IEnumerable<SymbolReference> symbolReferencesinFile =
                     AstOperations
                         .FindReferencesOfSymbol(
@@ -316,6 +336,8 @@ namespace Microsoft.PowerShell.EditorServices
                 workspace.ExpandScriptReferences(
                     sourceFile);
 
+            var filesSearched = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             // look through the referenced files until definition is found
             // or there are no more file to look through
             SymbolReference foundDefinition = null;
@@ -326,6 +348,7 @@ namespace Microsoft.PowerShell.EditorServices
                         referencedFiles[i].ScriptAst,
                         foundSymbol);
 
+                filesSearched.Add(referencedFiles[i].FilePath);
                 if (foundDefinition != null)
                 {
                     foundDefinition.FilePath = referencedFiles[i].FilePath;
@@ -333,7 +356,37 @@ namespace Microsoft.PowerShell.EditorServices
                 }
             }
 
-            // if definition is not found in referenced files
+            // if the definition the not found in referenced files
+            // look for it in all the files in the workspace
+            if (foundDefinition == null)
+            {
+                // Get a list of all powershell files in the workspace path
+                var allFiles = workspace.EnumeratePSFiles();
+                foreach (var file in allFiles)
+                {
+                    if (filesSearched.Contains(file))
+                    {
+                        continue;
+                    }
+
+                    Token[] tokens = null;
+                    ParseError[] parseErrors = null;
+                    foundDefinition =
+                        AstOperations.FindDefinitionOfSymbol(
+                            Parser.ParseFile(file, out tokens, out parseErrors),
+                            foundSymbol);
+
+                    filesSearched.Add(file);
+                    if (foundDefinition != null)
+                    {
+                        foundDefinition.FilePath = file;
+                        break;
+                    }
+
+                }
+            }
+
+            // if definition is not found in file in the workspace
             // look for it in the builtin commands
             if (foundDefinition == null)
             {

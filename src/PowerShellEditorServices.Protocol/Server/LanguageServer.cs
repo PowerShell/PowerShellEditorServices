@@ -679,7 +679,8 @@ function __Expand-Alias {
             FindReferencesResult referencesResult =
                 await editorSession.LanguageService.FindReferencesOfSymbol(
                     foundSymbol,
-                    editorSession.Workspace.ExpandScriptReferences(scriptFile));
+                    editorSession.Workspace.ExpandScriptReferences(scriptFile),
+                    editorSession.Workspace);
 
             Location[] referenceLocations = null;
 
