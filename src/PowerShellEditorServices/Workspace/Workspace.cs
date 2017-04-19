@@ -219,7 +219,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>An enumerator over the PowerShell files found in the workspace</returns>
         public IEnumerable<string> EnumeratePSFiles()
         {
-            if (WorkspacePath == null)
+            if (WorkspacePath == null
+                || !Directory.Exists(WorkspacePath))
             {
                 yield break;
             }
