@@ -8,6 +8,38 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
+
+    /// <summary>
+    /// An item to transfer a text document from the client to the server
+    /// </summary>
+    public class TextDocumentItem
+    {
+        /// <summary>
+        /// Gets or sets the URI which identifies the path of the
+        /// text document.
+        /// </summary>
+        public string Uri { get; set; }
+
+        /// <summary>
+        /// The text document's language identifier.
+        /// </summary>
+        /// <returns></returns>
+        public string LanguageId { get; set; }
+
+        /// <summary>
+        /// The version number of this document, which will strictly increase after each change, including
+        /// undo/redo.
+        /// </summary>
+        /// <returns></returns>
+        public int Version { get; set;}
+
+        /// <summary>
+        /// The content of the opened text document.
+        /// </summary>
+        /// <returns></returns>
+        public string Text { get; set;}
+    }
+
     /// <summary>
     /// Defines a base parameter class for identifying a text document.
     /// </summary>
