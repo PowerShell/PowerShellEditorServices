@@ -68,8 +68,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidOpenTextDocumentNotification : TextDocumentIdentifier
     {
         public static readonly
-            EventType<DidOpenTextDocumentNotification> Type =
-            EventType<DidOpenTextDocumentNotification>.Create("textDocument/didOpen");
+            EventType<TextDocumentItem> Type =
+            EventType<TextDocumentItem>.Create("textDocument/didOpen");
 
         /// <summary>
         /// Gets or sets the full content of the opened document.
