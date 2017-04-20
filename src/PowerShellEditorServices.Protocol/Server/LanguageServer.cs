@@ -483,7 +483,7 @@ function __Expand-Alias {
         }
 
         protected Task HandleDidOpenTextDocumentNotification(
-            DidOpenTextDocumentNotification openParams,
+            TextDocumentItem openParams,
             EventContext eventContext)
         {
             ScriptFile openedFile =
