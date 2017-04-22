@@ -12,6 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     /// <summary>
     /// An item to transfer a text document from the client to the server
     /// </summary>
+    [DebuggerDisplay("TextDocumentItem = {Uri}:{LanguageId}:{Version}:{Text}")]
     public class TextDocumentItem
     {
         /// <summary>
