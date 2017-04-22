@@ -544,7 +544,7 @@ function __Expand-Alias {
             // A text change notification can batch multiple change requests
             foreach (var textChange in textChangeParams.ContentChanges)
             {
-                ScriptFile changedFile = editorSession.Workspace.GetFile(textChangeParams.Uri);
+                ScriptFile changedFile = editorSession.Workspace.GetFile(textChangeParams.TextDocument.Uri);
 
                 changedFile.ApplyChange(
                     GetFileChangeDetails(

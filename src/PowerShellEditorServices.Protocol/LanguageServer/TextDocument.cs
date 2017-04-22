@@ -127,8 +127,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
             EventType<DidChangeTextDocumentParams>.Create("textDocument/didChange");
     }
 
-    public class DidChangeTextDocumentParams : TextDocumentIdentifier
+    /// <summary>
+    /// The change text document notification's paramters.
+    /// </summary>
+    public class DidChangeTextDocumentParams
     {
+        /// <summary>
+        /// The document that did change. The version number points to the version after
+        /// all provided content changes have been applied.
+        /// </summary>
+        public VersionedTextDocumentIdentifier TextDocument;
+
         /// <summary>
         /// Gets or sets the list of changes to the document content.
         /// </summary>
