@@ -24,25 +24,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 
     public enum CompletionItemKind
     {
-        	Text = 1,
-            Method = 2,
-            Function = 3,
-            Constructor = 4,
-            Field = 5,
-            Variable = 6,
-            Class = 7,
-            Interface = 8,
-            Module = 9,
-            Property = 10,
-            Unit = 11,
-            Value = 12,
-            Enum = 13,
-            Keyword = 14,
-            Snippet = 15,
-            Color = 16,
-            File = 17,
-            Reference = 18,
-            Folder = 19
+        Text = 1,
+        Method = 2,
+        Function = 3,
+        Constructor = 4,
+        Field = 5,
+        Variable = 6,
+        Class = 7,
+        Interface = 8,
+        Module = 9,
+        Property = 10,
+        Unit = 11,
+        Value = 12,
+        Enum = 13,
+        Keyword = 14,
+        Snippet = 15,
+        Color = 16,
+        File = 17,
+        Reference = 18,
+        Folder = 19
     }
 
     [DebuggerDisplay("NewText = {NewText}, Range = {Range.Start.Line}:{Range.Start.Character} - {Range.End.Line}:{Range.End.Character}")]
@@ -73,7 +73,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 
         public string InsertText { get; set; }
 
+        public Range Range { get; set; }
+
+        public string[] CommitCharacters { get; set; }
+
         public TextEdit TextEdit { get; set; }
+
+        public TextEdit[] AdditionalTextEdits { get; set; }
+
+        public Command Command { get; set; }
 
         /// <summary>
         /// Gets or sets a custom data field that allows the server to mark
@@ -82,6 +90,30 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// resolve request.
         /// </summary>
         public object Data { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a reference to a command. Provides a title which will be used to
+    /// represent a command in the UI and, optionally, an array of arguments which
+    /// will be passed to the command handler function when invoked.
+    /// </summary>
+    public class Command
+    {
+        /// <summary>
+        /// Title of the command.
+        /// </summary>
+        /// <returns></returns>
+        public string Title { get; set; }
+
+        /// <summary>
+        /// The identifier of the actual command handler.
+        /// </summary>
+        public string command { get; set; }
+
+        /// <summary>
+        /// Arguments that the command handler should be invoked with.
+        /// </summary>
+        public object[] arguments { get; set; }
     }
 }
 
