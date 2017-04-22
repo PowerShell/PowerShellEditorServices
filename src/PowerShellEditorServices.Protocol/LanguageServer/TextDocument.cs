@@ -32,13 +32,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// undo/redo.
         /// </summary>
         /// <returns></returns>
-        public int Version { get; set;}
+        public int Version { get; set; }
 
         /// <summary>
         /// The content of the opened text document.
         /// </summary>
         /// <returns></returns>
-        public string Text { get; set;}
+        public string Text { get; set; }
     }
 
     /// <summary>
@@ -103,9 +103,21 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
             EventType<DidSaveTextDocumentParams>.Create("textDocument/didSave");
     }
 
+    /// <summary>
+    /// The parameters sent in a save text document notification.
+    /// </summary>
     public class DidSaveTextDocumentParams
     {
-        public TextDocumentIdentifier TextDocument { get; set; }
+        /// <summary>
+        /// The document that was closed.
+        /// </summary>
+        public VersionedTextDocumentIdentifier TextDocument { get; set; }
+
+        /// <summary>
+        /// Optional content when saved. Depends on the includeText value when the save notification was
+        /// included.
+        /// </summary>
+        public string Text { get; set; }
     }
 
     public class DidChangeTextDocumentNotification
@@ -133,7 +145,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 
         /// <summary>
         /// Gets or sets the length of the Range being replaced in the
-        /// document.  Will be null if the server's TextDocumentSyncKind is 
+        /// document.  Will be null if the server's TextDocumentSyncKind is
         /// Full.
         /// </summary>
         public int? RangeLength { get; set; }
