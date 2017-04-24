@@ -824,18 +824,18 @@ function __Expand-Alias {
         }
 
         protected async Task HandleDocumentHighlightRequest(
-            TextDocumentPosition textDocumentPosition,
+            TextDocumentPositionParams textDocumentPositionParams,
             RequestContext<DocumentHighlight[]> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
-                    textDocumentPosition.Uri);
+                    textDocumentPositionParams.TextDocument.Uri);
 
             FindOccurrencesResult occurrencesResult =
                 editorSession.LanguageService.FindOccurrencesInFile(
                     scriptFile,
-                    textDocumentPosition.Position.Line + 1,
-                    textDocumentPosition.Position.Character + 1);
+                    textDocumentPositionParams.Position.Line + 1,
+                    textDocumentPositionParams.Position.Character + 1);
 
             DocumentHighlight[] documentHighlights = null;
 

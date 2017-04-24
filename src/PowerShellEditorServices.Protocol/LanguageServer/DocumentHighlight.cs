@@ -7,14 +7,14 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
-    public enum DocumentHighlightKind 
+    public enum DocumentHighlightKind
     {
         Text = 1,
         Read = 2,
         Write = 3
     }
 
-    public class DocumentHighlight 
+    public class DocumentHighlight
     {
 	    public Range Range { get; set; }
 
@@ -24,8 +24,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DocumentHighlightRequest
     {
         public static readonly
-            RequestType<TextDocumentPosition, DocumentHighlight[]> Type =
-            RequestType<TextDocumentPosition, DocumentHighlight[]>.Create("textDocument/documentHighlight");
+            RequestType<TextDocumentPositionParams, DocumentHighlight[]> Type =
+            RequestType<TextDocumentPositionParams, DocumentHighlight[]>.Create("textDocument/documentHighlight");
     }
 }
 

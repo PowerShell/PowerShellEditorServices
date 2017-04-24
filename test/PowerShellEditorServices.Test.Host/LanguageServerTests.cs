@@ -430,9 +430,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             DocumentHighlight[] highlights =
                 await this.SendRequest(
                     DocumentHighlightRequest.Type,
-                    new TextDocumentPosition
+                    new TextDocumentPositionParams
                     {
-                        Uri = "TestFiles\\FindReferences.ps1",
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\FindReferences.ps1"
+                        },
                         Position = new Position
                         {
                             Line = 0,
