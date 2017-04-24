@@ -453,9 +453,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             SignatureHelp signatureHelp =
                 await this.SendRequest(
                     SignatureHelpRequest.Type,
-                    new TextDocumentPosition
+                    new TextDocumentPositionParams
                     {
-                        Uri = "TestFiles\\FindReferences.ps1",
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\FindReferences.ps1"
+                        },
                         Position = new Position
                         {
                             Line = 12,
