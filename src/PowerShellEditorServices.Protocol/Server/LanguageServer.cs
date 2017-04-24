@@ -773,18 +773,18 @@ function __Expand-Alias {
         }
 
         protected async Task HandleSignatureHelpRequest(
-            TextDocumentPosition textDocumentPosition,
+            TextDocumentPositionParams textDocumentPositionParams,
             RequestContext<SignatureHelp> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
-                    textDocumentPosition.Uri);
+                    textDocumentPositionParams.TextDocument.Uri);
 
             ParameterSetSignatures parameterSets =
                 await editorSession.LanguageService.FindParameterSetsInFile(
                     scriptFile,
-                    textDocumentPosition.Position.Line + 1,
-                    textDocumentPosition.Position.Character + 1);
+                    textDocumentPositionParams.Position.Line + 1,
+                    textDocumentPositionParams.Position.Character + 1);
 
             SignatureInformation[] signatures = null;
             int? activeParameter = null;
