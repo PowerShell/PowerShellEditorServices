@@ -77,6 +77,23 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public Position Position { get; set; }
     }
 
+    /// <summary>
+    /// A parameter literal used in requests to pass a text document and a position inside that document.
+    /// </summary>
+    public class TextDocumentPositionParams {
+        /// <summary>
+        /// The text document.
+        /// </summary>
+        /// <returns></returns>
+        public TextDocumentIdentifier TextDocument { get; set; }
+
+        /// <summary>
+        /// The position inside the text document.
+        /// </summary>
+        /// <returns></returns>
+        public Position Position { get; set; }
+    }
+
     public class DidOpenTextDocumentNotification : TextDocumentIdentifier
     {
         public static readonly
