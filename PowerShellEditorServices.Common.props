@@ -9,5 +9,6 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PowerShell/PowerShellEditorServices</RepositoryUrl>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 </Project>
