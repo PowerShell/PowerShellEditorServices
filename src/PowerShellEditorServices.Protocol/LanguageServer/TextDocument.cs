@@ -80,7 +80,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     /// <summary>
     /// A parameter literal used in requests to pass a text document and a position inside that document.
     /// </summary>
-    public class TextDocumentPositionParams {
+    public class TextDocumentPositionParams
+    {
         /// <summary>
         /// The text document.
         /// </summary>
@@ -115,8 +116,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidCloseTextDocumentNotification
     {
         public static readonly
-            EventType<TextDocumentIdentifier> Type =
-            EventType<TextDocumentIdentifier>.Create("textDocument/didClose");
+            EventType<DidCloseTextDocumentParams> Type =
+            EventType<DidCloseTextDocumentParams>.Create("textDocument/didClose");
+    }
+
+    /// <summary>
+    /// The parameters sent in a close text document notification.
+    /// </summary>
+    public class DidCloseTextDocumentParams
+    {
+        /// <summary>
+        /// The document that was closed.
+        /// </summary>
+        public TextDocumentIdentifier TextDocument { get; set; }
     }
 
     public class DidSaveTextDocumentNotification
