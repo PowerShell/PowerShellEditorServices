@@ -314,16 +314,19 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 {
                     Console.Write(Environment.NewLine);
 
-                    var unusedTask =
-                        this.powerShellContext
-                            .ExecuteScriptString(
-                                commandString,
-                                false,
-                                true,
-                                true)
-                            .ConfigureAwait(false);
+                    if (!string.IsNullOrWhiteSpace(commandString))
+                    {
+                        var unusedTask =
+                            this.powerShellContext
+                                .ExecuteScriptString(
+                                    commandString,
+                                    false,
+                                    true,
+                                    true)
+                                .ConfigureAwait(false);
 
-                    break;
+                        break;
+                    }
                 }
             }
             while (!cancellationToken.IsCancellationRequested);
