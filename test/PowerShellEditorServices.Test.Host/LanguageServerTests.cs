@@ -752,13 +752,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             await this.SendEvent(
                 DidOpenTextDocumentNotification.Type,
-                new TextDocumentItem()
+                new DidOpenTextDocumentParams
                 {
-                    Uri = filePath,
-                    Text = fileContents,
-                    LanguageId = "PowerShell",
-                    Version = 0
-        });
+                    TextDocument = new TextDocumentItem
+                    {
+                        Uri = filePath,
+                        Text = fileContents,
+                        LanguageId = "PowerShell",
+                        Version = 0
+                    }
+                });
 
             if (diagnosticWaitTask != null)
             {

@@ -483,13 +483,13 @@ function __Expand-Alias {
         }
 
         protected Task HandleDidOpenTextDocumentNotification(
-            TextDocumentItem openParams,
+            DidOpenTextDocumentParams openParams,
             EventContext eventContext)
         {
             ScriptFile openedFile =
                 editorSession.Workspace.GetFileBuffer(
-                    openParams.Uri,
-                    openParams.Text);
+                    openParams.TextDocument.Uri,
+                    openParams.TextDocument.Text);
 
             // TODO: Get all recently edited files in the workspace
             this.RunScriptDiagnostics(
