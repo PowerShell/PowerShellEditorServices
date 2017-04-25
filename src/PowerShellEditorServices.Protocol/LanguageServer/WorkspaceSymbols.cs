@@ -7,7 +7,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
-    public enum SymbolKind 
+    public enum SymbolKind
     {
         File = 1,
         Module = 2,
@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         Array = 18,
     }
 
-    public class SymbolInformation 
+    public class SymbolInformation
     {
         public string Name { get; set; }
 
@@ -43,8 +43,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DocumentSymbolRequest
     {
         public static readonly
-            RequestType<TextDocumentIdentifier, SymbolInformation[]> Type =
-            RequestType<TextDocumentIdentifier, SymbolInformation[]>.Create("textDocument/documentSymbol");
+            RequestType<DocumentSymbolParams, SymbolInformation[]> Type =
+            RequestType<DocumentSymbolParams, SymbolInformation[]>.Create("textDocument/documentSymbol");
+    }
+
+    /// <summary>
+    /// Parameters for a DocumentSymbolRequest
+    /// </summary>
+    public class DocumentSymbolParams
+    {
+        /// <summary>
+        /// The text document.
+        /// </summary>
+        public TextDocumentIdentifier TextDocument { get; set; }
     }
 
     public class WorkspaceSymbolRequest
