@@ -912,12 +912,12 @@ function __Expand-Alias {
         }
 
         protected async Task HandleDocumentSymbolRequest(
-            TextDocumentIdentifier textDocumentIdentifier,
+            DocumentSymbolParams documentSymbolParams,
             RequestContext<SymbolInformation[]> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
-                    textDocumentIdentifier.Uri);
+                    documentSymbolParams.TextDocument.Uri);
 
             FindOccurrencesResult foundSymbols =
                 editorSession.LanguageService.FindSymbolsInFile(
