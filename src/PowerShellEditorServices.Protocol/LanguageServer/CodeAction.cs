@@ -6,13 +6,28 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class CodeActionRequest
     {
         public static readonly
-            RequestType<CodeActionRequest, CodeActionCommand[]> Type =
-            RequestType<CodeActionRequest, CodeActionCommand[]>.Create("textDocument/codeAction");
+            RequestType<CodeActionParams, CodeActionCommand[]> Type =
+            RequestType<CodeActionParams, CodeActionCommand[]>.Create("textDocument/codeAction");
+    }
 
+    /// <summary>
+    /// Parameters for CodeActionRequest.
+    /// </summary>
+    public class CodeActionParams
+    {
+        /// <summary>
+        /// The document in which the command was invoked.
+        /// </summary>
         public TextDocumentIdentifier TextDocument { get; set; }
 
+        /// <summary>
+        /// The range for which the command was invoked.
+        /// </summary>
         public Range Range { get; set; }
 
+        /// <summary>
+        /// Context carrying additional information.
+        /// </summary>
         public CodeActionContext Context { get; set; }
     }
 
