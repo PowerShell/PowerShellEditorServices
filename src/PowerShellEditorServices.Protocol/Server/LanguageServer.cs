@@ -1078,7 +1078,7 @@ function __Expand-Alias {
         }
 
         protected async Task HandleCodeActionRequest(
-            CodeActionRequest codeActionParams,
+            CodeActionParams codeActionParams,
             RequestContext<CodeActionCommand[]> requestContext)
         {
             MarkerCorrection correction = null;
