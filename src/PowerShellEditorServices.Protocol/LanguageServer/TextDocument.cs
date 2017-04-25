@@ -94,16 +94,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public Position Position { get; set; }
     }
 
-    public class DidOpenTextDocumentNotification : TextDocumentIdentifier
+    public class DidOpenTextDocumentNotification
     {
         public static readonly
-            EventType<TextDocumentItem> Type =
-            EventType<TextDocumentItem>.Create("textDocument/didOpen");
+            EventType<DidOpenTextDocumentParams> Type =
+            EventType<DidOpenTextDocumentParams>.Create("textDocument/didOpen");
+    }
 
+    /// <summary>
+    /// The parameters sent in an open text document notification
+    /// </summary>
+    public class DidOpenTextDocumentParams
+    {
         /// <summary>
-        /// Gets or sets the full content of the opened document.
+        /// The document that was opened.
         /// </summary>
-        public string Text { get; set; }
+        public TextDocumentItem TextDocument { get; set; }
     }
 
     public class DidCloseTextDocumentNotification
