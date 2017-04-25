@@ -503,11 +503,11 @@ function __Expand-Alias {
         }
 
         protected async Task HandleDidCloseTextDocumentNotification(
-            TextDocumentIdentifier closeParams,
+            DidCloseTextDocumentParams closeParams,
             EventContext eventContext)
         {
             // Find and close the file in the current session
-            var fileToClose = editorSession.Workspace.GetFile(closeParams.Uri);
+            var fileToClose = editorSession.Workspace.GetFile(closeParams.TextDocument.Uri);
 
             if (fileToClose != null)
             {
