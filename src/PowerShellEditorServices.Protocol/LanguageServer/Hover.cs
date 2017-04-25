@@ -29,8 +29,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class HoverRequest
     {
         public static readonly
-            RequestType<TextDocumentPosition, Hover> Type =
-            RequestType<TextDocumentPosition, Hover>.Create("textDocument/hover");
+            RequestType<TextDocumentPositionParams, Hover> Type =
+            RequestType<TextDocumentPositionParams, Hover>.Create("textDocument/hover");
 
     }
 }

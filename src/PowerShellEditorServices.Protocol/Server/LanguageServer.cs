@@ -863,20 +863,20 @@ function __Expand-Alias {
         }
 
         protected async Task HandleHoverRequest(
-            TextDocumentPosition textDocumentPosition,
+            TextDocumentPositionParams textDocumentPositionParams,
             RequestContext<Hover> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
-                    textDocumentPosition.Uri);
+                    textDocumentPositionParams.TextDocument.Uri);
 
             SymbolDetails symbolDetails =
                 await editorSession
                     .LanguageService
                     .FindSymbolDetailsAtLocation(
                         scriptFile,
-                        textDocumentPosition.Position.Line + 1,
-                        textDocumentPosition.Position.Character + 1);
+                        textDocumentPositionParams.Position.Line + 1,
+                        textDocumentPositionParams.Position.Character + 1);
 
             List<MarkedString> symbolInfo = new List<MarkedString>();
             Range? symbolRange = null;
