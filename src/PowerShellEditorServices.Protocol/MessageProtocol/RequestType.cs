@@ -12,8 +12,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     {
         public string MethodName { get; private set; }
 
+        public static RequestType<TParams, TResult> ConvertToReqestType<TError, TRegistrationOption>(
+            RequestType0<TResult, TError, TRegistrationOption> requestType0)
+        {
+            return RequestType<TParams, TResult>.Create(requestType0.Method);
+        }
         public static RequestType<TParams, TResult> Create(string typeName)
         {
+            if (typeName == null)
+            {
+                throw new System.ArgumentNullException(nameof(typeName));
+            }
+
             return new RequestType<TParams, TResult>()
             {
                 MethodName = typeName

@@ -132,6 +132,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Message Sending
 
+        public Task<TResult> SendRequest<TResult, TError, TRegistrationOption>(
+            RequestType0<TResult, TError, TRegistrationOption> requestType0)
+        {
+            return this.SendRequest<Object, TResult>(
+                RequestType<Object, TResult>.ConvertToReqestType(requestType0),
+                 null);
+        }
+
+
         /// <summary>
         /// Sends a request to the server
         /// </summary>
@@ -253,6 +262,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         #endregion
 
         #region Message Handling
+
+        public void SetRequestHandler<TResult, TError, TRegistrationOption>(
+            RequestType0<TResult, TError, TRegistrationOption> requestType0,
+            Func<RequestContext<TResult>, Task> requestHandler)
+        {
+            SetRequestHandler(
+                RequestType<Object, TResult>.ConvertToReqestType(requestType0),
+                (param1, requestContext) =>
+                {
+                    return requestHandler(requestContext);
+                });
+        }
 
         public void SetRequestHandler<TParams, TResult>(
             RequestType<TParams, TResult> requestType,
