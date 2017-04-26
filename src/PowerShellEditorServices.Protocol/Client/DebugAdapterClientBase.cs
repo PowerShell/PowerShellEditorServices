@@ -19,13 +19,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 
         public async Task LaunchScript(string scriptFilePath)
         {
-            await this.SendRequest(
+            await this.SendRequest<LaunchRequestArguments, object>(
                 LaunchRequest.Type,
                 new LaunchRequestArguments {
                     Script = scriptFilePath
                 });
 
-            await this.SendRequest(ConfigurationDoneRequest.Type, null);
+            await this.SendRequest<object, object>(ConfigurationDoneRequest.Type, null);
         }
 
         protected override Task OnStart()
@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         protected override Task OnConnect()
         {
             // Initialize the debug adapter
-            return this.SendRequest(
+            return this.SendRequest<InitializeRequestArguments, InitializeResponseBody>(
                 InitializeRequest.Type,
                 new InitializeRequestArguments
                 {
