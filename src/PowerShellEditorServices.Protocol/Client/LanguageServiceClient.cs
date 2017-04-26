@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 {
     public class LanguageServiceClient : LanguageClientBase
     {
-        private Dictionary<string, ScriptFileMarker[]> cachedDiagnostics = 
+        private Dictionary<string, ScriptFileMarker[]> cachedDiagnostics =
             new Dictionary<string, ScriptFileMarker[]>();
 
         public LanguageServiceClient(ChannelBase clientChannel)
@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         #region Private Methods
 
         private Task HandlePublishDiagnosticsEvent(
-            PublishDiagnosticsNotification diagnostics, 
+            PublishDiagnosticsNotification diagnostics,
             EventContext eventContext)
         {
             string normalizedPath = diagnostics.Uri.ToLower();
@@ -79,7 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 
         private static ScriptFileMarker GetMarkerFromDiagnostic(Diagnostic diagnostic)
         {
-            DiagnosticSeverity severity = 
+            DiagnosticSeverity severity =
                 diagnostic.Severity.GetValueOrDefault(
                     DiagnosticSeverity.Error);
 

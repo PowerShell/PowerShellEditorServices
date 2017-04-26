@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             this.messageProtocolType = messageProtocolType;
             this.originalSynchronizationContext = SynchronizationContext.Current;
         }
-        
+
         /// <summary>
         /// Starts the language server client and sends the Initialize method.
         /// </summary>
@@ -150,14 +150,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         /// <param name="requestParams"></param>
         /// <returns></returns>
         public Task<TResult> SendRequest<TParams, TResult>(
-            RequestType<TParams, TResult> requestType, 
+            RequestType<TParams, TResult> requestType,
             TParams requestParams)
         {
             return this.SendRequest(requestType, requestParams, true);
         }
 
         public async Task<TResult> SendRequest<TParams, TResult>(
-            RequestType<TParams, TResult> requestType, 
+            RequestType<TParams, TResult> requestType,
             TParams requestParams,
             bool waitForResponse)
         {
@@ -182,13 +182,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             {
                 responseTask = new TaskCompletionSource<Message>();
                 this.pendingRequests.Add(
-                    this.currentMessageId.ToString(), 
+                    this.currentMessageId.ToString(),
                     responseTask);
             }
 
             await this.protocolChannel.MessageWriter.WriteRequest<TParams, TResult>(
-                requestType, 
-                requestParams, 
+                requestType,
+                requestParams,
                 this.currentMessageId);
 
             if (responseTask != null)
