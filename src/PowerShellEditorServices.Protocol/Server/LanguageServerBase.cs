@@ -55,7 +55,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
 
         private async Task HandleShutdownRequest(
-            object shutdownParams,
             RequestContext<object> requestContext)
         {
             // Allow the implementor to shut down gracefully
