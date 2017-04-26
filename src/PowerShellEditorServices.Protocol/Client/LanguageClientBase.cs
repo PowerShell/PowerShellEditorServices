@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         protected override async Task OnStop()
         {
             // First, notify the language server that we're stopping
-            var response = await this.SendRequest(ShutdownRequest.Type, new object());
+            var response = await this.SendRequest<object, object, object>(ShutdownRequest.Type);
             await this.SendEvent(ExitNotification.Type, new object());
         }
 

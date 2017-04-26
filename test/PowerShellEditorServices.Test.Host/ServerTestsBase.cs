@@ -139,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             TParams requestParams)
         {
             return
-                this.protocolClient.SendRequest(
+                this.protocolClient.SendRequest<TParams, TResult>(
                     requestType,
                     requestParams);
         }

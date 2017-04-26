@@ -40,8 +40,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
                 Capabilities = new ClientCapabilities()
             };
 
-            return this.SendRequest(
-                InitializeRequest.Type, 
+            return this.SendRequest<InitializeRequest, InitializeResult>(
+                InitializeRequest.Type,
                 initializeRequest);
         }
 
