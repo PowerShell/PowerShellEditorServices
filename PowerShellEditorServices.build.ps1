@@ -18,7 +18,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
 }
 
-task SetupDotNet -Before Restore, Clean, Build, Test, TestPowerShellApi, PackageNuGet {
+task SetupDotNet -Before Restore, Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi, PackageNuGet {
 
     $requiredSdkVersion = "1.0.0"
 
@@ -157,9 +157,17 @@ function UploadTestLogs {
     }
 }
 
-task Test -If { !$script:IsUnix } {
+task Test TestServer,TestProtocol,TestHost
+
+task TestServer -If { !$script:IsUnix } {
     exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
+}
+
+task TestProtocol -If { !$script:IsUnix} {
     exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
+}
+
+task TestHost -If { !$script:IsUnix} {
     exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
 }
 
