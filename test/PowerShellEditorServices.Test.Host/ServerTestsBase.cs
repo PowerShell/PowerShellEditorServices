@@ -102,18 +102,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             {
                 // Must have read an error?  Keep reading from error stream
                 string errorString = completedRead.Result;
+                Task<string> errorRead = this.serviceProcess.StandardError.ReadToEndAsync();
 
-                while (true)
+                // Lets give the read operation 5 seconds to complete. Ideally, it shouldn't
+                // take that long at all, but just in case...
+                if (errorRead.Wait(5000))
                 {
-                    Task<string> errorRead = this.serviceProcess.StandardError.ReadLineAsync();
-
                     if (!string.IsNullOrEmpty(errorRead.Result))
                     {
                         errorString += errorRead.Result + Environment.NewLine;
-                    }
-                    else
-                    {
-                        break;
                     }
                 }
 
