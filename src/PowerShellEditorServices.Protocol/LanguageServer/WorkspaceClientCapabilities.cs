@@ -16,22 +16,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// <summary>
         /// Capabilities specific to the `workspace/didChangeConfiguration` notification.
         /// </summary>
-        public DidChangeConfigurationCapabilities DidChangeConfiguration { get; set; }
+        public DynamicRegistrationCapability DidChangeConfiguration { get; set; }
 
         /// <summary>
         /// Capabilities specific to the `workspace/didChangeWatchedFiles` notification.
         /// </summary>
-        public DidChangeWatchedFilesCapabilities DidChangeWatchedFiles { get; set; }
+        public DynamicRegistrationCapability DidChangeWatchedFiles { get; set; }
 
         /// <summary>
         /// Capabilities specific to the `workspace/symbol` request.
         /// </summary>
-        public SymbolCapabilities Symbol { get; set; }
+        public DynamicRegistrationCapability Symbol { get; set; }
 
         /// <summary>
         /// Capabilities specific to the `workspace/executeCommand` request.
         /// </summary>
-        public ExecuteCommandCapabilities ExecuteCommand { get; set; }
+        public DynamicRegistrationCapability ExecuteCommand { get; set; }
     }
 
     /// <summary>
@@ -43,49 +43,5 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// The client supports versioned document changes in `WorkspaceEdit`
         /// </summary>
         bool DocumentChanges { get; set; }
-    }
-
-    /// <summary>
-    /// Class to represent capabilities specific to the `workspace/didChangeConfiguration` notification.
-    /// </summary>
-    public class DidChangeConfigurationCapabilities
-    {
-        /// <summary>
-        /// Did change configuration supports dynamic registration.
-        /// </summary>
-        bool DynamicRegistration { get; set; }
-    }
-
-    /// <summary>
-    /// Class to represent capabilities specific to the `workspace/didChangeWatchedFiles` notification.
-    /// </summary>
-    public class DidChangeWatchedFilesCapabilities
-    {
-        /// <summary>
-        /// Did change watched files notification supports dynamic registration.
-        /// </summary>
-        bool DynamicRegistration { get; set; }
-    }
-
-    /// <summary>
-    /// Class to represent capabilities specific to the `workspace/symbol` request.
-    /// </summary>
-    public class SymbolCapabilities
-    {
-        /// <summary>
-        /// Symbol request supports dynamic registration.
-        /// </summary>
-        bool DynamicRegistration { get; set; }
-    }
-
-    /// <summary>
-    /// Class to represent capabilities specific to the `workspace/executeCommand` request.
-    /// </summary>
-    public class ExecuteCommandCapabilities
-    {
-        /// <summary>
-        /// Execute command supports dynamic registration.
-        /// </summary>
-        bool DynamicRegistration { get; set; }
     }
 }
