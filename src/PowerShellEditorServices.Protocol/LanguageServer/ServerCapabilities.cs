@@ -26,6 +26,60 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public bool? WorkspaceSymbolProvider { get; set; }
 
         public bool? CodeActionProvider { get; set; }
+
+        public bool? CodeLensProvider { get; set; }
+
+        public bool? DocumentFormattingProvider { get; set; }
+
+        public bool? DocumentRangeFormattingProvider { get; set; }
+
+        public DocumentOnTypeFormattingOptions DocumentOnTypeFormattingProvider { get; set; }
+
+        public bool? RenameProvider { get; set; }
+
+        public DocumentLinkOptions DocumentLinkProvider { get; set; }
+
+        public ExecuteCommandOptions ExecuteCommandProvider { get; set; }
+
+        public object Experimental { get; set; }
+    }
+
+    /// <summary>
+    /// Execute command options.
+    /// </summary>
+    public class ExecuteCommandOptions
+    {
+        /// <summary>
+        /// The commands to be executed on the server.
+        /// </summary>
+        public string[] Commands { get; set; }
+    }
+
+    /// <summary>
+    /// Document link options.
+    /// </summary>
+    public class DocumentLinkOptions
+    {
+        /// <summary>
+        /// Document links have a resolve provider.
+        /// </summary>
+        public bool? ResolveProvider { get; set; }
+    }
+
+    /// <summary>
+    /// Options that the server provides for OnTypeFormatting request.
+    /// </summary>
+    public class DocumentOnTypeFormattingOptions
+    {
+        /// <summary>
+        /// A character on which formatting should be triggered.
+        /// </summary>
+        public string FirstTriggerCharacter { get; set; }
+
+        /// <summary>
+        /// More trigger characters.
+        /// </summary>
+        public string[] MoreTriggerCharacters { get; set; }
     }
 
     /// <summary>
