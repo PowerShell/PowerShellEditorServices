@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class GetPSHostProcessesRequest
     {
         public static readonly
-            RequestType<object, GetPSHostProcessesResponse[]> Type =
-                RequestType<object, GetPSHostProcessesResponse[]>.Create("powerShell/getPSHostProcesses");
+            RequestType<object, GetPSHostProcessesResponse[], object, object> Type =
+                RequestType<object, GetPSHostProcessesResponse[], object, object>.Create("powerShell/getPSHostProcesses");
     }
 
     public class GetPSHostProcessesResponse

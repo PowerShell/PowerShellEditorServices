@@ -131,12 +131,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             }
         }
 
-        protected Task<TResult> SendRequest<TParams, TResult>(
-            RequestType<TParams, TResult> requestType,
+        protected Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOption>(
+            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
             TParams requestParams)
         {
             return
-                this.protocolClient.SendRequest<TParams, TResult>(
+                this.protocolClient.SendRequest(
                     requestType,
                     requestParams);
         }
@@ -218,7 +218,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         protected async Task<Tuple<TParams, RequestContext<TResponse>>> WaitForRequest<TParams, TResponse>(
-            RequestType<TParams, TResponse> requestType,
+            RequestType<TParams, TResponse, object, object> requestType,
             int timeoutMilliseconds = 5000)
         {
             Task<Tuple<TParams, RequestContext<TResponse>>> requestTask = null;

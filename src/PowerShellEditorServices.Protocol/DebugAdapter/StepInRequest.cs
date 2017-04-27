@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class StepInRequest
     {
         public static readonly
-            RequestType<object, object> Type =
-            RequestType<object, object>.Create("stepIn");
+            RequestType<object, object, object, object> Type =
+            RequestType<object, object, object, object>.Create("stepIn");
     }
 }
 

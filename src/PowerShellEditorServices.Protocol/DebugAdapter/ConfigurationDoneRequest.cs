@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class ConfigurationDoneRequest
     {
         public static readonly
-            RequestType<object, object> Type =
-            RequestType<object, object>.Create("configurationDone");
+            RequestType<object, object, object, object> Type =
+            RequestType<object, object, object, object>.Create("configurationDone");
     }
 }

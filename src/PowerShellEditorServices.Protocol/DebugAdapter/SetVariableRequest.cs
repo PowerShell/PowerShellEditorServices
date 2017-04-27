@@ -15,8 +15,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class SetVariableRequest
     {
         public static readonly
-            RequestType<SetVariableRequestArguments, SetVariableResponseBody> Type =
-            RequestType<SetVariableRequestArguments, SetVariableResponseBody>.Create("setVariable");
+            RequestType<SetVariableRequestArguments, SetVariableResponseBody, object, object> Type =
+            RequestType<SetVariableRequestArguments, SetVariableResponseBody, object, object>.Create("setVariable");
     }
 
     [DebuggerDisplay("VariablesReference = {VariablesReference}")]

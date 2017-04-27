@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Channel.WebSocket
         }
 
         private Task<TResult> SendRequest<TParams, TResult>(
-                RequestType<TParams, TResult> requestType,
+                RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
                 TParams requestParams)
                     {
                         return

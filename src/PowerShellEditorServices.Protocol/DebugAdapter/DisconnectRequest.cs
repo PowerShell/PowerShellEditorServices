@@ -7,11 +7,11 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 {
-    public class DisconnectRequest 
+    public class DisconnectRequest
     {
         public static readonly
-            RequestType<object, object> Type =
-            RequestType<object, object>.Create("disconnect");
+            RequestType<object, object, object, object> Type =
+            RequestType<object, object, object, object>.Create("disconnect");
     }
 }
 

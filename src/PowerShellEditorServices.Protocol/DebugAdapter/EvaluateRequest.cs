@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class EvaluateRequest
     {
         public static readonly
-            RequestType<EvaluateRequestArguments, EvaluateResponseBody> Type =
-            RequestType<EvaluateRequestArguments, EvaluateResponseBody>.Create("evaluate");
+            RequestType<EvaluateRequestArguments, EvaluateResponseBody, object, object> Type =
+            RequestType<EvaluateRequestArguments, EvaluateResponseBody, object, object>.Create("evaluate");
     }
 
     public class EvaluateRequestArguments

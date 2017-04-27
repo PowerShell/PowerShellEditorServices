@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Messages
     public class ShowChoicePromptRequest
     {
         public static readonly
-            RequestType<ShowChoicePromptRequest, ShowChoicePromptResponse> Type =
-            RequestType<ShowChoicePromptRequest, ShowChoicePromptResponse>.Create("powerShell/showChoicePrompt");
+            RequestType<ShowChoicePromptRequest, ShowChoicePromptResponse, object, object> Type =
+            RequestType<ShowChoicePromptRequest, ShowChoicePromptResponse, object, object>.Create("powerShell/showChoicePrompt");
 
         public bool IsMultiChoice { get; set; }
 
@@ -34,8 +34,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Messages
     public class ShowInputPromptRequest
     {
         public static readonly
-            RequestType<ShowInputPromptRequest, ShowInputPromptResponse> Type =
-            RequestType<ShowInputPromptRequest, ShowInputPromptResponse>.Create("powerShell/showInputPrompt");
+            RequestType<ShowInputPromptRequest, ShowInputPromptResponse, object, object> Type =
+            RequestType<ShowInputPromptRequest, ShowInputPromptResponse, object, object>.Create("powerShell/showInputPrompt");
 
         /// <summary>
         /// Gets or sets the name of the field.

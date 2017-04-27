@@ -11,8 +11,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class PowerShellVersionRequest
     {
         public static readonly
-            RequestType<object, PowerShellVersion> Type =
-            RequestType<object, PowerShellVersion>.Create("powerShell/getVersion");
+            RequestType<object, PowerShellVersion, object, object> Type =
+            RequestType<object, PowerShellVersion, object, object>.Create("powerShell/getVersion");
     }
 
     public class PowerShellVersion

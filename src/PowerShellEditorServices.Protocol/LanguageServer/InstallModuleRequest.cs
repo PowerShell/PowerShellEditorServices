@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     class InstallModuleRequest
     {
         public static readonly
-            RequestType<string, object> Type =
-            RequestType<string, object>.Create("powerShell/installModule");
+            RequestType<string, object, object, object> Type =
+            RequestType<string, object, object, object>.Create("powerShell/installModule");
     }
 }

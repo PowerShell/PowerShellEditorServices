@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class SignatureHelpRequest
     {
         public static readonly
-            RequestType<TextDocumentPositionParams, SignatureHelp> Type =
-            RequestType<TextDocumentPositionParams, SignatureHelp>.Create("textDocument/signatureHelp");
+            RequestType<TextDocumentPositionParams, SignatureHelp, object, object> Type =
+            RequestType<TextDocumentPositionParams, SignatureHelp, object, object>.Create("textDocument/signatureHelp");
     }
 
     public class ParameterInformation

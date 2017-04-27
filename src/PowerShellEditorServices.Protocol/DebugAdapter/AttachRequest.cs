@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class AttachRequest
     {
         public static readonly
-            RequestType<AttachRequestArguments, object> Type =
-            RequestType<AttachRequestArguments, object>.Create("attach");
+            RequestType<AttachRequestArguments, object, object, object> Type =
+            RequestType<AttachRequestArguments, object, object, object>.Create("attach");
     }
 
     public class AttachRequestArguments

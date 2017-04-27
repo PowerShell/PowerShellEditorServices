@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class ReferencesRequest
     {
         public static readonly
-            RequestType<ReferencesParams, Location[]> Type =
-            RequestType<ReferencesParams, Location[]>.Create("textDocument/references");
+            RequestType<ReferencesParams, Location[], object, object> Type =
+            RequestType<ReferencesParams, Location[], object, object>.Create("textDocument/references");
     }
 
     public class ReferencesParams : TextDocumentPosition

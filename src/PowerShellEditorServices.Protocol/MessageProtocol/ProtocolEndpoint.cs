@@ -135,8 +135,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         public Task<TResult> SendRequest<TResult, TError, TRegistrationOption>(
             RequestType0<TResult, TError, TRegistrationOption> requestType0)
         {
-            return this.SendRequest<Object, TResult>(
-                RequestType<Object, TResult>.ConvertToReqestType(requestType0),
+            return this.SendRequest(
+                RequestType<Object, TResult, TError, TRegistrationOption>.ConvertToRequestType(requestType0),
                  null);
         }
 
@@ -149,15 +149,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         /// <param name="requestType"></param>
         /// <param name="requestParams"></param>
         /// <returns></returns>
-        public Task<TResult> SendRequest<TParams, TResult>(
-            RequestType<TParams, TResult> requestType,
+        public Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOption>(
+            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
             TParams requestParams)
         {
             return this.SendRequest(requestType, requestParams, true);
         }
 
-        public async Task<TResult> SendRequest<TParams, TResult>(
-            RequestType<TParams, TResult> requestType,
+        public async Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOption>(
+            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
             TParams requestParams,
             bool waitForResponse)
         {
@@ -186,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     responseTask);
             }
 
-            await this.protocolChannel.MessageWriter.WriteRequest<TParams, TResult>(
+            await this.protocolChannel.MessageWriter.WriteRequest<TParams, TResult, TError, TRegistrationOption>(
                 requestType,
                 requestParams,
                 this.currentMessageId);
@@ -268,15 +268,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             Func<RequestContext<TResult>, Task> requestHandler)
         {
             SetRequestHandler(
-                RequestType<Object, TResult>.ConvertToReqestType(requestType0),
+                RequestType<Object, TResult, TError, TRegistrationOption>.ConvertToRequestType(requestType0),
                 (param1, requestContext) =>
                 {
                     return requestHandler(requestContext);
                 });
         }
 
-        public void SetRequestHandler<TParams, TResult>(
-            RequestType<TParams, TResult> requestType,
+        public void SetRequestHandler<TParams, TResult, TError, TRegistrationOption>(
+            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
             Func<TParams, RequestContext<TResult>, Task> requestHandler)
         {
             this.MessageDispatcher.SetRequestHandler(

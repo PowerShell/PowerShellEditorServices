@@ -13,8 +13,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             EventType<TParams> eventType,
             TParams eventParams);
 
-        Task<TResult> SendRequest<TParams, TResult>(
-            RequestType<TParams, TResult> requestType,
+        Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOption>(
+            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
             TParams requestParams,
             bool waitForResponse);
     }

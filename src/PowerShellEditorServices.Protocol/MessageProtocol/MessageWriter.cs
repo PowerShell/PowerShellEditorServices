@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         private IMessageSerializer messageSerializer;
         private AsyncLock writeLock = new AsyncLock();
 
-        private JsonSerializer contentSerializer = 
+        private JsonSerializer contentSerializer =
             JsonSerializer.Create(
                 Constants.JsonSerializerSettings);
 
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     Constants.JsonSerializerSettings);
 
             byte[] messageBytes = Encoding.UTF8.GetBytes(serializedMessage);
-            byte[] headerBytes = 
+            byte[] headerBytes =
                 Encoding.ASCII.GetBytes(
                     string.Format(
                         Constants.ContentLengthFormatString,
@@ -89,8 +89,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
-        public async Task WriteRequest<TParams, TResult>(
-            RequestType<TParams, TResult> requestType, 
+        public async Task WriteRequest<TParams, TResult, TError, TRegistrationOption>(
+            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
             TParams requestParams,
             int requestId)
         {
@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
             await this.WriteMessage(
                 Message.Request(
-                    requestId.ToString(), 
+                    requestId.ToString(),
                     requestType.MethodName,
                     contentObject));
         }

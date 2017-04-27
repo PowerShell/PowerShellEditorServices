@@ -15,8 +15,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     class ScriptFileMarkersRequest
     {
         public static readonly
-            RequestType<ScriptFileMarkerRequestParams, ScriptFileMarkerRequestResultParams> Type =
-                RequestType<ScriptFileMarkerRequestParams, ScriptFileMarkerRequestResultParams>.Create("powerShell/getScriptFileMarkers");
+            RequestType<ScriptFileMarkerRequestParams, ScriptFileMarkerRequestResultParams, object, object> Type =
+                RequestType<ScriptFileMarkerRequestParams, ScriptFileMarkerRequestResultParams, object, object>.Create("powerShell/getScriptFileMarkers");
     }
 
     /// <summary>

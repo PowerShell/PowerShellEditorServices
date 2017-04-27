@@ -13,8 +13,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class NextRequest
     {
         public static readonly
-            RequestType<object, object> Type =
-            RequestType<object, object>.Create("next");
+            RequestType<object, object, object, object> Type =
+            RequestType<object, object, object, object>.Create("next");
     }
 }
 
