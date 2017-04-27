@@ -225,7 +225,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             // Use the request queue if one has been registered
             AsyncQueue<object> requestQueue = null;
-            if (this.requestQueuePerType.TryGetValue(requestType.MethodName, out requestQueue))
+            if (this.requestQueuePerType.TryGetValue(requestType.Method, out requestQueue))
             {
                 requestTask =
                     requestQueue
@@ -264,7 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 throw new TimeoutException(
                     string.Format(
                         "Timed out waiting for '{0}' request!",
-                        requestType.MethodName));
+                        requestType.Method));
             }
 
             return await requestTask;
