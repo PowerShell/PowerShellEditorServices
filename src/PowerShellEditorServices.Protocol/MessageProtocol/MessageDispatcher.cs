@@ -92,8 +92,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
-        public void SetRequestHandler<TParams, TResult, TError, TRegistrationOption>(
-            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
+        public void SetRequestHandler<TParams, TResult, TError, TRegistrationOptions>(
+            RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             Func<TParams, RequestContext<TResult>, Task> requestHandler)
         {
             this.SetRequestHandler(
@@ -102,8 +102,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 false);
         }
 
-        public void SetRequestHandler<TParams, TResult, TError, TRegistrationOption>(
-            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
+        public void SetRequestHandler<TParams, TResult, TError, TRegistrationOptions>(
+            RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             Func<TParams, RequestContext<TResult>, Task> requestHandler,
             bool overrideExisting)
         {
