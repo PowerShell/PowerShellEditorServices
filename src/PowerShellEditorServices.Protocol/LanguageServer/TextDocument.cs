@@ -98,8 +98,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidOpenTextDocumentNotification
     {
         public static readonly
-            NotificationType<DidOpenTextDocumentParams> Type =
-            NotificationType<DidOpenTextDocumentParams>.Create("textDocument/didOpen");
+            NotificationType<DidOpenTextDocumentParams, object> Type =
+            NotificationType<DidOpenTextDocumentParams, object>.Create("textDocument/didOpen");
     }
 
     /// <summary>
@@ -116,8 +116,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidCloseTextDocumentNotification
     {
         public static readonly
-            NotificationType<DidCloseTextDocumentParams> Type =
-            NotificationType<DidCloseTextDocumentParams>.Create("textDocument/didClose");
+            NotificationType<DidCloseTextDocumentParams, object> Type =
+            NotificationType<DidCloseTextDocumentParams, object>.Create("textDocument/didClose");
     }
 
     /// <summary>
@@ -134,8 +134,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidSaveTextDocumentNotification
     {
         public static readonly
-            NotificationType<DidSaveTextDocumentParams> Type =
-            NotificationType<DidSaveTextDocumentParams>.Create("textDocument/didSave");
+            NotificationType<DidSaveTextDocumentParams, object> Type =
+            NotificationType<DidSaveTextDocumentParams, object>.Create("textDocument/didSave");
     }
 
     /// <summary>
@@ -158,8 +158,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidChangeTextDocumentNotification
     {
         public static readonly
-            NotificationType<DidChangeTextDocumentParams> Type =
-            NotificationType<DidChangeTextDocumentParams>.Create("textDocument/didChange");
+            NotificationType<DidChangeTextDocumentParams, object> Type =
+            NotificationType<DidChangeTextDocumentParams, object>.Create("textDocument/didChange");
     }
 
     /// <summary>

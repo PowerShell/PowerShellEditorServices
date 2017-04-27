@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidChangeConfigurationNotification<TConfig>
     {
         public static readonly
-            NotificationType<DidChangeConfigurationParams<TConfig>> Type =
-            NotificationType<DidChangeConfigurationParams<TConfig>>.Create("workspace/didChangeConfiguration");
+            NotificationType<DidChangeConfigurationParams<TConfig>, object> Type =
+            NotificationType<DidChangeConfigurationParams<TConfig>, object>.Create("workspace/didChangeConfiguration");
     }
 
     public class DidChangeConfigurationParams<TConfig>

@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
@@ -10,8 +11,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class ContinuedEvent
     {
         public static readonly
-            NotificationType<ContinuedEvent> Type =
-            NotificationType<ContinuedEvent>.Create("continued");
+            NotificationType<ContinuedEvent, object> Type =
+            NotificationType<ContinuedEvent, object>.Create("continued");
 
         public int ThreadId { get; set; }
 

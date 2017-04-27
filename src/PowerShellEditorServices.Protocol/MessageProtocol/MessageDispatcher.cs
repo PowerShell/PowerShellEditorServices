@@ -133,8 +133,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 });
         }
 
-        public void SetEventHandler<TParams>(
-            NotificationType<TParams> eventType,
+        public void SetEventHandler<TParams, TRegistrationOptions>(
+            NotificationType<TParams, TRegistrationOptions> eventType,
             Func<TParams, EventContext, Task> eventHandler)
         {
             this.SetEventHandler(
@@ -143,8 +143,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 false);
         }
 
-        public void SetEventHandler<TParams>(
-            NotificationType<TParams> eventType,
+        public void SetEventHandler<TParams, TRegistrationOptions>(
+            NotificationType<TParams, TRegistrationOptions> eventType,
             Func<TParams, EventContext, Task> eventHandler,
             bool overrideExisting)
         {

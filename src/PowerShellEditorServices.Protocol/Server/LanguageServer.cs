@@ -1249,7 +1249,7 @@ function __Expand-Alias {
         private Task RunScriptDiagnostics(
             ScriptFile[] filesToAnalyze,
             EditorSession editorSession,
-            Func<NotificationType<PublishDiagnosticsNotification>, PublishDiagnosticsNotification, Task> eventSender)
+            Func<NotificationType<PublishDiagnosticsNotification, object>, PublishDiagnosticsNotification, Task> eventSender)
         {
             // If there's an existing task, attempt to cancel it
             try
@@ -1327,7 +1327,7 @@ function __Expand-Alias {
             bool isScriptAnalysisEnabled,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EditorSession editorSession,
-            Func<NotificationType<PublishDiagnosticsNotification>, PublishDiagnosticsNotification, Task> eventSender,
+            Func<NotificationType<PublishDiagnosticsNotification, object>, PublishDiagnosticsNotification, Task> eventSender,
             CancellationToken cancellationToken)
         {
             // First of all, wait for the desired delay period before
@@ -1403,7 +1403,7 @@ function __Expand-Alias {
             ScriptFile scriptFile,
             ScriptFileMarker[] markers,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
-            Func<NotificationType<PublishDiagnosticsNotification>, PublishDiagnosticsNotification, Task> eventSender)
+            Func<NotificationType<PublishDiagnosticsNotification, object>, PublishDiagnosticsNotification, Task> eventSender)
         {
             List<Diagnostic> diagnostics = new List<Diagnostic>();
 

@@ -926,7 +926,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // Exited the session while the debugger is stopped,
                 // send a ContinuedEvent so that the client changes the
                 // UI to appear to be running again
-                await this.SendEvent<ContinuedEvent>(
+                await this.SendEvent<ContinuedEvent, Object>(
                     ContinuedEvent.Type,
                     new ContinuedEvent
                     {

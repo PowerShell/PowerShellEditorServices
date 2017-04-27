@@ -15,8 +15,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class PublishDiagnosticsNotification
     {
         public static readonly
-            NotificationType<PublishDiagnosticsNotification> Type =
-            NotificationType<PublishDiagnosticsNotification>.Create("textDocument/publishDiagnostics");
+            NotificationType<PublishDiagnosticsNotification, object> Type =
+            NotificationType<PublishDiagnosticsNotification, object>.Create("textDocument/publishDiagnostics");
 
         /// <summary>
         /// Gets or sets the URI for which diagnostic information is reported.

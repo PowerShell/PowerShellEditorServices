@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class StoppedEvent
     {
         public static readonly
-            NotificationType<StoppedEventBody> Type =
-            NotificationType<StoppedEventBody>.Create("stopped");
+            NotificationType<StoppedEventBody, object> Type =
+            NotificationType<StoppedEventBody, object>.Create("stopped");
     }
 
     public class StoppedEventBody
