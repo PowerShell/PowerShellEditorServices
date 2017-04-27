@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// The client supports the following `CompletionItem` specific capabilities.
         /// </summary>
         /// <returns></returns>
-        CompletionItemCapabilities CompletionItem { get; set; }
+        public CompletionItemCapabilities CompletionItem { get; set; }
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// the end of the snippet. Placeholders with equal identifiers are linked,
         /// that is typing in one will update others too.
         /// </summary>
-        bool SnippetSupport { get; set; }
+        public bool? SnippetSupport { get; set; }
     }
 
     /// <summary>
@@ -114,17 +114,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// <summary>
         /// The client supports sending will save notifications.
         /// </summary>
-        bool WillSave { get; set; }
+        public bool? WillSave { get; set; }
 
         /// <summary>
         /// The client supports sending a will save request and waits for a response
         /// providing text edits which will be applied to the document before it is save.
         /// </summary>
-        bool WillSaveWaitUntil { get; set; }
+        public bool? WillSaveWaitUntil { get; set; }
 
         /// <summary>
         /// The client supports did save notifications.
         /// </summary>
-        bool DidSave { get; set; }
+        public bool? DidSave { get; set; }
     }
 }
