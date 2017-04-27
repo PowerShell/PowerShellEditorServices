@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class ExitedEvent
     {
         public static readonly
-            EventType<ExitedEventBody> Type =
-            EventType<ExitedEventBody>.Create("exited");
+            NotificationType<ExitedEventBody> Type =
+            NotificationType<ExitedEventBody>.Create("exited");
     }
 
     public class ExitedEventBody

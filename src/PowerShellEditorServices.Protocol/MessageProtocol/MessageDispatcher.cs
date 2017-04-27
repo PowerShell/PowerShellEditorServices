@@ -134,7 +134,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         }
 
         public void SetEventHandler<TParams>(
-            EventType<TParams> eventType,
+            NotificationType<TParams> eventType,
             Func<TParams, EventContext, Task> eventHandler)
         {
             this.SetEventHandler(
@@ -144,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         }
 
         public void SetEventHandler<TParams>(
-            EventType<TParams> eventType,
+            NotificationType<TParams> eventType,
             Func<TParams, EventContext, Task> eventHandler,
             bool overrideExisting)
         {

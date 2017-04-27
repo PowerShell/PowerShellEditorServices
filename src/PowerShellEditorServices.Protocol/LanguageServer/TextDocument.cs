@@ -98,8 +98,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidOpenTextDocumentNotification
     {
         public static readonly
-            EventType<DidOpenTextDocumentParams> Type =
-            EventType<DidOpenTextDocumentParams>.Create("textDocument/didOpen");
+            NotificationType<DidOpenTextDocumentParams> Type =
+            NotificationType<DidOpenTextDocumentParams>.Create("textDocument/didOpen");
     }
 
     /// <summary>
@@ -116,8 +116,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidCloseTextDocumentNotification
     {
         public static readonly
-            EventType<DidCloseTextDocumentParams> Type =
-            EventType<DidCloseTextDocumentParams>.Create("textDocument/didClose");
+            NotificationType<DidCloseTextDocumentParams> Type =
+            NotificationType<DidCloseTextDocumentParams>.Create("textDocument/didClose");
     }
 
     /// <summary>
@@ -134,8 +134,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidSaveTextDocumentNotification
     {
         public static readonly
-            EventType<DidSaveTextDocumentParams> Type =
-            EventType<DidSaveTextDocumentParams>.Create("textDocument/didSave");
+            NotificationType<DidSaveTextDocumentParams> Type =
+            NotificationType<DidSaveTextDocumentParams>.Create("textDocument/didSave");
     }
 
     /// <summary>
@@ -158,8 +158,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidChangeTextDocumentNotification
     {
         public static readonly
-            EventType<DidChangeTextDocumentParams> Type =
-            EventType<DidChangeTextDocumentParams>.Create("textDocument/didChange");
+            NotificationType<DidChangeTextDocumentParams> Type =
+            NotificationType<DidChangeTextDocumentParams>.Create("textDocument/didChange");
     }
 
     /// <summary>

@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class StartedEvent
     {
         public static readonly
-            EventType<object> Type =
-            EventType<object>.Create("started");
+            NotificationType<object> Type =
+            NotificationType<object>.Create("started");
     }
 }

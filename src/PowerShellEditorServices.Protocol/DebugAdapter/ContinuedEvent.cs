@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class ContinuedEvent
     {
         public static readonly
-            EventType<ContinuedEvent> Type =
-            EventType<ContinuedEvent>.Create("continued");
+            NotificationType<ContinuedEvent> Type =
+            NotificationType<ContinuedEvent>.Create("continued");
 
         public int ThreadId { get; set; }
 

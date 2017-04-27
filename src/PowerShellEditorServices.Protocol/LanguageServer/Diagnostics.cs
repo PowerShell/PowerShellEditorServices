@@ -15,8 +15,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class PublishDiagnosticsNotification
     {
         public static readonly
-            EventType<PublishDiagnosticsNotification> Type = 
-            EventType<PublishDiagnosticsNotification>.Create("textDocument/publishDiagnostics");
+            NotificationType<PublishDiagnosticsNotification> Type =
+            NotificationType<PublishDiagnosticsNotification>.Create("textDocument/publishDiagnostics");
 
         /// <summary>
         /// Gets or sets the URI for which diagnostic information is reported.
@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public Diagnostic[] Diagnostics { get; set; }
     }
 
-    public enum DiagnosticSeverity 
+    public enum DiagnosticSeverity
     {
         /// <summary>
         /// Indicates that the diagnostic represents an error.

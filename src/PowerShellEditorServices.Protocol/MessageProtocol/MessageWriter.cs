@@ -122,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     contentObject));
         }
 
-        public async Task WriteEvent<TParams>(EventType<TParams> eventType, TParams eventParams)
+        public async Task WriteEvent<TParams>(NotificationType<TParams> eventType, TParams eventParams)
         {
             // Allow null content
             JToken contentObject =
