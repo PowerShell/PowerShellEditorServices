@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class ExtensionCommandAddedNotification
     {
         public static readonly
-            NotificationType<ExtensionCommandAddedNotification> Type =
-            NotificationType<ExtensionCommandAddedNotification>.Create("powerShell/extensionCommandAdded");
+            NotificationType<ExtensionCommandAddedNotification, object> Type =
+            NotificationType<ExtensionCommandAddedNotification, object>.Create("powerShell/extensionCommandAdded");
 
         public string Name { get; set; }
 
@@ -21,8 +21,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class ExtensionCommandUpdatedNotification
     {
         public static readonly
-            NotificationType<ExtensionCommandUpdatedNotification> Type =
-            NotificationType<ExtensionCommandUpdatedNotification>.Create("powerShell/extensionCommandUpdated");
+            NotificationType<ExtensionCommandUpdatedNotification, object> Type =
+            NotificationType<ExtensionCommandUpdatedNotification, object>.Create("powerShell/extensionCommandUpdated");
 
         public string Name { get; set; }
     }
@@ -30,8 +30,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class ExtensionCommandRemovedNotification
     {
         public static readonly
-            NotificationType<ExtensionCommandRemovedNotification> Type =
-            NotificationType<ExtensionCommandRemovedNotification>.Create("powerShell/extensionCommandRemoved");
+            NotificationType<ExtensionCommandRemovedNotification, object> Type =
+            NotificationType<ExtensionCommandRemovedNotification, object>.Create("powerShell/extensionCommandRemoved");
 
         public string Name { get; set; }
     }

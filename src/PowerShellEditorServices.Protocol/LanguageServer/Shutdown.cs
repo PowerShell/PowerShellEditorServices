@@ -25,8 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class ExitNotification
     {
         public static readonly
-            NotificationType<object> Type =
-            NotificationType<object>.Create("exit");
+            NotificationType<object, object> Type =
+            NotificationType<object, object>.Create("exit");
     }
 }
 

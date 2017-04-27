@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class OutputEvent
     {
         public static readonly
-            NotificationType<OutputEventBody> Type =
-            NotificationType<OutputEventBody>.Create("output");
+            NotificationType<OutputEventBody, object> Type =
+            NotificationType<OutputEventBody, object>.Create("output");
     }
 
     public class OutputEventBody

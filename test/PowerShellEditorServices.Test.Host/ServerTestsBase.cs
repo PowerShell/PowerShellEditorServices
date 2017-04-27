@@ -141,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     requestParams);
         }
 
-        protected Task SendEvent<TParams>(NotificationType<TParams> eventType, TParams eventParams)
+        protected Task SendEvent<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType, TParams eventParams)
         {
             return
                 this.protocolClient.SendEvent(
@@ -149,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     eventParams);
         }
 
-        protected void QueueEventsForType<TParams>(NotificationType<TParams> eventType)
+        protected void QueueEventsForType<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType)
         {
             var eventQueue =
                 this.eventQueuePerType.AddOrUpdate(
@@ -165,8 +165,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 });
         }
 
-        protected async Task<TParams> WaitForEvent<TParams>(
-            NotificationType<TParams> eventType,
+        protected async Task<TParams> WaitForEvent<TParams, TRegistrationOptions>(
+            NotificationType<TParams, TRegistrationOptions> eventType,
             int timeoutMilliseconds = 5000)
         {
             Task<TParams> eventTask = null;

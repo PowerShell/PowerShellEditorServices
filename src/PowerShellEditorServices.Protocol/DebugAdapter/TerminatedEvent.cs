@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class TerminatedEvent
     {
         public static readonly
-            NotificationType<TerminatedEvent> Type =
-            NotificationType<TerminatedEvent>.Create("terminated");
+            NotificationType<TerminatedEvent, object> Type =
+            NotificationType<TerminatedEvent, object>.Create("terminated");
 
         public bool Restart { get; set; }
     }

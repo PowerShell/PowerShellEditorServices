@@ -9,7 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     /// Defines an event type with a particular method name.
     /// </summary>
     /// <typeparam name="TParams">The parameter type for this event.</typeparam>
-    public class NotificationType<TParams> : AbstractMessageType
+    public class NotificationType<TParams, TRegistrationOptions> : AbstractMessageType
     {
         private NotificationType(string method) : base(method, 1)
         {
@@ -21,9 +21,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         /// </summary>
         /// <param name="method">The method name of the event.</param>
         /// <returns>A new EventType instance for the defined type.</returns>
-        public static NotificationType<TParams> Create(string method)
+        public static NotificationType<TParams, TRegistrationOptions> Create(string method)
         {
-            return new NotificationType<TParams>(method);
+            return new NotificationType<TParams, TRegistrationOptions>(method);
         }
     }
 }
