@@ -174,7 +174,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         #region Built-in Message Handlers
 
         protected async Task HandleInitializeRequest(
-            InitializeRequest initializeParams,
+            InitializeParams initializeParams,
             RequestContext<InitializeResult> requestContext)
         {
             // Grab the workspace path from the parameters

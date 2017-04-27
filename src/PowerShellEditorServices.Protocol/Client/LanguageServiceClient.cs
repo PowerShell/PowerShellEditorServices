@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         protected override Task OnConnect()
         {
             // Send the 'initialize' request and wait for the response
-            var initializeRequest = new InitializeRequest
+            var initializeParams = new InitializeParams
             {
                 RootPath = "",
                 Capabilities = new ClientCapabilities()
@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 
             return this.SendRequest(
                 InitializeRequest.Type,
-                initializeRequest);
+                initializeParams);
         }
 
         #region Events
