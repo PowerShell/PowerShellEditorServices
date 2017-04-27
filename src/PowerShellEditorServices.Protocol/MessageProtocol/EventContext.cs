@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         }
 
         public async Task SendEvent<TParams>(
-            EventType<TParams> eventType, 
+            NotificationType<TParams> eventType,
             TParams eventParams)
         {
             await this.messageWriter.WriteEvent(

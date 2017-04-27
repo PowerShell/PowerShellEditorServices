@@ -215,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         /// <param name="eventParams">The event parameters being sent.</param>
         /// <returns>A Task that tracks completion of the send operation.</returns>
         public Task SendEvent<TParams>(
-            EventType<TParams> eventType,
+            NotificationType<TParams> eventType,
             TParams eventParams)
         {
             // Some requests may still be in the SynchronizationContext queue
@@ -285,7 +285,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         }
 
         public void SetEventHandler<TParams>(
-            EventType<TParams> eventType,
+            NotificationType<TParams> eventType,
             Func<TParams, EventContext, Task> eventHandler)
         {
             this.MessageDispatcher.SetEventHandler(
@@ -295,7 +295,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         }
 
         public void SetEventHandler<TParams>(
-            EventType<TParams> eventType,
+            NotificationType<TParams> eventType,
             Func<TParams, EventContext, Task> eventHandler,
             bool overrideExisting)
         {

@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     internal interface IMessageSender
     {
         Task SendEvent<TParams>(
-            EventType<TParams> eventType,
+            NotificationType<TParams> eventType,
             TParams eventParams);
 
         Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOption>(

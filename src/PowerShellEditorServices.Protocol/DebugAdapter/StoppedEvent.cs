@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class StoppedEvent
     {
         public static readonly
-            EventType<StoppedEventBody> Type =
-            EventType<StoppedEventBody>.Create("stopped");
+            NotificationType<StoppedEventBody> Type =
+            NotificationType<StoppedEventBody>.Create("stopped");
     }
 
     public class StoppedEventBody
@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         /// </summary>
         public int? ThreadId { get; set; }
 
-        public Source Source { get; set; } 
+        public Source Source { get; set; }
 
         /// <summary>
         /// Gets or sets additional information such as an error message.

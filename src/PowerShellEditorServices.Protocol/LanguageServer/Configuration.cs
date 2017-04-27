@@ -7,11 +7,11 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
-    public class DidChangeConfigurationNotification<TConfig> 
+    public class DidChangeConfigurationNotification<TConfig>
     {
         public static readonly
-            EventType<DidChangeConfigurationParams<TConfig>> Type =
-            EventType<DidChangeConfigurationParams<TConfig>>.Create("workspace/didChangeConfiguration");
+            NotificationType<DidChangeConfigurationParams<TConfig>> Type =
+            NotificationType<DidChangeConfigurationParams<TConfig>>.Create("workspace/didChangeConfiguration");
     }
 
     public class DidChangeConfigurationParams<TConfig>

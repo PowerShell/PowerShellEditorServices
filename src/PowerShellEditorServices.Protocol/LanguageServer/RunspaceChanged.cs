@@ -11,8 +11,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class RunspaceChangedEvent
     {
         public static readonly
-            EventType<RunspaceDetails> Type =
-            EventType<RunspaceDetails>.Create("powerShell/runspaceChanged");
+            NotificationType<RunspaceDetails> Type =
+            NotificationType<RunspaceDetails>.Create("powerShell/runspaceChanged");
     }
 
     public class RunspaceDetails

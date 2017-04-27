@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
         public List<OutputEventBody> OutputEvents { get; } = new List<OutputEventBody>();
 
         public Task SendEvent<TParams>(
-            EventType<TParams> eventType,
+            NotificationType<TParams> eventType,
             TParams eventParams)
         {
             OutputEventBody outputEvent = eventParams as OutputEventBody;
