@@ -8,6 +8,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// <summary>
         /// Whether the capability supports dynamic registration.
         /// </summary>
-        public bool DynamicRegistration { get; set; }
+        public bool? DynamicRegistration { get; set; }
     }
 }
