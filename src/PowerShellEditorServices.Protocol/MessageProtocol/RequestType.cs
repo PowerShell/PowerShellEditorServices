@@ -8,9 +8,12 @@ using System.Diagnostics;
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
     [DebuggerDisplay("RequestType Method = {Method}")]
-    public class RequestType<TParams, TResult, TError, TRegistrationOption>
+    public class RequestType<TParams, TResult, TError, TRegistrationOption> : AbstractMessageType
     {
-        public string Method { get; private set; }
+        private RequestType(string method) : base(method, 1)
+        {
+
+        }
 
         public static RequestType<TParams, TResult, TError, TRegistrationOption> ConvertToRequestType(
             RequestType0<TResult, TError, TRegistrationOption> requestType0)
@@ -18,17 +21,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             return RequestType<TParams, TResult, TError, TRegistrationOption>.Create(requestType0.Method);
         }
 
-        public static RequestType<TParams, TResult, TError, TRegistrationOption> Create(string typeName)
+        public static RequestType<TParams, TResult, TError, TRegistrationOption> Create(string method)
         {
-            if (typeName == null)
+            if (method == null)
             {
-                throw new System.ArgumentNullException(nameof(typeName));
+                throw new System.ArgumentNullException(nameof(method));
             }
 
-            return new RequestType<TParams, TResult, TError, TRegistrationOption>()
-            {
-                Method = typeName
-            };
+            return new RequestType<TParams, TResult, TError, TRegistrationOption>(method);
         }
     }
 }
