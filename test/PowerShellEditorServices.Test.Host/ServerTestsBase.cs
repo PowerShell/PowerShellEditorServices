@@ -153,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         {
             var eventQueue =
                 this.eventQueuePerType.AddOrUpdate(
-                    eventType.MethodName,
+                    eventType.Method,
                     new AsyncQueue<object>(),
                     (key, queue) => queue);
 
@@ -173,7 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             // Use the event queue if one has been registered
             AsyncQueue<object> eventQueue = null;
-            if (this.eventQueuePerType.TryGetValue(eventType.MethodName, out eventQueue))
+            if (this.eventQueuePerType.TryGetValue(eventType.Method, out eventQueue))
             {
                 eventTask =
                     eventQueue
@@ -211,7 +211,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 throw new TimeoutException(
                     string.Format(
                         "Timed out waiting for '{0}' event!",
-                        eventType.MethodName));
+                        eventType.Method));
             }
 
             return await eventTask;

@@ -151,11 +151,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             if (overrideExisting)
             {
                 // Remove the existing handler so a new one can be set
-                this.eventHandlers.Remove(eventType.MethodName);
+                this.eventHandlers.Remove(eventType.Method);
             }
 
             this.eventHandlers.Add(
-                eventType.MethodName,
+                eventType.Method,
                 (eventMessage, messageWriter) =>
                 {
                     var eventContext = new EventContext(messageWriter);

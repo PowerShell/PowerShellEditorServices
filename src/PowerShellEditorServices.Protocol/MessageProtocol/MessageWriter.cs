@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
             await this.WriteMessage(
                 Message.Event(
-                    eventType.MethodName,
+                    eventType.Method,
                     contentObject));
         }
 
