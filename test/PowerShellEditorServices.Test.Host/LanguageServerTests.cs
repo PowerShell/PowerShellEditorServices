@@ -122,9 +122,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             CompletionItem[] completions =
                 await this.SendRequest(
                     CompletionRequest.Type,
-                    new TextDocumentPosition
+                    new TextDocumentPositionParams
                     {
-                        Uri = "TestFiles\\CompleteFunctionName.ps1",
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\CompleteFunctionName.ps1",
+                        },
                         Position = new Position
                         {
                             Line = 4,
@@ -146,9 +149,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             CompletionItem[] completions =
                 await this.SendRequest(
                     CompletionRequest.Type,
-                    new TextDocumentPosition
+                    new TextDocumentPositionParams
                     {
-                        Uri = "TestFiles\\CompleteFunctionName.ps1",
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\CompleteFunctionName.ps1"
+                        },
                         Position = new Position
                         {
                             Line = 3,
@@ -172,9 +178,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             await this.SendRequest(
                 CompletionRequest.Type,
-                new TextDocumentPosition
+                new TextDocumentPositionParams
                 {
-                    Uri = "TestFiles\\CompleteFunctionName.ps1",
+                    TextDocument = new TextDocumentIdentifier
+                    {
+                        Uri = "TestFiles\\CompleteFunctionName.ps1"
+                    },
                     Position = new Position
                     {
                         Line = 7,
@@ -212,9 +221,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             CompletionItem[] completions =
                 await this.SendRequest(
                     CompletionRequest.Type,
-                    new TextDocumentPosition
+                    new TextDocumentPositionParams
                     {
-                        Uri = "TestFiles\\CompleteFunctionName.ps1",
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\CompleteFunctionName.ps1"
+                        },
                         Position = new Position
                         {
                             Line = 5,

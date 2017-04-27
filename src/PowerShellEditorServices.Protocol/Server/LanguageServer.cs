@@ -708,15 +708,15 @@ function __Expand-Alias {
         }
 
         protected async Task HandleCompletionRequest(
-            TextDocumentPosition textDocumentPosition,
+            TextDocumentPositionParams textDocumentPositionParams,
             RequestContext<CompletionItem[]> requestContext)
         {
-            int cursorLine = textDocumentPosition.Position.Line + 1;
-            int cursorColumn = textDocumentPosition.Position.Character + 1;
+            int cursorLine = textDocumentPositionParams.Position.Line + 1;
+            int cursorColumn = textDocumentPositionParams.Position.Character + 1;
 
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
-                    textDocumentPosition.Uri);
+                    textDocumentPositionParams.TextDocument.Uri);
 
             CompletionResults completionResults =
                 await editorSession.LanguageService.GetCompletionsInFile(
