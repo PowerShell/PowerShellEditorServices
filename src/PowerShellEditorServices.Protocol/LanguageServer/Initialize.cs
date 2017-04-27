@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class InitializeRequest
     {
         public static readonly
-            RequestType<InitializeParams, InitializeResult, object, object> Type =
-            RequestType<InitializeParams, InitializeResult, object, object>.Create("initialize");
+            RequestType<InitializeParams, InitializeResult, InitializeError, object> Type =
+            RequestType<InitializeParams, InitializeResult, InitializeError, object>.Create("initialize");
    }
 
     public enum TraceType {
