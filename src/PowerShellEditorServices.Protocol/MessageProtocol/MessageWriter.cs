@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             await this.WriteMessage(
                 Message.Request(
                     requestId.ToString(),
-                    requestType.MethodName,
+                    requestType.Method,
                     contentObject));
         }
 

@@ -7,10 +7,10 @@ using System.Diagnostics;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
-    [DebuggerDisplay("RequestType MethodName = {MethodName}")]
+    [DebuggerDisplay("RequestType Method = {Method}")]
     public class RequestType<TParams, TResult, TError, TRegistrationOption>
     {
-        public string MethodName { get; private set; }
+        public string Method { get; private set; }
 
         public static RequestType<TParams, TResult, TError, TRegistrationOption> ConvertToRequestType(
             RequestType0<TResult, TError, TRegistrationOption> requestType0)
@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
             return new RequestType<TParams, TResult, TError, TRegistrationOption>()
             {
-                MethodName = typeName
+                Method = typeName
             };
         }
     }

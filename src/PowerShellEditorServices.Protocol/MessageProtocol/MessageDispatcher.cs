@@ -110,11 +110,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             if (overrideExisting)
             {
                 // Remove the existing handler so a new one can be set
-                this.requestHandlers.Remove(requestType.MethodName);
+                this.requestHandlers.Remove(requestType.Method);
             }
 
             this.requestHandlers.Add(
-                requestType.MethodName,
+                requestType.Method,
                 (requestMessage, messageWriter) =>
                 {
                     var requestContext =
