@@ -8,15 +8,15 @@ using System.Diagnostics;
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
     [DebuggerDisplay("RequestType0 Method = {Method}")]
-    public class RequestType0<TResult, TError, TRegistrationOption> : AbstractMessageType
+    public class RequestType0<TResult, TError, TRegistrationOptions> : AbstractMessageType
     {
         public RequestType0(string method) : base(method, 0)
         {
         }
 
-        public static RequestType0<TResult, TError, TRegistrationOption> Create(string method)
+        public static RequestType0<TResult, TError, TRegistrationOptions> Create(string method)
         {
-            return new RequestType0<TResult, TError, TRegistrationOption>(method);
+            return new RequestType0<TResult, TError, TRegistrationOptions>(method);
         }
     }
 }

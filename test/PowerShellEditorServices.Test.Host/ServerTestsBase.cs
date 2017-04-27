@@ -131,8 +131,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             }
         }
 
-        protected Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOption>(
-            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
+        protected Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOptions>(
+            RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             TParams requestParams)
         {
             return

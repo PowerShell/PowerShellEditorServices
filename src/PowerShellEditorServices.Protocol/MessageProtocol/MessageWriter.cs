@@ -89,8 +89,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
-        public async Task WriteRequest<TParams, TResult, TError, TRegistrationOption>(
-            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
+        public async Task WriteRequest<TParams, TResult, TError, TRegistrationOptions>(
+            RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             TParams requestParams,
             int requestId)
         {

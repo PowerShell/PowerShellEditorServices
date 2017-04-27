@@ -113,8 +113,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             return Task.FromResult(true);
         }
 
-        public Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOption>(
-            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
+        public Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOptions>(
+            RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             TParams requestParams, bool waitForResponse)
         {
             // Legitimately not implemented for these tests.
