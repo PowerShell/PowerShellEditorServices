@@ -14,18 +14,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         /// <summary>
         /// Gets the method name for the event type.
         /// </summary>
-        public string MethodName { get; private set; }
+        public string Method { get; private set; }
 
         /// <summary>
         /// Creates an EventType instance with the given parameter type and method name.
         /// </summary>
-        /// <param name="methodName">The method name of the event.</param>
+        /// <param name="method">The method name of the event.</param>
         /// <returns>A new EventType instance for the defined type.</returns>
-        public static NotificationType<TParams> Create(string methodName)
+        public static NotificationType<TParams> Create(string method)
         {
             return new NotificationType<TParams>()
             {
-                MethodName = methodName
+                Method = method
             };
         }
     }
