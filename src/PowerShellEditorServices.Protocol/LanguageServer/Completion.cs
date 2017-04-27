@@ -11,8 +11,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class CompletionRequest
     {
         public static readonly
-            RequestType<TextDocumentPosition, CompletionItem[], object, object> Type =
-            RequestType<TextDocumentPosition, CompletionItem[], object, object>.Create("textDocument/completion");
+            RequestType<TextDocumentPositionParams, CompletionItem[], object, object> Type =
+            RequestType<TextDocumentPositionParams, CompletionItem[], object, object>.Create("textDocument/completion");
     }
 
     public class CompletionResolveRequest
