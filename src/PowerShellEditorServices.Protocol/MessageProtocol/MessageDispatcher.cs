@@ -92,8 +92,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
-        public void SetRequestHandler<TParams, TResult>(
-            RequestType<TParams, TResult> requestType,
+        public void SetRequestHandler<TParams, TResult, TError, TRegistrationOption>(
+            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
             Func<TParams, RequestContext<TResult>, Task> requestHandler)
         {
             this.SetRequestHandler(
@@ -102,8 +102,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 false);
         }
 
-        public void SetRequestHandler<TParams, TResult>(
-            RequestType<TParams, TResult> requestType,
+        public void SetRequestHandler<TParams, TResult, TError, TRegistrationOption>(
+            RequestType<TParams, TResult, TError, TRegistrationOption> requestType,
             Func<TParams, RequestContext<TResult>, Task> requestHandler,
             bool overrideExisting)
         {
@@ -263,7 +263,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         }
 
         protected async Task DispatchMessage(
-            Message messageToDispatch, 
+            Message messageToDispatch,
             MessageWriter messageWriter)
         {
             Task handlerToAwait = null;

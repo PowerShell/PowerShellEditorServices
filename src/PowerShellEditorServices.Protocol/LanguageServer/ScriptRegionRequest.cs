@@ -13,8 +13,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     class ScriptRegionRequest
     {
         public static readonly
-            RequestType<ScriptRegionRequestParams, ScriptRegionRequestResult> Type =
-                RequestType<ScriptRegionRequestParams, ScriptRegionRequestResult>.Create("powerShell/getScriptRegion");
+            RequestType<ScriptRegionRequestParams, ScriptRegionRequestResult, object, object> Type =
+                RequestType<ScriptRegionRequestParams, ScriptRegionRequestResult, object, object>.Create("powerShell/getScriptRegion");
     }
 
     /// <summary>

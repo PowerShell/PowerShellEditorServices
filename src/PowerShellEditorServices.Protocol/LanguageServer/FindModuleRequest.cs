@@ -11,8 +11,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class FindModuleRequest
     {
         public static readonly
-            RequestType<List<PSModuleMessage>, object> Type =
-            RequestType<List<PSModuleMessage>, object>.Create("powerShell/findModule");
+            RequestType<List<PSModuleMessage>, object, object, object> Type =
+            RequestType<List<PSModuleMessage>, object, object, object>.Create("powerShell/findModule");
     }
 
 

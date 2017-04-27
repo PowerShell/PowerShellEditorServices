@@ -43,8 +43,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DocumentSymbolRequest
     {
         public static readonly
-            RequestType<DocumentSymbolParams, SymbolInformation[]> Type =
-            RequestType<DocumentSymbolParams, SymbolInformation[]>.Create("textDocument/documentSymbol");
+            RequestType<DocumentSymbolParams, SymbolInformation[], object, object> Type =
+            RequestType<DocumentSymbolParams, SymbolInformation[], object, object>.Create("textDocument/documentSymbol");
     }
 
     /// <summary>
@@ -61,8 +61,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class WorkspaceSymbolRequest
     {
         public static readonly
-            RequestType<WorkspaceSymbolParams, SymbolInformation[]> Type =
-            RequestType<WorkspaceSymbolParams, SymbolInformation[]>.Create("workspace/symbol");
+            RequestType<WorkspaceSymbolParams, SymbolInformation[], object, object> Type =
+            RequestType<WorkspaceSymbolParams, SymbolInformation[], object, object>.Create("workspace/symbol");
     }
 
     public class WorkspaceSymbolParams

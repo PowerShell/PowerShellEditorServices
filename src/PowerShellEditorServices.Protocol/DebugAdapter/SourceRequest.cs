@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class SourceRequest
     {
         public static readonly
-            RequestType<SourceRequestArguments, SourceResponseBody> Type =
-            RequestType<SourceRequestArguments, SourceResponseBody>.Create("source");
+            RequestType<SourceRequestArguments, SourceResponseBody, object, object> Type =
+            RequestType<SourceRequestArguments, SourceResponseBody, object, object>.Create("source");
     }
 
     public class SourceRequestArguments

@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class InitializeRequest
     {
         public static readonly
-            RequestType<InitializeRequest, InitializeResult> Type =
-            RequestType<InitializeRequest, InitializeResult>.Create("initialize");
+            RequestType<InitializeRequest, InitializeResult, object, object> Type =
+            RequestType<InitializeRequest, InitializeResult, object, object>.Create("initialize");
 
         /// <summary>
         /// Gets or sets the root path of the editor's open workspace.

@@ -12,8 +12,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class LaunchRequest
     {
         public static readonly
-            RequestType<LaunchRequestArguments, object> Type =
-            RequestType<LaunchRequestArguments, object>.Create("launch");
+            RequestType<LaunchRequestArguments, object, object, object> Type =
+            RequestType<LaunchRequestArguments, object, object, object>.Create("launch");
     }
 
     public class LaunchRequestArguments
@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public bool NoDebug { get; set; }
 
         /// <summary>
-        /// Gets or sets a boolean value that determines whether to automatically stop 
+        /// Gets or sets a boolean value that determines whether to automatically stop
         /// target after launch. If not specified, target does not stop.
         /// </summary>
         public bool StopOnEntry { get; set; }
@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public string Cwd { get; set; }
 
         /// <summary>
-        /// Gets or sets the absolute path to the runtime executable to be used. 
+        /// Gets or sets the absolute path to the runtime executable to be used.
         /// Default is the runtime executable on the PATH.
         /// </summary>
         public string RuntimeExecutable { get; set; }
@@ -64,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public string[] RuntimeArgs { get; set; }
 
         /// <summary>
-        /// Gets or sets optional environment variables to pass to the debuggee. The string valued 
+        /// Gets or sets optional environment variables to pass to the debuggee. The string valued
         /// properties of the 'environmentVariables' are used as key/value pairs.
         /// </summary>
         public Dictionary<string, string> Env { get; set; }

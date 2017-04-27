@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     class GetPSSARulesRequest
     {
         public static readonly
-            RequestType<string, object> Type =
-            RequestType<string, object>.Create("powerShell/getPSSARules");
+            RequestType<string, object, object, object> Type =
+            RequestType<string, object, object, object>.Create("powerShell/getPSSARules");
     }
 }

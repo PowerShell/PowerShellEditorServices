@@ -49,8 +49,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class InvokeExtensionCommandRequest
     {
         public static readonly
-            RequestType<InvokeExtensionCommandRequest, string> Type =
-            RequestType<InvokeExtensionCommandRequest, string>.Create("powerShell/invokeExtensionCommand");
+            RequestType<InvokeExtensionCommandRequest, string, object, object> Type =
+            RequestType<InvokeExtensionCommandRequest, string, object, object>.Create("powerShell/invokeExtensionCommand");
 
         public string Name { get; set; }
 
@@ -60,8 +60,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class GetEditorContextRequest
     {
         public static readonly
-            RequestType<GetEditorContextRequest, ClientEditorContext> Type =
-            RequestType<GetEditorContextRequest, ClientEditorContext>.Create("editor/getEditorContext");
+            RequestType<GetEditorContextRequest, ClientEditorContext, object, object> Type =
+            RequestType<GetEditorContextRequest, ClientEditorContext, object, object>.Create("editor/getEditorContext");
     }
 
     public enum EditorCommandResponse
@@ -73,8 +73,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class InsertTextRequest
     {
         public static readonly
-            RequestType<InsertTextRequest, EditorCommandResponse> Type =
-            RequestType<InsertTextRequest, EditorCommandResponse>.Create("editor/insertText");
+            RequestType<InsertTextRequest, EditorCommandResponse, object, object> Type =
+            RequestType<InsertTextRequest, EditorCommandResponse, object, object>.Create("editor/insertText");
 
         public string FilePath { get; set; }
 
@@ -86,8 +86,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class SetSelectionRequest
     {
         public static readonly
-            RequestType<SetSelectionRequest, EditorCommandResponse> Type =
-            RequestType<SetSelectionRequest, EditorCommandResponse>.Create("editor/setSelection");
+            RequestType<SetSelectionRequest, EditorCommandResponse, object, object> Type =
+            RequestType<SetSelectionRequest, EditorCommandResponse, object, object>.Create("editor/setSelection");
 
         public Range SelectionRange { get; set; }
     }
@@ -95,8 +95,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class SetCursorPositionRequest
     {
         public static readonly
-            RequestType<SetCursorPositionRequest, EditorCommandResponse> Type =
-            RequestType<SetCursorPositionRequest, EditorCommandResponse>.Create("editor/setCursorPosition");
+            RequestType<SetCursorPositionRequest, EditorCommandResponse, object, object> Type =
+            RequestType<SetCursorPositionRequest, EditorCommandResponse, object, object>.Create("editor/setCursorPosition");
 
         public Position CursorPosition { get; set; }
     }
@@ -104,43 +104,43 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class OpenFileRequest
     {
         public static readonly
-            RequestType<string, EditorCommandResponse> Type =
-            RequestType<string, EditorCommandResponse>.Create("editor/openFile");
+            RequestType<string, EditorCommandResponse, object, object> Type =
+            RequestType<string, EditorCommandResponse, object, object>.Create("editor/openFile");
     }
 
     public class CloseFileRequest
     {
         public static readonly
-            RequestType<string, EditorCommandResponse> Type =
-            RequestType<string, EditorCommandResponse>.Create("editor/closeFile");
+            RequestType<string, EditorCommandResponse, object, object> Type =
+            RequestType<string, EditorCommandResponse, object, object>.Create("editor/closeFile");
     }
 
     public class ShowInformationMessageRequest
     {
         public static readonly
-            RequestType<string, EditorCommandResponse> Type =
-            RequestType<string, EditorCommandResponse>.Create("editor/showInformationMessage");
+            RequestType<string, EditorCommandResponse, object, object> Type =
+            RequestType<string, EditorCommandResponse, object, object>.Create("editor/showInformationMessage");
     }
 
     public class ShowWarningMessageRequest
     {
         public static readonly
-            RequestType<string, EditorCommandResponse> Type =
-            RequestType<string, EditorCommandResponse>.Create("editor/showWarningMessage");
+            RequestType<string, EditorCommandResponse, object, object> Type =
+            RequestType<string, EditorCommandResponse, object, object>.Create("editor/showWarningMessage");
     }
 
     public class ShowErrorMessageRequest
     {
         public static readonly
-            RequestType<string, EditorCommandResponse> Type =
-            RequestType<string, EditorCommandResponse>.Create("editor/showErrorMessage");
+            RequestType<string, EditorCommandResponse, object, object> Type =
+            RequestType<string, EditorCommandResponse, object, object>.Create("editor/showErrorMessage");
     }
 
     public class SetStatusBarMessageRequest
     {
         public static readonly
-            RequestType<StatusBarMessageDetails, EditorCommandResponse> Type =
-            RequestType<StatusBarMessageDetails, EditorCommandResponse>.Create("editor/setStatusBarMessage");
+            RequestType<StatusBarMessageDetails, EditorCommandResponse, object, object> Type =
+            RequestType<StatusBarMessageDetails, EditorCommandResponse, object, object>.Create("editor/setStatusBarMessage");
     }
 
     public class StatusBarMessageDetails

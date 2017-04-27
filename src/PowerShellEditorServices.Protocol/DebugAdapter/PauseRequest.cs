@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class PauseRequest
     {
         public static readonly
-            RequestType<object, object> Type =
-            RequestType<object, object>.Create("pause");
+            RequestType<object, object, object, object> Type =
+            RequestType<object, object, object, object>.Create("pause");
     }
 }
 
