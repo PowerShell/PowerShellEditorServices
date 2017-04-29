@@ -6,8 +6,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class CodeActionRequest
     {
         public static readonly
-            RequestType<CodeActionParams, CodeActionCommand[], object, object> Type =
-            RequestType<CodeActionParams, CodeActionCommand[], object, object>.Create("textDocument/codeAction");
+            RequestType<CodeActionParams, CodeActionCommand[], object, TextDocumentRegistrationOptions> Type =
+            RequestType<CodeActionParams, CodeActionCommand[], object, TextDocumentRegistrationOptions>.Create("textDocument/codeAction");
     }
 
     /// <summary>
