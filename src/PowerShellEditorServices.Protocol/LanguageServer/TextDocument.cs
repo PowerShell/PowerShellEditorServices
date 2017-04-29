@@ -149,8 +149,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidCloseTextDocumentNotification
     {
         public static readonly
-            NotificationType<DidCloseTextDocumentParams, object> Type =
-            NotificationType<DidCloseTextDocumentParams, object>.Create("textDocument/didClose");
+            NotificationType<DidCloseTextDocumentParams, TextDocumentRegistrationOptions> Type =
+            NotificationType<DidCloseTextDocumentParams, TextDocumentRegistrationOptions>.Create("textDocument/didClose");
     }
 
     /// <summary>
