@@ -43,8 +43,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DocumentSymbolRequest
     {
         public static readonly
-            RequestType<DocumentSymbolParams, SymbolInformation[], object, object> Type =
-            RequestType<DocumentSymbolParams, SymbolInformation[], object, object>.Create("textDocument/documentSymbol");
+            RequestType<DocumentSymbolParams, SymbolInformation[], object, TextDocumentRegistrationOptions> Type =
+            RequestType<DocumentSymbolParams, SymbolInformation[], object, TextDocumentRegistrationOptions>.Create("textDocument/documentSymbol");
     }
 
     /// <summary>
