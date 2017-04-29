@@ -197,7 +197,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidSaveTextDocumentParams
     {
         /// <summary>
-        /// The document that was closed.
+        /// The document that was saved.
         /// </summary>
         public VersionedTextDocumentIdentifier TextDocument { get; set; }
 

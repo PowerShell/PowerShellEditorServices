@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 
         public TextEdit[] AdditionalTextEdits { get; set; }
 
-        public Command Command { get; set; }
+        public CommandType Command { get; set; }
 
         /// <summary>
         /// Gets or sets a custom data field that allows the server to mark
@@ -109,8 +109,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     /// Represents a reference to a command. Provides a title which will be used to
     /// represent a command in the UI and, optionally, an array of arguments which
     /// will be passed to the command handler function when invoked.
+    ///
+    /// The name of the corresponding type in vscode-languageserver-node is Command
+    /// but since .net does not allow a property name (Command) and its enclosing
+    /// type name to be the same we change its name to CommandType.
     /// </summary>
-    public class Command
+    public class CommandType
     {
         /// <summary>
         /// Title of the command.
@@ -121,12 +125,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// <summary>
         /// The identifier of the actual command handler.
         /// </summary>
-        public string command { get; set; }
+        public string Command { get; set; }
 
         /// <summary>
         /// Arguments that the command handler should be invoked with.
         /// </summary>
-        public object[] arguments { get; set; }
+        public object[] Arguments { get; set; }
     }
 }
 
