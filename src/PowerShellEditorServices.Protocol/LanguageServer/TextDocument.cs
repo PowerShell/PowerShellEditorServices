@@ -167,8 +167,28 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidSaveTextDocumentNotification
     {
         public static readonly
-            NotificationType<DidSaveTextDocumentParams, object> Type =
-            NotificationType<DidSaveTextDocumentParams, object>.Create("textDocument/didSave");
+            NotificationType<DidSaveTextDocumentParams, TextDocumentSaveRegistrationOptions> Type =
+            NotificationType<DidSaveTextDocumentParams, TextDocumentSaveRegistrationOptions>.Create("textDocument/didSave");
+    }
+
+    /// <summary>
+    /// Save options.
+    /// </summary>
+    public class SaveOptions {
+        /// <summary>
+        /// The client is supposed to include the content on save.
+        /// </summary>
+        public bool? IncludeText { get; set; }
+    }
+
+    public class TextDocumentSaveRegistrationOptions : TextDocumentRegistrationOptions
+    {
+        // We cannot inherit from two base classes (SaveOptions and TextDocumentRegistrationOptions)
+        // simultaneously, hence we repeat this IncludeText flag here.
+        /// <summary>
+        /// The client is supposed to include the content on save.
+        /// </summary>
+        public bool? IncludeText { get; set; }
     }
 
     /// <summary>
