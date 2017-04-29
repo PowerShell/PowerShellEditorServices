@@ -1467,6 +1467,9 @@ function __Expand-Alias {
                 case CompletionType.Command:
                     return CompletionItemKind.Function;
 
+                case CompletionType.Property:
+                    return CompletionItemKind.Property;
+
                 case CompletionType.Method:
                     return CompletionItemKind.Method;
 
