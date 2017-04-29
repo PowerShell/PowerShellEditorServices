@@ -10,8 +10,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class SignatureHelpRequest
     {
         public static readonly
-            RequestType<TextDocumentPositionParams, SignatureHelp, object, object> Type =
-            RequestType<TextDocumentPositionParams, SignatureHelp, object, object>.Create("textDocument/signatureHelp");
+            RequestType<TextDocumentPositionParams, SignatureHelp, object, SignatureHelpRegistrationOptions> Type =
+            RequestType<TextDocumentPositionParams, SignatureHelp, object, SignatureHelpRegistrationOptions>.Create("textDocument/signatureHelp");
+    }
+
+    public class SignatureHelpRegistrationOptions : TextDocumentRegistrationOptions
+    {
+        // We duplicate the properties of SignatureHelpOptions class here because
+        // we cannot derive from two classes. One way to get around this situation
+        // is to use define SignatureHelpOptions as an interface instead of a class.
+        public string[] TriggerCharacters { get; set; }
     }
 
     public class ParameterInformation
