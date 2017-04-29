@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DefinitionRequest
     {
         public static readonly
-            RequestType<TextDocumentPosition, Location[], object, object> Type =
-            RequestType<TextDocumentPosition, Location[], object, object>.Create("textDocument/definition");
+            RequestType<TextDocumentPosition, Location[], object, TextDocumentRegistrationOptions> Type =
+            RequestType<TextDocumentPosition, Location[], object, TextDocumentRegistrationOptions>.Create("textDocument/definition");
     }
 }
 
