@@ -11,8 +11,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class CompletionRequest
     {
         public static readonly
-            RequestType<TextDocumentPositionParams, CompletionItem[], object, object> Type =
-            RequestType<TextDocumentPositionParams, CompletionItem[], object, object>.Create("textDocument/completion");
+            RequestType<TextDocumentPositionParams, CompletionItem[], object, CompletionRegistrationOptions> Type =
+            RequestType<TextDocumentPositionParams, CompletionItem[], object, CompletionRegistrationOptions>.Create("textDocument/completion");
     }
 
     public class CompletionResolveRequest
@@ -20,6 +20,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public static readonly
             RequestType<CompletionItem, CompletionItem, object, object> Type =
             RequestType<CompletionItem, CompletionItem, object, object>.Create("completionItem/resolve");
+    }
+
+    /// <summary>
+    /// Completion registration options.
+    /// </summary>
+    public class CompletionRegistrationOptions : TextDocumentRegistrationOptions
+    {
+        // We duplicate the properties of completionOptions class here because
+        // we cannot derive from two classes. One way to get around this situation
+        // is to use define CompletionOptions as an interface instead of a class.
+        public bool? ResolveProvider { get; set; }
+
+        public string[] TriggerCharacters { get; set; }
     }
 
     public enum CompletionItemKind
