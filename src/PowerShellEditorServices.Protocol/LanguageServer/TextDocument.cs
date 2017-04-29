@@ -98,8 +98,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidOpenTextDocumentNotification
     {
         public static readonly
-            NotificationType<DidOpenTextDocumentParams, object> Type =
-            NotificationType<DidOpenTextDocumentParams, object>.Create("textDocument/didOpen");
+            NotificationType<DidOpenTextDocumentParams, TextDocumentRegistrationOptions> Type =
+            NotificationType<DidOpenTextDocumentParams, TextDocumentRegistrationOptions>.Create("textDocument/didOpen");
     }
 
     /// <summary>
@@ -111,6 +111,39 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// The document that was opened.
         /// </summary>
         public TextDocumentItem TextDocument { get; set; }
+    }
+
+    /// <summary>
+    /// General text document registration options.
+    /// </summary>
+    public class TextDocumentRegistrationOptions {
+        /// <summary>
+        /// A document selector to identify the scope of the registration. If set to null the document
+        /// selector provided on the client side will be used.
+        /// </summary>
+        public DocumentFilter[] DocumentSelector { get; set; }
+    }
+
+    /// <summary>
+    /// A document filter denotes a document by different properties like the language, the scheme
+    /// of its resource, or a glob-pattern that is applied to the path.
+    /// </summary>
+    public class DocumentFilter
+    {
+        /// <summary>
+        /// A language id, like `powershell`
+        /// </summary>
+        public string Language { get; set; }
+
+        /// <summary>
+        /// A Uri, like `file` or `untitled`
+        /// </summary>
+        public string Scheme { get; set; }
+
+        /// <summary>
+        /// A glob pattern, like `*.{ps1,psd1}`
+        /// </summary>
+        public string Pattern { get; set; }
     }
 
     public class DidCloseTextDocumentNotification
