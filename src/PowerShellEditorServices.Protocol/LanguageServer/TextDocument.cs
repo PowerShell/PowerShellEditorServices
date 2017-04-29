@@ -211,8 +211,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DidChangeTextDocumentNotification
     {
         public static readonly
-            NotificationType<DidChangeTextDocumentParams, object> Type =
-            NotificationType<DidChangeTextDocumentParams, object>.Create("textDocument/didChange");
+            NotificationType<DidChangeTextDocumentParams, TextDocumentChangeRegistrationOptions> Type =
+            NotificationType<DidChangeTextDocumentParams, TextDocumentChangeRegistrationOptions>.Create("textDocument/didChange");
+    }
+
+    /// <summary>
+    /// Describe options to be used when registered for text document change events.
+    /// </summary>
+    public class TextDocumentChangeRegistrationOptions : TextDocumentRegistrationOptions
+    {
+        /// <summary>
+        /// How documents are synced to the server.
+        /// </summary>
+        public TextDocumentSyncKind SyncKind { get; set; }
     }
 
     /// <summary>
