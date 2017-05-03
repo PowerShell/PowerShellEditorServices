@@ -668,7 +668,7 @@ function __Expand-Alias {
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
-                    referencesParams.Uri);
+                    referencesParams.TextDocument.Uri);
 
             SymbolReference foundSymbol =
                 editorSession.LanguageService.FindSymbolAtLocation(

@@ -263,7 +263,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 ReferencesRequest.Type,
                 new ReferencesParams
                 {
-                    Uri = "TestFiles\\FindReferences.ps1",
+                    TextDocument = new TextDocumentIdentifier
+                    {
+                        Uri = "TestFiles\\FindReferences.ps1"
+                    },
                     Position = new Position
                     {
                         Line = 7,
@@ -292,7 +295,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     ReferencesRequest.Type,
                     new ReferencesParams
                     {
-                        Uri = "TestFiles\\FindReferences.ps1",
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\FindReferences.ps1"
+                        },
                         Position = new Position
                         {
                             Line = 9,
@@ -314,7 +320,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     ReferencesRequest.Type,
                     new ReferencesParams
                     {
-                        Uri = "TestFiles\\FindReferences.ps1",
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\FindReferences.ps1"
+                        },
                         Position = new Position
                         {
                             Line = 0,
@@ -343,7 +352,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     ReferencesRequest.Type,
                     new ReferencesParams
                     {
-                        Uri = "TestFiles\\FindReferences.ps1",
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\FindReferences.ps1"
+                        },
                         Position = new Position
                         {
                             Line = 0,
