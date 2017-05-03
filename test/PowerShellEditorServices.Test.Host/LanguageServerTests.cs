@@ -370,9 +370,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Location[] locations =
                 await this.SendRequest(
                     DefinitionRequest.Type,
-                    new TextDocumentPosition
+                    new TextDocumentPositionParams
                     {
-                        Uri = "TestFiles\\FindReferences.ps1",
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\FindReferences.ps1",
+                        },
                         Position = new Position
                         {
                             Line = 2,
@@ -394,9 +397,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Location[] locations =
                 await this.SendRequest(
                     DefinitionRequest.Type,
-                    new TextDocumentPosition
+                    new TextDocumentPositionParams
                     {
-                        Uri = "TestFiles\\FindReferences.ps1",
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\FindReferences.ps1"
+                        },
                         Position = new Position
                         {
                             Line = 10,
@@ -416,9 +422,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Location[] locations =
                 await this.SendRequest(
                     DefinitionRequest.Type,
-                    new TextDocumentPosition
+                    new TextDocumentPositionParams
                     {
-                        Uri = "TestFiles\\FindReferences.ps1",
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\FindReferences.ps1"
+                        },
                         Position = new Position
                         {
                             Line = 8,

@@ -624,12 +624,12 @@ function __Expand-Alias {
         }
 
         protected async Task HandleDefinitionRequest(
-            TextDocumentPosition textDocumentPosition,
+            TextDocumentPositionParams textDocumentPosition,
             RequestContext<Location[]> requestContext)
         {
             ScriptFile scriptFile =
                 editorSession.Workspace.GetFile(
-                    textDocumentPosition.Uri);
+                    textDocumentPosition.TextDocument.Uri);
 
             SymbolReference foundSymbol =
                 editorSession.LanguageService.FindSymbolAtLocation(
