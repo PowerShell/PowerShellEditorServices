@@ -66,18 +66,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     }
 
     /// <summary>
-    /// Defines a position in a text document.
-    /// </summary>
-    [DebuggerDisplay("TextDocumentPosition = {Position.Line}:{Position.Character}")]
-    public class TextDocumentPosition : TextDocumentIdentifier
-    {
-        /// <summary>
-        /// Gets or sets the position in the document.
-        /// </summary>
-        public Position Position { get; set; }
-    }
-
-    /// <summary>
     /// A parameter literal used in requests to pass a text document and a position inside that document.
     /// </summary>
     public class TextDocumentPositionParams
