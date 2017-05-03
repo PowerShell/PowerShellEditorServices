@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
             RequestType<ReferencesParams, Location[], object, TextDocumentRegistrationOptions>.Create("textDocument/references");
     }
 
-    public class ReferencesParams : TextDocumentPosition
+    public class ReferencesParams : TextDocumentPositionParams
     {
         public ReferencesContext Context { get; set; }
     }
