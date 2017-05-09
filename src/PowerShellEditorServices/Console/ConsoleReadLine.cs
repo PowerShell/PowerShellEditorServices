@@ -476,7 +476,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
                         lock (this.readKeyLock)
                         {
-                            if (this.bufferedKey.HasValue)
+                            if (cancellationToken.IsCancellationRequested)
+                            {
+                                throw new TaskCanceledException();
+                            }
+                            else if (this.bufferedKey.HasValue)
                             {
                                 keyInfo = this.bufferedKey.Value;
                                 this.bufferedKey = null;
