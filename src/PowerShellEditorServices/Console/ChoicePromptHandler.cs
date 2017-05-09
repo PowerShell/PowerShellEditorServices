@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
     }
 
     /// <summary>
-    /// Provides a base implementation for IPromptHandler classes 
+    /// Provides a base implementation for IPromptHandler classes
     /// that present the user a set of options from which a selection
     /// should be made.
     /// </summary>
@@ -41,6 +42,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private CancellationTokenSource promptCancellationTokenSource =
             new CancellationTokenSource();
+        private TaskCompletionSource<Dictionary<string, object>> cancelTask =
+            new TaskCompletionSource<Dictionary<string, object>>();
 
         #endregion
 
@@ -98,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's choice.
         /// </returns>
-        public Task<int> PromptForChoice(
+        public async Task<int> PromptForChoice(
             string promptCaption,
             string promptMessage,
             ChoiceDetails[] choices,
@@ -120,7 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             cancellationToken.Register(this.CancelPrompt, true);
 
             // Convert the int[] result to int
-            return
+            return await this.WaitForTask(
                 this.StartPromptLoop(this.promptCancellationTokenSource.Token)
                     .ContinueWith(
                         task =>
@@ -135,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             }
 
                             return this.GetSingleResult(task.Result);
-                        });
+                        }));
         }
 
         /// <summary>
@@ -161,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's choices.
         /// </returns>
-        public Task<int[]> PromptForChoice(
+        public async Task<int[]> PromptForChoice(
             string promptCaption,
             string promptMessage,
             ChoiceDetails[] choices,
@@ -179,7 +182,24 @@ namespace Microsoft.PowerShell.EditorServices.Console
             // Cancel the TaskCompletionSource if the caller cancels the task
             cancellationToken.Register(this.CancelPrompt, true);
 
-            return this.StartPromptLoop(this.promptCancellationTokenSource.Token);
+            return await this.WaitForTask(
+                this.StartPromptLoop(
+                    this.promptCancellationTokenSource.Token));
+        }
+
+        private async Task<T> WaitForTask<T>(Task<T> taskToWait)
+        {
+            Task finishedTask =
+                await Task.WhenAny(
+                    this.cancelTask.Task,
+                    taskToWait);
+
+            if (this.cancelTask.Task.IsCanceled)
+            {
+                throw new PipelineStoppedException();
+            }
+
+            return taskToWait.Result;
         }
 
         private async Task<int[]> StartPromptLoop(
@@ -232,7 +252,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         /// <param name="responseString">The string representing the user's response.</param>
         /// <returns>
-        /// True if the prompt is complete, false if the prompt is 
+        /// True if the prompt is complete, false if the prompt is
         /// still waiting for a valid response.
         /// </returns>
         protected virtual int[] HandleResponse(string responseString)
@@ -280,6 +300,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             // Cancel the prompt task
             this.promptCancellationTokenSource.Cancel();
+            this.cancelTask.TrySetCanceled();
         }
 
         #endregion

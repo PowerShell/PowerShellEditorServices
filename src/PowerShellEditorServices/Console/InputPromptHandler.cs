@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace Microsoft.PowerShell.EditorServices.Console
 {
     /// <summary>
-    /// Provides a base implementation for IPromptHandler classes 
+    /// Provides a base implementation for IPromptHandler classes
     /// that present the user a set of fields for which values
     /// should be entered.
     /// </summary>
@@ -26,6 +26,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         private FieldDetails currentField;
         private CancellationTokenSource promptCancellationTokenSource =
             new CancellationTokenSource();
+        private TaskCompletionSource<Dictionary<string, object>> cancelTask =
+            new TaskCompletionSource<Dictionary<string, object>>();
 
         #endregion
 
@@ -57,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     new FieldDetails[] { new FieldDetails("", "", typeof(string), false, "") },
                     cancellationToken);
 
-            return 
+            return
                 innerTask.ContinueWith<string>(
                     task =>
                     {
@@ -69,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                         {
                             throw new TaskCanceledException(task);
                         }
-                        
+
                         // Return the value of the sole field
                         return (string)task.Result[""];
                     });
@@ -95,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's input.
         /// </returns>
-        public Task<Dictionary<string, object>> PromptForInput(
+        public async Task<Dictionary<string, object>> PromptForInput(
             string promptCaption,
             string promptMessage,
             FieldDetails[] fields,
@@ -108,7 +110,20 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             this.ShowPromptMessage(promptCaption, promptMessage);
 
-            return this.StartPromptLoop(this.promptCancellationTokenSource.Token);
+            Task<Dictionary<string, object>> promptTask =
+                this.StartPromptLoop(this.promptCancellationTokenSource.Token);
+
+            Task finishedTask =
+                await Task.WhenAny(
+                    cancelTask.Task,
+                    promptTask);
+
+            if (this.cancelTask.Task.IsCanceled)
+            {
+                throw new PipelineStoppedException();
+            }
+
+            return promptTask.Result;
         }
 
         /// <summary>
@@ -128,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     new FieldDetails[] { new FieldDetails("", "", typeof(SecureString), false, "") },
                     cancellationToken);
 
-            return 
+            return
                 innerTask.ContinueWith(
                     task =>
                     {
@@ -140,7 +155,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                         {
                             throw new TaskCanceledException(task);
                         }
-                        
+
                         // Return the value of the sole field
                         return (SecureString)task.Result?[""];
                     });
@@ -153,6 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             // Cancel the prompt task
             this.promptCancellationTokenSource.Cancel();
+            this.cancelTask.TrySetCanceled();
         }
 
         #endregion

@@ -447,11 +447,21 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             if (this.EnableConsoleRepl)
             {
-                // Any command which writes output to the host will affect
-                // the display of the prompt
-                if (eventArgs.ExecutionOptions.WriteOutputToHost ||
+                if (eventArgs.ExecutionStatus == ExecutionStatus.Aborted)
+                {
+                    // When aborted, cancel any lingering prompts
+                    if (this.activePromptHandler != null)
+                    {
+                        this.activePromptHandler.CancelPrompt();
+                        this.WriteOutput(string.Empty);
+                    }
+                }
+                else if (
+                    eventArgs.ExecutionOptions.WriteOutputToHost ||
                     eventArgs.ExecutionOptions.InterruptCommandPrompt)
                 {
+                    // Any command which writes output to the host will affect
+                    // the display of the prompt
                     if (eventArgs.ExecutionStatus != ExecutionStatus.Running)
                     {
                         // Execution has completed, start the input prompt
@@ -461,6 +471,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     {
                         // A new command was started, cancel the input prompt
                         this.CancelReadLoop();
+                        this.WriteOutput(string.Empty);
                     }
                 }
                 else if (
@@ -469,6 +480,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                      eventArgs.HadErrors))
                 {
                     this.CancelReadLoop();
+                    this.WriteOutput(string.Empty);
                     this.StartReadLoop();
                 }
             }

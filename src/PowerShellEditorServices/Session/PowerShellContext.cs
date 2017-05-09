@@ -870,6 +870,11 @@ namespace Microsoft.PowerShell.EditorServices
                 this.powerShell.BeginStop(null, null);
 
                 this.SessionState = PowerShellContextState.Aborting;
+
+                this.OnExecutionStatusChanged(
+                    ExecutionStatus.Aborted,
+                    null,
+                    false);
             }
             else
             {
