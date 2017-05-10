@@ -1,5 +1,41 @@
 # PowerShell Editor Services Release History
 
+## 1.0.0
+### Wednesday, May 10, 2017
+
+We are excited to announce that we've reached version 1.0!  For more information,
+please see the [official announcement](https://blogs.msdn.microsoft.com/powershell/2017/05/10/announcing-powershell-for-visual-studio-code-1-0/)
+on the PowerShell Team Blog.
+
+#### Fixes and improvements
+
+- Upgraded our Language Server Protocol support to [protocol version 3](https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md).
+
+- Added basic module-wide function references support which searches all of the
+  PowerShell script files within the current workspace for references and
+  definitions.
+
+- Fixed [vscode-powershell #698](https://github.com/PowerShell/vscode-powershell/issues/698) -
+  When debugging scripts in the integrated console, the cursor position should now
+  be stable after stepping through your code!  Please let us know if you see any
+  other cases where this issue appears.
+
+- Fixed [vscode-powershell #626](https://github.com/PowerShell/vscode-powershell/issues/626) -
+  Fixed an issue where debugging a script in one VS Code window would cause that script's
+  output to be written to a different VS Code window in the same process.
+
+- Fixed [vscode-powershell #618](https://github.com/PowerShell/vscode-powershell/issues/618) -
+  Pressing enter on an empty command line in the Integrated Console no longer adds the
+  empty line to the command history.
+
+- Fixed [vscode-powershell #617](https://github.com/PowerShell/vscode-powershell/issues/617) -
+  Stopping the debugger during a prompt for a mandatory script parameter no
+  longer crashes the language server.
+
+- Fixed [#428](https://github.com/PowerShell/PowerShellEditorServices/issues/428) -
+  Debugger no longer hangs when you stop debugging while an input or choice prompt is
+  active in the integrated console.
+
 ## 0.12.1
 ### Friday, April 7, 2017
 
