@@ -1,7 +1,6 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>0.12.1</VersionPrefix>
-    <VersionSuffix>beta</VersionSuffix>
+    <VersionPrefix>1.0.0</VersionPrefix>
     <Company>Microsoft</Company>
     <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <PackageTags>PowerShell;editor;development;language;debugging</PackageTags>
