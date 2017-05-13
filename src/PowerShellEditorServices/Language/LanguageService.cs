@@ -115,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                     return completionResults;
                 }
-                catch(ArgumentException e)
+                catch (ArgumentException e)
                 {
                     // Bad completion results could return an invalid
                     // replacement range, catch that here
@@ -231,7 +231,8 @@ namespace Microsoft.PowerShell.EditorServices
                 AstOperations
                     .FindSymbolsInDocument(scriptFile.ScriptAst, this.powerShellContext.LocalPowerShellVersion.Version)
                     .Select(
-                        reference => {
+                        reference =>
+                        {
                             reference.SourceLine =
                                 scriptFile.GetLine(reference.ScriptRegion.StartLineNumber);
                             reference.FilePath = scriptFile.FilePath;
@@ -239,7 +240,8 @@ namespace Microsoft.PowerShell.EditorServices
                         });
 
             return
-                new FindOccurrencesResult {
+                new FindOccurrencesResult
+                {
                     FoundOccurrences = symbolReferencesinFile
                 };
         }
@@ -267,7 +269,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                 // We want to look for references first in referenced files, hence we use ordered dictionary
                 var fileMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
-                foreach(ScriptFile file in referencedFiles)
+                foreach (ScriptFile file in referencedFiles)
                 {
                     fileMap.Add(file.FilePath, file);
                 }
@@ -518,6 +520,17 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return ScriptRegion.Create(ast.Extent);
+        }
+
+        public FunctionDefinitionAst GetFunctionDefinitionAtLine(
+            ScriptFile scriptFile,
+            int lineNumber)
+        {
+            var functionDefinitionAst = scriptFile.ScriptAst.Find(
+                ast => ast is FunctionDefinitionAst && ast.Extent.StartLineNumber == lineNumber,
+                true);
+
+            return functionDefinitionAst as FunctionDefinitionAst;
         }
 
         #endregion
