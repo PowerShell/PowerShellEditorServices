@@ -10,12 +10,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     class CommentHelpRequest
     {
         public static readonly RequestType<CommentHelpRequestParams, CommentHelpRequestResult, object, object> Type
-            = RequestType<CommentHelpRequestParams, CommentHelpRequestResult, object, object>.Create("powershell/getCommentHelp");
+            = RequestType<CommentHelpRequestParams, CommentHelpRequestResult, object, object>.Create("powerShell/getCommentHelp");
     }
 
     public class CommentHelpRequestResult
     {
-        public string[] content;
+        public string[] Content { get; set; }
     }
 
     public class CommentHelpRequestParams

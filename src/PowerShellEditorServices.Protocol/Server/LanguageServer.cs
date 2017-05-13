@@ -20,6 +20,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
+using System.Collections;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
@@ -147,7 +148,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.SetRequestHandler(ScriptRegionRequest.Type, this.HandleGetFormatScriptRegionRequest);
 
             this.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequest);
-
+            this.SetRequestHandler(CommentHelpRequest.Type, this.HandleCommentHelpRequest);
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
             this.editorSession.ExtensionService.Initialize(
@@ -241,9 +242,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 var ruleInfos = dynParams.ruleInfos;
                 foreach (dynamic ruleInfo in ruleInfos)
                 {
-                    if ((Boolean) ruleInfo.isEnabled)
+                    if ((Boolean)ruleInfo.isEnabled)
                     {
-                        activeRules.Add((string) ruleInfo.name);
+                        activeRules.Add((string)ruleInfo.name);
                     }
                 }
                 editorSession.AnalysisService.ActiveRules = activeRules.ToArray();
@@ -307,7 +308,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             var markers = await editorSession.AnalysisService.GetSemanticMarkersAsync(
                 editorSession.Workspace.GetFile(requestParams.fileUri),
                 editorSession.AnalysisService.GetPSSASettingsHashtable(requestParams.settings));
-            await requestContext.SendResult(new ScriptFileMarkerRequestResultParams {
+            await requestContext.SendResult(new ScriptFileMarkerRequestResultParams
+            {
                 markers = markers
             });
         }
@@ -569,7 +571,7 @@ function __Expand-Alias {
         {
             bool oldLoadProfiles = this.currentSettings.EnableProfileLoading;
             bool oldScriptAnalysisEnabled =
-                this.currentSettings.ScriptAnalysis.Enable.HasValue ? this.currentSettings.ScriptAnalysis.Enable.Value : false ;
+                this.currentSettings.ScriptAnalysis.Enable.HasValue ? this.currentSettings.ScriptAnalysis.Enable.Value : false;
             string oldScriptAnalysisSettingsPath =
                 this.currentSettings.ScriptAnalysis.SettingsPath;
 
@@ -1072,6 +1074,50 @@ function __Expand-Alias {
             await requestContext.SendResult(psHostProcesses.ToArray());
         }
 
+        protected async Task HandleCommentHelpRequest(
+           CommentHelpRequestParams requestParams,
+           RequestContext<CommentHelpRequestResult> requestContext)
+        {
+            var scriptFile = EditorSession.Workspace.GetFile(requestParams.DocumentUri);
+            var expectedFunctionLine = requestParams.TriggerPosition.Line + 2;
+            var functionDefinitionAst = EditorSession.LanguageService.GetFunctionDefinitionAtLine(
+                scriptFile,
+                expectedFunctionLine);
+            var result = new CommentHelpRequestResult()
+            {
+                Content = new string[] { "" }
+            };
+
+            if (functionDefinitionAst != null)
+            {
+                var settings = new Dictionary<string, Hashtable>();
+                var ruleSettings = new Hashtable();
+                ruleSettings.Add("ExportedOnly", false);
+                ruleSettings.Add("Enable", true);
+                settings.Add("PSProvideCommentHelp", ruleSettings);
+                var pssaSettings = EditorSession.AnalysisService.GetPSSASettingsHashtable(settings);
+
+                // todo create a semantic marker api that take only string
+                var analysisResults = await EditorSession.AnalysisService.GetSemanticMarkersAsync(
+                    scriptFile,
+                    pssaSettings);
+
+                var analysisResult = analysisResults?.FirstOrDefault(x =>
+                {
+                    return x.Correction != null
+                        && x.Correction.Edits[0].StartLineNumber == expectedFunctionLine;
+                });
+
+                if (analysisResult != null)
+                {
+                    // find the analysis result whose correction starts on
+                    result.Content = analysisResult.Correction.Edits[0].Text.Split('\n').Select(x => x.Trim('\r')).ToArray();
+                }
+            }
+
+            await requestContext.SendResult(result);
+        }
+
         private bool IsQueryMatch(string query, string symbolName)
         {
             return symbolName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
@@ -1134,12 +1180,12 @@ function __Expand-Alias {
                     // Return an empty result since the result value is irrelevant
                     // for this request in the LanguageServer
                     return
-                        requestContext.SendResult(
-                            new DebugAdapterMessages.EvaluateResponseBody
-                            {
-                                Result = "",
-                                VariablesReference = 0
-                            });
+                    requestContext.SendResult(
+                        new DebugAdapterMessages.EvaluateResponseBody
+                        {
+                            Result = "",
+                            VariablesReference = 0
+                        });
                 });
 
             return Task.FromResult(true);
