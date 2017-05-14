@@ -1094,6 +1094,7 @@ function __Expand-Alias {
                 var ruleSettings = new Hashtable();
                 ruleSettings.Add("ExportedOnly", false);
                 ruleSettings.Add("Enable", true);
+                ruleSettings.Add("BlockComment", requestParams.BlockComment);
                 settings.Add("PSProvideCommentHelp", ruleSettings);
                 var pssaSettings = EditorSession.AnalysisService.GetPSSASettingsHashtable(settings);
 

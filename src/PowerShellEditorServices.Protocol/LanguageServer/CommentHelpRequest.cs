@@ -22,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     {
         public string DocumentUri { get; set; }
         public Position TriggerPosition { get; set; }
+        public bool BlockComment { get; set; }
     }
 }
 
