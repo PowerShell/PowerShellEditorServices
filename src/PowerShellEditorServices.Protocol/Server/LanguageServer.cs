@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
@@ -82,6 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     this);
 
             this.editorSession.StartDebugService(this.editorOperations);
+            this.editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStopped;
 
             if (enableConsoleRepl)
             {
@@ -1193,6 +1195,15 @@ function __Expand-Alias {
                 });
         }
 
+        private async void DebugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
+        {
+            if (!this.editorSession.DebugService.IsClientAttached)
+            {
+                await this.SendEvent(
+                    StartDebuggerEvent.Type,
+                    new StartDebuggerEvent());
+            }
+        }
 
         #endregion
 

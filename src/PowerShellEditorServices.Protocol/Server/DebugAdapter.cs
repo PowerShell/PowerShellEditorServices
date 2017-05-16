@@ -162,6 +162,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
             }
 
+            this.editorSession.DebugService.IsClientAttached = false;
+
             if (this.disconnectRequestContext != null)
             {
                 // Respond to the disconnect request and stop the server
@@ -207,6 +209,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object args,
             RequestContext<object> requestContext)
         {
+            this.editorSession.DebugService.IsClientAttached = true;
+
             if (!string.IsNullOrEmpty(this.scriptToLaunch))
             {
                 if (this.editorSession.PowerShellContext.SessionState == PowerShellContextState.Ready)
@@ -225,6 +229,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
 
             await requestContext.SendResult(null);
+
+            if (this.isInteractiveDebugSession &&
+                this.editorSession.DebugService.IsDebuggerStopped)
+            {
+                // If this is an interactive session and there's a pending breakpoint,
+                // send that information along to the debugger client
+                this.DebugService_DebuggerStopped(
+                    this,
+                    this.editorSession.DebugService.CurrentDebuggerStoppedEventArgs);
+            }
         }
 
         protected async Task HandleLaunchRequest(
@@ -270,8 +284,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 #endif
             }
 
-            // TODO: What's the right approach here?
-            if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local)
+            if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local &&
+                !this.editorSession.DebugService.IsDebuggerStopped)
             {
                 await editorSession.PowerShellContext.SetWorkingDirectory(workingDir);
                 Logger.Write(LogLevel.Verbose, "Working dir set to: " + workingDir);
@@ -294,7 +308,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // If the current session is remote, map the script path to the remote
             // machine if necessary
-            if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+            if (this.scriptToLaunch != null &&
+                this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
             {
                 this.scriptToLaunch =
                     this.editorSession.RemoteFileManager.GetMappedPath(
