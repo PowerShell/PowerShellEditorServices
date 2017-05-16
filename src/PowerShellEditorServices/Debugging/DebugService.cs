@@ -48,6 +48,28 @@ namespace Microsoft.PowerShell.EditorServices
 
         #endregion
 
+        #region Properties
+
+        /// <summary>
+        /// Gets or sets a boolean that indicates whether a debugger client is
+        /// currently attached to the debugger.
+        /// </summary>
+        public bool IsClientAttached { get; set; }
+
+        /// <summary>
+        /// Gets a boolean that indicates whether the debugger is currently
+        /// stopped at a breakpoint.
+        /// </summary>
+        public bool IsDebuggerStopped => this.powerShellContext.IsDebuggerStopped;
+
+        /// <summary>
+        /// Gets the current DebuggerStoppedEventArgs when the debugger
+        /// is stopped.
+        /// </summary>
+        public DebuggerStoppedEventArgs CurrentDebuggerStoppedEventArgs { get; private set; }
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
@@ -80,6 +102,8 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.powerShellContext = powerShellContext;
             this.powerShellContext.DebuggerStop += this.OnDebuggerStop;
+            this.powerShellContext.DebuggerResumed += this.OnDebuggerResumed;
+
             this.powerShellContext.BreakpointUpdated += this.OnBreakpointUpdated;
 
             this.remoteFileManager = remoteFileManager;
@@ -1126,13 +1150,21 @@ namespace Microsoft.PowerShell.EditorServices
                 }
             }
 
-            // Notify the host that the debugger is stopped
-            this.DebuggerStopped?.Invoke(
-                sender,
+            this.CurrentDebuggerStoppedEventArgs =
                 new DebuggerStoppedEventArgs(
                     e,
                     this.powerShellContext.CurrentRunspace,
-                    localScriptPath));
+                    localScriptPath);
+
+            // Notify the host that the debugger is stopped
+            this.DebuggerStopped?.Invoke(
+                sender,
+                this.CurrentDebuggerStoppedEventArgs);
+        }
+
+        private void OnDebuggerResumed(object sender, DebuggerResumeAction e)
+        {
+            this.CurrentDebuggerStoppedEventArgs = null;
         }
 
         /// <summary>
