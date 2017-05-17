@@ -1097,6 +1097,7 @@ function __Expand-Alias {
                 ruleSettings.Add("ExportedOnly", false);
                 ruleSettings.Add("Enable", true);
                 ruleSettings.Add("BlockComment", requestParams.BlockComment);
+                ruleSettings.Add("VSCodeSnippetCorrection", true);
                 settings.Add("PSProvideCommentHelp", ruleSettings);
                 var pssaSettings = EditorSession.AnalysisService.GetPSSASettingsHashtable(settings);
 
