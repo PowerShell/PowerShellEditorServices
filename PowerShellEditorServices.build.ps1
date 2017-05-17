@@ -105,15 +105,21 @@ task Clean {
 task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
     [xml]$props = Get-Content .\PowerShellEditorServices.Common.props
 
+    $script:BuildNumber = 9999
     $script:VersionSuffix = $props.Project.PropertyGroup.VersionSuffix
-    $script:BaseVersion = "$($props.Project.PropertyGroup.VersionPrefix)-$($props.Project.PropertyGroup.VersionSuffix)"
-    $script:FullVersion = "$($props.Project.PropertyGroup.VersionPrefix)-$($props.Project.PropertyGroup.VersionSuffix)"
 
     if ($env:APPVEYOR) {
         $script:BuildNumber = $env:APPVEYOR_BUILD_NUMBER
-        $script:FullVersion = "$script:FullVersion-$script:BuildNumber"
+    }
+
+    if ($script:VersionSuffix -ne $null) {
         $script:VersionSuffix = "$script:VersionSuffix-$script:BuildNumber"
     }
+    else {
+        $script:VersionSuffix = "$script:BuildNumber"
+    }
+
+    $script:FullVersion = "$($props.Project.PropertyGroup.VersionPrefix)-$script:VersionSuffix"
 
     Write-Host "`n### Product Version: $script:FullVersion`n" -ForegroundColor Green
 }
