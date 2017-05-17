@@ -838,7 +838,7 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     command = new PSCommand();
                     command.AddCommand(profilePath, false);
-                    await this.ExecuteCommand(command);
+                    await this.ExecuteCommand<object>(command, true, true);
                 }
 
                 // Gather the session details (particularly the prompt) after
