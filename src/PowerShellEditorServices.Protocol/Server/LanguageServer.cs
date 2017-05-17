@@ -1083,10 +1083,7 @@ function __Expand-Alias {
             var functionDefinitionAst = EditorSession.LanguageService.GetFunctionDefinitionAtLine(
                 scriptFile,
                 expectedFunctionLine);
-            var result = new CommentHelpRequestResult()
-            {
-                Content = new string[] { "" }
-            };
+            var result = new CommentHelpRequestResult();
 
             if (functionDefinitionAst != null)
             {
@@ -1096,6 +1093,7 @@ function __Expand-Alias {
                 ruleSettings.Add("Enable", true);
                 ruleSettings.Add("BlockComment", requestParams.BlockComment);
                 ruleSettings.Add("VSCodeSnippetCorrection", true);
+                ruleSettings.Add("Placement", "before");
                 settings.Add("PSProvideCommentHelp", ruleSettings);
                 var pssaSettings = EditorSession.AnalysisService.GetPSSASettingsHashtable(settings);
 
@@ -1110,11 +1108,8 @@ function __Expand-Alias {
                         && x.Correction.Edits[0].StartLineNumber == expectedFunctionLine;
                 });
 
-                if (analysisResult != null)
-                {
-                    // find the analysis result whose correction starts on
-                    result.Content = analysisResult.Correction.Edits[0].Text.Split('\n').Select(x => x.Trim('\r')).ToArray();
-                }
+                // find the analysis result whose correction starts on
+                result.Content = analysisResult?.Correction.Edits[0].Text.Split('\n').Select(x => x.Trim('\r')).ToArray();
             }
 
             await requestContext.SendResult(result);
