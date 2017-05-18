@@ -186,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="ruleSettingsMap">A settings hashtable</param>
         /// <returns></returns>
-        public Hashtable GetPSSASettingsHashtable(IDictionary<string, Hashtable> ruleSettingsMap)
+        public static Hashtable GetPSSASettingsHashtable(IDictionary<string, Hashtable> ruleSettingsMap)
         {
             var hashtable = new Hashtable();
             var ruleSettingsHashtable = new Hashtable();

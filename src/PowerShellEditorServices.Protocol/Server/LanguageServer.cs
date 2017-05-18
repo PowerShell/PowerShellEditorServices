@@ -307,7 +307,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             var markers = await editorSession.AnalysisService.GetSemanticMarkersAsync(
                 editorSession.Workspace.GetFile(requestParams.fileUri),
-                editorSession.AnalysisService.GetPSSASettingsHashtable(requestParams.settings));
+                AnalysisService.GetPSSASettingsHashtable(requestParams.settings));
             await requestContext.SendResult(new ScriptFileMarkerRequestResultParams
             {
                 markers = markers
@@ -1095,7 +1095,7 @@ function __Expand-Alias {
                 ruleSettings.Add("VSCodeSnippetCorrection", true);
                 ruleSettings.Add("Placement", "before");
                 settings.Add("PSProvideCommentHelp", ruleSettings);
-                var pssaSettings = EditorSession.AnalysisService.GetPSSASettingsHashtable(settings);
+                var pssaSettings = AnalysisService.GetPSSASettingsHashtable(settings);
 
                 // todo create a semantic marker api that take only string
                 var analysisResults = await EditorSession.AnalysisService.GetSemanticMarkersAsync(
