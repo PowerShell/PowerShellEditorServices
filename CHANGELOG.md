@@ -1,5 +1,23 @@
 # PowerShell Editor Services Release History
 
+## 1.1.0
+### Thursday, May 18, 2017
+
+#### Fixes and improvements
+
+- [#452](https://github.com/PowerShell/PowerShellEditorServices/pull/452) -
+  Added the `powerShell/getCommentHelp` request type for requesting a snippet-style
+  text edit to add comment-based help to a function defined at a particular location.
+
+- [#455](https://github.com/PowerShell/PowerShellEditorServices/pull/455) -
+  Added the `powerShell/startDebugger` notification type to notify the editor that it
+  should activate its debugger because a breakpoint has been hit in the session while
+  no debugger client was attached.
+
+- [#663](https://github.com/PowerShell/vscode-powershell/issues/663) and [#689](https://github.com/PowerShell/vscode-powershell/issues/689) -
+  We now write the errors and Write-Output calls that occur while loading profile
+  scripts so that it's easier to diagnose issues with your profile scripts.
+
 ## 1.0.0
 ### Wednesday, May 10, 2017
 
