@@ -1,4 +1,4 @@
-version: '1.0.0.{build}'
+version: '1.1.0.{build}'
 image: Visual Studio 2017
 clone_depth: 10
 skip_tags: true
@@ -6,7 +6,6 @@ skip_tags: true
 branches:
   only:
   - master
-  - develop
 
 environment:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true  # Don't download unneeded packages
