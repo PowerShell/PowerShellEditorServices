@@ -142,6 +142,54 @@ namespace Microsoft.PowerShell.EditorServices
         #region Public Methods
 
         /// <summary>
+        /// Get PSScriptAnalyzer settings hashtable for PSProvideCommentHelp rule.
+        /// </summary>
+        /// <param name="enable">Enable the rule.</param>
+        /// <param name="exportedOnly">Analyze only exported functions/cmdlets.</param>
+        /// <param name="blockComment">Use block comment or line comment.</param>
+        /// <param name="vscodeSnippetCorrection">Return a vscode snipped correction should be returned.</param>
+        /// <param name="placement">Place comment help at the given location relative to the function definition.</param>
+        /// <returns>A PSScriptAnalyzer settings hashtable.</returns>
+        public static Hashtable GetCommentHelpRuleSettings(
+            bool enable,
+            bool exportedOnly,
+            bool blockComment,
+            bool vscodeSnippetCorrection,
+            string placement)
+        {
+            var settings = new Dictionary<string, Hashtable>();
+            var ruleSettings = new Hashtable();
+            ruleSettings.Add("Enable", enable);
+            ruleSettings.Add("ExportedOnly", exportedOnly);
+            ruleSettings.Add("BlockComment", blockComment);
+            ruleSettings.Add("VSCodeSnippetCorrection", vscodeSnippetCorrection);
+            ruleSettings.Add("Placement", placement);
+            settings.Add("PSProvideCommentHelp", ruleSettings);
+            return GetPSSASettingsHashtable(settings);
+        }
+
+        /// <summary>
+        /// Construct a PSScriptAnalyzer settings hashtable
+        /// </summary>
+        /// <param name="ruleSettingsMap">A settings hashtable</param>
+        /// <returns></returns>
+        public static Hashtable GetPSSASettingsHashtable(IDictionary<string, Hashtable> ruleSettingsMap)
+        {
+            var hashtable = new Hashtable();
+            var ruleSettingsHashtable = new Hashtable();
+
+            hashtable["IncludeRules"] = ruleSettingsMap.Keys.ToArray<object>();
+            hashtable["Rules"] = ruleSettingsHashtable;
+
+            foreach (var kvp in ruleSettingsMap)
+            {
+                ruleSettingsHashtable.Add(kvp.Key, kvp.Value);
+            }
+
+            return hashtable;
+        }
+
+        /// <summary>
         /// Perform semantic analysis on the given ScriptFile and returns
         /// an array of ScriptFileMarkers.
         /// </summary>
@@ -179,27 +227,6 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return ruleNames;
-        }
-
-        /// <summary>
-        /// Construct a PSScriptAnalyzer settings hashtable
-        /// </summary>
-        /// <param name="ruleSettingsMap">A settings hashtable</param>
-        /// <returns></returns>
-        public static Hashtable GetPSSASettingsHashtable(IDictionary<string, Hashtable> ruleSettingsMap)
-        {
-            var hashtable = new Hashtable();
-            var ruleSettingsHashtable = new Hashtable();
-
-            hashtable["IncludeRules"] = ruleSettingsMap.Keys.ToArray<object>();
-            hashtable["Rules"] = ruleSettingsHashtable;
-
-            foreach (var kvp in ruleSettingsMap)
-            {
-                ruleSettingsHashtable.Add(kvp.Key, kvp.Value);
-            }
-
-            return hashtable;
         }
 
         /// <summary>

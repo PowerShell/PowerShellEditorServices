@@ -1087,20 +1087,15 @@ function __Expand-Alias {
 
             if (functionDefinitionAst != null)
             {
-                var settings = new Dictionary<string, Hashtable>();
-                var ruleSettings = new Hashtable();
-                ruleSettings.Add("ExportedOnly", false);
-                ruleSettings.Add("Enable", true);
-                ruleSettings.Add("BlockComment", requestParams.BlockComment);
-                ruleSettings.Add("VSCodeSnippetCorrection", true);
-                ruleSettings.Add("Placement", "before");
-                settings.Add("PSProvideCommentHelp", ruleSettings);
-                var pssaSettings = AnalysisService.GetPSSASettingsHashtable(settings);
-
-                // todo create a semantic marker api that take only string
+               // todo create a semantic marker api that take only string
                 var analysisResults = await EditorSession.AnalysisService.GetSemanticMarkersAsync(
                     scriptFile,
-                    pssaSettings);
+                    AnalysisService.GetCommentHelpRuleSettings(
+                        true,
+                        false,
+                        requestParams.BlockComment,
+                        true,
+                        "before"));
 
                 var analysisResult = analysisResults?.FirstOrDefault(x =>
                 {
