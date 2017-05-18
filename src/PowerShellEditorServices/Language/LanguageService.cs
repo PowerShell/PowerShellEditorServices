@@ -522,6 +522,12 @@ namespace Microsoft.PowerShell.EditorServices
             return ScriptRegion.Create(ast.Extent);
         }
 
+        /// <summary>
+        /// Gets the function defined on a given line.
+        /// </summary>
+        /// <param name="scriptFile">Open script file.</param>
+        /// <param name="lineNumber">The 1 based line on which to look for function definition.</param>
+        /// <returns>If found, returns the function definition on the given line. Otherwise, returns null.</returns>
         public FunctionDefinitionAst GetFunctionDefinitionAtLine(
             ScriptFile scriptFile,
             int lineNumber)
