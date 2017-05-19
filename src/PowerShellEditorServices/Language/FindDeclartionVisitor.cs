@@ -14,25 +14,31 @@ namespace Microsoft.PowerShell.EditorServices
     internal class FindDeclartionVisitor : AstVisitor
     {
         private SymbolReference symbolRef;
+        private string variableName;
 
         public SymbolReference FoundDeclartion{ get; private set; }
 
         public FindDeclartionVisitor(SymbolReference symbolRef)
         {
             this.symbolRef = symbolRef;
+            if (this.symbolRef.SymbolType == SymbolType.Variable)
+            {
+                // converts `$varName` to `varName` or of the form ${varName} to varName
+                variableName = symbolRef.SymbolName.TrimStart('$').Trim('{', '}');
+            }
         }
 
         /// <summary>
         /// Decides if the current function defintion is the right defition
-        /// for the symbol being searched for. The defintion of the symbol will be a of type 
+        /// for the symbol being searched for. The defintion of the symbol will be a of type
         /// SymbolType.Function and have the same name as the symbol
         /// </summary>
         /// <param name="functionDefinitionAst">A FunctionDefinitionAst in the script's AST</param>
-        /// <returns>A descion to stop searching if the right FunctionDefinitionAst was found, 
+        /// <returns>A descion to stop searching if the right FunctionDefinitionAst was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
-            // Get the start column number of the function name, 
+            // Get the start column number of the function name,
             // instead of the the start column of 'function' and create new extent for the functionName
             int startColumnNumber =
                 functionDefinitionAst.Extent.Text.IndexOf(
@@ -62,27 +68,27 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Decides if the current variable expression is the right defition for 
-        /// the symbol being searched for. The defintion of the symbol will be a of type 
-        /// SymbolType.Variable and have the same name as the symbol
+        /// Check if the left hand side of an assignmentStatementAst is a VariableExpressionAst
+        /// with the same name as that of symbolRef.
         /// </summary>
-        /// <param name="variableExpressionAst">A FunctionDefinitionAst in the script's AST</param>
-        /// <returns>A descion to stop searching if the right VariableExpressionAst was found, 
+        /// <param name="assignmentStatementAst">An AssignmentStatementAst/param>
+        /// <returns>A descion to stop searching if the right VariableExpressionAst was found,
         /// or a decision to continue if it wasn't found</returns>
-        public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
+        public override AstVisitAction VisitAssignmentStatement(AssignmentStatementAst assignmentStatementAst)
         {
-            if(symbolRef.SymbolType.Equals(SymbolType.Variable) &&
-                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            var variableExprAst = assignmentStatementAst.Left as VariableExpressionAst;
+            if (variableExprAst == null ||
+                variableName == null ||
+                !variableExprAst.VariablePath.UserPath.Equals(
+                    variableName,
+                    StringComparison.OrdinalIgnoreCase))
             {
-                this.FoundDeclartion =
-                    new SymbolReference(
-                        SymbolType.Variable,
-                        variableExpressionAst.Extent);
-
-                return AstVisitAction.StopVisit;
+                return AstVisitAction.Continue;
             }
 
-            return AstVisitAction.Continue;
+            // TODO also find instances of set-variable
+            FoundDeclartion = new SymbolReference(SymbolType.Variable, variableExprAst.Extent);
+            return AstVisitAction.StopVisit;
         }
     }
 }
