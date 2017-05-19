@@ -11,3 +11,6 @@ My-Function $things
 Write-Output "Hi";
 
 Write-Output ""
+
+. .\VariableDefinition.ps1
+Write-Output $variableInOtherFile
