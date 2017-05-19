@@ -9,16 +9,16 @@ using System.Management.Automation.Language;
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// The vistor used to find the defintion of a symbol
+    /// The visitor used to find the definition of a symbol
     /// </summary>
-    internal class FindDeclartionVisitor : AstVisitor
+    internal class FindDeclarationVisitor : AstVisitor
     {
         private SymbolReference symbolRef;
         private string variableName;
 
-        public SymbolReference FoundDeclartion{ get; private set; }
+        public SymbolReference FoundDeclaration{ get; private set; }
 
-        public FindDeclartionVisitor(SymbolReference symbolRef)
+        public FindDeclarationVisitor(SymbolReference symbolRef)
         {
             this.symbolRef = symbolRef;
             if (this.symbolRef.SymbolType == SymbolType.Variable)
@@ -29,8 +29,8 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Decides if the current function defintion is the right defition
-        /// for the symbol being searched for. The defintion of the symbol will be a of type
+        /// Decides if the current function definition is the right definition
+        /// for the symbol being searched for. The definition of the symbol will be a of type
         /// SymbolType.Function and have the same name as the symbol
         /// </summary>
         /// <param name="functionDefinitionAst">A FunctionDefinitionAst in the script's AST</param>
@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
                  nameExtent.Text.Equals(symbolRef.ScriptRegion.Text, StringComparison.CurrentCultureIgnoreCase))
             {
-                this.FoundDeclartion =
+                this.FoundDeclaration =
                     new SymbolReference(
                         SymbolType.Function,
                         nameExtent);
@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// with the same name as that of symbolRef.
         /// </summary>
         /// <param name="assignmentStatementAst">An AssignmentStatementAst/param>
-        /// <returns>A descion to stop searching if the right VariableExpressionAst was found,
+        /// <returns>A decision to stop searching if the right VariableExpressionAst was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitAssignmentStatement(AssignmentStatementAst assignmentStatementAst)
         {
@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             // TODO also find instances of set-variable
-            FoundDeclartion = new SymbolReference(SymbolType.Variable, variableExprAst.Extent);
+            FoundDeclaration = new SymbolReference(SymbolType.Variable, variableExprAst.Extent);
             return AstVisitAction.StopVisit;
         }
     }
