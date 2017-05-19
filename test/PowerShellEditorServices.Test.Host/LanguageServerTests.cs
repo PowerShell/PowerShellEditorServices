@@ -456,6 +456,66 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
+        public async Task FindsDefinitionOfVariableInOtherFile()
+        {
+            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+
+            Location[] locations =
+                await this.SendRequest(
+                    DefinitionRequest.Type,
+                    new TextDocumentPositionParams
+                    {
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\FindReferences.ps1"
+                        },
+                        Position = new Position
+                        {
+                            Line = 15,
+                            Character = 20,
+                        }
+                    });
+
+            Assert.NotNull(locations);
+            Assert.Equal(1, locations.Length);
+            Assert.EndsWith("VariableDefinition.ps1", locations[0].Uri);
+            Assert.Equal(0, locations[0].Range.Start.Line);
+            Assert.Equal(0, locations[0].Range.Start.Character);
+            Assert.Equal(0, locations[0].Range.End.Line);
+            Assert.Equal(20, locations[0].Range.End.Character);
+        }
+
+        [Fact]
+        public async Task FindDefinitionOfVariableWithSpecialChars()
+        {
+            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+
+            Location[] locations =
+                await this.SendRequest(
+                    DefinitionRequest.Type,
+                    new TextDocumentPositionParams
+                    {
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = "TestFiles\\FindReferences.ps1"
+                        },
+                        Position = new Position
+                        {
+                            Line = 18,
+                            Character = 24,
+                        }
+                    });
+
+            Assert.NotNull(locations);
+            Assert.Equal(1, locations.Length);
+            Assert.EndsWith("FindReferences.ps1", locations[0].Uri);
+            Assert.Equal(17, locations[0].Range.Start.Line);
+            Assert.Equal(0, locations[0].Range.Start.Character);
+            Assert.Equal(17, locations[0].Range.End.Line);
+            Assert.Equal(27, locations[0].Range.End.Character);
+        }
+
+        [Fact]
         public async Task FindsOccurencesOnFunctionDefinition()
         {
             await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");

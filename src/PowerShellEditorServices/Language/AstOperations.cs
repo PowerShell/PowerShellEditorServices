@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices
     internal static class AstOperations
     {
         /// <summary>
-        /// Gets completions for the symbol found in the Ast at 
+        /// Gets completions for the symbol found in the Ast at
         /// the given file offset.
         /// </summary>
         /// <param name="scriptAst">
@@ -47,14 +47,14 @@ namespace Microsoft.PowerShell.EditorServices
         /// symbol at the given offset.
         /// </returns>
         static public async Task<CommandCompletion> GetCompletions(
-            Ast scriptAst, 
-            Token[] currentTokens, 
+            Ast scriptAst,
+            Token[] currentTokens,
             int fileOffset,
             PowerShellContext powerShellContext,
             CancellationToken cancellationToken)
         {
             var type = scriptAst.Extent.StartScriptPosition.GetType();
-            var method = 
+            var method =
 #if CoreCLR
                 type.GetMethod(
                     "CloneWithNewOffset",
@@ -67,9 +67,9 @@ namespace Microsoft.PowerShell.EditorServices
                     new[] { typeof(int) }, null);
 #endif
 
-            IScriptPosition cursorPosition = 
+            IScriptPosition cursorPosition =
                 (IScriptPosition)method.Invoke(
-                    scriptAst.Extent.StartScriptPosition, 
+                    scriptAst.Extent.StartScriptPosition,
                     new object[] { fileOffset });
 
             Logger.Write(
@@ -138,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Finds the symbol at a given file location 
+        /// Finds the symbol at a given file location
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="lineNumber">The line number of the cursor for the given script</param>
@@ -176,15 +176,15 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="AliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
         /// <returns></returns>
         static public IEnumerable<SymbolReference> FindReferencesOfSymbol(
-            Ast scriptAst, 
-            SymbolReference symbolReference, 
+            Ast scriptAst,
+            SymbolReference symbolReference,
             Dictionary<String, List<String>> CmdletToAliasDictionary,
             Dictionary<String, String> AliasToCmdletDictionary)
         {
             // find the symbol evaluators for the node types we are handling
-            FindReferencesVisitor referencesVisitor = 
+            FindReferencesVisitor referencesVisitor =
                 new FindReferencesVisitor(
-                    symbolReference, 
+                    symbolReference,
                     CmdletToAliasDictionary,
                     AliasToCmdletDictionary);
             scriptAst.Visit(referencesVisitor);
@@ -202,8 +202,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A collection of SymbolReference objects that are refrences to the symbolRefrence
         /// not including aliases</returns>
         static public IEnumerable<SymbolReference> FindReferencesOfSymbol(
-            ScriptBlockAst scriptAst, 
-            SymbolReference foundSymbol, 
+            ScriptBlockAst scriptAst,
+            SymbolReference foundSymbol,
             bool needsAliases)
         {
             FindReferencesVisitor referencesVisitor =
@@ -214,7 +214,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Finds the definition of the symbol 
+        /// Finds the definition of the symbol
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="symbolReference">The symbol that we are looking for the definition of</param>
@@ -223,12 +223,12 @@ namespace Microsoft.PowerShell.EditorServices
             Ast scriptAst,
             SymbolReference symbolReference)
         {
-            FindDeclartionVisitor declarationVisitor = 
-                new FindDeclartionVisitor(
+            FindDeclarationVisitor declarationVisitor =
+                new FindDeclarationVisitor(
                     symbolReference);
             scriptAst.Visit(declarationVisitor);
 
-            return declarationVisitor.FoundDeclartion;
+            return declarationVisitor.FoundDeclaration;
         }
 
         /// <summary>
