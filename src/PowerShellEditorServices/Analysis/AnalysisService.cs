@@ -197,7 +197,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
         public async Task<ScriptFileMarker[]> GetSemanticMarkersAsync(ScriptFile file)
         {
-            return await GetSemanticMarkersAsync(file, activeRules, settingsPath);
+            return await GetSemanticMarkersAsync<string>(file, activeRules, settingsPath);
         }
 
         /// <summary>
@@ -209,6 +209,19 @@ namespace Microsoft.PowerShell.EditorServices
         public async Task<ScriptFileMarker[]> GetSemanticMarkersAsync(ScriptFile file, Hashtable settings)
         {
             return await GetSemanticMarkersAsync<Hashtable>(file, null, settings);
+        }
+
+        /// <summary>
+        /// Perform semantic analysis on the given script with the given settings.
+        /// </summary>
+        /// <param name="file">The script content to be analyzed.</param>
+        /// <param name="settings">ScriptAnalyzer settings</param>
+        /// <returns></returns>
+        public async Task<ScriptFileMarker[]> GetSemanticMarkersAsync(
+           string scriptContent,
+           Hashtable settings)
+        {
+            return await GetSemanticMarkersAsync<Hashtable>(scriptContent, null, settings);
         }
 
         /// <summary>
@@ -252,11 +265,29 @@ namespace Microsoft.PowerShell.EditorServices
             TSettings settings) where TSettings : class
         {
             if (hasScriptAnalyzerModule
-                && file.IsAnalysisEnabled
-                && (typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
+                && file.IsAnalysisEnabled)
+            {
+                return await GetSemanticMarkersAsync<TSettings>(
+                    file.Contents,
+                    rules,
+                    settings);
+            }
+            else
+            {
+                // Return an empty marker list
+                return new ScriptFileMarker[0];
+            }
+        }
+
+        private async Task<ScriptFileMarker[]> GetSemanticMarkersAsync<TSettings>(
+            string scriptContent,
+            string[] rules,
+            TSettings settings) where TSettings : class
+        {
+            if ((typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
                 && (rules != null || settings != null))
             {
-                var scriptFileMarkers = await GetDiagnosticRecordsAsync(file, rules, settings);
+                var scriptFileMarkers = await GetDiagnosticRecordsAsync(scriptContent, rules, settings);
                 return scriptFileMarkers.Select(ScriptFileMarker.FromDiagnosticRecord).ToArray();
             }
             else
@@ -318,9 +349,9 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         private async Task<PSObject[]> GetDiagnosticRecordsAsync<TSettings>(
-            ScriptFile file,
-            string[] rules,
-            TSettings settings) where TSettings : class
+             string scriptContent,
+             string[] rules,
+             TSettings settings) where TSettings : class
         {
             var diagnosticRecords = new PSObject[0];
 
@@ -346,7 +377,7 @@ namespace Microsoft.PowerShell.EditorServices
                     "Invoke-ScriptAnalyzer",
                     new Dictionary<string, object>
                     {
-                        { "ScriptDefinition", file.Contents },
+                        { "ScriptDefinition", scriptContent },
                         { settingParameter, settingArgument }
                     });
             }
@@ -357,6 +388,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             return diagnosticRecords;
         }
+
 
         private PSObject[] InvokePowerShell(string command, IDictionary<string, object> paramArgMap)
         {
@@ -389,7 +421,8 @@ namespace Microsoft.PowerShell.EditorServices
 
         private async Task<PSObject[]> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
         {
-            var task = Task.Run(() => {
+            var task = Task.Run(() =>
+            {
                 return InvokePowerShell(command, paramArgMap);
             });
 
