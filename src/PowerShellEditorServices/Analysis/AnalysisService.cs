@@ -214,7 +214,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Perform semantic analysis on the given script with the given settings.
         /// </summary>
-        /// <param name="file">The script content to be analyzed.</param>
+        /// <param name="scriptContent">The script content to be analyzed.</param>
         /// <param name="settings">ScriptAnalyzer settings</param>
         /// <returns></returns>
         public async Task<ScriptFileMarker[]> GetSemanticMarkersAsync(
