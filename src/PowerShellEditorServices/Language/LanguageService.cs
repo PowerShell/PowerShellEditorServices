@@ -545,7 +545,7 @@ namespace Microsoft.PowerShell.EditorServices
             int lineNumber,
             out string helpLocation)
         {
-            var foundAst = scriptFile.ScriptAst.FindAll(
+            var foundAsts = scriptFile.ScriptAst.FindAll(
                 ast =>
                 {
                     // find all the script definitions that contain the line `lineNumber`
@@ -558,7 +558,16 @@ namespace Microsoft.PowerShell.EditorServices
                     return fdAst.Body.Extent.StartLineNumber < lineNumber &&
                         fdAst.Body.Extent.EndLineNumber > lineNumber;
                 },
-                true).Aggregate((x, y) =>
+                true);
+
+            // check if the next line contains a function definition
+            if (foundAsts == null || !foundAsts.Any())
+            {
+                helpLocation = "before";
+                return GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
+            }
+
+            var funcDefnAst = foundAsts.Cast<FunctionDefinitionAst>().Aggregate((x, y) =>
                 {
                     // of all the function definitions found, return the innermost function definition that contains
                     // `lineNumber`
@@ -570,24 +579,24 @@ namespace Microsoft.PowerShell.EditorServices
                     return y;
                 });
 
+            // TODO fix help completion in nested functions
             // TODO use tokens to check for non empty character instead of just checking for line offset
             // check if the line number is the first line in the function body
             // check if the line number is the last line in the function body
-            if (foundAst == null)
-            {
-                helpLocation = "before";
-                return GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
-            }
-
-            // check if the next line contains a function definition
-            var funcDefnAst = foundAst as FunctionDefinitionAst;
             if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
             {
                 helpLocation = "begin";
+                return funcDefnAst;
             }
 
-            helpLocation = "end";
-            return funcDefnAst;
+            if (funcDefnAst.Body.Extent.EndLineNumber == lineNumber + 1)
+            {
+                helpLocation = "end";
+                return funcDefnAst;
+            }
+
+            helpLocation = null;
+            return null;
         }
 
         #endregion

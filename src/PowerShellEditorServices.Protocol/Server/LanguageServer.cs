@@ -1082,14 +1082,16 @@ function __Expand-Alias {
         {
             var scriptFile = EditorSession.Workspace.GetFile(requestParams.DocumentUri);
             var expectedFunctionLine = requestParams.TriggerPosition.Line + 2;
-            var functionDefinitionAst = EditorSession.LanguageService.GetFunctionDefinitionAtLine(
+            string helpLocation;
+            var functionDefinitionAst = EditorSession.LanguageService.GetFunctionDefinitionForHelpComment(
                 scriptFile,
-                expectedFunctionLine);
-            var result = new CommentHelpRequestResult();
+                requestParams.TriggerPosition.Line + 1,
+                out helpLocation);
 
+            var result = new CommentHelpRequestResult();
             if (functionDefinitionAst != null)
             {
-               // todo create a semantic marker api that take only string
+                // todo create a semantic marker api that take only string
                 var analysisResults = await EditorSession.AnalysisService.GetSemanticMarkersAsync(
                     scriptFile,
                     AnalysisService.GetCommentHelpRuleSettings(
@@ -1097,16 +1099,16 @@ function __Expand-Alias {
                         false,
                         requestParams.BlockComment,
                         true,
-                        "before"));
+                        helpLocation));
 
-                var analysisResult = analysisResults?.FirstOrDefault(x =>
-                {
-                    return x.Correction != null
-                        && x.Correction.Edits[0].StartLineNumber == expectedFunctionLine;
-                });
-
-                // find the analysis result whose correction starts on
-                result.Content = analysisResult?.Correction.Edits[0].Text.Split('\n').Select(x => x.Trim('\r')).ToArray();
+                result.Content = analysisResults?
+                                     .FirstOrDefault()?
+                                     .Correction?
+                                     .Edits[0]
+                                     .Text
+                                     .Split('\n')
+                                     .Select(x => x.Trim('\r'))
+                                     .ToArray();
             }
 
             await requestContext.SendResult(result);
