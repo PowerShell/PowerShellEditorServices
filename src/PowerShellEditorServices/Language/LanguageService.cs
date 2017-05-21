@@ -539,6 +539,57 @@ namespace Microsoft.PowerShell.EditorServices
             return functionDefinitionAst as FunctionDefinitionAst;
         }
 
+        // todo add xml doc
+        public FunctionDefinitionAst GetFunctionDefinitionForHelpComment(
+            ScriptFile scriptFile,
+            int lineNumber,
+            out string helpLocation)
+        {
+            var foundAst = scriptFile.ScriptAst.FindAll(
+                ast =>
+                {
+                    // find all the script definitions that contain the line `lineNumber`
+                    var fdAst = ast as FunctionDefinitionAst;
+                    if (fdAst == null)
+                    {
+                        return false;
+                    }
+
+                    return fdAst.Body.Extent.StartLineNumber < lineNumber &&
+                        fdAst.Body.Extent.EndLineNumber > lineNumber;
+                },
+                true).Aggregate((x, y) =>
+                {
+                    // of all the function definitions found, return the innermost function definition that contains
+                    // `lineNumber`
+                    if (x.Extent.StartOffset >= y.Extent.StartOffset && x.Extent.EndOffset <= x.Extent.EndOffset)
+                    {
+                        return x;
+                    }
+
+                    return y;
+                });
+
+            // TODO use tokens to check for non empty character instead of just checking for line offset
+            // check if the line number is the first line in the function body
+            // check if the line number is the last line in the function body
+            if (foundAst == null)
+            {
+                helpLocation = "before";
+                return GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
+            }
+
+            // check if the next line contains a function definition
+            var funcDefnAst = foundAst as FunctionDefinitionAst;
+            if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
+            {
+                helpLocation = "begin";
+            }
+
+            helpLocation = "end";
+            return funcDefnAst;
+        }
+
         #endregion
 
         #region Private Fields
