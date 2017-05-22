@@ -1109,6 +1109,12 @@ function __Expand-Alias {
                                      .Split('\n')
                                      .Select(x => x.Trim('\r'))
                                      .ToArray();
+
+                if (helpLocation.Equals("begin", StringComparison.OrdinalIgnoreCase))
+                {
+                    // we need to trim the leading `{` that the correction sends.
+                    result.Content = result.Content?.Skip(1).ToArray();
+                }
             }
 
             await requestContext.SendResult(result);
