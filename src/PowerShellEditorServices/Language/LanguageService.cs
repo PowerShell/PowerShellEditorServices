@@ -545,6 +545,14 @@ namespace Microsoft.PowerShell.EditorServices
             int lineNumber,
             out string helpLocation)
         {
+            // check if the next line contains a function definition
+            var funcDefnAst = GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
+            if (funcDefnAst != null)
+            {
+                helpLocation = "before";
+                return funcDefnAst;
+            }
+
             var foundAsts = scriptFile.ScriptAst.FindAll(
                 ast =>
                 {
@@ -560,14 +568,9 @@ namespace Microsoft.PowerShell.EditorServices
                 },
                 true);
 
-            // check if the next line contains a function definition
-            if (foundAsts == null || !foundAsts.Any())
+            if (foundAsts != null && foundAsts.Any())
             {
-                helpLocation = "before";
-                return GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
-            }
-
-            var funcDefnAst = foundAsts.Cast<FunctionDefinitionAst>().Aggregate((x, y) =>
+                funcDefnAst = foundAsts.Cast<FunctionDefinitionAst>().Aggregate((x, y) =>
                 {
                     // of all the function definitions found, return the innermost function definition that contains
                     // `lineNumber`
@@ -579,20 +582,21 @@ namespace Microsoft.PowerShell.EditorServices
                     return y;
                 });
 
-            // TODO fix help completion in nested functions
-            // TODO use tokens to check for non empty character instead of just checking for line offset
-            // check if the line number is the first line in the function body
-            // check if the line number is the last line in the function body
-            if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
-            {
-                helpLocation = "begin";
-                return funcDefnAst;
-            }
+                // TODO fix help completion in nested functions
+                // TODO use tokens to check for non empty character instead of just checking for line offset
+                // check if the line number is the first line in the function body
+                // check if the line number is the last line in the function body
+                if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
+                {
+                    helpLocation = "begin";
+                    return funcDefnAst;
+                }
 
-            if (funcDefnAst.Body.Extent.EndLineNumber == lineNumber + 1)
-            {
-                helpLocation = "end";
-                return funcDefnAst;
+                if (funcDefnAst.Body.Extent.EndLineNumber == lineNumber + 1)
+                {
+                    helpLocation = "end";
+                    return funcDefnAst;
+                }
             }
 
             helpLocation = null;
