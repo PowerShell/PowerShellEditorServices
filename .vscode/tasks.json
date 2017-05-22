@@ -1,8 +1,8 @@
 {
-	"version": "0.1.0",
+	"version": "2.0.0",
 
     "windows": {
-        "command": "${env.windir}\\sysnative\\windowspowershell\\v1.0\\PowerShell.exe",
+        "command": "powershell.exe",
         "args": [ "-NoProfile", "-ExecutionPolicy", "Bypass" ]
     },
     "linux": {
@@ -14,7 +14,6 @@
         "args": [ "-NoProfile" ]
     },
 
-	"isShellCommand": true,
 	"showOutput": "always",
 
     // Associate with test task runner
@@ -35,6 +34,18 @@
             "suppressTaskName": true,
             "isTestCommand": true,
             "args": [ "Invoke-Build Test" ]
+        },
+        {
+            "taskName": "Test Language Service",
+            "suppressTaskName": true,
+            "isTestCommand": true,
+            "args": [ "Invoke-Build TestServer" ]
+        },
+        {
+            "taskName": "Test Host",
+            "suppressTaskName": true,
+            "isTestCommand": true,
+            "args": [ "Invoke-Build TestHost" ]
         }
 	]
 }
