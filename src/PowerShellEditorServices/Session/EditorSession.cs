@@ -65,6 +65,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public RemoteFileManager RemoteFileManager { get; private set; }
 
+        /// <summary>
+        /// Gets a boolean which is true if the integrated console host is
+        /// active in this session.
+        /// </summary>
+        public bool UsesConsoleHost { get; private set; }
+
         #endregion
 
         #region Public Methods
@@ -93,6 +99,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
             this.ExtensionService = new ExtensionService(this.PowerShellContext);
             this.TemplateService = new TemplateService(this.PowerShellContext);
+            this.UsesConsoleHost = enableConsoleRepl;
 
             this.InstantiateAnalysisService();
 

@@ -45,31 +45,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             get { return this.editorOperations; }
         }
 
-        public EditorSession EditorSession
-        {
-            get { return this.editorSession; }
-        }
-
-        /// <param name="hostDetails">
-        /// Provides details about the host application.
-        /// </param>
-        public LanguageServer(HostDetails hostDetails, ProfilePaths profilePaths)
-            : this(hostDetails, profilePaths, false, new StdioServerChannel())
-        {
-        }
-
         /// <param name="hostDetails">
         /// Provides details about the host application.
         /// </param>
         public LanguageServer(
-            HostDetails hostDetails,
-            ProfilePaths profilePaths,
-            bool enableConsoleRepl,
+            EditorSession editorSession,
             ChannelBase serverChannel)
             : base(serverChannel)
         {
-            this.editorSession = new EditorSession();
-            this.editorSession.StartSession(hostDetails, profilePaths, enableConsoleRepl);
+            this.editorSession = editorSession;
             this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;
 
             // Attach to ExtensionService events
@@ -86,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession.StartDebugService(this.editorOperations);
             this.editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStopped;
 
-            if (enableConsoleRepl)
+            if (this.editorSession.UsesConsoleHost)
             {
                 this.editorSession.ConsoleService.EnableConsoleRepl = true;
             }
@@ -1080,18 +1064,18 @@ function __Expand-Alias {
            CommentHelpRequestParams requestParams,
            RequestContext<CommentHelpRequestResult> requestContext)
         {
-            var scriptFile = EditorSession.Workspace.GetFile(requestParams.DocumentUri);
+            var scriptFile = this.editorSession.Workspace.GetFile(requestParams.DocumentUri);
             var expectedFunctionLine = requestParams.TriggerPosition.Line + 2;
 
             string helpLocation;
-            var functionDefinitionAst = EditorSession.LanguageService.GetFunctionDefinitionForHelpComment(
+            var functionDefinitionAst = this.editorSession.LanguageService.GetFunctionDefinitionForHelpComment(
                 scriptFile,
                 requestParams.TriggerPosition.Line + 1,
                 out helpLocation);
             var result = new CommentHelpRequestResult();
             if (functionDefinitionAst != null)
             {
-                var analysisResults = await EditorSession.AnalysisService.GetSemanticMarkersAsync(
+                var analysisResults = await this.editorSession.AnalysisService.GetSemanticMarkersAsync(
                     functionDefinitionAst.Extent.Text,
                     AnalysisService.GetCommentHelpRuleSettings(
                         true,

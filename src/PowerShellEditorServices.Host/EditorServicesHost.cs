@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
+using Microsoft.PowerShell.EditorServices.Extensions;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -34,6 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private HostDetails hostDetails;
         private string bundledModulesPath;
         private DebugAdapter debugAdapter;
+        private EditorSession editorSession;
         private HashSet<string> featureFlags;
         private LanguageServer languageServer;
 
@@ -82,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 else
                 {
                     Debugger.Launch();
-                }                
+                }
             }
 #endif
 
@@ -148,11 +150,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// <param name="profilePaths">The object containing the profile paths to load for this session.</param>
         public void StartLanguageService(int languageServicePort, ProfilePaths profilePaths)
         {
+            this.editorSession =
+                CreateSession(
+                    this.hostDetails,
+                    profilePaths,
+                    this.enableConsoleRepl);
+
             this.languageServer =
                 new LanguageServer(
-                    hostDetails,
-                    profilePaths,
-                    this.enableConsoleRepl,
+                    this.editorSession,
                     new TcpSocketServerChannel(languageServicePort));
 
             this.languageServer.Start().Wait();
@@ -177,17 +183,23 @@ namespace Microsoft.PowerShell.EditorServices.Host
             {
                 this.debugAdapter =
                     new DebugAdapter(
-                        this.languageServer.EditorSession,
-                        new TcpSocketServerChannel(debugServicePort));
+                        this.editorSession,
+                        new TcpSocketServerChannel(debugServicePort),
+                        false);
             }
             else
             {
+                EditorSession debugSession =
+                    this.CreateDebugSession(
+                        this.hostDetails,
+                        profilePaths,
+                        this.languageServer.EditorOperations);
+
                 this.debugAdapter =
                     new DebugAdapter(
-                        hostDetails,
-                        profilePaths,
+                        debugSession,
                         new TcpSocketServerChannel(debugServicePort),
-                        this.languageServer?.EditorOperations);
+                        true);
             }
 
             this.debugAdapter.SessionEnded +=
@@ -252,6 +264,28 @@ namespace Microsoft.PowerShell.EditorServices.Host
         #endregion
 
         #region Private Methods
+
+        private EditorSession CreateSession(
+            HostDetails hostDetails,
+            ProfilePaths profilePaths,
+            bool enableConsoleRepl)
+        {
+            EditorSession editorSession = new EditorSession();
+            editorSession.StartSession(hostDetails, profilePaths, enableConsoleRepl);
+
+            return editorSession;
+        }
+
+        private EditorSession CreateDebugSession(
+            HostDetails hostDetails,
+            ProfilePaths profilePaths,
+            IEditorOperations editorOperations)
+        {
+            EditorSession editorSession = new EditorSession();
+            editorSession.StartDebugSession(hostDetails, profilePaths, editorOperations);
+
+            return editorSession;
+        }
 
 #if !CoreCLR
         static void CurrentDomain_UnhandledException(
