@@ -1082,12 +1082,12 @@ function __Expand-Alias {
         {
             var scriptFile = EditorSession.Workspace.GetFile(requestParams.DocumentUri);
             var expectedFunctionLine = requestParams.TriggerPosition.Line + 2;
+
             string helpLocation;
             var functionDefinitionAst = EditorSession.LanguageService.GetFunctionDefinitionForHelpComment(
                 scriptFile,
                 requestParams.TriggerPosition.Line + 1,
                 out helpLocation);
-
             var result = new CommentHelpRequestResult();
             if (functionDefinitionAst != null)
             {
@@ -1100,7 +1100,6 @@ function __Expand-Alias {
                         requestParams.BlockComment,
                         true,
                         helpLocation));
-
                 result.Content = analysisResults?
                                      .FirstOrDefault()?
                                      .Correction?
@@ -1109,10 +1108,11 @@ function __Expand-Alias {
                                      .Split('\n')
                                      .Select(x => x.Trim('\r'))
                                      .ToArray();
-
-                if (helpLocation.Equals("begin", StringComparison.OrdinalIgnoreCase))
+                if (helpLocation != null &&
+                    !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
                 {
-                    // we need to trim the leading `{` that the correction sends.
+                    // we need to trim the leading `{` and newline when helpLocation=="begin"
+                    // we also need to trim the leading newline when helpLocation=="end"
                     result.Content = result.Content?.Skip(1).ToArray();
                 }
             }
