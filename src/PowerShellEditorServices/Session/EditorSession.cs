@@ -79,22 +79,15 @@ namespace Microsoft.PowerShell.EditorServices
         /// Starts the session using the provided IConsoleHost implementation
         /// for the ConsoleService.
         /// </summary>
-        /// <param name="hostDetails">
-        /// Provides details about the host application.
-        /// </param>
-        /// <param name="profilePaths">
-        /// An object containing the profile paths for the session.
-        /// </param>
         /// <param name="enableConsoleRepl">
         /// Enables a terminal-based REPL for this session.
         /// </param>
         public void StartSession(
-            HostDetails hostDetails,
-            ProfilePaths profilePaths,
+            PowerShellContext powerShellContext,
             bool enableConsoleRepl)
         {
             // Initialize all services
-            this.PowerShellContext = new PowerShellContext(hostDetails, profilePaths, enableConsoleRepl);
+            this.PowerShellContext = powerShellContext;
             this.LanguageService = new LanguageService(this.PowerShellContext);
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
             this.ExtensionService = new ExtensionService(this.PowerShellContext);
@@ -111,22 +104,15 @@ namespace Microsoft.PowerShell.EditorServices
         /// Starts a debug-only session using the provided IConsoleHost implementation
         /// for the ConsoleService.
         /// </summary>
-        /// <param name="hostDetails">
-        /// Provides details about the host application.
-        /// </param>
-        /// <param name="profilePaths">
-        /// An object containing the profile paths for the session.
-        /// </param>
         /// <param name="editorOperations">
         /// An IEditorOperations implementation used to interact with the editor.
         /// </param>
         public void StartDebugSession(
-            HostDetails hostDetails,
-            ProfilePaths profilePaths,
+            PowerShellContext powerShellContext,
             IEditorOperations editorOperations)
         {
             // Initialize all services
-            this.PowerShellContext = new PowerShellContext(hostDetails, profilePaths);
+            this.PowerShellContext = powerShellContext;
             this.ConsoleService = new ConsoleService(this.PowerShellContext);
             this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations);
             this.DebugService = new DebugService(this.PowerShellContext, this.RemoteFileManager);

@@ -271,7 +271,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
             bool enableConsoleRepl)
         {
             EditorSession editorSession = new EditorSession();
-            editorSession.StartSession(hostDetails, profilePaths, enableConsoleRepl);
+            editorSession.StartSession(
+                CreatePowerShellContext(hostDetails, profilePaths, enableConsoleRepl),
+                enableConsoleRepl);
 
             return editorSession;
         }
@@ -282,9 +284,19 @@ namespace Microsoft.PowerShell.EditorServices.Host
             IEditorOperations editorOperations)
         {
             EditorSession editorSession = new EditorSession();
-            editorSession.StartDebugSession(hostDetails, profilePaths, editorOperations);
+            editorSession.StartDebugSession(
+                CreatePowerShellContext(hostDetails, profilePaths, enableConsoleRepl),
+                editorOperations);
 
             return editorSession;
+        }
+
+        private PowerShellContext CreatePowerShellContext(
+            HostDetails hostDetails,
+            ProfilePaths profilePaths,
+            bool enableConsoleRepl)
+        {
+            return new PowerShellContext(hostDetails, profilePaths, enableConsoleRepl);
         }
 
 #if !CoreCLR
