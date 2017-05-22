@@ -1093,7 +1093,7 @@ function __Expand-Alias {
             {
                 // todo create a semantic marker api that take only string
                 var analysisResults = await EditorSession.AnalysisService.GetSemanticMarkersAsync(
-                    scriptFile,
+                    functionDefinitionAst.Extent.Text,
                     AnalysisService.GetCommentHelpRuleSettings(
                         true,
                         false,
