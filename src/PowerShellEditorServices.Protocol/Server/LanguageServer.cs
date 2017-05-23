@@ -1091,7 +1091,7 @@ function __Expand-Alias {
             {
                // todo create a semantic marker api that take only string
                 var analysisResults = await EditorSession.AnalysisService.GetSemanticMarkersAsync(
-                    scriptFile,
+                    functionDefinitionAst.Extent.Text,
                     AnalysisService.GetCommentHelpRuleSettings(
                         true,
                         false,
@@ -1099,14 +1099,15 @@ function __Expand-Alias {
                         true,
                         "before"));
 
-                var analysisResult = analysisResults?.FirstOrDefault(x =>
-                {
-                    return x.Correction != null
-                        && x.Correction.Edits[0].StartLineNumber == expectedFunctionLine;
-                });
-
                 // find the analysis result whose correction starts on
-                result.Content = analysisResult?.Correction.Edits[0].Text.Split('\n').Select(x => x.Trim('\r')).ToArray();
+                result.Content = analysisResults?
+                                    .FirstOrDefault()?
+                                    .Correction?
+                                    .Edits[0]
+                                    .Text
+                                    .Split('\n')
+                                    .Select(x => x.Trim('\r'))
+                                    .ToArray();
             }
 
             await requestContext.SendResult(result);
