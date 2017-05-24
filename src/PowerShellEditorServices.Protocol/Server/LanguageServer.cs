@@ -1091,7 +1091,6 @@ function __Expand-Alias {
             var result = new CommentHelpRequestResult();
             if (functionDefinitionAst != null)
             {
-                // todo create a semantic marker api that take only string
                 var analysisResults = await EditorSession.AnalysisService.GetSemanticMarkersAsync(
                     functionDefinitionAst.Extent.Text,
                     AnalysisService.GetCommentHelpRuleSettings(
