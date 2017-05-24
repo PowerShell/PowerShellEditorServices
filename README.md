@@ -1,8 +1,8 @@
 # PowerShell Editor Services
 
-PowerShell Editor Services provides common functionality that is needed
-to enable a consistent and robust PowerShell development experience
-across multiple editors.
+PowerShell Editor Services is a PowerShell module that provides common
+functionality needed to enable a consistent and robust PowerShell development
+experience in almost any editor or integrated development environment (IDE).
 
 ## Features
 
@@ -10,22 +10,29 @@ across multiple editors.
   - Code navigation actions (find references, go to definition)
   - Statement completions (IntelliSense)
   - Real-time semantic analysis of scripts using PowerShell Script Analyzer
-  - Basic script evaluation
 - The Debugging Service simplifies interaction with the PowerShell debugger (breakpoints, variables, call stack, etc)
-- The Console Service provides a simplified interactive console interface which implements a rich PSHost implementation:
-  - Interactive command execution support, including basic use of native console applications
-  - Choice prompt support
-  - Input prompt support
-  - Get-Credential support (coming soon)
-- The Extension Service provides a generalized extensibility model that allows you to
-  write new functionality for any host editor that uses PowerShell Editor Services
+- The [$psEditor API](http://powershell.github.io/PowerShellEditorServices/guide/extensions.html) enables scripting of the host editor
+- A full, terminal-based Integrated Console experience for interactive development and debugging
 
-The core Editor Services library is intended to be consumed in any type of host application, whether
-it is a WPF UI, console application, or web service.  A standard console application host is included
-so that you can easily consume Editor Services functionality in any editor using the JSON API that it
-exposes.
+### Important note regarding the .NET APIs in Microsoft.PowerShell.EditorServices.dll
 
-## Build status of master branches
+With the 1.0 release of PowerShell Editor Services, we have deprecated the public APIs
+of the following classes:
+
+- EditorSession
+- LanguageService
+- DebugService
+- ConsoleService
+- AnalysisService
+- ExtensionService
+- TemplateService
+
+The intended usage model is now to host PowerShell Editor Services within powershell.exe
+and communicate with it over TCP sockets via the [Language Server Protocol](https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md)
+and [Debug Adapter Protocol](https://github.com/Microsoft/vscode-debugadapter-node/blob/master/protocol/src/debugProtocol.ts).
+Detailed usage documentation for this module is coming soon!
+
+## Build Status
 
 | AppVeyor (Windows)                                                                                                                                                                        | Travis CI (Linux / macOS)                                                                                                                                 |
 |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -43,13 +50,13 @@ how to use this project. You can also read our plans for future feature developm
 
 ## Development
 
-
 ### 1. Install PowerShell if necessary
 
 If you are using Windows, skip this step.  If you are using Linux or macOS, you will need to
 install PowerShell by following [these instructions](https://github.com/PowerShell/PowerShell#get-powershell).
 
-If you are using macOS you will need to download the latest version of OpenSSL. The easiest way to get this is from [Homebrew](http://brew.sh/). After installing Homebrew execute the following commands:
+If you are using macOS you will need to download the latest version of OpenSSL. The easiest way to get this is from
+[Homebrew](http://brew.sh/). After installing Homebrew execute the following commands:
 
 ```
   brew update
