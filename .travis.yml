@@ -20,10 +20,10 @@ before_install:
     fi
 
 install:
-  - pushd tools
+  - pushd scripts
   - ./download.sh
   - popd
 
 script:
   - ulimit -n 4096
-  - powershell -File tools/travis.ps1
+  - powershell -File scripts/travis.ps1
