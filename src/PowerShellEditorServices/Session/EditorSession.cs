@@ -79,9 +79,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// Starts the session using the provided IConsoleHost implementation
         /// for the ConsoleService.
         /// </summary>
-        /// <param name="enableConsoleRepl">
-        /// Enables a terminal-based REPL for this session.
-        /// </param>
+        /// <param name="powerShellContext"></param>
+        /// <param name="consoleService"></param>
         public void StartSession(
             PowerShellContext powerShellContext,
             ConsoleService consoleService)
@@ -105,6 +104,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// Starts a debug-only session using the provided IConsoleHost implementation
         /// for the ConsoleService.
         /// </summary>
+        /// <param name="powerShellContext"></param>
+        /// <param name="consoleService"></param>
         /// <param name="editorOperations">
         /// An IEditorOperations implementation used to interact with the editor.
         /// </param>

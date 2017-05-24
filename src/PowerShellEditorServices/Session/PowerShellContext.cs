@@ -115,6 +115,13 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Constructors
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="hostDetails"></param>
+        /// <param name="powerShellContext"></param>
+        /// <param name="enableConsoleRepl"></param>
+        /// <returns></returns>
         public static Runspace CreateRunspace(
             HostDetails hostDetails,
             PowerShellContext powerShellContext,
@@ -125,6 +132,11 @@ namespace Microsoft.PowerShell.EditorServices
             return CreateRunspace(psHost);
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="psHost"></param>
+        /// <returns></returns>
         public static Runspace CreateRunspace(PSHost psHost)
         {
             var initialSessionState = InitialSessionState.CreateDefault2();
