@@ -1,7 +1,5 @@
 # PowerShell Editor Services
 
-[![Build status](https://ci.appveyor.com/api/projects/status/85tyhckawwxoiim2/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/powershelleditorservices/branch/master)
-
 PowerShell Editor Services provides common functionality that is needed
 to enable a consistent and robust PowerShell development experience
 across multiple editors.
@@ -26,6 +24,12 @@ The core Editor Services library is intended to be consumed in any type of host 
 it is a WPF UI, console application, or web service.  A standard console application host is included
 so that you can easily consume Editor Services functionality in any editor using the JSON API that it
 exposes.
+
+## Build status of master branches
+
+| AppVeyor (Windows)                                                                                                                                                                        | Travis CI (Linux / macOS)                                                                                                                                 |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [![Build status](https://ci.appveyor.com/api/projects/status/85tyhckawwxoiim2/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/powershelleditorservices/branch/master) | [![Build Status](https://travis-ci.org/Powershell/PowerShellEditorServices.svg?branch=master)](https://travis-ci.org/powershell/PowerShellEditorServices) |
 
 ## Documentation
 
