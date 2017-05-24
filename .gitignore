@@ -32,7 +32,6 @@ module/
 docs/_site/
 docs/_repo/
 docs/metadata/
-tools/
 
 # quickbuild.exe
 /VersionGeneratingLogs/
