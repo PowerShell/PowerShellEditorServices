@@ -63,34 +63,28 @@ function Start-EditorServicesHost {
     $editorServicesHost = $null
     $hostDetails = New-Object Microsoft.PowerShell.EditorServices.Session.HostDetails @($HostName, $HostProfileId, (New-Object System.Version @($HostVersion)))
 
-    try {
-        $editorServicesHost =
-            New-Object Microsoft.PowerShell.EditorServices.Host.EditorServicesHost @(
-                $hostDetails,
-                $BundledModulesPath,
-                $EnableConsoleRepl.IsPresent,
-                $WaitForDebugger.IsPresent,
-                $FeatureFlags)
+    $editorServicesHost =
+        New-Object Microsoft.PowerShell.EditorServices.Host.EditorServicesHost @(
+            $hostDetails,
+            $BundledModulesPath,
+            $EnableConsoleRepl.IsPresent,
+            $WaitForDebugger.IsPresent,
+            $FeatureFlags)
 
-        # Build the profile paths using the root paths of the current $profile variable
-        $profilePaths = New-Object Microsoft.PowerShell.EditorServices.Session.ProfilePaths @(
-            $hostDetails.ProfileId,
-            [System.IO.Path]::GetDirectoryName($profile.AllUsersAllHosts),
-            [System.IO.Path]::GetDirectoryName($profile.CurrentUserAllHosts));
+    # Build the profile paths using the root paths of the current $profile variable
+    $profilePaths = New-Object Microsoft.PowerShell.EditorServices.Session.ProfilePaths @(
+        $hostDetails.ProfileId,
+        [System.IO.Path]::GetDirectoryName($profile.AllUsersAllHosts),
+        [System.IO.Path]::GetDirectoryName($profile.CurrentUserAllHosts));
 
-        $editorServicesHost.StartLogging($LogPath, $LogLevel);
+    $editorServicesHost.StartLogging($LogPath, $LogLevel);
 
-        if ($DebugServiceOnly.IsPresent) {
-            $editorServicesHost.StartDebugService($DebugServicePort, $profilePaths, $false);
-        }
-        else {
-            $editorServicesHost.StartLanguageService($LanguageServicePort, $profilePaths);
-            $editorServicesHost.StartDebugService($DebugServicePort, $profilePaths, $true);
-        }
+    if ($DebugServiceOnly.IsPresent) {
+        $editorServicesHost.StartDebugService($DebugServicePort, $profilePaths, $false);
     }
-    catch {
-        Write-Error "PowerShell Editor Services host initialization failed, terminating."
-        Write-Error $_.Exception
+    else {
+        $editorServicesHost.StartLanguageService($LanguageServicePort, $profilePaths);
+        $editorServicesHost.StartDebugService($DebugServicePort, $profilePaths, $true);
     }
 
     return $editorServicesHost
