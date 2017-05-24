@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         public DebugServiceTests()
         {
-            this.powerShellContext = new PowerShellContext();
+            this.powerShellContext = PowerShellContextFactory.Create();
             this.powerShellContext.SessionStateChanged += powerShellContext_SessionStateChanged;
 
             this.workspace = new Workspace(this.powerShellContext.LocalPowerShellVersion.Version);

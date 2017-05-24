@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         private const string DebugTestFilePath =
             @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1";
 
-        private static readonly HostDetails TestHostDetails =
+        public static readonly HostDetails TestHostDetails =
             new HostDetails(
                 "PowerShell Editor Services Test Host",
                 "Test.PowerShellEditorServices",
@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         // NOTE: These paths are arbitrarily chosen just to verify that the profile paths
         //       can be set to whatever they need to be for the given host.
 
-        private readonly ProfilePaths TestProfilePaths =
+        public static readonly ProfilePaths TestProfilePaths =
             new ProfilePaths(
                 TestHostDetails.ProfileId,
                     Path.GetFullPath(
@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public PowerShellContextTests()
         {
-            this.powerShellContext = new PowerShellContext(TestHostDetails, TestProfilePaths);
+            this.powerShellContext = PowerShellContextFactory.Create();
             this.powerShellContext.SessionStateChanged += OnSessionStateChanged;
             this.stateChangeQueue = new AsyncQueue<SessionStateChangedEventArgs>();
         }

@@ -84,15 +84,16 @@ namespace Microsoft.PowerShell.EditorServices
         /// </param>
         public void StartSession(
             PowerShellContext powerShellContext,
-            bool enableConsoleRepl)
+            ConsoleService consoleService)
         {
             // Initialize all services
             this.PowerShellContext = powerShellContext;
+            this.ConsoleService = consoleService;
+            this.UsesConsoleHost = this.ConsoleService.EnableConsoleRepl;
+
             this.LanguageService = new LanguageService(this.PowerShellContext);
-            this.ConsoleService = new ConsoleService(this.PowerShellContext);
             this.ExtensionService = new ExtensionService(this.PowerShellContext);
             this.TemplateService = new TemplateService(this.PowerShellContext);
-            this.UsesConsoleHost = enableConsoleRepl;
 
             this.InstantiateAnalysisService();
 
@@ -109,11 +110,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// </param>
         public void StartDebugSession(
             PowerShellContext powerShellContext,
+            ConsoleService consoleService,
             IEditorOperations editorOperations)
         {
             // Initialize all services
             this.PowerShellContext = powerShellContext;
-            this.ConsoleService = new ConsoleService(this.PowerShellContext);
+            this.ConsoleService = consoleService;
+
             this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations);
             this.DebugService = new DebugService(this.PowerShellContext, this.RemoteFileManager);
 
@@ -142,7 +145,7 @@ namespace Microsoft.PowerShell.EditorServices
             // Script Analyzer binaries are not included.
             try
             {
-                this.AnalysisService = new AnalysisService(this.PowerShellContext.ConsoleHost, settingsPath);
+                this.AnalysisService = new AnalysisService(settingsPath);
             }
             catch (FileNotFoundException)
             {

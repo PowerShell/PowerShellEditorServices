@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Session;
@@ -10,6 +11,8 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Management.Automation.Runspaces;
+using System.Management.Automation.Host;
 using System.Reflection;
 using System.Threading;
 using Microsoft.PowerShell.EditorServices.Extensions;
@@ -271,9 +274,20 @@ namespace Microsoft.PowerShell.EditorServices.Host
             bool enableConsoleRepl)
         {
             EditorSession editorSession = new EditorSession();
+            PowerShellContext powerShellContext = new PowerShellContext();
+
+            ConsoleServicePSHost psHost =
+                new ConsoleServicePSHost(
+                    powerShellContext,
+                    hostDetails,
+                    enableConsoleRepl);
+
+            Runspace initialRunspace = PowerShellContext.CreateRunspace(psHost);
+            powerShellContext.Initialize(profilePaths, initialRunspace, true, psHost.ConsoleService);
+
             editorSession.StartSession(
-                CreatePowerShellContext(hostDetails, profilePaths, enableConsoleRepl),
-                enableConsoleRepl);
+                powerShellContext,
+                psHost.ConsoleService);
 
             return editorSession;
         }
@@ -284,19 +298,23 @@ namespace Microsoft.PowerShell.EditorServices.Host
             IEditorOperations editorOperations)
         {
             EditorSession editorSession = new EditorSession();
+            PowerShellContext powerShellContext = new PowerShellContext();
+
+            ConsoleServicePSHost psHost =
+                new ConsoleServicePSHost(
+                    powerShellContext,
+                    hostDetails,
+                    enableConsoleRepl);
+
+            Runspace initialRunspace = PowerShellContext.CreateRunspace(psHost);
+            powerShellContext.Initialize(profilePaths, initialRunspace, true, psHost.ConsoleService);
+
             editorSession.StartDebugSession(
-                CreatePowerShellContext(hostDetails, profilePaths, enableConsoleRepl),
+                powerShellContext,
+                psHost.ConsoleService,
                 editorOperations);
 
             return editorSession;
-        }
-
-        private PowerShellContext CreatePowerShellContext(
-            HostDetails hostDetails,
-            ProfilePaths profilePaths,
-            bool enableConsoleRepl)
-        {
-            return new PowerShellContext(hostDetails, profilePaths, enableConsoleRepl);
         }
 
 #if !CoreCLR

@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// ConsoleService and routes its calls to an IConsoleHost
     /// implementation.
     /// </summary>
-    internal class ConsoleServicePSHost : PSHost, IHostSupportsInteractiveSession
+    public class ConsoleServicePSHost : PSHost, IHostSupportsInteractiveSession
     {
         #region Private Fields
 
@@ -42,6 +42,8 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        public ConsoleService ConsoleService { get; private set; }
+
         #endregion
 
         #region Constructors
@@ -50,23 +52,27 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates a new instance of the ConsoleServicePSHost class
         /// with the given IConsoleHost implementation.
         /// </summary>
+        /// <param name="powerShellContext">
+        /// An implementation of IHostSupportsInteractiveSession for runspace management.
+        /// </param>
         /// <param name="hostDetails">
         /// Provides details about the host application.
-        /// </param>
-        /// <param name="hostSupportsInteractiveSession">
-        /// An implementation of IHostSupportsInteractiveSession for runspace management.
         /// </param>
         /// <param name="enableConsoleRepl">
         /// Enables a terminal-based REPL for this session.
         /// </param>
         public ConsoleServicePSHost(
+            PowerShellContext powerShellContext,
             HostDetails hostDetails,
-            IHostSupportsInteractiveSession hostSupportsInteractiveSession,
             bool enableConsoleRepl)
         {
             this.hostDetails = hostDetails;
             this.hostUserInterface = new ConsoleServicePSHostUserInterface(enableConsoleRepl);
-            this.hostSupportsInteractiveSession = hostSupportsInteractiveSession;
+            this.hostSupportsInteractiveSession = powerShellContext;
+
+            this.ConsoleService = new ConsoleService(powerShellContext);
+            this.ConsoleService.EnableConsoleRepl = enableConsoleRepl;
+            this.ConsoleHost = this.ConsoleService;
 
             System.Console.CancelKeyPress +=
                 (obj, args) =>

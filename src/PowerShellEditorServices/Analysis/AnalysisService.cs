@@ -102,10 +102,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Creates an instance of the AnalysisService class.
         /// </summary>
-        /// <param name="consoleHost">An object that implements IConsoleHost in which to write errors/warnings
-        /// from analyzer.</param>
         /// <param name="settingsPath">Path to a PSScriptAnalyzer settings file.</param>
-        public AnalysisService(IConsoleHost consoleHost, string settingsPath = null)
+        public AnalysisService(string settingsPath = null)
         {
             try
             {

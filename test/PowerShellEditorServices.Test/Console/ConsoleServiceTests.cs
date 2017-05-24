@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         private PowerShellContext powerShellContext;
         private TestConsolePromptHandlerContext promptHandlerContext;
 
-        private Dictionary<OutputType, string> outputPerType = 
+        private Dictionary<OutputType, string> outputPerType =
             new Dictionary<OutputType, string>();
 
         const string TestOutputString = "This is a test.";
@@ -50,21 +50,30 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public ConsoleServiceTests()
         {
             this.powerShellContext = new PowerShellContext();
+            ConsoleServicePSHost psHost =
+                new ConsoleServicePSHost(
+                    powerShellContext,
+                    PowerShellContextTests.TestHostDetails,
+                    false);
 
-            this.promptHandlerContext = 
+            this.consoleService = psHost.ConsoleService;
+
+            this.powerShellContext.Initialize(
+                null,
+                PowerShellContext.CreateRunspace(psHost),
+                true);
+
+            this.promptHandlerContext =
                 new TestConsolePromptHandlerContext();
 
-            this.consoleService =
-                new ConsoleService(
-                    this.powerShellContext,
-                    promptHandlerContext);
-
+            this.consoleService.PushPromptHandlerContext(this.promptHandlerContext);
             this.consoleService.OutputWritten += OnOutputWritten;
             promptHandlerContext.ConsoleHost = this.consoleService;
         }
 
         public void Dispose()
         {
+            this.powerShellContext.Dispose();
         }
 
         [Fact]
@@ -211,7 +220,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     .Split(
                         new string[] { Environment.NewLine },
                         StringSplitOptions.None);
-            
+
             Assert.Equal(PromptCaption, outputLines[0]);
             Assert.Equal(PromptMessage, outputLines[1]);
             Assert.Equal("[A] Apple [N] Banana [] Orange [?] Help (default is \"Banana\"): ", outputLines[2]);
@@ -550,7 +559,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public TestConsoleChoicePromptHandler(
             IConsoleHost consoleHost,
-            TaskCompletionSource<TestConsoleChoicePromptHandler> promptShownTask) 
+            TaskCompletionSource<TestConsoleChoicePromptHandler> promptShownTask)
             : base(consoleHost)
         {
             this.consoleHost = consoleHost;
@@ -612,7 +621,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public TestConsoleInputPromptHandler(
             IConsoleHost consoleHost,
-            TaskCompletionSource<TestConsoleInputPromptHandler> promptShownTask) 
+            TaskCompletionSource<TestConsoleInputPromptHandler> promptShownTask)
             : base(consoleHost)
         {
             this.consoleHost = consoleHost;

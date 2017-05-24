@@ -70,12 +70,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession.StartDebugService(this.editorOperations);
             this.editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStopped;
 
-            if (this.editorSession.UsesConsoleHost)
+            if (!this.editorSession.ConsoleService.EnableConsoleRepl)
             {
-                this.editorSession.ConsoleService.EnableConsoleRepl = true;
-            }
-            else
-            {
+                // TODO: This should be handled in ProtocolPSHost
                 this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
 
                 // Always send console prompts through the UI in the language service
@@ -144,6 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         protected override async Task Shutdown()
         {
             // Stop the interactive terminal
+            // TODO: This can happen at the host level
             this.editorSession.ConsoleService.CancelReadLoop();
 
             // Make sure remaining output is flushed before exiting
@@ -578,6 +576,7 @@ function __Expand-Alias {
             if (!this.consoleReplStarted)
             {
                 // Start the interactive terminal
+                // TODO: This can happen at the host level
                 this.editorSession.ConsoleService.StartReadLoop();
                 this.consoleReplStarted = true;
             }
@@ -1160,6 +1159,7 @@ function __Expand-Alias {
                 (task) =>
                 {
                     // Start the command loop again
+                    // TODO: This can happen inside the PSHost
                     this.editorSession.ConsoleService.StartReadLoop();
 
                     // Return an empty result since the result value is irrelevant
