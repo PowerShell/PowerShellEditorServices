@@ -539,6 +539,73 @@ namespace Microsoft.PowerShell.EditorServices
             return functionDefinitionAst as FunctionDefinitionAst;
         }
 
+        /// <summary>
+        /// Finds a function definition that follows or contains the given line number.
+        /// </summary>
+        /// <param name="scriptFile">Open script file.</param>
+        /// <param name="lineNumber">The 1 based line on which to look for function definition.</param>
+        /// <param name="helpLocation"></param>
+        /// <returns>If found, returns the function definition, otherwise, returns null.</returns>
+        public FunctionDefinitionAst GetFunctionDefinitionForHelpComment(
+            ScriptFile scriptFile,
+            int lineNumber,
+            out string helpLocation)
+        {
+            // check if the next line contains a function definition
+            var funcDefnAst = GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
+            if (funcDefnAst != null)
+            {
+                helpLocation = "before";
+                return funcDefnAst;
+            }
+
+            // find all the script definitions that contain the line `lineNumber`
+            var foundAsts = scriptFile.ScriptAst.FindAll(
+                ast =>
+                {
+                    var fdAst = ast as FunctionDefinitionAst;
+                    if (fdAst == null)
+                    {
+                        return false;
+                    }
+
+                    return fdAst.Body.Extent.StartLineNumber < lineNumber &&
+                        fdAst.Body.Extent.EndLineNumber > lineNumber;
+                },
+                true);
+
+            if (foundAsts != null && foundAsts.Any())
+            {
+                // of all the function definitions found, return the innermost function
+                // definition that contains `lineNumber`
+                funcDefnAst = foundAsts.Cast<FunctionDefinitionAst>().Aggregate((x, y) =>
+                {
+                    if (x.Extent.StartOffset >= y.Extent.StartOffset && x.Extent.EndOffset <= x.Extent.EndOffset)
+                    {
+                        return x;
+                    }
+
+                    return y;
+                });
+
+                // TODO use tokens to check for non empty character instead of just checking for line offset
+                if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
+                {
+                    helpLocation = "begin";
+                    return funcDefnAst;
+                }
+
+                if (funcDefnAst.Body.Extent.EndLineNumber == lineNumber + 1)
+                {
+                    helpLocation = "end";
+                    return funcDefnAst;
+                }
+            }
+
+            helpLocation = null;
+            return null;
+        }
+
         #endregion
 
         #region Private Fields

@@ -1082,14 +1082,15 @@ function __Expand-Alias {
         {
             var scriptFile = EditorSession.Workspace.GetFile(requestParams.DocumentUri);
             var expectedFunctionLine = requestParams.TriggerPosition.Line + 2;
-            var functionDefinitionAst = EditorSession.LanguageService.GetFunctionDefinitionAtLine(
-                scriptFile,
-                expectedFunctionLine);
-            var result = new CommentHelpRequestResult();
 
+            string helpLocation;
+            var functionDefinitionAst = EditorSession.LanguageService.GetFunctionDefinitionForHelpComment(
+                scriptFile,
+                requestParams.TriggerPosition.Line + 1,
+                out helpLocation);
+            var result = new CommentHelpRequestResult();
             if (functionDefinitionAst != null)
             {
-               // todo create a semantic marker api that take only string
                 var analysisResults = await EditorSession.AnalysisService.GetSemanticMarkersAsync(
                     functionDefinitionAst.Extent.Text,
                     AnalysisService.GetCommentHelpRuleSettings(
@@ -1097,17 +1098,22 @@ function __Expand-Alias {
                         false,
                         requestParams.BlockComment,
                         true,
-                        "before"));
-
-                // find the analysis result whose correction starts on
+                        helpLocation));
                 result.Content = analysisResults?
-                                    .FirstOrDefault()?
-                                    .Correction?
-                                    .Edits[0]
-                                    .Text
-                                    .Split('\n')
-                                    .Select(x => x.Trim('\r'))
-                                    .ToArray();
+                                     .FirstOrDefault()?
+                                     .Correction?
+                                     .Edits[0]
+                                     .Text
+                                     .Split('\n')
+                                     .Select(x => x.Trim('\r'))
+                                     .ToArray();
+                if (helpLocation != null &&
+                    !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
+                {
+                    // we need to trim the leading `{` and newline when helpLocation=="begin"
+                    // we also need to trim the leading newline when helpLocation=="end"
+                    result.Content = result.Content?.Skip(1).ToArray();
+                }
             }
 
             await requestContext.SendResult(result);
