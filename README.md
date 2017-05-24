@@ -29,7 +29,7 @@ exposes.
 
 | AppVeyor (Windows)                                                                                                                                                                        | Travis CI (Linux / macOS)                                                                                                                                 |
 |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [![Build status](https://ci.appveyor.com/api/projects/status/85tyhckawwxoiim2/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/powershelleditorservices/branch/master) | [![Build Status](https://travis-ci.org/Powershell/PowerShellEditorServices.svg?branch=master)](https://travis-ci.org/powershell/PowerShellEditorServices) |
+| [![Build status](https://ci.appveyor.com/api/projects/status/85tyhckawwxoiim2/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/powershelleditorservices/branch/master) | [![Build Status](https://travis-ci.org/PowerShell/PowerShellEditorServices.svg?branch=master)](https://travis-ci.org/PowerShell/PowerShellEditorServices) |
 
 ## Documentation
 
