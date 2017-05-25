@@ -37,39 +37,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private bool isInteractiveDebugSession;
         private RequestContext<object> disconnectRequestContext = null;
 
-        public DebugAdapter(HostDetails hostDetails, ProfilePaths profilePaths)
-            : this(hostDetails, profilePaths, new StdioServerChannel(), null)
-        {
-        }
-
-        public DebugAdapter(EditorSession editorSession, ChannelBase serverChannel)
-            : base(serverChannel)
+        public DebugAdapter(
+            EditorSession editorSession,
+            ChannelBase serverChannel,
+            bool ownsEditorSession)
+                : base(serverChannel)
         {
             this.editorSession = editorSession;
+            this.ownsEditorSession = ownsEditorSession;
+            this.enableConsoleRepl = editorSession.UsesConsoleHost;
         }
-
-        public DebugAdapter(
-            HostDetails hostDetails,
-            ProfilePaths profilePaths,
-            ChannelBase serverChannel,
-            IEditorOperations editorOperations)
-            : this(hostDetails, profilePaths, serverChannel, editorOperations, false)
-        {
-        }
-
-        public DebugAdapter(
-            HostDetails hostDetails,
-            ProfilePaths profilePaths,
-            ChannelBase serverChannel,
-            IEditorOperations editorOperations,
-            bool enableConsoleRepl)
-            : base(serverChannel)
-        {
-            this.ownsEditorSession = true;
-            this.editorSession = new EditorSession();
-            this.editorSession.StartDebugSession(hostDetails, profilePaths, editorOperations);
-            this.enableConsoleRepl = enableConsoleRepl;
-       }
 
         protected override void Initialize()
         {
@@ -325,6 +302,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             if (this.editorSession.ConsoleService.EnableConsoleRepl)
             {
+                // TODO: Write this during DebugSession init
                 await this.WriteUseIntegratedConsoleMessage();
             }
 

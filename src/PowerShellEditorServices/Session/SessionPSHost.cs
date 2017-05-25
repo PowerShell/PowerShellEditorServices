@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// ConsoleService and routes its calls to an IConsoleHost
     /// implementation.
     /// </summary>
-    internal class ConsoleServicePSHost : PSHost, IHostSupportsInteractiveSession
+    public class ConsoleServicePSHost : PSHost, IHostSupportsInteractiveSession
     {
         #region Private Fields
 
@@ -42,6 +42,11 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        /// Gets the ConsoleServices owned by this host.
+        /// </summary>
+        public ConsoleService ConsoleService { get; private set; }
+
         #endregion
 
         #region Constructors
@@ -50,23 +55,27 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates a new instance of the ConsoleServicePSHost class
         /// with the given IConsoleHost implementation.
         /// </summary>
+        /// <param name="powerShellContext">
+        /// An implementation of IHostSupportsInteractiveSession for runspace management.
+        /// </param>
         /// <param name="hostDetails">
         /// Provides details about the host application.
-        /// </param>
-        /// <param name="hostSupportsInteractiveSession">
-        /// An implementation of IHostSupportsInteractiveSession for runspace management.
         /// </param>
         /// <param name="enableConsoleRepl">
         /// Enables a terminal-based REPL for this session.
         /// </param>
         public ConsoleServicePSHost(
+            PowerShellContext powerShellContext,
             HostDetails hostDetails,
-            IHostSupportsInteractiveSession hostSupportsInteractiveSession,
             bool enableConsoleRepl)
         {
             this.hostDetails = hostDetails;
             this.hostUserInterface = new ConsoleServicePSHostUserInterface(enableConsoleRepl);
-            this.hostSupportsInteractiveSession = hostSupportsInteractiveSession;
+            this.hostSupportsInteractiveSession = powerShellContext;
+
+            this.ConsoleService = new ConsoleService(powerShellContext);
+            this.ConsoleService.EnableConsoleRepl = enableConsoleRepl;
+            this.ConsoleHost = this.ConsoleService;
 
             System.Console.CancelKeyPress +=
                 (obj, args) =>
@@ -87,16 +96,25 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region PSHost Implementation
 
+        /// <summary>
+        ///
+        /// </summary>
         public override Guid InstanceId
         {
             get { return this.instanceId; }
         }
 
+        /// <summary>
+        ///
+        /// </summary>
         public override string Name
         {
             get { return this.hostDetails.Name; }
         }
 
+        /// <summary>
+        ///
+        /// </summary>
         public override Version Version
         {
             get { return this.hostDetails.Version; }
@@ -104,43 +122,68 @@ namespace Microsoft.PowerShell.EditorServices
 
         // TODO: Pull these from IConsoleHost
 
+        /// <summary>
+        ///
+        /// </summary>
         public override System.Globalization.CultureInfo CurrentCulture
         {
             get { return System.Globalization.CultureInfo.CurrentCulture; }
         }
 
+        /// <summary>
+        ///
+        /// </summary>
         public override System.Globalization.CultureInfo CurrentUICulture
         {
             get { return System.Globalization.CultureInfo.CurrentUICulture; }
         }
 
+        /// <summary>
+        ///
+        /// </summary>
         public override PSHostUserInterface UI
         {
             get { return this.hostUserInterface; }
         }
 
+        /// <summary>
+        ///
+        /// </summary>
         public override void EnterNestedPrompt()
         {
             Logger.Write(LogLevel.Verbose, "EnterNestedPrompt() called.");
         }
 
+        /// <summary>
+        ///
+        /// </summary>
         public override void ExitNestedPrompt()
         {
             Logger.Write(LogLevel.Verbose, "ExitNestedPrompt() called.");
         }
 
+        /// <summary>
+        ///
+        /// </summary>
         public override void NotifyBeginApplication()
         {
             Logger.Write(LogLevel.Verbose, "NotifyBeginApplication() called.");
             this.isNativeApplicationRunning = true;
         }
 
+        /// <summary>
+        ///
+        /// </summary>
         public override void NotifyEndApplication()
         {
             Logger.Write(LogLevel.Verbose, "NotifyEndApplication() called.");
             this.isNativeApplicationRunning = false;
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="exitCode"></param>
         public override void SetShouldExit(int exitCode)
         {
             if (this.consoleHost != null)
@@ -158,6 +201,10 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region IHostSupportsInteractiveSession Implementation
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <returns></returns>
         public bool IsRunspacePushed
         {
             get
@@ -173,6 +220,10 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <returns></returns>
         public Runspace Runspace
         {
             get
@@ -188,6 +239,10 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="runspace"></param>
         public void PushRunspace(Runspace runspace)
         {
             if (this.hostSupportsInteractiveSession != null)
@@ -200,6 +255,9 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        /// <summary>
+        ///
+        /// </summary>
         public void PopRunspace()
         {
             if (this.hostSupportsInteractiveSession != null)

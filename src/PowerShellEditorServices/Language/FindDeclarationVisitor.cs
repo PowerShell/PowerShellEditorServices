@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Check if the left hand side of an assignmentStatementAst is a VariableExpressionAst
         /// with the same name as that of symbolRef.
         /// </summary>
-        /// <param name="assignmentStatementAst">An AssignmentStatementAst/param>
+        /// <param name="assignmentStatementAst">An AssignmentStatementAst</param>
         /// <returns>A decision to stop searching if the right VariableExpressionAst was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitAssignmentStatement(AssignmentStatementAst assignmentStatementAst)

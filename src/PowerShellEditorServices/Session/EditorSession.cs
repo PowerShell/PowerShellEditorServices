@@ -65,6 +65,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public RemoteFileManager RemoteFileManager { get; private set; }
 
+        /// <summary>
+        /// Gets a boolean which is true if the integrated console host is
+        /// active in this session.
+        /// </summary>
+        public bool UsesConsoleHost { get; private set; }
+
         #endregion
 
         #region Public Methods
@@ -73,24 +79,18 @@ namespace Microsoft.PowerShell.EditorServices
         /// Starts the session using the provided IConsoleHost implementation
         /// for the ConsoleService.
         /// </summary>
-        /// <param name="hostDetails">
-        /// Provides details about the host application.
-        /// </param>
-        /// <param name="profilePaths">
-        /// An object containing the profile paths for the session.
-        /// </param>
-        /// <param name="enableConsoleRepl">
-        /// Enables a terminal-based REPL for this session.
-        /// </param>
+        /// <param name="powerShellContext"></param>
+        /// <param name="consoleService"></param>
         public void StartSession(
-            HostDetails hostDetails,
-            ProfilePaths profilePaths,
-            bool enableConsoleRepl)
+            PowerShellContext powerShellContext,
+            ConsoleService consoleService)
         {
             // Initialize all services
-            this.PowerShellContext = new PowerShellContext(hostDetails, profilePaths, enableConsoleRepl);
+            this.PowerShellContext = powerShellContext;
+            this.ConsoleService = consoleService;
+            this.UsesConsoleHost = this.ConsoleService.EnableConsoleRepl;
+
             this.LanguageService = new LanguageService(this.PowerShellContext);
-            this.ConsoleService = new ConsoleService(this.PowerShellContext);
             this.ExtensionService = new ExtensionService(this.PowerShellContext);
             this.TemplateService = new TemplateService(this.PowerShellContext);
 
@@ -104,23 +104,20 @@ namespace Microsoft.PowerShell.EditorServices
         /// Starts a debug-only session using the provided IConsoleHost implementation
         /// for the ConsoleService.
         /// </summary>
-        /// <param name="hostDetails">
-        /// Provides details about the host application.
-        /// </param>
-        /// <param name="profilePaths">
-        /// An object containing the profile paths for the session.
-        /// </param>
+        /// <param name="powerShellContext"></param>
+        /// <param name="consoleService"></param>
         /// <param name="editorOperations">
         /// An IEditorOperations implementation used to interact with the editor.
         /// </param>
         public void StartDebugSession(
-            HostDetails hostDetails,
-            ProfilePaths profilePaths,
+            PowerShellContext powerShellContext,
+            ConsoleService consoleService,
             IEditorOperations editorOperations)
         {
             // Initialize all services
-            this.PowerShellContext = new PowerShellContext(hostDetails, profilePaths);
-            this.ConsoleService = new ConsoleService(this.PowerShellContext);
+            this.PowerShellContext = powerShellContext;
+            this.ConsoleService = consoleService;
+
             this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations);
             this.DebugService = new DebugService(this.PowerShellContext, this.RemoteFileManager);
 
@@ -149,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices
             // Script Analyzer binaries are not included.
             try
             {
-                this.AnalysisService = new AnalysisService(this.PowerShellContext.ConsoleHost, settingsPath);
+                this.AnalysisService = new AnalysisService(settingsPath);
             }
             catch (FileNotFoundException)
             {

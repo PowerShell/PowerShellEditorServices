@@ -76,7 +76,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             // Register this instance as the IConsoleHost for the PowerShellContext
             this.powerShellContext = powerShellContext;
-            this.powerShellContext.ConsoleHost = this;
             this.powerShellContext.DebuggerStop += PowerShellContext_DebuggerStop;
             this.powerShellContext.DebuggerResumed += PowerShellContext_DebuggerResumed;
             this.powerShellContext.ExecutionStatusChanged += PowerShellContext_ExecutionStatusChanged;

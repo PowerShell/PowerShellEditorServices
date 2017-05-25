@@ -38,9 +38,7 @@ namespace Microsoft.PowerShell.EditorServices
         private RunspaceDetails initialRunspace;
         private SessionDetails mostRecentSessionDetails;
 
-        private IConsoleHost consoleHost;
         private ProfilePaths profilePaths;
-        private ConsoleServicePSHost psHost;
 
         private IVersionSpecificOperations versionSpecificOperations;
 
@@ -94,15 +92,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets or sets an IConsoleHost implementation for use in
         /// writing output to the console.
         /// </summary>
-        internal IConsoleHost ConsoleHost
-        {
-            get { return this.consoleHost; }
-            set
-            {
-                this.consoleHost = value;
-                this.psHost.ConsoleHost = value;
-            }
-        }
+        private IConsoleHost ConsoleHost { get; set; }
 
         /// <summary>
         /// Gets details pertaining to the current runspace.
@@ -126,41 +116,29 @@ namespace Microsoft.PowerShell.EditorServices
         #region Constructors
 
         /// <summary>
-        /// Initializes a new instance of the PowerShellContext class and
-        /// opens a runspace to be used for the session.
+        ///
         /// </summary>
-        public PowerShellContext() : this((HostDetails)null, null)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the PowerShellContext class and
-        /// opens a runspace to be used for the session.
-        /// </summary>
-        /// <param name="hostDetails">Provides details about the host application.</param>
-        /// <param name="profilePaths">An object containing the profile paths for the session.</param>
-        public PowerShellContext(HostDetails hostDetails, ProfilePaths profilePaths)
-            : this(hostDetails, profilePaths, false)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the PowerShellContext class and
-        /// opens a runspace to be used for the session.
-        /// </summary>
-        /// <param name="hostDetails">Provides details about the host application.</param>
-        /// <param name="profilePaths">An object containing the profile paths for the session.</param>
-        /// <param name="enableConsoleRepl">
-        /// Enables a terminal-based REPL for this session.
-        /// </param>
-        public PowerShellContext(
+        /// <param name="hostDetails"></param>
+        /// <param name="powerShellContext"></param>
+        /// <param name="enableConsoleRepl"></param>
+        /// <returns></returns>
+        public static Runspace CreateRunspace(
             HostDetails hostDetails,
-            ProfilePaths profilePaths,
+            PowerShellContext powerShellContext,
             bool enableConsoleRepl)
         {
-            hostDetails = hostDetails ?? HostDetails.Default;
+            var psHost = new ConsoleServicePSHost(powerShellContext, hostDetails, enableConsoleRepl);
+            powerShellContext.ConsoleHost = psHost.ConsoleService;
+            return CreateRunspace(psHost);
+        }
 
-            this.psHost = new ConsoleServicePSHost(hostDetails, this, enableConsoleRepl);
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="psHost"></param>
+        /// <returns></returns>
+        public static Runspace CreateRunspace(PSHost psHost)
+        {
             var initialSessionState = InitialSessionState.CreateDefault2();
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
@@ -170,9 +148,7 @@ namespace Microsoft.PowerShell.EditorServices
             runspace.ThreadOptions = PSThreadOptions.ReuseThread;
             runspace.Open();
 
-            this.ownsInitialRunspace = true;
-
-            this.Initialize(profilePaths, runspace);
+            return runspace;
         }
 
         /// <summary>
@@ -181,16 +157,34 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="profilePaths">An object containing the profile paths for the session.</param>
         /// <param name="initialRunspace">The initial runspace to use for this instance.</param>
-        public PowerShellContext(ProfilePaths profilePaths, Runspace initialRunspace)
+        /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
+        public void Initialize(
+            ProfilePaths profilePaths,
+            Runspace initialRunspace,
+            bool ownsInitialRunspace)
         {
-            this.Initialize(profilePaths, initialRunspace);
+            this.Initialize(profilePaths, initialRunspace, ownsInitialRunspace, null);
         }
 
-        private void Initialize(ProfilePaths profilePaths, Runspace initialRunspace)
+        /// <summary>
+        /// Initializes a new instance of the PowerShellContext class using
+        /// an existing runspace for the session.
+        /// </summary>
+        /// <param name="profilePaths">An object containing the profile paths for the session.</param>
+        /// <param name="initialRunspace">The initial runspace to use for this instance.</param>
+        /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
+        /// <param name="consoleHost">An IConsoleHost implementation.  Optional.</param>
+        public void Initialize(
+            ProfilePaths profilePaths,
+            Runspace initialRunspace,
+            bool ownsInitialRunspace,
+            IConsoleHost consoleHost)
         {
             Validate.IsNotNull("initialRunspace", initialRunspace);
 
+            this.ownsInitialRunspace = ownsInitialRunspace;
             this.SessionState = PowerShellContextState.NotStarted;
+            this.ConsoleHost = consoleHost;
 
             // Get the PowerShell runtime version
             this.LocalPowerShellVersion =
