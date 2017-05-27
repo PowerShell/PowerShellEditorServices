@@ -103,6 +103,8 @@ contribute code, documentation, tests, or bug reports, please read our [Contribu
 
 - [David Wilson](https://github.com/daviwil) - [@daviwil](http://twitter.com/daviwil)
 - [Keith Hill](https://github.com/rkeithhill) - [@r_keith_hill](http://twitter.com/r_keith_hill)
+- [Kapil Borle](https://github.com/kapilmb) - [@kmborle](http://twitter.com/kmborle)
+- [Patrick Meinecke](https://github.com/SeeminglyScience) - [@SeeminglyScienc](http://twitter.com/SeeminglyScienc)
 
 ## License
 
