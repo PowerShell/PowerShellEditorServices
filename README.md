@@ -1,5 +1,7 @@
 # PowerShell Editor Services
 
+[![Join the chat at https://gitter.im/PowerShell/PowerShellEditorServices](https://badges.gitter.im/PowerShell/PowerShellEditorServices.svg)](https://gitter.im/PowerShell/PowerShellEditorServices?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 PowerShell Editor Services is a PowerShell module that provides common
 functionality needed to enable a consistent and robust PowerShell development
 experience in almost any editor or integrated development environment (IDE).
