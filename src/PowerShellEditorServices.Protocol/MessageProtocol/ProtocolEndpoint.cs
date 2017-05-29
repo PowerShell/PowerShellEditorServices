@@ -4,8 +4,10 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,12 +29,28 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         private ProtocolEndpointState currentState;
         private int currentMessageId;
         private ChannelBase protocolChannel;
+        private AsyncContextThread messageLoopThread;
         private MessageProtocolType messageProtocolType;
         private TaskCompletionSource<bool> endpointExitedTask;
         private SynchronizationContext originalSynchronizationContext;
+        private CancellationTokenSource messageLoopCancellationToken =
+            new CancellationTokenSource();
 
         private Dictionary<string, TaskCompletionSource<Message>> pendingRequests =
             new Dictionary<string, TaskCompletionSource<Message>>();
+
+        public SynchronizationContext SynchronizationContext { get; private set; }
+
+        private bool InMessageLoopThread
+        {
+            get
+            {
+                // We're in the same thread as the message loop if the
+                // current synchronization context equals the one we
+                // know.
+                return SynchronizationContext.Current == this.SynchronizationContext;
+            }
+        }
 
         /// <summary>
         /// Gets the MessageDispatcher which allows registration of
@@ -77,8 +95,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 // Set the handler for any message responses that come back
                 this.MessageDispatcher.SetResponseHandler(this.HandleResponse);
 
-                // Listen for unhandled exceptions from the dispatcher
-                this.MessageDispatcher.UnhandledException += MessageDispatcher_UnhandledException;
+                // Listen for unhandled exceptions from the message loop
+                this.UnhandledException += MessageDispatcher_UnhandledException;
 
                 // Notify implementation about endpoint start
                 await this.OnStart();
@@ -92,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                             async (t) =>
                             {
                                 // Start the MessageDispatcher
-                                this.MessageDispatcher.Start();
+                                this.StartMessageLoop();
                                 await this.OnConnect();
                             });
 
@@ -117,8 +135,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 // Stop the implementation first
                 await this.OnStop();
 
-                // Stop the dispatcher and channel
-                this.MessageDispatcher.Stop();
+                // Stop the message loop and channel
+                this.StopMessageLoop();
                 this.protocolChannel.Stop();
 
                 // Notify anyone waiting for exit
@@ -235,11 +253,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             // To ensure that messages are written serially, dispatch
             // dispatch the SendEvent call to the message loop thread.
 
-            if (!this.MessageDispatcher.InMessageLoopThread)
+            if (!this.InMessageLoopThread)
             {
                 TaskCompletionSource<bool> writeTask = new TaskCompletionSource<bool>();
 
-                this.MessageDispatcher.SynchronizationContext.Post(
+                this.SynchronizationContext.Post(
                     async (obj) =>
                     {
                         await this.protocolChannel.MessageWriter.WriteEvent(
@@ -316,6 +334,28 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
+        private void StartMessageLoop()
+        {
+            // Start the main message loop thread.  The Task is
+            // not explicitly awaited because it is running on
+            // an independent background thread.
+            this.messageLoopThread = new AsyncContextThread("Message Dispatcher");
+            this.messageLoopThread
+                .Run(() => this.ListenForMessages(this.messageLoopCancellationToken.Token))
+                .ContinueWith(this.OnListenTaskCompleted);
+        }
+
+        private void StopMessageLoop()
+        {
+            // Stop the message loop thread
+            if (this.messageLoopThread != null)
+            {
+                this.messageLoopCancellationToken.Cancel();
+                this.messageLoopThread.Stop();
+                SynchronizationContext.SetSynchronizationContext(null);
+            }
+        }
+
         #endregion
 
         #region Subclass Lifetime Methods
@@ -346,6 +386,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             this.SessionEnded?.Invoke(this, null);
         }
 
+        public event EventHandler<Exception> UnhandledException;
+
+        protected void OnUnhandledException(Exception unhandledException)
+        {
+            if (this.UnhandledException != null)
+            {
+                this.UnhandledException(this, unhandledException);
+            }
+        }
+
         #endregion
 
         #region Event Handlers
@@ -363,6 +413,102 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         }
 
         #endregion
+
+        #region Private Methods
+
+        private async Task ListenForMessages(CancellationToken cancellationToken)
+        {
+            this.SynchronizationContext = SynchronizationContext.Current;
+
+            // Run the message loop
+            bool isRunning = true;
+            while (isRunning && !cancellationToken.IsCancellationRequested)
+            {
+                Message newMessage = null;
+
+                try
+                {
+                    // Read a message from the channel
+                    newMessage = await this.protocolChannel.MessageReader.ReadMessage();
+                }
+                catch (MessageParseException e)
+                {
+                    // TODO: Write an error response
+
+                    Logger.Write(
+                        LogLevel.Error,
+                        "Could not parse a message that was received:\r\n\r\n" +
+                        e.ToString());
+
+                    // Continue the loop
+                    continue;
+                }
+                catch (IOException e)
+                {
+                    // The stream has ended, end the message loop
+                    Logger.Write(
+                        LogLevel.Error,
+                        string.Format(
+                            "Stream terminated unexpectedly, ending MessageDispatcher loop\r\n\r\nException: {0}\r\n{1}",
+                            e.GetType().Name,
+                            e.Message));
+
+                    break;
+                }
+                catch (ObjectDisposedException)
+                {
+                    Logger.Write(
+                        LogLevel.Verbose,
+                        "MessageReader attempted to read from a disposed stream, ending MessageDispatcher loop");
+
+                    break;
+                }
+                catch (Exception e)
+                {
+                    Logger.Write(
+                        LogLevel.Verbose,
+                        "Caught unexpected exception '{0}' in MessageDispatcher loop:\r\n{1}",
+                        e.GetType().Name,
+                        e.Message);
+                }
+
+                // The message could be null if there was an error parsing the
+                // previous message.  In this case, do not try to dispatch it.
+                if (newMessage != null)
+                {
+                    if (newMessage.MessageType == MessageType.Response)
+                    {
+                        this.HandleResponse(newMessage);
+                    }
+                    else
+                    {
+                        // Process the message
+                        await this.MessageDispatcher.DispatchMessage(
+                            newMessage,
+                            this.protocolChannel.MessageWriter);
+                    }
+                }
+            }
+        }
+
+        private void OnListenTaskCompleted(Task listenTask)
+        {
+            if (listenTask.IsFaulted)
+            {
+                Logger.Write(
+                    LogLevel.Error,
+                    string.Format(
+                        "MessageDispatcher loop terminated due to unhandled exception:\r\n\r\n{0}",
+                        listenTask.Exception.ToString()));
+
+                this.OnUnhandledException(listenTask.Exception);
+            }
+            else if (listenTask.IsCompleted || listenTask.IsCanceled)
+            {
+                // TODO: Dispose of anything?
+            }
+        }
+
+        #endregion
     }
 }
-
