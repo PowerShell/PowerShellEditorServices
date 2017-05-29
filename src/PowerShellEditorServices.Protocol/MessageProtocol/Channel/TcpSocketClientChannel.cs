@@ -11,37 +11,24 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class TcpSocketClientChannel : ChannelBase
     {
-        private int portNumber;
         private NetworkStream networkStream;
-        private IMessageSerializer messageSerializer;
 
-        public TcpSocketClientChannel(int portNumber)
+        public TcpSocketClientChannel(TcpClient tcpClient)
         {
-            this.portNumber = portNumber;
-        }
-
-        public override async Task WaitForConnection()
-        {
-            TcpClient tcpClient = new TcpClient();
-            await tcpClient.ConnectAsync(IPAddress.Loopback, this.portNumber);
             this.networkStream = tcpClient.GetStream();
-
-            this.MessageReader =
-                new MessageReader(
-                    this.networkStream,
-                    this.messageSerializer);
-
-            this.MessageWriter =
-                new MessageWriter(
-                    this.networkStream,
-                    this.messageSerializer);
-
-            this.IsConnected = true;
         }
 
         protected override void Initialize(IMessageSerializer messageSerializer)
         {
-            this.messageSerializer = messageSerializer;
+            this.MessageReader =
+                new MessageReader(
+                    this.networkStream,
+                    messageSerializer);
+
+            this.MessageWriter =
+                new MessageWriter(
+                    this.networkStream,
+                    messageSerializer);
         }
 
         protected override void Shutdown()
@@ -51,6 +38,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                 this.networkStream.Dispose();
                 this.networkStream = null;
             }
+        }
+
+        public static async Task<TcpSocketClientChannel> Connect(
+            int portNumber,
+            MessageProtocolType messageProtocolType)
+        {
+            TcpClient tcpClient = new TcpClient();
+            await tcpClient.ConnectAsync(IPAddress.Loopback, portNumber);
+
+            var clientChannel = new TcpSocketClientChannel(tcpClient);
+            clientChannel.Start(messageProtocolType);
+
+            return clientChannel;
         }
     }
 }

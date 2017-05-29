@@ -28,11 +28,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
             // Add handlers for common events
             this.SetEventHandler(PublishDiagnosticsNotification.Type, HandlePublishDiagnosticsEvent);
 
-            return Task.FromResult(true);
-        }
-
-        protected override Task OnConnect()
-        {
             // Send the 'initialize' request and wait for the response
             var initializeParams = new InitializeParams
             {

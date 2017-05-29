@@ -13,53 +13,33 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     public class TcpSocketServerChannel : ChannelBase
     {
         private TcpClient tcpClient;
-        private TcpListener tcpListener;
         private NetworkStream networkStream;
-        private IMessageSerializer messageSerializer;
 
-        public TcpSocketServerChannel(int portNumber)
+        public TcpSocketServerChannel(TcpClient tcpClient)
         {
-            this.tcpListener = new TcpListener(IPAddress.Loopback, portNumber);
-            this.tcpListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            this.tcpListener.Start();
-        }
-
-        public override async Task WaitForConnection()
-        {
-            this.tcpClient = await this.tcpListener.AcceptTcpClientAsync();
+            this.tcpClient = tcpClient;
             this.networkStream = this.tcpClient.GetStream();
-
-            this.MessageReader =
-                new MessageReader(
-                    this.networkStream,
-                    this.messageSerializer);
-
-            this.MessageWriter =
-                new MessageWriter(
-                    this.networkStream,
-                    this.messageSerializer);
-
-            this.IsConnected = true;
         }
 
         protected override void Initialize(IMessageSerializer messageSerializer)
         {
-            this.messageSerializer = messageSerializer;
+            this.MessageReader =
+                new MessageReader(
+                    this.networkStream,
+                    messageSerializer);
+
+            this.MessageWriter =
+                new MessageWriter(
+                    this.networkStream,
+                    messageSerializer);
         }
 
         protected override void Shutdown()
         {
-            if (this.tcpListener != null)
-            {
-                this.networkStream.Dispose();
-                this.tcpListener.Stop();
-                this.tcpListener = null;
-
-                Logger.Write(LogLevel.Verbose, "TCP listener has been stopped");
-            }
 
             if (this.tcpClient != null)
             {
+                this.networkStream.Dispose();
 #if CoreCLR
                 this.tcpClient.Dispose();
 #else

@@ -94,21 +94,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 // Listen for unhandled exceptions from the message loop
                 this.UnhandledException += MessageDispatcher_UnhandledException;
 
+                // Start the message loop 
+                this.StartMessageLoop();
+
                 // Notify implementation about endpoint start
                 await this.OnStart();
-
-                // Wait for connection and notify the implementor
-                // NOTE: This task is not meant to be awaited.
-                Task waitTask =
-                    this.protocolChannel
-                        .WaitForConnection()
-                        .ContinueWith(
-                            async (t) =>
-                            {
-                                // Start the MessageDispatcher
-                                this.StartMessageLoop();
-                                await this.OnConnect();
-                            });
 
                 // Endpoint is now started
                 this.currentState = ProtocolEndpointState.Started;
@@ -183,11 +173,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 return default(TResult);
             }
 
-            if (!this.protocolChannel.IsConnected)
-            {
-                throw new InvalidOperationException("SendRequest called when ProtocolChannel was not yet connected");
-            }
-
             this.currentMessageId++;
 
             TaskCompletionSource<Message> responseTask = null;
@@ -238,11 +223,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             if (this.currentState == ProtocolEndpointState.Shutdown)
             {
                 return Task.FromResult(true);
-            }
-
-            if (!this.protocolChannel.IsConnected)
-            {
-                throw new InvalidOperationException("SendEvent called when ProtocolChannel was not yet connected");
             }
 
             // Some events could be raised from a different thread.
@@ -357,11 +337,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         #region Subclass Lifetime Methods
 
         protected virtual Task OnStart()
-        {
-            return Task.FromResult(true);
-        }
-
-        protected virtual Task OnConnect()
         {
             return Task.FromResult(true);
         }

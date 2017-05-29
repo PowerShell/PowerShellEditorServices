@@ -3,11 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers;
 using System.IO;
 using System.Text;
-using System;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
@@ -34,23 +31,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             this.outputStream = System.Console.OpenStandardOutput();
 
             // Set up the reader and writer
-            this.MessageReader = 
+            this.MessageReader =
                 new MessageReader(
                     this.inputStream,
                     messageSerializer);
 
-            this.MessageWriter = 
+            this.MessageWriter =
                 new MessageWriter(
                     this.outputStream,
                     messageSerializer);
-
-            this.IsConnected = true;
-        }
-
-        public override Task WaitForConnection()
-        {
-            // We're always connected immediately in the stdio channel
-            return Task.FromResult(true);
         }
 
         protected override void Shutdown()
