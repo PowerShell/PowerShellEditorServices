@@ -14,8 +14,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private ChannelBase serverChannel;
 
-        public LanguageServerBase(ChannelBase serverChannel) :
-            base(serverChannel, MessageProtocolType.LanguageServer)
+        public LanguageServerBase(
+            ChannelBase serverChannel,
+            MessageDispatcher messageDispatcher)
+            : base(
+                serverChannel,
+                messageDispatcher,
+                MessageProtocolType.LanguageServer)
         {
             this.serverChannel = serverChannel;
         }
