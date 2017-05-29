@@ -13,7 +13,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
     public class DebugAdapterClient : ProtocolEndpoint
     {
         public DebugAdapterClient(ChannelBase clientChannel)
-            : base(clientChannel, MessageProtocolType.DebugAdapter)
+            : base(
+                clientChannel,
+                new MessageDispatcher(),
+                MessageProtocolType.DebugAdapter)
         {
         }
 

@@ -12,8 +12,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public abstract class DebugAdapterBase : ProtocolEndpoint
     {
-        public DebugAdapterBase(ChannelBase serverChannel)
-            : base (serverChannel, MessageProtocolType.DebugAdapter)
+        public DebugAdapterBase(
+            ChannelBase serverChannel,
+            MessageDispatcher messageDispatcher)
+            : base(
+                serverChannel,
+                messageDispatcher,
+                MessageProtocolType.DebugAdapter)
         {
         }
 

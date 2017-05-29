@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             EditorSession editorSession,
             ChannelBase serverChannel,
             bool ownsEditorSession)
-                : base(serverChannel)
+                : base(serverChannel, new MessageDispatcher())
         {
             this.editorSession = editorSession;
             this.ownsEditorSession = ownsEditorSession;

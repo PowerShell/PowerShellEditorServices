@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public LanguageServer(
             EditorSession editorSession,
             ChannelBase serverChannel)
-            : base(serverChannel)
+            : base(serverChannel, new MessageDispatcher())
         {
             this.editorSession = editorSession;
             this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;

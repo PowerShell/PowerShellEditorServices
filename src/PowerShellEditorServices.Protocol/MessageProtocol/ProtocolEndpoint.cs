@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         /// handlers for requests, responses, and events that are
         /// transmitted through the channel.
         /// </summary>
-        protected MessageDispatcher MessageDispatcher { get; set; }
+        private MessageDispatcher MessageDispatcher { get; set; }
 
         /// <summary>
         /// Initializes an instance of the protocol server using the
@@ -71,9 +71,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         /// </param>
         public ProtocolEndpoint(
             ChannelBase protocolChannel,
+            MessageDispatcher messageDispatcher,
             MessageProtocolType messageProtocolType)
         {
             this.protocolChannel = protocolChannel;
+            this.MessageDispatcher = messageDispatcher;
             this.messageProtocolType = messageProtocolType;
             this.originalSynchronizationContext = SynchronizationContext.Current;
         }
@@ -88,12 +90,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             {
                 // Start the provided protocol channel
                 this.protocolChannel.Start(this.messageProtocolType);
-
-                // Start the message dispatcher
-                this.MessageDispatcher = new MessageDispatcher(this.protocolChannel);
-
-                // Set the handler for any message responses that come back
-                this.MessageDispatcher.SetResponseHandler(this.HandleResponse);
 
                 // Listen for unhandled exceptions from the message loop
                 this.UnhandledException += MessageDispatcher_UnhandledException;

@@ -21,7 +21,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         /// </summary>
         /// <param name="clientChannel">The channel to use for communication with the server.</param>
         public LanguageClientBase(ChannelBase clientChannel)
-            : base(clientChannel, MessageProtocolType.LanguageServer)
+            : base(
+                clientChannel,
+                new MessageDispatcher(),
+                MessageProtocolType.LanguageServer)
         {
         }
 
