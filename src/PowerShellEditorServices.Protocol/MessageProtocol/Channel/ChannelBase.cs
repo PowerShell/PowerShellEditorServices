@@ -15,11 +15,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     public abstract class ChannelBase
     {
         /// <summary>
-        /// Gets a boolean that is true if the channel is connected or false if not.
-        /// </summary>
-        public bool IsConnected { get; protected set; }
-
-        /// <summary>
         /// Gets the MessageReader for reading messages from the channel.
         /// </summary>
         public MessageReader MessageReader { get; protected set; }
@@ -47,14 +42,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
             this.Initialize(messageSerializer);
         }
-
-        /// <summary>
-        /// Returns a Task that allows the consumer of the ChannelBase
-        /// implementation to wait until a connection has been made to
-        /// the opposite endpoint whether it's a client or server.
-        /// </summary>
-        /// <returns>A Task to be awaited until a connection is made.</returns>
-        public abstract Task WaitForConnection();
 
         /// <summary>
         /// Stops the channel.

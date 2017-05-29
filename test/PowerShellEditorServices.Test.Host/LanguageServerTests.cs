@@ -11,6 +11,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.IO;
 using System.Linq;
@@ -34,8 +35,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 #endif
                     "logs",
                     this.GetType().Name,
-                    Guid.NewGuid().ToString().Substring(0, 8) + ".log");
+                    Guid.NewGuid().ToString().Substring(0, 8));
 
+            Logger.Initialize(
+                testLogPath + "-client.log",
+                LogLevel.Verbose);
+
+            testLogPath += "-server.log";
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
             Tuple<int, int> portNumbers =
@@ -47,16 +53,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             this.protocolClient =
                 this.languageServiceClient =
                     new LanguageServiceClient(
-                        new TcpSocketClientChannel(
-                            portNumbers.Item1));
+                        await TcpSocketClientChannel.Connect(
+                            portNumbers.Item1,
+                            MessageProtocolType.LanguageServer));
 
             await this.languageServiceClient.Start();
-
-            // HACK: Insert a short delay to give the MessageDispatcher time to
-            // start up.  This will have to be fixed soon with a larger refactoring
-            // to improve the client/server model.  Tracking this here:
-            // https://github.com/PowerShell/PowerShellEditorServices/issues/245
-            await Task.Delay(1750);
         }
 
         public async Task DisposeAsync()

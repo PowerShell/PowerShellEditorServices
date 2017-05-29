@@ -105,7 +105,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
             IEditorOperations editorOperations)
         {
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
-            Validate.IsNotNull(nameof(editorOperations), editorOperations);
 
             this.powerShellContext = powerShellContext;
             this.powerShellContext.RunspaceChanged += HandleRunspaceChanged;
@@ -385,7 +384,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     {
                         foreach (string remotePath in remotePathMappings.OpenedPaths)
                         {
-                            await this.editorOperations.CloseFile(remotePath);
+                            await this.editorOperations?.CloseFile(remotePath);
                         }
                     }
                 }
@@ -428,7 +427,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                         }
 
                         // Open the file in the editor
-                        this.editorOperations.OpenFile(localFilePath);
+                        this.editorOperations?.OpenFile(localFilePath);
                     }
                 }
                 catch (NullReferenceException e)

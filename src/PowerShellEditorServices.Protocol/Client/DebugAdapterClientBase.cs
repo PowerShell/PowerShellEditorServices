@@ -33,11 +33,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 
         protected override Task OnStart()
         {
-            return Task.FromResult(true);
-        }
-
-        protected override Task OnConnect()
-        {
             // Initialize the debug adapter
             return this.SendRequest(
                 InitializeRequest.Type,

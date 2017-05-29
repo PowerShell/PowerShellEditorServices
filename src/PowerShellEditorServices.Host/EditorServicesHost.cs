@@ -3,7 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Console;
+using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Session;
@@ -12,10 +13,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Management.Automation.Runspaces;
-using System.Management.Automation.Host;
 using System.Reflection;
-using System.Threading;
-using Microsoft.PowerShell.EditorServices.Extensions;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -36,11 +35,17 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         private bool enableConsoleRepl;
         private HostDetails hostDetails;
+        private ProfilePaths profilePaths;
         private string bundledModulesPath;
         private DebugAdapter debugAdapter;
         private EditorSession editorSession;
         private HashSet<string> featureFlags;
         private LanguageServer languageServer;
+
+        private TcpSocketServerListener languageServiceListener;
+        private TcpSocketServerListener debugServiceListener;
+
+        private TaskCompletionSource<bool> serverCompletedTask;
 
         #endregion
 
@@ -153,24 +158,39 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// <param name="profilePaths">The object containing the profile paths to load for this session.</param>
         public void StartLanguageService(int languageServicePort, ProfilePaths profilePaths)
         {
-            this.editorSession =
-                CreateSession(
-                    this.hostDetails,
-                    profilePaths,
-                    this.enableConsoleRepl);
+            this.profilePaths = profilePaths;
 
-            this.languageServer =
-                new LanguageServer(
-                    this.editorSession,
-                    new TcpSocketServerChannel(languageServicePort));
+            this.languageServiceListener =
+                new TcpSocketServerListener(
+                    MessageProtocolType.LanguageServer,
+                    languageServicePort);
 
-            this.languageServer.Start().Wait();
+            this.languageServiceListener.ClientConnect += this.OnLanguageServiceClientConnect;
+            this.languageServiceListener.Start();
 
             Logger.Write(
                 LogLevel.Normal,
                 string.Format(
                     "Language service started, listening on port {0}",
                     languageServicePort));
+        }
+
+        private async void OnLanguageServiceClientConnect(
+            object sender,
+            TcpSocketServerChannel serverChannel)
+        {
+            this.editorSession =
+                CreateSession(
+                    this.hostDetails,
+                    this.profilePaths,
+                    this.enableConsoleRepl);
+
+            this.languageServer =
+                new LanguageServer(
+                    this.editorSession,
+                    serverChannel);
+
+            await this.languageServer.Start();
         }
 
         /// <summary>
@@ -182,12 +202,29 @@ namespace Microsoft.PowerShell.EditorServices.Host
             ProfilePaths profilePaths,
             bool useExistingSession)
         {
-            if (this.enableConsoleRepl && useExistingSession)
+            this.debugServiceListener =
+                new TcpSocketServerListener(
+                    MessageProtocolType.LanguageServer,
+                    debugServicePort);
+
+            this.debugServiceListener.ClientConnect += OnDebugServiceClientConnect;
+            this.debugServiceListener.Start();
+
+            Logger.Write(
+                LogLevel.Normal,
+                string.Format(
+                    "Debug service started, listening on port {0}",
+                    debugServicePort));
+        }
+
+        private async void OnDebugServiceClientConnect(object sender, TcpSocketServerChannel serverChannel)
+        {
+            if (this.enableConsoleRepl)
             {
                 this.debugAdapter =
                     new DebugAdapter(
                         this.editorSession,
-                        new TcpSocketServerChannel(debugServicePort),
+                        serverChannel,
                         false);
             }
             else
@@ -196,42 +233,26 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     this.CreateDebugSession(
                         this.hostDetails,
                         profilePaths,
-                        this.languageServer.EditorOperations);
+                        this.languageServer?.EditorOperations);
 
                 this.debugAdapter =
                     new DebugAdapter(
                         debugSession,
-                        new TcpSocketServerChannel(debugServicePort),
+                        serverChannel,
                         true);
             }
 
             this.debugAdapter.SessionEnded +=
                 (obj, args) =>
                 {
-                    // Only restart if we're reusing the existing session
-                    // or if we're not using the console REPL, otherwise
-                    // the process should terminate
-                    if (useExistingSession)
-                    {
-                        Logger.Write(
-                            LogLevel.Normal,
-                            "Previous debug session ended, restarting debug service...");
+                    Logger.Write(
+                        LogLevel.Normal,
+                        "Previous debug session ended, restarting debug service listener...");
 
-                        this.StartDebugService(debugServicePort, profilePaths, true);
-                    }
-                    else if (!this.enableConsoleRepl)
-                    {
-                        this.StartDebugService(debugServicePort, profilePaths, false);
-                    }
+                    this.debugServiceListener.Start();
                 };
 
-            this.debugAdapter.Start().Wait();
-
-            Logger.Write(
-                LogLevel.Normal,
-                string.Format(
-                    "Debug service started, listening on port {0}",
-                    debugServicePort));
+            await this.debugAdapter.Start();
         }
 
         /// <summary>
@@ -251,17 +272,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// </summary>
         public void WaitForCompletion()
         {
-            // Wait based on which server is started.  If the language server
-            // hasn't been started then we may only need to wait on the debug
-            // adapter to complete.
-            if (this.languageServer != null)
-            {
-                this.languageServer.WaitForExit();
-            }
-            else if (this.debugAdapter != null)
-            {
-                this.debugAdapter.WaitForExit();
-            }
+            // TODO: We need a way to know when to complete this task!
+            this.serverCompletedTask = new TaskCompletionSource<bool>();
+            this.serverCompletedTask.Task.Wait();
         }
 
         #endregion

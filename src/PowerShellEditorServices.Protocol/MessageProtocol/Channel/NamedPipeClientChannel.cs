@@ -11,51 +11,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class NamedPipeClientChannel : ChannelBase
     {
-        private string pipeName;
         private NamedPipeClientStream pipeClient;
 
-        public NamedPipeClientChannel(string pipeName)
+        public NamedPipeClientChannel(NamedPipeClientStream pipeClient)
         {
-            this.pipeName = pipeName;
-        }
-
-        public override async Task WaitForConnection()
-        {
-#if CoreCLR
-            await this.pipeClient.ConnectAsync();
-#else
-            this.IsConnected = false;
-
-            while (!this.IsConnected)
-            {
-                try
-                {
-                    // Wait for 500 milliseconds so that we don't tie up the thread
-                    this.pipeClient.Connect(500);
-                    this.IsConnected = this.pipeClient.IsConnected;
-                }
-                catch (TimeoutException)
-                {
-                    // Connect timed out, wait and try again
-                    await Task.Delay(1000);
-                    continue;
-                }
-            }
-#endif
-
-            // If we've reached this point, we're connected
-            this.IsConnected = true;
+            this.pipeClient = pipeClient;
         }
 
         protected override void Initialize(IMessageSerializer messageSerializer)
         {
-            this.pipeClient =
-                new NamedPipeClientStream(
-                    ".",
-                    this.pipeName,
-                    PipeDirection.InOut,
-                    PipeOptions.Asynchronous);
-
             this.MessageReader =
                 new MessageReader(
                     this.pipeClient,
@@ -73,6 +37,41 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             {
                 this.pipeClient.Dispose();
             }
+        }
+
+        public static async Task<NamedPipeClientChannel> Connect(
+            string pipeName,
+            MessageProtocolType messageProtocolType)
+        {
+            var pipeClient =
+                new NamedPipeClientStream(
+                    ".",
+                    pipeName,
+                    PipeDirection.InOut,
+                    PipeOptions.Asynchronous);
+
+#if CoreCLR
+            await pipeClient.ConnectAsync();
+#else
+            while (!pipeClient.IsConnected)
+            {
+                try
+                {
+                    // Wait for 500 milliseconds so that we don't tie up the thread
+                    pipeClient.Connect(500);
+                }
+                catch (TimeoutException)
+                {
+                    // Connect timed out, wait and try again
+                    await Task.Delay(1000);
+                    continue;
+                }
+            }
+#endif
+            var clientChannel = new NamedPipeClientChannel(pipeClient);
+            clientChannel.Start(messageProtocolType);
+
+            return clientChannel;
         }
     }
 }
