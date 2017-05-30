@@ -103,14 +103,6 @@ namespace Microsoft.PowerShell.EditorServices
             private set;
         }
 
-        /// <summary>
-        /// Gets the prompt string for the current runspace.
-        /// </summary>
-        public string PromptString
-        {
-            get { return this.mostRecentSessionDetails.PromptString; }
-        }
-
         #endregion
 
         #region Constructors
