@@ -5,6 +5,8 @@
 
 using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Protocol;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Templates;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -77,12 +79,14 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public bool UsesConsoleHost { get; private set; }
 
+        public IMessageDispatcher MessageDispatcher { get; private set; }
+
         #endregion
 
         #region Constructors
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public EditorSession(ILogger logger)
@@ -109,6 +113,8 @@ namespace Microsoft.PowerShell.EditorServices
             this.ConsoleService = consoleService;
             this.UsesConsoleHost = this.ConsoleService.EnableConsoleRepl;
 
+            // Initialize all services
+            this.MessageDispatcher = new MessageDispatcher(this.logger);
             this.LanguageService = new LanguageService(this.PowerShellContext, this.logger);
             this.ExtensionService = new ExtensionService(this.PowerShellContext);
             this.TemplateService = new TemplateService(this.PowerShellContext, this.logger);
@@ -137,6 +143,8 @@ namespace Microsoft.PowerShell.EditorServices
             this.PowerShellContext = powerShellContext;
             this.ConsoleService = consoleService;
 
+            // Initialize all services
+            this.MessageDispatcher = new MessageDispatcher(this.logger);
             this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations, logger);
             this.DebugService = new DebugService(this.PowerShellContext, this.RemoteFileManager, logger);
 
