@@ -24,6 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
     {
         #region Fields
 
+        private bool isReadLoopStarted;
         private ConsoleReadLine consoleReadLine;
         private PowerShellContext powerShellContext;
 
@@ -106,21 +107,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             if (this.EnableConsoleRepl)
             {
-                if (this.readLineCancellationToken == null)
-                {
-                    this.readLineCancellationToken = new CancellationTokenSource();
-
-                    var terminalThreadTask =
-                        Task.Factory.StartNew(
-                            async () =>
-                            {
-                                await this.StartReplLoop(this.readLineCancellationToken.Token);
-                            });
-                }
-                else
-                {
-                    Logger.Write(LogLevel.Verbose, "StartReadLoop called while read loop is already running");
-                }
+                this.isReadLoopStarted = true;
+                this.InnerStartReadLoop();
             }
         }
 
@@ -129,15 +117,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         public void CancelReadLoop()
         {
-            if (this.readLineCancellationToken != null)
-            {
-                // Set this to false so that Ctrl+C isn't trapped by any
-                // lingering ReadKey
-                Console.TreatControlCAsInput = false;
-
-                this.readLineCancellationToken.Cancel();
-                this.readLineCancellationToken = null;
-            }
+            this.isReadLoopStarted = false;
+            this.InnerCancelReadLoop();
         }
 
         /// <summary>
@@ -148,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task ExecuteScriptAtPath(string scriptPath, string arguments = null)
         {
-            this.CancelReadLoop();
+            this.InnerCancelReadLoop();
 
             // If we don't escape wildcard characters in the script path, the script can
             // fail to execute if say the script name was foo][.ps1.
@@ -161,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 true,
                 false);
 
-            this.StartReadLoop();
+            this.InnerStartReadLoop();
         }
 
         /// <summary>
@@ -270,6 +251,41 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     true,
                     OutputType.Normal,
                     ConsoleColor.Blue);
+            }
+        }
+
+        private void InnerStartReadLoop()
+        {
+            if (this.EnableConsoleRepl)
+            {
+                if (this.readLineCancellationToken == null)
+                {
+                    this.readLineCancellationToken = new CancellationTokenSource();
+
+                    var terminalThreadTask =
+                        Task.Factory.StartNew(
+                            async () =>
+                            {
+                                await this.StartReplLoop(this.readLineCancellationToken.Token);
+                            });
+                }
+                else
+                {
+                    Logger.Write(LogLevel.Verbose, "InnerStartReadLoop called while read loop is already running");
+                }
+            }
+        }
+
+        private void InnerCancelReadLoop()
+        {
+            if (this.readLineCancellationToken != null)
+            {
+                // Set this to false so that Ctrl+C isn't trapped by any
+                // lingering ReadKey
+                Console.TreatControlCAsInput = false;
+
+                this.readLineCancellationToken.Cancel();
+                this.readLineCancellationToken = null;
             }
         }
 
@@ -431,20 +447,20 @@ namespace Microsoft.PowerShell.EditorServices.Console
         private void PowerShellContext_DebuggerStop(object sender, System.Management.Automation.DebuggerStopEventArgs e)
         {
             // Cancel any existing prompt first
-            this.CancelReadLoop();
+            this.InnerCancelReadLoop();
 
             this.WriteDebuggerBanner(e);
-            this.StartReadLoop();
+            this.InnerStartReadLoop();
         }
 
         private void PowerShellContext_DebuggerResumed(object sender, System.Management.Automation.DebuggerResumeAction e)
         {
-            this.CancelReadLoop();
+            this.InnerCancelReadLoop();
         }
 
         private void PowerShellContext_ExecutionStatusChanged(object sender, ExecutionStatusChangedEventArgs eventArgs)
         {
-            if (this.EnableConsoleRepl)
+            if (this.EnableConsoleRepl && this.isReadLoopStarted)
             {
                 if (eventArgs.ExecutionStatus == ExecutionStatus.Aborted)
                 {
@@ -464,12 +480,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     if (eventArgs.ExecutionStatus != ExecutionStatus.Running)
                     {
                         // Execution has completed, start the input prompt
-                        this.StartReadLoop();
+                        this.InnerStartReadLoop();
                     }
                     else
                     {
                         // A new command was started, cancel the input prompt
-                        this.CancelReadLoop();
+                        this.InnerCancelReadLoop();
                         this.WriteOutput(string.Empty);
                     }
                 }
@@ -478,9 +494,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     (eventArgs.ExecutionStatus == ExecutionStatus.Failed ||
                      eventArgs.HadErrors))
                 {
-                    this.CancelReadLoop();
+                    this.InnerCancelReadLoop();
                     this.WriteOutput(string.Empty);
-                    this.StartReadLoop();
+                    this.InnerStartReadLoop();
                 }
             }
         }
