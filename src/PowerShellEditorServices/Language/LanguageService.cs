@@ -481,6 +481,15 @@ namespace Microsoft.PowerShell.EditorServices
                         IEnumerable<CommandParameterSetInfo> commandParamSets = commandInfo.ParameterSets;
                         return new ParameterSetSignatures(commandParamSets, foundSymbol);
                     }
+                    catch (RuntimeException e)
+                    {
+                        // A RuntimeException will be thrown when an invalid attribute is
+                        // on a parameter binding block and then that command/script has
+                        // its signatures resolved by typing it into a script.
+                        Logger.WriteException("RuntimeException encountered while accessing command parameter sets", e);
+
+                        return null;
+                    }
                     catch (InvalidOperationException)
                     {
                         // For some commands there are no paramsets (like applications).  Until
