@@ -28,7 +28,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     public class LanguageServer : LanguageServerBase
     {
         private static CancellationTokenSource existingRequestCancellation;
-        private readonly static string DiagnosticSourceName = "PowerShellEditorServices";
 
         private bool profilesLoaded;
         private bool consoleReplStarted;
@@ -1119,8 +1118,7 @@ function __Expand-Alias {
             {
                 foreach (var diagnostic in codeActionParams.Context.Diagnostics)
                 {
-                    if (string.Equals(diagnostic.Source, DiagnosticSourceName, StringComparison.CurrentCultureIgnoreCase) &&
-                        !string.IsNullOrEmpty(diagnostic.Code) &&
+                    if (!string.IsNullOrEmpty(diagnostic.Code) &&
                         markerIndex.TryGetValue(diagnostic.Code, out correction))
                     {
                         codeActionCommands.Add(
@@ -1482,8 +1480,8 @@ function __Expand-Alias {
             {
                 Severity = MapDiagnosticSeverity(scriptFileMarker.Level),
                 Message = scriptFileMarker.Message,
-                Code = Guid.NewGuid().ToString(),
-                Source = DiagnosticSourceName,
+                Code = scriptFileMarker.Source + Guid.NewGuid().ToString(),
+                Source = scriptFileMarker.Source,
                 Range = new Range
                 {
                     Start = new Position
