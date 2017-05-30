@@ -78,6 +78,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public MarkerCorrection Correction { get; set; }
 
+        /// <summary>
+        /// Gets or sets the name of the marker's source like "PowerShell"
+        /// or "PSScriptAnalyzer".
+        /// </summary>
+        public string Source { get; set; }
+
         #endregion
 
         #region Public Methods
@@ -91,7 +97,8 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 Message = parseError.Message,
                 Level = ScriptFileMarkerLevel.Error,
-                ScriptRegion = ScriptRegion.Create(parseError.Extent)
+                ScriptRegion = ScriptRegion.Create(parseError.Extent),
+                Source = "PowerShell"
             };
         }
         private static string GetIfExistsString(PSObject psobj, string memberName)
@@ -153,10 +160,11 @@ namespace Microsoft.PowerShell.EditorServices
 
             return new ScriptFileMarker
             {
-                Message = diagnosticRecord.Message as string,
+                Message = $"{diagnosticRecord.Message as string} ({ruleName})",
                 Level = GetMarkerLevelFromDiagnosticSeverity((diagnosticRecord.Severity as Enum).ToString()),
                 ScriptRegion = ScriptRegion.Create(diagnosticRecord.Extent as IScriptExtent),
-                Correction = correction
+                Correction = correction,
+                Source = "PSScriptAnalyzer"
             };
         }
 
