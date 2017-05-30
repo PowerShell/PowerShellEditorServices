@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
-    public class MessageDispatcher : IMessageHandlers
+    public class MessageDispatcher : IMessageHandlers, IMessageDispatcher
     {
         #region Fields
 
