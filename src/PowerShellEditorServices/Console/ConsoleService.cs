@@ -13,6 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
     using Microsoft.PowerShell.EditorServices.Session;
     using System;
     using System.Globalization;
+    using System.Linq;
     using System.Management.Automation;
     using System.Security;
 
@@ -218,9 +219,24 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Private Methods
 
-        private void WritePromptStringToHost()
+        private async Task WritePromptStringToHost()
         {
-            string promptString = this.powerShellContext.PromptString;
+            PSCommand promptCommand = new PSCommand().AddScript("prompt");
+
+            string promptString =
+                (await this.powerShellContext.ExecuteCommand<object>(promptCommand, false, false))
+                    .OfType<string>()
+                    .FirstOrDefault() ?? "PS> ";
+
+            // Add the [DBG] prefix if we're stopped in the debugger
+            if (this.powerShellContext.IsDebuggerStopped)
+            {
+                promptString =
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "[DBG]: {0}",
+                        promptString);
+            }
 
             // Update the stored prompt string if the session is remote
             if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
@@ -295,7 +311,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             {
                 string commandString = null;
 
-                this.WritePromptStringToHost();
+                await this.WritePromptStringToHost();
 
                 try
                 {

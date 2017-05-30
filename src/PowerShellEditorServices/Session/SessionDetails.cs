@@ -16,11 +16,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
     public class SessionDetails
     {
         /// <summary>
-        /// Gets the current prompt string.
-        /// </summary>
-        public string PromptString { get; internal set; }
-
-        /// <summary>
         /// Gets the process ID of the current process.
         /// </summary>
         public int? ProcessId { get; private set; }
@@ -47,7 +42,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             Hashtable innerHashtable = detailsObject.BaseObject as Hashtable;
 
-            this.PromptString = innerHashtable["prompt"] as string ?? "PS> ";
             this.ProcessId = (int)innerHashtable["processId"] as int?;
             this.ComputerName = innerHashtable["computerName"] as string;
             this.InstanceId = innerHashtable["instanceId"] as Guid?;
@@ -62,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         {
             PSCommand infoCommand = new PSCommand();
             infoCommand.AddScript(
-                "@{ 'prompt' = prompt; 'computerName' = $env:ComputerName; 'processId' = $PID; 'instanceId' = $host.InstanceId }");
+                "@{ 'computerName' = $env:ComputerName; 'processId' = $PID; 'instanceId' = $host.InstanceId }");
 
             return infoCommand;
         }
