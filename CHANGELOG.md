@@ -1,5 +1,30 @@
 # PowerShell Editor Services Release History
 
+## 1.2.0
+### Wednesday, May 31, 2017
+
+#### Fixes and improvements
+
+- [#462](https://github.com/PowerShell/PowerShellEditorServices/issues/462) -
+  Fixed crash when getting signature help for functions and scripts
+  using invalid parameter attributes
+
+- [PowerShell/vscode-powershell#763](https://github.com/PowerShell/vscode-powershell/issues/763) -
+  Dynamic comment-based help snippets now work inside functions
+
+- [PowerShell/vscode-powershell#710](https://github.com/PowerShell/vscode-powershell/issues/710) -
+  Variable definitions can now be found across the workspace
+
+- [PowerShell/vscode-powershell#771](https://github.com/PowerShell/vscode-powershell/issues/771) -
+  Improved dynamic comment help snippet performance in scripts with many functions
+
+- [PowerShell/vscode-powershell#774](https://github.com/PowerShell/vscode-powershell/issues/774) -
+  Pressing Enter now causes custom prompt functions to be fully evaluated
+
+- [PowerShell/vscode-powershell#770](https://github.com/PowerShell/vscode-powershell/issues/770) -
+  Fixed issue where custom prompt function might be written twice when
+  starting the integrated console
+
 ## 1.1.0
 ### Thursday, May 18, 2017
 
