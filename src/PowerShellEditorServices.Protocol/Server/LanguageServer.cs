@@ -1063,32 +1063,43 @@ function __Expand-Alias {
            RequestContext<CommentHelpRequestResult> requestContext)
         {
             var scriptFile = this.editorSession.Workspace.GetFile(requestParams.DocumentUri);
-            var expectedFunctionLine = requestParams.TriggerPosition.Line + 2;
+            var triggerLine0b = requestParams.TriggerPosition.Line;
+            var triggerLine1b = triggerLine0b + 1;
 
             string helpLocation;
-            var functionDefinitionAst = this.editorSession.LanguageService.GetFunctionDefinitionForHelpComment(
+            var functionDefinitionAst = editorSession.LanguageService.GetFunctionDefinitionForHelpComment(
                 scriptFile,
-                requestParams.TriggerPosition.Line + 1,
+                triggerLine1b,
                 out helpLocation);
             var result = new CommentHelpRequestResult();
             if (functionDefinitionAst != null)
             {
+                var funcExtent = functionDefinitionAst.Extent;
+                var funcText = funcExtent.Text;
+                if (helpLocation.Equals("begin"))
+                {
+                    // check if the previous character is `<` because it invalidates
+                    // the param block the follows it.
+                    var lines = ScriptFile.GetLines(funcText).ToArray();
+                    var relativeTriggerLine0b = triggerLine1b - funcExtent.StartLineNumber;
+                    if (relativeTriggerLine0b > 0 && lines[relativeTriggerLine0b].IndexOf("<") > -1)
+                    {
+                        lines[relativeTriggerLine0b] = string.Empty;
+                    }
+
+                    funcText = string.Join("\n", lines);
+                }
+
                 var analysisResults = await this.editorSession.AnalysisService.GetSemanticMarkersAsync(
-                    functionDefinitionAst.Extent.Text,
+                    funcText,
                     AnalysisService.GetCommentHelpRuleSettings(
                         true,
                         false,
                         requestParams.BlockComment,
                         true,
                         helpLocation));
-                result.Content = analysisResults?
-                                     .FirstOrDefault()?
-                                     .Correction?
-                                     .Edits[0]
-                                     .Text
-                                     .Split('\n')
-                                     .Select(x => x.Trim('\r'))
-                                     .ToArray();
+                var help = analysisResults?.FirstOrDefault()?.Correction?.Edits[0].Text;
+                result.Content = help == null ? null : ScriptFile.GetLines(help).ToArray();
                 if (helpLocation != null &&
                     !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
                 {
