@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Console;
 using System.Threading;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.PowerShell.EditorServices.Session;
+using System.Globalization;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -22,37 +24,64 @@ namespace Microsoft.PowerShell.EditorServices
     /// for the ConsoleService and routes its calls to an IConsoleHost
     /// implementation.
     /// </summary>
-    internal class ConsoleServicePSHostUserInterface : PSHostUserInterface, IHostUISupportsMultipleChoiceSelection
+    public abstract class EditorServicesPSHostUserInterface :
+        PSHostUserInterface,
+        IHostInput,
+        IHostOutput,
+        IHostUISupportsMultipleChoiceSelection
     {
         #region Private Fields
 
-        private IConsoleHost consoleHost;
+        private PromptHandler activePromptHandler;
         private PSHostRawUserInterface rawUserInterface;
+        private CancellationTokenSource commandLoopCancellationToken;
+
+        /// <summary>
+        /// The PowerShellContext to use for executing commands.
+        /// </summary>
+        protected PowerShellContext powerShellContext;
 
         #endregion
 
         #region Public Constants
 
+        /// <summary>
+        /// Gets a const string for the console's debug message prefix.
+        /// </summary>
         public const string DebugMessagePrefix = "DEBUG: ";
+
+        /// <summary>
+        /// Gets a const string for the console's warning message prefix.
+        /// </summary>
         public const string WarningMessagePrefix = "WARNING: ";
+
+        /// <summary>
+        /// Gets a const string for the console's verbose message prefix.
+        /// </summary>
         public const string VerboseMessagePrefix = "VERBOSE: ";
 
         #endregion
 
         #region Properties
 
-        internal IConsoleHost ConsoleHost
-        {
-            get { return this.consoleHost; }
-            set
-            {
-                this.consoleHost = value;
-            }
-        }
-
 #if !PowerShellv3 && !PowerShellv4 && !PowerShellv5r1 // Only available in Windows 10 Update 1 or higher
+        /// <summary>
+        /// Returns true if the host supports VT100 output codes.
+        /// </summary>
         public override bool SupportsVirtualTerminal => true;
 #endif
+
+        /// <summary>
+        /// Returns true if a native application is currently running.
+        /// </summary>
+        public bool IsNativeApplicationRunning { get; internal set; }
+
+        private bool IsCommandLoopRunning { get; set; }
+
+        /// <summary>
+        /// Gets the ILogger implementation used for this host.
+        /// </summary>
+        protected ILogger Logger { get; private set; }
 
         #endregion
 
@@ -62,120 +91,269 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates a new instance of the ConsoleServicePSHostUserInterface
         /// class with the given IConsoleHost implementation.
         /// </summary>
-        public ConsoleServicePSHostUserInterface(bool enableConsoleRepl)
+        /// <param name="powerShellContext">The PowerShellContext to use for executing commands.</param>
+        /// <param name="rawUserInterface">The PSHostRawUserInterface implementation to use for this host.</param>
+        /// <param name="logger">An ILogger implementation to use for this host.</param>
+        public EditorServicesPSHostUserInterface(
+            PowerShellContext powerShellContext,
+            PSHostRawUserInterface rawUserInterface,
+            ILogger logger)
         {
-            if (enableConsoleRepl)
-            {
-                // Set the output encoding to UTF-8 so that special
-                // characters are written to the console correctly
-                System.Console.OutputEncoding = System.Text.Encoding.UTF8;
-            }
+            this.Logger = logger;
+            this.powerShellContext = powerShellContext;
+            this.rawUserInterface = rawUserInterface;
 
-            this.rawUserInterface =
-                enableConsoleRepl
-                    ? (PSHostRawUserInterface)new ConsoleServicePSHostRawUserInterface()
-                    : new SimplePSHostRawUserInterface();
+            this.powerShellContext.DebuggerStop += PowerShellContext_DebuggerStop;
+            this.powerShellContext.DebuggerResumed += PowerShellContext_DebuggerResumed;
+            this.powerShellContext.ExecutionStatusChanged += PowerShellContext_ExecutionStatusChanged;
         }
+
+        #endregion
+
+        #region Public Methods
+
+        void IHostInput.StartCommandLoop()
+        {
+            if (!this.IsCommandLoopRunning)
+            {
+                this.IsCommandLoopRunning = true;
+                this.ShowCommandPrompt();
+            }
+        }
+
+        void IHostInput.StopCommandLoop()
+        {
+            if (this.IsCommandLoopRunning)
+            {
+                this.IsCommandLoopRunning = false;
+                this.CancelCommandPrompt();
+            }
+        }
+
+        private void ShowCommandPrompt()
+        {
+            if (this.commandLoopCancellationToken == null)
+            {
+                this.commandLoopCancellationToken = new CancellationTokenSource();
+
+                var commandLoopThreadTask =
+                    Task.Factory.StartNew(
+                        async () =>
+                        {
+                            await this.StartReplLoop(this.commandLoopCancellationToken.Token);
+                        });
+            }
+            else
+            {
+                Logger.Write(LogLevel.Verbose, "StartReadLoop called while read loop is already running");
+            }
+        }
+
+        private void CancelCommandPrompt()
+        {
+            if (this.commandLoopCancellationToken != null)
+            {
+                // Set this to false so that Ctrl+C isn't trapped by any
+                // lingering ReadKey
+                // TOOD: Move this to Terminal impl!
+                //Console.TreatControlCAsInput = false;
+
+                this.commandLoopCancellationToken.Cancel();
+                this.commandLoopCancellationToken = null;
+            }
+        }
+
+        /// <summary>
+        /// Cancels the currently executing command or prompt.
+        /// </summary>
+        public void SendControlC()
+        {
+            if (this.activePromptHandler != null)
+            {
+                this.activePromptHandler.CancelPrompt();
+            }
+            else
+            {
+                // Cancel the current execution
+                this.powerShellContext.AbortExecution();
+            }
+        }
+
+        #endregion
+
+        #region Abstract Methods
+
+        /// <summary>
+        /// Requests that the HostUI implementation read a command line
+        /// from the user to be executed in the integrated console command
+        /// loop.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A CancellationToken used to cancel the command line request.
+        /// </param>
+        /// <returns>A Task that can be awaited for the resulting input string.</returns>
+        protected abstract Task<string> ReadCommandLine(CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Creates an InputPrompt handle to use for displaying input
+        /// prompts to the user.
+        /// </summary>
+        /// <returns>A new InputPromptHandler instance.</returns>
+        protected abstract InputPromptHandler OnCreateInputPromptHandler();
+
+        /// <summary>
+        /// Creates a ChoicePromptHandler to use for displaying a
+        /// choice prompt to the user.
+        /// </summary>
+        /// <returns>A new ChoicePromptHandler instance.</returns>
+        protected abstract ChoicePromptHandler OnCreateChoicePromptHandler();
+
+        /// <summary>
+        /// Writes output of the given type to the user interface with
+        /// the given foreground and background colors.  Also includes
+        /// a newline if requested.
+        /// </summary>
+        /// <param name="outputString">
+        /// The output string to be written.
+        /// </param>
+        /// <param name="includeNewLine">
+        /// If true, a newline should be appended to the output's contents.
+        /// </param>
+        /// <param name="outputType">
+        /// Specifies the type of output to be written.
+        /// </param>
+        /// <param name="foregroundColor">
+        /// Specifies the foreground color of the output to be written.
+        /// </param>
+        /// <param name="backgroundColor">
+        /// Specifies the background color of the output to be written.
+        /// </param>
+        public abstract void WriteOutput(
+            string outputString,
+            bool includeNewLine,
+            OutputType outputType,
+            ConsoleColor foregroundColor,
+            ConsoleColor backgroundColor);
+
+        /// <summary>
+        /// Sends a progress update event to the user.
+        /// </summary>
+        /// <param name="sourceId">The source ID of the progress event.</param>
+        /// <param name="progressDetails">The details of the activity's current progress.</param>
+        protected abstract void UpdateProgress(
+            long sourceId,
+            ProgressDetails progressDetails);
+
+        #endregion
+
+        #region IHostInput Implementation
 
         #endregion
 
         #region PSHostUserInterface Implementation
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="promptCaption"></param>
+        /// <param name="promptMessage"></param>
+        /// <param name="fieldDescriptions"></param>
+        /// <returns></returns>
         public override Dictionary<string, PSObject> Prompt(
             string promptCaption,
             string promptMessage,
             Collection<FieldDescription> fieldDescriptions)
         {
-            if (this.consoleHost != null)
+            FieldDetails[] fields =
+                fieldDescriptions
+                    .Select(f => { return FieldDetails.Create(f, this.Logger); })
+                    .ToArray();
+
+            CancellationTokenSource cancellationToken = new CancellationTokenSource();
+            Task<Dictionary<string, object>> promptTask =
+                this.CreateInputPromptHandler()
+                    .PromptForInput(
+                        promptCaption,
+                        promptMessage,
+                        fields,
+                        cancellationToken.Token);
+
+            // Run the prompt task and wait for it to return
+            this.WaitForPromptCompletion(
+                promptTask,
+                "Prompt",
+                cancellationToken);
+
+            // Convert all values to PSObjects
+            var psObjectDict = new Dictionary<string, PSObject>();
+
+            // The result will be null if the prompt was cancelled
+            if (promptTask.Result != null)
             {
-                FieldDetails[] fields =
-                    fieldDescriptions
-                        .Select(f => { return FieldDetails.Create(f, Logger.CurrentLogger); })
-                        .ToArray();
-
-                CancellationTokenSource cancellationToken = new CancellationTokenSource();
-                Task<Dictionary<string, object>> promptTask =
-                    this.consoleHost
-                        .GetInputPromptHandler()
-                        .PromptForInput(
-                            promptCaption,
-                            promptMessage,
-                            fields,
-                            cancellationToken.Token);
-
-                // Run the prompt task and wait for it to return
-                this.WaitForPromptCompletion(
-                    promptTask,
-                    "Prompt",
-                    cancellationToken);
-
                 // Convert all values to PSObjects
-                var psObjectDict = new Dictionary<string, PSObject>();
-
-                // The result will be null if the prompt was cancelled
-                if (promptTask.Result != null)
+                foreach (var keyValuePair in promptTask.Result)
                 {
-                    // Convert all values to PSObjects
-                    foreach (var keyValuePair in promptTask.Result)
-                    {
-                        psObjectDict.Add(
-                            keyValuePair.Key,
-                            keyValuePair.Value != null
-                                ? PSObject.AsPSObject(keyValuePair.Value)
-                                : null);
-                    }
+                    psObjectDict.Add(
+                        keyValuePair.Key,
+                        keyValuePair.Value != null
+                            ? PSObject.AsPSObject(keyValuePair.Value)
+                            : null);
                 }
+            }
 
-                // Return the result
-                return psObjectDict;
-            }
-            else
-            {
-                // Notify the caller that there's no implementation
-                throw new NotImplementedException();
-            }
+            // Return the result
+            return psObjectDict;
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="promptCaption"></param>
+        /// <param name="promptMessage"></param>
+        /// <param name="choiceDescriptions"></param>
+        /// <param name="defaultChoice"></param>
+        /// <returns></returns>
         public override int PromptForChoice(
             string promptCaption,
             string promptMessage,
             Collection<ChoiceDescription> choiceDescriptions,
             int defaultChoice)
         {
-            if (this.consoleHost != null)
-            {
-                ChoiceDetails[] choices =
-                    choiceDescriptions
-                        .Select(ChoiceDetails.Create)
-                        .ToArray();
+            ChoiceDetails[] choices =
+                choiceDescriptions
+                    .Select(ChoiceDetails.Create)
+                    .ToArray();
 
-                CancellationTokenSource cancellationToken = new CancellationTokenSource();
-                Task<int> promptTask =
-                    this.consoleHost
-                        .GetChoicePromptHandler()
-                        .PromptForChoice(
-                            promptCaption,
-                            promptMessage,
-                            choices,
-                            defaultChoice,
-                            cancellationToken.Token);
+            CancellationTokenSource cancellationToken = new CancellationTokenSource();
+            Task<int> promptTask =
+                this.CreateChoicePromptHandler()
+                    .PromptForChoice(
+                        promptCaption,
+                        promptMessage,
+                        choices,
+                        defaultChoice,
+                        cancellationToken.Token);
 
-                // Run the prompt task and wait for it to return
-                this.WaitForPromptCompletion(
-                    promptTask,
-                    "PromptForChoice",
-                    cancellationToken);
+            // Run the prompt task and wait for it to return
+            this.WaitForPromptCompletion(
+                promptTask,
+                "PromptForChoice",
+                cancellationToken);
 
-                // Return the result
-                return promptTask.Result;
-            }
-            else
-            {
-                // Notify the caller that there's no implementation
-                throw new NotImplementedException();
-            }
+            // Return the result
+            return promptTask.Result;
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="promptCaption"></param>
+        /// <param name="promptMessage"></param>
+        /// <param name="userName"></param>
+        /// <param name="targetName"></param>
+        /// <param name="allowedCredentialTypes"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
         public override PSCredential PromptForCredential(
             string promptCaption,
             string promptMessage,
@@ -184,52 +362,50 @@ namespace Microsoft.PowerShell.EditorServices
             PSCredentialTypes allowedCredentialTypes,
             PSCredentialUIOptions options)
         {
-            if (this.consoleHost != null)
-            {
-                CancellationTokenSource cancellationToken = new CancellationTokenSource();
+            CancellationTokenSource cancellationToken = new CancellationTokenSource();
 
-                Task<Dictionary<string, object>> promptTask =
-                    this.consoleHost
-                        .GetInputPromptHandler()
-                        .PromptForInput(
-                            promptCaption,
-                            promptMessage,
-                            new FieldDetails[] { new CredentialFieldDetails("Credential", "Credential", userName) },
-                            cancellationToken.Token);
+            Task<Dictionary<string, object>> promptTask =
+                this.CreateInputPromptHandler()
+                    .PromptForInput(
+                        promptCaption,
+                        promptMessage,
+                        new FieldDetails[] { new CredentialFieldDetails("Credential", "Credential", userName) },
+                        cancellationToken.Token);
 
-                Task<PSCredential> unpackTask =
-                    promptTask.ContinueWith(
-                        task =>
+            Task<PSCredential> unpackTask =
+                promptTask.ContinueWith(
+                    task =>
+                    {
+                        if (task.IsFaulted)
                         {
-                            if (task.IsFaulted)
-                            {
-                                throw task.Exception;
-                            }
-                            else if (task.IsCanceled)
-                            {
-                                throw new TaskCanceledException(task);
-                            }
+                            throw task.Exception;
+                        }
+                        else if (task.IsCanceled)
+                        {
+                            throw new TaskCanceledException(task);
+                        }
 
-                            // Return the value of the sole field
-                            return (PSCredential)task.Result?["Credential"];
-                        });
+                        // Return the value of the sole field
+                        return (PSCredential)task.Result?["Credential"];
+                    });
 
-                // Run the prompt task and wait for it to return
-                this.WaitForPromptCompletion(
-                    unpackTask,
-                    "PromptForCredential",
-                    cancellationToken);
+            // Run the prompt task and wait for it to return
+            this.WaitForPromptCompletion(
+                unpackTask,
+                "PromptForCredential",
+                cancellationToken);
 
-                return unpackTask.Result;
-            }
-            else
-            {
-                // Notify the caller that there's no implementation
-                throw new NotImplementedException(
-                    "'Get-Credential' is not yet supported in this editor.");
-            }
+            return unpackTask.Result;
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="caption"></param>
+        /// <param name="message"></param>
+        /// <param name="userName"></param>
+        /// <param name="targetName"></param>
+        /// <returns></returns>
         public override PSCredential PromptForCredential(
             string caption,
             string message,
@@ -245,213 +421,363 @@ namespace Microsoft.PowerShell.EditorServices
                 PSCredentialUIOptions.Default);
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <returns></returns>
         public override PSHostRawUserInterface RawUI
         {
             get { return this.rawUserInterface; }
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <returns></returns>
         public override string ReadLine()
         {
-            if (this.consoleHost != null)
-            {
-                CancellationTokenSource cancellationToken = new CancellationTokenSource();
+            CancellationTokenSource cancellationToken = new CancellationTokenSource();
 
-                Task<string> promptTask =
-                    this.consoleHost
-                        .GetInputPromptHandler()
-                        .PromptForInput(cancellationToken.Token);
+            Task<string> promptTask =
+                this.CreateInputPromptHandler()
+                    .PromptForInput(cancellationToken.Token);
 
-                // Run the prompt task and wait for it to return
-                this.WaitForPromptCompletion(
-                    promptTask,
-                    "ReadLine",
-                    cancellationToken);
+            // Run the prompt task and wait for it to return
+            this.WaitForPromptCompletion(
+                promptTask,
+                "ReadLine",
+                cancellationToken);
 
-                return promptTask.Result;
-            }
-            else
-            {
-                // Notify the caller that there's no implementation
-                throw new NotImplementedException();
-            }
+            return promptTask.Result;
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <returns></returns>
         public override SecureString ReadLineAsSecureString()
         {
-            if (this.consoleHost != null)
-            {
-                CancellationTokenSource cancellationToken = new CancellationTokenSource();
+            CancellationTokenSource cancellationToken = new CancellationTokenSource();
 
-                Task<SecureString> promptTask =
-                    this.consoleHost
-                        .GetInputPromptHandler()
-                        .PromptForSecureInput(cancellationToken.Token);
+            Task<SecureString> promptTask =
+                this.CreateInputPromptHandler()
+                    .PromptForSecureInput(cancellationToken.Token);
 
-                // Run the prompt task and wait for it to return
-                this.WaitForPromptCompletion(
-                    promptTask,
-                    "ReadLineAsSecureString",
-                    cancellationToken);
+            // Run the prompt task and wait for it to return
+            this.WaitForPromptCompletion(
+                promptTask,
+                "ReadLineAsSecureString",
+                cancellationToken);
 
-                return promptTask.Result;
-            }
-            else
-            {
-                // Notify the caller that there's no implementation
-                throw new NotImplementedException();
-            }
+            return promptTask.Result;
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="foregroundColor"></param>
+        /// <param name="backgroundColor"></param>
+        /// <param name="value"></param>
         public override void Write(
             ConsoleColor foregroundColor,
             ConsoleColor backgroundColor,
             string value)
         {
-            if (this.consoleHost != null)
-            {
-                this.consoleHost.WriteOutput(
-                    value,
-                    false,
-                    OutputType.Normal,
-                    foregroundColor,
-                    backgroundColor);
-            }
+            this.WriteOutput(
+                value,
+                false,
+                OutputType.Normal,
+                foregroundColor,
+                backgroundColor);
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="value"></param>
         public override void Write(string value)
         {
-            if (this.consoleHost != null)
-            {
-                this.consoleHost.WriteOutput(
-                    value,
-                    false,
-                    OutputType.Normal,
-                    this.rawUserInterface.ForegroundColor,
-                    this.rawUserInterface.BackgroundColor);
-            }
+            this.WriteOutput(
+                value,
+                false,
+                OutputType.Normal,
+                this.rawUserInterface.ForegroundColor,
+                this.rawUserInterface.BackgroundColor);
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="value"></param>
         public override void WriteLine(string value)
         {
-            if (this.consoleHost != null)
-            {
-                this.consoleHost.WriteOutput(
-                    value,
-                    true,
-                    OutputType.Normal,
-                    this.rawUserInterface.ForegroundColor,
-                    this.rawUserInterface.BackgroundColor);
-            }
+            this.WriteOutput(
+                value,
+                true,
+                OutputType.Normal,
+                this.rawUserInterface.ForegroundColor,
+                this.rawUserInterface.BackgroundColor);
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="message"></param>
         public override void WriteDebugLine(string message)
         {
-            if (this.consoleHost != null)
-            {
-                this.consoleHost.WriteOutput(
-                    DebugMessagePrefix + message,
-                    true,
-                    OutputType.Debug,
-                    foregroundColor: ConsoleColor.Yellow);
-            }
+            this.WriteOutput(
+                DebugMessagePrefix + message,
+                true,
+                OutputType.Debug,
+                foregroundColor: ConsoleColor.Yellow);
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="message"></param>
         public override void WriteVerboseLine(string message)
         {
-            if (this.consoleHost != null)
-            {
-                this.consoleHost.WriteOutput(
-                    VerboseMessagePrefix + message,
-                    true,
-                    OutputType.Verbose,
-                    foregroundColor: ConsoleColor.Blue);
-            }
+            this.WriteOutput(
+                VerboseMessagePrefix + message,
+                true,
+                OutputType.Verbose,
+                foregroundColor: ConsoleColor.Blue);
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="message"></param>
         public override void WriteWarningLine(string message)
         {
-            if (this.consoleHost != null)
-            {
-                this.consoleHost.WriteOutput(
-                    WarningMessagePrefix + message,
-                    true,
-                    OutputType.Warning,
-                    foregroundColor: ConsoleColor.Yellow);
-            }
+            this.WriteOutput(
+                WarningMessagePrefix + message,
+                true,
+                OutputType.Warning,
+                foregroundColor: ConsoleColor.Yellow);
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="value"></param>
         public override void WriteErrorLine(string value)
         {
-            if (this.consoleHost != null)
-            {
-                this.consoleHost.WriteOutput(
-                    value,
-                    true,
-                    OutputType.Error,
-                    ConsoleColor.Red);
-            }
+            this.WriteOutput(
+                value,
+                true,
+                OutputType.Error,
+                ConsoleColor.Red);
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="sourceId"></param>
+        /// <param name="record"></param>
         public override void WriteProgress(
             long sourceId,
             ProgressRecord record)
         {
-            if (this.consoleHost != null)
-            {
-                this.consoleHost.UpdateProgress(
-                    sourceId,
-                    ProgressDetails.Create(record));
-            }
+            this.UpdateProgress(
+                sourceId,
+                ProgressDetails.Create(record));
         }
 
         #endregion
 
         #region IHostUISupportsMultipleChoiceSelection Implementation
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="promptCaption"></param>
+        /// <param name="promptMessage"></param>
+        /// <param name="choiceDescriptions"></param>
+        /// <param name="defaultChoices"></param>
+        /// <returns></returns>
         public Collection<int> PromptForChoice(
             string promptCaption,
             string promptMessage,
             Collection<ChoiceDescription> choiceDescriptions,
             IEnumerable<int> defaultChoices)
         {
-            if (this.consoleHost != null)
-            {
-                ChoiceDetails[] choices =
-                    choiceDescriptions
-                        .Select(ChoiceDetails.Create)
-                        .ToArray();
+            ChoiceDetails[] choices =
+                choiceDescriptions
+                    .Select(ChoiceDetails.Create)
+                    .ToArray();
 
-                CancellationTokenSource cancellationToken = new CancellationTokenSource();
-                Task<int[]> promptTask =
-                    this.consoleHost
-                        .GetChoicePromptHandler()
-                        .PromptForChoice(
-                            promptCaption,
-                            promptMessage,
-                            choices,
-                            defaultChoices.ToArray(),
-                            cancellationToken.Token);
+            CancellationTokenSource cancellationToken = new CancellationTokenSource();
+            Task<int[]> promptTask =
+                this.CreateChoicePromptHandler()
+                    .PromptForChoice(
+                        promptCaption,
+                        promptMessage,
+                        choices,
+                        defaultChoices.ToArray(),
+                        cancellationToken.Token);
 
-                // Run the prompt task and wait for it to return
-                this.WaitForPromptCompletion(
-                    promptTask,
-                    "PromptForChoice",
-                    cancellationToken);
+            // Run the prompt task and wait for it to return
+            this.WaitForPromptCompletion(
+                promptTask,
+                "PromptForChoice",
+                cancellationToken);
 
-                // Return the result
-                return new Collection<int>(promptTask.Result.ToList());
-            }
-            else
-            {
-                // Notify the caller that there's no implementation
-                throw new NotImplementedException();
-            }
+            // Return the result
+            return new Collection<int>(promptTask.Result.ToList());
         }
 
         #endregion
 
         #region Private Methods
 
+        private async Task WritePromptStringToHost()
+        {
+            PSCommand promptCommand = new PSCommand().AddScript("prompt");
+
+            string promptString =
+                (await this.powerShellContext.ExecuteCommand<PSObject>(promptCommand, false, false))
+                    .Select(pso => pso.BaseObject)
+                    .OfType<string>()
+                    .FirstOrDefault() ?? "PS> ";
+
+            // Add the [DBG] prefix if we're stopped in the debugger
+            if (this.powerShellContext.IsDebuggerStopped)
+            {
+                promptString =
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "[DBG]: {0}",
+                        promptString);
+            }
+
+            // Update the stored prompt string if the session is remote
+            if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+            {
+                promptString =
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "[{0}]: {1}",
+                        this.powerShellContext.CurrentRunspace.Runspace.ConnectionInfo != null
+                            ? this.powerShellContext.CurrentRunspace.Runspace.ConnectionInfo.ComputerName
+                            : this.powerShellContext.CurrentRunspace.SessionDetails.ComputerName,
+                        promptString);
+            }
+
+            // Write the prompt string
+            this.WriteOutput(promptString, false);
+        }
+
+        private void WriteDebuggerBanner(DebuggerStopEventArgs eventArgs)
+        {
+            // TODO: What do we display when we don't know why we stopped?
+
+            if (eventArgs.Breakpoints.Count > 0)
+            {
+                // The breakpoint classes have nice ToString output so use that
+                this.WriteOutput(
+                    Environment.NewLine + $"Hit {eventArgs.Breakpoints[0].ToString()}\n",
+                    true,
+                    OutputType.Normal,
+                    ConsoleColor.Blue);
+            }
+        }
+
+        private async Task StartReplLoop(CancellationToken cancellationToken)
+        {
+            do
+            {
+                string commandString = null;
+
+                await this.WritePromptStringToHost();
+
+                try
+                {
+                    commandString = await this.ReadCommandLine(cancellationToken);
+                }
+                catch (PipelineStoppedException)
+                {
+                    this.WriteOutput(
+                        "^C",
+                        true,
+                        OutputType.Normal,
+                        foregroundColor: ConsoleColor.Red);
+                }
+                catch (TaskCanceledException)
+                {
+                    // Do nothing here, the while loop condition will exit.
+                }
+                catch (Exception e) // Narrow this if possible
+                {
+                    this.WriteOutput(
+                        $"\n\nAn error occurred while reading input:\n\n{e.ToString()}\n",
+                        true,
+                        OutputType.Error);
+
+                    Logger.WriteException("Caught exception while reading command line", e);
+                }
+
+                if (commandString != null)
+                {
+                    this.WriteOutput(string.Empty);
+
+                    if (!string.IsNullOrWhiteSpace(commandString))
+                    {
+                        var unusedTask =
+                            this.powerShellContext
+                                .ExecuteScriptString(
+                                    commandString,
+                                    false,
+                                    true,
+                                    true)
+                                .ConfigureAwait(false);
+
+                        break;
+                    }
+                }
+            }
+            while (!cancellationToken.IsCancellationRequested);
+        }
+
+        private InputPromptHandler CreateInputPromptHandler()
+        {
+            if (this.activePromptHandler != null)
+            {
+                Logger.Write(
+                    LogLevel.Error,
+                    "Prompt handler requested while another prompt is already active.");
+            }
+
+            InputPromptHandler inputPromptHandler = this.OnCreateInputPromptHandler();
+            this.activePromptHandler = inputPromptHandler;
+            this.activePromptHandler.PromptCancelled += activePromptHandler_PromptCancelled;
+
+            return inputPromptHandler;
+        }
+
+        private ChoicePromptHandler CreateChoicePromptHandler()
+        {
+            if (this.activePromptHandler != null)
+            {
+                Logger.Write(
+                    LogLevel.Error,
+                    "Prompt handler requested while another prompt is already active.");
+            }
+
+            ChoicePromptHandler choicePromptHandler = this.OnCreateChoicePromptHandler();
+            this.activePromptHandler = choicePromptHandler;
+            this.activePromptHandler.PromptCancelled += activePromptHandler_PromptCancelled;
+
+            return choicePromptHandler;
+        }
+
+        private void activePromptHandler_PromptCancelled(object sender, EventArgs e)
+        {
+            // Clean up the existing prompt
+            this.activePromptHandler.PromptCancelled -= activePromptHandler_PromptCancelled;
+            this.activePromptHandler = null;
+        }
         private void WaitForPromptCompletion<TResult>(
             Task<TResult> promptTask,
             string promptFunctionName,
@@ -468,7 +794,7 @@ namespace Microsoft.PowerShell.EditorServices
                     // The Wait() call has timed out, cancel the prompt
                     cancellationToken.Cancel();
 
-                    this.consoleHost.WriteOutput("\r\nPrompt has been cancelled due to a timeout.\r\n");
+                    this.WriteOutput("\r\nPrompt has been cancelled due to a timeout.\r\n");
                     throw new PipelineStoppedException();
                 }
             }
@@ -476,7 +802,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 // Find the right InnerException
                 Exception innerException = e.InnerException;
-                if (innerException is AggregateException)
+                while (innerException is AggregateException)
                 {
                     innerException = innerException.InnerException;
                 }
@@ -500,6 +826,64 @@ namespace Microsoft.PowerShell.EditorServices
                             "{0} failed, check inner exception for details",
                             promptFunctionName),
                         innerException);
+                }
+            }
+        }
+
+        private void PowerShellContext_DebuggerStop(object sender, System.Management.Automation.DebuggerStopEventArgs e)
+        {
+            // Cancel any existing prompt first
+            this.CancelCommandPrompt();
+
+            this.WriteDebuggerBanner(e);
+            this.ShowCommandPrompt();
+        }
+
+        private void PowerShellContext_DebuggerResumed(object sender, System.Management.Automation.DebuggerResumeAction e)
+        {
+            this.CancelCommandPrompt();
+        }
+
+        private void PowerShellContext_ExecutionStatusChanged(object sender, ExecutionStatusChangedEventArgs eventArgs)
+        {
+            // The command loop should only be manipulated if it's already started
+            if (this.IsCommandLoopRunning)
+            {
+                if (eventArgs.ExecutionStatus == ExecutionStatus.Aborted)
+                {
+                    // When aborted, cancel any lingering prompts
+                    if (this.activePromptHandler != null)
+                    {
+                        this.activePromptHandler.CancelPrompt();
+                        this.WriteOutput(string.Empty);
+                    }
+                }
+                else if (
+                    eventArgs.ExecutionOptions.WriteOutputToHost ||
+                    eventArgs.ExecutionOptions.InterruptCommandPrompt)
+                {
+                    // Any command which writes output to the host will affect
+                    // the display of the prompt
+                    if (eventArgs.ExecutionStatus != ExecutionStatus.Running)
+                    {
+                        // Execution has completed, start the input prompt
+                        this.ShowCommandPrompt();
+                    }
+                    else
+                    {
+                        // A new command was started, cancel the input prompt
+                        this.CancelCommandPrompt();
+                        this.WriteOutput(string.Empty);
+                    }
+                }
+                else if (
+                    eventArgs.ExecutionOptions.WriteErrorsToHost &&
+                    (eventArgs.ExecutionStatus == ExecutionStatus.Failed ||
+                        eventArgs.HadErrors))
+                {
+                    this.CancelCommandPrompt();
+                    this.WriteOutput(string.Empty);
+                    this.ShowCommandPrompt();
                 }
             }
         }

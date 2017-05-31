@@ -26,9 +26,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             Shutdown
         }
 
-        private ProtocolEndpointState currentState;
         private int currentMessageId;
         private ChannelBase protocolChannel;
+        private ProtocolEndpointState currentState;
+        private IMessageDispatcher messageDispatcher;
         private AsyncContextThread messageLoopThread;
         private TaskCompletionSource<bool> endpointExitedTask;
         private SynchronizationContext originalSynchronizationContext;
@@ -54,13 +55,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         protected ILogger Logger { get; private set; }
 
         /// <summary>
-        /// Gets the MessageDispatcher which allows registration of
-        /// handlers for requests, responses, and events that are
-        /// transmitted through the channel.
-        /// </summary>
-        private MessageDispatcher MessageDispatcher { get; set; }
-
-        /// <summary>
         /// Initializes an instance of the protocol server using the
         /// specified channel for communication.
         /// </summary>
@@ -72,13 +66,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         /// </param>
         public ProtocolEndpoint(
             ChannelBase protocolChannel,
-            MessageDispatcher messageDispatcher,
+            IMessageDispatcher messageDispatcher,
             ILogger logger)
         {
             this.protocolChannel = protocolChannel;
-            this.MessageDispatcher = messageDispatcher;
-            this.originalSynchronizationContext = SynchronizationContext.Current;
+            this.messageDispatcher = messageDispatcher;
             this.Logger = logger;
+
+            this.originalSynchronizationContext = SynchronizationContext.Current;
         }
 
         /// <summary>
@@ -247,36 +242,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Message Handling
 
-        public void SetRequestHandler<TParams, TResult, TError, TRegistrationOptions>(
-            RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
-            Func<TParams, RequestContext<TResult>, Task> requestHandler)
-        {
-            this.MessageDispatcher.SetRequestHandler(
-                requestType,
-                requestHandler);
-        }
-
-        public void SetEventHandler<TParams, TRegistrationOptions>(
-            NotificationType<TParams, TRegistrationOptions> eventType,
-            Func<TParams, EventContext, Task> eventHandler)
-        {
-            this.MessageDispatcher.SetEventHandler(
-                eventType,
-                eventHandler,
-                false);
-        }
-
-        public void SetEventHandler<TParams, TRegistrationOptions>(
-            NotificationType<TParams, TRegistrationOptions> eventType,
-            Func<TParams, EventContext, Task> eventHandler,
-            bool overrideExisting)
-        {
-            this.MessageDispatcher.SetEventHandler(
-                eventType,
-                eventHandler,
-                overrideExisting);
-        }
-
         private void HandleResponse(Message responseMessage)
         {
             TaskCompletionSource<Message> pendingRequestTask = null;
@@ -411,7 +376,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     else
                     {
                         // Process the message
-                        await this.MessageDispatcher.DispatchMessage(
+                        await this.messageDispatcher.DispatchMessage(
                             newMessage,
                             this.protocolChannel.MessageWriter);
                     }
@@ -426,7 +391,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 Logger.Write(
                     LogLevel.Error,
                     string.Format(
-                        "MessageDispatcher loop terminated due to unhandled exception:\r\n\r\n{0}",
+                        "ProtocolEndpoint message loop terminated due to unhandled exception:\r\n\r\n{0}",
                         listenTask.Exception.ToString()));
 
                 this.OnUnhandledException(listenTask.Exception);

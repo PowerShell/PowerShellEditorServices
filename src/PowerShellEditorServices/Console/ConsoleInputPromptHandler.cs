@@ -15,11 +15,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
     /// Provides a standard implementation of InputPromptHandler
     /// for use in the interactive console (REPL).
     /// </summary>
-    public class ConsoleInputPromptHandler : InputPromptHandler
+    public abstract class ConsoleInputPromptHandler : InputPromptHandler
     {
         #region Private Fields
 
-        private IConsoleHost consoleHost;
+        /// <summary>
+        /// The IHostOutput instance to use for this prompt.
+        /// </summary>
+        protected IHostOutput hostOutput;
 
         #endregion
 
@@ -28,15 +31,17 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Creates an instance of the ConsoleInputPromptHandler class.
         /// </summary>
-        /// <param name="consoleHost">
-        /// The IConsoleHost implementation to use for writing to the
+        /// <param name="hostOutput">
+        /// The IHostOutput implementation to use for writing to the
         /// console.
         /// </param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public ConsoleInputPromptHandler(IConsoleHost consoleHost, ILogger logger)
-            : base(logger)
+        public ConsoleInputPromptHandler(
+            IHostOutput hostOutput,
+            ILogger logger)
+                : base(logger)
         {
-            this.consoleHost = consoleHost;
+            this.hostOutput = hostOutput;
         }
 
         #endregion
@@ -53,12 +58,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             if (!string.IsNullOrEmpty(caption))
             {
-                this.consoleHost.WriteOutput(caption, true);
+                this.hostOutput.WriteOutput(caption, true);
             }
 
             if (!string.IsNullOrEmpty(message))
             {
-                this.consoleHost.WriteOutput(message, true);
+                this.hostOutput.WriteOutput(message, true);
             }
         }
 
@@ -73,7 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             // In this case don't write anything
             if (!string.IsNullOrEmpty(fieldDetails.Name))
             {
-                this.consoleHost.WriteOutput(
+                this.hostOutput.WriteOutput(
                     fieldDetails.Name + ": ",
                     false);
             }
@@ -89,33 +94,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </param>
         protected override void ShowErrorMessage(Exception e)
         {
-            this.consoleHost.WriteOutput(
+            this.hostOutput.WriteOutput(
                 e.Message,
                 true,
                 OutputType.Error);
         }
 
-        /// <summary>
-        /// Reads an input string from the user.
-        /// </summary>
-        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
-        /// <returns>A Task that can be awaited to get the user's response.</returns>
-        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
-        {
-            return this.consoleHost.ReadSimpleLine(cancellationToken);
-        }
-
-        /// <summary>
-        /// Reads a SecureString from the user.
-        /// </summary>
-        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
-        /// <returns>A Task that can be awaited to get the user's response.</returns>
-        protected override Task<SecureString> ReadSecureString(CancellationToken cancellationToken)
-        {
-            return this.consoleHost.ReadSecureLine(cancellationToken);
-        }
-
         #endregion
     }
 }
-

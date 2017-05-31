@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -195,6 +195,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 CreateSession(
                     this.hostDetails,
                     this.profilePaths,
+                    protocolEndpoint,
+                    messageDispatcher,
                     this.enableConsoleRepl);
 
             this.languageServer =
@@ -264,7 +266,10 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     this.CreateDebugSession(
                         this.hostDetails,
                         profilePaths,
-                        this.languageServer?.EditorOperations);
+                        protocolEndpoint,
+                        messageDispatcher,
+                        this.languageServer?.EditorOperations,
+                        false);
 
                 this.debugAdapter =
                     new DebugAdapter(
@@ -318,23 +323,29 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private EditorSession CreateSession(
             HostDetails hostDetails,
             ProfilePaths profilePaths,
+            IMessageSender messageSender,
+            IMessageHandlers messageHandlers,
             bool enableConsoleRepl)
         {
             EditorSession editorSession = new EditorSession(this.logger);
             PowerShellContext powerShellContext = new PowerShellContext(this.logger);
 
-            ConsoleServicePSHost psHost =
-                new ConsoleServicePSHost(
+            EditorServicesPSHostUserInterface hostUserInterface =
+                enableConsoleRepl
+                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, this.logger)
+                    : new ProtocolPSHostUserInterface(powerShellContext, messageSender, messageHandlers, this.logger);
+
+            EditorServicesPSHost psHost =
+                new EditorServicesPSHost(
                     powerShellContext,
                     hostDetails,
-                    enableConsoleRepl);
+                    hostUserInterface,
+                    this.logger);
 
             Runspace initialRunspace = PowerShellContext.CreateRunspace(psHost);
-            powerShellContext.Initialize(profilePaths, initialRunspace, true, psHost.ConsoleService);
+            powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
 
-            editorSession.StartSession(
-                powerShellContext,
-                psHost.ConsoleService);
+            editorSession.StartSession(powerShellContext, hostUserInterface);
 
             return editorSession;
         }
@@ -342,23 +353,31 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private EditorSession CreateDebugSession(
             HostDetails hostDetails,
             ProfilePaths profilePaths,
-            IEditorOperations editorOperations)
+            IMessageSender messageSender,
+            IMessageHandlers messageHandlers,
+            IEditorOperations editorOperations,
+            bool enableConsoleRepl)
         {
             EditorSession editorSession = new EditorSession(this.logger);
             PowerShellContext powerShellContext = new PowerShellContext(this.logger);
 
-            ConsoleServicePSHost psHost =
-                new ConsoleServicePSHost(
+            EditorServicesPSHostUserInterface hostUserInterface =
+                enableConsoleRepl
+                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, this.logger)
+                    : new ProtocolPSHostUserInterface(powerShellContext, messageSender, messageHandlers, this.logger);
+
+            EditorServicesPSHost psHost =
+                new EditorServicesPSHost(
                     powerShellContext,
                     hostDetails,
-                    enableConsoleRepl);
+                    hostUserInterface,
+                    this.logger);
 
             Runspace initialRunspace = PowerShellContext.CreateRunspace(psHost);
-            powerShellContext.Initialize(profilePaths, initialRunspace, true, psHost.ConsoleService);
+            powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
 
             editorSession.StartDebugSession(
                 powerShellContext,
-                psHost.ConsoleService,
                 editorOperations);
 
             return editorSession;

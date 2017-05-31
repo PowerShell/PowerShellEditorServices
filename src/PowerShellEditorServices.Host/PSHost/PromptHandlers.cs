@@ -12,51 +12,24 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Security;
 
-namespace Microsoft.PowerShell.EditorServices.Protocol.Server
+namespace Microsoft.PowerShell.EditorServices.Host
 {
-    internal class ProtocolPromptHandlerContext : IPromptHandlerContext
-    {
-        private IMessageSender messageSender;
-        private ConsoleService consoleService;
-
-        public ProtocolPromptHandlerContext(
-            IMessageSender messageSender,
-            ConsoleService consoleService)
-        {
-            this.messageSender = messageSender;
-            this.consoleService = consoleService;
-        }
-
-        public ChoicePromptHandler GetChoicePromptHandler()
-        {
-            return new ProtocolChoicePromptHandler(
-                this.messageSender,
-                this.consoleService,
-                Logger.CurrentLogger);
-        }
-
-        public InputPromptHandler GetInputPromptHandler()
-        {
-            return new ProtocolInputPromptHandler(
-                this.messageSender,
-                this.consoleService);
-        }
-    }
-
     internal class ProtocolChoicePromptHandler : ConsoleChoicePromptHandler
     {
+        private IHostInput hostInput;
         private IMessageSender messageSender;
-        private ConsoleService consoleService;
         private TaskCompletionSource<string> readLineTask;
 
         public ProtocolChoicePromptHandler(
             IMessageSender messageSender,
-            ConsoleService consoleService,
+            IHostInput hostInput,
+            IHostOutput hostOutput,
             ILogger logger)
-                : base(consoleService, logger)
+                : base(hostOutput, logger)
         {
+            this.hostInput = hostInput;
+            this.hostOutput = hostOutput;
             this.messageSender = messageSender;
-            this.consoleService = consoleService;
         }
 
         protected override void ShowPrompt(PromptStyle promptStyle)
@@ -93,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                 if (!response.PromptCancelled)
                 {
-                    this.consoleService.WriteOutput(
+                    this.hostOutput.WriteOutput(
                         response.ResponseText,
                         OutputType.Normal);
 
@@ -102,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 else
                 {
                     // Cancel the current prompt
-                    this.consoleService.SendControlC();
+                    this.hostInput.SendControlC();
                 }
             }
             else
@@ -117,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
 
                 // Cancel the current prompt
-                this.consoleService.SendControlC();
+                this.hostInput.SendControlC();
             }
 
             this.readLineTask = null;
@@ -126,37 +99,24 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
     internal class ProtocolInputPromptHandler : ConsoleInputPromptHandler
     {
+        private IHostInput hostInput;
         private IMessageSender messageSender;
-        private ConsoleService consoleService;
         private TaskCompletionSource<string> readLineTask;
 
         public ProtocolInputPromptHandler(
             IMessageSender messageSender,
-            ConsoleService consoleService)
-                : base(
-                    consoleService,
-                    Microsoft.PowerShell.EditorServices.Utility.Logger.CurrentLogger)
+            IHostInput hostInput,
+            IHostOutput hostOutput,
+            ILogger logger)
+                : base(hostOutput, logger)
         {
+            this.hostInput = hostInput;
+            this.hostOutput = hostOutput;
             this.messageSender = messageSender;
-            this.consoleService = consoleService;
-        }
-
-        protected override void ShowErrorMessage(Exception e)
-        {
-            // Use default behavior for writing the error message
-            base.ShowErrorMessage(e);
-        }
-
-        protected override void ShowPromptMessage(string caption, string message)
-        {
-            // Use default behavior for writing the prompt message
-            base.ShowPromptMessage(caption, message);
         }
 
         protected override void ShowFieldPrompt(FieldDetails fieldDetails)
         {
-            // Write the prompt to the console first so that there's a record
-            // of it occurring
             base.ShowFieldPrompt(fieldDetails);
 
             messageSender
@@ -186,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                 if (!response.PromptCancelled)
                 {
-                    this.consoleService.WriteOutput(
+                    this.hostOutput.WriteOutput(
                         response.ResponseText,
                         OutputType.Normal);
 
@@ -195,7 +155,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 else
                 {
                     // Cancel the current prompt
-                    this.consoleService.SendControlC();
+                    this.hostInput.SendControlC();
                 }
             }
             else
@@ -210,11 +170,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
 
                 // Cancel the current prompt
-                this.consoleService.SendControlC();
+                this.hostInput.SendControlC();
             }
 
             this.readLineTask = null;
         }
+
+        protected override Task<SecureString> ReadSecureString(CancellationToken cancellationToken)
+        {
+            // TODO: Write a message to the console
+            throw new NotImplementedException();
+        }
     }
 }
-

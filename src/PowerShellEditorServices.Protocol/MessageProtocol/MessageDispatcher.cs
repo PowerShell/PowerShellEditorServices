@@ -42,17 +42,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             Func<TParams, RequestContext<TResult>, Task> requestHandler)
         {
-            this.SetRequestHandler(
-                requestType,
-                requestHandler,
-                false);
-        }
+            bool overrideExisting = true;
 
-        public void SetRequestHandler<TParams, TResult, TError, TRegistrationOptions>(
-            RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
-            Func<TParams, RequestContext<TResult>, Task> requestHandler,
-            bool overrideExisting)
-        {
             if (overrideExisting)
             {
                 // Remove the existing handler so a new one can be set
@@ -95,17 +86,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             NotificationType<TParams, TRegistrationOptions> eventType,
             Func<TParams, EventContext, Task> eventHandler)
         {
-            this.SetEventHandler(
-                eventType,
-                eventHandler,
-                true);
-        }
+            bool overrideExisting = true;
 
-        public void SetEventHandler<TParams, TRegistrationOptions>(
-            NotificationType<TParams, TRegistrationOptions> eventType,
-            Func<TParams, EventContext, Task> eventHandler,
-            bool overrideExisting)
-        {
             if (overrideExisting)
             {
                 // Remove the existing handler so a new one can be set

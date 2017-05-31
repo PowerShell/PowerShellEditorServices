@@ -4,17 +4,14 @@
 //
 
 using System;
-using System.Security;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Console
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// Provides a simplified interface for implementing a PowerShell
-    /// host that will be used for an interactive console.
+    /// Provides a simplified interface for writing output to a
+    /// PowerShell host implementation.
     /// </summary>
-    public interface IConsoleHost
+    public interface IHostOutput
     {
         /// <summary>
         /// Writes output of the given type to the user interface with
@@ -42,83 +39,34 @@ namespace Microsoft.PowerShell.EditorServices.Console
             OutputType outputType,
             ConsoleColor foregroundColor,
             ConsoleColor backgroundColor);
-
-        /// <summary>
-        /// Creates a ChoicePromptHandler to use for displaying a
-        /// choice prompt to the user.
-        /// </summary>
-        /// <returns>A new ChoicePromptHandler instance.</returns>
-        ChoicePromptHandler GetChoicePromptHandler();
-
-        /// <summary>
-        /// Creates an InputPrompt handle to use for displaying input
-        /// prompts to the user.
-        /// </summary>
-        /// <returns>A new InputPromptHandler instance.</returns>
-        InputPromptHandler GetInputPromptHandler();
-
-        /// <summary>
-        /// Reads an input string from the user.
-        /// </summary>
-        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
-        /// <returns>A Task that can be awaited to get the user's response.</returns>
-        Task<string> ReadSimpleLine(CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Reads a SecureString from the user.
-        /// </summary>
-        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
-        /// <returns>A Task that can be awaited to get the user's response.</returns>
-        Task<SecureString> ReadSecureLine(CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Cancels the currently executing command or prompt.
-        /// </summary>
-        void SendControlC();
-
-        /// <summary>
-        /// Sends a progress update event to the user.
-        /// </summary>
-        /// <param name="sourceId">The source ID of the progress event.</param>
-        /// <param name="progressDetails">The details of the activity's current progress.</param>
-        void UpdateProgress(
-            long sourceId,
-            ProgressDetails progressDetails);
-
-        /// <summary>
-        /// Notifies the IConsoleHost implementation that the PowerShell
-        /// session is exiting.
-        /// </summary>
-        /// <param name="exitCode">The error code that identifies the session exit result.</param>
-        void ExitSession(int exitCode);
     }
 
     /// <summary>
-    /// Provides helpful extension methods for the IConsoleHost interface.
+    /// Provides helpful extension methods for the IHostOutput interface.
     /// </summary>
-    public static class IConsoleHostExtensions
+    public static class IHostOutputExtensions
     {
         /// <summary>
         /// Writes normal output with a newline to the user interface.
         /// </summary>
-        /// <param name="consoleHost">
-        /// The IConsoleHost implementation to use for WriteOutput calls.
+        /// <param name="hostOutput">
+        /// The IHostOutput implementation to use for WriteOutput calls.
         /// </param>
         /// <param name="outputString">
         /// The output string to be written.
         /// </param>
         public static void WriteOutput(
-            this IConsoleHost consoleHost,
+            this IHostOutput hostOutput,
             string outputString)
         {
-            consoleHost.WriteOutput(outputString, true);
+            hostOutput.WriteOutput(outputString, true);
         }
 
         /// <summary>
         /// Writes normal output to the user interface.
         /// </summary>
-        /// <param name="consoleHost">
-        /// The IConsoleHost implementation to use for WriteOutput calls.
+        /// <param name="hostOutput">
+        /// The IHostOutput implementation to use for WriteOutput calls.
         /// </param>
         /// <param name="outputString">
         /// The output string to be written.
@@ -127,11 +75,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// If true, a newline should be appended to the output's contents.
         /// </param>
         public static void WriteOutput(
-            this IConsoleHost consoleHost,
+            this IHostOutput hostOutput,
             string outputString,
             bool includeNewLine)
         {
-            consoleHost.WriteOutput(
+            hostOutput.WriteOutput(
                 outputString,
                 includeNewLine,
                 OutputType.Normal);
@@ -141,8 +89,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// Writes output of a particular type to the user interface
         /// with a newline ending.
         /// </summary>
-        /// <param name="consoleHost">
-        /// The IConsoleHost implementation to use for WriteOutput calls.
+        /// <param name="hostOutput">
+        /// The IHostOutput implementation to use for WriteOutput calls.
         /// </param>
         /// <param name="outputString">
         /// The output string to be written.
@@ -151,11 +99,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// Specifies the type of output to be written.
         /// </param>
         public static void WriteOutput(
-            this IConsoleHost consoleHost,
+            this IHostOutput hostOutput,
             string outputString,
             OutputType outputType)
         {
-            consoleHost.WriteOutput(
+            hostOutput.WriteOutput(
                 outputString,
                 true,
                 OutputType.Normal);
@@ -164,8 +112,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Writes output of a particular type to the user interface.
         /// </summary>
-        /// <param name="consoleHost">
-        /// The IConsoleHost implementation to use for WriteOutput calls.
+        /// <param name="hostOutput">
+        /// The IHostOutput implementation to use for WriteOutput calls.
         /// </param>
         /// <param name="outputString">
         /// The output string to be written.
@@ -177,12 +125,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// Specifies the type of output to be written.
         /// </param>
         public static void WriteOutput(
-            this IConsoleHost consoleHost,
+            this IHostOutput hostOutput,
             string outputString,
             bool includeNewLine,
             OutputType outputType)
         {
-            consoleHost.WriteOutput(
+            hostOutput.WriteOutput(
                 outputString,
                 includeNewLine,
                 outputType,
@@ -194,8 +142,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// Writes output of a particular type to the user interface using
         /// a particular foreground color.
         /// </summary>
-        /// <param name="consoleHost">
-        /// The IConsoleHost implementation to use for WriteOutput calls.
+        /// <param name="hostOutput">
+        /// The IHostOutput implementation to use for WriteOutput calls.
         /// </param>
         /// <param name="outputString">
         /// The output string to be written.
@@ -210,13 +158,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// Specifies the foreground color of the output to be written.
         /// </param>
         public static void WriteOutput(
-            this IConsoleHost consoleHost,
+            this IHostOutput hostOutput,
             string outputString,
             bool includeNewLine,
             OutputType outputType,
             ConsoleColor foregroundColor)
         {
-            consoleHost.WriteOutput(
+            hostOutput.WriteOutput(
                 outputString,
                 includeNewLine,
                 outputType,

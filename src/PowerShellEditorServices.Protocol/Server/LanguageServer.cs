@@ -8,7 +8,6 @@ using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Templates;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
@@ -20,8 +19,6 @@ using System.Management.Automation;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
-using System.Collections;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
@@ -35,7 +32,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private EditorSession editorSession;
         private IMessageSender messageSender;
         private IMessageHandlers messageHandlers;
-        private OutputDebouncer outputDebouncer;
         private LanguageServerEditorOperations editorOperations;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
 
@@ -76,21 +72,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.editorSession.StartDebugService(this.editorOperations);
             this.editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStopped;
-
-            if (!this.editorSession.ConsoleService.EnableConsoleRepl)
-            {
-                // TODO: This should be handled in ProtocolPSHost
-                this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
-
-                // Always send console prompts through the UI in the language service
-                this.editorSession.ConsoleService.PushPromptHandlerContext(
-                    new ProtocolPromptHandlerContext(
-                        this.messageSender,
-                        this.editorSession.ConsoleService));
-            }
-
-            // Set up the output debouncer to throttle output event writes
-            this.outputDebouncer = new OutputDebouncer(this.messageSender);
         }
 
         /// <summary>
@@ -136,8 +117,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(NewProjectFromTemplateRequest.Type, this.HandleNewProjectFromTemplateRequest);
             this.messageHandlers.SetRequestHandler(GetProjectTemplatesRequest.Type, this.HandleGetProjectTemplatesRequest);
 
-            this.messageHandlers.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
-
             this.messageHandlers.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
             this.messageHandlers.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
 
@@ -153,18 +132,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 this.editorOperations).Wait();
         }
 
-        protected async Task Stop()
+        protected Task Stop()
         {
-            // Stop the interactive terminal
-            // TODO: This can happen at the host level
-            this.editorSession.ConsoleService.CancelReadLoop();
-
-            // Make sure remaining output is flushed before exiting
-            await this.outputDebouncer.Flush();
-
             Logger.Write(LogLevel.Normal, "Language service is shutting down...");
 
             // TODO: Raise an event so that the host knows to shut down
+
+            return Task.FromResult(true);
         }
 
         #region Built-in Message Handlers
@@ -605,8 +579,7 @@ function __Expand-Alias {
             if (!this.consoleReplStarted)
             {
                 // Start the interactive terminal
-                // TODO: This can happen at the host level
-                this.editorSession.ConsoleService.StartReadLoop();
+                this.editorSession.HostInput.StartCommandLoop();
                 this.consoleReplStarted = true;
             }
 
@@ -1177,44 +1150,6 @@ function __Expand-Alias {
                 codeActionCommands.ToArray());
         }
 
-        protected Task HandleEvaluateRequest(
-            DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
-            RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
-        {
-            // We don't await the result of the execution here because we want
-            // to be able to receive further messages while the current script
-            // is executing.  This important in cases where the pipeline thread
-            // gets blocked by something in the script like a prompt to the user.
-            var executeTask =
-                this.editorSession.PowerShellContext.ExecuteScriptString(
-                    evaluateParams.Expression,
-                    writeInputToHost: true,
-                    writeOutputToHost: true,
-                    addToHistory: true);
-
-            // Return the execution result after the task completes so that the
-            // caller knows when command execution completed.
-            executeTask.ContinueWith(
-                (task) =>
-                {
-                    // Start the command loop again
-                    // TODO: This can happen inside the PSHost
-                    this.editorSession.ConsoleService.StartReadLoop();
-
-                    // Return an empty result since the result value is irrelevant
-                    // for this request in the LanguageServer
-                    return
-                    requestContext.SendResult(
-                        new DebugAdapterMessages.EvaluateResponseBody
-                        {
-                            Result = "",
-                            VariablesReference = 0
-                        });
-                });
-
-            return Task.FromResult(true);
-        }
-
         #endregion
 
         #region Event Handlers
@@ -1224,12 +1159,6 @@ function __Expand-Alias {
             await this.messageSender.SendEvent(
                 RunspaceChangedEvent.Type,
                 new Protocol.LanguageServer.RunspaceDetails(e.NewRunspace));
-        }
-
-        private async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
-        {
-            // Queue the output for writing
-            await this.outputDebouncer.Invoke(e);
         }
 
         private async void ExtensionService_ExtensionAdded(object sender, EditorCommand e)
