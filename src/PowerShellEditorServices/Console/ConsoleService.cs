@@ -224,7 +224,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
             PSCommand promptCommand = new PSCommand().AddScript("prompt");
 
             string promptString =
-                (await this.powerShellContext.ExecuteCommand<object>(promptCommand, false, false))
+                (await this.powerShellContext.ExecuteCommand<PSObject>(promptCommand, false, false))
+                    .Select(pso => pso.BaseObject)
                     .OfType<string>()
                     .FirstOrDefault() ?? "PS> ";
 
