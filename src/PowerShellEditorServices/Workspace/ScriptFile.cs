@@ -193,6 +193,21 @@ namespace Microsoft.PowerShell.EditorServices
         #region Public Methods
 
         /// <summary>
+        /// Get the lines in a string.
+        /// </summary>
+        /// <param name="text">Input string to be split up into lines.</param>
+        /// <returns>The lines in the string.</returns>
+        public static IEnumerable<string> GetLines(string text)
+        {
+            if (text == null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
+
+            return text.Split('\n').Select(line => line.TrimEnd('\r'));
+        }
+
+        /// <summary>
         /// Gets a line from the file's contents.
         /// </summary>
         /// <param name="lineNumber">The 1-based line number in the file.</param>
@@ -479,11 +494,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             // Split the file contents into lines and trim
             // any carriage returns from the strings.
-            this.FileLines =
-                fileContents
-                    .Split('\n')
-                    .Select(line => line.TrimEnd('\r'))
-                    .ToList();
+            this.FileLines = GetLines(fileContents).ToList();
 
             // Parse the contents to get syntax tree and errors
             this.ParseFileContents();
