@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     /// Throttles output written via OutputEvents by batching all output
     /// written within a short time window and writing it all out at once.
     /// </summary>
-    internal class OutputDebouncer : AsyncDebouncer<OutputWrittenEventArgs>
+    public class OutputDebouncer : AsyncDebouncer<OutputWrittenEventArgs>
     {
         #region Private Fields
 
@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Add to string (and include newline)
             this.currentOutputString +=
                 output.OutputText +
-                (output.IncludeNewLine ? 
+                (output.IncludeNewLine ?
                     System.Environment.NewLine :
                     string.Empty);
         }

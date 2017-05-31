@@ -17,35 +17,15 @@ namespace Microsoft.PowerShell.EditorServices
     /// ConsoleService and routes its calls to an IConsoleHost
     /// implementation.
     /// </summary>
-    public class ConsoleServicePSHost : PSHost, IHostSupportsInteractiveSession
+    public class EditorServicesPSHost : PSHost, IHostSupportsInteractiveSession
     {
         #region Private Fields
 
+        private ILogger Logger;
         private HostDetails hostDetails;
-        private IConsoleHost consoleHost;
-        private bool isNativeApplicationRunning;
         private Guid instanceId = Guid.NewGuid();
-        private ConsoleServicePSHostUserInterface hostUserInterface;
+        private EditorServicesPSHostUserInterface hostUserInterface;
         private IHostSupportsInteractiveSession hostSupportsInteractiveSession;
-
-        #endregion
-
-        #region Properties
-
-        internal IConsoleHost ConsoleHost
-        {
-            get { return this.consoleHost; }
-            set
-            {
-                this.consoleHost = value;
-                this.hostUserInterface.ConsoleHost = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets the ConsoleServices owned by this host.
-        /// </summary>
-        public ConsoleService ConsoleService { get; private set; }
 
         #endregion
 
@@ -61,35 +41,20 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="hostDetails">
         /// Provides details about the host application.
         /// </param>
-        /// <param name="enableConsoleRepl">
-        /// Enables a terminal-based REPL for this session.
+        /// <param name="hostUserInterface">
+        /// The EditorServicesPSHostUserInterface implementation to use for this host.
         /// </param>
-        public ConsoleServicePSHost(
+        /// <param name="logger">An ILogger implementation to use for this host.</param>
+        public EditorServicesPSHost(
             PowerShellContext powerShellContext,
             HostDetails hostDetails,
-            bool enableConsoleRepl)
+            EditorServicesPSHostUserInterface hostUserInterface,
+            ILogger logger)
         {
+            this.Logger = logger;
             this.hostDetails = hostDetails;
-            this.hostUserInterface = new ConsoleServicePSHostUserInterface(enableConsoleRepl);
+            this.hostUserInterface = hostUserInterface;
             this.hostSupportsInteractiveSession = powerShellContext;
-
-            this.ConsoleService = new ConsoleService(powerShellContext);
-            this.ConsoleService.EnableConsoleRepl = enableConsoleRepl;
-            this.ConsoleHost = this.ConsoleService;
-
-            System.Console.CancelKeyPress +=
-                (obj, args) =>
-                {
-                    if (!this.isNativeApplicationRunning)
-                    {
-                        // We'll handle Ctrl+C
-                        if (this.ConsoleHost != null)
-                        {
-                            args.Cancel = true;
-                            this.consoleHost.SendControlC();
-                        }
-                    }
-                };
         }
 
         #endregion
@@ -151,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void EnterNestedPrompt()
         {
-            Logger.CurrentLogger.Write(LogLevel.Verbose, "EnterNestedPrompt() called.");
+            Logger.Write(LogLevel.Verbose, "EnterNestedPrompt() called.");
         }
 
         /// <summary>
@@ -159,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void ExitNestedPrompt()
         {
-            Logger.CurrentLogger.Write(LogLevel.Verbose, "ExitNestedPrompt() called.");
+            Logger.Write(LogLevel.Verbose, "ExitNestedPrompt() called.");
         }
 
         /// <summary>
@@ -167,8 +132,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void NotifyBeginApplication()
         {
-            Logger.CurrentLogger.Write(LogLevel.Verbose, "NotifyBeginApplication() called.");
-            this.isNativeApplicationRunning = true;
+            Logger.Write(LogLevel.Verbose, "NotifyBeginApplication() called.");
+            this.hostUserInterface.IsNativeApplicationRunning = true;
         }
 
         /// <summary>
@@ -176,8 +141,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void NotifyEndApplication()
         {
-            Logger.CurrentLogger.Write(LogLevel.Verbose, "NotifyEndApplication() called.");
-            this.isNativeApplicationRunning = false;
+            Logger.Write(LogLevel.Verbose, "NotifyEndApplication() called.");
+            this.hostUserInterface.IsNativeApplicationRunning = false;
         }
 
         /// <summary>
@@ -186,11 +151,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="exitCode"></param>
         public override void SetShouldExit(int exitCode)
         {
-            if (this.consoleHost != null)
-            {
-                this.consoleHost.ExitSession(exitCode);
-            }
-
             if (this.IsRunspacePushed)
             {
                 this.PopRunspace();

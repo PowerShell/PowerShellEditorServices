@@ -5,8 +5,6 @@
 
 using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Extensions;
-using Microsoft.PowerShell.EditorServices.Protocol;
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Templates;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -27,6 +25,11 @@ namespace Microsoft.PowerShell.EditorServices
         #endregion
 
         #region Properties
+
+        /// <summary>
+        /// Gets the IHostInput implementation to use for this session.
+        /// </summary>
+        public IHostInput HostInput { get; private set; }
 
         /// <summary>
         /// Gets the Workspace instance for this session.
@@ -54,11 +57,6 @@ namespace Microsoft.PowerShell.EditorServices
         public DebugService DebugService { get; private set; }
 
         /// <summary>
-        /// Gets the ConsoleService instance for this session.
-        /// </summary>
-        public ConsoleService ConsoleService { get; private set; }
-
-        /// <summary>
         /// Gets the ExtensionService instance for this session.
         /// </summary>
         public ExtensionService ExtensionService { get; private set; }
@@ -72,14 +70,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the RemoteFileManager instance for this session.
         /// </summary>
         public RemoteFileManager RemoteFileManager { get; private set; }
-
-        /// <summary>
-        /// Gets a boolean which is true if the integrated console host is
-        /// active in this session.
-        /// </summary>
-        public bool UsesConsoleHost { get; private set; }
-
-        public IMessageDispatcher MessageDispatcher { get; private set; }
 
         #endregion
 
@@ -103,18 +93,15 @@ namespace Microsoft.PowerShell.EditorServices
         /// for the ConsoleService.
         /// </summary>
         /// <param name="powerShellContext"></param>
-        /// <param name="consoleService"></param>
+        /// <param name="hostInput"></param>
         public void StartSession(
             PowerShellContext powerShellContext,
-            ConsoleService consoleService)
+            IHostInput hostInput)
         {
-            // Initialize all services
             this.PowerShellContext = powerShellContext;
-            this.ConsoleService = consoleService;
-            this.UsesConsoleHost = this.ConsoleService.EnableConsoleRepl;
+            this.HostInput = hostInput;
 
             // Initialize all services
-            this.MessageDispatcher = new MessageDispatcher(this.logger);
             this.LanguageService = new LanguageService(this.PowerShellContext, this.logger);
             this.ExtensionService = new ExtensionService(this.PowerShellContext);
             this.TemplateService = new TemplateService(this.PowerShellContext, this.logger);
@@ -130,21 +117,16 @@ namespace Microsoft.PowerShell.EditorServices
         /// for the ConsoleService.
         /// </summary>
         /// <param name="powerShellContext"></param>
-        /// <param name="consoleService"></param>
         /// <param name="editorOperations">
         /// An IEditorOperations implementation used to interact with the editor.
         /// </param>
         public void StartDebugSession(
             PowerShellContext powerShellContext,
-            ConsoleService consoleService,
             IEditorOperations editorOperations)
         {
-            // Initialize all services
             this.PowerShellContext = powerShellContext;
-            this.ConsoleService = consoleService;
 
             // Initialize all services
-            this.MessageDispatcher = new MessageDispatcher(this.logger);
             this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations, logger);
             this.DebugService = new DebugService(this.PowerShellContext, this.RemoteFileManager, logger);
 

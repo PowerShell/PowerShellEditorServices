@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Management.Automation.Host;
@@ -13,24 +12,16 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// Provides an simple implementation of the PSHostRawUserInterface class.
     /// </summary>
-    internal class SimplePSHostRawUserInterface : PSHostRawUserInterface
+    public class SimplePSHostRawUserInterface : PSHostRawUserInterface
     {
         #region Private Fields
 
         private const int DefaultConsoleHeight = 100;
         private const int DefaultConsoleWidth = 120;
 
+        private ILogger Logger;
+
         private Size currentBufferSize = new Size(DefaultConsoleWidth, DefaultConsoleHeight);
-
-        #endregion
-
-        #region Properties
-
-        internal IConsoleHost ConsoleHost
-        {
-            get;
-            set;
-        }
 
         #endregion
 
@@ -40,8 +31,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates a new instance of the SimplePSHostRawUserInterface
         /// class with the given IConsoleHost implementation.
         /// </summary>
-        public SimplePSHostRawUserInterface()
+        /// <param name="logger">The ILogger implementation to use for this instance.</param>
+        public SimplePSHostRawUserInterface(ILogger logger)
         {
+            this.Logger = logger;
             this.ForegroundColor = ConsoleColor.White;
             this.BackgroundColor = ConsoleColor.Black;
         }
@@ -159,7 +152,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A KeyInfo struct with details about the current keypress.</returns>
         public override KeyInfo ReadKey(ReadKeyOptions options)
         {
-            Logger.CurrentLogger.Write(
+            Logger.Write(
                 LogLevel.Warning,
                 "PSHostRawUserInterface.ReadKey was called");
 
@@ -171,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void FlushInputBuffer()
         {
-            Logger.CurrentLogger.Write(
+            Logger.Write(
                 LogLevel.Warning,
                 "PSHostRawUserInterface.FlushInputBuffer was called");
         }
@@ -183,7 +176,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A BufferCell array with the requested buffer contents.</returns>
         public override BufferCell[,] GetBufferContents(Rectangle rectangle)
         {
-            Logger.CurrentLogger.Write(
+            Logger.Write(
                 LogLevel.Warning,
                 "PSHostRawUserInterface.GetBufferContents was called");
 
@@ -203,7 +196,7 @@ namespace Microsoft.PowerShell.EditorServices
             Rectangle clip,
             BufferCell fill)
         {
-            Logger.CurrentLogger.Write(
+            Logger.Write(
                 LogLevel.Warning,
                 "PSHostRawUserInterface.ScrollBufferContents was called");
         }
@@ -217,7 +210,7 @@ namespace Microsoft.PowerShell.EditorServices
             Rectangle rectangle,
             BufferCell fill)
         {
-            Logger.CurrentLogger.Write(
+            Logger.Write(
                 LogLevel.Warning,
                 "PSHostRawUserInterface.SetBufferContents was called");
         }
@@ -231,7 +224,7 @@ namespace Microsoft.PowerShell.EditorServices
             Coordinates origin,
             BufferCell[,] contents)
         {
-            Logger.CurrentLogger.Write(
+            Logger.Write(
                 LogLevel.Warning,
                 "PSHostRawUserInterface.SetBufferContents was called");
         }

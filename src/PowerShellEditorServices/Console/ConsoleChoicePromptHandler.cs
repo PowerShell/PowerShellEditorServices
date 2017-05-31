@@ -14,11 +14,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
     /// Provides a standard implementation of ChoicePromptHandler
     /// for use in the interactive console (REPL).
     /// </summary>
-    public class ConsoleChoicePromptHandler : ChoicePromptHandler
+    public abstract class ConsoleChoicePromptHandler : ChoicePromptHandler
     {
         #region Private Fields
 
-        private IConsoleHost consoleHost;
+        /// <summary>
+        /// The IHostOutput instance to use for this prompt.
+        /// </summary>
+        protected IHostOutput hostOutput;
 
         #endregion
 
@@ -27,15 +30,17 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Creates an instance of the ConsoleChoicePromptHandler class.
         /// </summary>
-        /// <param name="consoleHost">
-        /// The IConsoleHost implementation to use for writing to the
+        /// <param name="hostOutput">
+        /// The IHostOutput implementation to use for writing to the
         /// console.
         /// </param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public ConsoleChoicePromptHandler(IConsoleHost consoleHost, ILogger logger)
-            : base(logger)
+        public ConsoleChoicePromptHandler(
+            IHostOutput hostOutput,
+            ILogger logger)
+                : base(logger)
         {
-            this.consoleHost = consoleHost;
+            this.hostOutput = hostOutput;
         }
 
         #endregion
@@ -52,12 +57,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
             {
                 if (this.Caption != null)
                 {
-                    this.consoleHost.WriteOutput(this.Caption);
+                    this.hostOutput.WriteOutput(this.Caption);
                 }
 
                 if (this.Message != null)
                 {
-                    this.consoleHost.WriteOutput(this.Message);
+                    this.hostOutput.WriteOutput(this.Message);
                 }
             }
 
@@ -68,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                         choice.Label[choice.HotKeyIndex].ToString().ToUpper() :
                         string.Empty;
 
-                this.consoleHost.WriteOutput(
+                this.hostOutput.WriteOutput(
                     string.Format(
                         "[{0}] {1} ",
                         hotKeyString,
@@ -76,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     false);
             }
 
-            this.consoleHost.WriteOutput("[?] Help", false);
+            this.hostOutput.WriteOutput("[?] Help", false);
 
             var validDefaultChoices =
                 this.DefaultChoices.Where(
@@ -90,21 +95,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
                         this.DefaultChoices
                             .Select(choice => this.Choices[choice].Label));
 
-                this.consoleHost.WriteOutput(
+                this.hostOutput.WriteOutput(
                     $" (default is \"{choiceString}\"): ",
                     false);
             }
         }
 
-        /// <summary>
-        /// Reads an input string from the user.
-        /// </summary>
-        /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
-        /// <returns>A Task that can be awaited to get the user's response.</returns>
-        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
-        {
-            return this.consoleHost.ReadSimpleLine(cancellationToken);
-        }
 
         /// <summary>
         /// Implements behavior to handle the user's response.
@@ -121,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 // Print help text
                 foreach (var choice in this.Choices)
                 {
-                    this.consoleHost.WriteOutput(
+                    this.hostOutput.WriteOutput(
                         string.Format(
                             "{0} - {1}",
                             (choice.HotKeyCharacter.HasValue ?
@@ -137,4 +133,3 @@ namespace Microsoft.PowerShell.EditorServices.Console
         }
     }
 }
-

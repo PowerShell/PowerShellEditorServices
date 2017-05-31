@@ -8,8 +8,6 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -30,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 this.OnOutputEvent);
         }
 
-        public async Task<string> ReadLine(string expectedOutputCategory = "stdout")
+        public async Task<string> ReadLine(string expectedOutputCategory = "stdout", bool waitForNewLine = true)
         {
             try
             {
@@ -100,6 +98,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     // At this point, the state of lineHasNewLine will determine
                     // whether the loop continues to wait for another output
                     // event that completes the current line.
+                    if (!waitForNewLine)
+                    {
+                        break;
+                    }
                 }
 
                 return nextOutputString;

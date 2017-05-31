@@ -772,6 +772,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 File.Exists(currentUserCurrentHostPath),
                 "Copied profile path does not exist!");
 
+            OutputReader outputReader = new OutputReader(this.messageHandlers);
+
             // Send the configuration change to cause profiles to be loaded
             await this.languageServiceClient.SendEvent(
                 DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type,
@@ -790,7 +792,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     }
                 });
 
-            OutputReader outputReader = new OutputReader(this.messageHandlers);
+            // Wait for the prompt to be written once the profile loads
+            Assert.StartsWith("PS ", await outputReader.ReadLine(waitForNewLine: false));
 
             Task<EvaluateResponseBody> evaluateTask =
                 this.SendRequest(

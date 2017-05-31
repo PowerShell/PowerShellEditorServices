@@ -89,10 +89,10 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Gets or sets an IConsoleHost implementation for use in
+        /// Gets or sets an IHostOutput implementation for use in
         /// writing output to the console.
         /// </summary>
-        private IConsoleHost ConsoleHost { get; set; }
+        private IHostOutput ConsoleWriter { get; set; }
 
         /// <summary>
         /// Gets details pertaining to the current runspace.
@@ -108,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices
         #region Constructors
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public PowerShellContext(ILogger logger)
@@ -121,15 +121,19 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="hostDetails"></param>
         /// <param name="powerShellContext"></param>
-        /// <param name="enableConsoleRepl"></param>
+        /// <param name="hostUserInterface">
+        /// The EditorServicesPSHostUserInterface to use for this instance.
+        /// </param>
+        /// <param name="logger">An ILogger implementation to use for this instance.</param>
         /// <returns></returns>
         public static Runspace CreateRunspace(
             HostDetails hostDetails,
             PowerShellContext powerShellContext,
-            bool enableConsoleRepl)
+            EditorServicesPSHostUserInterface hostUserInterface,
+            ILogger logger)
         {
-            var psHost = new ConsoleServicePSHost(powerShellContext, hostDetails, enableConsoleRepl);
-            powerShellContext.ConsoleHost = psHost.ConsoleService;
+            var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
+            powerShellContext.ConsoleWriter = hostUserInterface;
             return CreateRunspace(psHost);
         }
 
@@ -174,18 +178,18 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="profilePaths">An object containing the profile paths for the session.</param>
         /// <param name="initialRunspace">The initial runspace to use for this instance.</param>
         /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
-        /// <param name="consoleHost">An IConsoleHost implementation.  Optional.</param>
+        /// <param name="consoleHost">An IHostOutput implementation.  Optional.</param>
         public void Initialize(
             ProfilePaths profilePaths,
             Runspace initialRunspace,
             bool ownsInitialRunspace,
-            IConsoleHost consoleHost)
+            IHostOutput consoleHost)
         {
             Validate.IsNotNull("initialRunspace", initialRunspace);
 
             this.ownsInitialRunspace = ownsInitialRunspace;
             this.SessionState = PowerShellContextState.NotStarted;
-            this.ConsoleHost = consoleHost;
+            this.ConsoleWriter = consoleHost;
 
             // Get the PowerShell runtime version
             this.LocalPowerShellVersion =
@@ -1211,9 +1215,9 @@ namespace Microsoft.PowerShell.EditorServices
             bool includeNewLine,
             OutputType outputType)
         {
-            if (this.ConsoleHost != null)
+            if (this.ConsoleWriter != null)
             {
-                this.ConsoleHost.WriteOutput(
+                this.ConsoleWriter.WriteOutput(
                     outputString,
                     includeNewLine,
                     outputType);
@@ -1281,9 +1285,9 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void WriteError(string errorMessage)
         {
-            if (this.ConsoleHost != null)
+            if (this.ConsoleWriter != null)
             {
-                this.ConsoleHost.WriteOutput(
+                this.ConsoleWriter.WriteOutput(
                     errorMessage,
                     true,
                     OutputType.Error,

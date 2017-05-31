@@ -23,7 +23,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     public class DebugAdapter
     {
         private EditorSession editorSession;
-        private OutputDebouncer outputDebouncer;
 
         private bool noDebug;
         private ILogger Logger;
@@ -32,7 +31,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private bool isAttachSession;
         private bool waitingForAttach;
         private string scriptToLaunch;
-        private bool enableConsoleRepl;
         private bool ownsEditorSession;
         private bool executionCompleted;
         private IMessageSender messageSender;
@@ -52,7 +50,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageSender = messageSender;
             this.messageHandlers = messageHandlers;
             this.ownsEditorSession = ownsEditorSession;
-            this.enableConsoleRepl = editorSession.UsesConsoleHost;
         }
 
         public void Start()
@@ -117,12 +114,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.executionCompleted = true;
 
-            // Make sure remaining output is flushed before exiting
-            if (this.outputDebouncer != null)
-            {
-                await this.outputDebouncer.Flush();
-            }
-
             this.UnregisterEventHandlers();
 
             if (this.isAttachSession)
@@ -166,12 +157,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         protected void Stop()
         {
             Logger.Write(LogLevel.Normal, "Debug adapter is shutting down...");
-
-            // Make sure remaining output is flushed before exiting
-            if (this.outputDebouncer != null)
-            {
-                this.outputDebouncer.Flush().Wait();
-            }
 
             if (this.editorSession != null)
             {
@@ -324,12 +309,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // If no script is being launched, mark this as an interactive
             // debugging session
             this.isInteractiveDebugSession = string.IsNullOrEmpty(this.scriptToLaunch);
-
-            if (this.editorSession.ConsoleService.EnableConsoleRepl)
-            {
-                // TODO: Write this during DebugSession init
-                await this.WriteUseIntegratedConsoleMessage();
-            }
 
             // Send the InitializedEvent so that the debugger will continue
             // sending configuration requests
@@ -788,31 +767,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             if (isFromRepl)
             {
-                if (!this.editorSession.ConsoleService.EnableConsoleRepl)
-                {
-                    // Check for special commands
-                    if (string.Equals("!ctrlc", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        editorSession.PowerShellContext.AbortExecution();
-                    }
-                    else if (string.Equals("!break", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        editorSession.DebugService.Break();
-                    }
-                    else
-                    {
-                        // Send the input through the console service
-                        var notAwaited =
-                            this.editorSession
-                                .PowerShellContext
-                                .ExecuteScriptString(evaluateParams.Expression, false, true)
-                                .ConfigureAwait(false);
-                    }
-                }
-                else
-                {
-                    await this.WriteUseIntegratedConsoleMessage();
-                }
+                // TODO: Do we send the input through the command handler?
+                // Send the input through the console service
+                var notAwaited =
+                    this.editorSession
+                        .PowerShellContext
+                        .ExecuteScriptString(evaluateParams.Expression, false, true)
+                        .ConfigureAwait(false);
             }
             else
             {
@@ -862,12 +823,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession.PowerShellContext.RunspaceChanged += this.powerShellContext_RunspaceChanged;
             this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
             this.editorSession.PowerShellContext.DebuggerResumed += this.powerShellContext_DebuggerResumed;
-
-            if (!this.enableConsoleRepl)
-            {
-                this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
-                this.outputDebouncer = new OutputDebouncer(this.messageSender);
-            }
         }
 
         private void UnregisterEventHandlers()
@@ -875,25 +830,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession.PowerShellContext.RunspaceChanged -= this.powerShellContext_RunspaceChanged;
             this.editorSession.DebugService.DebuggerStopped -= this.DebugService_DebuggerStopped;
             this.editorSession.PowerShellContext.DebuggerResumed -= this.powerShellContext_DebuggerResumed;
-
-            if (!this.enableConsoleRepl)
-            {
-                this.editorSession.ConsoleService.OutputWritten -= this.powerShellContext_OutputWritten;
-            }
         }
 
         #endregion
 
         #region Event Handlers
-
-        private async void powerShellContext_OutputWritten(object sender, OutputWrittenEventArgs e)
-        {
-            if (this.outputDebouncer != null)
-            {
-                // Queue the output for writing
-                await this.outputDebouncer.Invoke(e);
-            }
-        }
 
         async void DebugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
         {
