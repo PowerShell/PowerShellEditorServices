@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Validate.IsNotNullOrEmptyString("filePath", filePath);
 
-            // Resolve the full file path 
+            // Resolve the full file path
             string resolvedFilePath = this.ResolveFilePath(filePath);
             string keyName = resolvedFilePath.ToLower();
 
@@ -73,12 +73,12 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile scriptFile = null;
             if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile))
             {
-                // This method allows FileNotFoundException to bubble up 
+                // This method allows FileNotFoundException to bubble up
                 // if the file isn't found.
                 using (FileStream fileStream = new FileStream(resolvedFilePath, FileMode.Open, FileAccess.Read))
                 using (StreamReader streamReader = new StreamReader(fileStream, Encoding.UTF8))
                 {
-                    scriptFile = 
+                    scriptFile =
                         new ScriptFile(
                             resolvedFilePath,
                             filePath,
@@ -115,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Validate.IsNotNullOrEmptyString("filePath", filePath);
 
-            // Resolve the full file path 
+            // Resolve the full file path
             string resolvedFilePath = this.ResolveFilePath(filePath);
             string keyName = resolvedFilePath.ToLower();
 
@@ -123,7 +123,7 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile scriptFile = null;
             if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile) && initialBuffer != null)
             {
-                scriptFile = 
+                scriptFile =
                     new ScriptFile(
                         resolvedFilePath,
                         filePath,
@@ -159,11 +159,11 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Gets all file references by recursively searching 
+        /// Gets all file references by recursively searching
         /// through referenced files in a scriptfile
         /// </summary>
         /// <param name="scriptFile">Contains the details and contents of an open script file</param>
-        /// <returns>A scriptfile array where the first file 
+        /// <returns>A scriptfile array where the first file
         /// in the array is the "root file" of the search</returns>
         public ScriptFile[] ExpandScriptReferences(ScriptFile scriptFile)
         {
@@ -171,7 +171,7 @@ namespace Microsoft.PowerShell.EditorServices
             List<ScriptFile> expandedReferences = new List<ScriptFile>();
 
             // add original file so it's not searched for, then find all file references
-            referencedScriptFiles.Add(scriptFile.Id, scriptFile); 
+            referencedScriptFiles.Add(scriptFile.Id, scriptFile);
             RecursivelyFindReferences(scriptFile, referencedScriptFiles);
 
             // remove original file from referened file and add it as the first element of the
@@ -219,25 +219,60 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>An enumerator over the PowerShell files found in the workspace</returns>
         public IEnumerable<string> EnumeratePSFiles()
         {
-            if (WorkspacePath == null
-                || !Directory.Exists(WorkspacePath))
+            if (WorkspacePath == null || !Directory.Exists(WorkspacePath))
             {
-                yield break;
+                return Enumerable.Empty<string>();
             }
 
-            var patterns = new string[] { @"*.ps1", @"*.psm1", @"*.psd1" };
-            foreach(var pattern in patterns)
-            {
-                foreach (var file in Directory.EnumerateFiles(WorkspacePath, pattern, SearchOption.AllDirectories))
-                {
-                    yield return file;
-                }
-            }
+            return this.RecursivelyEnumerateFiles(WorkspacePath);
         }
 
         #endregion
 
         #region Private Methods
+
+        private IEnumerable<string> RecursivelyEnumerateFiles(string folderPath)
+        {
+            var foundFiles = Enumerable.Empty<string>();
+            var patterns = new string[] { @"*.ps1", @"*.psm1", @"*.psd1" };
+
+            try
+            {
+                IEnumerable<string> subDirs = Directory.EnumerateDirectories(folderPath);
+                foreach (string dir in subDirs)
+                {
+                    foundFiles =
+                        foundFiles.Concat(
+                            RecursivelyEnumerateFiles(dir));
+                }
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Logger.WriteException(
+                    $"Could not enumerate files in the path '{folderPath}' due to the path not being accessible",
+                    e);
+            }
+
+            foreach (var pattern in patterns)
+            {
+                try
+                {
+                    foundFiles =
+                        foundFiles.Concat(
+                            Directory.EnumerateFiles(
+                                folderPath,
+                                pattern));
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    Logger.WriteException(
+                        $"Could not enumerate files in the path '{folderPath}' due to a file not being accessible",
+                        e);
+                }
+            }
+
+            return foundFiles;
+        }
 
         /// <summary>
         /// Recusrively searches through referencedFiles in scriptFiles
@@ -246,11 +281,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="scriptFile">Details an contents of "root" script file</param>
         /// <param name="referencedScriptFiles">A Dictionary of referenced script files</param>
         private void RecursivelyFindReferences(
-            ScriptFile scriptFile, 
+            ScriptFile scriptFile,
             Dictionary<string, ScriptFile> referencedScriptFiles)
         {
             // Get the base path of the current script for use in resolving relative paths
-            string baseFilePath = 
+            string baseFilePath =
                 GetBaseFilePath(
                     scriptFile.FilePath);
 
@@ -347,12 +382,12 @@ namespace Microsoft.PowerShell.EditorServices
                 // TODO: Assert instead?
                 throw new InvalidOperationException(
                     string.Format(
-                        "Must provide a full path for originalScriptPath: {0}", 
+                        "Must provide a full path for originalScriptPath: {0}",
                         filePath));
             }
 
             // Get the directory of the file path
-            return Path.GetDirectoryName(filePath); 
+            return Path.GetDirectoryName(filePath);
         }
 
         private string ResolveRelativeScriptPath(string baseFilePath, string relativePath)
