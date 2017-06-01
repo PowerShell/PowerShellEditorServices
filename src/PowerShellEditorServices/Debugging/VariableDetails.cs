@@ -254,7 +254,7 @@ namespace Microsoft.PowerShell.EditorServices
             return result;
         }
 
-        private static VariableDetails[] GetChildren(object obj)
+        private VariableDetails[] GetChildren(object obj)
         {
             List<VariableDetails> childVariables = new List<VariableDetails>();
 
@@ -281,6 +281,13 @@ namespace Microsoft.PowerShell.EditorServices
                     // If a PSObject other than a PSCustomObject, unwrap it.
                     if (psObject != null)
                     {
+                        // First add the PSObject's ETS propeties
+                        childVariables.AddRange(
+                            psObject
+                                .Properties
+                                .Where(p => p.MemberType == PSMemberTypes.NoteProperty)
+                                .Select(p => new VariableDetails(p)));
+
                         obj = psObject.BaseObject;
                     }
 
@@ -329,13 +336,14 @@ namespace Microsoft.PowerShell.EditorServices
                     AddDotNetProperties(obj, childVariables);
                 }
             }
-            catch (GetValueInvocationException)
+            catch (GetValueInvocationException ex)
             {
                 // This exception occurs when accessing the value of a
                 // variable causes a script to be executed.  Right now
                 // we aren't loading children on the pipeline thread so
                 // this causes an exception to be raised.  In this case,
                 // just return an empty list of children.
+                Logger.Write(LogLevel.Warning, $"Failed to get properties of variable {this.Name}, script execution was attempted: {ex.Message}");
             }
 
             return childVariables.ToArray();
