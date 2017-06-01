@@ -343,7 +343,7 @@ namespace Microsoft.PowerShell.EditorServices
                 // we aren't loading children on the pipeline thread so
                 // this causes an exception to be raised.  In this case,
                 // just return an empty list of children.
-                Logger.Write(LogLevel.Warning, $"Failed to get properties of variable {this.Name}, script execution was attempted: {ex.Message}");
+                Logger.Write(LogLevel.Warning, $"Failed to get properties of variable {this.Name}, value invocation was attempted: {ex.Message}");
             }
 
             return childVariables.ToArray();
