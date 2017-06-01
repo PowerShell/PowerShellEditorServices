@@ -895,7 +895,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(var.IsExpandable);
 
             var childVars = debugService.GetVariables(var.Id);
-            Assert.Equal(52, childVars.Length);
+            Assert.Equal(53, childVars.Length);
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
