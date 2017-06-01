@@ -1,5 +1,26 @@
 # PowerShell Editor Services Release History
 
+## 1.2.1
+### Thursday, June 1, 2017
+
+#### Fixes and improvements
+
+- [#478](https://github.com/PowerShell/PowerShellEditorServices/issues/478) -
+  Dynamic comment help snippets now generate parameter fields correctly
+  when `<#` is typed above a `param()` block.
+
+- [PowerShell/vscode-powershell#808](https://github.com/PowerShell/vscode-powershell/issues/808) -
+  An extra `PS>` is no longer being written to the Integrated Console for
+  some users who have custom prompt functions.
+
+- [PowerShell/vscode-powershell#813](https://github.com/PowerShell/vscode-powershell/issues/813) -
+  Finding references of symbols across the workspace now properly handles
+  inaccessible folders and file paths
+
+- [PowerShell/vscode-powershell#821](https://github.com/PowerShell/vscode-powershell/issues/821) -
+  Note properties on PSObjects are now visible in the debugger's Variables
+  view
+
 ## 1.2.0
 ### Wednesday, May 31, 2017
 
