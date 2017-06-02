@@ -52,7 +52,7 @@ how to use this project. You can also read our plans for future feature developm
 
 ## Development
 
-### 1. Install PowerShell if necessary
+### 1. On Linux or macOS, install PowerShell Core
 
 If you are using Windows, skip this step.  If you are using Linux or macOS, you will need to
 install PowerShell by following [these instructions](https://github.com/PowerShell/PowerShell#get-powershell).
@@ -67,13 +67,20 @@ If you are using macOS you will need to download the latest version of OpenSSL. 
   ln -s /usr/local/opt/openssl/lib/libcrypto.1.0.0.dylib /usr/local/lib/
   ln -s /usr/local/opt/openssl/lib/libssl.1.0.0.dylib /usr/local/lib/
 ```
-### 2. Clone the GitHub repository:
+### 2. On Windows, install the .NET 4.5.1 Targeting Pack
+
+**NOTE: This is only necessary if you don't have Visual Studio installed**
+
+If you try to build the code and receive an error about a missing .NET 4.5.1
+Targeting Pack, you should download and install the [.NET Framework 4.5.2 Developer Pack](https://www.microsoft.com/en-us/download/details.aspx?id=42637).
+
+### 3. Clone the GitHub repository:
 
 ```
 git clone https://github.com/PowerShell/PowerShellEditorServices.git
 ```
 
-### 3. Install [Invoke-Build](https://github.com/nightroman/Invoke-Build)
+### 4. Install [Invoke-Build](https://github.com/nightroman/Invoke-Build)
 
 This step requires PowerShellGet, included by default with PowerShell v5 and up
 but installable on [PowerShell v3 and v4](https://github.com/PowerShell/PowerShellGet#get-powershellget-module-for-powershell-versions-30-and-40).
