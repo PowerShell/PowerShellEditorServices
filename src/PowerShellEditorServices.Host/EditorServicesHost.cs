@@ -12,6 +12,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -189,6 +190,11 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 new LanguageServer(
                     this.editorSession,
                     serverChannel);
+
+            await this.editorSession.PowerShellContext.ImportCommandsModule(
+                Path.Combine(
+                    Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
+                    @"..\..\Commands"));
 
             await this.languageServer.Start();
         }
