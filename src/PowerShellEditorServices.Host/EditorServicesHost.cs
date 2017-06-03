@@ -34,6 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
     {
         #region Private Fields
 
+        private ILogger logger;
         private bool enableConsoleRepl;
         private HostDetails hostDetails;
         private ProfilePaths profilePaths;
@@ -114,7 +115,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// <param name="logLevel">The minimum level of log messages to be written.</param>
         public void StartLogging(string logFilePath, LogLevel logLevel)
         {
-            Logger.Initialize(logFilePath, logLevel);
+            this.logger = new FileLogger(logFilePath, logLevel);
+            Logger.Initialize(this.logger);
 
 #if CoreCLR
             FileVersionInfo fileVersionInfo =
