@@ -264,9 +264,7 @@ namespace Microsoft.PowerShell.EditorServices
             // sometimes we don't have reliable access to the filename
             // so we employ heuristics to check if the contents are
             // part of a psd1 file.
-            return (ast.Extent.File != null
-                        && ast.Extent.File.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase))
-                    || IsPowerShellDataFileAstNode(
+            return IsPowerShellDataFileAstNode(
                         new { Item = ast, Children = new List<dynamic>() },
                         new Type[] {
                             typeof(ScriptBlockAst),
