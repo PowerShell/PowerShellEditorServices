@@ -151,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void EnterNestedPrompt()
         {
-            Logger.Write(LogLevel.Verbose, "EnterNestedPrompt() called.");
+            Logger.CurrentLogger.Write(LogLevel.Verbose, "EnterNestedPrompt() called.");
         }
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void ExitNestedPrompt()
         {
-            Logger.Write(LogLevel.Verbose, "ExitNestedPrompt() called.");
+            Logger.CurrentLogger.Write(LogLevel.Verbose, "ExitNestedPrompt() called.");
         }
 
         /// <summary>
@@ -167,7 +167,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void NotifyBeginApplication()
         {
-            Logger.Write(LogLevel.Verbose, "NotifyBeginApplication() called.");
+            Logger.CurrentLogger.Write(LogLevel.Verbose, "NotifyBeginApplication() called.");
             this.isNativeApplicationRunning = true;
         }
 
@@ -176,7 +176,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void NotifyEndApplication()
         {
-            Logger.Write(LogLevel.Verbose, "NotifyEndApplication() called.");
+            Logger.CurrentLogger.Write(LogLevel.Verbose, "NotifyEndApplication() called.");
             this.isNativeApplicationRunning = false;
         }
 

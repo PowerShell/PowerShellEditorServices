@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Language
 {
@@ -25,12 +26,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private PowerShellContext powerShellContext;
         private const string baseSharedScriptPath = @"..\..\..\..\PowerShellEditorServices.Test.Shared\";
 
-
         public LanguageServiceTests()
         {
-            this.powerShellContext = PowerShellContextFactory.Create();
-            this.workspace = new Workspace(this.powerShellContext.LocalPowerShellVersion.Version);
-            this.languageService = new LanguageService(this.powerShellContext);
+            var logger = new NullLogger();
+            this.powerShellContext = PowerShellContextFactory.Create(logger);
+            this.workspace = new Workspace(this.powerShellContext.LocalPowerShellVersion.Version, logger);
+            this.languageService = new LanguageService(this.powerShellContext, logger);
         }
 
         public void Dispose()
@@ -163,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             var definitionResult =
                 await this.GetDefinition(
                     FindsFunctionDefinitionInWorkspace.SourceDetails,
-                    new Workspace(this.powerShellContext.LocalPowerShellVersion.Version)
+                    new Workspace(this.powerShellContext.LocalPowerShellVersion.Version, new NullLogger())
                     {
                         WorkspacePath = Path.Combine(baseSharedScriptPath, @"References")
                     });

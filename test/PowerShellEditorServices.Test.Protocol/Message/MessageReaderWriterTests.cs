@@ -10,6 +10,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
 {
@@ -19,10 +20,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
         const string TestEventFormatString = "{{\"event\":\"testEvent\",\"body\":{{\"someString\":\"{0}\"}},\"seq\":0,\"type\":\"event\"}}";
         readonly int ExpectedMessageByteCount = Encoding.UTF8.GetByteCount(TestEventString);
 
+        private ILogger logger;
         private IMessageSerializer messageSerializer;
 
         public MessageReaderWriterTests()
         {
+            this.logger = new NullLogger();
             this.messageSerializer = new V8MessageSerializer();
         }
 
@@ -31,10 +34,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
         {
             MemoryStream outputStream = new MemoryStream();
 
-            MessageWriter messageWriter = 
+            MessageWriter messageWriter =
                 new MessageWriter(
                     outputStream,
-                    this.messageSerializer);
+                    this.messageSerializer,
+                    this.logger);
 
             // Write the message and then roll back the stream to be read
             // TODO: This will need to be redone!
@@ -69,8 +73,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
             MemoryStream inputStream = new MemoryStream();
             MessageReader messageReader =
                 new MessageReader(
-                    inputStream, 
-                    this.messageSerializer);
+                    inputStream,
+                    this.messageSerializer,
+                    this.logger);
 
             // Write a message to the stream
             byte[] messageBuffer = this.GetMessageBytes(TestEventString);
@@ -94,8 +99,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
             MemoryStream inputStream = new MemoryStream();
             MessageReader messageReader =
                 new MessageReader(
-                    inputStream, 
-                    this.messageSerializer);
+                    inputStream,
+                    this.messageSerializer,
+                    this.logger);
 
             // Get a message to use for writing to the stream
             byte[] messageBuffer = this.GetMessageBytes(TestEventString);
@@ -130,12 +136,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
             MemoryStream inputStream = new MemoryStream();
             MessageReader messageReader =
                 new MessageReader(
-                    inputStream, 
-                    this.messageSerializer);
+                    inputStream,
+                    this.messageSerializer,
+                    this.logger);
 
             // Get a message with content so large that the buffer will need
             // to be resized to fit it all.
-            byte[] messageBuffer = 
+            byte[] messageBuffer =
                 this.GetMessageBytes(
                     string.Format(
                         TestEventFormatString,
@@ -159,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
             }
 
             byte[] messageBytes = Encoding.UTF8.GetBytes(messageString);
-            byte[] headerBytes = 
+            byte[] headerBytes =
                 Encoding.ASCII.GetBytes(
                     string.Format(
                         Constants.ContentLengthFormatString,

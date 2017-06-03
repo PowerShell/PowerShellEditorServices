@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// Gets the version of the PowerShell runtime.
         /// </summary>
         public Version Version { get; private set; }
-        
+
         /// <summary>
         /// Gets the full version string, either the ToString of the Version
         /// property or the GitCommitId for open-source PowerShell releases.
@@ -90,8 +90,9 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// Gets the PowerShell version details for the given runspace.
         /// </summary>
         /// <param name="runspace">The runspace for which version details will be gathered.</param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         /// <returns>A new PowerShellVersionDetails instance.</returns>
-        public static PowerShellVersionDetails GetVersionDetails(Runspace runspace)
+        public static PowerShellVersionDetails GetVersionDetails(Runspace runspace, ILogger logger)
         {
             Version powerShellVersion = new Version(5, 0);
             string versionString = null;
@@ -149,7 +150,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
             catch (Exception ex)
             {
-                Logger.Write(
+                logger.Write(
                     LogLevel.Warning,
                     "Failed to look up PowerShell version, defaulting to version 5.\r\n\r\n" + ex.ToString());
             }

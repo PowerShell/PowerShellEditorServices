@@ -47,10 +47,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <param name="taskReturningFunc">
         /// A Func which returns the task to be run on the thread.
         /// </param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         /// <returns>
         /// A Task which can be used to monitor the thread for completion.
         /// </returns>
-        public Task Run(Func<Task> taskReturningFunc)
+        public Task Run(Func<Task> taskReturningFunc, ILogger logger)
         {
             // Start up a long-running task with the action as the
             // main entry point for the thread
@@ -62,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                         Thread.CurrentThread.Name = "AsyncContextThread: " + this.threadName;
 
                         // Set up an AsyncContext to run the task
-                        AsyncContext.Start(taskReturningFunc);
+                        AsyncContext.Start(taskReturningFunc, logger);
                     },
                     this.threadCancellationToken.Token,
                     TaskCreationOptions.LongRunning,

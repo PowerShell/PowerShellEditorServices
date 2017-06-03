@@ -21,6 +21,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
+        private ILogger logger;
         private Version powerShellVersion;
         private Dictionary<string, ScriptFile> workspaceFiles = new Dictionary<string, ScriptFile>();
 
@@ -41,9 +42,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates a new instance of the Workspace class.
         /// </summary>
         /// <param name="powerShellVersion">The version of PowerShell for which scripts will be parsed.</param>
-        public Workspace(Version powerShellVersion)
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public Workspace(Version powerShellVersion, ILogger logger)
         {
             this.powerShellVersion = powerShellVersion;
+            this.logger = logger;
         }
 
         #endregion
@@ -88,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices
                     this.workspaceFiles.Add(keyName, scriptFile);
                 }
 
-                Logger.Write(LogLevel.Verbose, "Opened file on disk: " + resolvedFilePath);
+                this.logger.Write(LogLevel.Verbose, "Opened file on disk: " + resolvedFilePath);
             }
 
             return scriptFile;
@@ -132,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                 this.workspaceFiles.Add(keyName, scriptFile);
 
-                Logger.Write(LogLevel.Verbose, "Opened file as in-memory buffer: " + resolvedFilePath);
+                this.logger.Write(LogLevel.Verbose, "Opened file as in-memory buffer: " + resolvedFilePath);
             }
 
             return scriptFile;
@@ -248,7 +251,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             catch (UnauthorizedAccessException e)
             {
-                Logger.WriteException(
+                this.logger.WriteException(
                     $"Could not enumerate files in the path '{folderPath}' due to the path not being accessible",
                     e);
             }
@@ -265,7 +268,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 catch (UnauthorizedAccessException e)
                 {
-                    Logger.WriteException(
+                    this.logger.WriteException(
                         $"Could not enumerate files in the path '{folderPath}' due to a file not being accessible",
                         e);
                 }
@@ -303,7 +306,7 @@ namespace Microsoft.PowerShell.EditorServices
                     continue;
                 }
 
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Verbose,
                     string.Format(
                         "Resolved relative path '{0}' to '{1}'",
@@ -348,7 +351,7 @@ namespace Microsoft.PowerShell.EditorServices
                 filePath = Path.GetFullPath(filePath);
             }
 
-            Logger.Write(LogLevel.Verbose, "Resolved path: " + filePath);
+            this.logger.Write(LogLevel.Verbose, "Resolved path: " + filePath);
 
             return filePath;
         }
@@ -428,7 +431,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (resolveException != null)
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Error,
                     $"Could not resolve relative script path\r\n" +
                     $"    baseFilePath = {baseFilePath}\r\n    " +

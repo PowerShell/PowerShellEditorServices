@@ -25,6 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
     {
         #region Fields
 
+        private ILogger logger;
         private string remoteFilesPath;
         private string processTempPath;
         private PowerShellContext powerShellContext;
@@ -100,12 +101,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <param name="editorOperations">
         /// The IEditorOperations instance to use for opening/closing files in the editor.
         /// </param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public RemoteFileManager(
             PowerShellContext powerShellContext,
-            IEditorOperations editorOperations)
+            IEditorOperations editorOperations,
+            ILogger logger)
         {
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
+            this.logger = logger;
             this.powerShellContext = powerShellContext;
             this.powerShellContext.RunspaceChanged += HandleRunspaceChanged;
 
@@ -176,7 +180,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                             }
                             else
                             {
-                                Logger.Write(
+                                this.logger.Write(
                                     LogLevel.Warning,
                                     $"Could not load contents of remote file '{remoteFilePath}'");
                             }
@@ -185,7 +189,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 }
                 catch (IOException e)
                 {
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Error,
                         $"Caught {e.GetType().Name} while attempting to get remote file at path '{remoteFilePath}'\r\n\r\n{e.ToString()}");
                 }
@@ -211,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     localFilePath,
                     this.powerShellContext.CurrentRunspace);
 
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Verbose,
                 $"Saving remote file {remoteFilePath} (local path: {localFilePath})");
 
@@ -222,7 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
             catch (IOException e)
             {
-                Logger.WriteException(
+                this.logger.WriteException(
                     "Failed to read contents of local copy of remote file",
                     e);
 
@@ -245,7 +249,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             if (errorMessages.Length > 0)
             {
-                Logger.Write(LogLevel.Error, $"Remote file save failed due to an error:\r\n\r\n{errorMessages}");
+                this.logger.Write(LogLevel.Error, $"Remote file save failed due to an error:\r\n\r\n{errorMessages}");
             }
         }
 
@@ -276,7 +280,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
             catch (IOException e)
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Error,
                     $"Caught {e.GetType().Name} while attempting to write temporary file at path '{temporaryFilePath}'\r\n\r\n{e.ToString()}");
 
@@ -432,7 +436,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 }
                 catch (NullReferenceException e)
                 {
-                    Logger.WriteException("Could not store null remote file content", e);
+                    this.logger.WriteException("Could not store null remote file content", e);
                 }
             }
         }
@@ -474,7 +478,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 }
                 catch (RemoteException e)
                 {
-                    Logger.WriteException("Could not create psedit function.", e);
+                    this.logger.WriteException("Could not create psedit function.", e);
                 }
             }
         }
@@ -503,7 +507,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 }
                 catch (Exception e) when (e is RemoteException || e is PSInvalidOperationException)
                 {
-                    Logger.WriteException("Could not remove psedit function.", e);
+                    this.logger.WriteException("Could not remove psedit function.", e);
                 }
             }
         }
@@ -521,7 +525,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
             catch (IOException e)
             {
-                Logger.WriteException(
+                this.logger.WriteException(
                     $"Could not delete temporary folder for current process: {this.processTempPath}", e);
             }
         }

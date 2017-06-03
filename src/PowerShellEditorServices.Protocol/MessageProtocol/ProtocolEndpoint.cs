@@ -52,6 +52,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
+        protected ILogger Logger { get; private set; }
+
         /// <summary>
         /// Gets the MessageDispatcher which allows registration of
         /// handlers for requests, responses, and events that are
@@ -72,12 +74,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         public ProtocolEndpoint(
             ChannelBase protocolChannel,
             MessageDispatcher messageDispatcher,
-            MessageProtocolType messageProtocolType)
+            MessageProtocolType messageProtocolType,
+            ILogger logger)
         {
             this.protocolChannel = protocolChannel;
             this.MessageDispatcher = messageDispatcher;
             this.messageProtocolType = messageProtocolType;
             this.originalSynchronizationContext = SynchronizationContext.Current;
+            this.Logger = logger;
         }
 
         /// <summary>
@@ -94,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 // Listen for unhandled exceptions from the message loop
                 this.UnhandledException += MessageDispatcher_UnhandledException;
 
-                // Start the message loop 
+                // Start the message loop
                 this.StartMessageLoop();
 
                 // Notify implementation about endpoint start
@@ -317,7 +321,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             // an independent background thread.
             this.messageLoopThread = new AsyncContextThread("Message Dispatcher");
             this.messageLoopThread
-                .Run(() => this.ListenForMessages(this.messageLoopCancellationToken.Token))
+                .Run(
+                    () => this.ListenForMessages(this.messageLoopCancellationToken.Token),
+                    this.Logger)
                 .ContinueWith(this.OnListenTaskCompleted);
         }
 

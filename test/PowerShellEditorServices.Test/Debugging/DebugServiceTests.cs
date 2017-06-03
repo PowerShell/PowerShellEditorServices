@@ -31,10 +31,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         public DebugServiceTests()
         {
-            this.powerShellContext = PowerShellContextFactory.Create();
+            var logger = new NullLogger();
+
+            this.powerShellContext = PowerShellContextFactory.Create(logger);
             this.powerShellContext.SessionStateChanged += powerShellContext_SessionStateChanged;
 
-            this.workspace = new Workspace(this.powerShellContext.LocalPowerShellVersion.Version);
+            this.workspace = new Workspace(this.powerShellContext.LocalPowerShellVersion.Version, logger);
 
             // Load the test debug file
             this.debugScriptFile =
@@ -45,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 this.workspace.GetFile(
                     @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
 
-            this.debugService = new DebugService(this.powerShellContext);
+            this.debugService = new DebugService(this.powerShellContext, logger);
             this.debugService.DebuggerStopped += debugService_DebuggerStopped;
             this.debugService.BreakpointUpdated += debugService_BreakpointUpdated;
             this.runnerContext = SynchronizationContext.Current;

@@ -12,13 +12,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class TcpSocketServerChannel : ChannelBase
     {
+        private ILogger logger;
         private TcpClient tcpClient;
         private NetworkStream networkStream;
 
-        public TcpSocketServerChannel(TcpClient tcpClient)
+        public TcpSocketServerChannel(TcpClient tcpClient, ILogger logger)
         {
             this.tcpClient = tcpClient;
             this.networkStream = this.tcpClient.GetStream();
+            this.logger = logger;
         }
 
         protected override void Initialize(IMessageSerializer messageSerializer)
@@ -26,12 +28,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             this.MessageReader =
                 new MessageReader(
                     this.networkStream,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
 
             this.MessageWriter =
                 new MessageWriter(
                     this.networkStream,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
         }
 
         protected override void Shutdown()
@@ -47,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 #endif
                 this.tcpClient = null;
 
-                Logger.Write(LogLevel.Verbose, "TCP client has been closed");
+                this.logger.Write(LogLevel.Verbose, "TCP client has been closed");
             }
         }
     }

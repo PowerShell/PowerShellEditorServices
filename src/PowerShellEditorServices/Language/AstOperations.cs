@@ -39,6 +39,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="powerShellContext">
         /// The PowerShellContext to use for gathering completions.
         /// </param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         /// <param name="cancellationToken">
         /// A CancellationToken to cancel completion requests.
         /// </param>
@@ -51,6 +52,7 @@ namespace Microsoft.PowerShell.EditorServices
             Token[] currentTokens,
             int fileOffset,
             PowerShellContext powerShellContext,
+            ILogger logger,
             CancellationToken cancellationToken)
         {
             var type = scriptAst.Extent.StartScriptPosition.GetType();
@@ -72,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices
                     scriptAst.Extent.StartScriptPosition,
                     new object[] { fileOffset });
 
-            Logger.Write(
+            logger.Write(
                 LogLevel.Verbose,
                 string.Format(
                     "Getting completions at offset {0} (line: {1}, column: {2})",
@@ -99,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices
                     ErrorRecord errorRecord = outputObject.BaseObject as ErrorRecord;
                     if (errorRecord != null)
                     {
-                        Logger.WriteException(
+                        logger.WriteException(
                             "Encountered an error while invoking TabExpansion2 in the debugger",
                             errorRecord.Exception);
                     }
@@ -130,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                     stopwatch.Stop();
 
-                    Logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
+                    logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
                 }
             }
 

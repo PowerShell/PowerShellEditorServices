@@ -6,16 +6,21 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class TcpSocketClientChannel : ChannelBase
     {
+        private ILogger logger;
         private NetworkStream networkStream;
 
-        public TcpSocketClientChannel(TcpClient tcpClient)
+        public TcpSocketClientChannel(
+            TcpClient tcpClient,
+            ILogger logger)
         {
             this.networkStream = tcpClient.GetStream();
+            this.logger = logger;
         }
 
         protected override void Initialize(IMessageSerializer messageSerializer)
@@ -23,12 +28,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             this.MessageReader =
                 new MessageReader(
                     this.networkStream,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
 
             this.MessageWriter =
                 new MessageWriter(
                     this.networkStream,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
         }
 
         protected override void Shutdown()
@@ -42,12 +49,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         public static async Task<TcpSocketClientChannel> Connect(
             int portNumber,
-            MessageProtocolType messageProtocolType)
+            MessageProtocolType messageProtocolType,
+            ILogger logger)
         {
             TcpClient tcpClient = new TcpClient();
             await tcpClient.ConnectAsync(IPAddress.Loopback, portNumber);
 
-            var clientChannel = new TcpSocketClientChannel(tcpClient);
+            var clientChannel = new TcpSocketClientChannel(tcpClient, logger);
             clientChannel.Start(messageProtocolType);
 
             return clientChannel;

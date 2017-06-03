@@ -6,16 +6,21 @@
 using System;
 using System.IO.Pipes;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class NamedPipeClientChannel : ChannelBase
     {
+        private ILogger logger;
         private NamedPipeClientStream pipeClient;
 
-        public NamedPipeClientChannel(NamedPipeClientStream pipeClient)
+        public NamedPipeClientChannel(
+            NamedPipeClientStream pipeClient,
+            ILogger logger)
         {
             this.pipeClient = pipeClient;
+            this.logger = logger;
         }
 
         protected override void Initialize(IMessageSerializer messageSerializer)
@@ -23,12 +28,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             this.MessageReader =
                 new MessageReader(
                     this.pipeClient,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
 
             this.MessageWriter =
                 new MessageWriter(
                     this.pipeClient,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
         }
 
         protected override void Shutdown()
@@ -41,7 +48,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         public static async Task<NamedPipeClientChannel> Connect(
             string pipeName,
-            MessageProtocolType messageProtocolType)
+            MessageProtocolType messageProtocolType,
+            ILogger logger)
         {
             var pipeClient =
                 new NamedPipeClientStream(
@@ -68,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                 }
             }
 #endif
-            var clientChannel = new NamedPipeClientChannel(pipeClient);
+            var clientChannel = new NamedPipeClientChannel(pipeClient, logger);
             clientChannel.Start(messageProtocolType);
 
             return clientChannel;

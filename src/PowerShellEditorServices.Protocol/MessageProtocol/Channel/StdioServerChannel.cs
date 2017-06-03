@@ -5,6 +5,7 @@
 
 using System.IO;
 using System.Text;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
@@ -15,8 +16,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     /// </summary>
     public class StdioServerChannel : ChannelBase
     {
+        private ILogger logger;
         private Stream inputStream;
         private Stream outputStream;
+
+        public StdioServerChannel(ILogger logger)
+        {
+            this.logger = logger;
+        }
 
         protected override void Initialize(IMessageSerializer messageSerializer)
         {
@@ -34,12 +41,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             this.MessageReader =
                 new MessageReader(
                     this.inputStream,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
 
             this.MessageWriter =
                 new MessageWriter(
                     this.outputStream,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
         }
 
         protected override void Shutdown()

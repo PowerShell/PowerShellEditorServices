@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public ConsoleServiceTests()
         {
-            this.powerShellContext = new PowerShellContext();
+            this.powerShellContext = new PowerShellContext(new NullLogger());
             ConsoleServicePSHost psHost =
                 new ConsoleServicePSHost(
                     powerShellContext,
@@ -560,7 +560,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public TestConsoleChoicePromptHandler(
             IConsoleHost consoleHost,
             TaskCompletionSource<TestConsoleChoicePromptHandler> promptShownTask)
-            : base(consoleHost)
+            : base(consoleHost, new NullLogger())
         {
             this.consoleHost = consoleHost;
             this.promptShownTask = promptShownTask;
@@ -622,7 +622,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public TestConsoleInputPromptHandler(
             IConsoleHost consoleHost,
             TaskCompletionSource<TestConsoleInputPromptHandler> promptShownTask)
-            : base(consoleHost)
+            : base(consoleHost, new NullLogger())
         {
             this.consoleHost = consoleHost;
             this.promptShownTask = promptShownTask;

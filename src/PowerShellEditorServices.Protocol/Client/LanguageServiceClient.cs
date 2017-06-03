@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 {
@@ -18,8 +19,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         private Dictionary<string, ScriptFileMarker[]> cachedDiagnostics =
             new Dictionary<string, ScriptFileMarker[]>();
 
-        public LanguageServiceClient(ChannelBase clientChannel)
-            : base(clientChannel)
+        public LanguageServiceClient(ChannelBase clientChannel, ILogger logger)
+            : base(clientChannel, logger)
         {
         }
 

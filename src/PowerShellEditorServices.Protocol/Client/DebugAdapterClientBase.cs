@@ -7,16 +7,18 @@ using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 {
     public class DebugAdapterClient : ProtocolEndpoint
     {
-        public DebugAdapterClient(ChannelBase clientChannel)
+        public DebugAdapterClient(ChannelBase clientChannel, ILogger logger)
             : base(
                 clientChannel,
-                new MessageDispatcher(),
-                MessageProtocolType.DebugAdapter)
+                new MessageDispatcher(logger),
+                MessageProtocolType.DebugAdapter,
+                logger)
         {
         }
 

@@ -25,6 +25,8 @@ namespace Microsoft.PowerShell.EditorServices
         #region Private Fields
 
         private const int NumRunspaces = 1;
+
+        private ILogger logger;
         private RunspacePool analysisRunspacePool;
         private PSModuleInfo scriptAnalyzerModuleInfo;
 
@@ -103,13 +105,16 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates an instance of the AnalysisService class.
         /// </summary>
         /// <param name="settingsPath">Path to a PSScriptAnalyzer settings file.</param>
-        public AnalysisService(string settingsPath = null)
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public AnalysisService(string settingsPath, ILogger logger)
         {
+            this.logger = logger;
+
             try
             {
                 this.SettingsPath = settingsPath;
 
-                scriptAnalyzerModuleInfo = FindPSScriptAnalyzerModule();
+                scriptAnalyzerModuleInfo = FindPSScriptAnalyzerModule(logger);
                 var sessionState = InitialSessionState.CreateDefault2();
                 sessionState.ImportPSModulesFromPath(scriptAnalyzerModuleInfo.ModuleBase);
 
@@ -131,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices
                 var sb = new StringBuilder();
                 sb.AppendLine("PSScriptAnalyzer cannot be imported, AnalysisService will be disabled.");
                 sb.AppendLine(e.Message);
-                Logger.Write(LogLevel.Warning, sb.ToString());
+                this.logger.Write(LogLevel.Warning, sb.ToString());
             }
         }
 
@@ -295,7 +300,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private static PSModuleInfo FindPSScriptAnalyzerModule()
+        private static PSModuleInfo FindPSScriptAnalyzerModule(ILogger logger)
         {
             using (var ps = System.Management.Automation.PowerShell.Create())
             {
@@ -314,7 +319,7 @@ namespace Microsoft.PowerShell.EditorServices
                 var psModuleInfo = modules == null ? null : modules.FirstOrDefault();
                 if (psModuleInfo != null)
                 {
-                    Logger.Write(
+                    logger.Write(
                         LogLevel.Normal,
                             string.Format(
                                 "PSScriptAnalyzer found at {0}",
@@ -323,7 +328,7 @@ namespace Microsoft.PowerShell.EditorServices
                     return psModuleInfo;
                 }
 
-                Logger.Write(
+                logger.Write(
                     LogLevel.Normal,
                     "PSScriptAnalyzer module was not found.");
                 return null;
@@ -342,7 +347,7 @@ namespace Microsoft.PowerShell.EditorServices
                     sb.AppendLine(rule);
                 }
 
-                Logger.Write(LogLevel.Verbose, sb.ToString());
+                this.logger.Write(LogLevel.Verbose, sb.ToString());
             }
         }
 
@@ -380,7 +385,7 @@ namespace Microsoft.PowerShell.EditorServices
                     });
             }
 
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Verbose,
                 String.Format("Found {0} violations", diagnosticRecords.Count()));
 
@@ -410,7 +415,7 @@ namespace Microsoft.PowerShell.EditorServices
                     // Two main reasons that cause the exception are:
                     // * PSCmdlet.WriteOutput being called from another thread than Begin/Process
                     // * CompositionContainer.ComposeParts complaining that "...Only one batch can be composed at a time"
-                    Logger.Write(LogLevel.Error, ex.Message);
+                    this.logger.Write(LogLevel.Error, ex.Message);
                 }
 
                 return result;

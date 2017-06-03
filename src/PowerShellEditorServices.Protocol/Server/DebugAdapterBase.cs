@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
@@ -14,11 +15,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         public DebugAdapterBase(
             ChannelBase serverChannel,
-            MessageDispatcher messageDispatcher)
+            MessageDispatcher messageDispatcher,
+            ILogger logger)
             : base(
                 serverChannel,
                 messageDispatcher,
-                MessageProtocolType.DebugAdapter)
+                MessageProtocolType.DebugAdapter,
+                logger)
         {
         }
 

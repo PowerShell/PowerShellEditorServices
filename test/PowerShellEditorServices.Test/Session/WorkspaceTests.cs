@@ -8,12 +8,13 @@ using System;
 using System.IO;
 using System.Linq;
 using Xunit;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Session
 {
     public class WorkspaceTests
     {
-        private static readonly Version PowerShellVersion = new Version("5.0"); 
+        private static readonly Version PowerShellVersion = new Version("5.0");
 
         [Fact]
         public void CanResolveWorkspaceRelativePath()
@@ -23,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             string testPathOutside = @"c:\Test\PeerPath\FilePath.ps1";
             string testPathAnotherDrive = @"z:\TryAndFindMe\FilePath.ps1";
 
-            Workspace workspace = new Workspace(PowerShellVersion);
+            Workspace workspace = new Workspace(PowerShellVersion, new NullLogger());
 
             // Test without a workspace path
             Assert.Equal(testPathOutside, workspace.GetRelativePath(testPathOutside));

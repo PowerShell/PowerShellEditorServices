@@ -17,6 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     {
         #region Private Fields
 
+        private ILogger logger;
         private Stream outputStream;
         private IMessageSerializer messageSerializer;
         private AsyncLock writeLock = new AsyncLock();
@@ -31,11 +32,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         public MessageWriter(
             Stream outputStream,
-            IMessageSerializer messageSerializer)
+            IMessageSerializer messageSerializer,
+            ILogger logger)
         {
             Validate.IsNotNull("streamWriter", outputStream);
             Validate.IsNotNull("messageSerializer", messageSerializer);
 
+            this.logger = logger;
             this.outputStream = outputStream;
             this.messageSerializer = messageSerializer;
         }
@@ -56,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     messageToWrite);
 
             // Log the JSON representation of the message
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Verbose,
                 string.Format(
                     "WRITE MESSAGE:\r\n\r\n{0}",

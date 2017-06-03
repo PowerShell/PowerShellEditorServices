@@ -35,7 +35,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
 
         public async Task InitializeAsync()
         {
-            this.powerShellContext = PowerShellContextFactory.Create();
+            var logger = new NullLogger();
+            this.powerShellContext = PowerShellContextFactory.Create(logger);
             await this.powerShellContext.ImportCommandsModule(@"..\..\..\..\..\module\PowerShellEditorServices\Commands");
 
             this.extensionService = new ExtensionService(this.powerShellContext);

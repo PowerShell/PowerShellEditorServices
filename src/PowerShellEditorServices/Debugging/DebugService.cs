@@ -29,6 +29,7 @@ namespace Microsoft.PowerShell.EditorServices
         private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
         private const string TemporaryScriptFileName = "Script Listing.ps1";
 
+        private ILogger logger;
         private PowerShellContext powerShellContext;
         private RemoteFileManager remoteFileManager;
 
@@ -79,8 +80,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="powerShellContext">
         /// The PowerShellContext to use for all debugging operations.
         /// </param>
-        public DebugService(PowerShellContext powerShellContext)
-            : this(powerShellContext, null)
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public DebugService(PowerShellContext powerShellContext, ILogger logger)
+            : this(powerShellContext, null, logger)
         {
         }
 
@@ -94,12 +96,15 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="remoteFileManager">
         /// A RemoteFileManager instance to use for accessing files in remote sessions.
         /// </param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public DebugService(
             PowerShellContext powerShellContext,
-            RemoteFileManager remoteFileManager)
+            RemoteFileManager remoteFileManager,
+            ILogger logger)
         {
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
+            this.logger = logger;
             this.powerShellContext = powerShellContext;
             this.powerShellContext.DebuggerStop += this.OnDebuggerStop;
             this.powerShellContext.DebuggerResumed += this.OnDebuggerResumed;
@@ -145,7 +150,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (!this.remoteFileManager.IsUnderRemoteTempPath(scriptPath))
                 {
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Verbose,
                         $"Could not set breakpoints for local path '{scriptPath}' in a remote session.");
 
@@ -163,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.temporaryScriptListingPath != null &&
                 this.temporaryScriptListingPath.Equals(scriptPath, StringComparison.CurrentCultureIgnoreCase))
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Verbose,
                     $"Could not set breakpoint on temporary script listing path '{scriptPath}'.");
 
@@ -361,7 +366,7 @@ namespace Microsoft.PowerShell.EditorServices
             VariableDetailsBase parentVariable = this.variables[variableReferenceId];
             if (parentVariable.IsExpandable)
             {
-                childVariables = parentVariable.GetChildren();
+                childVariables = parentVariable.GetChildren(this.logger);
                 foreach (var child in childVariables)
                 {
                     // Only add child if it hasn't already been added.
@@ -439,7 +444,7 @@ namespace Microsoft.PowerShell.EditorServices
             Validate.IsNotNull(nameof(name), name);
             Validate.IsNotNull(nameof(value), value);
 
-            Logger.Write(LogLevel.Verbose, $"SetVariableRequest for '{name}' to value string (pre-quote processing): '{value}'");
+            this.logger.Write(LogLevel.Verbose, $"SetVariableRequest for '{name}' to value string (pre-quote processing): '{value}'");
 
             // An empty or whitespace only value is not a valid expression for SetVariable.
             if (value.Trim().Length == 0)
@@ -552,7 +557,7 @@ namespace Microsoft.PowerShell.EditorServices
                 EngineIntrinsics executionContext = getExecContextResults.OfType<EngineIntrinsics>().FirstOrDefault();
 
                 var msg = $"Setting variable '{name}' using conversion to value: {psobject ?? "<null>"}";
-                Logger.Write(LogLevel.Verbose, msg);
+                this.logger.Write(LogLevel.Verbose, msg);
 
                 psVariable.Value = argTypeConverterAttr.Transform(executionContext, psobject);
             }
@@ -560,14 +565,14 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 // PSVariable is *not* strongly typed. In this case, whack the old value with the new value.
                 var msg = $"Setting variable '{name}' directly to value: {psobject ?? "<null>"} - previous type was {psVariable.Value?.GetType().Name ?? "<unknown>"}";
-                Logger.Write(LogLevel.Verbose, msg);
+                this.logger.Write(LogLevel.Verbose, msg);
                 psVariable.Value = psobject;
             }
 
             // Use the VariableDetails.ValueString functionality to get the string representation for client debugger.
             // This makes the returned string consistent with the strings normally displayed for variables in the debugger.
             var tempVariable = new VariableDetails(psVariable);
-            Logger.Write(LogLevel.Verbose, $"Set variable '{name}' to: {tempVariable.ValueString ?? "<null>"}");
+            this.logger.Write(LogLevel.Verbose, $"Set variable '{name}' to: {tempVariable.ValueString ?? "<null>"}");
             return tempVariable.ValueString;
         }
 
@@ -763,7 +768,7 @@ namespace Microsoft.PowerShell.EditorServices
                         optionsProperty.Value as string,
                         out variableScope))
                 {
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Warning,
                         $"Could not parse a variable's ScopedItemOptions value of '{optionsProperty.Value}'");
                 }
@@ -949,7 +954,7 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     // Shouldn't get here unless someone called this with no condition and no hit count.
                     actionScriptBlock = ScriptBlock.Create("break");
-                    Logger.Write(LogLevel.Warning, "No condition and no hit count specified by caller.");
+                    this.logger.Write(LogLevel.Warning, "No condition and no hit count specified by caller.");
                 }
 
                 return actionScriptBlock;
@@ -1112,7 +1117,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 else
                 {
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Warning,
                         $"Could not load script context");
                 }
@@ -1195,7 +1200,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                     if (mappedPath == null)
                     {
-                        Logger.Write(
+                        this.logger.Write(
                             LogLevel.Error,
                             $"Could not map remote path '{scriptPath}' to a local path.");
 

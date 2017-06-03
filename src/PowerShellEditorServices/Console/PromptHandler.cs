@@ -4,6 +4,7 @@
 //
 
 using System;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -12,6 +13,20 @@ namespace Microsoft.PowerShell.EditorServices.Console
     /// </summary>
     public abstract class PromptHandler
     {
+        /// <summary>
+        /// Gets the ILogger used for this instance.
+        /// </summary>
+        protected ILogger Logger { get; private set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public PromptHandler(ILogger logger)
+        {
+            this.Logger = logger;
+        }
+
         /// <summary>
         /// Called when the active prompt should be cancelled.
         /// </summary>

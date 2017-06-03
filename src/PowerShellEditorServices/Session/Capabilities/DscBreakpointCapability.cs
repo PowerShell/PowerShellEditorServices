@@ -79,7 +79,8 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
 
         public static DscBreakpointCapability CheckForCapability(
             RunspaceDetails runspaceDetails,
-            PowerShellContext powerShellContext)
+            PowerShellContext powerShellContext,
+            ILogger logger)
         {
             DscBreakpointCapability capability = null;
 
@@ -103,12 +104,12 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
                     }
                     catch (CmdletInvocationException e)
                     {
-                        Logger.WriteException("Could not load the DSC module!", e);
+                        logger.WriteException("Could not load the DSC module!", e);
                     }
 
                     if (moduleInfo != null)
                     {
-                        Logger.Write(LogLevel.Verbose, "Side-by-side DSC module found, gathering DSC resource paths...");
+                        logger.Write(LogLevel.Verbose, "Side-by-side DSC module found, gathering DSC resource paths...");
 
                         // The module was loaded, add the breakpoint capability
                         capability = new DscBreakpointCapability();
@@ -132,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
                         }
                         catch (CmdletInvocationException e)
                         {
-                            Logger.WriteException("Get-DscResource failed!", e);
+                            logger.WriteException("Get-DscResource failed!", e);
                         }
 
                         if (resourcePaths != null)
@@ -142,16 +143,16 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
                                     .Select(o => (string)o.BaseObject)
                                     .ToArray();
 
-                            Logger.Write(LogLevel.Verbose, $"DSC resources found: {resourcePaths.Count}");
+                            logger.Write(LogLevel.Verbose, $"DSC resources found: {resourcePaths.Count}");
                         }
                         else
                         {
-                            Logger.Write(LogLevel.Verbose, $"No DSC resources found.");
+                            logger.Write(LogLevel.Verbose, $"No DSC resources found.");
                         }
                     }
                     else
                     {
-                        Logger.Write(LogLevel.Verbose, $"Side-by-side DSC module was not found.");
+                        logger.Write(LogLevel.Verbose, $"Side-by-side DSC module was not found.");
                     }
                 }
             }

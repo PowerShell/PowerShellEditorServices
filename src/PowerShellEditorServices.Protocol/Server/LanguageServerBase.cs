@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
@@ -16,11 +17,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         public LanguageServerBase(
             ChannelBase serverChannel,
-            MessageDispatcher messageDispatcher)
+            MessageDispatcher messageDispatcher,
+            ILogger logger)
             : base(
                 serverChannel,
                 messageDispatcher,
-                MessageProtocolType.LanguageServer)
+                MessageProtocolType.LanguageServer,
+                logger)
         {
             this.serverChannel = serverChannel;
         }

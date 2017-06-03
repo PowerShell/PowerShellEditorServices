@@ -18,6 +18,12 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public class EditorSession
     {
+        #region Private Fields
+
+        private ILogger logger;
+
+        #endregion
+
         #region Properties
 
         /// <summary>
@@ -73,6 +79,19 @@ namespace Microsoft.PowerShell.EditorServices
 
         #endregion
 
+        #region Constructors
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public EditorSession(ILogger logger)
+        {
+            this.logger = logger;
+        }
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
@@ -90,14 +109,14 @@ namespace Microsoft.PowerShell.EditorServices
             this.ConsoleService = consoleService;
             this.UsesConsoleHost = this.ConsoleService.EnableConsoleRepl;
 
-            this.LanguageService = new LanguageService(this.PowerShellContext);
+            this.LanguageService = new LanguageService(this.PowerShellContext, this.logger);
             this.ExtensionService = new ExtensionService(this.PowerShellContext);
-            this.TemplateService = new TemplateService(this.PowerShellContext);
+            this.TemplateService = new TemplateService(this.PowerShellContext, this.logger);
 
             this.InstantiateAnalysisService();
 
             // Create a workspace to contain open files
-            this.Workspace = new Workspace(this.PowerShellContext.LocalPowerShellVersion.Version);
+            this.Workspace = new Workspace(this.PowerShellContext.LocalPowerShellVersion.Version, this.logger);
         }
 
         /// <summary>
@@ -118,11 +137,11 @@ namespace Microsoft.PowerShell.EditorServices
             this.PowerShellContext = powerShellContext;
             this.ConsoleService = consoleService;
 
-            this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations);
-            this.DebugService = new DebugService(this.PowerShellContext, this.RemoteFileManager);
+            this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations, logger);
+            this.DebugService = new DebugService(this.PowerShellContext, this.RemoteFileManager, logger);
 
             // Create a workspace to contain open files
-            this.Workspace = new Workspace(this.PowerShellContext.LocalPowerShellVersion.Version);
+            this.Workspace = new Workspace(this.PowerShellContext.LocalPowerShellVersion.Version, this.logger);
         }
 
         /// <summary>
@@ -135,8 +154,8 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (this.DebugService == null)
             {
-                this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations);
-                this.DebugService = new DebugService(this.PowerShellContext, this.RemoteFileManager);
+                this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations, logger);
+                this.DebugService = new DebugService(this.PowerShellContext, this.RemoteFileManager, logger);
             }
         }
 
@@ -146,11 +165,11 @@ namespace Microsoft.PowerShell.EditorServices
             // Script Analyzer binaries are not included.
             try
             {
-                this.AnalysisService = new AnalysisService(settingsPath);
+                this.AnalysisService = new AnalysisService(settingsPath, this.logger);
             }
             catch (FileNotFoundException)
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Warning,
                     "Script Analyzer binaries not found, AnalysisService will be disabled.");
             }
