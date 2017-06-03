@@ -13,15 +13,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class TcpSocketServerListener : ServerListenerBase<TcpSocketServerChannel>
     {
+        private ILogger logger;
         private int portNumber;
         private TcpListener tcpListener;
 
         public TcpSocketServerListener(
             MessageProtocolType messageProtocolType,
-            int portNumber)
+            int portNumber,
+            ILogger logger)
                 : base(messageProtocolType)
         {
             this.portNumber = portNumber;
+            this.logger = logger;
         }
 
         public override void Start()
@@ -43,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                 this.tcpListener.Stop();
                 this.tcpListener = null;
 
-                Logger.Write(LogLevel.Verbose, "TCP listener has been stopped");
+                this.logger.Write(LogLevel.Verbose, "TCP listener has been stopped");
             }
         }
 
@@ -57,11 +60,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                         TcpClient tcpClient = await this.tcpListener.AcceptTcpClientAsync();
                         this.OnClientConnect(
                             new TcpSocketServerChannel(
-                                tcpClient));
+                                tcpClient,
+                                this.logger));
                     }
                     catch (Exception e)
                     {
-                        Logger.WriteException(
+                        this.logger.WriteException(
                             "An unhandled exception occurred while listening for a TCP client connection",
                             e);
 

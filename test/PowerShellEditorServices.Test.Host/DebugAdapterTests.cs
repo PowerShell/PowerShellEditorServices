@@ -17,6 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class DebugAdapterTests : ServerTestsBase, IAsyncLifetime
     {
+        private ILogger logger;
         private DebugAdapterClient debugAdapterClient;
         private string DebugScriptPath =
             Path.GetFullPath(@"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
@@ -34,10 +35,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8));
 
-            Logger.Initialize(
+            this.logger =
                 new FileLogger(
                     testLogPath + "-client.log",
-                    LogLevel.Verbose));
+                    LogLevel.Verbose);
+
+            Logger.Initialize(this.logger);
 
             testLogPath += "-server.log";
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);
@@ -53,7 +56,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     new DebugAdapterClient(
                         await TcpSocketClientChannel.Connect(
                             portNumbers.Item2,
-                            MessageProtocolType.DebugAdapter));
+                            MessageProtocolType.DebugAdapter,
+                            this.logger),
+                        this.logger);
 
             await this.debugAdapterClient.Start();
         }

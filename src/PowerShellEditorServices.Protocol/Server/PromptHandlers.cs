@@ -31,7 +31,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             return new ProtocolChoicePromptHandler(
                 this.messageSender,
-                this.consoleService);
+                this.consoleService,
+                Logger.CurrentLogger);
         }
 
         public InputPromptHandler GetInputPromptHandler()
@@ -50,8 +51,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         public ProtocolChoicePromptHandler(
             IMessageSender messageSender,
-            ConsoleService consoleService)
-                : base(consoleService)
+            ConsoleService consoleService,
+            ILogger logger)
+                : base(consoleService, logger)
         {
             this.messageSender = messageSender;
             this.consoleService = consoleService;
@@ -131,7 +133,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public ProtocolInputPromptHandler(
             IMessageSender messageSender,
             ConsoleService consoleService)
-                : base(consoleService)
+                : base(
+                    consoleService,
+                    Microsoft.PowerShell.EditorServices.Utility.Logger.CurrentLogger)
         {
             this.messageSender = messageSender;
             this.consoleService = consoleService;

@@ -40,8 +40,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public DebugAdapter(
             EditorSession editorSession,
             ChannelBase serverChannel,
-            bool ownsEditorSession)
-                : base(serverChannel, new MessageDispatcher())
+            bool ownsEditorSession,
+            ILogger logger)
+                : base(serverChannel, new MessageDispatcher(logger), logger)
         {
             this.editorSession = editorSession;
             this.ownsEditorSession = ownsEditorSession;

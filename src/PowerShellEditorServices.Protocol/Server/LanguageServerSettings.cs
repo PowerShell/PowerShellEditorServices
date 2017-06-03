@@ -19,12 +19,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.ScriptAnalysis = new ScriptAnalysisSettings();
         }
 
-        public void Update(LanguageServerSettings settings, string workspaceRootPath)
+        public void Update(
+            LanguageServerSettings settings,
+            string workspaceRootPath,
+            ILogger logger)
         {
             if (settings != null)
             {
                 this.EnableProfileLoading = settings.EnableProfileLoading;
-                this.ScriptAnalysis.Update(settings.ScriptAnalysis, workspaceRootPath);
+                this.ScriptAnalysis.Update(
+                    settings.ScriptAnalysis,
+                    workspaceRootPath,
+                    logger);
             }
         }
     }
@@ -40,7 +46,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.Enable = true;
         }
 
-        public void Update(ScriptAnalysisSettings settings, string workspaceRootPath)
+        public void Update(
+            ScriptAnalysisSettings settings,
+            string workspaceRootPath,
+            ILogger logger)
         {
             if (settings != null)
             {
@@ -62,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         // In this case we should just log an error and let
                         // the specified settings path go through even though
                         // it will fail to load.
-                        Logger.Write(
+                        logger.Write(
                             LogLevel.Error,
                             "Could not resolve Script Analyzer settings path due to null or empty workspaceRootPath.");
                     }

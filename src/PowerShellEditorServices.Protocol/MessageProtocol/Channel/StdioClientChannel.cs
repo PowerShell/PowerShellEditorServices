@@ -6,6 +6,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
@@ -19,6 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         private string serviceProcessPath;
         private string serviceProcessArguments;
 
+        private ILogger logger;
         private Stream inputStream;
         private Stream outputStream;
         private Process serviceProcess;
@@ -35,8 +37,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         /// <param name="serverProcessArguments">Optional arguments to pass to the service process executable.</param>
         public StdioClientChannel(
             string serverProcessPath,
+            ILogger logger,
             params string[] serverProcessArguments)
         {
+            this.logger = logger;
             this.serviceProcessPath = serverProcessPath;
 
             if (serverProcessArguments != null)
@@ -46,11 +50,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                         " ",
                         serverProcessArguments);
             }
-        }
-
-        public StdioClientChannel(Process serviceProcess)
-        {
-            this.serviceProcess = serviceProcess;
         }
 
         protected override void Initialize(IMessageSerializer messageSerializer)
@@ -84,12 +83,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             this.MessageReader =
                 new MessageReader(
                     this.inputStream,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
 
             this.MessageWriter =
                 new MessageWriter(
                     this.outputStream,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
         }
 
         protected override void Shutdown()

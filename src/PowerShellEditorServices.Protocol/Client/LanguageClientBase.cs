@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 {
@@ -20,11 +21,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         /// specified channel for communication.
         /// </summary>
         /// <param name="clientChannel">The channel to use for communication with the server.</param>
-        public LanguageClientBase(ChannelBase clientChannel)
+        public LanguageClientBase(ChannelBase clientChannel, ILogger logger)
             : base(
                 clientChannel,
-                new MessageDispatcher(),
-                MessageProtocolType.LanguageServer)
+                new MessageDispatcher(logger),
+                MessageProtocolType.LanguageServer,
+                logger)
         {
         }
 

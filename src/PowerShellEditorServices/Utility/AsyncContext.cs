@@ -23,7 +23,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// The Task-returning Func which represents the "main" function
         /// for the thread.
         /// </param>
-        public static void Start(Func<Task> asyncMainFunc)
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public static void Start(Func<Task> asyncMainFunc, ILogger logger)
         {
             // Is there already a synchronization context?
             if (SynchronizationContext.Current != null)
@@ -33,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             // Create and register a synchronization context for this thread
-            var threadSyncContext = new ThreadSynchronizationContext();
+            var threadSyncContext = new ThreadSynchronizationContext(logger);
             SynchronizationContext.SetSynchronizationContext(threadSyncContext);
 
             // Get the main task and act on its completion

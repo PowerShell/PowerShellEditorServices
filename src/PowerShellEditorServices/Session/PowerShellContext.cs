@@ -33,6 +33,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Fields
 
+        private ILogger logger;
         private PowerShell powerShell;
         private bool ownsInitialRunspace;
         private RunspaceDetails initialRunspace;
@@ -105,6 +106,15 @@ namespace Microsoft.PowerShell.EditorServices
         #endregion
 
         #region Constructors
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public PowerShellContext(ILogger logger)
+        {
+            this.logger = logger;
+        }
 
         /// <summary>
         ///
@@ -180,7 +190,8 @@ namespace Microsoft.PowerShell.EditorServices
             // Get the PowerShell runtime version
             this.LocalPowerShellVersion =
                 PowerShellVersionDetails.GetVersionDetails(
-                    initialRunspace);
+                    initialRunspace,
+                    this.logger);
 
             this.powerShell = PowerShell.Create();
             this.powerShell.Runspace = initialRunspace;
@@ -196,7 +207,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.CurrentRunspace = this.initialRunspace;
 
             // Write out the PowerShell version for tracking purposes
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Normal,
                 string.Format(
                     "PowerShell runtime version: {0}, edition: {1}",
@@ -422,7 +433,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (Thread.CurrentThread.ManagedThreadId != this.pipelineThreadId &&
                 this.pipelineExecutionTask != null)
             {
-                Logger.Write(LogLevel.Verbose, "Passing command execution to pipeline thread.");
+                this.logger.Write(LogLevel.Verbose, "Passing command execution to pipeline thread.");
 
                 PipelineExecutionRequest<TResult> executionRequest =
                     new PipelineExecutionRequest<TResult>(
@@ -467,7 +478,7 @@ namespace Microsoft.PowerShell.EditorServices
                     }
                     else
                     {
-                        Logger.Write(
+                        this.logger.Write(
                             LogLevel.Verbose,
                             string.Format(
                                 "Attempting to execute command(s):\r\n\r\n{0}",
@@ -521,13 +532,13 @@ namespace Microsoft.PowerShell.EditorServices
                             }
 
                             errorMessages?.Append(errorMessage);
-                            Logger.Write(LogLevel.Error, errorMessage);
+                            this.logger.Write(LogLevel.Error, errorMessage);
 
                             hadErrors = true;
                         }
                         else
                         {
-                            Logger.Write(
+                            this.logger.Write(
                                 LogLevel.Verbose,
                                 "Execution completed successfully.");
                         }
@@ -535,7 +546,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 catch (PipelineStoppedException e)
                 {
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Error,
                         "Pipeline stopped while executing command:\r\n\r\n" + e.ToString());
 
@@ -543,7 +554,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 catch (RuntimeException e)
                 {
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Error,
                         "Runtime exception occurred while executing command:\r\n\r\n" + e.ToString());
 
@@ -744,7 +755,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 catch (System.Management.Automation.DriveNotFoundException e)
                 {
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Error,
                         "Could not determine current filesystem location:\r\n\r\n" + e.ToString());
                 }
@@ -858,7 +869,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (this.SessionState != PowerShellContextState.Aborting &&
                 this.SessionState != PowerShellContextState.Disposed)
             {
-                Logger.Write(LogLevel.Verbose, "Execution abort requested...");
+                this.logger.Write(LogLevel.Verbose, "Execution abort requested...");
 
                 // Clean up the debugger
                 if (this.IsDebuggerStopped)
@@ -880,7 +891,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             else
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Verbose,
                     string.Format(
                         $"Execution abort requested when already aborted (SessionState = {this.SessionState})"));
@@ -894,7 +905,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         internal void BreakExecution()
         {
-            Logger.Write(LogLevel.Verbose, "Debugger break requested...");
+            this.logger.Write(LogLevel.Verbose, "Debugger break requested...");
 
             // Pause the debugger
             this.versionSpecificOperations.PauseDebugger(
@@ -909,14 +920,14 @@ namespace Microsoft.PowerShell.EditorServices
                 // The execution thread will clean up the task.
                 if (!this.debuggerStoppedTask.TrySetResult(resumeAction))
                 {
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Error,
                         $"Tried to resume debugger with action {resumeAction} but the task was already completed.");
                 }
             }
             else
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Error,
                     $"Tried to resume debugger with action {resumeAction} but there was no debuggerStoppedTask.");
             }
@@ -1025,7 +1036,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                 if (exitException != null)
                 {
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Error,
                         $"Caught {exitException.GetType().Name} while exiting {runspaceDetails.Location} runspace:\r\n{exitException.ToString()}");
                 }
@@ -1044,7 +1055,7 @@ namespace Microsoft.PowerShell.EditorServices
             else
             {
                 // Write the situation to the log since this shouldn't happen
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Error,
                     "The PowerShellContext.runspaceWaitQueue has more than one item");
             }
@@ -1111,7 +1122,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (this.SessionState != PowerShellContextState.Disposed)
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Verbose,
                     string.Format(
                         "Session state changed --\r\n\r\n    Old state: {0}\r\n    New state: {1}\r\n    Result: {2}",
@@ -1124,7 +1135,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             else
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Warning,
                     $"Received session state change to {e.NewSessionState} when already disposed");
             }
@@ -1164,7 +1175,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private IEnumerable<TResult> ExecuteCommandInDebugger<TResult>(PSCommand psCommand, bool sendOutputToHost)
         {
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Verbose,
                 string.Format(
                     "Attempting to execute command(s) in the debugger:\r\n\r\n{0}",
@@ -1387,7 +1398,7 @@ namespace Microsoft.PowerShell.EditorServices
                 desiredExecutionPolicy == ExecutionPolicy.Bypass ||
                 currentPolicy == ExecutionPolicy.Undefined)
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Verbose,
                     string.Format(
                         "Setting execution policy:\r\n    Current = ExecutionPolicy.{0}\r\n    Desired = ExecutionPolicy.{1}",
@@ -1407,7 +1418,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 catch (CmdletInvocationException e)
                 {
-                    Logger.WriteException(
+                    this.logger.WriteException(
                         $"An error occurred while calling Set-ExecutionPolicy, the desired policy of {desiredExecutionPolicy} may not be set.",
                         e);
                 }
@@ -1416,7 +1427,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             else
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Verbose,
                     string.Format(
                         "Current execution policy: ExecutionPolicy.{0}",
@@ -1438,7 +1449,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             catch (RuntimeException e)
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Verbose,
                     "Runtime exception occurred while gathering runspace info:\r\n\r\n" + e.ToString());
             }
@@ -1534,7 +1545,7 @@ namespace Microsoft.PowerShell.EditorServices
                     nameof(profilePaths.CurrentUserCurrentHost),
                     profilePaths.CurrentUserCurrentHost));
 
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Verbose,
                 string.Format(
                     "Setting $profile variable in runspace.  Current user host profile path: {0}",
@@ -1584,7 +1595,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void OnDebuggerStop(object sender, DebuggerStopEventArgs e)
         {
-            Logger.Write(LogLevel.Verbose, "Debugger stopped execution.");
+            this.logger.Write(LogLevel.Verbose, "Debugger stopped execution.");
 
             // Set the task so a result can be set
             this.debuggerStoppedTask =
@@ -1616,7 +1627,7 @@ namespace Microsoft.PowerShell.EditorServices
             // Raise the event for the debugger service
             this.DebuggerStop?.Invoke(sender, e);
 
-            Logger.Write(LogLevel.Verbose, "Starting pipeline thread message loop...");
+            this.logger.Write(LogLevel.Verbose, "Starting pipeline thread message loop...");
 
             while (true)
             {
@@ -1631,7 +1642,7 @@ namespace Microsoft.PowerShell.EditorServices
                     this.WriteOutput("", true);
 
                     e.ResumeAction = localDebuggerStoppedTask.Result;
-                    Logger.Write(LogLevel.Verbose, "Received debugger resume action " + e.ResumeAction.ToString());
+                    this.logger.Write(LogLevel.Verbose, "Received debugger resume action " + e.ResumeAction.ToString());
 
                     // Notify listeners that the debugger has resumed
                     this.DebuggerResumed?.Invoke(this, e.ResumeAction);
@@ -1658,7 +1669,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 else if (taskIndex == 1)
                 {
-                    Logger.Write(LogLevel.Verbose, "Received pipeline thread execution request.");
+                    this.logger.Write(LogLevel.Verbose, "Received pipeline thread execution request.");
 
                     IPipelineExecutionRequest executionRequest = localPipelineExecutionTask.Result;
 
@@ -1667,7 +1678,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                     executionRequest.Execute().Wait();
 
-                    Logger.Write(LogLevel.Verbose, "Pipeline thread execution completed.");
+                    this.logger.Write(LogLevel.Verbose, "Pipeline thread execution completed.");
 
                     if (this.CurrentRunspace.Runspace.RunspaceAvailability == RunspaceAvailability.Available)
                     {
@@ -1761,12 +1772,12 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void ConfigureRunspaceCapabilities(RunspaceDetails runspaceDetails)
         {
-            DscBreakpointCapability.CheckForCapability(this.CurrentRunspace, this);
+            DscBreakpointCapability.CheckForCapability(this.CurrentRunspace, this, this.logger);
         }
 
         private void PushRunspace(RunspaceDetails newRunspaceDetails)
         {
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Verbose,
                 $"Pushing {this.CurrentRunspace.Location} ({this.CurrentRunspace.Context}), new runspace is {newRunspaceDetails.Location} ({newRunspaceDetails.Context}), connection: {newRunspaceDetails.ConnectionString}");
 
@@ -1869,7 +1880,7 @@ namespace Microsoft.PowerShell.EditorServices
                     RunspaceDetails previousRunspace = this.CurrentRunspace;
                     this.CurrentRunspace = this.runspaceStack.Pop();
 
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Verbose,
                         $"Popping {previousRunspace.Location} ({previousRunspace.Context}), new runspace is {this.CurrentRunspace.Location} ({this.CurrentRunspace.Context}), connection: {this.CurrentRunspace.ConnectionString}");
 
@@ -1896,7 +1907,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 else
                 {
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Error,
                         "Caller attempted to pop a runspace when no runspaces are on the stack.");
                 }
@@ -1931,7 +1942,8 @@ namespace Microsoft.PowerShell.EditorServices
             this.PushRunspace(
                 RunspaceDetails.CreateFromRunspace(
                     runspace,
-                    sessionDetails));
+                    sessionDetails,
+                    this.logger));
         }
 
         void IHostSupportsInteractiveSession.PopRunspace()

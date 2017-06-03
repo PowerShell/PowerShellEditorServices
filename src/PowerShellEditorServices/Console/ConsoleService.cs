@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             if (defaultPromptHandlerContext == null)
             {
                 defaultPromptHandlerContext =
-                    new ConsolePromptHandlerContext(this);
+                    new ConsolePromptHandlerContext(this, Logger.CurrentLogger);
             }
 
             this.promptHandlerContextStack.Push(
@@ -288,7 +288,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 }
                 else
                 {
-                    Logger.Write(LogLevel.Verbose, "InnerStartReadLoop called while read loop is already running");
+                    Logger.CurrentLogger.Write(LogLevel.Verbose, "InnerStartReadLoop called while read loop is already running");
                 }
             }
         }
@@ -339,7 +339,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                         true,
                         OutputType.Error);
 
-                    Logger.WriteException("Caught exception while reading command line", e);
+                    Logger.CurrentLogger.WriteException("Caught exception while reading command line", e);
                 }
 
                 if (commandString != null)
@@ -434,7 +434,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             if (this.activePromptHandler != null)
             {
-                Logger.Write(
+                Logger.CurrentLogger.Write(
                     LogLevel.Error,
                     "Prompt handler requested while another prompt is already active.");
             }

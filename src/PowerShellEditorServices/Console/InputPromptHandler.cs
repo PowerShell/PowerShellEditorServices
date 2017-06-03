@@ -10,6 +10,7 @@ using System.Management.Automation;
 using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -30,6 +31,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
             new TaskCompletionSource<Dictionary<string, object>>();
 
         #endregion
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public InputPromptHandler(ILogger logger) : base(logger)
+        {
+        }
 
         #region Properties
 
@@ -312,7 +321,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             foreach (FieldDetails field in this.Fields)
             {
-                fieldValues.Add(field.OriginalName, field.GetValue());
+                fieldValues.Add(field.OriginalName, field.GetValue(this.Logger));
             }
 
             return fieldValues;
@@ -321,4 +330,3 @@ namespace Microsoft.PowerShell.EditorServices.Console
         #endregion
     }
 }
-

@@ -71,8 +71,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         private void AssertWritesMessageAtLevel(LogLevel logLevel)
         {
             // Write a message at the desired level
-            Logger.Initialize(new FileLogger(logFilePath, LogLevel.Verbose));
-            Logger.Write(logLevel, testMessage);
+            var logger = new FileLogger(logFilePath, LogLevel.Verbose);
+            logger.Write(logLevel, testMessage);
+
+            // Dispose of the logger
+            logger.Dispose();
 
             // Read the contents and verify that it's there
             string logContents = this.ReadLogContents();
@@ -82,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
 
         private void AssertExcludesMessageBelowLevel(LogLevel minimumLogLevel)
         {
-            Logger.Initialize(new FileLogger(logFilePath, minimumLogLevel));
+            var logger = new FileLogger(logFilePath, minimumLogLevel);
 
             // Get all possible log levels
             LogLevel[] allLogLevels =
@@ -93,8 +96,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             // Write a message at each log level
             foreach (var logLevel in allLogLevels)
             {
-                Logger.Write((LogLevel)logLevel, testMessage);
+                logger.Write((LogLevel)logLevel, testMessage);
             }
+
+            // Dispose of the logger
+            logger.Dispose();
 
             // Make sure all excluded log levels aren't in the contents
             string logContents = this.ReadLogContents();
@@ -120,6 +126,44 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
                     File.ReadAllLines(
                         logFilePath,
                         Encoding.UTF8));
+        }
+
+        private class LogPathHelper : IDisposable
+        {
+            private readonly string logFilePathTemplate =
+                Path.Combine(
+    #if CoreCLR
+                    AppContext.BaseDirectory,
+    #else
+                    AppDomain.CurrentDomain.BaseDirectory,
+    #endif
+                    "Test-{0}.log");
+
+            public string LogFilePath { get; private set; }
+
+            public LogPathHelper()
+            {
+                this.LogFilePath =
+                    string.Format(
+                        logFilePathTemplate,
+                        "2");
+                        //Guid.NewGuid().ToString());
+            }
+
+            public void Dispose()
+            {
+                // Delete the created file
+                try
+                {
+                    if (this.LogFilePath != null)
+                    {
+                        File.Delete(this.LogFilePath);
+                    }
+                }
+                catch (Exception)
+                {
+                }
+            }
         }
 
         #endregion

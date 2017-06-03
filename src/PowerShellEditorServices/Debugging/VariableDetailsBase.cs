@@ -3,10 +3,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Utility;
+
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// Defines the common details between a variable and a variable container such as a scope 
+    /// Defines the common details between a variable and a variable container such as a scope
     /// in the current debugging session.
     /// </summary>
     public abstract class VariableDetailsBase
@@ -47,6 +49,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// details of its children.  Otherwise it returns an empty array.
         /// </summary>
         /// <returns></returns>
-        public abstract VariableDetailsBase[] GetChildren();
+        public abstract VariableDetailsBase[] GetChildren(ILogger logger);
     }
 }

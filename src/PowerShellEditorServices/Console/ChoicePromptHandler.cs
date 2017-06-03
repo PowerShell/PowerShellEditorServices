@@ -9,6 +9,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -46,6 +47,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
             new TaskCompletionSource<Dictionary<string, object>>();
 
         #endregion
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public ChoicePromptHandler(ILogger logger) : base(logger)
+        {
+        }
 
         #region Properties
 

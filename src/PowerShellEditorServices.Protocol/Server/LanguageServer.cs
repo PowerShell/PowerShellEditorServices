@@ -49,8 +49,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         /// </param>
         public LanguageServer(
             EditorSession editorSession,
-            ChannelBase serverChannel)
-            : base(serverChannel, new MessageDispatcher())
+            ChannelBase serverChannel,
+            ILogger logger)
+            : base(serverChannel, new MessageDispatcher(logger), logger)
         {
             this.editorSession = editorSession;
             this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;
@@ -560,7 +561,8 @@ function __Expand-Alias {
 
             this.currentSettings.Update(
                 configChangeParams.Settings.Powershell,
-                this.editorSession.Workspace.WorkspacePath);
+                this.editorSession.Workspace.WorkspacePath,
+                this.Logger);
 
             if (!this.profilesLoaded &&
                 this.currentSettings.EnableProfileLoading &&
@@ -1342,6 +1344,7 @@ function __Expand-Alias {
                         this.codeActionsPerFile,
                         editorSession,
                         eventSender,
+                        this.Logger,
                         existingRequestCancellation.Token),
                 CancellationToken.None,
                 TaskCreationOptions.None,
@@ -1357,6 +1360,7 @@ function __Expand-Alias {
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EditorSession editorSession,
             EventContext eventContext,
+            ILogger Logger,
             CancellationToken cancellationToken)
         {
             await DelayThenInvokeDiagnostics(
@@ -1366,6 +1370,7 @@ function __Expand-Alias {
                 correctionIndex,
                 editorSession,
                 eventContext.SendEvent,
+                Logger,
                 cancellationToken);
         }
 
@@ -1377,6 +1382,7 @@ function __Expand-Alias {
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EditorSession editorSession,
             Func<NotificationType<PublishDiagnosticsNotification, object>, PublishDiagnosticsNotification, Task> eventSender,
+            ILogger Logger,
             CancellationToken cancellationToken)
         {
             // First of all, wait for the desired delay period before

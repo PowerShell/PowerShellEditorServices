@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// complete.
         /// </summary>
         /// <returns>The field's final value.</returns>
-        public object GetValue()
+        public object GetValue(ILogger logger)
         {
             object fieldValue = this.OnGetValue();
 
@@ -133,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 else
                 {
                     // This "shoudln't" happen, so log in case it does
-                    Logger.Write(
+                    logger.Write(
                         LogLevel.Error,
                         $"Cannot retrieve value for field {this.Label}");
                 }
@@ -170,9 +170,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Internal Methods
 
-        internal static FieldDetails Create(FieldDescription fieldDescription)
+        internal static FieldDetails Create(
+            FieldDescription fieldDescription,
+            ILogger logger)
         {
-            Type fieldType = GetFieldTypeFromTypeName(fieldDescription.ParameterAssemblyFullName);
+            Type fieldType =
+                GetFieldTypeFromTypeName(
+                    fieldDescription.ParameterAssemblyFullName,
+                    logger);
 
             if (typeof(IList).GetTypeInfo().IsAssignableFrom(fieldType.GetTypeInfo()))
             {
@@ -203,15 +208,17 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
         }
 
-        private static Type GetFieldTypeFromTypeName(string assemblyFullName)
+        private static Type GetFieldTypeFromTypeName(
+            string assemblyFullName,
+            ILogger logger)
         {
-            Type fieldType = typeof(string); 
+            Type fieldType = typeof(string);
 
             if (!string.IsNullOrEmpty(assemblyFullName))
             {
                 if (!LanguagePrimitives.TryConvertTo<Type>(assemblyFullName, out fieldType))
                 {
-                    Logger.Write(
+                    logger.Write(
                         LogLevel.Warning,
                         string.Format(
                             "Could not resolve type of field: {0}",

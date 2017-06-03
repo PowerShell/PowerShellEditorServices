@@ -23,8 +23,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         private const int CR = 0x0D;
         private const int LF = 0x0A;
-        private static string[] NewLineDelimiters = new string[] { Environment.NewLine }; 
+        private static string[] NewLineDelimiters = new string[] { Environment.NewLine };
 
+        private ILogger logger;
         private Stream inputStream;
         private IMessageSerializer messageSerializer;
         private Encoding messageEncoding;
@@ -51,11 +52,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         public MessageReader(
             Stream inputStream,
             IMessageSerializer messageSerializer,
+            ILogger logger,
             Encoding messageEncoding = null)
         {
             Validate.IsNotNull("streamReader", inputStream);
             Validate.IsNotNull("messageSerializer", messageSerializer);
 
+            this.logger = logger;
             this.inputStream = inputStream;
             this.messageSerializer = messageSerializer;
 
@@ -83,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 this.needsMoreData = false;
 
                 // Do we need to look for message headers?
-                if (this.readState == ReadState.Headers && 
+                if (this.readState == ReadState.Headers &&
                     !this.TryReadMessageHeaders())
                 {
                     // If we don't have enough data to read headers yet, keep reading
@@ -92,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 }
 
                 // Do we need to look for message content?
-                if (this.readState == ReadState.Content && 
+                if (this.readState == ReadState.Content &&
                     !this.TryReadMessageContent(out messageContent))
                 {
                     // If we don't have enough data yet to construct the content, keep reading
@@ -108,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             JObject messageObject = JObject.Parse(messageContent);
 
             // Load the message
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Verbose,
                 string.Format(
                     "READ MESSAGE:\r\n\r\n{0}",
@@ -129,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             {
                 // Double the size of the buffer
                 Array.Resize(
-                    ref this.messageBuffer, 
+                    ref this.messageBuffer,
                     this.messageBuffer.Length * 2);
             }
 
@@ -162,10 +165,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
             // Scan for the final double-newline that marks the
             // end of the header lines
-            while (scanOffset + 3 < this.bufferEndOffset && 
-                   (this.messageBuffer[scanOffset] != CR || 
-                    this.messageBuffer[scanOffset + 1] != LF || 
-                    this.messageBuffer[scanOffset + 2] != CR || 
+            while (scanOffset + 3 < this.bufferEndOffset &&
+                   (this.messageBuffer[scanOffset] != CR ||
+                    this.messageBuffer[scanOffset + 1] != LF ||
+                    this.messageBuffer[scanOffset + 2] != CR ||
                     this.messageBuffer[scanOffset + 3] != LF))
             {
                 scanOffset++;
@@ -179,7 +182,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
             this.messageHeaders = new Dictionary<string, string>();
 
-            var headers = 
+            var headers =
                 Encoding.ASCII
                     .GetString(this.messageBuffer, this.readOffset, scanOffset)
                     .Split(NewLineDelimiters, StringSplitOptions.RemoveEmptyEntries);
@@ -232,19 +235,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
 
             // Convert the message contents to a string using the specified encoding
-            messageContent = 
+            messageContent =
                 this.messageEncoding.GetString(
                     this.messageBuffer,
-                    this.readOffset, 
+                    this.readOffset,
                     this.expectedContentLength);
 
             // Move the remaining bytes to the front of the buffer for the next message
             var remainingByteCount = this.bufferEndOffset - (this.expectedContentLength + this.readOffset);
             Buffer.BlockCopy(
-                this.messageBuffer, 
-                this.expectedContentLength + this.readOffset, 
-                this.messageBuffer, 
-                0, 
+                this.messageBuffer,
+                this.expectedContentLength + this.readOffset,
+                this.messageBuffer,
+                0,
                 remainingByteCount);
 
             // Reset the offsets for the next read

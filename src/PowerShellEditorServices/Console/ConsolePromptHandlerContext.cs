@@ -4,6 +4,7 @@
 //
 
 using System;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -15,6 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
     {
         #region Private Fields
 
+        private ILogger logger;
         private IConsoleHost consoleHost;
 
         #endregion
@@ -29,9 +31,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// The IConsoleHost implementation to use for writing to the
         /// console.
         /// </param>
-        public ConsolePromptHandlerContext(IConsoleHost consoleHost)
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public ConsolePromptHandlerContext(
+            IConsoleHost consoleHost,
+            ILogger logger)
         {
             this.consoleHost = consoleHost;
+            this.logger = logger;
         }
 
         #endregion
@@ -47,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </returns>
         public ChoicePromptHandler GetChoicePromptHandler()
         {
-            return new ConsoleChoicePromptHandler(this.consoleHost);
+            return new ConsoleChoicePromptHandler(this.consoleHost, this.logger);
         }
 
         /// <summary>
@@ -59,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </returns>
         public InputPromptHandler GetInputPromptHandler()
         {
-            return new ConsoleInputPromptHandler(this.consoleHost);
+            return new ConsoleInputPromptHandler(this.consoleHost, this.logger);
         }
 
         #endregion

@@ -11,6 +11,7 @@ using Xunit;
 using System;
 using System.Threading;
 using System.Security;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
@@ -130,6 +131,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public FieldDetails LastField { get; private set; }
 
         public Exception LastError { get; private set; }
+
+        public TestInputPromptHandler() : base(new NullLogger())
+        {
+        }
 
         public void ReturnInputString(string inputString)
         {

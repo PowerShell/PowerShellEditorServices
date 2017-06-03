@@ -20,6 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
     {
         #region Private Fields
 
+        private ILogger logger;
         private bool isPlasterLoaded;
         private bool? isPlasterInstalled;
         private PowerShellContext powerShellContext;
@@ -32,10 +33,12 @@ namespace Microsoft.PowerShell.EditorServices.Templates
         /// Creates a new instance of the TemplateService class.
         /// </summary>
         /// <param name="powerShellContext">The PowerShellContext to use for this service.</param>
-        public TemplateService(PowerShellContext powerShellContext)
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public TemplateService(PowerShellContext powerShellContext, ILogger logger)
         {
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
+            this.logger = logger;
             this.powerShellContext = powerShellContext;
         }
 
@@ -67,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
                     .AddCommand("Select-Object")
                     .AddParameter("First", 1);
 
-                Logger.Write(LogLevel.Verbose, "Checking if Plaster is installed...");
+                this.logger.Write(LogLevel.Verbose, "Checking if Plaster is installed...");
 
                 var getResult =
                     await this.powerShellContext.ExecuteCommand<PSObject>(
@@ -75,18 +78,18 @@ namespace Microsoft.PowerShell.EditorServices.Templates
 
                 PSObject moduleObject = getResult.First();
                 this.isPlasterInstalled = moduleObject != null;
-                string installedQualifier = 
+                string installedQualifier =
                     this.isPlasterInstalled.Value
                         ? string.Empty : "not ";
 
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Verbose,
                     $"Plaster is {installedQualifier}installed!");
 
                 // Attempt to load plaster
                 if (this.isPlasterInstalled.Value && this.isPlasterLoaded == false)
                 {
-                    Logger.Write(LogLevel.Verbose, "Loading Plaster...");
+                    this.logger.Write(LogLevel.Verbose, "Loading Plaster...");
 
                     psCommand = new PSCommand();
                     psCommand
@@ -103,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
                         this.isPlasterInstalled.Value
                             ? "was" : "could not be";
 
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Verbose,
                         $"Plaster {loadedQualifier} loaded successfully!");
                 }
@@ -141,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
                 await this.powerShellContext.ExecuteCommand<PSObject>(
                     psCommand, false, false);
 
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Verbose,
                 $"Found {templateObjects.Count()} Plaster templates");
 
@@ -163,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
             string templatePath,
             string destinationPath)
         {
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Verbose,
                 $"Invoking Plaster...\n\n    TemplatePath: {templatePath}\n    DestinationPath: {destinationPath}");
 

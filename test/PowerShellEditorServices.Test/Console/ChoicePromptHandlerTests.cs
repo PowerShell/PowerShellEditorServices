@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Console;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
@@ -70,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public void ChoicePromptRepromptsOnInvalidInput()
         {
-            TestChoicePromptHandler choicePromptHandler = 
+            TestChoicePromptHandler choicePromptHandler =
                 new TestChoicePromptHandler();
 
             Task<int> promptTask =
@@ -94,6 +95,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         private TaskCompletionSource<string> linePromptTask;
 
         public int TimesPrompted { get; private set; }
+
+        public TestChoicePromptHandler() : base(new NullLogger())
+        {
+        }
 
         public void ReturnInputString(string inputString)
         {

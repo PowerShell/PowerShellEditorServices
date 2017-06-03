@@ -13,14 +13,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class NamedPipeServerListener : ServerListenerBase<NamedPipeServerChannel>
     {
+        private ILogger logger;
         private string pipeName;
         private NamedPipeServerStream pipeServer;
 
         public NamedPipeServerListener(
             MessageProtocolType messageProtocolType,
-            string pipeName)
+            string pipeName,
+            ILogger logger)
             : base(messageProtocolType)
         {
+            this.logger = logger;
             this.pipeName = pipeName;
         }
 
@@ -38,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             }
             catch (IOException e)
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Verbose,
                     "Named pipe server failed to start due to exception:\r\n\r\n" + e.Message);
 
@@ -50,11 +53,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         {
             if (this.pipeServer != null)
             {
-                Logger.Write(LogLevel.Verbose, "Named pipe server shutting down...");
+                this.logger.Write(LogLevel.Verbose, "Named pipe server shutting down...");
 
                 this.pipeServer.Dispose();
 
-                Logger.Write(LogLevel.Verbose, "Named pipe server has been disposed.");
+                this.logger.Write(LogLevel.Verbose, "Named pipe server has been disposed.");
             }
         }
 
@@ -69,16 +72,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                         await this.pipeServer.WaitForConnectionAsync();
 #else
                         await Task.Factory.FromAsync(
-                            this.pipeServer.BeginWaitForConnection, 
+                            this.pipeServer.BeginWaitForConnection,
                             this.pipeServer.EndWaitForConnection, null);
 #endif
                         this.OnClientConnect(
                             new NamedPipeServerChannel(
-                                this.pipeServer));
+                                this.pipeServer,
+                                this.logger));
                     }
                     catch (Exception e)
                     {
-                        Logger.WriteException(
+                        this.logger.WriteException(
                             "An unhandled exception occurred while listening for a named pipe client connection",
                             e);
 

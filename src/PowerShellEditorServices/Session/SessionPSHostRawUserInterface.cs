@@ -168,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A KeyInfo struct with details about the current keypress.</returns>
         public override KeyInfo ReadKey(ReadKeyOptions options)
         {
-            Logger.Write(
+            Logger.CurrentLogger.Write(
                 LogLevel.Warning,
                 "PSHostRawUserInterface.ReadKey was called");
 
@@ -180,7 +180,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void FlushInputBuffer()
         {
-            Logger.Write(
+            Logger.CurrentLogger.Write(
                 LogLevel.Warning,
                 "PSHostRawUserInterface.FlushInputBuffer was called");
         }
@@ -192,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A BufferCell array with the requested buffer contents.</returns>
         public override BufferCell[,] GetBufferContents(Rectangle rectangle)
         {
-            Logger.Write(
+            Logger.CurrentLogger.Write(
                 LogLevel.Warning,
                 "PSHostRawUserInterface.GetBufferContents was called");
 
@@ -212,7 +212,7 @@ namespace Microsoft.PowerShell.EditorServices
             Rectangle clip,
             BufferCell fill)
         {
-            Logger.Write(
+            Logger.CurrentLogger.Write(
                 LogLevel.Warning,
                 "PSHostRawUserInterface.ScrollBufferContents was called");
         }
@@ -236,7 +236,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             else
             {
-                Logger.Write(
+                Logger.CurrentLogger.Write(
                     LogLevel.Warning,
                     "PSHostRawUserInterface.SetBufferContents was called with a specific region");
             }
@@ -251,7 +251,7 @@ namespace Microsoft.PowerShell.EditorServices
             Coordinates origin,
             BufferCell[,] contents)
         {
-            Logger.Write(
+            Logger.CurrentLogger.Write(
                 LogLevel.Warning,
                 "PSHostRawUserInterface.SetBufferContents was called");
         }

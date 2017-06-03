@@ -22,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class LanguageServerTests : ServerTestsBase, IAsyncLifetime
     {
+        private ILogger logger;
         private LanguageServiceClient languageServiceClient;
 
         public async Task InitializeAsync()
@@ -37,10 +38,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8));
 
-            Logger.Initialize(
+            this.logger =
                 new FileLogger(
                     testLogPath + "-client.log",
-                    LogLevel.Verbose));
+                    LogLevel.Verbose);
+
+            Logger.Initialize(this.logger);
 
             testLogPath += "-server.log";
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);
@@ -56,7 +59,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     new LanguageServiceClient(
                         await TcpSocketClientChannel.Connect(
                             portNumbers.Item1,
-                            MessageProtocolType.LanguageServer));
+                            MessageProtocolType.LanguageServer,
+                            this.logger),
+                        this.logger);
 
             await this.languageServiceClient.Start();
         }

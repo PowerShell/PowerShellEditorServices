@@ -183,10 +183,12 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <param name="sessionDetails">
         /// The SessionDetails for the runspace.
         /// </param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         /// <returns>A new RunspaceDetails instance.</returns>
         internal static RunspaceDetails CreateFromRunspace(
             Runspace runspace,
-            SessionDetails sessionDetails)
+            SessionDetails sessionDetails,
+            ILogger logger)
         {
             Validate.IsNotNull(nameof(runspace), runspace);
             Validate.IsNotNull(nameof(sessionDetails), sessionDetails);
@@ -194,7 +196,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             var runspaceId = runspace.InstanceId;
             var runspaceLocation = RunspaceLocation.Local;
             var runspaceContext = RunspaceContext.Original;
-            var versionDetails = PowerShellVersionDetails.GetVersionDetails(runspace);
+            var versionDetails = PowerShellVersionDetails.GetVersionDetails(runspace, logger);
 
             string connectionString = null;
 

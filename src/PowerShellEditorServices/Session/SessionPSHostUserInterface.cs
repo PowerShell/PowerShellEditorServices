@@ -13,6 +13,7 @@ using System.Security;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Console;
 using System.Threading;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -89,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 FieldDetails[] fields =
                     fieldDescriptions
-                        .Select(FieldDetails.Create)
+                        .Select(f => { return FieldDetails.Create(f, Logger.CurrentLogger); })
                         .ToArray();
 
                 CancellationTokenSource cancellationToken = new CancellationTokenSource();

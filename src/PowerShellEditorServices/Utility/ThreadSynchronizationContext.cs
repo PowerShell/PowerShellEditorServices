@@ -18,12 +18,26 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     {
         #region Private Fields
 
+        private ILogger logger;
         private BlockingCollection<Tuple<SendOrPostCallback, object>> requestQueue =
             new BlockingCollection<Tuple<SendOrPostCallback, object>>();
 
         #endregion
 
         #region Constructors
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public ThreadSynchronizationContext(ILogger logger)
+        {
+            this.logger = logger;
+        }
+
+        #endregion
+
+        #region Public Methods
 
         /// <summary>
         /// Posts a request for execution to the SynchronizationContext.
@@ -47,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
             else
             {
-                Logger.Write(
+                this.logger.Write(
                     LogLevel.Verbose,
                     "Attempted to post message to synchronization context after it's already completed");
             }

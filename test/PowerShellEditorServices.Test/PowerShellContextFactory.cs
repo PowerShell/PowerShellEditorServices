@@ -7,15 +7,16 @@ using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Test.Console;
 using System;
 using System.IO;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Test
 {
     internal static class PowerShellContextFactory
     {
 
-        public static PowerShellContext Create()
+        public static PowerShellContext Create(ILogger logger)
         {
-            PowerShellContext powerShellContext = new PowerShellContext();
+            PowerShellContext powerShellContext = new PowerShellContext(logger);
             powerShellContext.Initialize(
                 PowerShellContextTests.TestProfilePaths,
                 PowerShellContext.CreateRunspace(PowerShellContextTests.TestHostDetails, powerShellContext, false),

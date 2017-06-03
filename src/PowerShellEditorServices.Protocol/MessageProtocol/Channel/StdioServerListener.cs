@@ -4,21 +4,29 @@
 //
 
 using System.IO;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class StdioServerListener : ServerListenerBase<StdioServerChannel>
     {
-        public StdioServerListener(MessageProtocolType messageProtocolType) :
-            base(messageProtocolType)
+        private ILogger logger;
+
+        public StdioServerListener(
+            MessageProtocolType messageProtocolType,
+            ILogger logger)
+                : base(messageProtocolType)
         {
+            this.logger = logger;
         }
 
         public override void Start()
         {
             // Client is connected immediately because stdio
             // will buffer all I/O until we get to it
-            this.OnClientConnect(new StdioServerChannel());
+            this.OnClientConnect(
+                new StdioServerChannel(
+                    this.logger));
         }
 
         public override void Stop()

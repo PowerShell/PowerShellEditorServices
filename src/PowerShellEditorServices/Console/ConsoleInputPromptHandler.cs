@@ -7,6 +7,7 @@ using System;
 using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -31,7 +32,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// The IConsoleHost implementation to use for writing to the
         /// console.
         /// </param>
-        public ConsoleInputPromptHandler(IConsoleHost consoleHost)
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public ConsoleInputPromptHandler(IConsoleHost consoleHost, ILogger logger)
+            : base(logger)
         {
             this.consoleHost = consoleHost;
         }

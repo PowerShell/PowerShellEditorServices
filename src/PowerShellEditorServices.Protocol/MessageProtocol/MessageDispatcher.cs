@@ -17,11 +17,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     {
         #region Fields
 
+        private ILogger logger;
+
         private Dictionary<string, Func<Message, MessageWriter, Task>> requestHandlers =
             new Dictionary<string, Func<Message, MessageWriter, Task>>();
 
         private Dictionary<string, Func<Message, MessageWriter, Task>> eventHandlers =
             new Dictionary<string, Func<Message, MessageWriter, Task>>();
+
+        #endregion
+
+        #region Constructors
+
+        public MessageDispatcher(ILogger logger)
+        {
+            this.logger = logger;
+        }
 
         #endregion
 
@@ -126,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 else
                 {
                     // TODO: Message not supported error
-                    Logger.Write(LogLevel.Error, $"MessageDispatcher: No handler registered for Request type '{messageToDispatch.Method}'");
+                    this.logger.Write(LogLevel.Error, $"MessageDispatcher: No handler registered for Request type '{messageToDispatch.Method}'");
                 }
             }
             else if (messageToDispatch.MessageType == MessageType.Event)
@@ -139,13 +150,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 else
                 {
                     // TODO: Message not supported error
-                    Logger.Write(LogLevel.Error, $"MessageDispatcher: No handler registered for Event type '{messageToDispatch.Method}'");
+                    this.logger.Write(LogLevel.Error, $"MessageDispatcher: No handler registered for Event type '{messageToDispatch.Method}'");
                 }
             }
             else
             {
                 // TODO: Return message not supported
-                Logger.Write(LogLevel.Error, $"MessageDispatcher received unknown message type of method '{messageToDispatch.Method}'");
+                this.logger.Write(LogLevel.Error, $"MessageDispatcher received unknown message type of method '{messageToDispatch.Method}'");
             }
 
             if (handlerToAwait != null)

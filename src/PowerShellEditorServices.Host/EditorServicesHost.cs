@@ -136,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
             string newLine = Environment.NewLine;
 
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Normal,
                 string.Format(
                     $"PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (pid {Process.GetCurrentProcess().Id})..." + newLine + newLine +
@@ -166,12 +166,13 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.languageServiceListener =
                 new TcpSocketServerListener(
                     MessageProtocolType.LanguageServer,
-                    languageServicePort);
+                    languageServicePort,
+                    this.logger);
 
             this.languageServiceListener.ClientConnect += this.OnLanguageServiceClientConnect;
             this.languageServiceListener.Start();
 
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Normal,
                 string.Format(
                     "Language service started, listening on port {0}",
@@ -191,7 +192,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.languageServer =
                 new LanguageServer(
                     this.editorSession,
-                    serverChannel);
+                    serverChannel,
+                    this.logger);
 
             await this.editorSession.PowerShellContext.ImportCommandsModule(
                 Path.Combine(
@@ -213,12 +215,13 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.debugServiceListener =
                 new TcpSocketServerListener(
                     MessageProtocolType.LanguageServer,
-                    debugServicePort);
+                    debugServicePort,
+                    this.logger);
 
             this.debugServiceListener.ClientConnect += OnDebugServiceClientConnect;
             this.debugServiceListener.Start();
 
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Normal,
                 string.Format(
                     "Debug service started, listening on port {0}",
@@ -233,7 +236,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     new DebugAdapter(
                         this.editorSession,
                         serverChannel,
-                        false);
+                        false,
+                        this.logger);
             }
             else
             {
@@ -247,13 +251,14 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     new DebugAdapter(
                         debugSession,
                         serverChannel,
-                        true);
+                        true,
+                        this.logger);
             }
 
             this.debugAdapter.SessionEnded +=
                 (obj, args) =>
                 {
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Normal,
                         "Previous debug session ended, restarting debug service listener...");
 
@@ -294,8 +299,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
             ProfilePaths profilePaths,
             bool enableConsoleRepl)
         {
-            EditorSession editorSession = new EditorSession();
-            PowerShellContext powerShellContext = new PowerShellContext();
+            EditorSession editorSession = new EditorSession(this.logger);
+            PowerShellContext powerShellContext = new PowerShellContext(this.logger);
 
             ConsoleServicePSHost psHost =
                 new ConsoleServicePSHost(
@@ -318,8 +323,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
             ProfilePaths profilePaths,
             IEditorOperations editorOperations)
         {
-            EditorSession editorSession = new EditorSession();
-            PowerShellContext powerShellContext = new PowerShellContext();
+            EditorSession editorSession = new EditorSession(this.logger);
+            PowerShellContext powerShellContext = new PowerShellContext(this.logger);
 
             ConsoleServicePSHost psHost =
                 new ConsoleServicePSHost(
@@ -339,12 +344,12 @@ namespace Microsoft.PowerShell.EditorServices.Host
         }
 
 #if !CoreCLR
-        static void CurrentDomain_UnhandledException(
+        private void CurrentDomain_UnhandledException(
             object sender,
             UnhandledExceptionEventArgs e)
         {
             // Log the exception
-            Logger.Write(
+            this.logger.Write(
                 LogLevel.Error,
                 string.Format(
                     "FATAL UNHANDLED EXCEPTION:\r\n\r\n{0}",

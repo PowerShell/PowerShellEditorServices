@@ -24,6 +24,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
+        private ILogger logger;
         private bool areAliasesLoaded;
         private PowerShellContext powerShellContext;
         private CompletionResults mostRecentCompletions;
@@ -46,11 +47,15 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="powerShellContext">
         /// The PowerShellContext in which language service operations will be executed.
         /// </param>
-        public LanguageService(PowerShellContext powerShellContext)
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        public LanguageService(
+            PowerShellContext powerShellContext,
+            ILogger logger)
         {
             Validate.IsNotNull("powerShellContext", powerShellContext);
 
             this.powerShellContext = powerShellContext;
+            this.logger = logger;
 
             this.CmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
             this.AliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
@@ -96,6 +101,7 @@ namespace Microsoft.PowerShell.EditorServices
                     scriptFile.ScriptTokens,
                     fileOffset,
                     this.powerShellContext,
+                    this.logger,
                     new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
 
             if (commandCompletion != null)
@@ -119,7 +125,7 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     // Bad completion results could return an invalid
                     // replacement range, catch that here
-                    Logger.Write(
+                    this.logger.Write(
                         LogLevel.Error,
                         $"Caught exception while trying to create CompletionResults:\n\n{e.ToString()}");
                 }
@@ -486,7 +492,7 @@ namespace Microsoft.PowerShell.EditorServices
                         // A RuntimeException will be thrown when an invalid attribute is
                         // on a parameter binding block and then that command/script has
                         // its signatures resolved by typing it into a script.
-                        Logger.WriteException("RuntimeException encountered while accessing command parameter sets", e);
+                        this.logger.WriteException("RuntimeException encountered while accessing command parameter sets", e);
 
                         return null;
                     }

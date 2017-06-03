@@ -10,11 +10,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class NamedPipeServerChannel : ChannelBase
     {
+        private ILogger logger;
         private NamedPipeServerStream pipeServer;
 
-        public NamedPipeServerChannel(NamedPipeServerStream pipeServer)
+        public NamedPipeServerChannel(
+            NamedPipeServerStream pipeServer,
+            ILogger logger)
         {
             this.pipeServer = pipeServer;
+            this.logger = logger;
         }
 
         protected override void Initialize(IMessageSerializer messageSerializer)
@@ -22,12 +26,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             this.MessageReader =
                 new MessageReader(
                     this.pipeServer,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
 
             this.MessageWriter =
                 new MessageWriter(
                     this.pipeServer,
-                    messageSerializer);
+                    messageSerializer,
+                    this.logger);
         }
 
         protected override void Shutdown()
