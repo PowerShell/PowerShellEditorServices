@@ -6,14 +6,9 @@ namespace Microsoft.PowerShell.EditorServices
 {
     internal class PSDataFileDocumentSymbolProvider : IDocumentSymbolProvider
     {
-        bool IDocumentSymbolProvider.CanProvideFor(ScriptFile scriptFile)
-        {
-            throw new NotImplementedException();
-        }
-
         IEnumerable<SymbolReference> IDocumentSymbolProvider.GetSymbols(ScriptFile scriptFile, Version psVersion)
         {
-            if (!AstOperations.IsPowerShellDataFileAst(scriptFile.ScriptAst))
+            if (CanProvideFor(scriptFile))
             {
                 return Enumerable.Empty<SymbolReference>();
             }
@@ -21,6 +16,13 @@ namespace Microsoft.PowerShell.EditorServices
             var findHashtableSymbolsVisitor = new FindHashtableSymbolsVisitor();
             scriptFile.ScriptAst.Visit(findHashtableSymbolsVisitor);
             return findHashtableSymbolsVisitor.SymbolReferences;
+        }
+
+        private bool CanProvideFor(ScriptFile scriptFile)
+        {
+            return (scriptFile.FilePath != null &&
+                    scriptFile.FilePath.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase)) ||
+                    AstOperations.IsPowerShellDataFileAst(scriptFile.ScriptAst);
         }
     }
 }
