@@ -21,14 +21,17 @@ namespace Microsoft.PowerShell.EditorServices
         {
             var commandAsts = scriptFile.ScriptAst.FindAll(ast =>
             {
-                var cmdAst = ast as CommandAst;
-                if (cmdAst == null)
+                switch ((ast as CommandAst)?.GetCommandName().ToLower())
                 {
-                    return false;
-                }
+                    case "describe":
+                    case "context":
+                    case "it":
+                        return true;
 
-                var cmdName = cmdAst.GetCommandName().ToLower();
-                return cmdName.Equals("describe") || cmdName.Equals("context") || cmdName.Equals("it");
+                    case null:
+                    default:
+                        return false;
+                }
             },
             true);
 
