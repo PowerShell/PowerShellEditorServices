@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    internal class PSDataFileDocumentSymbolProvider : IDocumentSymbolProvider
+    internal class PSDDocumentSymbolProvider : IDocumentSymbolProvider
     {
         IEnumerable<SymbolReference> IDocumentSymbolProvider.GetSymbols(ScriptFile scriptFile, Version psVersion)
         {

@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    internal class GenericDocumentSymbolProvider : IDocumentSymbolProvider
+    internal class ScriptDocumentSymbolProvider : IDocumentSymbolProvider
     {
         IEnumerable<SymbolReference> IDocumentSymbolProvider.GetSymbols(ScriptFile scriptFile, Version psVersion)
         {
