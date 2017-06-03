@@ -38,8 +38,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     Guid.NewGuid().ToString().Substring(0, 8));
 
             Logger.Initialize(
-                testLogPath + "-client.log",
-                LogLevel.Verbose);
+                new FileLogger(
+                    testLogPath + "-client.log",
+                    LogLevel.Verbose));
 
             testLogPath += "-server.log";
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);

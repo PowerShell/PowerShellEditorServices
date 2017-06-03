@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
                 AppContext.BaseDirectory,
 #else
                 AppDomain.CurrentDomain.BaseDirectory,
-#endif                
+#endif
                 "Test.log");
 
         [Fact]
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         private void AssertWritesMessageAtLevel(LogLevel logLevel)
         {
             // Write a message at the desired level
-            Logger.Initialize(logFilePath, LogLevel.Verbose);
+            Logger.Initialize(new FileLogger(logFilePath, LogLevel.Verbose));
             Logger.Write(logLevel, testMessage);
 
             // Read the contents and verify that it's there
@@ -82,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
 
         private void AssertExcludesMessageBelowLevel(LogLevel minimumLogLevel)
         {
-            Logger.Initialize(logFilePath, minimumLogLevel);
+            Logger.Initialize(new FileLogger(logFilePath, minimumLogLevel));
 
             // Get all possible log levels
             LogLevel[] allLogLevels =
