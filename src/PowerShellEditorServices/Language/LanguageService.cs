@@ -227,6 +227,8 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Validate.IsNotNull("scriptFile", scriptFile);
 
+            // todo create a document symbol provider interface
+            // todo create document symbol providers for generic symbols, psd1 file symbols, pester file symbols
             IEnumerable<SymbolReference> symbolReferencesinFile =
                 AstOperations
                     .FindSymbolsInDocument(scriptFile.ScriptAst, this.powerShellContext.LocalPowerShellVersion.Version)
@@ -239,11 +241,43 @@ namespace Microsoft.PowerShell.EditorServices
                             return reference;
                         });
 
+            if (IsPesterFile(scriptFile))
+            {
+                symbolReferencesinFile = symbolReferencesinFile.Concat(GetPesterSymbols(scriptFile));
+            }
+
             return
                 new FindOccurrencesResult
                 {
                     FoundOccurrences = symbolReferencesinFile
                 };
+        }
+
+        private IEnumerable<SymbolReference> GetPesterSymbols(ScriptFile scriptFile)
+        {
+            var commandAsts = scriptFile.ScriptAst.FindAll(ast =>
+            {
+                var cmdAst = ast as CommandAst;
+                if (cmdAst == null)
+                {
+                    return false;
+                }
+
+                var cmdName = cmdAst.GetCommandName().ToLower();
+                return cmdName.Equals("describe") || cmdName.Equals("context") || cmdName.Equals("it");
+            },
+            true);
+
+            return commandAsts.Select(ast => new SymbolReference(
+                SymbolType.Function,
+                ast.Extent,
+                scriptFile.FilePath,
+                scriptFile.GetLine(ast.Extent.StartLineNumber)));
+        }
+
+        private bool IsPesterFile(ScriptFile scriptFile)
+        {
+            return scriptFile.FilePath.EndsWith("tests.ps1", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
