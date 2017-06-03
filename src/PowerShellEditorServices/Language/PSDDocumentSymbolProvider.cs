@@ -8,7 +8,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         IEnumerable<SymbolReference> IDocumentSymbolProvider.GetSymbols(ScriptFile scriptFile, Version psVersion)
         {
-            if (CanProvideFor(scriptFile))
+            if (!CanProvideFor(scriptFile))
             {
                 return Enumerable.Empty<SymbolReference>();
             }
