@@ -62,8 +62,8 @@ namespace Microsoft.PowerShell.EditorServices
             this.AliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
             this.documentSymbolProviders = new IDocumentSymbolProvider[]
             {
-                new GenericDocumentSymbolProvider()
-                // new PSDataFileDocumentSymbolProvider(),
+                new GenericDocumentSymbolProvider(),
+                new PSDataFileDocumentSymbolProvider(),
                 // new PesterFileDocumentSymboleProvider()
             };
         }

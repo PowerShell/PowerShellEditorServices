@@ -245,34 +245,23 @@ namespace Microsoft.PowerShell.EditorServices
 
             // TODO: Restore this when we figure out how to support multiple
             //       PS versions in the new PSES-as-a-module world (issue #276)
-//            if (powerShellVersion >= new Version(5,0))
-//            {
-//#if PowerShellv5
-//                FindSymbolsVisitor2 findSymbolsVisitor = new FindSymbolsVisitor2();
-//                scriptAst.Visit(findSymbolsVisitor);
-//                symbolReferences = findSymbolsVisitor.SymbolReferences;
-//#endif
-//            }
-//            else
-            {
-                if (IsPowerShellDataFileAst(scriptAst))
-                {
-                    var findHashtableSymbolsVisitor = new FindHashtableSymbolsVisitor();
-                    scriptAst.Visit(findHashtableSymbolsVisitor);
-                    symbolReferences = findHashtableSymbolsVisitor.SymbolReferences;
-                }
-                else
-                {
-                    FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
-                    scriptAst.Visit(findSymbolsVisitor);
-                    symbolReferences = findSymbolsVisitor.SymbolReferences;
-                }
-            }
+            //            if (powerShellVersion >= new Version(5,0))
+            //            {
+            //#if PowerShellv5
+            //                FindSymbolsVisitor2 findSymbolsVisitor = new FindSymbolsVisitor2();
+            //                scriptAst.Visit(findSymbolsVisitor);
+            //                symbolReferences = findSymbolsVisitor.SymbolReferences;
+            //#endif
+            //            }
+            //            else
 
+            FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
+            scriptAst.Visit(findSymbolsVisitor);
+            symbolReferences = findSymbolsVisitor.SymbolReferences;
             return symbolReferences;
         }
 
-        static private bool IsPowerShellDataFileAst(Ast ast)
+        static public bool IsPowerShellDataFileAst(Ast ast)
         {
             // sometimes we don't have reliable access to the filename
             // so we employ heuristics to check if the contents are
