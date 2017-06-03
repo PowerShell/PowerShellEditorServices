@@ -5,7 +5,7 @@ using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    internal class PesterFileDocumentSymbolProvider : IDocumentSymbolProvider
+    internal class PesterDocumentSymbolProvider : IDocumentSymbolProvider
     {
         IEnumerable<SymbolReference> IDocumentSymbolProvider.GetSymbols(ScriptFile scriptFile, Version psVersion)
         {
