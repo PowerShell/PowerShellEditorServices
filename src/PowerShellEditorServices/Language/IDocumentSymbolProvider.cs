@@ -5,6 +5,6 @@ namespace Microsoft.PowerShell.EditorServices
 {
     internal interface IDocumentSymbolProvider
     {
-        IEnumerable<SymbolReference> GetSymbols(ScriptFile scriptFile, Version psVersion);
+        IEnumerable<SymbolReference> GetSymbols(ScriptFile scriptFile, Version psVersion = null);
     }
 }
