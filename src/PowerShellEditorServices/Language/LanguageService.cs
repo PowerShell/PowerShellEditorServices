@@ -32,6 +32,7 @@ namespace Microsoft.PowerShell.EditorServices
         private string mostRecentRequestFile;
         private Dictionary<String, List<String>> CmdletToAliasDictionary;
         private Dictionary<String, String> AliasToCmdletDictionary;
+        private IDocumentSymbolProvider[] documentSymbolProviders;
 
         const int DefaultWaitTimeoutMilliseconds = 5000;
 
@@ -54,6 +55,12 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.CmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
             this.AliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
+            this.documentSymbolProviders = new IDocumentSymbolProvider[]
+            {
+                new GenericDocumentSymbolProvider()
+                // new PSDataFileDocumentSymbolProvider(),
+                // new PesterFileDocumentSymboleProvider()
+            };
         }
 
         #endregion
@@ -227,30 +234,49 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Validate.IsNotNull("scriptFile", scriptFile);
 
-            // todo create a document symbol provider interface
-            // todo create document symbol providers for generic symbols, psd1 file symbols, pester file symbols
-            IEnumerable<SymbolReference> symbolReferencesinFile =
-                AstOperations
-                    .FindSymbolsInDocument(scriptFile.ScriptAst, this.powerShellContext.LocalPowerShellVersion.Version)
-                    .Select(
+            var symbolReferences = Enumerable.Empty<SymbolReference>();
+            foreach (var provider in documentSymbolProviders)
+            {
+                symbolReferences = symbolReferences.Concat(provider.GetSymbols(scriptFile));
+            }
+
+            return new FindOccurrencesResult
+            {
+                FoundOccurrences = symbolReferences.Select(
                         reference =>
                         {
                             reference.SourceLine =
                                 scriptFile.GetLine(reference.ScriptRegion.StartLineNumber);
                             reference.FilePath = scriptFile.FilePath;
                             return reference;
-                        });
+                        })
+            };
 
-            if (IsPesterFile(scriptFile))
-            {
-                symbolReferencesinFile = symbolReferencesinFile.Concat(GetPesterSymbols(scriptFile));
-            }
+            // todo create a document symbol provider interface
+            // todo create document symbol providers for generic symbols, psd1 file symbols, pester file symbols
 
-            return
-                new FindOccurrencesResult
-                {
-                    FoundOccurrences = symbolReferencesinFile
-                };
+            // IEnumerable<SymbolReference> symbolReferencesinFile =
+            //     AstOperations
+            //         .FindSymbolsInDocument(scriptFile.ScriptAst, this.powerShellContext.LocalPowerShellVersion.Version)
+            //         .Select(
+            //             reference =>
+            //             {
+            //                 reference.SourceLine =
+            //                     scriptFile.GetLine(reference.ScriptRegion.StartLineNumber);
+            //                 reference.FilePath = scriptFile.FilePath;
+            //                 return reference;
+            //             });
+
+            // if (IsPesterFile(scriptFile))
+            // {
+            //     symbolReferencesinFile = symbolReferencesinFile.Concat(GetPesterSymbols(scriptFile));
+            // }
+
+            // return
+            //     new FindOccurrencesResult
+            //     {
+            //         FoundOccurrences = symbolReferencesinFile
+            //     };
         }
 
         private IEnumerable<SymbolReference> GetPesterSymbols(ScriptFile scriptFile)
