@@ -8,12 +8,6 @@
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Extensions\CmdletInterface.ps1">
-      <LogicalName>Microsoft.PowerShell.EditorServices.Extensions.CmdletInterface.ps1</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
-
   <PropertyGroup>
     <!-- NOTE: -->
     <!-- For PowerShell v5 there are some differences between the APIs released with -->

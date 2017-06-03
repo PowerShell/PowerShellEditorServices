@@ -252,6 +252,25 @@ namespace Microsoft.PowerShell.EditorServices
             this.runspaceWaitQueue.EnqueueAsync(runspaceHandle).Wait();
         }
 
+        /// <summary>
+        /// Imports the PowerShellEditorServices.Commands module into
+        /// the runspace.  This method will be moved somewhere else soon.
+        /// </summary>
+        /// <param name="moduleBasePath"></param>
+        /// <returns></returns>
+        public Task ImportCommandsModule(string moduleBasePath)
+        {
+            PSCommand importCommand = new PSCommand();
+            importCommand
+                .AddCommand("Import-Module")
+                .AddArgument(
+                    Path.Combine(
+                        moduleBasePath,
+                        "PowerShellEditorServices.Commands.psd1"));
+
+            return this.ExecuteCommand<PSObject>(importCommand, false, false);
+        }
+
         private static bool CheckIfRunspaceNeedsEventHandlers(RunspaceDetails runspaceDetails)
         {
             // The only types of runspaces that need to be configured are:

@@ -81,46 +81,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
                     "psEditor",
                     this.EditorObject);
             }
-
-            // Load the cmdlet interface
-            Type thisType = this.GetType();
-            Stream resourceStream =
-                thisType.GetTypeInfo().Assembly.GetManifestResourceStream(
-                    thisType.Namespace + ".CmdletInterface.ps1");
-
-            using (StreamReader reader = new StreamReader(resourceStream))
-            {
-                // Create a temporary folder path
-                string randomFileNamePart =
-                    Path.GetFileNameWithoutExtension(
-                        Path.GetRandomFileName());
-
-                string tempScriptPath =
-                    Path.Combine(
-                        Path.GetTempPath(),
-                        "PSES_ExtensionCmdlets_" + randomFileNamePart + ".ps1");
-
-                Logger.Write(
-                    LogLevel.Verbose,
-                    "Executing extension API cmdlet script at path: " + tempScriptPath);
-
-                // Read the cmdlet interface script and write it to a temporary
-                // file so that we don't have to execute the full file contents
-                // directly.  This keeps the script execution from creating a
-                // lot of noise in the verbose logs.
-                string cmdletInterfaceScript = reader.ReadToEnd();
-                File.WriteAllText(
-                    tempScriptPath,
-                    cmdletInterfaceScript);
-
-                await this.PowerShellContext.ExecuteScriptString(
-                    ". " + tempScriptPath,
-                    writeInputToHost: false,
-                    writeOutputToHost: false);
-
-                // Delete the temporary file
-                File.Delete(tempScriptPath);
-            }
         }
 
         /// <summary>

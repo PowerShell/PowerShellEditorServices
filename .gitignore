@@ -27,8 +27,8 @@ lock
 registered_data.ini
 .vs/
 .dotnet/
-module/
-
+module/Plaster
+module/PSScriptAnalyzer
 docs/_site/
 docs/_repo/
 docs/metadata/
