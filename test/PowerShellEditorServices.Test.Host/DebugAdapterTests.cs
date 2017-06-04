@@ -51,22 +51,26 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     waitForDebugger: false);
                     //waitForDebugger: true);
 
-            this.protocolClient =
-                this.debugAdapterClient =
-                    new DebugAdapterClient(
-                        await TcpSocketClientChannel.Connect(
-                            portNumbers.Item2,
-                            MessageProtocolType.DebugAdapter,
-                            this.logger),
-                        this.logger);
+            this.debugAdapterClient =
+                new DebugAdapterClient(
+                    await TcpSocketClientChannel.Connect(
+                        portNumbers.Item2,
+                        MessageProtocolType.DebugAdapter,
+                        this.logger),
+                    this.logger);
+
+            this.messageSender = this.debugAdapterClient;
+            this.messageHandlers = this.debugAdapterClient;
 
             await this.debugAdapterClient.Start();
         }
 
-        public async Task DisposeAsync()
+        public Task DisposeAsync()
         {
-            await this.debugAdapterClient.Stop();
+            this.debugAdapterClient.Stop();
             this.KillService();
+
+            return Task.FromResult(true);
         }
 
         [Fact]

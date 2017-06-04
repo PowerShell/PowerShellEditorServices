@@ -30,7 +30,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         private int currentMessageId;
         private ChannelBase protocolChannel;
         private AsyncContextThread messageLoopThread;
-        private MessageProtocolType messageProtocolType;
         private TaskCompletionSource<bool> endpointExitedTask;
         private SynchronizationContext originalSynchronizationContext;
         private CancellationTokenSource messageLoopCancellationToken =
@@ -74,12 +73,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         public ProtocolEndpoint(
             ChannelBase protocolChannel,
             MessageDispatcher messageDispatcher,
-            MessageProtocolType messageProtocolType,
             ILogger logger)
         {
             this.protocolChannel = protocolChannel;
             this.MessageDispatcher = messageDispatcher;
-            this.messageProtocolType = messageProtocolType;
             this.originalSynchronizationContext = SynchronizationContext.Current;
             this.Logger = logger;
         }
@@ -87,22 +84,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         /// <summary>
         /// Starts the language server client and sends the Initialize method.
         /// </summary>
-        /// <returns>A Task that can be awaited for initialization to complete.</returns>
-        public async Task Start()
+        public void Start()
         {
             if (this.currentState == ProtocolEndpointState.NotStarted)
             {
-                // Start the provided protocol channel
-                this.protocolChannel.Start(this.messageProtocolType);
-
                 // Listen for unhandled exceptions from the message loop
                 this.UnhandledException += MessageDispatcher_UnhandledException;
 
                 // Start the message loop
                 this.StartMessageLoop();
-
-                // Notify implementation about endpoint start
-                await this.OnStart();
 
                 // Endpoint is now started
                 this.currentState = ProtocolEndpointState.Started;
@@ -115,22 +105,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             this.endpointExitedTask.Task.Wait();
         }
 
-        public async Task Stop()
+        public void Stop()
         {
             if (this.currentState == ProtocolEndpointState.Started)
             {
                 // Make sure no future calls try to stop the endpoint during shutdown
                 this.currentState = ProtocolEndpointState.Shutdown;
 
-                // Stop the implementation first
-                await this.OnStop();
-
                 // Stop the message loop and channel
                 this.StopMessageLoop();
                 this.protocolChannel.Stop();
 
                 // Notify anyone waiting for exit
-                this.OnSessionEnded();
                 if (this.endpointExitedTask != null)
                 {
                     this.endpointExitedTask.SetResult(true);
@@ -261,18 +247,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Message Handling
 
-        public void SetRequestHandler<TResult, TError, TRegistrationOptions>(
-            RequestType0<TResult, TError, TRegistrationOptions> requestType0,
-            Func<RequestContext<TResult>, Task> requestHandler)
-        {
-            SetRequestHandler(
-                RequestType<Object, TResult, TError, TRegistrationOptions>.ConvertToRequestType(requestType0),
-                (param1, requestContext) =>
-                {
-                    return requestHandler(requestContext);
-                });
-        }
-
         public void SetRequestHandler<TParams, TResult, TError, TRegistrationOptions>(
             RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             Func<TParams, RequestContext<TResult>, Task> requestHandler)
@@ -340,28 +314,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #endregion
 
-        #region Subclass Lifetime Methods
-
-        protected virtual Task OnStart()
-        {
-            return Task.FromResult(true);
-        }
-
-        protected virtual Task OnStop()
-        {
-            return Task.FromResult(true);
-        }
-
-        #endregion
-
         #region Events
-
-        public event EventHandler SessionEnded;
-
-        protected virtual void OnSessionEnded()
-        {
-            this.SessionEnded?.Invoke(this, null);
-        }
 
         public event EventHandler<Exception> UnhandledException;
 
@@ -442,11 +395,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 }
                 catch (Exception e)
                 {
-                    Logger.Write(
-                        LogLevel.Verbose,
-                        "Caught unexpected exception '{0}' in MessageDispatcher loop:\r\n{1}",
-                        e.GetType().Name,
-                        e.Message);
+                    Logger.WriteException(
+                        "Caught unhandled exception in ProtocolEndpoint message loop",
+                        e);
                 }
 
                 // The message could be null if there was an error parsing the

@@ -6,20 +6,46 @@
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
-using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Utility;
+using System.Threading.Tasks;
+using System;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 {
-    public class DebugAdapterClient : ProtocolEndpoint
+    public class DebugAdapterClient : IMessageSender, IMessageHandlers
     {
+        private ILogger logger;
+        private ProtocolEndpoint protocolEndpoint;
+        private MessageDispatcher messageDispatcher;
+
         public DebugAdapterClient(ChannelBase clientChannel, ILogger logger)
-            : base(
-                clientChannel,
-                new MessageDispatcher(logger),
-                MessageProtocolType.DebugAdapter,
-                logger)
         {
+            this.logger = logger;
+            this.messageDispatcher = new MessageDispatcher(logger);
+            this.protocolEndpoint = new ProtocolEndpoint(
+                clientChannel,
+                messageDispatcher,
+                logger);
+        }
+
+        public async Task Start()
+        {
+            this.protocolEndpoint.Start();
+
+            // Initialize the debug adapter
+            await this.SendRequest(
+                InitializeRequest.Type,
+                new InitializeRequestArguments
+                {
+                    LinesStartAt1 = true,
+                    ColumnsStartAt1 = true
+                },
+                true);
+        }
+
+        public void Stop()
+        {
+            this.protocolEndpoint.Stop();
         }
 
         public async Task LaunchScript(string scriptFilePath)
@@ -28,21 +54,43 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
                 LaunchRequest.Type,
                 new LaunchRequestArguments {
                     Script = scriptFilePath
-                });
+                },
+                true);
 
-            await this.SendRequest(ConfigurationDoneRequest.Type, null);
+            await this.SendRequest(
+                ConfigurationDoneRequest.Type,
+                null,
+                true);
         }
 
-        protected override Task OnStart()
+        public Task SendEvent<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType, TParams eventParams)
         {
-            // Initialize the debug adapter
-            return this.SendRequest(
-                InitializeRequest.Type,
-                new InitializeRequestArguments
-                {
-                    LinesStartAt1 = true,
-                    ColumnsStartAt1 = true
-                });
+            return ((IMessageSender)protocolEndpoint).SendEvent(eventType, eventParams);
+        }
+
+        public Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOptions>(RequestType<TParams, TResult, TError, TRegistrationOptions> requestType, TParams requestParams, bool waitForResponse)
+        {
+            return ((IMessageSender)protocolEndpoint).SendRequest(requestType, requestParams, waitForResponse);
+        }
+
+        public Task<TResult> SendRequest<TResult, TError, TRegistrationOptions>(RequestType0<TResult, TError, TRegistrationOptions> requestType0)
+        {
+            return ((IMessageSender)protocolEndpoint).SendRequest(requestType0);
+        }
+
+        public void SetRequestHandler<TParams, TResult, TError, TRegistrationOptions>(RequestType<TParams, TResult, TError, TRegistrationOptions> requestType, Func<TParams, RequestContext<TResult>, Task> requestHandler)
+        {
+            ((IMessageHandlers)messageDispatcher).SetRequestHandler(requestType, requestHandler);
+        }
+
+        public void SetRequestHandler<TResult, TError, TRegistrationOptions>(RequestType0<TResult, TError, TRegistrationOptions> requestType0, Func<RequestContext<TResult>, Task> requestHandler)
+        {
+            ((IMessageHandlers)messageDispatcher).SetRequestHandler(requestType0, requestHandler);
+        }
+
+        public void SetEventHandler<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType, Func<TParams, EventContext, Task> eventHandler)
+        {
+            ((IMessageHandlers)messageDispatcher).SetEventHandler(eventType, eventHandler);
         }
     }
 }
