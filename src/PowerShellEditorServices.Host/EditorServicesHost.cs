@@ -183,6 +183,14 @@ namespace Microsoft.PowerShell.EditorServices.Host
             object sender,
             TcpSocketServerChannel serverChannel)
         {
+            MessageDispatcher messageDispatcher = new MessageDispatcher(this.logger);
+
+            ProtocolEndpoint protocolEndpoint =
+                new ProtocolEndpoint(
+                    serverChannel,
+                    messageDispatcher,
+                    this.logger);
+
             this.editorSession =
                 CreateSession(
                     this.hostDetails,
@@ -192,7 +200,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.languageServer =
                 new LanguageServer(
                     this.editorSession,
-                    serverChannel,
+                    messageDispatcher,
+                    protocolEndpoint,
                     this.logger);
 
             await this.editorSession.PowerShellContext.ImportCommandsModule(
@@ -200,7 +209,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
                     @"..\..\Commands"));
 
-            await this.languageServer.Start();
+            this.languageServer.Start();
+            protocolEndpoint.Start();
         }
 
         /// <summary>
@@ -214,7 +224,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         {
             this.debugServiceListener =
                 new TcpSocketServerListener(
-                    MessageProtocolType.LanguageServer,
+                    MessageProtocolType.DebugAdapter,
                     debugServicePort,
                     this.logger);
 
@@ -228,15 +238,24 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     debugServicePort));
         }
 
-        private async void OnDebugServiceClientConnect(object sender, TcpSocketServerChannel serverChannel)
+        private void OnDebugServiceClientConnect(object sender, TcpSocketServerChannel serverChannel)
         {
+            MessageDispatcher messageDispatcher = new MessageDispatcher(this.logger);
+
+            ProtocolEndpoint protocolEndpoint =
+                new ProtocolEndpoint(
+                    serverChannel,
+                    messageDispatcher,
+                    this.logger);
+
             if (this.enableConsoleRepl)
             {
                 this.debugAdapter =
                     new DebugAdapter(
                         this.editorSession,
-                        serverChannel,
                         false,
+                        messageDispatcher,
+                        protocolEndpoint,
                         this.logger);
             }
             else
@@ -250,8 +269,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 this.debugAdapter =
                     new DebugAdapter(
                         debugSession,
-                        serverChannel,
                         true,
+                        messageDispatcher,
+                        protocolEndpoint,
                         this.logger);
             }
 
@@ -265,7 +285,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     this.debugServiceListener.Start();
                 };
 
-            await this.debugAdapter.Start();
+            this.debugAdapter.Start();
+            protocolEndpoint.Start();
         }
 
         /// <summary>
@@ -273,10 +294,10 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// </summary>
         public void StopServices()
         {
-            this.languageServer?.Stop().Wait();
+            // TODO: Need a new way to shut down the services
+
             this.languageServer = null;
 
-            this.debugAdapter?.Stop().Wait();
             this.debugAdapter = null;
         }
 

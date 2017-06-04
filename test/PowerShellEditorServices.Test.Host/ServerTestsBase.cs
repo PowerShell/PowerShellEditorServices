@@ -18,7 +18,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
     public class ServerTestsBase
     {
         private Process serviceProcess;
-        protected ProtocolEndpoint protocolClient;
+        protected IMessageSender messageSender;
+        protected IMessageHandlers messageHandlers;
 
         private ConcurrentDictionary<string, AsyncQueue<object>> eventQueuePerType =
             new ConcurrentDictionary<string, AsyncQueue<object>>();
@@ -136,15 +137,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             TParams requestParams)
         {
             return
-                this.protocolClient.SendRequest(
+                this.messageSender.SendRequest(
                     requestType,
-                    requestParams);
+                    requestParams,
+                    true);
         }
 
         protected Task SendEvent<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType, TParams eventParams)
         {
             return
-                this.protocolClient.SendEvent(
+                this.messageSender.SendEvent(
                     eventType,
                     eventParams);
         }
@@ -157,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     new AsyncQueue<object>(),
                     (key, queue) => queue);
 
-            this.protocolClient.SetEventHandler(
+            this.messageHandlers.SetEventHandler(
                 eventType,
                 (p, ctx) =>
                 {
@@ -185,7 +187,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             {
                 TaskCompletionSource<TParams> eventTaskSource = new TaskCompletionSource<TParams>();
 
-                this.protocolClient.SetEventHandler(
+                this.messageHandlers.SetEventHandler(
                     eventType,
                     (p, ctx) =>
                     {
@@ -195,8 +197,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         }
 
                         return Task.FromResult(true);
-                    },
-                    true);  // Override any existing handler
+                    });
 
                 eventTask = eventTaskSource.Task;
             }
@@ -238,7 +239,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 var requestTaskSource =
                     new TaskCompletionSource<Tuple<TParams, RequestContext<TResponse>>>();
 
-                this.protocolClient.SetRequestHandler(
+                this.messageHandlers.SetRequestHandler(
                     requestType,
                     (p, ctx) =>
                     {

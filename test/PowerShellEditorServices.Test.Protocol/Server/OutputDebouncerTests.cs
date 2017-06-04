@@ -120,6 +120,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             // Legitimately not implemented for these tests.
             throw new NotImplementedException();
         }
+
+        public Task<TResult> SendRequest<TResult, TError, TRegistrationOptions>(RequestType0<TResult, TError, TRegistrationOptions> requestType0)
+        {
+            // Legitimately not implemented for these tests.
+            throw new NotImplementedException();
+        }
     }
 }
 

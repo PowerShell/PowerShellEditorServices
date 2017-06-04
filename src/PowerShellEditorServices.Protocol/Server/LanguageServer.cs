@@ -25,13 +25,16 @@ using System.Collections;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
-    public class LanguageServer : LanguageServerBase
+    public class LanguageServer
     {
         private static CancellationTokenSource existingRequestCancellation;
 
+        private ILogger Logger;
         private bool profilesLoaded;
         private bool consoleReplStarted;
         private EditorSession editorSession;
+        private IMessageSender messageSender;
+        private IMessageHandlers messageHandlers;
         private OutputDebouncer outputDebouncer;
         private LanguageServerEditorOperations editorOperations;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
@@ -49,10 +52,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         /// </param>
         public LanguageServer(
             EditorSession editorSession,
-            ChannelBase serverChannel,
+            IMessageHandlers messageHandlers,
+            IMessageSender messageSender,
             ILogger logger)
-            : base(serverChannel, new MessageDispatcher(logger), logger)
         {
+            this.Logger = logger;
             this.editorSession = editorSession;
             this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;
 
@@ -61,11 +65,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession.ExtensionService.CommandUpdated += ExtensionService_ExtensionUpdated;
             this.editorSession.ExtensionService.CommandRemoved += ExtensionService_ExtensionRemoved;
 
+            this.messageSender = messageSender;
+            this.messageHandlers = messageHandlers;
+
             // Create the IEditorOperations implementation
             this.editorOperations =
                 new LanguageServerEditorOperations(
                     this.editorSession,
-                    this);
+                    this.messageSender);
 
             this.editorSession.StartDebugService(this.editorOperations);
             this.editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStopped;
@@ -78,67 +85,75 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // Always send console prompts through the UI in the language service
                 this.editorSession.ConsoleService.PushPromptHandlerContext(
                     new ProtocolPromptHandlerContext(
-                        this,
+                        this.messageSender,
                         this.editorSession.ConsoleService));
             }
 
             // Set up the output debouncer to throttle output event writes
-            this.outputDebouncer = new OutputDebouncer(this);
+            this.outputDebouncer = new OutputDebouncer(this.messageSender);
         }
 
-        protected override void Initialize()
+        /// <summary>
+        /// Starts the language server client and sends the Initialize method.
+        /// </summary>
+        /// <returns>A Task that can be awaited for initialization to complete.</returns>
+        public void Start()
         {
             // Register all supported message types
 
-            this.SetRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
+            this.messageHandlers.SetRequestHandler(ShutdownRequest.Type, this.HandleShutdownRequest);
+            this.messageHandlers.SetEventHandler(ExitNotification.Type, this.HandleExitNotification);
 
-            this.SetEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotification);
-            this.SetEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotification);
-            this.SetEventHandler(DidSaveTextDocumentNotification.Type, this.HandleDidSaveTextDocumentNotification);
-            this.SetEventHandler(DidChangeTextDocumentNotification.Type, this.HandleDidChangeTextDocumentNotification);
-            this.SetEventHandler(DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
+            this.messageHandlers.SetRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
 
-            this.SetRequestHandler(DefinitionRequest.Type, this.HandleDefinitionRequest);
-            this.SetRequestHandler(ReferencesRequest.Type, this.HandleReferencesRequest);
-            this.SetRequestHandler(CompletionRequest.Type, this.HandleCompletionRequest);
-            this.SetRequestHandler(CompletionResolveRequest.Type, this.HandleCompletionResolveRequest);
-            this.SetRequestHandler(SignatureHelpRequest.Type, this.HandleSignatureHelpRequest);
-            this.SetRequestHandler(DocumentHighlightRequest.Type, this.HandleDocumentHighlightRequest);
-            this.SetRequestHandler(HoverRequest.Type, this.HandleHoverRequest);
-            this.SetRequestHandler(DocumentSymbolRequest.Type, this.HandleDocumentSymbolRequest);
-            this.SetRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
-            this.SetRequestHandler(CodeActionRequest.Type, this.HandleCodeActionRequest);
+            this.messageHandlers.SetEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotification);
+            this.messageHandlers.SetEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotification);
+            this.messageHandlers.SetEventHandler(DidSaveTextDocumentNotification.Type, this.HandleDidSaveTextDocumentNotification);
+            this.messageHandlers.SetEventHandler(DidChangeTextDocumentNotification.Type, this.HandleDidChangeTextDocumentNotification);
+            this.messageHandlers.SetEventHandler(DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
 
-            this.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
-            this.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
+            this.messageHandlers.SetRequestHandler(DefinitionRequest.Type, this.HandleDefinitionRequest);
+            this.messageHandlers.SetRequestHandler(ReferencesRequest.Type, this.HandleReferencesRequest);
+            this.messageHandlers.SetRequestHandler(CompletionRequest.Type, this.HandleCompletionRequest);
+            this.messageHandlers.SetRequestHandler(CompletionResolveRequest.Type, this.HandleCompletionResolveRequest);
+            this.messageHandlers.SetRequestHandler(SignatureHelpRequest.Type, this.HandleSignatureHelpRequest);
+            this.messageHandlers.SetRequestHandler(DocumentHighlightRequest.Type, this.HandleDocumentHighlightRequest);
+            this.messageHandlers.SetRequestHandler(HoverRequest.Type, this.HandleHoverRequest);
+            this.messageHandlers.SetRequestHandler(DocumentSymbolRequest.Type, this.HandleDocumentSymbolRequest);
+            this.messageHandlers.SetRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
+            this.messageHandlers.SetRequestHandler(CodeActionRequest.Type, this.HandleCodeActionRequest);
 
-            this.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
-            this.SetRequestHandler(InstallModuleRequest.Type, this.HandleInstallModuleRequest);
+            this.messageHandlers.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
+            this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
 
-            this.SetRequestHandler(InvokeExtensionCommandRequest.Type, this.HandleInvokeExtensionCommandRequest);
+            this.messageHandlers.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
+            this.messageHandlers.SetRequestHandler(InstallModuleRequest.Type, this.HandleInstallModuleRequest);
 
-            this.SetRequestHandler(PowerShellVersionRequest.Type, this.HandlePowerShellVersionRequest);
+            this.messageHandlers.SetRequestHandler(InvokeExtensionCommandRequest.Type, this.HandleInvokeExtensionCommandRequest);
 
-            this.SetRequestHandler(NewProjectFromTemplateRequest.Type, this.HandleNewProjectFromTemplateRequest);
-            this.SetRequestHandler(GetProjectTemplatesRequest.Type, this.HandleGetProjectTemplatesRequest);
+            this.messageHandlers.SetRequestHandler(PowerShellVersionRequest.Type, this.HandlePowerShellVersionRequest);
 
-            this.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
+            this.messageHandlers.SetRequestHandler(NewProjectFromTemplateRequest.Type, this.HandleNewProjectFromTemplateRequest);
+            this.messageHandlers.SetRequestHandler(GetProjectTemplatesRequest.Type, this.HandleGetProjectTemplatesRequest);
 
-            this.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
-            this.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
+            this.messageHandlers.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
 
-            this.SetRequestHandler(ScriptFileMarkersRequest.Type, this.HandleScriptFileMarkersRequest);
-            this.SetRequestHandler(ScriptRegionRequest.Type, this.HandleGetFormatScriptRegionRequest);
+            this.messageHandlers.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
+            this.messageHandlers.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
 
-            this.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequest);
-            this.SetRequestHandler(CommentHelpRequest.Type, this.HandleCommentHelpRequest);
+            this.messageHandlers.SetRequestHandler(ScriptFileMarkersRequest.Type, this.HandleScriptFileMarkersRequest);
+            this.messageHandlers.SetRequestHandler(ScriptRegionRequest.Type, this.HandleGetFormatScriptRegionRequest);
+
+            this.messageHandlers.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequest);
+            this.messageHandlers.SetRequestHandler(CommentHelpRequest.Type, this.HandleCommentHelpRequest);
+
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
             this.editorSession.ExtensionService.Initialize(
                 this.editorOperations).Wait();
         }
 
-        protected override async Task Shutdown()
+        protected async Task Stop()
         {
             // Stop the interactive terminal
             // TODO: This can happen at the host level
@@ -149,14 +164,27 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             Logger.Write(LogLevel.Normal, "Language service is shutting down...");
 
-            if (this.editorSession != null)
-            {
-                this.editorSession.Dispose();
-                this.editorSession = null;
-            }
+            // TODO: Raise an event so that the host knows to shut down
         }
 
         #region Built-in Message Handlers
+
+        private async Task HandleShutdownRequest(
+            RequestContext<object> requestContext)
+        {
+            // Allow the implementor to shut down gracefully
+            await this.Stop();
+
+            await requestContext.SendResult(new object());
+        }
+
+        private async Task HandleExitNotification(
+            object exitParams,
+            EventContext eventContext)
+        {
+            // Stop the server channel
+            await this.Stop();
+        }
 
         protected async Task HandleInitializeRequest(
             InitializeParams initializeParams,
@@ -239,7 +267,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await RunScriptDiagnostics(
                     new ScriptFile[] { scripFile },
                         editorSession,
-                        this.SendEvent);
+                        this.messageSender.SendEvent);
             await sendresult;
         }
 
@@ -1193,7 +1221,7 @@ function __Expand-Alias {
 
         private async void PowerShellContext_RunspaceChanged(object sender, Session.RunspaceChangedEventArgs e)
         {
-            await this.SendEvent(
+            await this.messageSender.SendEvent(
                 RunspaceChangedEvent.Type,
                 new Protocol.LanguageServer.RunspaceDetails(e.NewRunspace));
         }
@@ -1206,7 +1234,7 @@ function __Expand-Alias {
 
         private async void ExtensionService_ExtensionAdded(object sender, EditorCommand e)
         {
-            await this.SendEvent(
+            await this.messageSender.SendEvent(
                 ExtensionCommandAddedNotification.Type,
                 new ExtensionCommandAddedNotification
                 {
@@ -1217,7 +1245,7 @@ function __Expand-Alias {
 
         private async void ExtensionService_ExtensionUpdated(object sender, EditorCommand e)
         {
-            await this.SendEvent(
+            await this.messageSender.SendEvent(
                 ExtensionCommandUpdatedNotification.Type,
                 new ExtensionCommandUpdatedNotification
                 {
@@ -1227,7 +1255,7 @@ function __Expand-Alias {
 
         private async void ExtensionService_ExtensionRemoved(object sender, EditorCommand e)
         {
-            await this.SendEvent(
+            await this.messageSender.SendEvent(
                 ExtensionCommandRemovedNotification.Type,
                 new ExtensionCommandRemovedNotification
                 {
@@ -1239,7 +1267,7 @@ function __Expand-Alias {
         {
             if (!this.editorSession.DebugService.IsClientAttached)
             {
-                await this.SendEvent(
+                await this.messageSender.SendEvent(
                     StartDebuggerEvent.Type,
                     new StartDebuggerEvent());
             }
@@ -1294,7 +1322,7 @@ function __Expand-Alias {
             EditorSession editorSession,
             EventContext eventContext)
         {
-            return RunScriptDiagnostics(filesToAnalyze, editorSession, this.SendEvent);
+            return RunScriptDiagnostics(filesToAnalyze, editorSession, this.messageSender.SendEvent);
         }
 
         private Task RunScriptDiagnostics(

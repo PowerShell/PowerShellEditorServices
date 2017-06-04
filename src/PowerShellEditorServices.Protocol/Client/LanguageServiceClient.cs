@@ -38,7 +38,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 
             return this.SendRequest(
                 InitializeRequest.Type,
-                initializeParams);
+                initializeParams,
+                true);
         }
 
         #region Events

@@ -23,9 +23,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         private string currentOutputCategory;
         private Queue<Tuple<string, bool>> bufferedOutput = new Queue<Tuple<string, bool>>();
 
-        public OutputReader(ProtocolEndpoint protocolClient)
+        public OutputReader(IMessageHandlers messageHandlers)
         {
-            protocolClient.SetEventHandler(
+            messageHandlers.SetEventHandler(
                 OutputEvent.Type,
                 this.OnOutputEvent);
         }
@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     this.currentOutputCategory = nextOutputEvent.Category;
 
                     // Split up the output into multiple lines
-                    outputLines = 
+                    outputLines =
                         nextOutputEvent.Output.Split(
                             new string[] { "\n", "\r\n" },
                             StringSplitOptions.None);

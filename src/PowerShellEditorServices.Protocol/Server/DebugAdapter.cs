@@ -20,12 +20,13 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
-    public class DebugAdapter : DebugAdapterBase
+    public class DebugAdapter
     {
         private EditorSession editorSession;
         private OutputDebouncer outputDebouncer;
 
         private bool noDebug;
+        private ILogger Logger;
         private string arguments;
         private bool isRemoteAttach;
         private bool isAttachSession;
@@ -34,47 +35,53 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private bool enableConsoleRepl;
         private bool ownsEditorSession;
         private bool executionCompleted;
+        private IMessageSender messageSender;
+        private IMessageHandlers messageHandlers;
         private bool isInteractiveDebugSession;
         private RequestContext<object> disconnectRequestContext = null;
 
         public DebugAdapter(
             EditorSession editorSession,
-            ChannelBase serverChannel,
             bool ownsEditorSession,
+            IMessageHandlers messageHandlers,
+            IMessageSender messageSender,
             ILogger logger)
-                : base(serverChannel, new MessageDispatcher(logger), logger)
         {
+            this.Logger = logger;
             this.editorSession = editorSession;
+            this.messageSender = messageSender;
+            this.messageHandlers = messageHandlers;
             this.ownsEditorSession = ownsEditorSession;
             this.enableConsoleRepl = editorSession.UsesConsoleHost;
         }
 
-        protected override void Initialize()
+        public void Start()
         {
             // Register all supported message types
+            this.messageHandlers.SetRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
 
-            this.SetRequestHandler(LaunchRequest.Type, this.HandleLaunchRequest);
-            this.SetRequestHandler(AttachRequest.Type, this.HandleAttachRequest);
-            this.SetRequestHandler(ConfigurationDoneRequest.Type, this.HandleConfigurationDoneRequest);
-            this.SetRequestHandler(DisconnectRequest.Type, this.HandleDisconnectRequest);
+            this.messageHandlers.SetRequestHandler(LaunchRequest.Type, this.HandleLaunchRequest);
+            this.messageHandlers.SetRequestHandler(AttachRequest.Type, this.HandleAttachRequest);
+            this.messageHandlers.SetRequestHandler(ConfigurationDoneRequest.Type, this.HandleConfigurationDoneRequest);
+            this.messageHandlers.SetRequestHandler(DisconnectRequest.Type, this.HandleDisconnectRequest);
 
-            this.SetRequestHandler(SetBreakpointsRequest.Type, this.HandleSetBreakpointsRequest);
-            this.SetRequestHandler(SetExceptionBreakpointsRequest.Type, this.HandleSetExceptionBreakpointsRequest);
-            this.SetRequestHandler(SetFunctionBreakpointsRequest.Type, this.HandleSetFunctionBreakpointsRequest);
+            this.messageHandlers.SetRequestHandler(SetBreakpointsRequest.Type, this.HandleSetBreakpointsRequest);
+            this.messageHandlers.SetRequestHandler(SetExceptionBreakpointsRequest.Type, this.HandleSetExceptionBreakpointsRequest);
+            this.messageHandlers.SetRequestHandler(SetFunctionBreakpointsRequest.Type, this.HandleSetFunctionBreakpointsRequest);
 
-            this.SetRequestHandler(ContinueRequest.Type, this.HandleContinueRequest);
-            this.SetRequestHandler(NextRequest.Type, this.HandleNextRequest);
-            this.SetRequestHandler(StepInRequest.Type, this.HandleStepInRequest);
-            this.SetRequestHandler(StepOutRequest.Type, this.HandleStepOutRequest);
-            this.SetRequestHandler(PauseRequest.Type, this.HandlePauseRequest);
+            this.messageHandlers.SetRequestHandler(ContinueRequest.Type, this.HandleContinueRequest);
+            this.messageHandlers.SetRequestHandler(NextRequest.Type, this.HandleNextRequest);
+            this.messageHandlers.SetRequestHandler(StepInRequest.Type, this.HandleStepInRequest);
+            this.messageHandlers.SetRequestHandler(StepOutRequest.Type, this.HandleStepOutRequest);
+            this.messageHandlers.SetRequestHandler(PauseRequest.Type, this.HandlePauseRequest);
 
-            this.SetRequestHandler(ThreadsRequest.Type, this.HandleThreadsRequest);
-            this.SetRequestHandler(StackTraceRequest.Type, this.HandleStackTraceRequest);
-            this.SetRequestHandler(ScopesRequest.Type, this.HandleScopesRequest);
-            this.SetRequestHandler(VariablesRequest.Type, this.HandleVariablesRequest);
-            this.SetRequestHandler(SetVariableRequest.Type, this.HandleSetVariablesRequest);
-            this.SetRequestHandler(SourceRequest.Type, this.HandleSourceRequest);
-            this.SetRequestHandler(EvaluateRequest.Type, this.HandleEvaluateRequest);
+            this.messageHandlers.SetRequestHandler(ThreadsRequest.Type, this.HandleThreadsRequest);
+            this.messageHandlers.SetRequestHandler(StackTraceRequest.Type, this.HandleStackTraceRequest);
+            this.messageHandlers.SetRequestHandler(ScopesRequest.Type, this.HandleScopesRequest);
+            this.messageHandlers.SetRequestHandler(VariablesRequest.Type, this.HandleVariablesRequest);
+            this.messageHandlers.SetRequestHandler(SetVariableRequest.Type, this.HandleSetVariablesRequest);
+            this.messageHandlers.SetRequestHandler(SourceRequest.Type, this.HandleSourceRequest);
+            this.messageHandlers.SetRequestHandler(EvaluateRequest.Type, this.HandleEvaluateRequest);
         }
 
         protected Task LaunchScript(RequestContext<object> requestContext)
@@ -146,17 +153,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             {
                 // Respond to the disconnect request and stop the server
                 await this.disconnectRequestContext.SendResult(null);
-                await this.Stop();
+                this.Stop();
             }
             else
             {
-                await this.SendEvent(
+                await this.messageSender.SendEvent(
                     TerminatedEvent.Type,
                     new TerminatedEvent());
             }
         }
 
-        protected override void Shutdown()
+        protected void Stop()
         {
             Logger.Write(LogLevel.Normal, "Debug adapter is shutting down...");
 
@@ -179,9 +186,26 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                 this.editorSession = null;
             }
+
+            this.OnSessionEnded();
         }
 
         #region Built-in Message Handlers
+
+        private async Task HandleInitializeRequest(
+            object shutdownParams,
+            RequestContext<InitializeResponseBody> requestContext)
+        {
+            // Now send the Initialize response to continue setup
+            await requestContext.SendResult(
+                new InitializeResponseBody {
+                    SupportsConfigurationDoneRequest = true,
+                    SupportsFunctionBreakpoints = true,
+                    SupportsConditionalBreakpoints = true,
+                    SupportsHitConditionalBreakpoints = true,
+                    SupportsSetVariable = true
+                });
+        }
 
         protected async Task HandleConfigurationDoneRequest(
             object args,
@@ -309,7 +333,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // Send the InitializedEvent so that the debugger will continue
             // sending configuration requests
-            await this.SendEvent(
+            await this.messageSender.SendEvent(
                 InitializedEvent.Type,
                 null);
         }
@@ -449,7 +473,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     this.UnregisterEventHandlers();
 
                     await requestContext.SendResult(null);
-                    await this.Stop();
+                    this.Stop();
                 }
             }
         }
@@ -824,7 +848,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private async Task WriteUseIntegratedConsoleMessage()
         {
-            await this.SendEvent(
+            await this.messageSender.SendEvent(
                 OutputEvent.Type,
                 new OutputEventBody
                 {
@@ -842,7 +866,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             if (!this.enableConsoleRepl)
             {
                 this.editorSession.ConsoleService.OutputWritten += this.powerShellContext_OutputWritten;
-                this.outputDebouncer = new OutputDebouncer(this);
+                this.outputDebouncer = new OutputDebouncer(this.messageSender);
             }
         }
 
@@ -888,7 +912,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         : "breakpoint";
             }
 
-            await this.SendEvent(
+            await this.messageSender.SendEvent(
                 StoppedEvent.Type,
                 new StoppedEventBody
                 {
@@ -910,7 +934,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // Send the InitializedEvent so that the debugger will continue
                 // sending configuration requests
                 this.waitingForAttach = false;
-                await this.SendEvent(InitializedEvent.Type, null);
+                await this.messageSender.SendEvent(InitializedEvent.Type, null);
             }
             else if (
                 e.ChangeAction == RunspaceChangeAction.Exit &&
@@ -920,7 +944,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // Exited the session while the debugger is stopped,
                 // send a ContinuedEvent so that the client changes the
                 // UI to appear to be running again
-                await this.SendEvent<ContinuedEvent, Object>(
+                await this.messageSender.SendEvent<ContinuedEvent, Object>(
                     ContinuedEvent.Type,
                     new ContinuedEvent
                     {
@@ -932,13 +956,24 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private async void powerShellContext_DebuggerResumed(object sender, DebuggerResumeAction e)
         {
-            await this.SendEvent(
+            await this.messageSender.SendEvent(
                 ContinuedEvent.Type,
                 new ContinuedEvent
                 {
                     AllThreadsContinued = true,
                     ThreadId = 1
                 });
+        }
+
+        #endregion
+
+        #region Events
+
+        public event EventHandler SessionEnded;
+
+        protected virtual void OnSessionEnded()
+        {
+            this.SessionEnded?.Invoke(this, null);
         }
 
         #endregion

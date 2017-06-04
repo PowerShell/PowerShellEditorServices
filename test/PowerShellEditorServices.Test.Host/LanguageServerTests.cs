@@ -54,14 +54,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     waitForDebugger: false);
                     //waitForDebugger: true);
 
-            this.protocolClient =
-                this.languageServiceClient =
-                    new LanguageServiceClient(
-                        await TcpSocketClientChannel.Connect(
-                            portNumbers.Item1,
-                            MessageProtocolType.LanguageServer,
-                            this.logger),
-                        this.logger);
+            this.languageServiceClient =
+                new LanguageServiceClient(
+                    await TcpSocketClientChannel.Connect(
+                        portNumbers.Item1,
+                        MessageProtocolType.LanguageServer,
+                        this.logger),
+                    this.logger);
+
+            this.messageSender = this.languageServiceClient;
+            this.messageHandlers = this.languageServiceClient;
 
             await this.languageServiceClient.Start();
         }
@@ -580,7 +582,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesOutput()
         {
-            OutputReader outputReader = new OutputReader(this.protocolClient);
+            OutputReader outputReader = new OutputReader(this.messageHandlers);
 
             await
                 this.SendRequest(
@@ -609,7 +611,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesChoicePrompt()
         {
-            OutputReader outputReader = new OutputReader(this.protocolClient);
+            OutputReader outputReader = new OutputReader(this.messageHandlers);
 
             string choiceScript =
                 @"
@@ -659,7 +661,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task ServiceExecutesReplCommandAndReceivesInputPrompt()
         {
-            OutputReader outputReader = new OutputReader(this.protocolClient);
+            OutputReader outputReader = new OutputReader(this.messageHandlers);
 
             string promptScript =
                 @"
@@ -716,7 +718,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact(Skip = "Native command output in the legacy host has been disabled for now, may re-enable later")]
         public async Task ServiceExecutesNativeCommandAndReceivesCommand()
         {
-            OutputReader outputReader = new OutputReader(this.protocolClient);
+            OutputReader outputReader = new OutputReader(this.messageHandlers);
 
             // Execute the script but don't await the task yet because
             // the choice prompt will block execution from completing
@@ -788,7 +790,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     }
                 });
 
-            OutputReader outputReader = new OutputReader(this.protocolClient);
+            OutputReader outputReader = new OutputReader(this.messageHandlers);
 
             Task<EvaluateResponseBody> evaluateTask =
                 this.SendRequest(

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
-    internal interface IMessageSender
+    public interface IMessageSender
     {
         Task SendEvent<TParams, TRegistrationOptions>(
             NotificationType<TParams, TRegistrationOptions> eventType,
@@ -17,6 +17,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             TParams requestParams,
             bool waitForResponse);
+
+        Task<TResult> SendRequest<TResult, TError, TRegistrationOptions>(
+            RequestType0<TResult, TError, TRegistrationOptions> requestType0);
     }
 }
 
