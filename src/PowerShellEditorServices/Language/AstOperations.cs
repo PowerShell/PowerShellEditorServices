@@ -264,7 +264,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Checks if a given ast represents the root node of a *.psd1 file.
         /// </summary>
-        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <param name="ast">The abstract syntax tree of the given script</param>
         /// <returns>true if the AST represts a *.psd1 file, otherwise false</returns>
         static public bool IsPowerShellDataFileAst(Ast ast)
         {
