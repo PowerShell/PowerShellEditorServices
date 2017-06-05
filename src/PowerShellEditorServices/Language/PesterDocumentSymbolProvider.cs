@@ -5,19 +5,14 @@ using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    internal class PesterDocumentSymbolProvider : IDocumentSymbolProvider
+    internal class PesterDocumentSymbolProvider : DocumentSymbolProvider
     {
-        IEnumerable<SymbolReference> IDocumentSymbolProvider.GetSymbols(ScriptFile scriptFile, Version psVersion)
+        protected override bool CanProvideFor(ScriptFile scriptFile)
         {
-            if (IsPesterFile(scriptFile))
-            {
-                return GetPesterSymbols(scriptFile);
-            }
-
-            return Enumerable.Empty<SymbolReference>();
+            return scriptFile.FilePath.EndsWith("tests.ps1", StringComparison.OrdinalIgnoreCase);
         }
 
-        private IEnumerable<SymbolReference> GetPesterSymbols(ScriptFile scriptFile)
+        protected override IEnumerable<SymbolReference> GetSymbolsImpl(ScriptFile scriptFile, Version psVersion)
         {
             var commandAsts = scriptFile.ScriptAst.FindAll(ast =>
             {
@@ -40,11 +35,6 @@ namespace Microsoft.PowerShell.EditorServices
                 ast.Extent,
                 scriptFile.FilePath,
                 scriptFile.GetLine(ast.Extent.StartLineNumber)));
-        }
-
-        private bool IsPesterFile(ScriptFile scriptFile)
-        {
-            return scriptFile.FilePath.EndsWith("tests.ps1", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
