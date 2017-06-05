@@ -23,7 +23,6 @@ namespace Microsoft.PowerShell.EditorServices
                     case "it":
                         return true;
 
-                    case null:
                     default:
                         return false;
                 }
