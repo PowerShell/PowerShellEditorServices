@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices
         private string mostRecentRequestFile;
         private Dictionary<String, List<String>> CmdletToAliasDictionary;
         private Dictionary<String, String> AliasToCmdletDictionary;
-        private IDocumentSymbolProvider[] documentSymbolProviders;
+        private DocumentSymbolProvider[] documentSymbolProviders;
 
         const int DefaultWaitTimeoutMilliseconds = 5000;
 
@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.CmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
             this.AliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
-            this.documentSymbolProviders = new IDocumentSymbolProvider[]
+            this.documentSymbolProviders = new DocumentSymbolProvider[]
             {
                 new ScriptDocumentSymbolProvider(),
                 new PSDDocumentSymbolProvider(),
