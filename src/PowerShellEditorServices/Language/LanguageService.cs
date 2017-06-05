@@ -233,17 +233,11 @@ namespace Microsoft.PowerShell.EditorServices
         public FindOccurrencesResult FindSymbolsInFile(ScriptFile scriptFile)
         {
             Validate.IsNotNull("scriptFile", scriptFile);
-
-            var symbolReferences = Enumerable.Empty<SymbolReference>();
-            foreach (var provider in documentSymbolProviders)
-            {
-                symbolReferences = symbolReferences.Concat(provider.GetSymbols(scriptFile));
-            }
-
             return new FindOccurrencesResult
             {
-                FoundOccurrences = symbolReferences.Select(
-                        reference =>
+                FoundOccurrences = documentSymbolProviders
+                    .SelectMany(p => p.GetSymbols(scriptFile, powerShellContext.LocalPowerShellVersion.Version))
+                    .Select(reference =>
                         {
                             reference.SourceLine =
                                 scriptFile.GetLine(reference.ScriptRegion.StartLineNumber);
