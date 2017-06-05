@@ -301,6 +301,20 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
+        public void LanguageServiceFindsSymbolsInPesterFile()
+        {
+            var symbolsResult = this.FindSymbolsInFile(FindSymbolsInPesterFile.SourceDetails);
+            Assert.Equal(5, symbolsResult.FoundOccurrences.Count());
+        }
+
+        [Fact]
+        public void LangServerFindsSymbolsInPSDFile()
+        {
+            var symbolsResult = this.FindSymbolsInFile(FindSymbolsInPSDFile.SourceDetails);
+            Assert.Equal(3, symbolsResult.FoundOccurrences.Count());
+        }
+
+        [Fact]
         public void LanguageServiceFindsSymbolsInNoSymbolsFile()
         {
             FindOccurrencesResult symbolsResult =
@@ -309,7 +323,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             Assert.Equal(0, symbolsResult.FoundOccurrences.Count());
         }
-
 
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion)
         {
