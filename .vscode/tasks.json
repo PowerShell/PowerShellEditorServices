@@ -27,7 +27,14 @@
             "taskName": "Build",
             "suppressTaskName": true,
             "isBuildCommand": true,
-            "args": [ "Invoke-Build Build" ]
+            "args": [ "Invoke-Build Build" ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "taskName": "Build Release Configuration",
+            "suppressTaskName": true,
+            "args": [ "Invoke-Build Build -Configuration Release" ],
+            "problemMatcher": "$msCompile"
         },
         {
             "taskName": "Test",
