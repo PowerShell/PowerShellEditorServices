@@ -118,8 +118,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
 
         private string ReadLogContents()
         {
-            Logger.Close();
-
             return
                 string.Join(
                     "\r\n",

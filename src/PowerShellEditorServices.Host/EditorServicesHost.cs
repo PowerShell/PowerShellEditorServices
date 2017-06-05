@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -116,7 +116,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
         public void StartLogging(string logFilePath, LogLevel logLevel)
         {
             this.logger = new FileLogger(logFilePath, logLevel);
-            Logger.Initialize(this.logger);
 
 #if CoreCLR
             FileVersionInfo fileVersionInfo =

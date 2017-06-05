@@ -40,8 +40,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     testLogPath + "-client.log",
                     LogLevel.Verbose);
 
-            Logger.Initialize(this.logger);
-
             testLogPath += "-server.log";
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
