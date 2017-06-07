@@ -35,10 +35,10 @@ function Import-EditorCommand {
             process {
                 if (-not $ModuleToSearch) { return }
 
-                $caller = (Get-PSCallStack)[1]
+                $caller = (Get-PSCallStack)[2]
 
-                if ($caller.InvocationInfo.MyCommand.Module.Name -eq $ModuleToSearch) {
-                    $moduleInfo = $caller.InvocationInfo.MyCommand.Module
+                if ($caller.InvocationInfo.MyCommand.ScriptBlock.Module.Name -eq $ModuleToSearch) {
+                    $moduleInfo = $caller.InvocationInfo.MyCommand.ScriptBlock.Module
 
                     return $moduleInfo.Invoke(
                         {

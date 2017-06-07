@@ -5,6 +5,16 @@ function ConvertTo-ScriptExtent {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.Language.IScriptExtent])]
     param(
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName='ByOffset')]
+        [Alias('StartOffset', 'Offset')]
+        [int]
+        $StartOffsetNumber,
+
+        [Parameter(ValueFromPipelineByPropertyName, ParameterSetName='ByOffset')]
+        [Alias('EndOffset')]
+        [int]
+        $EndOffsetNumber,
+
         [Parameter(ValueFromPipelineByPropertyName, ParameterSetName='ByPosition')]
         [Alias('StartLine', 'Line')]
         [int]
@@ -25,16 +35,6 @@ function ConvertTo-ScriptExtent {
         [int]
         $EndColumnNumber,
 
-        [Parameter(ValueFromPipelineByPropertyName, ParameterSetName='ByOffset')]
-        [Alias('StartOffset', 'Offset')]
-        [int]
-        $StartOffsetNumber,
-
-        [Parameter(ValueFromPipelineByPropertyName, ParameterSetName='ByOffset')]
-        [Alias('EndOffset')]
-        [int]
-        $EndOffsetNumber,
-
         [Parameter(ValueFromPipelineByPropertyName, ParameterSetName='ByPosition')]
         [Parameter(ValueFromPipelineByPropertyName, ParameterSetName='ByOffset')]
         [Parameter(ValueFromPipelineByPropertyName, ParameterSetName='ByBuffer')]
@@ -52,7 +52,10 @@ function ConvertTo-ScriptExtent {
         [Microsoft.PowerShell.EditorServices.BufferPosition]
         $EndBuffer,
 
-        [Parameter(ValueFromPipeline)]
+        [Parameter(Mandatory,
+                   ValueFromPipeline,
+                   ValueFromPipelineByPropertyName,
+                   ParameterSetName='ByExtent')]
         [System.Management.Automation.Language.IScriptExtent]
         $Extent
     )
