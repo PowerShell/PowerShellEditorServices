@@ -251,8 +251,14 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="scriptDefinition">Script text to be formatted</param>
         /// <returns>The formatted script text.</returns>
-        public async Task<string> Format(string scriptDefinition)
+        public async Task<string> Format(
+            string scriptDefinition,
+            int startLineNumber = -1,
+            int startColumnNumber = -1,
+            int endLineNumber = -1,
+            int endColumnNumber = -1)
         {
+            // we cannot use Range type therefore this workaround of using -1 default value
             if (!hasScriptAnalyzerModule)
             {
                 return null;
@@ -261,7 +267,11 @@ namespace Microsoft.PowerShell.EditorServices
             var result = await InvokePowerShellAsync(
                 "Invoke-Formatter",
                 new Dictionary<string, object> {
-                    {"ScriptDefinition", scriptDefinition}
+                    {"ScriptDefinition", scriptDefinition},
+                    {"StartLineNumber", startLineNumber},
+                    {"StartColumnNumber", startColumnNumber},
+                    {"EndLineNumber", endLineNumber},
+                    {"EndColumnNumber", endColumnNumber}
                 });
 
             return result?.Select(r => r.ImmediateBaseObject as string).FirstOrDefault();
