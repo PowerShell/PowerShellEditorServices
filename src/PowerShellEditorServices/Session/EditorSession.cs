@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Components;
 using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Session;
@@ -70,6 +71,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the RemoteFileManager instance for this session.
         /// </summary>
         public RemoteFileManager RemoteFileManager { get; private set; }
+
+        /// <summary>
+        /// Gets the IComponentCollection instance for this session.
+        /// </summary>
+        public IComponentRegistry Components { get; } = new ComponentRegistry();
 
         #endregion
 
