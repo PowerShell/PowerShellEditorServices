@@ -538,7 +538,7 @@ function __Expand-Alias {
 
                 changedFile.ApplyChange(
                     GetFileChangeDetails(
-                        textChange.Range.Value,
+                        textChange.Range,
                         textChange.Text));
 
                 changedFiles.Add(changedFile);
@@ -870,7 +870,7 @@ function __Expand-Alias {
                         textDocumentPositionParams.Position.Character + 1);
 
             List<MarkedString> symbolInfo = new List<MarkedString>();
-            Range? symbolRange = null;
+            Range symbolRange = null;
 
             if (symbolDetails != null)
             {

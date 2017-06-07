@@ -237,7 +237,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// Gets or sets the Range where the document was changed.  Will
         /// be null if the server's TextDocumentSyncKind is Full.
         /// </summary>
-        public Range? Range { get; set; }
+        public Range Range { get; set; }
 
         /// <summary>
         /// Gets or sets the length of the Range being replaced in the
@@ -267,7 +267,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     }
 
     [DebuggerDisplay("Start = {Start.Line}:{Start.Character}, End = {End.Line}:{End.Character}")]
-    public struct Range
+    public class Range
     {
         /// <summary>
         /// Gets or sets the starting position of the range.
