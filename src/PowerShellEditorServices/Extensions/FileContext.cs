@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     {
         #region Private Fields
 
-        private ScriptFile scriptFile;
+        internal ScriptFile scriptFile;
         private EditorContext editorContext;
         private IEditorOperations editorOperations;
 
