@@ -1188,44 +1188,6 @@ function __Expand-Alias {
             });
         }
 
-        protected Task HandleEvaluateRequest(
-            DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
-            RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
-        {
-            // We don't await the result of the execution here because we want
-            // to be able to receive further messages while the current script
-            // is executing.  This important in cases where the pipeline thread
-            // gets blocked by something in the script like a prompt to the user.
-            var executeTask =
-                this.editorSession.PowerShellContext.ExecuteScriptString(
-                    evaluateParams.Expression,
-                    writeInputToHost: true,
-                    writeOutputToHost: true,
-                    addToHistory: true);
-
-            // Return the execution result after the task completes so that the
-            // caller knows when command execution completed.
-            executeTask.ContinueWith(
-                (task) =>
-                {
-                    // Start the command loop again
-                    // TODO: This can happen inside the PSHost
-                    this.editorSession.ConsoleService.StartReadLoop();
-
-                    // Return an empty result since the result value is irrelevant
-                    // for this request in the LanguageServer
-                    return
-                    requestContext.SendResult(
-                        new DebugAdapterMessages.EvaluateResponseBody
-                        {
-                            Result = "",
-                            VariablesReference = 0
-                        });
-                });
-
-            return Task.FromResult(true);
-        }
-
         #endregion
 
         #region Event Handlers
