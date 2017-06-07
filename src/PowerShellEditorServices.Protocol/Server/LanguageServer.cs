@@ -1159,7 +1159,10 @@ function __Expand-Alias {
             // TODO Get settings
             // TODO Update settings to store code formatting settings
             var scriptFile = editorSession.Workspace.GetFile(formattingParams.TextDocument.Uri);
-            var formattedScript = await editorSession.AnalysisService.Format(scriptFile.Contents);
+
+            // TODO raise an error event incase format returns null;
+            var formattedScript = await editorSession.AnalysisService.Format(scriptFile.Contents) ??
+                                    scriptFile.Contents;
             var extent = scriptFile.ScriptAst.Extent;
 
             // todo create an extension for this
