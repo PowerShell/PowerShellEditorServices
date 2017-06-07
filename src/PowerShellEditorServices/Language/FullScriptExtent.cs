@@ -1,5 +1,6 @@
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -116,6 +117,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="bufferRange">The buffer range this extent is located at.</param>
         public FullScriptExtent(FileContext fileContext, BufferRange bufferRange)
         {
+            Validate.IsNotNull(nameof(fileContext), fileContext);
+            Validate.IsNotNull(nameof(bufferRange), bufferRange);
+
             BufferRange = bufferRange;
             FileContext = fileContext;
 
@@ -136,6 +140,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="endOffset">The zero based offset this extent ends at.</param>
         public FullScriptExtent(FileContext fileContext, int startOffset, int endOffset)
         {
+            Validate.IsNotNull(nameof(fileContext), fileContext);
+            Validate.IsNotNull(nameof(startOffset), startOffset);
+            Validate.IsNotNull(nameof(endOffset), endOffset);
+
             FileContext = fileContext;
             StartOffset = startOffset;
             EndOffset = endOffset;
@@ -146,6 +154,9 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Public Methods
 
+        /// <summary>
+        /// Return the text this extent refers to.
+        /// </summary>
         public override string ToString()
         {
             return Text;
