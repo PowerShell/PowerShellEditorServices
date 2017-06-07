@@ -246,15 +246,25 @@ namespace Microsoft.PowerShell.EditorServices
             return ruleNames;
         }
 
+        /// <summary>
+        /// Format a given script text with default codeformatting settings.
+        /// </summary>
+        /// <param name="scriptDefinition">Script text to be formatted</param>
+        /// <returns>The formatted script text.</returns>
         public async Task<string> Format(string scriptDefinition)
         {
-            var result = InvokePowerShellAsync(
+            if (!hasScriptAnalyzerModule)
+            {
+                return null;
+            }
+
+            var result = await InvokePowerShellAsync(
                 "Invoke-Formatter",
                 new Dictionary<string, object> {
                     {"ScriptDefinition", scriptDefinition}
                 });
 
-            return (await result)?.Select(r => r.ImmediateBaseObject as string).FirstOrDefault();
+            return result?.Select(r => r.ImmediateBaseObject as string).FirstOrDefault();
         }
 
         /// <summary>
