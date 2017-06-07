@@ -15,7 +15,7 @@ RootModule = 'PowerShellEditorServices.Commands.psm1'
 ModuleVersion = '1.0.0'
 
 # ID used to uniquely identify this module
-GUID = '9ca15887-53a2-479a-9cda-48d26bcb6c47'
+GUID = '6064d846-0fa0-4b6d-afc1-11e5bed3c4a9'
 
 # Author of this module
 Author = 'Microsoft'
@@ -66,7 +66,15 @@ Description = 'Provides internal commands for PowerShell Editor Services that on
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @('Register-EditorCommand', 'Unregister-EditorCommand')
+FunctionsToExport = @('Register-EditorCommand',
+                      'Unregister-EditorCommand',
+                      'Set-ScriptExtent',
+                      'Find-Ast',
+                      'Import-EditorCommand',
+                      'ConvertFrom-ScriptExtent',
+                      'ConvertTo-ScriptExtent',
+                      'Get-Token',
+                      'Join-ScriptExtent')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
