@@ -1158,6 +1158,34 @@ function __Expand-Alias {
         {
             // TODO Get settings
             // TODO Update settings to store code formatting settings
+            var scriptFile = editorSession.Workspace.GetFile(formattingParams.TextDocument.Uri);
+            var formattedScript = await editorSession.AnalysisService.Format(scriptFile.Contents);
+            var extent = scriptFile.ScriptAst.Extent;
+
+            // todo create an extension for this
+            var editRange = new Range
+            {
+                Start = new Position
+                {
+                    Line = extent.StartLineNumber - 1,
+                    Character = extent.StartColumnNumber - 1
+                },
+                End = new Position
+                {
+                    Line = extent.EndLineNumber - 1,
+                    Character = extent.EndColumnNumber - 1
+                }
+            };
+
+            await requestContext.SendResult(new TextEdit[1]
+            {
+                new TextEdit
+                {
+                    Range = editRange,
+                    NewText = formattedScript
+                },
+
+            });
         }
 
         protected Task HandleEvaluateRequest(

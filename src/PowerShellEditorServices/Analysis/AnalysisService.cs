@@ -245,6 +245,17 @@ namespace Microsoft.PowerShell.EditorServices
             return ruleNames;
         }
 
+        public async Task<string> Format(string scriptDefinition)
+        {
+            var result = InvokePowerShellAsync(
+                "Invoke-Formatter",
+                new Dictionary<string, object> {
+                    {"ScriptDefinition", scriptDefinition}
+                });
+
+            return (await result)?.Select(r => r.ImmediateBaseObject as string).FirstOrDefault();
+        }
+
         /// <summary>
         /// Disposes the runspace being used by the analysis service.
         /// </summary>
