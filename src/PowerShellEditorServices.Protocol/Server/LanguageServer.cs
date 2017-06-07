@@ -104,6 +104,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
             this.messageHandlers.SetRequestHandler(CodeActionRequest.Type, this.HandleCodeActionRequest);
             this.messageHandlers.SetRequestHandler(DocumentFormattingRequest.Type, this.HandleDocumentFormattingRequest);
+            this.messageHandlers.SetRequestHandler(
+                DocumentRangeFormattingRequest.Type,
+                this.HandleDocumentRangeFormattingRequest);
 
             this.messageHandlers.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
             this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
@@ -197,7 +200,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         {
                             TriggerCharacters = new string[] { " " } // TODO: Other characters here?
                         },
-                        DocumentFormattingProvider = true
+                        DocumentFormattingProvider = true,
+                        DocumentRangeFormattingProvider = true
                     }
                 });
         }
@@ -1156,44 +1160,88 @@ function __Expand-Alias {
             DocumentFormattingParams formattingParams,
             RequestContext<TextEdit[]> requestContext)
         {
-            // TODO Get settings
-            // TODO Update settings to store code formatting settings
-            var scriptFile = editorSession.Workspace.GetFile(formattingParams.TextDocument.Uri);
-
-            // TODO raise an error event incase format returns null;
-            var formattedScript = await editorSession.AnalysisService.Format(scriptFile.Contents) ??
-                                    scriptFile.Contents;
-            var extent = scriptFile.ScriptAst.Extent;
-
-            // todo create an extension for this
-            var editRange = new Range
-            {
-                Start = new Position
-                {
-                    Line = extent.StartLineNumber - 1,
-                    Character = extent.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = extent.EndLineNumber - 1,
-                    Character = extent.EndColumnNumber - 1
-                }
-            };
-
+            var result = await Format(formattingParams.TextDocument.Uri, null);
             await requestContext.SendResult(new TextEdit[1]
             {
                 new TextEdit
                 {
-                    Range = editRange,
-                    NewText = formattedScript
+                    NewText = result.Item1,
+                    Range = result.Item2
                 },
+            });
+        }
 
+        protected async Task HandleDocumentRangeFormattingRequest(
+            DocumentRangeFormattingParams formattingParams,
+            RequestContext<TextEdit[]> requestContext)
+        {
+            var result = await Format(formattingParams.TextDocument.Uri, formattingParams.Range);
+            await requestContext.SendResult(new TextEdit[1]
+            {
+                new TextEdit
+                {
+                    NewText = result.Item1,
+                    Range = result.Item2
+                },
             });
         }
 
         #endregion
 
         #region Event Handlers
+
+        private async Task<Tuple<string, Range>> Format(string documentUri, Range range)
+        {
+
+            // TODO Get settings
+            // TODO Update settings to store code formatting settings
+            var scriptFile = editorSession.Workspace.GetFile(documentUri);
+
+            // TODO raise an error event incase format returns null;
+            string formattedScript;
+            if (range == null)
+            {
+                formattedScript = await editorSession.AnalysisService.Format(scriptFile.Contents);
+            }
+            else
+            {
+                formattedScript = await editorSession.AnalysisService.Format(
+                    scriptFile.Contents,
+                    range.Start.Line + 1,
+                    range.Start.Character + 1,
+                    range.End.Line + 1,
+                    range.End.Character + 1);
+            }
+
+
+            formattedScript = formattedScript ?? scriptFile.Contents;
+            var extent = scriptFile.ScriptAst.Extent;
+
+            // todo create an extension for this
+            Range editRange;
+            if (range != null)
+            {
+                editRange = new Range
+                {
+                    Start = new Position
+                    {
+                        Line = extent.StartLineNumber - 1,
+                        Character = extent.StartColumnNumber - 1
+                    },
+                    End = new Position
+                    {
+                        Line = extent.EndLineNumber - 1,
+                        Character = extent.EndColumnNumber - 1
+                    }
+                };
+            }
+            else
+            {
+                editRange = range;
+            }
+
+            return Tuple.Create(formattedScript, editRange);
+        }
 
         private async void PowerShellContext_RunspaceChanged(object sender, Session.RunspaceChangedEventArgs e)
         {
