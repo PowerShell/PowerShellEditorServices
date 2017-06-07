@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class DocumentFormattingRequest
     {
         public static readonly
-            RequestType<DocumentFormattingParams, TextEdit[], object,TextDocumentRegistrationOptions> Type = RequestType<DocumentFormattingParams, TextEdit[], object,TextDocumentRegistrationOptions>.Create("textDocument/definition");
+            RequestType<DocumentFormattingParams, TextEdit[], object,TextDocumentRegistrationOptions> Type = RequestType<DocumentFormattingParams, TextEdit[], object,TextDocumentRegistrationOptions>.Create("textDocument/formatting");
     }
 
     public class DocumentFormattingParams
