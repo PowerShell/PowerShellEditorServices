@@ -1190,7 +1190,9 @@ function __Expand-Alias {
 
         #region Event Handlers
 
-        private async Task<Tuple<string, Range>> Format(string documentUri, Range range)
+        private async Task<Tuple<string, Range>> Format(
+            string documentUri,
+            Range range)
         {
 
             // TODO Get settings
@@ -1199,47 +1201,43 @@ function __Expand-Alias {
 
             // TODO raise an error event incase format returns null;
             string formattedScript;
+            Range editRange;
+            int sl, sc, el, ec;
             if (range == null)
             {
                 formattedScript = await editorSession.AnalysisService.Format(scriptFile.Contents);
+                sl = -1;
+                sc = -1;
+                el = -1;
+                ec = -1;
             }
             else
             {
-                formattedScript = await editorSession.AnalysisService.Format(
-                    scriptFile.Contents,
-                    range.Start.Line + 1,
-                    range.Start.Character + 1,
-                    range.End.Line + 1,
-                    range.End.Character + 1);
+                sl = range.Start.Line + 1;
+                sc = range.Start.Character + 1;
+                el = range.End.Line + 1;
+                ec = range.End.Character + 1;
             }
 
-
-            formattedScript = formattedScript ?? scriptFile.Contents;
             var extent = scriptFile.ScriptAst.Extent;
 
-            // todo create an extension for this
-            Range editRange;
-            if (range != null)
+            // todo create an extension for converting range to script extent
+            editRange = new Range
             {
-                editRange = new Range
+                Start = new Position
                 {
-                    Start = new Position
-                    {
-                        Line = extent.StartLineNumber - 1,
-                        Character = extent.StartColumnNumber - 1
-                    },
-                    End = new Position
-                    {
-                        Line = extent.EndLineNumber - 1,
-                        Character = extent.EndColumnNumber - 1
-                    }
-                };
-            }
-            else
-            {
-                editRange = range;
-            }
+                    Line = extent.StartLineNumber - 1,
+                    Character = extent.StartColumnNumber - 1
+                },
+                End = new Position
+                {
+                    Line = extent.EndLineNumber - 1,
+                    Character = extent.EndColumnNumber - 1
+                }
+            };
 
+            formattedScript = await editorSession.AnalysisService.Format(scriptFile.Contents, sl, sc, el, ec);
+            formattedScript = formattedScript ?? scriptFile.Contents;
             return Tuple.Create(formattedScript, editRange);
         }
 
