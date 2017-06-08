@@ -10,10 +10,10 @@ using System.Collections.Generic;
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// Provides a default implementation of IProviderCollection.
+    /// Provides a default implementation of IFeatureProviderCollection.
     /// </summary>
-    public class ProviderCollection<TProvider> : IProviderCollection<TProvider>
-        where TProvider : IProvider
+    public class FeatureProviderCollection<TProvider> : IFeatureProviderCollection<TProvider>
+        where TProvider : IFeatureProvider
     {
         #region Private Fields
 
@@ -21,9 +21,9 @@ namespace Microsoft.PowerShell.EditorServices
 
         #endregion
 
-        #region IProviderCollection Implementation
+        #region IFeatureProviderCollection Implementation
 
-        void IProviderCollection<TProvider>.Add(TProvider provider)
+        void IFeatureProviderCollection<TProvider>.Add(TProvider provider)
         {
             if (!this.providerList.Contains(provider))
             {

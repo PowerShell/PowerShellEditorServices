@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
     /// Provides an IDocumentSymbolProvider implementation for
     /// enumerating symbols in script (.psd1, .psm1) files.
     /// </summary>
-    public class ScriptDocumentSymbolProvider : ProviderBase, IDocumentSymbolProvider
+    public class ScriptDocumentSymbolProvider : FeatureProviderBase, IDocumentSymbolProvider
     {
         private Version powerShellVersion;
 

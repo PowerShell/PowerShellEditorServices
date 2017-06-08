@@ -14,7 +14,7 @@ using Microsoft.PowerShell.EditorServices.Symbols;
 
 namespace Microsoft.PowerShell.EditorServices.CodeLenses
 {
-    internal class ReferencesCodeLensProvider : ProviderBase, ICodeLensProvider
+    internal class ReferencesCodeLensProvider : FeatureProviderBase, ICodeLensProvider
     {
         private EditorSession editorSession;
         private IDocumentSymbolProvider symbolProvider;

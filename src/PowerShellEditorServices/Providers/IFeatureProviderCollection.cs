@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// Defines the contract for a collection of provider implementations.
     /// </summary>
-    public interface IProviderCollection<TProvider> : IEnumerable<TProvider>
-        where TProvider : IProvider
+    public interface IFeatureProviderCollection<TProvider> : IEnumerable<TProvider>
+        where TProvider : IFeatureProvider
     {
         /// <summary>
         /// Adds a provider to the collection.

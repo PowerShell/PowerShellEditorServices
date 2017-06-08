@@ -21,8 +21,8 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
     {
         private EditorSession editorSession;
 
-        public IProviderCollection<IDocumentSymbolProvider> Providers { get; } =
-            new ProviderCollection<IDocumentSymbolProvider>();
+        public IFeatureProviderCollection<IDocumentSymbolProvider> Providers { get; } =
+            new FeatureProviderCollection<IDocumentSymbolProvider>();
 
         public DocumentSymbolFeature(
             EditorSession editorSession,

@@ -6,9 +6,9 @@
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// Provides a base implementation of IProvider.
+    /// Provides a base implementation of IFeatureProvider.
     /// </summary>
-    public abstract class ProviderBase : IProvider
+    public abstract class FeatureProviderBase : IFeatureProvider
     {
         /// <summary>
         /// Gets the provider class type's FullName as the
