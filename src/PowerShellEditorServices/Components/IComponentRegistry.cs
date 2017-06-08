@@ -3,9 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using System;
 
 namespace Microsoft.PowerShell.EditorServices.Components
 {
@@ -19,6 +17,9 @@ namespace Microsoft.PowerShell.EditorServices.Components
         /// or throws an ArgumentException if an instance has
         /// already been registered.
         /// </summary>
+        /// <param name="componentType">
+        /// The component type that the instance represents.
+        /// </param>
         /// <param name="componentInstance">
         /// The instance of the component to be registered.
         /// </param>
@@ -26,30 +27,35 @@ namespace Microsoft.PowerShell.EditorServices.Components
         /// The provided component instance for convenience in assignment
         /// statements.
         /// </returns>
-        TComponent Register<TComponent>(TComponent componentInstance)
-            where TComponent : class;
+        object Register(
+            Type componentType,
+            object componentInstance);
 
         /// <summary>
         /// Gets the registered instance of the specified
         /// component type or throws a KeyNotFoundException if
         /// no instance has been registered.
         /// </summary>
+        /// <param name="componentType">
+        /// The component type for which an instance will be retrieved.
+        /// </param>
         /// <returns>The implementation of the specified type.</returns>
-        TComponent Get<TComponent>()
-            where TComponent : class;
+        object Get(Type componentType);
 
         /// <summary>
         /// Attempts to retrieve the instance of the specified
         /// component type and, if found, stores it in the
         /// componentInstance parameter.
         /// </summary>
+        /// <param name="componentType">
+        /// The component type for which an instance will be retrieved.
+        /// </param>
         /// <param name="componentInstance">
         /// The out parameter in which the found instance will be stored.
         /// </param>
         /// <returns>
         /// True if a registered instance was found, false otherwise.
         /// </returns>
-        bool TryGet<TComponent>(out TComponent componentInstance)
-            where TComponent : class;
+        bool TryGet(Type componentType, out object componentInstance);
     }
 }
