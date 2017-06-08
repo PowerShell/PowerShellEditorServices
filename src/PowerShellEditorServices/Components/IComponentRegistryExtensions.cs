@@ -3,29 +3,21 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Microsoft.PowerShell.EditorServices.Components
 {
     /// <summary>
-    /// Provides a default implementation for the IComponentRegistry
-    /// interface.
+    /// Provides generic helper methods for working with IComponentRegistry
+    /// methods.
     /// </summary>
-    public class ComponentRegistry : IComponentRegistry
+    public static class IComponentRegistryExtensions
     {
-        private Dictionary<Type, object> componentRegistry =
-            new Dictionary<Type, object>();
-
         /// <summary>
         /// Registers an instance of the specified component type
         /// or throws an ArgumentException if an instance has
         /// already been registered.
         /// </summary>
-        /// <param name="componentType">
-        /// The component type that the instance represents.
+        /// <param name="componentRegistry">
+        /// The IComponentRegistry instance.
         /// </param>
         /// <param name="componentInstance">
         /// The instance of the component to be registered.
@@ -34,25 +26,31 @@ namespace Microsoft.PowerShell.EditorServices.Components
         /// The provided component instance for convenience in assignment
         /// statements.
         /// </returns>
-        public object Register(Type componentType, object componentInstance)
+        public static TComponent Register<TComponent>(
+            this IComponentRegistry componentRegistry,
+            TComponent componentInstance)
+                where TComponent : class
         {
-            this.componentRegistry.Add(componentType, componentInstance);
-            return componentInstance;
+            return
+                (TComponent)componentRegistry.Register(
+                    typeof(TComponent),
+                    componentInstance);
         }
-
 
         /// <summary>
         /// Gets the registered instance of the specified
         /// component type or throws a KeyNotFoundException if
         /// no instance has been registered.
         /// </summary>
-        /// <param name="componentType">
-        /// The component type for which an instance will be retrieved.
+        /// <param name="componentRegistry">
+        /// The IComponentRegistry instance.
         /// </param>
         /// <returns>The implementation of the specified type.</returns>
-        public object Get(Type componentType)
+        public static TComponent Get<TComponent>(
+            this IComponentRegistry componentRegistry)
+                where TComponent : class
         {
-            return this.componentRegistry[componentType];
+            return (TComponent)componentRegistry.Get(typeof(TComponent));
         }
 
         /// <summary>
@@ -60,21 +58,26 @@ namespace Microsoft.PowerShell.EditorServices.Components
         /// component type and, if found, stores it in the
         /// componentInstance parameter.
         /// </summary>
+        /// <param name="componentRegistry">
+        /// The IComponentRegistry instance.
+        /// </param>
         /// <param name="componentInstance">
         /// The out parameter in which the found instance will be stored.
-        /// </param>
-        /// <param name="componentType">
-        /// The component type for which an instance will be retrieved.
         /// </param>
         /// <returns>
         /// True if a registered instance was found, false otherwise.
         /// </returns>
-        public bool TryGet(Type componentType, out object componentInstance)
+        public static bool TryGet<TComponent>(
+            this IComponentRegistry componentRegistry,
+            out TComponent componentInstance)
+                where TComponent : class
         {
+            object componentObject = null;
             componentInstance = null;
 
-            if (this.componentRegistry.TryGetValue(componentType, out componentInstance))
+            if (componentRegistry.TryGet(typeof(TComponent), out componentObject))
             {
+                componentInstance = componentObject as TComponent;
                 return componentInstance != null;
             }
 
