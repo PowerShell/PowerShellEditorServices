@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Components;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -68,10 +69,17 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// implementation for future interaction with the host editor.
         /// </summary>
         /// <param name="editorOperations">An IEditorOperations implementation.</param>
+        /// <param name="componentRegistry">An IComponentRegistry instance which provides components in the session.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
-        public async Task Initialize(IEditorOperations editorOperations)
+        public async Task Initialize(
+            IEditorOperations editorOperations,
+            IComponentRegistry componentRegistry)
         {
-            this.EditorObject = new EditorObject(this, editorOperations);
+            this.EditorObject =
+                new EditorObject(
+                    this,
+                    editorOperations,
+                    componentRegistry);
 
             // Register the editor object in the runspace
             PSCommand variableCommand = new PSCommand();
