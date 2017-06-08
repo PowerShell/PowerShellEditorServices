@@ -582,6 +582,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         {
             OutputReader outputReader = new OutputReader(this.messageHandlers);
 
+            // Send the configuration request to initiate the command loop
+            await this.SendConfigurationRequest(outputReader);
+
             await
                 this.SendRequest(
                     EvaluateRequest.Type,
@@ -591,7 +594,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     });
 
             Assert.Equal("1 + 2", await outputReader.ReadLine());
-            await outputReader.ReadLine(); // Skip the empty line
             Assert.Equal("3", await outputReader.ReadLine());
         }
 
@@ -610,6 +612,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         public async Task ServiceExecutesReplCommandAndReceivesChoicePrompt()
         {
             OutputReader outputReader = new OutputReader(this.messageHandlers);
+
+            // Send the configuration request to initiate the command loop
+            await this.SendConfigurationRequest(outputReader);
 
             string choiceScript =
                 @"
@@ -648,8 +653,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     ResponseText = "a"
                 });
 
-            // Skip the initial script and prompt lines (6 script lines plus 2 blank lines and 3 prompt lines)
-            string[] outputLines = await outputReader.ReadLines(11);
+            // Skip the initial script and prompt lines (6 script lines plus 3 prompt lines)
+            string[] outputLines = await outputReader.ReadLines(9);
 
             // Wait for the selection to appear as output
             await evaluateTask;
@@ -660,6 +665,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         public async Task ServiceExecutesReplCommandAndReceivesInputPrompt()
         {
             OutputReader outputReader = new OutputReader(this.messageHandlers);
+
+            // Send the configuration request to initiate the command loop
+            await this.SendConfigurationRequest(outputReader);
 
             string promptScript =
                 @"
@@ -696,8 +704,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     ResponseText = "John"
                 });
 
-            // Skip the initial script lines (4 script lines plus 2 blank lines)
-            string[] scriptLines = await outputReader.ReadLines(6);
+            // Skip the initial 4 script lines
+            string[] scriptLines = await outputReader.ReadLines(4);
 
             // Verify the first line
             Assert.Equal("Name: John", await outputReader.ReadLine());
@@ -773,25 +781,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             OutputReader outputReader = new OutputReader(this.messageHandlers);
 
             // Send the configuration change to cause profiles to be loaded
-            await this.languageServiceClient.SendEvent(
-                DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type,
-                new DidChangeConfigurationParams<LanguageServerSettingsWrapper>
-                {
-                    Settings = new LanguageServerSettingsWrapper
-                    {
-                        Powershell = new LanguageServerSettings
-                        {
-                            EnableProfileLoading = true,
-                            ScriptAnalysis = new ScriptAnalysisSettings
-                            {
-                                Enable = false
-                            }
-                        }
-                    }
-                });
-
-            // Wait for the prompt to be written once the profile loads
-            Assert.StartsWith("PS ", await outputReader.ReadLine(waitForNewLine: false));
+            await this.SendConfigurationRequest(outputReader, true);
 
             Task<EvaluateResponseBody> evaluateTask =
                 this.SendRequest(
@@ -870,6 +860,32 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             {
                 await diagnosticWaitTask;
             }
+        }
+
+        private async Task SendConfigurationRequest(
+            OutputReader outputReader,
+            bool enableProfileLoading = false)
+        {
+            // Send the configuration change to cause profiles to be loaded
+            await this.languageServiceClient.SendEvent(
+                DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type,
+                new DidChangeConfigurationParams<LanguageServerSettingsWrapper>
+                {
+                    Settings = new LanguageServerSettingsWrapper
+                    {
+                        Powershell = new LanguageServerSettings
+                        {
+                            EnableProfileLoading = enableProfileLoading,
+                            ScriptAnalysis = new ScriptAnalysisSettings
+                            {
+                                Enable = false
+                            }
+                        }
+                    }
+                });
+
+            // Wait for the prompt to be written once the profile loads
+            Assert.StartsWith("PS ", await outputReader.ReadLine(waitForNewLine: false));
         }
     }
 }
