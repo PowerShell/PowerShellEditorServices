@@ -100,7 +100,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(SignatureHelpRequest.Type, this.HandleSignatureHelpRequest);
             this.messageHandlers.SetRequestHandler(DocumentHighlightRequest.Type, this.HandleDocumentHighlightRequest);
             this.messageHandlers.SetRequestHandler(HoverRequest.Type, this.HandleHoverRequest);
-            this.messageHandlers.SetRequestHandler(DocumentSymbolRequest.Type, this.HandleDocumentSymbolRequest);
             this.messageHandlers.SetRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
             this.messageHandlers.SetRequestHandler(CodeActionRequest.Type, this.HandleCodeActionRequest);
 
@@ -945,7 +944,7 @@ function __Expand-Alias {
             await requestContext.SendResult(symbols);
         }
 
-        private SymbolKind GetSymbolKind(SymbolType symbolType)
+        public static SymbolKind GetSymbolKind(SymbolType symbolType)
         {
             switch (symbolType)
             {
@@ -959,7 +958,7 @@ function __Expand-Alias {
             }
         }
 
-        private string GetDecoratedSymbolName(SymbolReference symbolReference)
+        public static string GetDecoratedSymbolName(SymbolReference symbolReference)
         {
             string name = symbolReference.SymbolName;
 
@@ -1206,7 +1205,7 @@ function __Expand-Alias {
 
         #region Helper Methods
 
-        private static string GetFileUri(string filePath)
+        public static string GetFileUri(string filePath)
         {
             // If the file isn't untitled, return a URI-style path
             return
@@ -1215,7 +1214,7 @@ function __Expand-Alias {
                     : filePath;
         }
 
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
+        public static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
         {
             return new Range
             {
