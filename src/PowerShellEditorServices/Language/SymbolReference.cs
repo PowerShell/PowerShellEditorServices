@@ -48,14 +48,20 @@ namespace Microsoft.PowerShell.EditorServices
         /// Constructs and instance of a SymbolReference
         /// </summary>
         /// <param name="symbolType">The higher level type of the symbol</param>
+        /// <param name="symbolName">The name of the symbol</param>
         /// <param name="scriptExtent">The script extent of the symbol</param>
         /// <param name="filePath">The file path of the symbol</param>
         /// <param name="sourceLine">The line contents of the given symbol (defaults to empty string)</param>
-        public SymbolReference(SymbolType symbolType, IScriptExtent scriptExtent, string filePath = "", string sourceLine = "")
+        public SymbolReference(
+            SymbolType symbolType,
+            string symbolName,
+            IScriptExtent scriptExtent,
+            string filePath = "",
+            string sourceLine = "")
         {
             // TODO: Verify params
             this.SymbolType = symbolType;
-            this.SymbolName = scriptExtent.Text;
+            this.SymbolName = symbolName;
             this.ScriptRegion = ScriptRegion.Create(scriptExtent);
             this.FilePath = filePath;
             this.SourceLine = sourceLine;
@@ -66,6 +72,18 @@ namespace Microsoft.PowerShell.EditorServices
             //this.DisplayString =
             //    string.Format(
             //        "{0} {1}")
+        }
+
+        /// <summary>
+        /// Constructs and instance of a SymbolReference
+        /// </summary>
+        /// <param name="symbolType">The higher level type of the symbol</param>
+        /// <param name="scriptExtent">The script extent of the symbol</param>
+        /// <param name="filePath">The file path of the symbol</param>
+        /// <param name="sourceLine">The line contents of the given symbol (defaults to empty string)</param>
+        public SymbolReference(SymbolType symbolType, IScriptExtent scriptExtent, string filePath = "", string sourceLine = "")
+            : this(symbolType, scriptExtent.Text, scriptExtent, filePath, sourceLine)
+        {
         }
     }
 }
