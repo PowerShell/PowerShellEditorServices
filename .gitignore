@@ -59,3 +59,6 @@ PowerShellEditorServices.sln.ide/edb.chk
 PowerShellEditorServices.sln.ide/edbres00001.jrs
 PowerShellEditorServices.sln.ide/storage.ide
 *.jrs
+
+# Don't include PlatyPS generated MAML
+module/PowerShellEditorServices/Commands/en-US/*-help.xml

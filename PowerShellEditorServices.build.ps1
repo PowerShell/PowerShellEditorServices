@@ -100,6 +100,7 @@ task Clean {
     Remove-Item .\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
     Get-ChildItem -Recurse src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem .\module\PowerShellEditorServices\*.zip | Remove-Item -Force -ErrorAction Ignore
+    Get-ChildItem .\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
 }
 
 task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {

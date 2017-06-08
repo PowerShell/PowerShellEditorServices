@@ -1,6 +1,6 @@
 ---
 external help file: PowerShellEditorServices.Commands-help.xml
-online version:
+online version: https://github.com/PowerShell/PowerShellEditorServices/tree/master/module/docs/ConvertTo-ScriptExtent.md
 schema: 2.0.0
 ---
 
