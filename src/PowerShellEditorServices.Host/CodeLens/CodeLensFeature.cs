@@ -58,6 +58,9 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 new ReferencesCodeLensProvider(
                     editorSession));
 
+            codeLenses.Providers.Add(
+                new PesterCodeLensProvider(
+                    editorSession));
 
             editorSession.Components.Register<ICodeLenses>(codeLenses);
 
