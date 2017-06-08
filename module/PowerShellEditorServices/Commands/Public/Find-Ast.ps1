@@ -92,7 +92,7 @@ function Find-Ast {
                 # Need to store so we can reverse the collection.
                 $result = [Linq.Enumerable]::TakeWhile(
                     $topParent.FindAll({ $true }, $true),
-                    $predicate)
+                    $predicate) -as [System.Management.Automation.Language.Ast[]]
 
                 [array]::Reverse($result)
                 return $result
