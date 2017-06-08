@@ -715,11 +715,12 @@ namespace Microsoft.PowerShell.EditorServices
             bool writeOutputToHost,
             bool addToHistory)
         {
+            // Get rid of leading and trailing whitespace and newlines
+            scriptString = scriptString.Trim();
+
             if (writeInputToHost)
             {
-                this.WriteOutput(
-                    scriptString + Environment.NewLine,
-                    true);
+                this.WriteOutput(scriptString, false);
             }
 
             PSCommand psCommand = new PSCommand();
