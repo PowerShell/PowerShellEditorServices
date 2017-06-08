@@ -767,8 +767,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             if (isFromRepl)
             {
-                // TODO: Do we send the input through the command handler?
-                // Send the input through the console service
                 var notAwaited =
                     this.editorSession
                         .PowerShellContext

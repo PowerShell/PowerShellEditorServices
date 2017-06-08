@@ -334,7 +334,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl
                     ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, this.logger)
-                    : new ProtocolPSHostUserInterface(powerShellContext, messageSender, messageHandlers, this.logger);
+                    : new ProtocolPSHostUserInterface(powerShellContext, messageSender, this.logger);
 
             EditorServicesPSHost psHost =
                 new EditorServicesPSHost(
@@ -374,7 +374,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl
                     ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, this.logger)
-                    : new ProtocolPSHostUserInterface(powerShellContext, messageSender, messageHandlers, this.logger);
+                    : new ProtocolPSHostUserInterface(powerShellContext, messageSender, this.logger);
 
             EditorServicesPSHost psHost =
                 new EditorServicesPSHost(

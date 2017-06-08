@@ -20,6 +20,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
+using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
+
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class LanguageServer
@@ -115,6 +117,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.messageHandlers.SetRequestHandler(NewProjectFromTemplateRequest.Type, this.HandleNewProjectFromTemplateRequest);
             this.messageHandlers.SetRequestHandler(GetProjectTemplatesRequest.Type, this.HandleGetProjectTemplatesRequest);
+
+            this.messageHandlers.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
 
             this.messageHandlers.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
             this.messageHandlers.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
@@ -1148,6 +1152,40 @@ function __Expand-Alias {
 
             await requestContext.SendResult(
                 codeActionCommands.ToArray());
+        }
+
+       protected Task HandleEvaluateRequest(
+            DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
+            RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
+        {
+            // We don't await the result of the execution here because we want
+            // to be able to receive further messages while the current script
+            // is executing.  This important in cases where the pipeline thread
+            // gets blocked by something in the script like a prompt to the user.
+            var executeTask =
+                this.editorSession.PowerShellContext.ExecuteScriptString(
+                    evaluateParams.Expression,
+                    writeInputToHost: true,
+                    writeOutputToHost: true,
+                    addToHistory: true);
+
+            // Return the execution result after the task completes so that the
+            // caller knows when command execution completed.
+            executeTask.ContinueWith(
+                (task) =>
+                {
+                    // Return an empty result since the result value is irrelevant
+                    // for this request in the LanguageServer
+                    return
+                        requestContext.SendResult(
+                            new DebugAdapterMessages.EvaluateResponseBody
+                            {
+                                Result = "",
+                                VariablesReference = 0
+                            });
+                });
+
+            return Task.FromResult(true);
         }
 
         #endregion
