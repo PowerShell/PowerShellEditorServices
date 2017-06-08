@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Types>
+    <Type>
+        <Name>Microsoft.PowerShell.EditorServices.FullScriptExtent</Name>
+        <Members>
+            <MemberSet>
+                <Name>PSStandardMembers</Name>
+                <Members>
+                    <PropertySet>
+                        <Name>DefaultDisplayPropertySet</Name>
+                        <ReferencedProperties>
+                            <Name>File</Name>
+                            <Name>StartScriptPosition</Name>
+                            <Name>EndScriptPosition</Name>
+                            <Name>StartLineNumber</Name>
+                            <Name>StartColumnNumber</Name>
+                            <Name>EndLineNumber</Name>
+                            <Name>EndColumnNumber</Name>
+                            <Name>StartOffset</Name>
+                            <Name>EndOffset</Name>
+                            <Name>Text</Name>
+                        </ReferencedProperties>
+                    </PropertySet>
+                </Members>
+            </MemberSet>
+        </Members>
+    </Type>
+</Types>

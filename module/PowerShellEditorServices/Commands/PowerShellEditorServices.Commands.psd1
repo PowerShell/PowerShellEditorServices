@@ -57,7 +57,7 @@ Description = 'Provides internal commands for PowerShell Editor Services that on
 # ScriptsToProcess = @()
 
 # Type files (.ps1xml) to be loaded when importing this module
-# TypesToProcess = @()
+TypesToProcess = @('PowerShellEditorServices.Commands.types.ps1xml')
 
 # Format files (.ps1xml) to be loaded when importing this module
 # FormatsToProcess = @()
@@ -74,7 +74,9 @@ FunctionsToExport = @('Register-EditorCommand',
                       'ConvertFrom-ScriptExtent',
                       'ConvertTo-ScriptExtent',
                       'Get-Token',
-                      'Join-ScriptExtent')
+                      'Join-ScriptExtent',
+                      'Test-ScriptExtent',
+                      'psedit')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
