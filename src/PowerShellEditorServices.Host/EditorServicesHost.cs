@@ -8,6 +8,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -345,6 +346,14 @@ namespace Microsoft.PowerShell.EditorServices.Host
             powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
 
             editorSession.StartSession(powerShellContext, hostUserInterface);
+
+            // TODO: Move component registrations elsewhere!
+            editorSession.Components.Register(this.logger);
+            editorSession.Components.Register(messageHandlers);
+            editorSession.Components.Register(messageSender);
+            editorSession.Components.Register(powerShellContext);
+
+            DocumentSymbolFeature.Create(editorSession.Components, editorSession);
 
             return editorSession;
         }

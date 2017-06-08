@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections;
@@ -33,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices
         private string mostRecentRequestFile;
         private Dictionary<String, List<String>> CmdletToAliasDictionary;
         private Dictionary<String, String> AliasToCmdletDictionary;
-        private DocumentSymbolProvider[] documentSymbolProviders;
+        private IDocumentSymbolProvider[] documentSymbolProviders;
 
         const int DefaultWaitTimeoutMilliseconds = 5000;
 
@@ -60,10 +61,10 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.CmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
             this.AliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
-            this.documentSymbolProviders = new DocumentSymbolProvider[]
+            this.documentSymbolProviders = new IDocumentSymbolProvider[]
             {
-                new ScriptDocumentSymbolProvider(),
-                new PSDDocumentSymbolProvider(),
+                new ScriptDocumentSymbolProvider(powerShellContext.LocalPowerShellVersion.Version),
+                new PsdDocumentSymbolProvider(),
                 new PesterDocumentSymbolProvider()
             };
         }
@@ -242,7 +243,7 @@ namespace Microsoft.PowerShell.EditorServices
             return new FindOccurrencesResult
             {
                 FoundOccurrences = documentSymbolProviders
-                    .SelectMany(p => p.GetSymbols(scriptFile, powerShellContext.LocalPowerShellVersion.Version))
+                    .SelectMany(p => p.ProvideDocumentSymbols(scriptFile))
                     .Select(reference =>
                         {
                             reference.SourceLine =
