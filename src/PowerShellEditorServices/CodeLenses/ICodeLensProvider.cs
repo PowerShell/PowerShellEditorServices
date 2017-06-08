@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
     /// <summary>
     /// Specifies the contract for a Code Lens provider.
     /// </summary>
-    public interface ICodeLensProvider : IProvider
+    public interface ICodeLensProvider : IFeatureProvider
     {
         /// <summary>
         /// Provides a collection of CodeLenses for the given

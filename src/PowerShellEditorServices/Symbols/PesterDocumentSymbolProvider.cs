@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
     /// Provides an IDocumentSymbolProvider implementation for
     /// enumerating test symbols in Pester test (tests.ps1) files.
     /// </summary>
-    public class PesterDocumentSymbolProvider : ProviderBase, IDocumentSymbolProvider
+    public class PesterDocumentSymbolProvider : FeatureProviderBase, IDocumentSymbolProvider
     {
         IEnumerable<SymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)

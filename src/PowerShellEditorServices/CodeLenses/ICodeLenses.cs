@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// Gets the collection of ICodeLensProvider implementations
         /// that are registered with this component.
         /// </summary>
-        IProviderCollection<ICodeLensProvider> Providers { get; }
+        IFeatureProviderCollection<ICodeLensProvider> Providers { get; }
 
         /// <summary>
         /// Provides a collection of CodeLenses for the given

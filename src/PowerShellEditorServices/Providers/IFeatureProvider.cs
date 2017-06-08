@@ -8,10 +8,10 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// Defines the contract for a feature provider, particularly for provider identification.
     /// </summary>
-    public interface IProvider
+    public interface IFeatureProvider
     {
         /// <summary>
-        /// Specifies a unique identifier for a provider, typically a
+        /// Specifies a unique identifier for the feature provider, typically a
         /// fully-qualified name like "Microsoft.PowerShell.EditorServices.MyProvider"
         /// </summary>
         string ProviderId { get; }

@@ -25,8 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
              JsonSerializer.Create(
                  Constants.JsonSerializerSettings);
 
-        public IProviderCollection<ICodeLensProvider> Providers { get; } =
-            new ProviderCollection<ICodeLensProvider>();
+        public IFeatureProviderCollection<ICodeLensProvider> Providers { get; } =
+            new FeatureProviderCollection<ICodeLensProvider>();
 
         public CodeLensFeature(
             EditorSession editorSession,

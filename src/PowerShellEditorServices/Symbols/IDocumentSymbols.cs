@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// Gets the collection of IDocumentSymbolsProvider implementations
         /// that are registered with this component.
         /// </summary>
-        IProviderCollection<IDocumentSymbolProvider> Providers { get; }
+        IFeatureProviderCollection<IDocumentSymbolProvider> Providers { get; }
 
         /// <summary>
         /// Provides a list of symbols for the given document.
