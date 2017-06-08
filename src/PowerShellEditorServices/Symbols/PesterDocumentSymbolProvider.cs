@@ -16,6 +16,8 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
     /// </summary>
     public class PesterDocumentSymbolProvider : FeatureProviderBase, IDocumentSymbolProvider
     {
+        private static char[] DefinitionTrimChars = new char[] { ' ', '{' };
+
         IEnumerable<SymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
@@ -41,11 +43,20 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
             },
             true);
 
-            return commandAsts.Select(ast => new SymbolReference(
-                SymbolType.Function,
-                ast.Extent,
-                scriptFile.FilePath,
-                scriptFile.GetLine(ast.Extent.StartLineNumber)));
+            return commandAsts.Select(
+                ast => {
+                    var testDefinitionLine =
+                        scriptFile.GetLine(
+                            ast.Extent.StartLineNumber);
+
+                    return
+                        new SymbolReference(
+                            SymbolType.Function,
+                            testDefinitionLine.TrimEnd(DefinitionTrimChars),
+                            ast.Extent,
+                            scriptFile.FilePath,
+                            testDefinitionLine);
+                });
         }
     }
 }
