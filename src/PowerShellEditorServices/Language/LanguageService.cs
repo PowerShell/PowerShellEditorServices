@@ -197,6 +197,35 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Finds a function definition in the script given a file location
+        /// </summary>
+        /// <param name="scriptFile">The details and contents of a open script file</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>A SymbolReference of the symbol found at the given location
+        /// or null if there is no symbol at that location
+        /// </returns>
+        public SymbolReference FindFunctionDefinitionAtLocation(
+            ScriptFile scriptFile,
+            int lineNumber,
+            int columnNumber)
+        {
+            SymbolReference symbolReference =
+                AstOperations.FindSymbolAtPosition(
+                    scriptFile.ScriptAst,
+                    lineNumber,
+                    columnNumber,
+                    includeFunctionDefinitions: true);
+
+            if (symbolReference != null)
+            {
+                symbolReference.FilePath = scriptFile.FilePath;
+            }
+
+            return symbolReference;
+        }
+
+        /// <summary>
         /// Finds the details of the symbol at the given script file location.
         /// </summary>
         /// <param name="scriptFile">The ScriptFile in which the symbol can be located.</param>

@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -10,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// <summary>
     /// Contains details about a specific region of text in script file.
     /// </summary>
-    public sealed class ScriptRegion
+    public sealed class ScriptRegion : IScriptExtent
     {
         #region Properties
 
@@ -53,6 +54,18 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets or sets the ending file offset of the region.
         /// </summary>
         public int EndOffset { get; set; }
+
+        /// <summary>
+        /// Gets the starting IScriptPosition in the script.
+        /// (Currently unimplemented.)
+        /// </summary>
+        IScriptPosition IScriptExtent.StartScriptPosition => throw new NotImplementedException();
+
+        /// <summary>
+        /// Gets the ending IScriptPosition in the script.
+        /// (Currently unimplemented.)
+        /// </summary>
+        IScriptPosition IScriptExtent.EndScriptPosition => throw new NotImplementedException();
 
         #endregion
 

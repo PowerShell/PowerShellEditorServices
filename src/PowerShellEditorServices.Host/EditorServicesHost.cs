@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.CodeLenses;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
@@ -353,6 +354,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             editorSession.Components.Register(messageSender);
             editorSession.Components.Register(powerShellContext);
 
+            CodeLensFeature.Create(editorSession.Components, editorSession);
             DocumentSymbolFeature.Create(editorSession.Components, editorSession);
 
             return editorSession;
