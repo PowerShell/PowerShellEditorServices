@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Components;
 using System;
 using System.Management.Automation;
 using System.Reflection;
@@ -42,6 +43,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         public EditorWindow Window { get; private set; }
 
+        /// <summary>
+        /// Gets the component registry for the session.
+        /// </summary>
+        /// <returns></returns>
+        public IComponentRegistry Components { get; private set; }
+
         #endregion
 
         /// <summary>
@@ -49,12 +56,15 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="extensionService">An ExtensionService which handles command registration.</param>
         /// <param name="editorOperations">An IEditorOperations implementation which handles operations in the host editor.</param>
+        /// <param name="componentRegistry">An IComponentRegistry instance which provides components in the session.</param>
         public EditorObject(
             ExtensionService extensionService,
-            IEditorOperations editorOperations)
+            IEditorOperations editorOperations,
+            IComponentRegistry componentRegistry)
         {
             this.extensionService = extensionService;
             this.editorOperations = editorOperations;
+            this.Components = componentRegistry;
 
             // Create API area objects
             this.Workspace = new EditorWorkspace(this.editorOperations);

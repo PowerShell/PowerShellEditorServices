@@ -132,7 +132,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
             this.editorSession.ExtensionService.Initialize(
-                this.editorOperations).Wait();
+                this.editorOperations,
+                this.editorSession.Components).Wait();
         }
 
         protected Task Stop()
