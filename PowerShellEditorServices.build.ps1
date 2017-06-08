@@ -197,7 +197,9 @@ task LayoutModule -After Build {
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
     }
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+}
 
+task BuildCmdletHelp {
     New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US -Force
 }
 
@@ -225,4 +227,4 @@ task UploadArtifacts -If ($script:IsCIBuild) {
 }
 
 # The default task is to run the entire CI build
-task . GetProductVersion, Clean, Build, TestPowerShellApi, CITest, PackageNuGet, PackageModule, UploadArtifacts
+task . GetProductVersion, Clean, Build, TestPowerShellApi, CITest, BuildCmdletHelp, PackageNuGet, PackageModule, UploadArtifacts
