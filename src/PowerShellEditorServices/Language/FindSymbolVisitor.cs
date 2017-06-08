@@ -14,13 +14,18 @@ namespace Microsoft.PowerShell.EditorServices
     {
         private int lineNumber;
         private int columnNumber;
+        private bool includeFunctionDefinitions;
 
         public SymbolReference FoundSymbolReference { get; private set; }
 
-        public FindSymbolVisitor(int lineNumber, int columnNumber)
+        public FindSymbolVisitor(
+            int lineNumber,
+            int columnNumber,
+            bool includeFunctionDefinitions)
         {
             this.lineNumber = lineNumber;
             this.columnNumber = columnNumber;
+            this.includeFunctionDefinitions = includeFunctionDefinitions;
         }
 
         /// <summary>
@@ -54,9 +59,14 @@ namespace Microsoft.PowerShell.EditorServices
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
-            int startColumnNumber =
-                functionDefinitionAst.Extent.Text.IndexOf(
-                    functionDefinitionAst.Name) + 1;
+            int startColumnNumber = 1;
+
+            if (!this.includeFunctionDefinitions)
+            {
+                startColumnNumber =
+                    functionDefinitionAst.Extent.Text.IndexOf(
+                        functionDefinitionAst.Name) + 1;
+            }
 
             IScriptExtent nameExtent = new ScriptExtent()
             {

@@ -186,6 +186,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         WorkspaceSymbolProvider = true,
                         HoverProvider = true,
                         CodeActionProvider = true,
+                        CodeLensProvider = new CodeLensOptions { ResolveProvider = true },
                         CompletionProvider = new CompletionOptions
                         {
                             ResolveProvider = true,
