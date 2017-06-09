@@ -1,5 +1,92 @@
 # PowerShell Editor Services Release History
 
+## 1.3.0
+### Friday, June 9, 2017
+
+#### Notice of new internal redesign ([#484](https://github.com/PowerShell/PowerShellEditorServices/pull/484), [#488](https://github.com/PowerShell/PowerShellEditorServices/pull/488), [#489](https://github.com/PowerShell/PowerShellEditorServices/pull/489))
+
+This release marks the start of a major redesign of the core PowerShell
+Editor Services APIs, PSHost implementation, and service model.  Most of
+these changes will be transparent to the language and debugging services
+so there shouldn't be any major breaking changes.
+
+The goal is to quickly design and validate a new extensibility model that
+allows IFeatureProvider implementations to extend focused feature components
+which could be a part of PowerShell Editor Services or another extension
+module.  As we progress, certain features may move out of the core Editor
+Services module into satellite modules.  This will allow our functionality
+to be much more flexible and provide extensions with the same set of
+capabilities that built-in features have.
+
+We are moving toward a 2.0 release of the core PowerShell Editor Services
+APIs over the next few months once this new design has been validated and
+stabilized.  We'll produce updated API documentation as we move closer
+to 2.0.
+
+#### New document symbol and CodeLens features ([#490](https://github.com/PowerShell/PowerShellEditorServices/pull/490), [#497](https://github.com/PowerShell/PowerShellEditorServices/pull/497), [#498](https://github.com/PowerShell/PowerShellEditorServices/pull/498))
+
+As part of our new extensibility model work, we've added two new components
+which follow the new "feature and provider" model which we'll be moving
+all other features to soon.
+
+The IDocumentSymbols feature component provides a list of symbols for a
+given document.  It relies on the results provided by a collection of
+IDocumentSymbolProvider implementations which can come from any module.
+We've added the following built-in IDocumentSymbolProvider implementations:
+
+- ScriptDocumentSymbolProvider: Provides symbols for function and command
+  definitions in .ps1 and .psm1 files
+- PsdDocumentSymbolProvider: Provides symbols for keys in .psd1 files
+- PesterDocumentSymbolProvider: Provides symbols for Describe, Context, and
+  It blocks in Pester test scripts
+
+We took a similar approach to developing an ICodeLenses feature component
+which retrieves a list of CodeLenses which get displayed in files to provide
+visible actions embedded into the code.  We used this design to add the
+following built-in ICodeLensProvider implementations:
+
+- ReferencesCodeLensProvider: Shows CodeLenses like "3 references" to indicate
+  the number of references to a given function or command
+- PesterCodeLensProvider: Shows "Run tests" and "Debug tests" CodeLenses on
+  Pester Describe blocks in test script files allowing the user to easily
+  run and debug those tests
+
+Note that the ICodeLensProvider and IDocumentSymbolProvider interfaces are
+not fully stable yet but we encourage you to try using them so that you can
+give us your feedback!
+
+#### Added a new PowerShellEditorServices.Commands module (#[487](https://github.com/PowerShell/PowerShellEditorServices/pull/487), #[496](https://github.com/PowerShell/PowerShellEditorServices/pull/496))
+
+We've added a new Commands module that gets loaded inside of PowerShell Editor
+Services to provide useful functionality when the $psEditor API is available.
+
+Thanks to our new co-maintainer [Patrick Meinecke](https://github.com/SeeminglyScience),
+we've gained a new set of useful commands for interacting with the $psEditor APIs
+within the Integrated Console:
+
+- [Find-Ast](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Find-Ast.md)
+- [Get-Token](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Get-Token.md)
+- [ConvertFrom-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/ConvertFrom-ScriptExtent.md)
+- [ConvertTo-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/ConvertTo-ScriptExtent.md)
+- [Set-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Set-ScriptExtent.md)
+- [Join-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Join-ScriptExtent.md)
+- [Test-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Test-ScriptExtent.md)
+- [Import-EditorCommand](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Import-EditorCommand.md)
+
+#### Microsoft.PowerShell.EditorServices API removals ([#492](https://github.com/PowerShell/PowerShellEditorServices/pull/492))
+
+We've removed the following classes and interfaces which were previously
+considered public APIs in the core Editor Services assembly:
+
+- ConsoleService and IConsoleHost: We now centralize our host interface
+  implementations under the standard PSHostUserInterface design.
+- IPromptHandlerContext: We no longer have the concept of "prompt handler
+  contexts."  Each PSHostUserInterface implementation now has one way of
+  displaying console-based prompts to the user.  New editor window prompting
+  APIs will be added for the times when a UI is needed.
+- Logger: now replaced by a new non-static ILogger instance which can be
+  requested by extensions through the IComponentRegistry.
+
 ## 1.2.1
 ### Thursday, June 1, 2017
 
