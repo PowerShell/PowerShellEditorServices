@@ -264,16 +264,26 @@ namespace Microsoft.PowerShell.EditorServices
                 return null;
             }
 
-            var result = await InvokePowerShellAsync(
-                "Invoke-Formatter",
-                new Dictionary<string, object> {
+            Dictionary<string, object> argsDict;
+
+            // this is a workaround till range formatter is enable in script analyzer
+            if (startLineNumber == -1)
+            {
+                argsDict = new Dictionary<string, object> {
+                    {"ScriptDefinition", scriptDefinition}
+                };
+            }
+            else
+            {
+                argsDict = new Dictionary<string, object> {
                     {"ScriptDefinition", scriptDefinition},
                     {"StartLineNumber", startLineNumber},
                     {"StartColumnNumber", startColumnNumber},
                     {"EndLineNumber", endLineNumber},
                     {"EndColumnNumber", endColumnNumber}
-                });
-
+                };
+            }
+            var result = await InvokePowerShellAsync("Invoke-Formatter", argsDict);
             return result?.Select(r => r.ImmediateBaseObject as string).FirstOrDefault();
         }
 
