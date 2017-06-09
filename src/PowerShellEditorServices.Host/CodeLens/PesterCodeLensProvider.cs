@@ -27,18 +27,9 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         }
 
         private IEnumerable<CodeLens> GetPesterLens(
-            SymbolReference symbol,
+            PesterSymbolReference pesterSymbol,
             ScriptFile scriptFile)
         {
-            // Trim the Describe "" { from the symbol name
-            int startQuoteIndex = symbol.SourceLine.IndexOfAny(QuoteChars) + 1;
-            int endQuoteIndex =  symbol.SourceLine.LastIndexOfAny(QuoteChars);
-
-            string describeBlockName =
-                symbol.SourceLine.Substring(
-                    startQuoteIndex,
-                    endQuoteIndex - startQuoteIndex);
-
             var clientCommands = new ClientCommand[]
             {
                 new ClientCommand(
@@ -48,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     {
                         scriptFile.ClientFilePath,
                         false, // Don't debug
-                        describeBlockName,
+                        pesterSymbol.TestName,
                     }),
 
                 new ClientCommand(
@@ -58,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     {
                         scriptFile.ClientFilePath,
                         true, // Run in debugger
-                        describeBlockName,
+                        pesterSymbol.TestName,
                     }),
             };
 
@@ -68,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         new CodeLens(
                             this,
                             scriptFile,
-                            symbol.ScriptRegion,
+                            pesterSymbol.ScriptRegion,
                             command));
         }
 
@@ -80,8 +71,10 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
             var lenses =
                 symbols
-                    .Where(s => s.SymbolName.StartsWith("Describe"))
+                    .OfType<PesterSymbolReference>()
+                    .Where(s => s.Command == PesterCommandType.Describe)
                     .SelectMany(s => this.GetPesterLens(s, scriptFile))
+                    .Where(codeLens => codeLens != null)
                     .ToArray();
 
             return lenses;
