@@ -1,4 +1,4 @@
-version: '1.2.1.{build}'
+version: '1.3.0.{build}'
 image: Visual Studio 2017
 clone_depth: 10
 skip_tags: true
@@ -13,7 +13,6 @@ environment:
 
 install:
   - ps: |
-
       Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force | Out-Null
       Import-PackageProvider NuGet -Force | Out-Null
       Set-PSRepository -Name PSGallery -InstallationPolicy Trusted | Out-Null
