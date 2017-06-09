@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             {
                 new ClientCommand(
                     "PowerShell.RunPesterTests",
-                    "run tests",
+                    "Run tests",
                     new object[]
                     {
                         scriptFile.ClientFilePath,
@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
                 new ClientCommand(
                     "PowerShell.RunPesterTests",
-                    "debug tests",
+                    "Debug tests",
                     new object[]
                     {
                         scriptFile.ClientFilePath,
