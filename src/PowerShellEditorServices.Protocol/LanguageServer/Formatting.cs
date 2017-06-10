@@ -84,12 +84,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// <summary>
         /// Size of a tab in spaces.
         /// </summary>
-        int TabSize { get; set; }
+        public int TabSize { get; set; }
 
         /// <summary>
         /// Prefer spaces over tabs.
         /// </summary>
-        bool InsertSpaces { get; set; }
+        public bool InsertSpaces { get; set; }
     }
 }
 
