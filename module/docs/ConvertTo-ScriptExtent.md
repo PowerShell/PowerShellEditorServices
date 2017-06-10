@@ -12,10 +12,10 @@ Converts position and range objects from PowerShellEditorServices to ScriptExten
 
 ## SYNTAX
 
-### ByObject
+### ByExtent
 
 ```powershell
-ConvertTo-ScriptExtent [-InputObject <IScriptExtent>] [<CommonParameters>]
+ConvertTo-ScriptExtent [-Extent <IScriptExtent>] [<CommonParameters>]
 ```
 
 ### ByPosition
@@ -41,7 +41,7 @@ ConvertTo-ScriptExtent [-FilePath <String>] [-StartBuffer <BufferPosition>] [-En
 
 ## DESCRIPTION
 
-Converts position and range objects from PowerShellEditorServices to ScriptExtent objects.
+The ConvertTo-ScriptExtent function can be used to convert any object with position related properties to a ScriptExtent object.  You can also specify the parameters directly to manually create ScriptExtent objects.
 
 ## EXAMPLES
 
@@ -51,17 +51,25 @@ Converts position and range objects from PowerShellEditorServices to ScriptExten
 $psEditor.GetEditorContext().SelectedRange | ConvertTo-ScriptExtent
 ```
 
-Returns a InternalScriptExtent object of the currently selected range.
+Returns a ScriptExtent object of the currently selected range.
+
+### -------------------------- EXAMPLE 2 --------------------------
+
+```powershell
+ConvertTo-ScriptExtent -StartOffset 10 -EndOffset 100
+```
+
+Returns a ScriptExtent object from a start and end offset.
 
 ## PARAMETERS
 
-### -InputObject
+### -Extent
 
-This is here so we can pass script extent objects through without any processing.
+Specifies a ScriptExtent object to use as a base to create a new editor context aware ScriptExtent object.
 
 ```yaml
 Type: IScriptExtent
-Parameter Sets: ByObject
+Parameter Sets: ByExtent
 Aliases:
 
 Required: False
@@ -223,29 +231,23 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ### System.Object
 
-You can pass any object with any of the following properties.
+You can pass any object with properties that have position related names.  Below is a list of all the property names that can be bound as parameters through the pipeline.
 
-StartLineNumber, StartLine, Line
-EndLineNumber, EndLine
-StartColumnNumber, StartColumn, Column
-EndColumnNumber, EndColumn
-StartOffsetNumber, StartOffset, Offset
-EndOffsetNumber, EndOffset
-StartBuffer, Start
-EndBuffer, End
+StartLineNumber, StartLine, Line, EndLineNumber, EndLine, StartColumnNumber, StartColumn, Column, EndColumnNumber, EndColumn, StartOffsetNumber, StartOffset, Offset, EndOffsetNumber, EndOffset, StartBuffer, Start, EndBuffer, End
 
-Objects of type IScriptExtent will be passed through with no processing.
+You can also pass IScriptExtent objects to be converted to context aware versions.
 
 ## OUTPUTS
 
-### System.Management.Automation.Language.IScriptExtent
+### Microsoft.PowerShell.EditorServices.FullScriptExtent
 
-### System.Management.Automation.Language.InternalScriptExtent
-
-This function will return any IScriptExtent object passed without processing. Objects created
-by this function will be of type InternalScriptExtent.
+The converted ScriptExtent object will be returned to the pipeline.
 
 ## NOTES
 
 ## RELATED LINKS
 
+[ConvertFrom-ScriptExtent](ConvertFrom-ScriptExtent.md)
+[Test-ScriptExtent](Test-ScriptExtent.md)
+[Set-ScriptExtent](Set-ScriptExtent.md)
+[Join-ScriptExtent](Join-ScriptExtent.md)

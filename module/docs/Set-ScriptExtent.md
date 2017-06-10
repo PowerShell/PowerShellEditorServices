@@ -15,19 +15,19 @@ Replaces text at a specified IScriptExtent object.
 ### __AllParameterSets (Default)
 
 ```powershell
-Set-ScriptExtent [-Text] <PSObject> [-Extent <ElasticExtent>] [<CommonParameters>]
+Set-ScriptExtent [-Text] <PSObject> [-Extent <IScriptExtent>] [<CommonParameters>]
 ```
 
 ### AsString
 
 ```powershell
-Set-ScriptExtent [-Text] <PSObject> [-AsString] [-Extent <ElasticExtent>] [<CommonParameters>]
+Set-ScriptExtent [-Text] <PSObject> [-AsString] [-Extent <IScriptExtent>] [<CommonParameters>]
 ```
 
 ### AsArray
 
 ```powershell
-Set-ScriptExtent [-Text] <PSObject> [-AsArray] [-Extent <ElasticExtent>] [<CommonParameters>]
+Set-ScriptExtent [-Text] <PSObject> [-AsArray] [-Extent <IScriptExtent>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -129,7 +129,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ### System.Management.Automation.Language.IScriptExtent
 
-You can pass script extent objects to this function.  You can also pass objects with a property named "Extent".
+You can pass ScriptExtent objects to this function.  You can also pass objects with a property named "Extent" such as ASTs from Find-Ast or tokens from Get-Token.
 
 ## OUTPUTS
 
@@ -139,3 +139,8 @@ You can pass script extent objects to this function.  You can also pass objects 
 
 ## RELATED LINKS
 
+[Find-Ast](Find-Ast.md)
+[ConvertTo-ScriptExtent](ConvertTo-ScriptExtent.md)
+[ConvertFrom-ScriptExtent](ConvertFrom-ScriptExtent.md)
+[Test-ScriptExtent](Test-ScriptExtent.md)
+[Join-ScriptExtent](Join-ScriptExtent.md)

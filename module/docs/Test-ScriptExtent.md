@@ -125,7 +125,7 @@ Accept wildcard characters: False
 
 ### System.Management.Automation.Language.IScriptExtent
 
-You can pass reference script extent objects to this function.
+You can pass ScriptExtent objects to this function.  You can also pass objects with a property named "Extent" such as ASTs from Find-Ast or tokens from Get-Token.
 
 ## OUTPUTS
 
@@ -138,3 +138,8 @@ If the "PassThru" parameter is specified and the test passed, the reference scri
 ## NOTES
 
 ## RELATED LINKS
+
+[ConvertTo-ScriptExtent](ConvertTo-ScriptExtent.md)
+[ConvertFrom-ScriptExtent](ConvertFrom-ScriptExtent.md)
+[Set-ScriptExtent](Set-ScriptExtent.md)
+[Join-ScriptExtent](Join-ScriptExtent.md)

@@ -8,7 +8,7 @@ schema: 2.0.0
 
 ## SYNOPSIS
 
-Search for a ast within an ast.
+Find a specific element in an abstract syntax tree (AST).
 
 ## SYNTAX
 
@@ -27,7 +27,9 @@ Find-Ast [-AtCursor] [<CommonParameters>]
 
 ## DESCRIPTION
 
-The Find-Ast function can be used to easily find a specific ast from a starting ast. By default children asts will be searched, but ancestor asts can also be searched by specifying the "Ancestor" switch parameter.
+The Find-Ast function can be used to easily find a specific AST within a script file. All ASTs following the inital starting ast will be searched, including those that are not part of the same tree.
+
+The behavior of the search (such as direction and criteria) can be changed with parameters.
 
 Additionally, you can find the Ast closest to the cursor with the "AtCursor" switch parameter.
 
@@ -76,16 +78,50 @@ Returns all variable expressions used in a dot source expression.
 ### -------------------------- EXAMPLE 6 --------------------------
 
 ```powershell
-Find-Ast { 'PowerShellVersion' -eq $_ } | Find-Ast -First | Set-ScriptExtent -Text "'4.0'"
+Find-Ast { 'PowerShellVersion' -eq $_ } |
+    Find-Ast -First |
+    Set-ScriptExtent -Text '4.0' -AsString
 ```
 
-First finds the ast of the PowerShellVersion manifest tag, then finds the first ast after it and changes the text to '4.0'. This will not work as is if the field is commented.
+This example sets the required PowerShell version in a module manifest to 4.0.
+
+First it finds the AST of the PowerShellVersion manifest field, then finds the first AST directly after it and changes the text to '4.0'. This will not work as is if the field is commented.
+
+### -------------------------- EXAMPLE 7 --------------------------
+
+```powershell
+Find-Ast { $_.ArgumentName -eq 'ParameterSetName' -and $_.Argument.Value -eq 'ByPosition' } |
+    Find-Ast -First -Ancestor { $_ -is [System.Management.Automation.Language.ParameterAst] } |
+    ForEach-Object { $_.Name.VariablePath.UserPath }
+```
+
+This example gets a list of all parameters that belong to the parameter set 'ByPosition'. First it uses the ArgumentName and Argument properties of NamedAttributeArgumentAst to find the ASTs of arguments to the Parameter attribute that declare the the parameter set 'ByPosition'.  It then finds the closest parent ParameterAst and retrieves the name from it.
+
+### -------------------------- EXAMPLE 8 --------------------------
+
+```powershell
+$companyName = Find-Ast {
+    $_.Value -eq 'CompanyName' -or
+    (Find-Ast -Ast $_ -First -Before).Value -eq 'CompanyName'
+}
+
+$previousField = $companyName[0] | Find-Ast -First -Before { $_.StringConstantType -eq 'BareWord' }
+
+$companyNameComments = $companyName.Extent, $previousField.Extent |
+    Join-ScriptExtent |
+    Get-Token |
+    Where-Object Kind -eq 'Comment'
+
+$fullManifestElement = $companyNameComments.Extent, $companyName.Extent | Join-ScriptExtent
+```
+
+This example shows off ways you can combine the position functions together to get very specific portions of a script file.  The result of this example is a ScriptExtent that includes a manifest field, value, and all comments above it.
 
 ## PARAMETERS
 
 ### -FilterScript
 
-Specifies a ScriptBlock that returns $true if an ast should be returned. Uses $PSItem and $_ like Where-Object. If not specified all asts will be returned.
+Specifies a ScriptBlock that returns $true if an AST should be returned. Uses $PSItem and $_ like Where-Object. If not specified all ASTs will be returned.
 
 ```yaml
 Type: ScriptBlock
@@ -101,7 +137,7 @@ Accept wildcard characters: False
 
 ### -Ast
 
-Specifies the starting ast. The default is the ast of the current file in PowerShell Editor Services.
+Specifies the starting AST. The default is the AST of the current file in PowerShell Editor Services.
 
 ```yaml
 Type: Ast
@@ -133,7 +169,7 @@ Accept wildcard characters: False
 
 ### -Family
 
-If specified only children of the starting ast will be searched. If specified with the "Before" parameter then only ancestors will be searched.
+If specified only children of the starting AST will be searched. If specified with the "Before" parameter then only ancestors will be searched.
 
 ```yaml
 Type: SwitchParameter
@@ -149,7 +185,7 @@ Accept wildcard characters: False
 
 ### -First
 
-If specified will return only the first result. This will be the closest ast that matches.
+If specified will return only the first result. This will be the closest AST that matches.
 
 ```yaml
 Type: SwitchParameter
@@ -165,7 +201,7 @@ Accept wildcard characters: False
 
 ### -Last
 
-If specified will return only the last result. This will be the furthest ast that matches.
+If specified will return only the last result. This will be the furthest AST that matches.
 
 ```yaml
 Type: SwitchParameter
@@ -181,7 +217,7 @@ Accept wildcard characters: False
 
 ### -Ancestor
 
-If specified will only search ancestors of the starting ast.  This is a convenience parameter that acts the same as the "Family" and "Before" parameters when used together.
+If specified will only search ancestors of the starting AST.  This is a convenience parameter that acts the same as the "Family" and "Before" parameters when used together.
 
 ```yaml
 Type: SwitchParameter
@@ -197,7 +233,7 @@ Accept wildcard characters: False
 
 ### -IncludeStartingAst
 
-If specified the starting ast will be included if matched.
+If specified the starting AST will be included if matched.
 
 ```yaml
 Type: SwitchParameter
@@ -213,7 +249,7 @@ Accept wildcard characters: False
 
 ### -AtCursor
 
-If specified, this function will return the smallest ast that the cursor is within. Requires PowerShell Editor Services.
+If specified, this function will return the smallest AST that the cursor is within.
 
 ```yaml
 Type: SwitchParameter
@@ -235,15 +271,18 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ### System.Management.Automation.Language.Ast
 
-You can pass asts to search to this function.
+You can pass ASTs to search to this function.
 
 ## OUTPUTS
 
 ### System.Management.Automation.Language.Ast
 
-Asts that match the criteria will be returned to the pipeline.
+ASTs that match the criteria will be returned to the pipeline.
 
 ## NOTES
 
 ## RELATED LINKS
 
+[Get-Token](Get-Token.md)
+[Set-ScriptExtent](Set-ScriptExtent.md)
+[ConvertTo-ScriptExtent](ConvertTo-ScriptExtent.md)
