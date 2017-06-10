@@ -186,6 +186,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
     }
 
+    public class EditorSettings : AbstractSettings
+    {
+        public EditorSettings() : base() { }
+
+        public EditorSettings(EditorSettings editorSettings) : base (editorSettings) { }
+
+        public int TabSize { get; set; }
+
+        public bool InsertSpaces { get; set; }
+    }
+
     public class LanguageServerSettingsWrapper
         {
             // NOTE: This property is capitalized as 'Powershell' because the
