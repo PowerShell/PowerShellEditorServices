@@ -603,7 +603,7 @@ namespace Microsoft.PowerShell.EditorServices
             // of command executions into string output.  However, if null is returned
             // then return null so that no output gets displayed.
             string outputString =
-                results != null ?
+                results != null && results.Count() > 0 ?
                     string.Join(Environment.NewLine, results) :
                     null;
 
