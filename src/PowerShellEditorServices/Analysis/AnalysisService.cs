@@ -253,6 +253,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>The formatted script text.</returns>
         public async Task<string> Format(
             string scriptDefinition,
+            Hashtable settings,
             int startLineNumber = -1,
             int startColumnNumber = -1,
             int endLineNumber = -1,
@@ -270,13 +271,15 @@ namespace Microsoft.PowerShell.EditorServices
             if (startLineNumber == -1)
             {
                 argsDict = new Dictionary<string, object> {
-                    {"ScriptDefinition", scriptDefinition}
+                    {"ScriptDefinition", scriptDefinition},
+                    {"Settings", settings}
                 };
             }
             else
             {
                 argsDict = new Dictionary<string, object> {
                     {"ScriptDefinition", scriptDefinition},
+                    {"Settings", settings},
                     {"StartLineNumber", startLineNumber},
                     {"StartColumnNumber", startColumnNumber},
                     {"EndLineNumber", endLineNumber},

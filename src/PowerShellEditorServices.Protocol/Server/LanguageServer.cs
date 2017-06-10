@@ -1159,7 +1159,11 @@ function __Expand-Alias {
             DocumentFormattingParams formattingParams,
             RequestContext<TextEdit[]> requestContext)
         {
-            var result = await Format(formattingParams.TextDocument.Uri, null);
+            var result = await Format(
+                formattingParams.TextDocument.Uri,
+                formattingParams.options,
+                null);
+
             await requestContext.SendResult(new TextEdit[1]
             {
                 new TextEdit
@@ -1174,7 +1178,11 @@ function __Expand-Alias {
             DocumentRangeFormattingParams formattingParams,
             RequestContext<TextEdit[]> requestContext)
         {
-            var result = await Format(formattingParams.TextDocument.Uri, formattingParams.Range);
+            var result = await Format(
+                formattingParams.TextDocument.Uri,
+                formattingParams.options,
+                formattingParams.Range);
+
             await requestContext.SendResult(new TextEdit[1]
             {
                 new TextEdit
@@ -1191,12 +1199,16 @@ function __Expand-Alias {
 
         private async Task<Tuple<string, Range>> Format(
             string documentUri,
+            FormattingOptions options,
             Range range)
         {
 
             // TODO Get settings
             // TODO Update settings to store code formatting settings
             var scriptFile = editorSession.Workspace.GetFile(documentUri);
+            var pssaSettings = currentSettings.CodeFormatting.GetPSSASettingsHashTable(
+                options.TabSize,
+                options.InsertSpaces);
 
             // TODO raise an error event incase format returns null;
             string formattedScript;
@@ -1204,7 +1216,6 @@ function __Expand-Alias {
             int sl, sc, el, ec;
             if (range == null)
             {
-                formattedScript = await editorSession.AnalysisService.Format(scriptFile.Contents);
                 sl = -1;
                 sc = -1;
                 el = -1;
@@ -1235,7 +1246,13 @@ function __Expand-Alias {
                 }
             };
 
-            formattedScript = await editorSession.AnalysisService.Format(scriptFile.Contents, sl, sc, el, ec);
+            formattedScript = await editorSession.AnalysisService.Format(
+                scriptFile.Contents,
+                pssaSettings,
+                sl,
+                sc,
+                el,
+                ec);
             formattedScript = formattedScript ?? scriptFile.Contents;
             return Tuple.Create(formattedScript, editRange);
         }
