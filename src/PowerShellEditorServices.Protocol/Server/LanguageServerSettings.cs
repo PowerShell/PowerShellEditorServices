@@ -92,12 +92,33 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
     }
 
-    public class CodeFormattingSettings
+    public class AbstractSettings
+    {
+        public AbstractSettings()
+        {
+
+        }
+
+        public AbstractSettings(AbstractSettings abstractSettings)
+        {
+            if (abstractSettings == null)
+            {
+                throw new ArgumentNullException(nameof(abstractSettings));
+            }
+
+            foreach (var prop in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                prop.SetValue(this, prop.GetValue(abstractSettings));
+            }
+        }
+    }
+
+    public class CodeFormattingSettings : AbstractSettings
     {
         /// <summary>
         /// Default constructor.
         /// </summary>
-        public CodeFormattingSettings()
+        public CodeFormattingSettings() : base()
         {
 
         }
@@ -107,16 +128,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         /// </summary>
         /// <param name="codeFormattingSettings">An instance of type CodeFormattingSettings.</param>
         public CodeFormattingSettings(CodeFormattingSettings codeFormattingSettings)
+            : base(codeFormattingSettings)
         {
-            if (codeFormattingSettings == null)
-            {
-                throw new ArgumentNullException(nameof(codeFormattingSettings));
-            }
 
-            foreach (var prop in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
-            {
-                prop.SetValue(this, prop.GetValue(codeFormattingSettings));
-            }
         }
 
         public bool OpenBraceOnSameLine { get; set; }
