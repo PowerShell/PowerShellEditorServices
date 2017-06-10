@@ -16,17 +16,15 @@ Module to facilitate easy manipulation of script files and editor features.
 
 ### [ConvertFrom-ScriptExtent](ConvertFrom-ScriptExtent.md)
 
-Translates IScriptExtent object properties into constructors for some common PowerShell EditorServices types.
+The ConvertFrom-ScriptExtent function converts ScriptExtent objects to types used in methods found in the $psEditor API.
 
 ### [ConvertTo-ScriptExtent](ConvertTo-ScriptExtent.md)
 
-Converts position and range objects from PowerShellEditorServices to ScriptExtent objects.
+The ConvertTo-ScriptExtent function can be used to convert any object with position related properties to a ScriptExtent object.  You can also specify the parameters directly to manually create ScriptExtent objects.
 
 ### [Find-Ast](Find-Ast.md)
 
-The Find-Ast function can be used to easily find a specific ast from a starting ast.  By
-default children asts will be searched, but ancestor asts can also be searched by specifying
-the "Ancestor" switch parameter.
+The Find-Ast function can be used to easily find a specific AST within a script file. All ASTs following the inital starting ast will be searched, including those that are not part of the same tree.
 
 ### [Get-Token](Get-Token.md)
 
@@ -40,7 +38,7 @@ Alternatively, you can specify command info objects (like those from the Get-Com
 
 ### [Join-ScriptExtent](Join-ScriptExtent.md)
 
-The Join-ScriptExtent function will combine all ScriptExtent objects piped to it into a single extent.
+The Join-ScriptExtent function will combine all ScriptExtent objects piped to it into a single extent.  This can be used combine multiple ASTs, tokens, or other script elements into a single object that can then be manipulated or used for more targeted searches.
 
 ### [Set-ScriptExtent](Set-ScriptExtent.md)
 

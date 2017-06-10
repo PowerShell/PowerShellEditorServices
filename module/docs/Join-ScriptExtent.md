@@ -8,7 +8,7 @@ schema: 2.0.0
 
 ## SYNOPSIS
 
-Combine script extents.
+Combine multiple ScriptExtent objects into a single ScriptExtent.
 
 ## SYNTAX
 
@@ -18,7 +18,7 @@ Join-ScriptExtent [[-Extent] <IScriptExtent[]>] [<CommonParameters>]
 
 ## DESCRIPTION
 
-The Join-ScriptExtent function will combine all ScriptExtent objects piped to it into a single extent.
+The Join-ScriptExtent function will combine all ScriptExtent objects piped to it into a single extent.  This can be used combine multiple ASTs, tokens, or other script elements into a single object that can then be manipulated or used for more targeted searches.
 
 ## EXAMPLES
 
@@ -57,16 +57,19 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ### System.Management.Automation.Language.IScriptExtent
 
-You can pass script extent objects to this function.  You can also pass objects with a property
-named "Extent".
+You can pass ScriptExtent objects to this function.  You can also pass objects with a property named "Extent" such as ASTs from Find-Ast or tokens from Get-Token.
 
 ## OUTPUTS
 
 ### System.Management.Automation.Language.IScriptExtent
 
-The combined extent is returned.
+The combined ScriptExtent object is returned.
 
 ## NOTES
 
 ## RELATED LINKS
 
+[ConvertTo-ScriptExtent](ConvertTo-ScriptExtent.md)
+[ConvertFrom-ScriptExtent](ConvertFrom-ScriptExtent.md)
+[Test-ScriptExtent](Test-ScriptExtent.md)
+[Set-ScriptExtent](Set-ScriptExtent.md)

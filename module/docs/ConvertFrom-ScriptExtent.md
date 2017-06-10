@@ -26,18 +26,20 @@ ConvertFrom-ScriptExtent -Extent <IScriptExtent[]> [-BufferPosition] [-Start] [-
 
 ## DESCRIPTION
 
-Translates IScriptExtent object properties into constructors for some common PowerShell EditorServices types.
+The ConvertFrom-ScriptExtent function converts ScriptExtent objects to types used in methods found in the $psEditor API.
 
 ## EXAMPLES
 
 ### -------------------------- EXAMPLE 1 --------------------------
 
 ```powershell
-$sb = { Get-ChildItem 'Documents' }
-$sb.Ast | Find-Ast { $_ -eq 'Documents' } | ConvertFrom-ScriptExtent -BufferRange
+$range = Find-Ast -First { [System.Management.Automation.Language.CommandAst] } |
+    ConvertFrom-ScriptExtent -BufferRange
+
+$psEditor.GetEditorContext().SetSelection($range)
 ```
 
-Gets the buffer range of the string expression "Documents".
+Convert the extent of the first CommandAst to a BufferRange and use that to select it with the $psEditor API.
 
 ## PARAMETERS
 
@@ -129,7 +131,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ### System.Management.Automation.Language.IScriptExtent
 
-You can pipe IScriptExtent objects to be converted.
+You can pass ScriptExtent objects to this function.  You can also pass objects with a property named "Extent" such as ASTs from Find-Ast or tokens from Get-Token.
 
 ## OUTPUTS
 
@@ -137,10 +139,13 @@ You can pipe IScriptExtent objects to be converted.
 
 ### Microsoft.PowerShell.EditorServices.BufferPosition
 
-This function will return an extent converted to one of the above types depending on switch
-choices.
+This function will return the converted object of one of the above types depending on parameter switch choices.
 
 ## NOTES
 
 ## RELATED LINKS
 
+[ConvertTo-ScriptExtent](ConvertTo-ScriptExtent.md)
+[Test-ScriptExtent](Test-ScriptExtent.md)
+[Set-ScriptExtent](Set-ScriptExtent.md)
+[Join-ScriptExtent](Join-ScriptExtent.md)
