@@ -842,8 +842,12 @@ namespace Microsoft.PowerShell.EditorServices
                 VariableContainerDetails localVariables =
                     await FetchVariableContainer(i.ToString(), autoVariables);
 
+                // When debugging, this is the best way I can find to get what is likely the workspace root.
+                // This is controlled by the "cwd:" setting in the launch config.
+                string workspaceRootPath = this.powerShellContext.InitialWorkingDirectory;
+
                 this.stackFrameDetails[i] =
-                    StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables);
+                    StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables, workspaceRootPath);
 
                 string stackFrameScriptPath = this.stackFrameDetails[i].ScriptPath;
                 if (scriptNameOverride != null &&

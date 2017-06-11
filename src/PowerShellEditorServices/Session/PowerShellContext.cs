@@ -103,6 +103,12 @@ namespace Microsoft.PowerShell.EditorServices
             private set;
         }
 
+        /// <summary>
+        /// Gets the working directory path the PowerShell context was inititially set when the debugger launches.
+        /// This path is used to determine whether a script in the call stack is an "external" script.
+        /// </summary>
+        public string InitialWorkingDirectory { get; private set; }
+
         #endregion
 
         #region Constructors
@@ -1073,6 +1079,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="path"></param>
         public async Task SetWorkingDirectory(string path)
         {
+            this.InitialWorkingDirectory = path;
+
             using (RunspaceHandle runspaceHandle = await this.GetRunspaceHandle())
             {
                 runspaceHandle.Runspace.SessionStateProxy.Path.SetLocation(path);
