@@ -47,11 +47,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public int? EndColumn { get; set; }
 
         /// <summary>
-        /// Gets the module associated with this frame, if any.
-        /// </summary>
-        public object ModuleId { get; set; }
-
-        /// <summary>
         /// Gets an optional hint for how to present this frame in the UI. A value of 'label' 
         /// can be used to indicate that the frame is an artificial frame that is used as a 
         /// visual label or separator. A value of 'subtle' can be used to change the appearance 
