@@ -8,6 +8,9 @@ using System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices
 {
+    /// <summary>
+    /// An optional hint for how to present a stack frame in the UI. 
+    /// </summary>
     public enum StackFramePresentationHint
     {
         /// <summary>
@@ -107,6 +110,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="localVariables">
         /// A variable container with all the local variables for this stack frame.
         /// </param>
+        /// <param name="workspaceRootPath">
+        /// Specifies the path to the root of an open workspace, if one is open. This path is used to
+        /// determine whether individua stack frames are external to the workspace.
+        /// </param>
         /// <returns>A new instance of the StackFrameDetails class.</returns>
         static internal StackFrameDetails Create(
             PSObject callStackFrameObject,
@@ -117,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices
             string moduleId = string.Empty;
             var presentationHint = StackFramePresentationHint.Normal;
 
-            var invocationInfo = callStackFrameObject.Properties["InvocationInfo"].Value as InvocationInfo;
+            var invocationInfo = callStackFrameObject.Properties["InvocationInfo"]?.Value as InvocationInfo;
             string scriptPath = (callStackFrameObject.Properties["ScriptName"].Value as string) ?? NoFileScriptPath;
             int startLineNumber = (int)(callStackFrameObject.Properties["ScriptLineNumber"].Value ?? 0);
 
