@@ -147,7 +147,8 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 }
                 else
                 {
-                    // TODO: Write error!
+                    await requestContext.SendError(
+                        $"Could not find provider for the original CodeLens: {codeLensData.ProviderId}");
                 }
             }
         }
