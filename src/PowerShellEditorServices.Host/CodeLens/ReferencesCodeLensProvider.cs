@@ -64,16 +64,18 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     references,
                     editorSession.Workspace);
 
-            var referenceLocations =
-                referencesResult
-                    .FoundReferences
-                    .Select(
-                        r => new Location
-                        {
-                            Uri = GetFileUri(r.FilePath),
-                            Range = r.ScriptRegion.ToRange()
-                        })
-                    .ToArray();
+            Location[] referenceLocations =
+                referencesResult == null
+                    ? new Location[0]
+                    : referencesResult
+                        .FoundReferences
+                        .Select(
+                            r => new Location
+                            {
+                                Uri = GetFileUri(r.FilePath),
+                                Range = r.ScriptRegion.ToRange()
+                            })
+                        .ToArray();
 
             return
                 new CodeLens(
