@@ -193,6 +193,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     messageDispatcher,
                     this.logger);
 
+            protocolEndpoint.UnhandledException += ProtocolEndpoint_UnhandledException;
+
             this.editorSession =
                 CreateSession(
                     this.hostDetails,
@@ -251,6 +253,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     serverChannel,
                     messageDispatcher,
                     this.logger);
+
+            protocolEndpoint.UnhandledException += ProtocolEndpoint_UnhandledException;
 
             if (this.enableConsoleRepl)
             {
@@ -392,6 +396,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 editorOperations);
 
             return editorSession;
+        }
+
+        private void ProtocolEndpoint_UnhandledException(object sender, Exception e)
+        {
+            this.logger.Write(
+                LogLevel.Error,
+                "PowerShell Editor Services is terminating due to an unhandled exception, see previous logs for details.");
+
+            this.serverCompletedTask.SetException(e);
         }
 
 #if !CoreCLR
