@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net452;netstandard1.6</TargetFrameworks>
-    <AssemblyName>Microsoft.PowerShell.EditorServices.Test.Host</AssemblyName>
+    <AssemblyName>Microsoft.PowerShell.EditorServices.Test.Server</AssemblyName>
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
 
@@ -16,7 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj" />
     <ProjectReference Include="..\..\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj" />
-    <ProjectReference Include="..\..\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj" />
+    <ProjectReference Include="..\..\src\PowerShellEditorServices.Server\PowerShellEditorServices.Host.csproj" />
   </ItemGroup>
 
   <ItemGroup>
