@@ -69,6 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     ? new Location[0]
                     : referencesResult
                         .FoundReferences
+                        .Where(r => NotReferenceDefinition(foundSymbol, r))
                         .Select(
                             r => new Location
                             {
@@ -92,6 +93,16 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                             referenceLocations,
                         }
                     ));
+        }
+
+        private static bool NotReferenceDefinition(
+            SymbolReference definition,
+            SymbolReference reference)
+        {
+            return
+                definition.ScriptRegion.StartLineNumber != reference.ScriptRegion.StartLineNumber
+                || definition.SymbolType != reference.SymbolType
+                || !string.Equals(definition.SymbolName, reference.SymbolName, StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetFileUri(string filePath)
