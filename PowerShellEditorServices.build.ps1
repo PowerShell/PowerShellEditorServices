@@ -143,12 +143,12 @@ task TestPowerShellApi -If { !$script:IsUnix } {
 }
 
 task Build {
-    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.Server\PowerShellEditorServices.Server.csproj $script:TargetFrameworksParam }
 }
 
 function UploadTestLogs {
     if ($script:IsCIBuild) {
-        $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net452/logs"
+        $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Server/bin/$Configuration/net452/logs"
         $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
 
         if (Test-Path $testLogsPath) {
@@ -175,7 +175,7 @@ task TestProtocol -If { !$script:IsUnix} {
 }
 
 task TestHost -If { !$script:IsUnix} {
-    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
+    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Server\PowerShellEditorServices.Test.Server.csproj }
 }
 
 task CITest (job Test -Safe), {
@@ -193,10 +193,10 @@ task LayoutModule -After Build {
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Core -Type Directory | Out-Null
 
     if (!$script:IsUnix) {
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Server\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Server\bin\$Configuration\net451\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
     }
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Server\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
 }
 
 task BuildCmdletHelp {
@@ -206,7 +206,7 @@ task BuildCmdletHelp {
 task PackageNuGet {
     exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj $script:TargetFrameworksParam }
     exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Server\PowerShellEditorServices.Server.csproj $script:TargetFrameworksParam }
 }
 
 task PackageModule {
@@ -221,7 +221,7 @@ task UploadArtifacts -If ($script:IsCIBuild) {
     if ($env:APPVEYOR) {
         Push-AppveyorArtifact .\src\PowerShellEditorServices\bin\$Configuration\Microsoft.PowerShell.EditorServices.$($script:FullVersion).nupkg
         Push-AppveyorArtifact .\src\PowerShellEditorServices.Protocol\bin\$Configuration\Microsoft.PowerShell.EditorServices.Protocol.$($script:FullVersion).nupkg
-        Push-AppveyorArtifact .\src\PowerShellEditorServices.Host\bin\$Configuration\Microsoft.PowerShell.EditorServices.Host.$($script:FullVersion).nupkg
+        Push-AppveyorArtifact .\src\PowerShellEditorServices.Server\bin\$Configuration\Microsoft.PowerShell.EditorServices.Server.$($script:FullVersion).nupkg
         Push-AppveyorArtifact .\module\PowerShellEditorServices-$($script:FullVersion).zip
     }
 }
