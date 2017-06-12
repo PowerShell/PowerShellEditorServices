@@ -17,17 +17,17 @@ using Servers = Microsoft.PowerShell.EditorServices.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Symbols
 {
-    internal class DocumentSymbolFeature : IDocumentSymbols
+    internal class DocumentSymbolFeature :
+        FeatureComponentBase<IDocumentSymbolProvider>,
+        IDocumentSymbols
     {
         private EditorSession editorSession;
-
-        public IFeatureProviderCollection<IDocumentSymbolProvider> Providers { get; } =
-            new FeatureProviderCollection<IDocumentSymbolProvider>();
 
         public DocumentSymbolFeature(
             EditorSession editorSession,
             IMessageHandlers messageHandlers,
             ILogger logger)
+                : base(logger)
         {
             this.editorSession = editorSession;
 
@@ -61,9 +61,12 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
             return documentSymbols;
         }
 
-        public IEnumerable<SymbolReference> ProvideDocumentSymbols(ScriptFile scriptFile)
+        public IEnumerable<SymbolReference> ProvideDocumentSymbols(
+            ScriptFile scriptFile)
         {
-            throw new NotImplementedException();
+            return
+                this.InvokeProviders(p => p.ProvideDocumentSymbols(scriptFile))
+                    .SelectMany(r => r);
         }
 
         protected async Task HandleDocumentSymbolRequest(
@@ -75,9 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
                     documentSymbolParams.TextDocument.Uri);
 
             IEnumerable<SymbolReference> foundSymbols =
-                this.Providers
-                    .SelectMany(
-                        provider => provider.ProvideDocumentSymbols(scriptFile));
+                this.ProvideDocumentSymbols(scriptFile);
 
             SymbolInformation[] symbols = null;
 

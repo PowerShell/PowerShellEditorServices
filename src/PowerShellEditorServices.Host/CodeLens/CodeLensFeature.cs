@@ -17,7 +17,9 @@ using LanguageServer = Microsoft.PowerShell.EditorServices.Protocol.LanguageServ
 
 namespace Microsoft.PowerShell.EditorServices.CodeLenses
 {
-    internal class CodeLensFeature : ICodeLenses
+    internal class CodeLensFeature :
+        FeatureComponentBase<ICodeLensProvider>,
+        ICodeLenses
     {
         private EditorSession editorSession;
 
@@ -25,13 +27,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
              JsonSerializer.Create(
                  Constants.JsonSerializerSettings);
 
-        public IFeatureProviderCollection<ICodeLensProvider> Providers { get; } =
-            new FeatureProviderCollection<ICodeLensProvider>();
-
         public CodeLensFeature(
             EditorSession editorSession,
             IMessageHandlers messageHandlers,
             ILogger logger)
+                : base(logger)
         {
             this.editorSession = editorSession;
 
@@ -70,8 +70,8 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
         {
             return
-                this.Providers
-                    .SelectMany(p => p.ProvideCodeLenses(scriptFile))
+                this.InvokeProviders(p => p.ProvideCodeLenses(scriptFile))
+                    .SelectMany(r => r)
                     .ToArray();
         }
 
@@ -88,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     codeLensParams.TextDocument.Uri);
 
             var codeLenses =
-               this.ProvideCodeLenses(scriptFile)
+                this.ProvideCodeLenses(scriptFile)
                     .Select(
                         codeLens =>
                             codeLens.ToProtocolCodeLens(
