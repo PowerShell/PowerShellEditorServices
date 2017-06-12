@@ -33,6 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
 
                 return
                     commandAst != null &&
+                    commandAst.InvocationOperator != TokenKind.Dot &&
                     PesterSymbolReference.GetCommandType(commandAst.GetCommandName()).HasValue &&
                     commandAst.CommandElements.Count >= 2;
             },
@@ -144,6 +145,11 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
 
         internal static PesterCommandType? GetCommandType(string commandName)
         {
+            if (commandName == null)
+            {
+                return null;
+            }
+
             switch (commandName.ToLower())
             {
                 case "describe":
