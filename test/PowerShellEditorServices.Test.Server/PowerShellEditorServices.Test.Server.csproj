@@ -16,7 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj" />
     <ProjectReference Include="..\..\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj" />
-    <ProjectReference Include="..\..\src\PowerShellEditorServices.Server\PowerShellEditorServices.Host.csproj" />
+    <ProjectReference Include="..\..\src\PowerShellEditorServices.Server\PowerShellEditorServices.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>

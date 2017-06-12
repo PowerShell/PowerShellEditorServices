@@ -2,8 +2,8 @@
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
-    <AssemblyTitle>PowerShell Editor Services Host Process</AssemblyTitle>
-    <Description>Provides a process for hosting the PowerShell Editor Services library exposed by a JSON message protocol.</Description>
+    <AssemblyTitle>PowerShell Editor Services - Server</AssemblyTitle>
+    <Description>Provides the server used for exposing PowerShell Editor Services as a JSON message protocol.</Description>
     <TargetFrameworks>net451;netstandard1.6</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Server</AssemblyName>
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>

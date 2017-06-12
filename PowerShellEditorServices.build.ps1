@@ -143,7 +143,7 @@ task TestPowerShellApi -If { !$script:IsUnix } {
 }
 
 task Build {
-    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.Server\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.Server\PowerShellEditorServices.Server.csproj $script:TargetFrameworksParam }
 }
 
 function UploadTestLogs {
@@ -175,7 +175,7 @@ task TestProtocol -If { !$script:IsUnix} {
 }
 
 task TestHost -If { !$script:IsUnix} {
-    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Server\PowerShellEditorServices.Test.Host.csproj }
+    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Server\PowerShellEditorServices.Test.Server.csproj }
 }
 
 task CITest (job Test -Safe), {
@@ -206,7 +206,7 @@ task BuildCmdletHelp {
 task PackageNuGet {
     exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj $script:TargetFrameworksParam }
     exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Server\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Server\PowerShellEditorServices.Server.csproj $script:TargetFrameworksParam }
 }
 
 task PackageModule {
