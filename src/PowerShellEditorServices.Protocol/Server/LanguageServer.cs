@@ -1180,7 +1180,7 @@ function __Expand-Alias {
         {
             var result = await Format(
                 formattingParams.TextDocument.Uri,
-                formattingParams.options,
+                formattingParams.Options,
                 formattingParams.Range);
 
             await requestContext.SendResult(new TextEdit[1]

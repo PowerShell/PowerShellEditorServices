@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// <summary>
         /// The format options.
         /// </summary>
-        public FormattingOptions options { get; set; }
+        public FormattingOptions Options { get; set; }
     }
 
     public class DocumentOnTypeFormattingParams
