@@ -250,6 +250,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// Format a given script text with default codeformatting settings.
         /// </summary>
         /// <param name="scriptDefinition">Script text to be formatted</param>
+        /// <param name="settings">ScriptAnalyzer settings</param>
+        /// <param name="rangeList">The range within which formatting should be applied.</param>
         /// <returns>The formatted script text.</returns>
         public async Task<string> Format(
             string scriptDefinition,
