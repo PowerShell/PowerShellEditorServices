@@ -127,7 +127,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
             this.messageHandlers.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
 
-            this.messageHandlers.SetRequestHandler(ScriptFileMarkersRequest.Type, this.HandleScriptFileMarkersRequest);
             this.messageHandlers.SetRequestHandler(ScriptRegionRequest.Type, this.HandleGetFormatScriptRegionRequest);
 
             this.messageHandlers.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequest);
@@ -294,19 +293,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await requestContext.SendResult(new ScriptRegionRequestResult
             {
                 scriptRegion = scriptRegion
-            });
-        }
-
-        private async Task HandleScriptFileMarkersRequest(
-            ScriptFileMarkerRequestParams requestParams,
-            RequestContext<ScriptFileMarkerRequestResultParams> requestContext)
-        {
-            var markers = await editorSession.AnalysisService.GetSemanticMarkersAsync(
-                editorSession.Workspace.GetFile(requestParams.fileUri),
-                AnalysisService.GetPSSASettingsHashtable(requestParams.settings));
-            await requestContext.SendResult(new ScriptFileMarkerRequestResultParams
-            {
-                markers = markers
             });
         }
 
