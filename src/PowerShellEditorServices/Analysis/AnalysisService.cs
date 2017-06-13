@@ -254,10 +254,7 @@ namespace Microsoft.PowerShell.EditorServices
         public async Task<string> Format(
             string scriptDefinition,
             Hashtable settings,
-            int startLineNumber = -1,
-            int startColumnNumber = -1,
-            int endLineNumber = -1,
-            int endColumnNumber = -1)
+            int[] rangeList)
         {
             // we cannot use Range type therefore this workaround of using -1 default value
             if (!hasScriptAnalyzerModule)
@@ -265,29 +262,17 @@ namespace Microsoft.PowerShell.EditorServices
                 return null;
             }
 
-            Dictionary<string, object> argsDict;
-
-            // this is a workaround till range formatter is enable in script analyzer
-            if (startLineNumber == -1)
-            {
-                argsDict = new Dictionary<string, object> {
+            var argsDict = new Dictionary<string, object> {
                     {"ScriptDefinition", scriptDefinition},
                     {"Settings", settings}
-                };
-            }
-            else
+            };
+            if (rangeList != null)
             {
-                argsDict = new Dictionary<string, object> {
-                    {"ScriptDefinition", scriptDefinition},
-                    {"Settings", settings},
-                    {"StartLineNumber", startLineNumber},
-                    {"StartColumnNumber", startColumnNumber},
-                    {"EndLineNumber", endLineNumber},
-                    {"EndColumnNumber", endColumnNumber}
-                };
+                argsDict.Add("Range", rangeList);
             }
+
             var result = await InvokePowerShellAsync("Invoke-Formatter", argsDict);
-            return result?.Select(r => r.ImmediateBaseObject as string).FirstOrDefault();
+            return result?.Select(r => r?.ImmediateBaseObject as string).FirstOrDefault();
         }
 
         /// <summary>

@@ -1202,33 +1202,19 @@ function __Expand-Alias {
             FormattingOptions options,
             Range range)
         {
-
-            // TODO Get settings
-            // TODO Update settings to store code formatting settings
             var scriptFile = editorSession.Workspace.GetFile(documentUri);
             var pssaSettings = currentSettings.CodeFormatting.GetPSSASettingsHashTable(
                 options.TabSize,
                 options.InsertSpaces);
 
-            // TODO raise an error event incase format returns null;
+            // TODO raise an error event in case format returns null;
             string formattedScript;
             Range editRange;
-            int sl, sc, el, ec;
-            if (range == null)
-            {
-                sl = -1;
-                sc = -1;
-                el = -1;
-                ec = -1;
-            }
-            else
-            {
-                sl = range.Start.Line + 1;
-                sc = range.Start.Character + 1;
-                el = range.End.Line + 1;
-                ec = range.End.Character + 1;
-            }
-
+            var rangeList = range == null ? null : new int[] {
+                range.Start.Line + 1,
+                range.Start.Character + 1,
+                range.End.Line + 1,
+                range.End.Character + 1};
             var extent = scriptFile.ScriptAst.Extent;
 
             // todo create an extension for converting range to script extent
@@ -1249,10 +1235,7 @@ function __Expand-Alias {
             formattedScript = await editorSession.AnalysisService.Format(
                 scriptFile.Contents,
                 pssaSettings,
-                sl,
-                sc,
-                el,
-                ec);
+                rangeList);
             formattedScript = formattedScript ?? scriptFile.Contents;
             return Tuple.Create(formattedScript, editRange);
         }
