@@ -92,33 +92,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
     }
 
-    public class AbstractSettings
-    {
-        public AbstractSettings()
-        {
-
-        }
-
-        public AbstractSettings(AbstractSettings abstractSettings)
-        {
-            if (abstractSettings == null)
-            {
-                throw new ArgumentNullException(nameof(abstractSettings));
-            }
-
-            foreach (var prop in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
-            {
-                prop.SetValue(this, prop.GetValue(abstractSettings));
-            }
-        }
-    }
-
-    public class CodeFormattingSettings : AbstractSettings
+    public class CodeFormattingSettings
     {
         /// <summary>
         /// Default constructor.
         /// </summary>
-        public CodeFormattingSettings() : base()
+        public CodeFormattingSettings()
         {
 
         }
@@ -128,9 +107,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         /// </summary>
         /// <param name="codeFormattingSettings">An instance of type CodeFormattingSettings.</param>
         public CodeFormattingSettings(CodeFormattingSettings codeFormattingSettings)
-            : base(codeFormattingSettings)
         {
+            if (codeFormattingSettings == null)
+            {
+                throw new ArgumentNullException(nameof(codeFormattingSettings));
+            }
 
+            foreach (var prop in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                prop.SetValue(this, prop.GetValue(codeFormattingSettings));
+            }
         }
 
         public bool OpenBraceOnSameLine { get; set; }
@@ -184,17 +170,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }}
             };
         }
-    }
-
-    public class EditorSettings : AbstractSettings
-    {
-        public EditorSettings() : base() { }
-
-        public EditorSettings(EditorSettings editorSettings) : base (editorSettings) { }
-
-        public int TabSize { get; set; }
-
-        public bool InsertSpaces { get; set; }
     }
 
     public class LanguageServerSettingsWrapper
