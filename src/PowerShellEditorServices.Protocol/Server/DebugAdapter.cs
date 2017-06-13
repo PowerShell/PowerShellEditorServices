@@ -643,7 +643,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             List<StackFrame> newStackFrames = new List<StackFrame>();
 
-            for (int i = 0; i < stackFrames.Length; i++)
+            int startFrameIndex = stackTraceParams.StartFrame ?? 0;
+            int maxFrameCount = stackFrames.Length;
+
+            // If the number of requested levels == 0 (or null), that means get all stack frames 
+            // after the specified startFrame index. Otherwise get all the stack frames.
+            int requestedFrameCount = (stackTraceParams.Levels ?? 0);
+            if (requestedFrameCount > 0)
+            {
+                maxFrameCount = Math.Min(maxFrameCount, startFrameIndex + requestedFrameCount);
+            }
+
+            for (int i = startFrameIndex; i < maxFrameCount; i++)
             {
                 // Create the new StackFrame object with an ID that can
                 // be referenced back to the current list of stack frames
@@ -656,7 +667,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await requestContext.SendResult(
                 new StackTraceResponseBody
                 {
-                    StackFrames = newStackFrames.ToArray()
+                    StackFrames = newStackFrames.ToArray(),
+                    TotalFrames = newStackFrames.Count
                 });
         }
 
@@ -767,8 +779,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             if (isFromRepl)
             {
-                // TODO: Do we send the input through the command handler?
-                // Send the input through the console service
                 var notAwaited =
                     this.editorSession
                         .PowerShellContext

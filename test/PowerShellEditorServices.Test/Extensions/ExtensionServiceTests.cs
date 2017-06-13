@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Components;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
@@ -46,7 +47,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
             this.extensionService.CommandUpdated += ExtensionService_ExtensionUpdated;
             this.extensionService.CommandRemoved += ExtensionService_ExtensionRemoved;
 
-            await this.extensionService.Initialize(this.editorOperations);
+            await this.extensionService.Initialize(
+                this.editorOperations,
+                new ComponentRegistry());
 
             var filePath = @"c:\Test\Test.ps1";
             this.currentFile = new ScriptFile(filePath, filePath, "This is a test file", new Version("5.0"));

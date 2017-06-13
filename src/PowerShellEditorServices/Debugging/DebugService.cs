@@ -603,7 +603,7 @@ namespace Microsoft.PowerShell.EditorServices
             // of command executions into string output.  However, if null is returned
             // then return null so that no output gets displayed.
             string outputString =
-                results != null ?
+                results != null && results.Any() ?
                     string.Join(Environment.NewLine, results) :
                     null;
 
@@ -842,8 +842,12 @@ namespace Microsoft.PowerShell.EditorServices
                 VariableContainerDetails localVariables =
                     await FetchVariableContainer(i.ToString(), autoVariables);
 
+                // When debugging, this is the best way I can find to get what is likely the workspace root.
+                // This is controlled by the "cwd:" setting in the launch config.
+                string workspaceRootPath = this.powerShellContext.InitialWorkingDirectory;
+
                 this.stackFrameDetails[i] =
-                    StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables);
+                    StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables, workspaceRootPath);
 
                 string stackFrameScriptPath = this.stackFrameDetails[i].ScriptPath;
                 if (scriptNameOverride != null &&

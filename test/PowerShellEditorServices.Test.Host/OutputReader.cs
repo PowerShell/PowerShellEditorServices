@@ -8,6 +8,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -37,7 +38,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 string nextOutputString = string.Empty;
 
                 // Wait no longer than 7 seconds for output to come back
-                CancellationTokenSource cancellationSource = new CancellationTokenSource(7000);
+                CancellationToken cancellationToken =
+                    Debugger.IsAttached
+                        ? CancellationToken.None
+                        : new CancellationTokenSource(7000).Token;
 
                 // Any lines in the buffer?
                 if (this.bufferedOutput.Count > 0)
@@ -56,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     // Execution reaches this point if a buffered line wasn't available
                     Task<OutputEventBody> outputTask =
                         this.outputQueue.DequeueAsync(
-                            cancellationSource.Token);
+                            cancellationToken);
                     OutputEventBody nextOutputEvent = await outputTask;
 
                     // Verify that the output is of the expected type

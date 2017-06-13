@@ -3,11 +3,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Components;
+using Microsoft.PowerShell.EditorServices.CodeLenses;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -190,6 +193,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     messageDispatcher,
                     this.logger);
 
+            protocolEndpoint.UnhandledException += ProtocolEndpoint_UnhandledException;
+
             this.editorSession =
                 CreateSession(
                     this.hostDetails,
@@ -248,6 +253,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     serverChannel,
                     messageDispatcher,
                     this.logger);
+
+            protocolEndpoint.UnhandledException += ProtocolEndpoint_UnhandledException;
 
             if (this.enableConsoleRepl)
             {
@@ -332,7 +339,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl
                     ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, this.logger)
-                    : new ProtocolPSHostUserInterface(powerShellContext, messageSender, messageHandlers, this.logger);
+                    : new ProtocolPSHostUserInterface(powerShellContext, messageSender, this.logger);
 
             EditorServicesPSHost psHost =
                 new EditorServicesPSHost(
@@ -345,6 +352,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
             powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
 
             editorSession.StartSession(powerShellContext, hostUserInterface);
+
+            // TODO: Move component registrations elsewhere!
+            editorSession.Components.Register(this.logger);
+            editorSession.Components.Register(messageHandlers);
+            editorSession.Components.Register(messageSender);
+            editorSession.Components.Register(powerShellContext);
+
+            CodeLensFeature.Create(editorSession.Components, editorSession);
+            DocumentSymbolFeature.Create(editorSession.Components, editorSession);
 
             return editorSession;
         }
@@ -363,7 +379,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl
                     ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, this.logger)
-                    : new ProtocolPSHostUserInterface(powerShellContext, messageSender, messageHandlers, this.logger);
+                    : new ProtocolPSHostUserInterface(powerShellContext, messageSender, this.logger);
 
             EditorServicesPSHost psHost =
                 new EditorServicesPSHost(
@@ -380,6 +396,15 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 editorOperations);
 
             return editorSession;
+        }
+
+        private void ProtocolEndpoint_UnhandledException(object sender, Exception e)
+        {
+            this.logger.Write(
+                LogLevel.Error,
+                "PowerShell Editor Services is terminating due to an unhandled exception, see previous logs for details.");
+
+            this.serverCompletedTask.SetException(e);
         }
 
 #if !CoreCLR

@@ -145,10 +145,20 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="lineNumber">The line number of the cursor for the given script</param>
         /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <param name="includeFunctionDefinitions">Includes full function definition ranges in the search.</param>
         /// <returns>SymbolReference of found symbol</returns>
-        static public SymbolReference FindSymbolAtPosition(Ast scriptAst, int lineNumber, int columnNumber)
+        static public SymbolReference FindSymbolAtPosition(
+            Ast scriptAst,
+            int lineNumber,
+            int columnNumber,
+            bool includeFunctionDefinitions = false)
         {
-            FindSymbolVisitor symbolVisitor = new FindSymbolVisitor(lineNumber, columnNumber);
+            FindSymbolVisitor symbolVisitor =
+                new FindSymbolVisitor(
+                    lineNumber,
+                    columnNumber,
+                    includeFunctionDefinitions);
+
             scriptAst.Visit(symbolVisitor);
 
             return symbolVisitor.FoundSymbolReference;

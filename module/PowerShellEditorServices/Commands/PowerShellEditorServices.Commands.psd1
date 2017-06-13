@@ -12,10 +12,10 @@
 RootModule = 'PowerShellEditorServices.Commands.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.0'
+ModuleVersion = '0.1.1'
 
 # ID used to uniquely identify this module
-GUID = '9ca15887-53a2-479a-9cda-48d26bcb6c47'
+GUID = '6064d846-0fa0-4b6d-afc1-11e5bed3c4a9'
 
 # Author of this module
 Author = 'Microsoft'
@@ -57,7 +57,7 @@ Description = 'Provides internal commands for PowerShell Editor Services that on
 # ScriptsToProcess = @()
 
 # Type files (.ps1xml) to be loaded when importing this module
-# TypesToProcess = @()
+TypesToProcess = @('PowerShellEditorServices.Commands.types.ps1xml')
 
 # Format files (.ps1xml) to be loaded when importing this module
 # FormatsToProcess = @()
@@ -66,7 +66,17 @@ Description = 'Provides internal commands for PowerShell Editor Services that on
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @('Register-EditorCommand', 'Unregister-EditorCommand')
+FunctionsToExport = @('Register-EditorCommand',
+                      'Unregister-EditorCommand',
+                      'Set-ScriptExtent',
+                      'Find-Ast',
+                      'Import-EditorCommand',
+                      'ConvertFrom-ScriptExtent',
+                      'ConvertTo-ScriptExtent',
+                      'Get-Token',
+                      'Join-ScriptExtent',
+                      'Test-ScriptExtent',
+                      'psedit')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()

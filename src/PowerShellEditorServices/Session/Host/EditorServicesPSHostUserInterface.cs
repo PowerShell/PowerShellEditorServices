@@ -720,8 +720,6 @@ namespace Microsoft.PowerShell.EditorServices
 
                 if (commandString != null)
                 {
-                    this.WriteOutput(string.Empty);
-
                     if (!string.IsNullOrWhiteSpace(commandString))
                     {
                         var unusedTask =
@@ -734,6 +732,10 @@ namespace Microsoft.PowerShell.EditorServices
                                 .ConfigureAwait(false);
 
                         break;
+                    }
+                    else
+                    {
+                        this.WriteOutput(string.Empty);
                     }
                 }
             }

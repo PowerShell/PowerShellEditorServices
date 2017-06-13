@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 
         public bool? CodeActionProvider { get; set; }
 
-        public bool? CodeLensProvider { get; set; }
+        public CodeLensOptions CodeLensProvider { get; set; }
 
         public bool? DocumentFormattingProvider { get; set; }
 

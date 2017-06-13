@@ -20,6 +20,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
+using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
+
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class LanguageServer
@@ -100,7 +102,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(SignatureHelpRequest.Type, this.HandleSignatureHelpRequest);
             this.messageHandlers.SetRequestHandler(DocumentHighlightRequest.Type, this.HandleDocumentHighlightRequest);
             this.messageHandlers.SetRequestHandler(HoverRequest.Type, this.HandleHoverRequest);
-            this.messageHandlers.SetRequestHandler(DocumentSymbolRequest.Type, this.HandleDocumentSymbolRequest);
             this.messageHandlers.SetRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
             this.messageHandlers.SetRequestHandler(CodeActionRequest.Type, this.HandleCodeActionRequest);
             this.messageHandlers.SetRequestHandler(DocumentFormattingRequest.Type, this.HandleDocumentFormattingRequest);
@@ -121,6 +122,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(NewProjectFromTemplateRequest.Type, this.HandleNewProjectFromTemplateRequest);
             this.messageHandlers.SetRequestHandler(GetProjectTemplatesRequest.Type, this.HandleGetProjectTemplatesRequest);
 
+            this.messageHandlers.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
+
             this.messageHandlers.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
             this.messageHandlers.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
 
@@ -133,7 +136,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
             this.editorSession.ExtensionService.Initialize(
-                this.editorOperations).Wait();
+                this.editorOperations,
+                this.editorSession.Components).Wait();
         }
 
         protected Task Stop()
@@ -191,6 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         WorkspaceSymbolProvider = true,
                         HoverProvider = true,
                         CodeActionProvider = true,
+                        CodeLensProvider = new CodeLensOptions { ResolveProvider = true },
                         CompletionProvider = new CompletionOptions
                         {
                             ResolveProvider = true,
@@ -950,7 +955,7 @@ function __Expand-Alias {
             await requestContext.SendResult(symbols);
         }
 
-        private SymbolKind GetSymbolKind(SymbolType symbolType)
+        public static SymbolKind GetSymbolKind(SymbolType symbolType)
         {
             switch (symbolType)
             {
@@ -964,7 +969,7 @@ function __Expand-Alias {
             }
         }
 
-        private string GetDecoratedSymbolName(SymbolReference symbolReference)
+        public static string GetDecoratedSymbolName(SymbolReference symbolReference)
         {
             string name = symbolReference.SymbolName;
 
@@ -1193,6 +1198,40 @@ function __Expand-Alias {
             });
         }
 
+        protected Task HandleEvaluateRequest(
+            DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
+            RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
+        {
+            // We don't await the result of the execution here because we want
+            // to be able to receive further messages while the current script
+            // is executing.  This important in cases where the pipeline thread
+            // gets blocked by something in the script like a prompt to the user.
+            var executeTask =
+                this.editorSession.PowerShellContext.ExecuteScriptString(
+                    evaluateParams.Expression,
+                    writeInputToHost: true,
+                    writeOutputToHost: true,
+                    addToHistory: true);
+
+            // Return the execution result after the task completes so that the
+            // caller knows when command execution completed.
+            executeTask.ContinueWith(
+                (task) =>
+                {
+                    // Return an empty result since the result value is irrelevant
+                    // for this request in the LanguageServer
+                    return
+                        requestContext.SendResult(
+                            new DebugAdapterMessages.EvaluateResponseBody
+                            {
+                                Result = "",
+                                VariablesReference = 0
+                            });
+                });
+
+            return Task.FromResult(true);
+        }
+
         #endregion
 
         #region Event Handlers
@@ -1292,7 +1331,7 @@ function __Expand-Alias {
 
         #region Helper Methods
 
-        private static string GetFileUri(string filePath)
+        public static string GetFileUri(string filePath)
         {
             // If the file isn't untitled, return a URI-style path
             return
@@ -1301,7 +1340,7 @@ function __Expand-Alias {
                     : filePath;
         }
 
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
+        public static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
         {
             return new Range
             {

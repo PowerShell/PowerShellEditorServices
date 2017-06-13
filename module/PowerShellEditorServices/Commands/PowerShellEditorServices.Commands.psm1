@@ -1,3 +1,7 @@
+Import-LocalizedData -BindingVariable Strings -FileName Strings -ErrorAction Ignore
 
-# TODO: Use a better script loading process here
-. $PSScriptRoot\Public\CmdletInterface.ps1
+Get-ChildItem -Path $PSScriptRoot\Public\*.ps1 | ForEach-Object {
+    . $PSItem.FullName
+}
+
+Export-ModuleMember -Function *-*

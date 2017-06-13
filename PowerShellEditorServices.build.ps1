@@ -100,6 +100,7 @@ task Clean {
     Remove-Item .\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
     Get-ChildItem -Recurse src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem .\module\PowerShellEditorServices\*.zip | Remove-Item -Force -ErrorAction Ignore
+    Get-ChildItem .\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
 }
 
 task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
@@ -198,6 +199,10 @@ task LayoutModule -After Build {
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
 }
 
+task BuildCmdletHelp {
+    New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US -Force
+}
+
 task PackageNuGet {
     exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj $script:TargetFrameworksParam }
     exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj $script:TargetFrameworksParam }
@@ -222,4 +227,4 @@ task UploadArtifacts -If ($script:IsCIBuild) {
 }
 
 # The default task is to run the entire CI build
-task . GetProductVersion, Clean, Build, TestPowerShellApi, CITest, PackageNuGet, PackageModule, UploadArtifacts
+task . GetProductVersion, Clean, Build, TestPowerShellApi, CITest, BuildCmdletHelp, PackageNuGet, PackageModule, UploadArtifacts

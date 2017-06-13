@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections;
@@ -33,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices
         private string mostRecentRequestFile;
         private Dictionary<String, List<String>> CmdletToAliasDictionary;
         private Dictionary<String, String> AliasToCmdletDictionary;
-        private DocumentSymbolProvider[] documentSymbolProviders;
+        private IDocumentSymbolProvider[] documentSymbolProviders;
 
         const int DefaultWaitTimeoutMilliseconds = 5000;
 
@@ -60,10 +61,10 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.CmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
             this.AliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
-            this.documentSymbolProviders = new DocumentSymbolProvider[]
+            this.documentSymbolProviders = new IDocumentSymbolProvider[]
             {
-                new ScriptDocumentSymbolProvider(),
-                new PSDDocumentSymbolProvider(),
+                new ScriptDocumentSymbolProvider(powerShellContext.LocalPowerShellVersion.Version),
+                new PsdDocumentSymbolProvider(),
                 new PesterDocumentSymbolProvider()
             };
         }
@@ -196,6 +197,35 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Finds a function definition in the script given a file location
+        /// </summary>
+        /// <param name="scriptFile">The details and contents of a open script file</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>A SymbolReference of the symbol found at the given location
+        /// or null if there is no symbol at that location
+        /// </returns>
+        public SymbolReference FindFunctionDefinitionAtLocation(
+            ScriptFile scriptFile,
+            int lineNumber,
+            int columnNumber)
+        {
+            SymbolReference symbolReference =
+                AstOperations.FindSymbolAtPosition(
+                    scriptFile.ScriptAst,
+                    lineNumber,
+                    columnNumber,
+                    includeFunctionDefinitions: true);
+
+            if (symbolReference != null)
+            {
+                symbolReference.FilePath = scriptFile.FilePath;
+            }
+
+            return symbolReference;
+        }
+
+        /// <summary>
         /// Finds the details of the symbol at the given script file location.
         /// </summary>
         /// <param name="scriptFile">The ScriptFile in which the symbol can be located.</param>
@@ -242,7 +272,7 @@ namespace Microsoft.PowerShell.EditorServices
             return new FindOccurrencesResult
             {
                 FoundOccurrences = documentSymbolProviders
-                    .SelectMany(p => p.GetSymbols(scriptFile, powerShellContext.LocalPowerShellVersion.Version))
+                    .SelectMany(p => p.ProvideDocumentSymbols(scriptFile))
                     .Select(reference =>
                         {
                             reference.SourceLine =

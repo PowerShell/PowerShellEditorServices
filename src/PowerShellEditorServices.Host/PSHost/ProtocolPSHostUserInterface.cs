@@ -7,10 +7,10 @@ using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -20,7 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         private IMessageSender messageSender;
         private OutputDebouncer outputDebouncer;
-        private TaskCompletionSource<string> commandLineInputTask;
 
         #endregion
 
@@ -34,16 +33,11 @@ namespace Microsoft.PowerShell.EditorServices.Host
         public ProtocolPSHostUserInterface(
             PowerShellContext powerShellContext,
             IMessageSender messageSender,
-            IMessageHandlers messageHandlers,
             ILogger logger)
             : base(powerShellContext, new SimplePSHostRawUserInterface(logger), logger)
         {
             this.messageSender = messageSender;
             this.outputDebouncer = new OutputDebouncer(messageSender);
-
-            messageHandlers.SetRequestHandler(
-                EvaluateRequest.Type,
-                this.HandleEvaluateRequest);
         }
 
         public void Dispose()
@@ -108,10 +102,12 @@ namespace Microsoft.PowerShell.EditorServices.Host
         {
         }
 
-        protected override async Task<string> ReadCommandLine(CancellationToken cancellationToken)
+        protected override Task<string> ReadCommandLine(CancellationToken cancellationToken)
         {
-            this.commandLineInputTask = new TaskCompletionSource<string>();
-            return await this.commandLineInputTask.Task;
+            // This currently does nothing because the "evaluate" request
+            // will cancel the current prompt and execute the user's
+            // script selection.
+            return new TaskCompletionSource<string>().Task;
         }
 
         protected override InputPromptHandler OnCreateInputPromptHandler()
@@ -122,67 +118,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
         protected override ChoicePromptHandler OnCreateChoicePromptHandler()
         {
             return new ProtocolChoicePromptHandler(this.messageSender, this, this, this.Logger);
-        }
-
-        protected async Task HandleEvaluateRequest(
-            EvaluateRequestArguments evaluateParams,
-            RequestContext<EvaluateResponseBody> requestContext)
-        {
-            // TODO: This needs to respect debug mode!
-
-            var evaluateResponse =
-                new EvaluateResponseBody
-                {
-                    Result = "",
-                    VariablesReference = 0
-                };
-
-            if (this.commandLineInputTask != null)
-            {
-                this.commandLineInputTask.SetResult(evaluateParams.Expression);
-                await requestContext.SendResult(evaluateResponse);
-            }
-            else
-            {
-                // Check for special commands
-                if (string.Equals("!ctrlc", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
-                {
-                    this.powerShellContext.AbortExecution();
-                    await requestContext.SendResult(evaluateResponse);
-                }
-                else if (string.Equals("!break", evaluateParams.Expression, StringComparison.CurrentCultureIgnoreCase))
-                {
-                    // TODO: Need debugger commands interface
-                    //editorSession.DebugService.Break();
-                    await requestContext.SendResult(evaluateResponse);
-                }
-                else
-                {
-                    // We don't await the result of the execution here because we want
-                    // to be able to receive further messages while the current script
-                    // is executing.  This important in cases where the pipeline thread
-                    // gets blocked by something in the script like a prompt to the user.
-                    var executeTask =
-                        this.powerShellContext.ExecuteScriptString(
-                            evaluateParams.Expression,
-                            writeInputToHost: true,
-                            writeOutputToHost: true,
-                            addToHistory: true);
-
-                    // Return the execution result after the task completes so that the
-                    // caller knows when command execution completed.
-                    Task unusedTask =
-                        executeTask.ContinueWith(
-                            (task) =>
-                            {
-                                // Return an empty result since the result value is irrelevant
-                                // for this request in the LanguageServer
-                                return
-                                    requestContext.SendResult(
-                                        evaluateResponse);
-                            });
-                }
-            }
         }
     }
 }
