@@ -33,6 +33,8 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <returns>The resolved file path.</returns>
         string GetWorkspaceRelativePath(string filePath);
 
+        Task NewFile();
+
         /// <summary>
         /// Causes a file to be opened in the editor.  If the file is
         /// already open, the editor must switch to the file.

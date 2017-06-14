@@ -174,12 +174,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
 
     public class TestEditorOperations : IEditorOperations
     {
+        
         public string GetWorkspacePath()
         {
             throw new NotImplementedException();
         }
 
         public string GetWorkspaceRelativePath(string filePath)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task NewFile()
         {
             throw new NotImplementedException();
         }
