@@ -40,6 +40,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         #region Public Methods
 
+        /// <summary>
+        /// Creates a new file in the editor
+        /// </summary>
         public void NewFile()
         {
             this.editorOperations.NewFile().Wait();
