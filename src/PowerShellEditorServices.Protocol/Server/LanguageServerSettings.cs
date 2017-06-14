@@ -22,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public LanguageServerSettings()
         {
             this.ScriptAnalysis = new ScriptAnalysisSettings();
+            this.CodeFormatting = new CodeFormattingSettings();
         }
 
         public void Update(

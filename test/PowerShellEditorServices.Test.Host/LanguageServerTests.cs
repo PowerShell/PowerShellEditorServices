@@ -879,7 +879,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                             ScriptAnalysis = new ScriptAnalysisSettings
                             {
                                 Enable = false
-                            }
+                            },
+                            CodeFormatting = new CodeFormattingSettings()
                         }
                     }
                 });
