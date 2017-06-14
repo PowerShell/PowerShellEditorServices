@@ -101,6 +101,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         clientContext.SelectionRange.End.Character + 1));
         }
 
+        public Task NewFile()
+        {
+            return
+                this.messageSender.SendRequest(
+                    NewFileRequest.Type,
+                    null,
+                    true);
+        }
+
         public Task OpenFile(string filePath)
         {
             return

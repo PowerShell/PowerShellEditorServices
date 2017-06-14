@@ -40,6 +40,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         #region Public Methods
 
+        public void NewFile()
+        {
+            this.editorOperations.NewFile().Wait();
+        }
+
         /// <summary>
         /// Opens a file in the workspace.  If the file is already open
         /// its buffer will be made active.

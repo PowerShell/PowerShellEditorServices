@@ -101,6 +101,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public Position CursorPosition { get; set; }
     }
 
+    public class NewFileRequest
+    {
+        public static readonly
+            RequestType<string, EditorCommandResponse, object, object> Type =
+            RequestType<string, EditorCommandResponse, object, object>.Create("editor/newFile");
+    }
+
     public class OpenFileRequest
     {
         public static readonly
