@@ -104,6 +104,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(HoverRequest.Type, this.HandleHoverRequest);
             this.messageHandlers.SetRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
             this.messageHandlers.SetRequestHandler(CodeActionRequest.Type, this.HandleCodeActionRequest);
+            this.messageHandlers.SetRequestHandler(DocumentFormattingRequest.Type, this.HandleDocumentFormattingRequest);
+            this.messageHandlers.SetRequestHandler(
+                DocumentRangeFormattingRequest.Type,
+                this.HandleDocumentRangeFormattingRequest);
 
             this.messageHandlers.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
             this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
@@ -123,7 +127,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
             this.messageHandlers.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
 
-            this.messageHandlers.SetRequestHandler(ScriptFileMarkersRequest.Type, this.HandleScriptFileMarkersRequest);
             this.messageHandlers.SetRequestHandler(ScriptRegionRequest.Type, this.HandleGetFormatScriptRegionRequest);
 
             this.messageHandlers.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequest);
@@ -200,7 +203,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         SignatureHelpProvider = new SignatureHelpOptions
                         {
                             TriggerCharacters = new string[] { " " } // TODO: Other characters here?
-                        }
+                        },
+                        DocumentFormattingProvider = false
                     }
                 });
         }
@@ -289,19 +293,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await requestContext.SendResult(new ScriptRegionRequestResult
             {
                 scriptRegion = scriptRegion
-            });
-        }
-
-        private async Task HandleScriptFileMarkersRequest(
-            ScriptFileMarkerRequestParams requestParams,
-            RequestContext<ScriptFileMarkerRequestResultParams> requestContext)
-        {
-            var markers = await editorSession.AnalysisService.GetSemanticMarkersAsync(
-                editorSession.Workspace.GetFile(requestParams.fileUri),
-                AnalysisService.GetPSSASettingsHashtable(requestParams.settings));
-            await requestContext.SendResult(new ScriptFileMarkerRequestResultParams
-            {
-                markers = markers
             });
         }
 
@@ -541,7 +532,7 @@ function __Expand-Alias {
 
                 changedFile.ApplyChange(
                     GetFileChangeDetails(
-                        textChange.Range.Value,
+                        textChange.Range,
                         textChange.Text));
 
                 changedFiles.Add(changedFile);
@@ -873,7 +864,7 @@ function __Expand-Alias {
                         textDocumentPositionParams.Position.Character + 1);
 
             List<MarkedString> symbolInfo = new List<MarkedString>();
-            Range? symbolRange = null;
+            Range symbolRange = null;
 
             if (symbolDetails != null)
             {
@@ -1155,7 +1146,45 @@ function __Expand-Alias {
                 codeActionCommands.ToArray());
         }
 
-       protected Task HandleEvaluateRequest(
+        protected async Task HandleDocumentFormattingRequest(
+            DocumentFormattingParams formattingParams,
+            RequestContext<TextEdit[]> requestContext)
+        {
+            var result = await Format(
+                formattingParams.TextDocument.Uri,
+                formattingParams.options,
+                null);
+
+            await requestContext.SendResult(new TextEdit[1]
+            {
+                new TextEdit
+                {
+                    NewText = result.Item1,
+                    Range = result.Item2
+                },
+            });
+        }
+
+        protected async Task HandleDocumentRangeFormattingRequest(
+            DocumentRangeFormattingParams formattingParams,
+            RequestContext<TextEdit[]> requestContext)
+        {
+            var result = await Format(
+                formattingParams.TextDocument.Uri,
+                formattingParams.Options,
+                formattingParams.Range);
+
+            await requestContext.SendResult(new TextEdit[1]
+            {
+                new TextEdit
+                {
+                    NewText = result.Item1,
+                    Range = result.Item2
+                },
+            });
+        }
+
+        protected Task HandleEvaluateRequest(
             DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
             RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
         {
@@ -1192,6 +1221,49 @@ function __Expand-Alias {
         #endregion
 
         #region Event Handlers
+
+        private async Task<Tuple<string, Range>> Format(
+            string documentUri,
+            FormattingOptions options,
+            Range range)
+        {
+            var scriptFile = editorSession.Workspace.GetFile(documentUri);
+            var pssaSettings = currentSettings.CodeFormatting.GetPSSASettingsHashTable(
+                options.TabSize,
+                options.InsertSpaces);
+
+            // TODO raise an error event in case format returns null;
+            string formattedScript;
+            Range editRange;
+            var rangeList = range == null ? null : new int[] {
+                range.Start.Line + 1,
+                range.Start.Character + 1,
+                range.End.Line + 1,
+                range.End.Character + 1};
+            var extent = scriptFile.ScriptAst.Extent;
+
+            // todo create an extension for converting range to script extent
+            editRange = new Range
+            {
+                Start = new Position
+                {
+                    Line = extent.StartLineNumber - 1,
+                    Character = extent.StartColumnNumber - 1
+                },
+                End = new Position
+                {
+                    Line = extent.EndLineNumber - 1,
+                    Character = extent.EndColumnNumber - 1
+                }
+            };
+
+            formattedScript = await editorSession.AnalysisService.Format(
+                scriptFile.Contents,
+                pssaSettings,
+                rangeList);
+            formattedScript = formattedScript ?? scriptFile.Contents;
+            return Tuple.Create(formattedScript, editRange);
+        }
 
         private async void PowerShellContext_RunspaceChanged(object sender, Session.RunspaceChangedEventArgs e)
         {

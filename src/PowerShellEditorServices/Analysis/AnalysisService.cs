@@ -129,6 +129,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.analysisRunspacePool.Open();
 
                 ActiveRules = IncludedRules.ToArray();
+                EnumeratePSScriptAnalyzerCmdlets();
                 EnumeratePSScriptAnalyzerRules();
             }
             catch (Exception e)
@@ -246,6 +247,37 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Format a given script text with default codeformatting settings.
+        /// </summary>
+        /// <param name="scriptDefinition">Script text to be formatted</param>
+        /// <param name="settings">ScriptAnalyzer settings</param>
+        /// <param name="rangeList">The range within which formatting should be applied.</param>
+        /// <returns>The formatted script text.</returns>
+        public async Task<string> Format(
+            string scriptDefinition,
+            Hashtable settings,
+            int[] rangeList)
+        {
+            // we cannot use Range type therefore this workaround of using -1 default value
+            if (!hasScriptAnalyzerModule)
+            {
+                return null;
+            }
+
+            var argsDict = new Dictionary<string, object> {
+                    {"ScriptDefinition", scriptDefinition},
+                    {"Settings", settings}
+            };
+            if (rangeList != null)
+            {
+                argsDict.Add("Range", rangeList);
+            }
+
+            var result = await InvokePowerShellAsync("Invoke-Formatter", argsDict);
+            return result?.Select(r => r?.ImmediateBaseObject as string).FirstOrDefault();
+        }
+
+        /// <summary>
         /// Disposes the runspace being used by the analysis service.
         /// </summary>
         public void Dispose()
@@ -332,6 +364,29 @@ namespace Microsoft.PowerShell.EditorServices
                     LogLevel.Normal,
                     "PSScriptAnalyzer module was not found.");
                 return null;
+            }
+        }
+
+        private void EnumeratePSScriptAnalyzerCmdlets()
+        {
+            if (hasScriptAnalyzerModule)
+            {
+                var sb = new StringBuilder();
+                var commands = InvokePowerShell(
+                "Get-Command",
+                new Dictionary<string, object>
+                {
+                    {"Module", "PSScriptAnalyzer"}
+                });
+
+                var commandNames = commands?
+                    .Select(c => c.ImmediateBaseObject as CmdletInfo)
+                    .Where(c => c != null)
+                    .Select(c => c.Name) ?? Enumerable.Empty<string>();
+
+                sb.AppendLine("The following cmdlets are available in the imported PSScriptAnalyzer module:");
+                sb.AppendLine(String.Join(Environment.NewLine, commandNames.Select(s => "    " + s)));
+                this.logger.Write(LogLevel.Verbose, sb.ToString());
             }
         }
 

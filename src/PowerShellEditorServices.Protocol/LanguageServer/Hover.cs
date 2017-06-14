@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     {
         public MarkedString[] Contents { get; set; }
 
-        public Range? Range { get; set; }
+        public Range Range { get; set; }
     }
 
     public class HoverRequest

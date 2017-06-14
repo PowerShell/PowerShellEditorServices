@@ -5,6 +5,9 @@
 
 using System.IO;
 using Microsoft.PowerShell.EditorServices.Utility;
+using System;
+using System.Reflection;
+using System.Collections;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
@@ -14,9 +17,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         public ScriptAnalysisSettings ScriptAnalysis { get; set; }
 
+        public CodeFormattingSettings CodeFormatting { get; set; }
+
         public LanguageServerSettings()
         {
             this.ScriptAnalysis = new ScriptAnalysisSettings();
+            this.CodeFormatting = new CodeFormattingSettings();
         }
 
         public void Update(
@@ -31,6 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     settings.ScriptAnalysis,
                     workspaceRootPath,
                     logger);
+                this.CodeFormatting = new CodeFormattingSettings(settings.CodeFormatting);
             }
         }
     }
@@ -86,12 +93,92 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
     }
 
-    public class LanguageServerSettingsWrapper
+    public class CodeFormattingSettings
     {
-        // NOTE: This property is capitalized as 'Powershell' because the
-        // mode name sent from the client is written as 'powershell' and
-        // JSON.net is using camelCasing.
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
+        public CodeFormattingSettings()
+        {
 
-        public LanguageServerSettings Powershell { get; set; }
+        }
+
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
+        /// <param name="codeFormattingSettings">An instance of type CodeFormattingSettings.</param>
+        public CodeFormattingSettings(CodeFormattingSettings codeFormattingSettings)
+        {
+            if (codeFormattingSettings == null)
+            {
+                throw new ArgumentNullException(nameof(codeFormattingSettings));
+            }
+
+            foreach (var prop in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                prop.SetValue(this, prop.GetValue(codeFormattingSettings));
+            }
+        }
+
+        public bool OpenBraceOnSameLine { get; set; }
+        public bool NewLineAfterOpenBrace { get; set; }
+        public bool NewLineAfterCloseBrace { get; set; }
+        public bool WhitespaceBeforeOpenBrace { get; set; }
+        public bool WhitespaceBeforeOpenParen { get; set; }
+        public bool WhitespaceAroundOperator { get; set; }
+        public bool WhitespaceAfterSeparator { get; set; }
+        public bool IgnoreOneLineBlock { get; set; }
+        public bool AlignPropertyValuePairs { get; set; }
+
+        public Hashtable GetPSSASettingsHashTable(int tabSize, bool insertSpaces)
+        {
+            return new Hashtable
+            {
+                {"IncludeRules", new string[] {
+                     "PSPlaceCloseBrace",
+                     "PSPlaceOpenBrace",
+                     "PSUseConsistentWhitespace",
+                     "PSUseConsistentIndentation",
+                     "PSAlignAssignmentStatement"
+                }},
+                {"Rules", new Hashtable {
+                    {"PSPlaceOpenBrace", new Hashtable {
+                        {"Enable", true},
+                        {"OnSameLine", OpenBraceOnSameLine},
+                        {"NewLineAfter", NewLineAfterOpenBrace},
+                        {"IgnoreOneLineBlock", IgnoreOneLineBlock}
+                    }},
+                    {"PSPlaceCloseBrace", new Hashtable {
+                        {"Enable", true},
+                        {"NewLineAfter", NewLineAfterCloseBrace},
+                        {"IgnoreOneLineBlock", IgnoreOneLineBlock}
+                    }},
+                    {"PSUseConsistentIndentation", new Hashtable {
+                        {"Enable", true},
+                        {"IndentationSize", tabSize}
+                    }},
+                    {"PSUseConsistentWhitespace", new Hashtable {
+                        {"Enable", true},
+                        {"CheckOpenBrace", WhitespaceBeforeOpenBrace},
+                        {"CheckOpenParen", WhitespaceBeforeOpenParen},
+                        {"CheckOperator", WhitespaceAroundOperator},
+                        {"CheckSeparator", WhitespaceAfterSeparator}
+                    }},
+                    {"PSAlignAssignmentStatement", new Hashtable {
+                        {"Enable", true},
+                        {"CheckHashtable", AlignPropertyValuePairs}
+                    }},
+                }}
+            };
+        }
     }
-}
+
+    public class LanguageServerSettingsWrapper
+        {
+            // NOTE: This property is capitalized as 'Powershell' because the
+            // mode name sent from the client is written as 'powershell' and
+            // JSON.net is using camelCasing.
+
+            public LanguageServerSettings Powershell { get; set; }
+        }
+    }
