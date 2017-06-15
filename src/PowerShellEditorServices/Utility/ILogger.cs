@@ -17,6 +17,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     public enum LogLevel
     {
         /// <summary>
+        /// Indicates a diagnostic log message.
+        /// </summary>
+        Diagnostic,
+
+        /// <summary>
         /// Indicates a verbose log message.
         /// </summary>
         Verbose,

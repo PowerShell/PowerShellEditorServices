@@ -58,9 +58,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 this.messageSerializer.SerializeMessage(
                     messageToWrite);
 
-            // Log the JSON representation of the message
             this.logger.Write(
                 LogLevel.Verbose,
+                $"Writing {messageToWrite.MessageType} '{messageToWrite.Method}'" +
+                (!string.IsNullOrEmpty(messageToWrite.Id) ? $" with id {messageToWrite.Id}" : string.Empty));
+
+            // Log the JSON representation of the message
+            this.logger.Write(
+                LogLevel.Diagnostic,
                 string.Format(
                     "WRITE MESSAGE:\r\n\r\n{0}",
                     JsonConvert.SerializeObject(
