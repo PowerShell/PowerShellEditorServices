@@ -112,13 +112,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
             // Load the message
             this.logger.Write(
-                LogLevel.Verbose,
+                LogLevel.Diagnostic,
                 string.Format(
                     "READ MESSAGE:\r\n\r\n{0}",
                     messageObject.ToString(Formatting.Indented)));
 
             // Return the parsed message
-            return this.messageSerializer.DeserializeMessage(messageObject);
+            Message parsedMessage = this.messageSerializer.DeserializeMessage(messageObject);
+
+            this.logger.Write(
+                LogLevel.Verbose,
+                $"Received {parsedMessage.MessageType} '{parsedMessage.Method}'" +
+                (!string.IsNullOrEmpty(parsedMessage.Id) ? $" with id {parsedMessage.Id}" : string.Empty));
+
+            return parsedMessage;
         }
 
         #endregion
