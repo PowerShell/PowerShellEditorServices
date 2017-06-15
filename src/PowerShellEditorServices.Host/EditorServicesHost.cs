@@ -256,44 +256,44 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
             protocolEndpoint.UnhandledException += ProtocolEndpoint_UnhandledException;
 
-            if (this.enableConsoleRepl)
+            bool ownsEditorSession = this.editorSession == null;
+
+            if (ownsEditorSession)
             {
-                this.debugAdapter =
-                    new DebugAdapter(
-                        this.editorSession,
-                        false,
-                        messageDispatcher,
-                        protocolEndpoint,
-                        this.logger);
-            }
-            else
-            {
-                EditorSession debugSession =
+                this.editorSession =
                     this.CreateDebugSession(
                         this.hostDetails,
                         profilePaths,
                         protocolEndpoint,
                         messageDispatcher,
                         this.languageServer?.EditorOperations,
-                        false);
-
-                this.debugAdapter =
-                    new DebugAdapter(
-                        debugSession,
-                        true,
-                        messageDispatcher,
-                        protocolEndpoint,
-                        this.logger);
+                        this.enableConsoleRepl);
             }
+
+            this.debugAdapter =
+                new DebugAdapter(
+                    this.editorSession,
+                    ownsEditorSession,
+                    messageDispatcher,
+                    protocolEndpoint,
+                    this.logger);
 
             this.debugAdapter.SessionEnded +=
                 (obj, args) =>
                 {
-                    this.logger.Write(
-                        LogLevel.Normal,
-                        "Previous debug session ended, restarting debug service listener...");
+                    if (!ownsEditorSession)
+                    {
+                        this.logger.Write(
+                            LogLevel.Normal,
+                            "Previous debug session ended, restarting debug service listener...");
 
-                    this.debugServiceListener.Start();
+                        this.debugServiceListener.Start();
+                    }
+                    else
+                    {
+                        // Exit the host process
+                        this.serverCompletedTask.SetResult(true);
+                    }
                 };
 
             this.debugAdapter.Start();

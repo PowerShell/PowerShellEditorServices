@@ -49,7 +49,7 @@ function Start-EditorServicesHost {
         [switch]
         $EnableConsoleRepl,
 
-        [string]
+        [switch]
         $DebugServiceOnly,
 
         [string[]]
