@@ -93,6 +93,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
     }
 
+    public enum CodeFormattingPreset
+    {
+        Custom,
+        OTBS,
+        Allman
+    }
+
     public class CodeFormattingSettings
     {
         /// <summary>
@@ -120,6 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
         }
 
+        public CodeFormattingPreset Preset { get; set; }
         public bool OpenBraceOnSameLine { get; set; }
         public bool NewLineAfterOpenBrace { get; set; }
         public bool NewLineAfterCloseBrace { get; set; }
