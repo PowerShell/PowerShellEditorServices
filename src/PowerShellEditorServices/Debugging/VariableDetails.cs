@@ -87,7 +87,10 @@ namespace Microsoft.PowerShell.EditorServices
             this.Id = -1; // Not been assigned a variable reference id yet
             this.Name = name;
             this.IsExpandable = GetIsExpandable(value);
-            this.ValueString = GetValueString(value, this.IsExpandable);
+
+            string typeName;
+            this.ValueString = GetValueStringAndType(value, this.IsExpandable, out typeName);
+            this.Type = typeName;
         }
 
         #endregion
@@ -154,23 +157,27 @@ namespace Microsoft.PowerShell.EditorServices
                 !(valueObject is UnableToRetrievePropertyMessage);
         }
 
-        private static string GetValueString(object value, bool isExpandable)
+        private static string GetValueStringAndType(object value, bool isExpandable, out string typeName)
         {
-            string valueString;
+            string valueString = null;
+            typeName = null;
 
             if (value == null)
             {
                 // Set to identifier recognized by PowerShell to make setVariable from the debug UI more natural.
-                valueString = "$null";
+                return "$null";
             }
-            else if (value is bool)
+
+            Type objType = value.GetType();
+            typeName = $"[{objType.FullName}]";
+
+            if (value is bool)
             {
                 // Set to identifier recognized by PowerShell to make setVariable from the debug UI more natural.
                 valueString = (bool) value ? "$true" : "$false";
             }
             else if (isExpandable)
             {
-                Type objType = value.GetType();
 
                 // Get the "value" for an expandable object.
                 if (value is DictionaryEntry)
@@ -181,12 +188,11 @@ namespace Microsoft.PowerShell.EditorServices
                         string.Format(
                             "[{0}, {1}]",
                             entry.Key,
-                            GetValueString(entry.Value, GetIsExpandable(entry.Value)));
+                            GetValueStringAndType(entry.Value, GetIsExpandable(entry.Value), out typeName));
                 }
                 else
                 {
                     string valueToString = value.SafeToString();
-
                     if (valueToString.Equals(objType.ToString()))
                     {
                         // If the ToString() matches the type name, then display the type
@@ -208,7 +214,7 @@ namespace Microsoft.PowerShell.EditorServices
                             shortTypeName = InsertDimensionSize(shortTypeName, collection.Count);
                         }
 
-                        valueString = "[" + shortTypeName + "]";
+                        valueString = $"[{shortTypeName}]";
                     }
                     else
                     {
