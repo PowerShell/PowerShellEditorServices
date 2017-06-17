@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.9
+VisualStudioVersion = 15.0.26430.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F594E7FD-1E72-4E51-A496-B019C2BA3180}"
 EndProject
@@ -25,6 +25,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerShellEditorServices.Protocol", "src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj", "{F8A0946A-5D25-4651-8079-B8D5776916FB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerShellEditorServices.Test.Protocol", "test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj", "{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerShellEditorServices.VSCode", "src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj", "{3B38E8DA-8BFF-4264-AF16-47929E6398A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -120,6 +122,18 @@ Global
 		{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4}.Release|x64.Build.0 = Release|Any CPU
 		{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4}.Release|x86.ActiveCfg = Release|Any CPU
 		{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4}.Release|x86.Build.0 = Release|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Debug|x64.Build.0 = Debug|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Debug|x86.Build.0 = Debug|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Release|x64.ActiveCfg = Release|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Release|x64.Build.0 = Release|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Release|x86.ActiveCfg = Release|Any CPU
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -132,5 +146,6 @@ Global
 		{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 		{F8A0946A-5D25-4651-8079-B8D5776916FB} = {F594E7FD-1E72-4E51-A496-B019C2BA3180}
 		{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
+		{3B38E8DA-8BFF-4264-AF16-47929E6398A3} = {F594E7FD-1E72-4E51-A496-B019C2BA3180}
 	EndGlobalSection
 EndGlobal

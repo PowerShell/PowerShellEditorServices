@@ -159,6 +159,7 @@ $editorServicesHost =
         -HostVersion $HostVersion `
         -LogPath $LogPath `
         -LogLevel $LogLevel `
+        -AdditionalModules @() `
         -LanguageServicePort $languageServicePort `
         -DebugServicePort $debugServicePort `
         -BundledModulesPath $BundledModulesPath `
