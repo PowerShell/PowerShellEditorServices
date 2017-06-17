@@ -8,6 +8,8 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Reflection;
 using System.Collections;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
@@ -93,10 +95,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
     }
 
+    /// <summary>
+    /// code formatting presets
+    /// </summary>
     public enum CodeFormattingPreset
     {
+
+        /// <summary>
+        /// Use the formatting settings as-is.
+        /// </summary>
         Custom,
+
+        /// <summary>
+        /// Configure the formatting settings to resemble the one true brace style variant of KR indent/brace style.
+        /// </summary>
         OTBS,
+
+        /// <summary>
+        /// Configure the formatting settings to resemble the Allman indent/brace style.
+        /// </summary>
         Allman
     }
 
@@ -104,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         /// <summary>
         /// Default constructor.
-        /// </summary>
+        /// </summary>>
         public CodeFormattingSettings()
         {
 
@@ -138,7 +155,43 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public bool IgnoreOneLineBlock { get; set; }
         public bool AlignPropertyValuePairs { get; set; }
 
-        public Hashtable GetPSSASettingsHashTable(int tabSize, bool insertSpaces)
+
+        /// <summary>
+        /// Get the settings hashtable that will be consumed by PSScriptAnalyzer.
+        /// </summary>
+        /// <param name="tabSize">The tab size in the number spaces.</param>
+        /// <param name="insertSpaces">If true, insert spaces otherwise insert tabs for indentation.</param>
+        /// <returns></returns>
+        public Hashtable GetPSSASettingsHashtable(
+            int tabSize,
+            bool insertSpaces)
+        {
+            var settings = GetCustomPSSASettingsHashtable(tabSize, insertSpaces);
+            var ruleSettings = (Hashtable)(settings["Rules"]);
+            var closeBraceSettings = (Hashtable)ruleSettings["PSPlaceCloseBrace"];
+            var openBraceSettings = (Hashtable)ruleSettings["PSPlaceOpenBrace"];
+            switch(Preset)
+            {
+                case CodeFormattingPreset.Allman:
+                    openBraceSettings["OnSameLine"] = false;
+                    openBraceSettings["NewLineAfter"] = true;
+                    closeBraceSettings["NewLineAfter"] = true;
+                    break;
+
+                case CodeFormattingPreset.OTBS:
+                    openBraceSettings["OnSameLine"] = true;
+                    openBraceSettings["NewLineAfter"] = true;
+                    closeBraceSettings["NewLineAfter"] = false;
+                    break;
+
+                default:
+                    break;
+            }
+
+            return settings;
+        }
+
+        private Hashtable GetCustomPSSASettingsHashtable(int tabSize, bool insertSpaces)
         {
             return new Hashtable
             {
