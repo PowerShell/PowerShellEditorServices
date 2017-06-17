@@ -96,11 +96,11 @@ task Restore -If { "Restore" -in $BuildTask -or (NeedsRestore(".\src")) -or (Nee
 
 task Clean {
     exec { & $script:dotnetExe clean }
-    Remove-Item .\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
-    Remove-Item .\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
-    Get-ChildItem -Recurse src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
-    Get-ChildItem .\module\PowerShellEditorServices*.zip | Remove-Item -Force -ErrorAction Ignore
-    Get-ChildItem .\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
+    Remove-Item $PSScriptRoot\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
+    Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
+    Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
+    Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-Item -Force -ErrorAction Ignore
+    Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
 }
 
 task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
@@ -224,7 +224,7 @@ task PackageNuGet {
 task PackageModule {
     [System.IO.Compression.ZipFile]::CreateFromDirectory(
         "$PSScriptRoot/module/",
-        "$PSScriptRoot/module/PowerShellEditorServices-$($script:FullVersion).zip",
+        "$PSScriptRoot/PowerShellEditorServices-$($script:FullVersion).zip",
         [System.IO.Compression.CompressionLevel]::Optimal,
         $false)
 }
@@ -234,7 +234,7 @@ task UploadArtifacts -If ($script:IsCIBuild) {
         Push-AppveyorArtifact .\src\PowerShellEditorServices\bin\$Configuration\Microsoft.PowerShell.EditorServices.$($script:FullVersion).nupkg
         Push-AppveyorArtifact .\src\PowerShellEditorServices.Protocol\bin\$Configuration\Microsoft.PowerShell.EditorServices.Protocol.$($script:FullVersion).nupkg
         Push-AppveyorArtifact .\src\PowerShellEditorServices.Host\bin\$Configuration\Microsoft.PowerShell.EditorServices.Host.$($script:FullVersion).nupkg
-        Push-AppveyorArtifact .\module\PowerShellEditorServices-$($script:FullVersion).zip
+        Push-AppveyorArtifact .\PowerShellEditorServices-$($script:FullVersion).zip
     }
 }
 
