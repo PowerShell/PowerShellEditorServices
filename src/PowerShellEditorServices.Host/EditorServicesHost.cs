@@ -43,6 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private ProfilePaths profilePaths;
         private string bundledModulesPath;
         private DebugAdapter debugAdapter;
+        private string[] additionalModules;
         private EditorSession editorSession;
         private HashSet<string> featureFlags;
         private LanguageServer languageServer;
@@ -78,6 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             string bundledModulesPath,
             bool enableConsoleRepl,
             bool waitForDebugger,
+            string[] additionalModules,
             string[] featureFlags)
         {
             Validate.IsNotNull(nameof(hostDetails), hostDetails);
@@ -85,6 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.hostDetails = hostDetails;
             this.enableConsoleRepl = enableConsoleRepl;
             this.bundledModulesPath = bundledModulesPath;
+            this.additionalModules = additionalModules ?? new string[0];
             this.featureFlags = new HashSet<string>(featureFlags ?? new string[0]);
 
 #if DEBUG
@@ -216,6 +219,17 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     @"..\..\Commands"));
 
             this.languageServer.Start();
+
+            // TODO: This can be moved to the point after the $psEditor object
+            // gets initialized when that is done earlier than LanguageServer.Initialize
+            foreach (string module in this.additionalModules)
+            {
+                await this.editorSession.PowerShellContext.ExecuteCommand<System.Management.Automation.PSObject>(
+                    new System.Management.Automation.PSCommand().AddCommand("Import-Module").AddArgument(module),
+                    false,
+                    true);
+            }
+
             protocolEndpoint.Start();
         }
 

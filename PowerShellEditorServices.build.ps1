@@ -22,7 +22,6 @@ task SetupDotNet -Before Restore, Clean, Build, TestHost, TestServer, TestProtoc
 
     $requiredSdkVersion = "1.0.0"
 
-    $needsInstall = $true
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
     $originalDotNetExePath = $dotnetExePath
@@ -98,8 +97,9 @@ task Restore -If { "Restore" -in $BuildTask -or (NeedsRestore(".\src")) -or (Nee
 task Clean {
     exec { & $script:dotnetExe clean }
     Remove-Item .\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
+    Remove-Item .\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
     Get-ChildItem -Recurse src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
-    Get-ChildItem .\module\PowerShellEditorServices\*.zip | Remove-Item -Force -ErrorAction Ignore
+    Get-ChildItem .\module\PowerShellEditorServices*.zip | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem .\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
 }
 
@@ -144,6 +144,7 @@ task TestPowerShellApi -If { !$script:IsUnix } {
 
 task Build {
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
 }
 
 function UploadTestLogs {
@@ -188,15 +189,26 @@ task CITest (job Test -Safe), {
 }
 
 task LayoutModule -After Build {
+    # Lay out the PowerShellEditorServices module's binaries
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\ -Type Directory | Out-Null
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop -Type Directory | Out-Null
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Core -Type Directory | Out-Null
 
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
     if (!$script:IsUnix) {
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
     }
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+
+    # Lay out the PowerShellEditorServices.VSCode module's binaries
+    New-Item -Force $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\ -Type Directory | Out-Null
+    New-Item -Force $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop -Type Directory | Out-Null
+    New-Item -Force $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core -Type Directory | Out-Null
+
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
+    if (!$script:IsUnix) {
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
+    }
 }
 
 task BuildCmdletHelp {
@@ -211,10 +223,10 @@ task PackageNuGet {
 
 task PackageModule {
     [System.IO.Compression.ZipFile]::CreateFromDirectory(
-        "$PSScriptRoot/module/PowerShellEditorServices",
+        "$PSScriptRoot/module/",
         "$PSScriptRoot/module/PowerShellEditorServices-$($script:FullVersion).zip",
         [System.IO.Compression.CompressionLevel]::Optimal,
-        $true)
+        $false)
 }
 
 task UploadArtifacts -If ($script:IsCIBuild) {
