@@ -96,25 +96,30 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     }
 
     /// <summary>
-    /// code formatting presets
+    /// Code formatting presets. 
+    /// See https://en.wikipedia.org/wiki/Indent_style for details on indent and brace styles.
     /// </summary>
     public enum CodeFormattingPreset
     {
-
         /// <summary>
         /// Use the formatting settings as-is.
         /// </summary>
         Custom,
 
         /// <summary>
-        /// Configure the formatting settings to resemble the one true brace style variant of KR indent/brace style.
+        /// Configure the formatting settings to resemble the Allman indent/brace style.
+        /// </summary>
+        Allman,
+
+        /// <summary>
+        /// Configure the formatting settings to resemble the one true brace style variant of K&R indent/brace style.
         /// </summary>
         OTBS,
 
         /// <summary>
-        /// Configure the formatting settings to resemble the Allman indent/brace style.
+        /// Configure the formatting settings to resemble the Stroustrup brace style variant of K&R indent/brace style.
         /// </summary>
-        Allman
+        Stroustrup
     }
 
     public class CodeFormattingSettings
@@ -182,6 +187,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     openBraceSettings["OnSameLine"] = true;
                     openBraceSettings["NewLineAfter"] = true;
                     closeBraceSettings["NewLineAfter"] = false;
+                    break;
+
+                case CodeFormattingPreset.Stroustrup:
+                    openBraceSettings["OnSameLine"] = true;
+                    openBraceSettings["NewLineAfter"] = true;
+                    closeBraceSettings["NewLineAfter"] = true;
                     break;
 
                 default:
