@@ -39,6 +39,11 @@ namespace Microsoft.PowerShell.EditorServices
         public string ValueString { get; protected set; }
 
         /// <summary>
+        /// Gets the type of the variable's value.
+        /// </summary>
+        public string Type { get; protected set; }
+
+        /// <summary>
         /// Returns true if the variable's value is expandable, meaning
         /// that it has child properties or its contents can be enumerated.
         /// </summary>

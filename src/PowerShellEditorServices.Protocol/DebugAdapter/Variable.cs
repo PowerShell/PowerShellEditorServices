@@ -13,6 +13,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public string Value { get; set; }
 
         /// <summary>
+        /// Gets or sets the type of the variable's value. Typically shown in the UI when hovering over the value.
+        /// </summary>
+        public string Type { get; set; }
+
+        /// <summary>
         /// Gets or sets the evaluatable name for the variable that will be evaluated by the debugger.
         /// </summary>
         public string EvaluateName { get; set; }
@@ -26,6 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
             {
                 Name = variable.Name,
                 Value = variable.ValueString ?? string.Empty,
+                Type = variable.Type,
                 EvaluateName = variable.Name,
                 VariablesReference = 
                     variable.IsExpandable ?

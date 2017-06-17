@@ -363,6 +363,12 @@ namespace Microsoft.PowerShell.EditorServices
         {
             VariableDetailsBase[] childVariables;
 
+            if ((variableReferenceId < 0) || (variableReferenceId >= this.variables.Count))
+            {
+                logger.Write(LogLevel.Warning, $"Received request for variableReferenceId {variableReferenceId} that is out of range of valid indices.");
+                return new VariableDetailsBase[0];
+            }
+            
             VariableDetailsBase parentVariable = this.variables[variableReferenceId];
             if (parentVariable.IsExpandable)
             {
