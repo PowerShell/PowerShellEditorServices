@@ -1,3 +1,8 @@
+#
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+#
+
 if (!$PSVersionTable.PSEdition -or $PSVersionTable.PSEdition -eq "Desktop") {
     Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.dll"
     Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.Host.dll"
@@ -53,6 +58,9 @@ function Start-EditorServicesHost {
         $DebugServiceOnly,
 
         [string[]]
+        $AdditionalModules = @(),
+
+        [string[]]
         [ValidateNotNull()]
         $FeatureFlags = @(),
 
@@ -69,6 +77,7 @@ function Start-EditorServicesHost {
             $BundledModulesPath,
             $EnableConsoleRepl.IsPresent,
             $WaitForDebugger.IsPresent,
+            $AdditionalModules,
             $FeatureFlags)
 
     # Build the profile paths using the root paths of the current $profile variable
