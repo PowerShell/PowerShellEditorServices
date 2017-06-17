@@ -24,7 +24,7 @@ Author = 'Microsoft'
 CompanyName = 'Microsoft'
 
 # Copyright statement for this module
-Copyright = '(c) 2016 Microsoft. All rights reserved.'
+Copyright = '(c) 2017 Microsoft. All rights reserved.'
 
 # Description of the functionality provided by this module
 # Description = ''
@@ -95,10 +95,10 @@ PrivateData = @{
         # Tags = @()
 
         # A URL to the license for this module.
-        # LicenseUri = ''
+        LicenseUri = 'https://github.com/PowerShell/PowerShellEditorServices/blob/master/LICENSE'
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+        ProjectUri = 'https://github.com/PowerShell/PowerShellEditorServices'
 
         # A URL to an icon representing this module.
         # IconUri = ''
