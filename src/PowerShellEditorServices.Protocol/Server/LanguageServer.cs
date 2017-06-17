@@ -1228,7 +1228,7 @@ function __Expand-Alias {
             Range range)
         {
             var scriptFile = editorSession.Workspace.GetFile(documentUri);
-            var pssaSettings = currentSettings.CodeFormatting.GetPSSASettingsHashTable(
+            var pssaSettings = currentSettings.CodeFormatting.GetPSSASettingsHashtable(
                 options.TabSize,
                 options.InsertSpaces);
 
