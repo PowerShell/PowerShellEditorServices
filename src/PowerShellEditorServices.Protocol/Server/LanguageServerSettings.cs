@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     }
 
     /// <summary>
-    /// Code formatting presets. 
+    /// Code formatting presets.
     /// See https://en.wikipedia.org/wiki/Indent_style for details on indent and brace styles.
     /// </summary>
     public enum CodeFormattingPreset
@@ -227,7 +227,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     }},
                     {"PSUseConsistentIndentation", new Hashtable {
                         {"Enable", true},
-                        {"IndentationSize", tabSize}
+                        {"IndentationSize", tabSize},
+                        {"Kind", insertSpaces ? "space" : "tab"}
                     }},
                     {"PSUseConsistentWhitespace", new Hashtable {
                         {"Enable", true},
