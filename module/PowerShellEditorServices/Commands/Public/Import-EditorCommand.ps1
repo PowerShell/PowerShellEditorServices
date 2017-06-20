@@ -1,3 +1,8 @@
+#
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+#
+
 function Import-EditorCommand {
     <#
     .EXTERNALHELP ..\PowerShellEditorServices.Commands-help.xml
