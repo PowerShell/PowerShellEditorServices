@@ -16,3 +16,7 @@ if ($psEditor -is [Microsoft.PowerShell.EditorServices.Extensions.EditorObject])
 else {
     Write-Verbose '$psEditor object not found in the session, components will not be registered.'
 }
+
+Get-ChildItem -Path $PSScriptRoot\Public\*.ps1 -Recurse | ForEach-Object {
+    . $PSItem.FullName
+}
