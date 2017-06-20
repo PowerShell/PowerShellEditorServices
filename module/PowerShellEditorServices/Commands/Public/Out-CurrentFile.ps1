@@ -1,13 +1,17 @@
 function Out-CurrentFile {
+    <#
+    .EXTERNALHELP ..\PowerShellEditorServices.Commands-help.xml
+    #>
+    [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipeline)]
-        $data
+        [Parameter(ValueFromPipeline, Mandatory=$true)]
+        $InputObject
     )
 
-    Begin { $d = @() }
-    Process { $d += $data }
+    Begin { $objectsToWrite = @() }
+    Process { $objectsToWrite += $InputObject }
     End {
-        $target = "@`"`r`n{0}`r`n`"@" -f ($d|out-string).Trim()
-        $pseditor.GetEditorContext().currentfile.inserttext($target)
+        $outputString = "@`"`r`n{0}`r`n`"@" -f ($objectsToWrite|out-string).Trim()
+        $psEditor.GetEditorContext().CurrentFile.InsertText($outputString)
     }
 }

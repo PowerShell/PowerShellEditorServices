@@ -33,6 +33,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <returns>The resolved file path.</returns>
         string GetWorkspaceRelativePath(string filePath);
 
+        /// <summary>
+        /// Causes a new untitled file to be created in the editor.
+        /// </summary>
+        /// <returns>A task that can be awaited for completion.</returns>
         Task NewFile();
 
         /// <summary>
