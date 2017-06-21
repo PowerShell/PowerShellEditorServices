@@ -1,5 +1,38 @@
 # PowerShell Editor Services Release History
 
+## 1.4.0
+### Wednesday, June 21, 2017
+
+- [#517](https://github.com/PowerShell/PowerShellEditorServices/pull/517) -
+  Added new `$psEditor.Workspace.NewFile()` API for creating a new untitled file
+  in the host editor.  Thanks [Doug Finke](https://github.com/dfinke)!
+
+- [#520](https://github.com/PowerShell/PowerShellEditorServices/pull/520) -
+  Added a new PowerShellEditorServices.VSCode module to contain functionality
+  that will only appear in Visual Studio Code.
+
+- [#523](https://github.com/PowerShell/PowerShellEditorServices/pull/523) -
+  Added APIs and cmdlets for creating custom HTML content views in VS Code.
+  See the *-VSCodeHtmlContentView cmdlets for more information.
+
+- [#516](https://github.com/PowerShell/PowerShellEditorServices/pull/516) -
+  Code formatting using PSScriptAnalyzer has now been moved server-side to use
+  the standard textDocument/formatting and textDocument/rangeFormatting message
+  types
+
+- [#521](https://github.com/PowerShell/PowerShellEditorServices/pull/521) -
+  Code formatting now accepts 3 code formatting presets, "Stroustrup", "Allman",
+  and "OTBS" which correspond to the most common PowerShell formatting styles.
+
+- [#518](https://github.com/PowerShell/PowerShellEditorServices/pull/518) -
+  Added `-DebugServiceOnly` parameter to `Start-EditorServicesHost` which enables
+  launching an Editor Services session purely for debugging PowerShell code.
+
+- [#519](https://github.com/PowerShell/PowerShellEditorServices/pull/519) -
+  Added a Diagnostic logging level for the most verbose logging output which
+  isn't always necessary for investigating issues.  The logging of JSON message
+  bodies has been moved to this logging level.
+
 ## 1.3.2
 ### Monday, June 12, 2017
 
