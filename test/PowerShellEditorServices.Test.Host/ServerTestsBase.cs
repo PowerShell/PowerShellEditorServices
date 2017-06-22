@@ -34,8 +34,20 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             string modulePath = Path.GetFullPath(@"..\..\..\..\..\module");
             string scriptPath = Path.Combine(modulePath, "Start-EditorServices.ps1");
 
-            // TODO: Need to determine the right module version programmatically!
-            string editorServicesModuleVersion = "1.4.1";
+#if CoreCLR
+            FileVersionInfo fileVersionInfo =
+                FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
+#else
+            FileVersionInfo fileVersionInfo =
+                FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
+#endif
+
+            string editorServicesModuleVersion =
+                string.Format(
+                    "{0}.{1}.{2}",
+                    fileVersionInfo.FileMajorPart,
+                    fileVersionInfo.FileMinorPart,
+                    fileVersionInfo.FileBuildPart);
 
             string scriptArgs =
                 string.Format(
