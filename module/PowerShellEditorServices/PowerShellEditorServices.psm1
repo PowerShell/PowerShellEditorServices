@@ -9,6 +9,7 @@ if (!$PSVersionTable.PSEdition -or $PSVersionTable.PSEdition -eq "Desktop") {
 }
 else {
     Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.dll"
+    Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.Protocol.dll"
     Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.Host.dll"
 }
 
