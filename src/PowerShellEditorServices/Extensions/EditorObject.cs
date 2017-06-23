@@ -91,6 +91,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         }
 
         /// <summary>
+        /// Returns all registered EditorCommands.
+        /// </summary>
+        /// <returns>An Array of all registered EditorCommands.</return>
+        public EditorCommand[] GetCommands()
+        {
+            return this.extensionService.GetCommands();
+        }
+        /// <summary>
         /// Gets the EditorContext which contains the state of the editor
         /// at the time this method is invoked.
         /// </summary>
