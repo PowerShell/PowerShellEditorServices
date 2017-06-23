@@ -170,6 +170,16 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             }
         }
 
+        /// <summary>
+        /// Returns all registered EditorCommands.
+        /// </summary>
+        /// <returns>An Array of all registered EditorCommands.</return>
+        public EditorCommand[] GetCommands()
+        {
+            EditorCommand[] commands = new EditorCommand[this.editorCommands.Count];
+            this.editorCommands.Values.CopyTo(commands,0);
+            return commands;
+        }
         #endregion
 
         #region Events
