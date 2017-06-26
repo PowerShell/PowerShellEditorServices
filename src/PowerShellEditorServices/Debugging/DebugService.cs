@@ -395,6 +395,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A VariableDetailsBase object containing the result.</returns>
         public VariableDetailsBase GetVariableFromExpression(string variableExpression, int stackFrameId)
         {
+            // NOTE: From a watch we will get passed expressions that are not naked variables references.
+            // Probably the right way to do this woudld be to examine the AST of the expr before calling
+            // this method to make sure it is a VariableReference.  But for the most part, non-naked variable
+            // references are very unlikely to find a matching variable e.g. "$i+5.2" will find no var matching "$i+5".
+
             // Break up the variable path
             string[] variablePathParts = variableExpression.Split('.');
 
@@ -414,7 +419,7 @@ namespace Microsoft.PowerShell.EditorServices
                         v =>
                             string.Equals(
                                 v.Name,
-                                variableExpression,
+                                variableName,
                                 StringComparison.CurrentCultureIgnoreCase));
 
                 if (resolvedVariable != null &&

@@ -787,17 +787,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
             else
             {
-                VariableDetails result = null;
+                VariableDetailsBase result = null;
 
                 // VS Code might send this request after the debugger
                 // has been resumed, return an empty result in this case.
                 if (editorSession.PowerShellContext.IsDebuggerStopped)
                 {
+                    // First check to see if the watch expression refers to a naked variable reference.
                     result =
-                        await editorSession.DebugService.EvaluateExpression(
-                            evaluateParams.Expression,
-                            evaluateParams.FrameId,
-                            isFromRepl);
+                        editorSession.DebugService.GetVariableFromExpression(evaluateParams.Expression, evaluateParams.FrameId);
+
+                    // If the expression is not a naked variable reference, then evaluate the expression.
+                    if (result == null)
+                    {
+                        result =
+                            await editorSession.DebugService.EvaluateExpression(
+                                evaluateParams.Expression,
+                                evaluateParams.FrameId,
+                                isFromRepl);
+                    }
                 }
 
                 if (result != null)
