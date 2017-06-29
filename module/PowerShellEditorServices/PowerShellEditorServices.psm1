@@ -49,7 +49,7 @@ function Start-EditorServicesHost {
         [ValidateNotNullOrEmpty()]
         $LogPath,
 
-        [ValidateSet("Normal", "Verbose", "Error")]
+        [ValidateSet("Normal", "Verbose", "Error", "Diagnostic")]
         $LogLevel = "Normal",
 
         [switch]
