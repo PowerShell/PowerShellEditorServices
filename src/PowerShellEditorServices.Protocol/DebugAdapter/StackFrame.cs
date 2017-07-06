@@ -58,6 +58,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
             StackFrameDetails stackFrame,
             int id)
         {
+            var sourcePresentationHint = 
+                stackFrame.IsExternalCode ? SourcePresentationHint.Deemphasize : SourcePresentationHint.Normal;
+
             return new StackFrame
             {
                 Id = id,
@@ -66,13 +69,35 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
                 EndLine = stackFrame.EndLineNumber,
                 Column = stackFrame.StartColumnNumber,
                 EndColumn = stackFrame.EndColumnNumber,
-                PresentationHint = stackFrame.PresentationHint.ToString().ToLower(),
                 Source = new Source
                 {
-                    Path = stackFrame.ScriptPath
+                    Path = stackFrame.ScriptPath,
+                    PresentationHint = sourcePresentationHint.ToString().ToLower()
                 }
             };
         }
+    }
+
+    /// <summary>
+    /// An optional hint for how to present a stack frame in the UI. 
+    /// </summary>
+    public enum StackFramePresentationHint
+    {
+        /// <summary>
+        /// Dispays the stack frame as a normal stack frame.
+        /// </summary>
+        Normal,
+
+        /// <summary>
+        /// Used to label an entry in the call stack that doesn't actually correspond to a stack frame.
+        /// This is typically used to label transitions to/from "external" code.
+        /// </summary>
+        Label,
+
+        /// <summary>
+        /// Displays the stack frame in a subtle way, typically used from loctaions outside of the current project or workspace.
+        /// </summary>
+        Subtle
     }
 }
 
