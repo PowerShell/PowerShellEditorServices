@@ -9,28 +9,6 @@ using System.Management.Automation;
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// An optional hint for how to present a stack frame in the UI. 
-    /// </summary>
-    public enum StackFramePresentationHint
-    {
-        /// <summary>
-        /// Dispays the stack frame as a normal stack frame.
-        /// </summary>
-        Normal,
-
-        /// <summary>
-        /// Used to label an entry in the call stack that doesn't actually correspond to a stack frame.
-        /// This is typically used to label transitions to/from "external" code.
-        /// </summary>
-        Label,
-
-        /// <summary>
-        /// Displays the stack frame in a subtle way, typically used from loctaions outside of the current project or workspace.
-        /// </summary>
-        Subtle
-    }
-
-    /// <summary>
     /// Contains details pertaining to a single stack frame in
     /// the current debugging session.
     /// </summary>
@@ -79,9 +57,10 @@ namespace Microsoft.PowerShell.EditorServices
         public int? EndColumnNumber { get; internal set; }
 
         /// <summary>
-        /// Gets a hint value that determines how the stack frame should be displayed.
+        /// Gets a boolean value indicating whether or not the stack frame is executing 
+        /// in script external to the current workspace root.
         /// </summary>
-        public StackFramePresentationHint PresentationHint { get; internal set; }
+        public bool IsExternalCode { get; internal set; }
 
         /// <summary>
         /// Gets or sets the VariableContainerDetails that contains the auto variables.
@@ -122,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices
             string workspaceRootPath = null)
         {
             string moduleId = string.Empty;
-            var presentationHint = StackFramePresentationHint.Normal;
+            var isExternal = false;
 
             var invocationInfo = callStackFrameObject.Properties["InvocationInfo"]?.Value as InvocationInfo;
             string scriptPath = (callStackFrameObject.Properties["ScriptName"].Value as string) ?? NoFileScriptPath;
@@ -132,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices
                 invocationInfo != null &&
                 !scriptPath.StartsWith(workspaceRootPath, StringComparison.OrdinalIgnoreCase))
             {
-                presentationHint = StackFramePresentationHint.Subtle;
+                isExternal = true;
             }
 
             return new StackFrameDetails
@@ -145,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices
                 EndColumnNumber = 0,
                 AutoVariables = autoVariables,
                 LocalVariables = localVariables,
-                PresentationHint = presentationHint
+                IsExternalCode = isExternal
             };
         }
 
