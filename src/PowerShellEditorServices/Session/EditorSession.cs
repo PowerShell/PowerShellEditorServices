@@ -123,14 +123,17 @@ namespace Microsoft.PowerShell.EditorServices
         /// for the ConsoleService.
         /// </summary>
         /// <param name="powerShellContext"></param>
+        /// <param name="hostInput"></param>
         /// <param name="editorOperations">
         /// An IEditorOperations implementation used to interact with the editor.
         /// </param>
         public void StartDebugSession(
             PowerShellContext powerShellContext,
+            IHostInput hostInput,
             IEditorOperations editorOperations)
         {
             this.PowerShellContext = powerShellContext;
+            this.HostInput = hostInput;
 
             // Initialize all services
             this.RemoteFileManager = new RemoteFileManager(this.PowerShellContext, editorOperations, logger);
