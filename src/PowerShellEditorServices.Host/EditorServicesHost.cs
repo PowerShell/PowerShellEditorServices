@@ -407,6 +407,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
             editorSession.StartDebugSession(
                 powerShellContext,
+                hostUserInterface,
                 editorOperations);
 
             return editorSession;

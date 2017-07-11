@@ -217,14 +217,23 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             await requestContext.SendResult(null);
 
-            if (this.isInteractiveDebugSession &&
-                this.editorSession.DebugService.IsDebuggerStopped)
+            if (this.isInteractiveDebugSession)
             {
-                // If this is an interactive session and there's a pending breakpoint,
-                // send that information along to the debugger client
-                this.DebugService_DebuggerStopped(
-                    this,
-                    this.editorSession.DebugService.CurrentDebuggerStoppedEventArgs);
+                if (this.ownsEditorSession)
+                {
+                    // If this is a debug-only session, we need to start
+                    // the command loop manually
+                    this.editorSession.HostInput.StartCommandLoop();
+                }
+
+                if (this.editorSession.DebugService.IsDebuggerStopped)
+                {
+                    // If this is an interactive session and there's a pending breakpoint,
+                    // send that information along to the debugger client
+                    this.DebugService_DebuggerStopped(
+                        this,
+                        this.editorSession.DebugService.CurrentDebuggerStoppedEventArgs);
+                }
             }
         }
 
@@ -646,7 +655,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             int startFrameIndex = stackTraceParams.StartFrame ?? 0;
             int maxFrameCount = stackFrames.Length;
 
-            // If the number of requested levels == 0 (or null), that means get all stack frames 
+            // If the number of requested levels == 0 (or null), that means get all stack frames
             // after the specified startFrame index. Otherwise get all the stack frames.
             int requestedFrameCount = (stackTraceParams.Levels ?? 0);
             if (requestedFrameCount > 0)
