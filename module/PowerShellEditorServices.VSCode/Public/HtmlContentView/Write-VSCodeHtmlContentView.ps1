@@ -33,7 +33,7 @@ function Write-VSCodeHtmlContentView {
         [Microsoft.PowerShell.EditorServices.VSCode.CustomViews.IHtmlContentView]
         $HtmlContentView,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("Content")]
         [ValidateNotNull()]
         [string]
