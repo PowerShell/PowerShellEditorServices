@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         /// <summary>
         /// Gets or sets the HTML body content to set in the view.
         /// </summary>
-        public string HtmlBodyContent { get; set; }
+        public HtmlContent HtmlContent { get; set; }
     }
 
     /// <summary>
