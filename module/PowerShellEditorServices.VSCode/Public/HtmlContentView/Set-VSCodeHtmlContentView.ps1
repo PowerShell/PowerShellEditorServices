@@ -19,6 +19,14 @@ function Set-VSCodeHtmlContentView {
     The HTML content that will be placed inside the <body> tag
     of the view.
 
+    .PARAMETER JavaScriptPaths
+    An array of paths to JavaScript files that will be loaded
+    into the view.
+
+    .PARAMETER StyleSheetPaths
+    An array of paths to stylesheet (CSS) files that will be
+    loaded into the view.
+
     .EXAMPLE
     # Set the view content with an h1 header
     Set-VSCodeHtmlContentView -HtmlContentView $htmlContentView -HtmlBodyContent "<h1>Hello world!</h1>"
@@ -39,10 +47,23 @@ function Set-VSCodeHtmlContentView {
         [Alias("Content")]
         [AllowEmptyString()]
         [string]
-        $HtmlBodyContent
+        $HtmlBodyContent,
+
+        [Parameter(Mandatory = $false)]
+        [string[]]
+        $JavaScriptPaths,
+
+        [Parameter(Mandatory = $false)]
+        [string[]]
+        $StyleSheetPaths
     )
 
     process {
-        $HtmlContentView.SetContent($HtmlBodyContent).Wait();
+        $htmlContent = New-Object Microsoft.PowerShell.EditorServices.VSCode.CustomViews.HtmlContent
+        $htmlContent.BodyContent = $HtmlBodyContent
+        $htmlContent.JavaScriptPaths = $JavaScriptPaths
+        $htmlContent.StyleSheetPaths = $StyleSheetPaths
+
+        $HtmlContentView.SetContent($htmlContent).Wait();
     }
 }
