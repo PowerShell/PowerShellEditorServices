@@ -97,8 +97,8 @@ function ConvertTo-ScriptExtent {
             if (-not $StartColumnNumber) { $StartColumnNumber = 1 }
             if (-not $StartLineNumber)   { $StartLineNumber   = 1 }
             $StartBuffer = New-Object Microsoft.PowerShell.EditorServices.BufferPosition @(
-                $StartColumnNumber,
-                $StartLineNumber)
+                $StartLineNumber,
+                $StartColumnNumber)
 
             if ($EndLineNumber -and $EndColumnNumber) {
                 $EndBuffer = New-Object Microsoft.PowerShell.EditorServices.BufferPosition @(
