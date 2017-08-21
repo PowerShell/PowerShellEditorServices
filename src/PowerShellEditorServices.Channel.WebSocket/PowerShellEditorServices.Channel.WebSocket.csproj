@@ -5,7 +5,6 @@
     <AssemblyTitle>PowerShell Editor Services WebSocket Protocol Channel</AssemblyTitle>
     <TargetFramework>net451</TargetFramework>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Channel.WebSocket</AssemblyName>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">

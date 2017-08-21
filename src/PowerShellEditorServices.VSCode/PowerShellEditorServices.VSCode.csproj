@@ -6,7 +6,6 @@
     <Description>Provides added functionality to PowerShell Editor Services for the Visual Studio Code editor.</Description>
     <TargetFrameworks>net451;netstandard1.6</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.VSCode</AssemblyName>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
 
   <!-- Fail the release build if there are missing public API documentation comments -->
