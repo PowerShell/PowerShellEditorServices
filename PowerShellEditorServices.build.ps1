@@ -18,9 +18,9 @@ if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
 }
 
-task SetupDotNet -Before Restore, Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi, PackageNuGet {
+task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi, PackageNuGet {
 
-    $requiredSdkVersion = "1.0.0"
+    $requiredSdkVersion = "2.0.0"
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -54,7 +54,7 @@ task SetupDotNet -Before Restore, Clean, Build, TestHost, TestServer, TestProtoc
 
         # Download the official installation script and run it
         $installScriptPath = "$([System.IO.Path]::GetTempPath())dotnet-install.$installScriptExt"
-        Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-rc3/scripts/obtain/dotnet-install.$installScriptExt" -OutFile $installScriptPath
+        Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/v2.0.0/scripts/obtain/dotnet-install.$installScriptExt" -OutFile $installScriptPath
         $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
         if (!$script:IsUnix) {
@@ -79,19 +79,6 @@ task SetupDotNet -Before Restore, Clean, Build, TestHost, TestServer, TestProtoc
     }
 
     Write-Host "`n### Using dotnet v$requiredSDKVersion at path $script:dotnetExe`n" -ForegroundColor Green
-}
-
-function NeedsRestore($rootPath) {
-    # This checks to see if the number of folders under a given
-    # path (like "src" or "test") is greater than the number of
-    # obj\project.assets.json files found under that path, implying
-    # that those folders have not yet been restored.
-    $projectAssets = (Get-ChildItem "$rootPath\*\obj\project.assets.json")
-    return ($projectAssets -eq $null) -or ((Get-ChildItem $rootPath).Length -gt $projectAssets.Length)
-}
-
-task Restore -If { "Restore" -in $BuildTask -or (NeedsRestore(".\src")) -or (NeedsRestore(".\test")) } -Before Clean, Build, Test {
-    exec { & $script:dotnetExe restore }
 }
 
 task Clean {
@@ -126,9 +113,6 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
 }
 
 function BuildForPowerShellVersion($version) {
-    # Restore packages for the specified version
-    exec { & $script:dotnetExe restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj /p:PowerShellVersion=$version }
-
     Write-Host -ForegroundColor Green "`n### Testing API usage for PowerShell $version...`n"
     exec { & $script:dotnetExe build -f net451 .\src\PowerShellEditorServices\PowerShellEditorServices.csproj /p:PowerShellVersion=$version }
 }
@@ -168,15 +152,21 @@ function UploadTestLogs {
 task Test TestServer,TestProtocol,TestHost
 
 task TestServer -If { !$script:IsUnix } {
-    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj }
+    Set-Location .\test\PowerShellEditorServices.Test\
+    exec { & $script:dotnetExe build -c $Configuration -f net452 }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
 }
 
 task TestProtocol -If { !$script:IsUnix} {
-    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Protocol\PowerShellEditorServices.Test.Protocol.csproj }
+    Set-Location .\test\PowerShellEditorServices.Test.Protocol\
+    exec { & $script:dotnetExe build -c $Configuration -f net452 }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
 }
 
 task TestHost -If { !$script:IsUnix} {
-    exec { & $script:dotnetExe test -c $Configuration -f net452 .\test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj }
+    Set-Location .\test\PowerShellEditorServices.Test.Host\
+    exec { & $script:dotnetExe build -c $Configuration -f net452 }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild -x86 }
 }
 
 task CITest (job Test -Safe), {

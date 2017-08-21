@@ -9,5 +9,6 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PowerShell/PowerShellEditorServices</RepositoryUrl>
     <DebugType>portable</DebugType>
+    <RuntimeFrameworkVersion>1.0.3</RuntimeFrameworkVersion>
   </PropertyGroup>
 </Project>

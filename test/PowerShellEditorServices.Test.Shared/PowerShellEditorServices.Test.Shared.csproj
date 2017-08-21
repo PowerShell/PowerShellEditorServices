@@ -5,8 +5,7 @@
     <VersionPrefix>0.9.0-beta</VersionPrefix>
     <TargetFrameworks>net452;netstandard1.6</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Test.Shared</AssemblyName>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
-  </PropertyGroup>
+ </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj" />
