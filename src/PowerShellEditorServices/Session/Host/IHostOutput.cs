@@ -135,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices
                 includeNewLine,
                 outputType,
                 ConsoleColor.Gray,
-                ConsoleColor.Black);
+                (ConsoleColor)(-1)); // -1 indicates the console's raw background color
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace Microsoft.PowerShell.EditorServices
                 includeNewLine,
                 outputType,
                 foregroundColor,
-                ConsoleColor.Black);
+                (ConsoleColor)(-1)); // -1 indicates the console's raw background color
         }
     }
 }
