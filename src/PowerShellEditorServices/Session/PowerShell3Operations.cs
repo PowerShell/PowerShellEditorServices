@@ -33,8 +33,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
         {
             IEnumerable<TResult> executionResult = null;
 
-            using (var nestedPipeline = currentRunspace.CreateNestedPipeline())
+            string historyString = psCommand.Commands[0].CommandText;
+            using (var nestedPipeline = currentRunspace.CreateNestedPipeline(historyString, sendOutputToHost))
             {
+                nestedPipeline.Commands.Clear();
                 foreach (var command in psCommand.Commands)
                 {
                     nestedPipeline.Commands.Add(command);
