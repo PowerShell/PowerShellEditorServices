@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices
             ConsoleColor oldBackgroundColor = System.Console.BackgroundColor;
 
             System.Console.ForegroundColor = foregroundColor;
-            System.Console.BackgroundColor = backgroundColor;
+            System.Console.BackgroundColor = ((int)backgroundColor != -1) ? backgroundColor : oldBackgroundColor;
 
             System.Console.Write(outputString + (includeNewLine ? Environment.NewLine : ""));
 

@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Is this an untitled script?
             Task launchTask = null;
 
-            if (this.scriptToLaunch.StartsWith("untitled"))
+            if (this.scriptToLaunch.StartsWith("untitled:"))
             {
                 ScriptFile untitledScript =
                     this.editorSession.Workspace.GetFile(
@@ -252,6 +252,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 #pragma warning disable 618
                 launchParams.Program;
 #pragma warning restore 618
+
+            // We come through here first when debugging an untitled (unsaved) file - there is now working dir.
+            if (workingDir.StartsWith("untitled:"))
+            {
+                workingDir = null;
+            }
 
             if (workingDir != null)
             {

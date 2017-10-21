@@ -413,6 +413,14 @@ namespace Microsoft.PowerShell.EditorServices
         {
             var diagnosticRecords = new PSObject[0];
 
+            // When a new, empty file is created there are by definition no issues.
+            // Furthermore, if you call Invoke-ScriptAnalyzer with an empty ScriptDefinition
+            // it will generate a ParameterBindingValidationException.
+            if (string.IsNullOrEmpty(scriptContent))
+            {
+                return diagnosticRecords;
+            }
+
             if (hasScriptAnalyzerModule
                 && (typeof(TSettings) == typeof(string)
                     || typeof(TSettings) == typeof(Hashtable)))
