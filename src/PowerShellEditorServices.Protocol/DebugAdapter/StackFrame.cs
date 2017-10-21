@@ -61,19 +61,28 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
             var sourcePresentationHint = 
                 stackFrame.IsExternalCode ? SourcePresentationHint.Deemphasize : SourcePresentationHint.Normal;
 
-            return new StackFrame
+            // When debugging an interactive session, the ScriptPath is <No File> which is not a valid source file.
+            // We need to make sure the user can't open the file associated with this stack frame.
+            // It will generate a VSCode error in this case.
+            Source source = null;
+            if (!stackFrame.ScriptPath.Contains("<"))
             {
-                Id = id,
-                Name = stackFrame.FunctionName,
-                Line = stackFrame.StartLineNumber,
-                EndLine = stackFrame.EndLineNumber,
-                Column = stackFrame.StartColumnNumber,
-                EndColumn = stackFrame.EndColumnNumber,
-                Source = new Source
+                source = new Source
                 {
                     Path = stackFrame.ScriptPath,
                     PresentationHint = sourcePresentationHint.ToString().ToLower()
-                }
+                };
+            }
+
+            return new StackFrame
+            {
+                Id = id,
+                Name = (source != null) ? stackFrame.FunctionName : "Interactive Session",
+                Line = (source != null) ? stackFrame.StartLineNumber : 0,
+                EndLine = stackFrame.EndLineNumber,
+                Column = (source != null) ? stackFrame.StartColumnNumber : 0,
+                EndColumn = stackFrame.EndColumnNumber,
+                Source = source
             };
         }
     }
