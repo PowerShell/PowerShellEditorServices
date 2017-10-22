@@ -487,6 +487,19 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             }
                             else
                             {
+                                // Check to see if a key is available.
+                                // If not check for cancellation requested.
+                                while (!Console.KeyAvailable)
+                                {
+                                    if (cancellationToken.IsCancellationRequested)
+                                    {
+                                        //this.bufferedKey = keyInfo;
+                                        throw new TaskCanceledException();
+                                    }
+
+                                    Thread.Sleep(100);
+                                }
+
                                 keyInfo = Console.ReadKey(true);
 
                                 if (cancellationToken.IsCancellationRequested)
