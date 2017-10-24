@@ -253,8 +253,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 launchParams.Program;
 #pragma warning restore 618
 
-            // We come through here first when debugging an untitled (unsaved) file - there is now working dir.
-            if (workingDir.StartsWith("untitled:"))
+            // When debugging an "untitled" (unsaved) file - the working dir can't be derived
+            // from the Script path.  OTOH, if the launch params specifies a Cwd, use it.
+            if (workingDir.StartsWith("untitled:") && string.IsNullOrEmpty(launchParams.Cwd))
             {
                 workingDir = null;
             }
