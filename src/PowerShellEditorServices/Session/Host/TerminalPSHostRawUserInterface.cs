@@ -208,11 +208,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A BufferCell array with the requested buffer contents.</returns>
         public override BufferCell[,] GetBufferContents(Rectangle rectangle)
         {
-            Logger.Write(
-                LogLevel.Warning,
-                "PSHostRawUserInterface.GetBufferContents was called");
-
-            throw new System.NotImplementedException();
+            return new BufferCell[0,0];
         }
 
         /// <summary>
