@@ -660,6 +660,18 @@ namespace Microsoft.PowerShell.EditorServices
             };
         }
 
+        /// <summary>
+        /// Clears all breakpoints in the current session.
+        /// </summary>
+        public async Task ClearAllBreakpoints()
+        {
+            PSCommand psCommand = new PSCommand();
+            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
+            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
+
+            await this.powerShellContext.ExecuteCommand<object>(psCommand);
+        }
+
         #endregion
 
         #region Private Methods

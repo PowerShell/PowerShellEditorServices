@@ -182,6 +182,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object shutdownParams,
             RequestContext<InitializeResponseBody> requestContext)
         {
+            // Clear any existing breakpoints before proceeding
+            await this.ClearSessionBreakpoints();
+
             // Now send the Initialize response to continue setup
             await requestContext.SendResult(
                 new InitializeResponseBody {
@@ -419,6 +422,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                     return;
                 }
+
+                // Clear any existing breakpoints before proceeding
+                await this.ClearSessionBreakpoints();
 
                 // Execute the Debug-Runspace command but don't await it because it
                 // will block the debug adapter initialization process.  The
@@ -881,6 +887,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession.DebugService.BreakpointUpdated -= DebugService_BreakpointUpdated;
             this.editorSession.DebugService.DebuggerStopped -= this.DebugService_DebuggerStopped;
             this.editorSession.PowerShellContext.DebuggerResumed -= this.powerShellContext_DebuggerResumed;
+        }
+
+        private async Task ClearSessionBreakpoints()
+        {
+            try
+            {
+                await this.editorSession.DebugService.ClearAllBreakpoints();
+            }
+            catch (Exception e)
+            {
+                Logger.WriteException("Caught exception while clearing breakpoints from session", e);
+            }
         }
 
         #endregion
