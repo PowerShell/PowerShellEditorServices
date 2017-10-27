@@ -418,10 +418,21 @@ namespace Microsoft.PowerShell.EditorServices.Session
                         }
                         else
                         {
-                            byte[] fileContent =
-                                args.SourceArgs.Length == 2
-                                ? (byte[])((args.SourceArgs[1] as PSObject).BaseObject)
-                                : new byte[0];
+                            byte[] fileContent = null;
+
+                            if (args.SourceArgs.Length == 2)
+                            {
+                                PSObject sourceObj = args.SourceArgs[1] as PSObject;
+                                if (sourceObj != null)
+                                {
+                                    fileContent = sourceObj.BaseObject as byte[];
+                                }
+                            }
+
+                            // If fileContent is still null after trying to
+                            // unpack the contents, just return an empty byte
+                            // array.
+                            fileContent = fileContent ?? new byte[0];
 
                             localFilePath =
                                 this.StoreRemoteFile(
