@@ -358,18 +358,30 @@ namespace Microsoft.PowerShell.EditorServices
 
         internal static bool IsPathInMemory(string filePath)
         {
-            // When viewing PowerShell files in the Git diff viewer, VS Code
-            // sends the contents of the file at HEAD with a URI that starts
-            // with 'inmemory'.  Untitled files which have been marked of
-            // type PowerShell have a path starting with 'untitled'.
-            return
-                filePath.StartsWith("inmemory") ||
-                filePath.StartsWith("untitled") ||
-                filePath.StartsWith("private")  ||
-                filePath.StartsWith("git");
+            bool isInMemory = false;
 
-            // TODO #342: Remove 'private' and 'git' and then add logic to
-            // throw when any unsupported file URI scheme is encountered.
+            // In cases where a "virtual" file is displayed in the editor,
+            // we need to treat the file differently than one that exists
+            // on disk.  A virtual file could be something like a diff
+            // view of the current file or an untitled file.
+            try
+            {
+                // NotSupportedException or ArgumentException gets thrown when
+                // given an invalid path.  Since any non-standard path will
+                // trigger this, assume that it means it's an in-memory file
+                // unless the path starts with file:
+                Path.GetFullPath(filePath);
+            }
+            catch (ArgumentException)
+            {
+                isInMemory = true;
+            }
+            catch (NotSupportedException)
+            {
+                isInMemory = true;
+            }
+
+            return !filePath.ToLower().StartsWith("file:") && isInMemory;
         }
 
         private string GetBaseFilePath(string filePath)
