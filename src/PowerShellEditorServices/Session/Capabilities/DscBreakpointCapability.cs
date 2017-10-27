@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
 
                     // Attempt to import the updated DSC module
                     powerShell.AddCommand("Import-Module");
-                    powerShell.AddArgument(@"${env:ProgramFiles}\DesiredStateConfiguration\1.0.0.0\Modules\PSDesiredStateConfiguration\PSDesiredStateConfiguration.psd1");
+                    powerShell.AddArgument(@"C:\Program Files\DesiredStateConfiguration\1.0.0.0\Modules\PSDesiredStateConfiguration\PSDesiredStateConfiguration.psd1");
                     powerShell.AddParameter("PassThru");
                     powerShell.AddParameter("ErrorAction", "Ignore");
 
