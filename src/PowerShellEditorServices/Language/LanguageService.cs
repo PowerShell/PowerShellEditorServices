@@ -334,8 +334,17 @@ namespace Microsoft.PowerShell.EditorServices
                         .Select(
                             reference =>
                             {
-                                reference.SourceLine =
-                                    file.GetLine(reference.ScriptRegion.StartLineNumber);
+                                try
+                                {
+                                    reference.SourceLine =
+                                        file.GetLine(reference.ScriptRegion.StartLineNumber);
+                                }
+                                catch (ArgumentOutOfRangeException e)
+                                {
+                                    reference.SourceLine = string.Empty;
+                                    this.logger.WriteException("Found reference is out of range in script file", e);
+                                }
+
                                 reference.FilePath = file.FilePath;
                                 return reference;
                             });
