@@ -84,7 +84,9 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
         {
             DscBreakpointCapability capability = null;
 
-            if (runspaceDetails.Context != RunspaceContext.DebuggedRunspace)
+            // DSC support is enabled only for Windows PowerShell.
+            if ((runspaceDetails.PowerShellVersion.Version.Major < 6) &&
+                (runspaceDetails.Context != RunspaceContext.DebuggedRunspace))
             {
                 using (PowerShell powerShell = PowerShell.Create())
                 {
@@ -92,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
 
                     // Attempt to import the updated DSC module
                     powerShell.AddCommand("Import-Module");
-                    powerShell.AddArgument(@"C:\Program Files\DesiredStateConfiguration\1.0.0.0\Modules\PSDesiredStateConfiguration\PSDesiredStateConfiguration.psd1");
+                    powerShell.AddArgument(@"${env:ProgramFiles}\DesiredStateConfiguration\1.0.0.0\Modules\PSDesiredStateConfiguration\PSDesiredStateConfiguration.psd1");
                     powerShell.AddParameter("PassThru");
                     powerShell.AddParameter("ErrorAction", "Ignore");
 
