@@ -8,8 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Security;
 using System.Text;
-using System.Diagnostics;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -249,7 +249,19 @@ namespace Microsoft.PowerShell.EditorServices
                             RecursivelyEnumerateFiles(dir));
                 }
             }
-            catch (UnauthorizedAccessException e)
+            catch (DirectoryNotFoundException e)
+            {
+                this.logger.WriteException(
+                    $"Could not enumerate files in the path '{folderPath}' due to it being an invalid path",
+                    e);
+            }
+            catch (PathTooLongException e)
+            {
+                this.logger.WriteException(
+                    $"Could not enumerate files in the path '{folderPath}' due to the path being too long",
+                    e);
+            }
+            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
             {
                 this.logger.WriteException(
                     $"Could not enumerate files in the path '{folderPath}' due to the path not being accessible",
