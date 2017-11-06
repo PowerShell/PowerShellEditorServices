@@ -510,9 +510,34 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         Breakpoints = srcBreakpoints.ToArray()
                     });
 
-	            return;
-	        }
+                return;
+            }
 
+            // Verify source file is a PowerShell script file.
+            string fileExtension = Path.GetExtension(scriptFile?.FilePath ?? "")?.ToLower();
+            if (string.IsNullOrEmpty(fileExtension) || ((fileExtension != ".ps1") && (fileExtension != ".psm1")))
+            {
+                Logger.Write(
+                    LogLevel.Warning,
+                    $"Attempted to set breakpoints on a non-PoweShell file: {setBreakpointsParams.Source.Path}");
+
+                string message = this.noDebug ? string.Empty : "Source is not a PowerShell script, breakpoint not set.";
+
+                var srcBreakpoints = setBreakpointsParams.Breakpoints
+                    .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
+                        srcBkpt, setBreakpointsParams.Source.Path, message, verified: this.noDebug));
+
+                // Return non-verified breakpoint message.
+                await requestContext.SendResult(
+                    new SetBreakpointsResponseBody
+                    {
+                        Breakpoints = srcBreakpoints.ToArray()
+                    });
+
+                return;
+            }
+
+            // At this point, the source file has been verified as a PowerShell script.
             var breakpointDetails = new BreakpointDetails[setBreakpointsParams.Breakpoints.Length];
             for (int i = 0; i < breakpointDetails.Length; i++)
             {
@@ -541,7 +566,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 catch (Exception e)
                 {
                     // Log whatever the error is
-                    Logger.WriteException("Caught error while setting breakpoints in SetBreakpoints handler", e);
+                    Logger.WriteException($"Caught error while setting breakpoints in SetBreakpoints handler for file {scriptFile?.FilePath}", e);
                 }
                 finally
                 {
