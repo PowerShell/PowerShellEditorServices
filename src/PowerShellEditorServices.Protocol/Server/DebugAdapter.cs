@@ -264,7 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 workingDir = null;
             }
 
-            if (workingDir != null)
+            if (!string.IsNullOrEmpty(workingDir))
             {
                 workingDir = PowerShellContext.UnescapePath(workingDir);
                 try
@@ -282,7 +282,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
             }
 
-            if (workingDir == null)
+            if (string.IsNullOrEmpty(workingDir))
             {
 #if CoreCLR
                 workingDir = AppContext.BaseDirectory;
@@ -490,7 +490,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // VSCode sends breakpoint requests with the original filename that doesn't exist anymore.
             try
             {
-                scriptFile = editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
+                // When you set a breakpoint in the right pane of a Git diff window on a PS1 file,
+                // the Source.Path comes through as Untitled-X.
+                if (!setBreakpointsParams.Source.Path.StartsWith("untitled:"))
+                {
+                    scriptFile = editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
+                }
             }
             catch (Exception e) when (e is FileNotFoundException || e is DirectoryNotFoundException)
             {
@@ -519,7 +524,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             {
                 Logger.Write(
                     LogLevel.Warning,
-                    $"Attempted to set breakpoints on a non-PoweShell file: {setBreakpointsParams.Source.Path}");
+                    $"Attempted to set breakpoints on a non-PowerShell file: {setBreakpointsParams.Source.Path}");
 
                 string message = this.noDebug ? string.Empty : "Source is not a PowerShell script, breakpoint not set.";
 
