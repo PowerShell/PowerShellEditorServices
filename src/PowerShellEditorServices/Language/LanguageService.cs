@@ -6,7 +6,6 @@
 using Microsoft.PowerShell.EditorServices.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -698,6 +697,12 @@ namespace Microsoft.PowerShell.EditorServices
                     }
 
                     this.areAliasesLoaded = true;
+                }
+                catch (PSNotSupportedException e)
+                {
+                    this.logger.Write(
+                        LogLevel.Warning,
+                        $"Caught PSNotSupportedException while attempting to get aliases from remote session:\n\n{e.ToString()}");
                 }
                 catch (TaskCanceledException)
                 {
