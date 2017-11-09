@@ -292,10 +292,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (column < 1 || column > maxColumn)
             {
-                throw new ArgumentOutOfRangeException(
-                    string.Format(
-                        "Position {line}:{column} is outside of the column range of 1 to {maxColumn}.",
-                        line));
+                throw new ArgumentOutOfRangeException($"Position {line}:{column} is outside of the column range of 1 to {maxColumn}.");
             }
         }
 
