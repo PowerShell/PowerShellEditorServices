@@ -703,6 +703,9 @@ namespace Microsoft.PowerShell.EditorServices
                     this.logger.Write(
                         LogLevel.Warning,
                         $"Caught PSNotSupportedException while attempting to get aliases from remote session:\n\n{e.ToString()}");
+
+                    // Prevent the aliases from being fetched again - no point if the remote doesn't support InvokeCommand.
+                    this.areAliasesLoaded = true;
                 }
                 catch (TaskCanceledException)
                 {
