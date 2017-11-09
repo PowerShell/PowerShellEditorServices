@@ -279,22 +279,20 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="column">The 1-based column to be validated.</param>
         public void ValidatePosition(int line, int column)
         {
-            if (line < 1 || line > this.FileLines.Count + 1)
+            int maxLine = this.FileLines.Count;
+            if (line < 1 || line > maxLine)
             {
-                throw new ArgumentOutOfRangeException("Position is outside of file line range.");
+                throw new ArgumentOutOfRangeException($"Position {line}:{column} is outside of the line range of 1 to {maxLine}.");
             }
 
-            // The maximum column is either one past the length of the string
+            // The maximum column is either **one past** the length of the string
             // or 1 if the string is empty.
             string lineString = this.FileLines[line - 1];
             int maxColumn = lineString.Length > 0 ? lineString.Length + 1 : 1;
 
             if (column < 1 || column > maxColumn)
             {
-                throw new ArgumentOutOfRangeException(
-                    string.Format(
-                        "Position is outside of column range for line {0}.",
-                        line));
+                throw new ArgumentOutOfRangeException($"Position {line}:{column} is outside of the column range of 1 to {maxColumn}.");
             }
         }
 
