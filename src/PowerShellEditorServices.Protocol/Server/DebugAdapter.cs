@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Is this an untitled script?
             Task launchTask = null;
 
-            if (this.scriptToLaunch.StartsWith("untitled:"))
+            if (ScriptFile.IsUntitledPath(this.scriptToLaunch))
             {
                 ScriptFile untitledScript =
                     this.editorSession.Workspace.GetFile(
@@ -259,12 +259,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // When debugging an "untitled" (unsaved) file - the working dir can't be derived
             // from the Script path.  OTOH, if the launch params specifies a Cwd, use it.
-            if (workingDir.StartsWith("untitled:") && string.IsNullOrEmpty(launchParams.Cwd))
+            if (ScriptFile.IsUntitledPath(workingDir) && string.IsNullOrEmpty(launchParams.Cwd))
             {
                 workingDir = null;
             }
 
-            if (workingDir != null)
+            if (!string.IsNullOrEmpty(workingDir))
             {
                 workingDir = PowerShellContext.UnescapePath(workingDir);
                 try
@@ -282,7 +282,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
             }
 
-            if (workingDir == null)
+            if (string.IsNullOrEmpty(workingDir))
             {
 #if CoreCLR
                 workingDir = AppContext.BaseDirectory;
@@ -490,7 +490,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // VSCode sends breakpoint requests with the original filename that doesn't exist anymore.
             try
             {
-                scriptFile = editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
+                // When you set a breakpoint in the right pane of a Git diff window on a PS1 file,
+                // the Source.Path comes through as Untitled-X.
+                if (!ScriptFile.IsUntitledPath(setBreakpointsParams.Source.Path))
+                {
+                    scriptFile = editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
+                }
             }
             catch (Exception e) when (e is FileNotFoundException || e is DirectoryNotFoundException)
             {
@@ -510,9 +515,34 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         Breakpoints = srcBreakpoints.ToArray()
                     });
 
-	            return;
-	        }
+                return;
+            }
 
+            // Verify source file is a PowerShell script file.
+            string fileExtension = Path.GetExtension(scriptFile?.FilePath ?? "")?.ToLower();
+            if (string.IsNullOrEmpty(fileExtension) || ((fileExtension != ".ps1") && (fileExtension != ".psm1")))
+            {
+                Logger.Write(
+                    LogLevel.Warning,
+                    $"Attempted to set breakpoints on a non-PowerShell file: {setBreakpointsParams.Source.Path}");
+
+                string message = this.noDebug ? string.Empty : "Source is not a PowerShell script, breakpoint not set.";
+
+                var srcBreakpoints = setBreakpointsParams.Breakpoints
+                    .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
+                        srcBkpt, setBreakpointsParams.Source.Path, message, verified: this.noDebug));
+
+                // Return non-verified breakpoint message.
+                await requestContext.SendResult(
+                    new SetBreakpointsResponseBody
+                    {
+                        Breakpoints = srcBreakpoints.ToArray()
+                    });
+
+                return;
+            }
+
+            // At this point, the source file has been verified as a PowerShell script.
             var breakpointDetails = new BreakpointDetails[setBreakpointsParams.Breakpoints.Length];
             for (int i = 0; i < breakpointDetails.Length; i++)
             {
@@ -541,7 +571,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 catch (Exception e)
                 {
                     // Log whatever the error is
-                    Logger.WriteException("Caught error while setting breakpoints in SetBreakpoints handler", e);
+                    Logger.WriteException($"Caught error while setting breakpoints in SetBreakpoints handler for file {scriptFile?.FilePath}", e);
                 }
                 finally
                 {

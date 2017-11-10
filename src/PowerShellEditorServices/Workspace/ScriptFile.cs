@@ -208,6 +208,19 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Deterines whether the supplied path indicates the file is an "untitled:Unitled-X" 
+        /// which has not been saved to file.
+        /// </summary>
+        /// <param name="path">The path to check.</param>
+        /// <returns>True if the path is an untitled file, false otherwise.</returns>
+        public static bool IsUntitledPath(string path)
+        {
+            Validate.IsNotNull(nameof(path), path);
+
+            return path.ToLower().StartsWith("untitled:");
+        }
+
+        /// <summary>
         /// Gets a line from the file's contents.
         /// </summary>
         /// <param name="lineNumber">The 1-based line number in the file.</param>
