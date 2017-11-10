@@ -6,7 +6,6 @@
 using Microsoft.PowerShell.EditorServices.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -697,6 +696,15 @@ namespace Microsoft.PowerShell.EditorServices
                         AliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
                     }
 
+                    this.areAliasesLoaded = true;
+                }
+                catch (PSNotSupportedException e)
+                {
+                    this.logger.Write(
+                        LogLevel.Warning,
+                        $"Caught PSNotSupportedException while attempting to get aliases from remote session:\n\n{e.ToString()}");
+
+                    // Prevent the aliases from being fetched again - no point if the remote doesn't support InvokeCommand.
                     this.areAliasesLoaded = true;
                 }
                 catch (TaskCanceledException)
