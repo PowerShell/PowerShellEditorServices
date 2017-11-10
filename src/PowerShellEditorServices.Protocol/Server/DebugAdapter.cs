@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Is this an untitled script?
             Task launchTask = null;
 
-            if (this.scriptToLaunch.StartsWith("untitled:"))
+            if (ScriptFile.IsUntitledPath(this.scriptToLaunch))
             {
                 ScriptFile untitledScript =
                     this.editorSession.Workspace.GetFile(
@@ -259,7 +259,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // When debugging an "untitled" (unsaved) file - the working dir can't be derived
             // from the Script path.  OTOH, if the launch params specifies a Cwd, use it.
-            if (workingDir.StartsWith("untitled:") && string.IsNullOrEmpty(launchParams.Cwd))
+            if (ScriptFile.IsUntitledPath(workingDir) && string.IsNullOrEmpty(launchParams.Cwd))
             {
                 workingDir = null;
             }
@@ -492,7 +492,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             {
                 // When you set a breakpoint in the right pane of a Git diff window on a PS1 file,
                 // the Source.Path comes through as Untitled-X.
-                if (!setBreakpointsParams.Source.Path.StartsWith("untitled:"))
+                if (!ScriptFile.IsUntitledPath(setBreakpointsParams.Source.Path))
                 {
                     scriptFile = editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
                 }
