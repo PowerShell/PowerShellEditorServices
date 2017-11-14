@@ -1,5 +1,21 @@
 # PowerShell Editor Services Release History
 
+## 1.5.1
+### Tuesday, November 14, 2017
+
+- [PowerShell/PowerShellEditorServices #574](https://github.com/PowerShell/PowerShellEditorServices/issues/574) -
+  Do not attempt to set breakpoints on files other than .ps1 and .psm1.
+
+- [PowerShell/PowerShellEditorServices #570](https://github.com/PowerShell/PowerShellEditorServices/issues/570) -
+  Fixed `Get-Help -ShowWindow` error in the PowerShell Integrated Console.  However this fix does not address the issue with
+  the help window appearing behind VSCode.
+
+- [PowerShell/PowerShellEditorServices #567](https://github.com/PowerShell/PowerShellEditorServices/issues/567) -
+  Fixed off-by-one error in ValidatePosition method.
+
+- [PowerShell/vscode-powershell #1091](https://github.com/PowerShell/vscode-powershell/issues/1091) -
+  Fixed crash when editing remote file using psedit by catching PSNotSupportedException.
+
 ## 1.5.0
 ### Friday, October 27, 2017
 
