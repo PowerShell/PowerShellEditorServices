@@ -6,6 +6,10 @@
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+#if !CoreCLR
+using System.Collections.Generic;
+using System.Diagnostics;
+#endif
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
@@ -82,9 +86,27 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override PSObject PrivateData
         {
-            // There is no PrivateData yet but by returning an empty object we can get past PowerShell's
-            // check for $host.PrivateData["window"] which errors on the null returned by default.
-            get { return new PSObject(); }
+            get
+            {
+#if !CoreCLR
+                string vscodePid = Environment.GetEnvironmentVariable("VSCODE_PID");
+                if (!string.IsNullOrEmpty(vscodePid) && int.TryParse(vscodePid, out int pid))
+                {
+                    try
+                    {
+                        var process = Process.GetProcessById(pid);
+                        IntPtr hwnd = process.MainWindowHandle;
+                        var dict = new Dictionary<string, IntPtr>() {{ "Window", hwnd }};
+                        return PSObject.AsPSObject(dict);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.Logger.WriteException("Could not find code process for PID {pid}", ex);
+                    }
+                }
+#endif
+                return new PSObject();
+            }
         }
 
         /// <summary>
