@@ -294,7 +294,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local &&
                 !this.editorSession.DebugService.IsDebuggerStopped)
             {
-                await editorSession.PowerShellContext.SetWorkingDirectory(workingDir);
+                await editorSession.PowerShellContext.SetWorkingDirectory(workingDir, isPathAlreadyEscaped: false);
                 Logger.Write(LogLevel.Verbose, "Working dir set to: " + workingDir);
             }
 

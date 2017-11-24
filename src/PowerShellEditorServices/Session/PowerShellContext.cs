@@ -1079,10 +1079,25 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="path"></param>
         public async Task SetWorkingDirectory(string path)
         {
+            await this.SetWorkingDirectory(path, true);
+        }
+
+        /// <summary>
+        /// Sets the current working directory of the powershell context.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="isPathAlreadyEscaped">Specify false to have the path escaped, otherwise specify true if the path has already been escaped.</param>
+        public async Task SetWorkingDirectory(string path, bool isPathAlreadyEscaped)
+        {
             this.InitialWorkingDirectory = path;
 
             using (RunspaceHandle runspaceHandle = await this.GetRunspaceHandle())
             {
+                if (!isPathAlreadyEscaped)
+                {
+                    path = EscapePath(path, false);
+                }
+
                 runspaceHandle.Runspace.SessionStateProxy.Path.SetLocation(path);
             }
         }

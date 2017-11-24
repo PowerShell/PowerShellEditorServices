@@ -178,7 +178,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             if (editorSession.Workspace.WorkspacePath != null)
             {
                 await editorSession.PowerShellContext.SetWorkingDirectory(
-                    editorSession.Workspace.WorkspacePath);
+                    editorSession.Workspace.WorkspacePath,
+                    isPathAlreadyEscaped: false);
             }
 
             await requestContext.SendResult(
