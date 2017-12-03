@@ -504,7 +504,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 e is IOException ||
                 e is NotSupportedException ||
                 e is PathTooLongException ||
-                e is SecurityException)
+                e is SecurityException ||
+                e is UnauthorizedAccessException)
             {
                 Logger.WriteException(
                     $"Failed to set breakpoint on file: {setBreakpointsParams.Source.Path}",
