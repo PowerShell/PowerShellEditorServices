@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -497,13 +498,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     scriptFile = editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
                 }
             }
-            catch (Exception e) when (e is FileNotFoundException || e is DirectoryNotFoundException)
+            catch (Exception e) when (
+                e is FileNotFoundException || 
+                e is DirectoryNotFoundException ||
+                e is IOException ||
+                e is NotSupportedException ||
+                e is PathTooLongException ||
+                e is SecurityException)
             {
-                Logger.Write(
-                    LogLevel.Warning,
-                    $"Attempted to set breakpoints on a non-existing file: {setBreakpointsParams.Source.Path}");
+                Logger.WriteException(
+                    $"Failed to set breakpoint on file: {setBreakpointsParams.Source.Path}",
+                    e);
 
-                string message = this.noDebug ? string.Empty : "Source does not exist, breakpoint not set.";
+                string message = this.noDebug ? string.Empty : "Source file could not be accessed, breakpoint not set - " + e.Message;
 
                 var srcBreakpoints = setBreakpointsParams.Breakpoints
                     .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
