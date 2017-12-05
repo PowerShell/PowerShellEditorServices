@@ -512,7 +512,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     e);
 
                 string message = this.noDebug ? string.Empty : "Source file could not be accessed, breakpoint not set - " + e.Message;
-
                 var srcBreakpoints = setBreakpointsParams.Breakpoints
                     .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
                         srcBkpt, setBreakpointsParams.Source.Path, message, verified: this.noDebug));
