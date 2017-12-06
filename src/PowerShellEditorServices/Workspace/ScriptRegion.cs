@@ -83,10 +83,21 @@ namespace Microsoft.PowerShell.EditorServices
         /// </returns>
         public static ScriptRegion Create(IScriptExtent scriptExtent)
         {
+            // IScriptExtent throws an ArgumentOutOfRange exception if Text is null
+            string scriptExtentText;
+            try
+            {
+                scriptExtentText = scriptExtent.Text;
+            }
+            catch (ArgumentOutOfRangeException e)
+            {
+                scriptExtentText = string.Empty;
+            }
+
             return new ScriptRegion
             {
                 File = scriptExtent.File,
-                Text = scriptExtent.Text,
+                Text = scriptExtentText,
                 StartLineNumber = scriptExtent.StartLineNumber,
                 StartColumnNumber = scriptExtent.StartColumnNumber,
                 StartOffset = scriptExtent.StartOffset,
