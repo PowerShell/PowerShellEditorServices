@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             catch (ArgumentOutOfRangeException e)
             {
-                scriptExtentText = "";
+                scriptExtentText = string.Empty;
             }
 
             return new ScriptRegion
