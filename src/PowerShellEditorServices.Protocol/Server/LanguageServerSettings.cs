@@ -101,6 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
 
                 this.SettingsPath = settingsPath;
+                logger.Write(LogLevel.Verbose, $"Using Script Analyzer settings path - '{settingsPath ?? ""}'.");
             }
         }
     }
