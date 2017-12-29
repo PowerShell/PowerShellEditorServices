@@ -228,6 +228,18 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         }
 
         #endregion
+
+        #region File Manipulation
+
+        /// <summary>
+        /// Saves this file.
+        /// </summary>
+        public void Save()
+        {
+            this.editorOperations.SaveFile(this.scriptFile.FilePath);
+        }
+
+        #endregion
     }
 }
 

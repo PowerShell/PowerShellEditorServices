@@ -55,6 +55,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         Task CloseFile(string filePath);
 
         /// <summary>
+        /// Causes a file to be saved in the editor.
+        /// </summary>
+        /// <param name="filePath">The path of the file to be saved.</param>
+        /// <returns>A Task that can be tracked for completion.</returns>
+        Task SaveFile(string filePath);
+
+        /// <summary>
         /// Inserts text into the specified range for the file at the specified path.
         /// </summary>
         /// <param name="filePath">The path of the file which will have text inserted.</param>

@@ -128,6 +128,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     true);
         }
 
+        public Task SaveFile(string filePath)
+        {
+            return
+                this.messageSender.SendRequest(
+                    SaveFileRequest.Type,
+                    filePath,
+                    true);
+        }
+
         public string GetWorkspacePath()
         {
             return this.editorSession.Workspace.WorkspacePath;
