@@ -91,6 +91,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                             settingsPath = Path.GetFullPath(Path.Combine(workspaceRootPath, settingsPath));
                         }
                     }
+
+                    this.SettingsPath = settingsPath;
+                    logger.Write(LogLevel.Verbose, $"Using Script Analyzer settings path - '{settingsPath ?? ""}'.");
                 }
                 catch (Exception ex) when (ex is NotSupportedException)
                 {
@@ -98,10 +101,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     logger.WriteException(
                         $"Invalid Script Analyzer settings path - '{settingsPath}'.",
                         ex);
-                }
 
-                this.SettingsPath = settingsPath;
-                logger.Write(LogLevel.Verbose, $"Using Script Analyzer settings path - '{settingsPath ?? ""}'.");
+                    this.SettingsPath = null;
+                }
             }
         }
     }
