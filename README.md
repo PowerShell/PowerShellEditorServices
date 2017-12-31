@@ -105,8 +105,7 @@ Open the PowerShellEditorServices folder that you cloned locally and press <kbd>
 ## Contributions Welcome!
 
 We would love to incorporate community contributions into this project.  If you would like to
-contribute code, documentation, tests, or bug reports, please read our [Contribution Guide]
-(http://powershell.github.io/PowerShellEditorServices/CONTRIBUTING.html) to learn more.
+contribute code, documentation, tests, or bug reports, please read our [Contribution Guide](http://powershell.github.io/PowerShellEditorServices/CONTRIBUTING.html) to learn more.
 
 ## Maintainers
 
