@@ -3,13 +3,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System.IO;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
-using System.Reflection;
 using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using System.Security;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
@@ -95,7 +94,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     this.SettingsPath = settingsPath;
                     logger.Write(LogLevel.Verbose, $"Using Script Analyzer settings path - '{settingsPath ?? ""}'.");
                 }
-                catch (Exception ex) when (ex is NotSupportedException)
+                catch (Exception ex) when (
+                    ex is NotSupportedException || 
+                    ex is PathTooLongException ||
+                    ex is SecurityException)
                 {
                     // Invalid chars in path like ${env:HOME} can cause Path.GetFullPath() to throw, catch such errors here
                     logger.WriteException(
