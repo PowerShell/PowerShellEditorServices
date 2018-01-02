@@ -169,7 +169,7 @@ task TestHost -If { !$script:IsUnix} {
     exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild -x86 }
 }
 
-task CITest (job Test -Safe), {
+task CITest ?Test, {
     # This task is used to ensure we have a chance to upload
     # test logs as a CI artifact when the tests fail
     if (error Test) {
