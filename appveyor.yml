@@ -17,7 +17,7 @@ install:
       Import-PackageProvider NuGet -Force | Out-Null
       Set-PSRepository -Name PSGallery -InstallationPolicy Trusted | Out-Null
       Install-Module InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser -Force | Out-Null
-      Install-Module platyPS -RequiredVersion 0.7.6 -Scope CurrentUser -Force | Out-Null
+      Install-Module platyPS -RequiredVersion 0.9.0 -Scope CurrentUser -Force | Out-Null
 
 build_script:
   - ps: Invoke-Build -Configuration Release
