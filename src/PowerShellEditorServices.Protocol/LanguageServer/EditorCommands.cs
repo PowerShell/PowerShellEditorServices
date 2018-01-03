@@ -122,6 +122,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
             RequestType<string, EditorCommandResponse, object, object>.Create("editor/closeFile");
     }
 
+    public class SaveFileRequest
+    {
+        public static readonly
+            RequestType<string, EditorCommandResponse, object, object> Type =
+            RequestType<string, EditorCommandResponse, object, object>.Create("editor/saveFile");
+    }
+
     public class ShowInformationMessageRequest
     {
         public static readonly
