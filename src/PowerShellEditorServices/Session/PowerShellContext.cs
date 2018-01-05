@@ -534,11 +534,11 @@ namespace Microsoft.PowerShell.EditorServices
                                 strBld.Append(error.ToString() + "\r\n");
                                 strBld.Append("ScriptStackTrace:\r\n");
                                 strBld.Append((error.ScriptStackTrace ?? "<null>") + "\r\n");
-                                strBld.Append($"Exception {error.Exception?.ToString() ?? "<null>"}");
+                                strBld.Append($"Exception:\r\n   {error.Exception?.ToString() ?? "<null>"}");
                                 Exception innerEx = error.Exception?.InnerException;
                                 while (innerEx != null)
                                 {
-                                    strBld.Append($"InnerException {innerEx.ToString()}");
+                                    strBld.Append($"InnerException:\r\n   {innerEx.ToString()}");
                                     innerEx = innerEx.InnerException;
                                 }
                             }
