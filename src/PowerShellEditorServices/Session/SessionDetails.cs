@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         {
             PSCommand infoCommand = new PSCommand();
             infoCommand.AddScript(
-                "@{ 'computerName' = $env:ComputerName; 'processId' = $PID; 'instanceId' = $host.InstanceId }");
+                "@{ 'computerName' = if ($ExecutionContext.Host.Runspace.ConnectionInfo) {$ExecutionContext.Host.Runspace.ConnectionInfo.ComputerName}  else {'localhost'}; 'processId' = $PID; 'instanceId' = $host.InstanceId }");
 
             return infoCommand;
         }
