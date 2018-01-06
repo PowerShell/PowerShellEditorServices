@@ -129,6 +129,10 @@ task TestPowerShellApi -If { !$script:IsUnix } {
 task Build {
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f netstandard1.6 }
+    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\UnixConsoleEcho.dll -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
+    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\runtimes\osx-64\native\libdisablekeyecho.dylib -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
+    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\runtimes\linux-64\native\libdisablekeyecho.so -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
 }
 
 function UploadTestLogs {
@@ -185,9 +189,12 @@ task LayoutModule -After Build {
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Core -Type Directory | Out-Null
 
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\libdisablekeyecho.* -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
     if (!$script:IsUnix) {
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
     }
 
     # Lay out the PowerShellEditorServices.VSCode module's binaries

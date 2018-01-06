@@ -59,6 +59,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="UnixConsoleEcho" Version="0.1.0" />
+  </ItemGroup>
+
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
     <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
   </PropertyGroup>

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using UnixConsoleEcho;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -20,8 +21,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
     {
         #region Private Field
 
-        private object readKeyLock = new object();
-        private ConsoleKeyInfo? bufferedKey;
         private PowerShellContext powerShellContext;
 
         #endregion
@@ -61,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    ConsoleKeyInfo keyInfo = await this.ReadKeyAsync(cancellationToken);
+                    ConsoleKeyInfo keyInfo = await ReadKeyAsync(cancellationToken);
 
                     if ((int)keyInfo.Key == 3 ||
                         keyInfo.Key == ConsoleKey.C && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
@@ -129,6 +128,28 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Private Methods
 
+        private static async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken)
+        {
+            await WaitForKeyAvailableAsync(cancellationToken);
+            return Console.ReadKey(true);
+        }
+
+        private static async Task WaitForKeyAvailableAsync(CancellationToken cancellationToken)
+        {
+            InputEcho.Disable();
+            try
+            {
+                while (!Console.KeyAvailable)
+                {
+                    await Task.Delay(50, cancellationToken);
+                }
+            }
+            finally
+            {
+                InputEcho.Enable();
+            }
+        }
+
         private async Task<string> ReadLine(bool isCommandLine, CancellationToken cancellationToken)
         {
             string inputBeforeCompletion = null;
@@ -154,7 +175,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    ConsoleKeyInfo keyInfo = await this.ReadKeyAsync(cancellationToken);
+                    ConsoleKeyInfo keyInfo = await ReadKeyAsync(cancellationToken);
 
                     // Do final position calculation after the key has been pressed
                     // because the window could have been resized before then
@@ -464,41 +485,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
 
             return null;
-        }
-
-        private async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken)
-        {
-            return await
-                Task.Factory.StartNew(
-                    () =>
-                    {
-                        ConsoleKeyInfo keyInfo;
-
-                        lock (this.readKeyLock)
-                        {
-                            if (cancellationToken.IsCancellationRequested)
-                            {
-                                throw new TaskCanceledException();
-                            }
-                            else if (this.bufferedKey.HasValue)
-                            {
-                                keyInfo = this.bufferedKey.Value;
-                                this.bufferedKey = null;
-                            }
-                            else
-                            {
-                                keyInfo = Console.ReadKey(true);
-
-                                if (cancellationToken.IsCancellationRequested)
-                                {
-                                    this.bufferedKey = keyInfo;
-                                    throw new TaskCanceledException();
-                                }
-                            }
-                        }
-
-                        return keyInfo;
-                    });
         }
 
         private int CalculateIndexFromCursor(
