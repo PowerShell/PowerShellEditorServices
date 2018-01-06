@@ -534,12 +534,42 @@ namespace Microsoft.PowerShell.EditorServices
 
                         if (this.powerShell.HadErrors)
                         {
-                            string errorMessage = "Execution completed with errors:\r\n\r\n";
+                            // Get the command/params that we were trying execute as a string in order to log it
+                            string commandText = "";
+                            foreach (var cmd in psCommand.Commands)
+                            {
+                                commandText += cmd.CommandText;
+                                foreach (var param in cmd.Parameters)
+                                {
+                                    commandText += $" -{param.Name} {param.Value}";
+                                }
+                                commandText += ";";
+                            }
 
+                            var strBld = new StringBuilder(1024);
+                            strBld.Append($"Execution of command '{commandText}' completed with errors:\r\n\r\n");
+
+                            int i = 1;
                             foreach (var error in this.powerShell.Streams.Error)
                             {
-                                errorMessage += error.ToString() + "\r\n";
+                                if (i > 1) strBld.Append("\r\n\r\n");
+                                strBld.Append($"Error #{i++}:\r\n");
+                                strBld.Append(error.ToString() + "\r\n");
+                                strBld.Append("ScriptStackTrace:\r\n");
+                                strBld.Append((error.ScriptStackTrace ?? "<null>") + "\r\n");
+                                strBld.Append($"Exception:\r\n   {error.Exception?.ToString() ?? "<null>"}");
+                                Exception innerEx = error.Exception?.InnerException;
+                                while (innerEx != null)
+                                {
+                                    strBld.Append($"InnerException:\r\n   {innerEx.ToString()}");
+                                    innerEx = innerEx.InnerException;
+                                }
                             }
+
+                            // We've reported these errors, clear them so they don't keep showing up.
+                            this.powerShell.Streams.Error.Clear();
+
+                            var errorMessage = strBld.ToString();
 
                             errorMessages?.Append(errorMessage);
                             this.logger.Write(LogLevel.Error, errorMessage);
