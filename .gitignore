@@ -62,3 +62,6 @@ PowerShellEditorServices.sln.ide/storage.ide
 
 # Don't include PlatyPS generated MAML
 module/PowerShellEditorServices/Commands/en-US/*-help.xml
+
+# Visual Studio for Mac generated file
+*.userprefs
