@@ -50,11 +50,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     $params = @{ Path=$filePathName; Raw=$true }
                     if ($PSVersionTable.PSEdition -eq 'Core')
                     {
-                        $params += @{ AsByteStream=$true }
+                        $params['AsByteStream']=$true
                     }
                     else
                     {
-                        $params += @{ Encoding='Byte' }
+                        $params['Encoding']='Byte'
                     }
 
                     $contentBytes = Get-Content @params
@@ -99,11 +99,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
             $params = @{ Path=$RemoteFilePath; Value=$Content; Force=$true }
             if ($PSVersionTable.PSEdition -eq 'Core')
             {
-                $params += @{ AsByteStream=$true }
+                $params['AsByteStream']=$true
             }
             else
             {
-                $params += @{ Encoding='Byte' }
+                $params['Encoding']='Byte'
             }
 
             Set-Content @params 2>&1
