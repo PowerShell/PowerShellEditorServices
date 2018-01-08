@@ -47,7 +47,17 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     $filePathName = $_.FullName
 
                     # Get file contents
-                    $contentBytes = Get-Content -Path $filePathName -Raw -Encoding Byte
+                    $params = @{ Path=$filePathName; Raw=$true }
+                    if ($PSVersionTable.PSEdition -eq 'Core')
+                    {
+                        $params['AsByteStream']=$true
+                    }
+                    else
+                    {
+                        $params['Encoding']='Byte'
+                    }
+
+                    $contentBytes = Get-Content @params
 
                     # Notify client for file open.
                     New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($filePathName, $contentBytes) > $null
@@ -85,7 +95,18 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 [byte[]] $Content
             )
 
-            Set-Content -Path $RemoteFilePath -Value $Content -Encoding Byte -Force 2>&1
+            # Set file contents
+            $params = @{ Path=$RemoteFilePath; Value=$Content; Force=$true }
+            if ($PSVersionTable.PSEdition -eq 'Core')
+            {
+                $params['AsByteStream']=$true
+            }
+            else
+            {
+                $params['Encoding']='Byte'
+            }
+
+            Set-Content @params 2>&1
         ";
 
         #endregion
