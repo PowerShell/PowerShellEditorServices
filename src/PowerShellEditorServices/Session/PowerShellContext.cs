@@ -534,20 +534,9 @@ namespace Microsoft.PowerShell.EditorServices
 
                         if (this.powerShell.HadErrors)
                         {
-                            // Get the command/params that we were trying execute as a string in order to log it
-                            string commandText = "";
-                            foreach (var cmd in psCommand.Commands)
-                            {
-                                commandText += cmd.CommandText;
-                                foreach (var param in cmd.Parameters)
-                                {
-                                    commandText += $" -{param.Name} {param.Value}";
-                                }
-                                commandText += ";";
-                            }
-
                             var strBld = new StringBuilder(1024);
-                            strBld.Append($"Execution of command '{commandText}' completed with errors:\r\n\r\n");
+                            strBld.AppendFormat("Execution of the following command(s) completed with errors:\r\n\r\n{0}\r\n", 
+                                GetStringForPSCommand(psCommand));
 
                             int i = 1;
                             foreach (var error in this.powerShell.Streams.Error)
@@ -1433,7 +1422,20 @@ namespace Microsoft.PowerShell.EditorServices
             foreach (var command in psCommand.Commands)
             {
                 stringBuilder.Append("    ");
-                stringBuilder.AppendLine(command.ToString());
+                stringBuilder.Append(command.CommandText);
+                foreach (var param in command.Parameters)
+                {
+                    if (param.Name != null)
+                    {
+                        stringBuilder.Append($" -{param.Name} {param.Value}");
+                    }
+                    else
+                    {
+                        stringBuilder.Append($" {param.Value}");
+                    }
+                }
+
+                stringBuilder.AppendLine();
             }
 
             return stringBuilder.ToString();
