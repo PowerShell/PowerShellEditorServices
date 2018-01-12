@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 [string] $PSEditFunction
             )
 
-            Register-EngineEvent -SourceIdentifier PSESRemoteSessionOpenFile {0}
+            Register-EngineEvent -SourceIdentifier PSESRemoteSessionOpenFile -Forward
 
             if ((Test-Path -Path 'function:\global:Open-EditorFile') -eq $false)
             {{
