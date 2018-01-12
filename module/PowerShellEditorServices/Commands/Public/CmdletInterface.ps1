@@ -80,7 +80,7 @@ function Unregister-EditorCommand {
 function Open-EditorFile {
     param([Parameter(Mandatory=$true)]$FilePaths)
 
-    dir $FilePaths | where { !$_.PSIsContainer } | % {
+    Get-ChildItem $FilePaths -File | ForEach-Object {
         $psEditor.Workspace.OpenFile($_.FullName)
     }
 }

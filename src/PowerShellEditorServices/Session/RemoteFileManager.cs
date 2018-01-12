@@ -82,14 +82,14 @@ namespace Microsoft.PowerShell.EditorServices.Session
         ";
 
         private const string RemovePSEditFunctionScript = @"
-            if ((Test-Path -Path 'function:\global:Open-EditorFile') -eq $true)
+            if (Test-Path -Path 'function:\global:Open-EditorFile')
             {
                 Remove-Item -Path 'function:\global:Open-EditorFile' -Force
             }
 
-            if (Get-Alias psedit)
+            if (Test-Path -Path 'alias:\psedit')
             {
-                Remove-Alias psedit
+                Remove-Item -Path 'alias:\psedit' -Force
             }
 
             Get-EventSubscriber -SourceIdentifier PSESRemoteSessionOpenFile -EA Ignore | Remove-Event
