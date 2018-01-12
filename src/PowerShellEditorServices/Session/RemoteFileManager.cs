@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 Remove-Item -Path 'alias:\psedit' -Force
             }
 
-            Get-EventSubscriber -SourceIdentifier PSESRemoteSessionOpenFile -EA Ignore | Remove-Event
+            Get-EventSubscriber -SourceIdentifier PSESRemoteSessionOpenFile -EA Ignore | Unregister-Event
         ";
 
         private const string SetRemoteContentsScript = @"
