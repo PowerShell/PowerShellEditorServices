@@ -77,11 +77,13 @@ function Unregister-EditorCommand {
     }
 }
 
-function psedit {
+function Open-EditorFile {
     param([Parameter(Mandatory=$true)]$FilePaths)
 
-    dir $FilePaths | where { !$_.PSIsContainer } | % {
+    Get-ChildItem $FilePaths -File | ForEach-Object {
         $psEditor.Workspace.OpenFile($_.FullName)
     }
 }
-Export-ModuleMember -Function psedit
+Set-Alias psedit Open-EditorFile -Scope Global
+
+Export-ModuleMember -Function Open-EditorFile

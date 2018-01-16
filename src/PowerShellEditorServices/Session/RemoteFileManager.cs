@@ -72,21 +72,27 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 [string] $PSEditFunction
             )
 
-            Register-EngineEvent -SourceIdentifier PSESRemoteSessionOpenFile {0}
+            Register-EngineEvent -SourceIdentifier PSESRemoteSessionOpenFile -Forward
 
-            if ((Test-Path -Path 'function:\global:PSEdit') -eq $false)
+            if ((Test-Path -Path 'function:\global:Open-EditorFile') -eq $false)
             {{
-                Set-Item -Path 'function:\global:PSEdit' -Value $PSEditFunction
+                Set-Item -Path 'function:\global:Open-EditorFile' -Value $PSEditFunction
+                Set-Alias psedit Open-EditorFile -Scope Global
             }}
         ";
 
         private const string RemovePSEditFunctionScript = @"
-            if ((Test-Path -Path 'function:\global:PSEdit') -eq $true)
+            if (Test-Path -Path 'function:\global:Open-EditorFile')
             {
-                Remove-Item -Path 'function:\global:PSEdit' -Force
+                Remove-Item -Path 'function:\global:Open-EditorFile' -Force
             }
 
-            Get-EventSubscriber -SourceIdentifier PSESRemoteSessionOpenFile -EA Ignore | Remove-Event
+            if (Test-Path -Path 'alias:\psedit')
+            {
+                Remove-Item -Path 'alias:\psedit' -Force
+            }
+
+            Get-EventSubscriber -SourceIdentifier PSESRemoteSessionOpenFile -EA Ignore | Unregister-Event
         ";
 
         private const string SetRemoteContentsScript = @"
