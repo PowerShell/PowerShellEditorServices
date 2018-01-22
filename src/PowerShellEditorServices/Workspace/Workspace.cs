@@ -241,7 +241,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             try
             {
-                IEnumerable<string> subDirs = Directory.EnumerateDirectories(folderPath);
+                IEnumerable<string> subDirs = Directory.GetDirectories(folderPath);
                 foreach (string dir in subDirs)
                 {
                     foundFiles =
@@ -274,7 +274,7 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     foundFiles =
                         foundFiles.Concat(
-                            Directory.EnumerateFiles(
+                            Directory.GetFiles(
                                 folderPath,
                                 pattern));
                 }
