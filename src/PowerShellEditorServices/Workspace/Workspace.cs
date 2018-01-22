@@ -278,10 +278,22 @@ namespace Microsoft.PowerShell.EditorServices
                                 folderPath,
                                 pattern));
                 }
-                catch (UnauthorizedAccessException e)
+                catch (DirectoryNotFoundException e)
                 {
                     this.logger.WriteException(
-                        $"Could not enumerate files in the path '{folderPath}' due to a file not being accessible",
+                        $"Could not enumerate files in the path '{folderPath}' due to a path being an invalid path",
+                        e);
+                }
+                catch (PathTooLongException e)
+                {
+                    this.logger.WriteException(
+                        $"Could not enumerate files in the path '{folderPath}' due to a path being too long",
+                        e);
+                }
+                catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+                {
+                    this.logger.WriteException(
+                        $"Could not enumerate files in the path '{folderPath}' due to a path not being accessible",
                         e);
                 }
             }
