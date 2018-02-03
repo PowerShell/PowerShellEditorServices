@@ -2,57 +2,78 @@
 	"version": "2.0.0",
 
     "windows": {
-        "command": "powershell.exe",
-        "args": [ "-NoProfile", "-ExecutionPolicy", "Bypass" ]
+        "options": {
+            "shell": {
+                "executable": "powershell.exe",
+                "args": [ "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command" ]
+            }
+        }
     },
     "linux": {
-        "command": "/usr/bin/powershell",
-        "args": [ "-NoProfile" ]
+        "options": {
+            "shell": {
+                "executable": "/usr/bin/pwsh",
+                "args": [ "-NoProfile", "-Command" ]
+            }
+        }
     },
     "osx": {
-        "command": "/usr/local/bin/powershell",
-        "args": [ "-NoProfile" ]
+        "options": {
+            "shell": {
+                "executable": "/usr/local/bin/pwsh",
+                "args": [ "-NoProfile", "-Command" ]
+            }
+        }
     },
-
-	"showOutput": "always",
 
     // Associate with test task runner
     "tasks": [
         {
-            "taskName": "Clean",
-            "suppressTaskName": true,
-            "args": [ "Invoke-Build Clean" ]
+            "label": "Clean",
+            "type": "shell",
+            "command": "Invoke-Build Clean",
+            "problemMatcher": ["$msCompile"]
         },
         {
-            "taskName": "Build",
-            "suppressTaskName": true,
-            "isBuildCommand": true,
-            "args": [ "Invoke-Build Build" ],
-            "problemMatcher": "$msCompile"
+            "label": "Build",
+            "type": "shell",
+            "command": "Invoke-Build Build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$msCompile"]
         },
         {
-            "taskName": "Build Release Configuration",
-            "suppressTaskName": true,
-            "args": [ "Invoke-Build Build -Configuration Release" ],
-            "problemMatcher": "$msCompile"
+            "label": "Build Release Configuration",
+            "type": "shell",
+            "command": "Invoke-Build Build -Configuration Release",
+            "group": "build",
+            "problemMatcher": ["$msCompile"]
         },
         {
-            "taskName": "Test",
-            "suppressTaskName": true,
-            "isTestCommand": true,
-            "args": [ "Invoke-Build Test" ]
+            "label": "Test",
+            "type": "shell",
+            "command": "Invoke-Build Test",
+            "group": "test",
+            "problemMatcher": ["$msCompile"]
         },
         {
-            "taskName": "Test Language Service",
-            "suppressTaskName": true,
-            "isTestCommand": true,
-            "args": [ "Invoke-Build TestServer" ]
+            "label": "Test Language Service",
+            "type": "shell",
+            "command": "Invoke-Build TestServer",
+            "group": "test",
+            "problemMatcher": ["$msCompile"]
         },
         {
-            "taskName": "Test Host",
-            "suppressTaskName": true,
-            "isTestCommand": true,
-            "args": [ "Invoke-Build TestHost" ]
+            "label": "Test Host",
+            "type": "shell",
+            "command": "Invoke-Build TestHost",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": ["$msCompile"]
         }
 	]
 }
