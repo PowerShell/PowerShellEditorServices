@@ -419,7 +419,7 @@ function __Expand-Alias {
     [ref]$errors=$null
 
     $tokens = [System.Management.Automation.PsParser]::Tokenize($targetScript, $errors).Where({$_.type -eq 'command'}) |
-                    Sort Start -Descending
+                    Sort-Object Start -Descending
 
     foreach ($token in  $tokens) {
         $definition=(Get-Command ('`'+$token.Content) -CommandType Alias -ErrorAction SilentlyContinue).Definition
