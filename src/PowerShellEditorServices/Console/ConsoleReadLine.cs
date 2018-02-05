@@ -6,9 +6,9 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using UnixConsoleEcho;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -20,12 +20,28 @@ namespace Microsoft.PowerShell.EditorServices.Console
     internal class ConsoleReadLine
     {
         #region Private Field
+        private static IConsoleOperations s_consoleProxy;
 
         private PowerShellContext powerShellContext;
 
         #endregion
 
         #region Constructors
+        static ConsoleReadLine()
+        {
+            // Maybe we should just include the RuntimeInformation package for FullCLR?
+            #if CoreCLR
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                s_consoleProxy = new WindowsConsoleOperations();
+                return;
+            }
+
+            s_consoleProxy = new UnixConsoleOperations();
+            #else
+            s_consoleProxy = new WindowsConsoleOperations();
+            #endif
+        }
 
         public ConsoleReadLine(PowerShellContext powerShellContext)
         {
@@ -130,24 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private static async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken)
         {
-            await WaitForKeyAvailableAsync(cancellationToken);
-            return Console.ReadKey(true);
-        }
-
-        private static async Task WaitForKeyAvailableAsync(CancellationToken cancellationToken)
-        {
-            InputEcho.Disable();
-            try
-            {
-                while (!Console.KeyAvailable)
-                {
-                    await Task.Delay(50, cancellationToken);
-                }
-            }
-            finally
-            {
-                InputEcho.Enable();
-            }
+            return await s_consoleProxy.ReadKeyAsync(cancellationToken);
         }
 
         private async Task<string> ReadLine(bool isCommandLine, CancellationToken cancellationToken)
