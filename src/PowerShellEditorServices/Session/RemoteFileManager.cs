@@ -38,29 +38,52 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private const string PSEditFunctionScript = @"
             param (
-                [Parameter(Mandatory=$true)] [String[]] $FileNames
+                [Parameter(Mandatory=$true)]
+                [String[]]
+                $FileNames,
+
+                [Parameter(ValueFromPipeline=$true)]
+                $NewValue,
+
+                [Parameter()]
+                [switch]
+                $Force
             )
 
-            foreach ($fileName in $FileNames)
-            {
-                dir $fileName | where { ! $_.PSIsContainer } | foreach {
-                    $filePathName = $_.FullName
+            begin {
+                $container = @()
+            }
 
-                    # Get file contents
-                    $params = @{ Path=$filePathName; Raw=$true }
-                    if ($PSVersionTable.PSEdition -eq 'Core')
-                    {
-                        $params['AsByteStream']=$true
+            process {
+                $container += $NewValue
+            }
+
+            end {
+                foreach ($fileName in $FileNames)
+                {
+                    if (-not (Test-Path $fileName) -and $Force) {
+                        $container > $fileName
                     }
-                    else
-                    {
-                        $params['Encoding']='Byte'
+
+                    dir $fileName | where { ! $_.PSIsContainer } | foreach {
+                        $filePathName = $_.FullName
+
+                        # Get file contents
+                        $params = @{ Path=$filePathName; Raw=$true }
+                        if ($PSVersionTable.PSEdition -eq 'Core')
+                        {
+                            $params['AsByteStream']=$true
+                        }
+                        else
+                        {
+                            $params['Encoding']='Byte'
+                        }
+
+                        $contentBytes = Get-Content @params
+
+                        # Notify client for file open.
+                        New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($filePathName, $contentBytes) > $null
                     }
-
-                    $contentBytes = Get-Content @params
-
-                    # Notify client for file open.
-                    New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($filePathName, $contentBytes) > $null
                 }
             }
         ";

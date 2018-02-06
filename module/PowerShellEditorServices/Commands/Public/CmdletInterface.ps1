@@ -78,10 +78,38 @@ function Unregister-EditorCommand {
 }
 
 function Open-EditorFile {
-    param([Parameter(Mandatory=$true)]$FilePaths)
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        $FilePaths,
 
-    Get-ChildItem $FilePaths -File | ForEach-Object {
-        $psEditor.Workspace.OpenFile($_.FullName)
+        [Parameter(ValueFromPipeline=$true)]
+        $NewValue,
+
+        [Parameter()]
+        [switch]
+        $Force
+    )
+
+    begin {
+        $container = @()
+    }
+
+    process {
+        $container += $NewValue
+    }
+
+    end {
+        $FilePaths | ForEach-Object {
+            if (-not (Test-Path $_) -and $Force) {
+                $container > $_
+            }
+        }
+
+        Get-ChildItem $FilePaths -File | ForEach-Object {
+            $psEditor.Workspace.OpenFile($_.FullName)
+        }
     }
 }
 Set-Alias psedit Open-EditorFile -Scope Global
