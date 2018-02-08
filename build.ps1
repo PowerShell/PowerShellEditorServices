@@ -90,7 +90,15 @@ if ($BootstrapBuildEnv) {
     }
     Write-Host "`n$string`n"
 } elseif ($Clean) {
-    Invoke-Build Clean
+    if(hasMissingTools) {
+        Write-Host "You are missing needed tools. Run './build.ps1 -BootstrapBuildEnv' to see what they are."
+    } else {
+        Invoke-Build Clean
+    }
 } else {
-    Invoke-Build Build
+    if(hasMissingTools) {
+        Write-Host "You are missing needed tools. Run './build.ps1 -BootstrapBuildEnv' to see what they are."
+    } else {
+        Invoke-Build Build
+    }
 }
