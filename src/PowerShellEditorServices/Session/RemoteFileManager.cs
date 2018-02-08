@@ -36,78 +36,161 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private const string RemoteSessionOpenFile = "PSESRemoteSessionOpenFile";
 
-        private const string PSEditFunctionScript = @"
-            param (
-                [Parameter(Mandatory=$true)]
-                [String[]]
-                $FileNames,
+        private const string PSEditModule = @"<#
+            .SYNOPSIS
+                Opens the specified files in your editor window
+            .DESCRIPTION
+                Opens the specified files in your editor window
+            .EXAMPLE
+                PS > Open-EditorFile './foo.ps1'
+                Opens foo.ps1 in your editor
+            .EXAMPLE
+                PS > gci ./myDir | Open-EditorFile
+                Opens everything in 'myDir' in your editor
+            .INPUTS
+                Path
+                an array of files you want to open in your editor
+            #>
+            function Open-EditorFile {
+                param (
+                    [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+                    [String[]]
+                    $Path
+                )
 
-                [Parameter(ValueFromPipeline=$true)]
-                $NewValue,
+                begin {
+                    $Paths = @()
+                }
 
-                [Parameter()]
-                [switch]
-                $Force
-            )
+                process {
+                    $Paths += $Path
+                }
 
-            begin {
-                $container = @()
-            }
+                end {
+                    foreach ($fileName in $Paths)
+                    {
+                        dir $fileName | where { ! $_.PSIsContainer } | foreach {
+                            $filePathName = $_.FullName
 
-            process {
-                $container += $NewValue
-            }
+                            # Get file contents
+                            $params = @{ Path=$filePathName; Raw=$true }
+                            if ($PSVersionTable.PSEdition -eq 'Core')
+                            {
+                                $params['AsByteStream']=$true
+                            }
+                            else
+                            {
+                                $params['Encoding']='Byte'
+                            }
 
-            end {
-                foreach ($fileName in $FileNames)
-                {
-                    if (-not (Test-Path $fileName) -and $Force) {
-                        $container > $fileName
-                    }
+                            $contentBytes = Get-Content @params
 
-                    dir $fileName | where { ! $_.PSIsContainer } | foreach {
-                        $filePathName = $_.FullName
-
-                        # Get file contents
-                        $params = @{ Path=$filePathName; Raw=$true }
-                        if ($PSVersionTable.PSEdition -eq 'Core')
-                        {
-                            $params['AsByteStream']=$true
+                            # Notify client for file open.
+                            New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($filePathName, $contentBytes) > $null
                         }
-                        else
-                        {
-                            $params['Encoding']='Byte'
-                        }
-
-                        $contentBytes = Get-Content @params
-
-                        # Notify client for file open.
-                        New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($filePathName, $contentBytes) > $null
                     }
                 }
             }
+
+            <#
+            .SYNOPSIS
+                Creates new files and opens them in your editor window
+            .DESCRIPTION
+                Creates new files and opens them in your editor window
+            .EXAMPLE
+                PS > New-EditorFile './foo.ps1'
+                Creates and opens a new foo.ps1 in your editor
+            .EXAMPLE
+                PS > Get-Process | New-EditorFile proc.txt
+                Creates and opens a new foo.ps1 in your editor with the contents of the call to Get-Process
+            .EXAMPLE
+                PS > Get-Process | New-EditorFile proc.txt -Force
+                Creates and opens a new foo.ps1 in your editor with the contents of the call to Get-Process. Overwrites the file if it already exists
+            .INPUTS
+                Path
+                an array of files you want to open in your editor
+                Value
+                The content you want in the new files
+                Force
+                Overwrites a file if it exists
+            #>
+            function New-EditorFile {
+                [CmdletBinding()]
+                param (
+                    [Parameter(Mandatory=$true)]
+                    [String[]]
+                    $Path,
+
+                    [Parameter(ValueFromPipeline=$true)]
+                    $Value,
+
+                    [Parameter()]
+                    [switch]
+                    $Force
+                )
+
+                begin {
+                    $container = @()
+                }
+
+                process {
+                    $container += $Value
+                }
+
+                end {
+                    foreach ($fileName in $Path)
+                    {
+                        if (-not (Test-Path $fileName) -or $Force) {
+                            $container > $fileName
+
+                            # Get file contents
+                            $params = @{ Path=$fileName; Raw=$true }
+                            if ($PSVersionTable.PSEdition -eq 'Core')
+                            {
+                                $params['AsByteStream']=$true
+                            }
+                            else
+                            {
+                                $params['Encoding']='Byte'
+                            }
+
+                            $contentBytes = Get-Content @params
+
+                            # Notify client for file open.
+                            New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($fileName, $contentBytes) > $null
+                        } else {
+                            $PSCmdlet.WriteError( (
+                                New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList @(
+                                    [System.Exception]'File already exists.'
+                                    $Null
+                                    [System.Management.Automation.ErrorCategory]::ResourceExists
+                                    $fileName ) ) )
+                        }
+                    }
+                }
+            }
+
+            Set-Alias psedit Open-EditorFile -Scope Global
+            Export-ModuleMember -Function Open-EditorFile, New-EditorFile
         ";
 
         // This script is templated so that the '-Forward' parameter can be added
         // to the script when in non-local sessions
         private const string CreatePSEditFunctionScript = @"
             param (
-                [string] $PSEditFunction
+                [string] $PSEditModule
             )
 
             Register-EngineEvent -SourceIdentifier PSESRemoteSessionOpenFile -Forward
-
-            if ((Test-Path -Path 'function:\global:Open-EditorFile') -eq $false)
-            {{
-                Set-Item -Path 'function:\global:Open-EditorFile' -Value $PSEditFunction
-                Set-Alias psedit Open-EditorFile -Scope Global
-            }}
+            $psedit = New-Module -ScriptBlock ([Scriptblock]::Create($PSEditModule)) -Name PSEdit
+            $psedit.ExportedFunctions.Keys | ForEach-Object {
+                Set-Item -Path function:\global:$_ -Value $asdf.ExportedFunctions[$_].Definition -Force
+            }
         ";
 
         private const string RemovePSEditFunctionScript = @"
-            if (Test-Path -Path 'function:\global:Open-EditorFile')
-            {
-                Remove-Item -Path 'function:\global:Open-EditorFile' -Force
+            Get-Command | Where-Object {$_.Source -eq 'PSEdit'} | ForEach-Object {
+                Remove-Item -Path function:\global:$($_.Name) -Force
             }
 
             if (Test-Path -Path 'alias:\psedit')
@@ -511,17 +594,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 {
                     runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived += HandlePSEventReceived;
 
-                    var createScript =
-                        string.Format(
-                            CreatePSEditFunctionScript,
-                            (runspaceDetails.Location == RunspaceLocation.Local &&
-                             runspaceDetails.Context == RunspaceContext.Original)
-                                ? string.Empty : "-Forward");
-
                     PSCommand createCommand = new PSCommand();
                     createCommand
-                        .AddScript(createScript)
-                        .AddParameter("PSEditFunction", PSEditFunctionScript);
+                        .AddScript(CreatePSEditFunctionScript)
+                        .AddParameter("PSEditModule", PSEditModule);
 
                     if (runspaceDetails.Context == RunspaceContext.DebuggedRunspace)
                     {

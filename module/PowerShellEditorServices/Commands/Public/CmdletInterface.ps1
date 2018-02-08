@@ -77,15 +77,37 @@ function Unregister-EditorCommand {
     }
 }
 
-function Open-EditorFile {
+<#
+.SYNOPSIS
+    Creates new files and opens them in your editor window
+.DESCRIPTION
+    Creates new files and opens them in your editor window
+.EXAMPLE
+    PS > New-EditorFile './foo.ps1'
+    Creates and opens a new foo.ps1 in your editor
+.EXAMPLE
+    PS > Get-Process | New-EditorFile proc.txt
+    Creates and opens a new foo.ps1 in your editor with the contents of the call to Get-Process
+.EXAMPLE
+    PS > Get-Process | New-EditorFile proc.txt -Force
+    Creates and opens a new foo.ps1 in your editor with the contents of the call to Get-Process. Overwrites the file if it already exists
+.INPUTS
+    Path
+    an array of files you want to open in your editor
+    Value
+    The content you want in the new files
+    Force
+    Overwrites a file if it exists
+#>
+function New-EditorFile {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        $FilePaths,
+        [String[]]
+        $Path,
 
         [Parameter(ValueFromPipeline=$true)]
-        $NewValue,
+        $Value,
 
         [Parameter()]
         [switch]
@@ -97,21 +119,49 @@ function Open-EditorFile {
     }
 
     process {
-        $container += $NewValue
+        $container += $Value
     }
 
     end {
-        $FilePaths | ForEach-Object {
-            if (-not (Test-Path $_) -and $Force) {
-                $container > $_
+        foreach ($fileName in $Path)
+        {
+            if (-not (Test-Path $fileName) -or $Force) {
+                $container > $fileName
+                $psEditor.Workspace.OpenFile($fileName)
+            } else {
+                $PSCmdlet.WriteError( (
+                    New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList @(
+                        [System.Exception]'File already exists.'
+                        $Null
+                        [System.Management.Automation.ErrorCategory]::ResourceExists
+                        $fileName ) ) )
             }
         }
+    }
+}
 
-        Get-ChildItem $FilePaths -File | ForEach-Object {
+function Open-EditorFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidateNotNullOrEmpty()]
+        $Path
+    )
+
+    begin {
+        $Paths = @()
+    }
+
+    process {
+        $Paths += $Path
+    }
+
+    end {
+        Get-ChildItem $Paths -File | ForEach-Object {
             $psEditor.Workspace.OpenFile($_.FullName)
         }
     }
 }
 Set-Alias psedit Open-EditorFile -Scope Global
 
-Export-ModuleMember -Function Open-EditorFile
+Export-ModuleMember -Function Open-EditorFile,New-EditorFile

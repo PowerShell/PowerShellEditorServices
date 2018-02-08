@@ -77,7 +77,8 @@ FunctionsToExport = @('Register-EditorCommand',
                       'Out-CurrentFile',
                       'Join-ScriptExtent',
                       'Test-ScriptExtent',
-                      'Open-EditorFile')
+                      'Open-EditorFile',
+                      'New-EditorFile')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
