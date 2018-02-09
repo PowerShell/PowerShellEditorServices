@@ -11,7 +11,6 @@ param(
 
 $NeededTools = @{
     OpenSsl = "openssl for macOS"
-    DotNet451TargetingPack = ".NET 4.5.1 Targeting Pack"
     PowerShellGet = "PowerShellGet latest"
     InvokeBuild = "InvokeBuild latest"
 }
@@ -36,18 +35,6 @@ function needsOpenSsl () {
     return $false
 }
 
-function needsDotNet451TargetingPack () {
-    if($BootstrapBuildEnv -and ($OS -eq "Windows")) {
-        $hasNet451TargetingPack = Get-CimInstance Win32_Product | Where-Object Name -match '\.NET Framework 4\.5\.1 Multi-Targeting Pack'
-        if(-not $hasNet451TargetingPack) {
-            return $true
-        }
-    } elseif($OS -eq "Windows") {
-        Write-Host "[Bootstrap] Did not check if the .NET 4.5.1 Targeting Pack is present. To check, run 'build.ps1 -BootstrapBuildEnv'"
-    }
-    return $false
-}
-
 function needsPowerShellGet () {
     if (Get-Module -ListAvailable -Name PowerShellGet) {
         return $false
@@ -67,9 +54,6 @@ function getMissingTools () {
 
     if (needsOpenSsl) {
         $missingTools += $NeededTools.OpenSsl
-    }
-    if (needsDotNet451TargetingPack) {
-        $missingTools += $NeededTools.DotNet451TargetingPack
     }
     if (needsPowerShellGet) {
         $missingTools += $NeededTools.PowerShellGet
