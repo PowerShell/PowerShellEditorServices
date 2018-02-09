@@ -37,7 +37,14 @@ function needsOpenSsl () {
 }
 
 function needsDotNet451TargetingPack () {
-    # how could we check for this?
+    if($BootstrapBuildEnv -and ($OS -eq "Windows")) {
+        $hasNet451TargetingPack = Get-CimInstance Win32_Product | Where-Object Name -match '\.NET Framework 4\.5\.1 Multi-Targeting Pack'
+        if(-not $hasNet451TargetingPack) {
+            return $true
+        }
+    } elseif($OS -eq "Windows") {
+        Write-Host "[Bootstrap] Did not check if the .NET 4.5.1 Targeting Pack is present. To check, run 'build.ps1 -BootstrapBuildEnv'"
+    }
     return $false
 }
 
