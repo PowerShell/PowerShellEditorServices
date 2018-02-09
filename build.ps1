@@ -2,11 +2,15 @@
 param(
     [Parameter()]
     [switch]
+    $Bootstrap,
+
+    [Parameter()]
+    [switch]
     $Clean,
 
     [Parameter()]
     [switch]
-    $BootstrapBuildEnv
+    $Test
 )
 
 $NeededTools = @{
@@ -69,7 +73,7 @@ function hasMissingTools () {
     return ((getMissingTools).Count -gt 0)
 }
 
-if ($BootstrapBuildEnv) {
+if ($Bootstrap) {
     $string = "Here is what your environment is missing:`n"
     $missingTools = getMissingTools
     if (($missingTools).Count -eq 0) {
@@ -80,16 +84,16 @@ if ($BootstrapBuildEnv) {
             + "https://github.com/powershell/PowerShellEditorServices#development"
     }
     Write-Host "`n$string`n"
-} elseif ($Clean) {
-    if(hasMissingTools) {
-        Write-Host "You are missing needed tools. Run './build.ps1 -BootstrapBuildEnv' to see what they are."
-    } else {
+} elseif(hasMissingTools) {
+    Write-Host "You are missing needed tools. Run './build.ps1 -Bootstrap' to see what they are."
+} else {
+    if($Clean) {
         Invoke-Build Clean
     }
-} else {
-    if(hasMissingTools) {
-        Write-Host "You are missing needed tools. Run './build.ps1 -BootstrapBuildEnv' to see what they are."
-    } else {
-        Invoke-Build Build
+
+    Invoke-Build Build
+
+    if($Test) {
+        Invoke-Build Test
     }
 }
