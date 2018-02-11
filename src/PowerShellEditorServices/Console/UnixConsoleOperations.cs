@@ -7,9 +7,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
 {
     internal class UnixConsoleOperations : IConsoleOperations
     {
-        private const int LONG_READ_DELAY = 400;
+        private const int LONG_READ_DELAY = 300;
 
         private const int SHORT_READ_TIMEOUT = 5000;
+
+        private static readonly ManualResetEventSlim _waitHandle = new ManualResetEventSlim();
 
         private SemaphoreSlim _readKeyHandle = new SemaphoreSlim(1, 1);
 
@@ -56,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private async Task<bool> ShortWaitForKey(CancellationToken cancellationToken)
         {
-            if (await SpinUntilKeyAvailable(SHORT_READ_TIMEOUT))
+            if (await SpinUntilKeyAvailable(SHORT_READ_TIMEOUT, cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 return true;
@@ -67,11 +69,16 @@ namespace Microsoft.PowerShell.EditorServices.Console
             return false;
         }
 
-        private async Task<bool> SpinUntilKeyAvailable(int millisecondsTimeout)
+        private async Task<bool> SpinUntilKeyAvailable(int millisecondsTimeout, CancellationToken cancellationToken)
         {
             return await Task<bool>.Factory.StartNew(
                 () => SpinWait.SpinUntil(
-                    () => System.Console.KeyAvailable,
+                    () =>
+                    {
+                        // The wait handle is never set, it's just used to enable cancelling the wait.
+                        _waitHandle.Wait(30, cancellationToken);
+                        return System.Console.KeyAvailable || cancellationToken.IsCancellationRequested;
+                    },
                     millisecondsTimeout));
         }
     }
