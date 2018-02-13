@@ -117,8 +117,9 @@ namespace Microsoft.PowerShell.EditorServices.Session
             function New-EditorFile {
                 [CmdletBinding()]
                 param (
-                    [Parameter(Mandatory=$true)]
+                    [Parameter()]
                     [String[]]
+                    [ValidateNotNullOrEmpty()]
                     $Path,
 
                     [Parameter(ValueFromPipeline=$true)]
@@ -130,42 +131,47 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 )
 
                 begin {
-                    $container = @()
+                    $valueList = @()
                 }
 
                 process {
-                    $container += $Value
+                    $valueList += $Value
                 }
 
                 end {
-                    foreach ($fileName in $Path)
-                    {
-                        if (-not (Test-Path $fileName) -or $Force) {
-                            $container > $fileName
+                    if ($Path) {
+                        foreach ($fileName in $Path)
+                        {
+                            if (-not (Test-Path $fileName) -or $Force) {
+                                $valueList > $fileName
 
-                            # Get file contents
-                            $params = @{ Path=$fileName; Raw=$true }
-                            if ($PSVersionTable.PSEdition -eq 'Core')
-                            {
-                                $params['AsByteStream']=$true
+                                # Get file contents
+                                $params = @{ Path=$fileName; Raw=$true }
+                                if ($PSVersionTable.PSEdition -eq 'Core')
+                                {
+                                    $params['AsByteStream']=$true
+                                }
+                                else
+                                {
+                                    $params['Encoding']='Byte'
+                                }
+
+                                $contentBytes = Get-Content @params
+
+                                # Notify client for file open.
+                                New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($fileName, $contentBytes) > $null
+                            } else {
+                                $PSCmdlet.WriteError( (
+                                    New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList @(
+                                        [System.Exception]'File already exists.'
+                                        $Null
+                                        [System.Management.Automation.ErrorCategory]::ResourceExists
+                                        $fileName ) ) )
                             }
-                            else
-                            {
-                                $params['Encoding']='Byte'
-                            }
-
-                            $contentBytes = Get-Content @params
-
-                            # Notify client for file open.
-                            New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($fileName, $contentBytes) > $null
-                        } else {
-                            $PSCmdlet.WriteError( (
-                                New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList @(
-                                    [System.Exception]'File already exists.'
-                                    $Null
-                                    [System.Management.Automation.ErrorCategory]::ResourceExists
-                                    $fileName ) ) )
                         }
+                    } else {
+                        $bytes = [System.Text.Encoding]::UTF8.GetBytes(($valueList | Out-String))
+                        New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($null, $bytes) > $null
                     }
                 }
             }
@@ -182,21 +188,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
             )
 
             Register-EngineEvent -SourceIdentifier PSESRemoteSessionOpenFile -Forward
-            $psedit = New-Module -ScriptBlock ([Scriptblock]::Create($PSEditModule)) -Name PSEdit
-            $psedit.ExportedFunctions.Keys | ForEach-Object {
-                Set-Item -Path function:\global:$_ -Value $asdf.ExportedFunctions[$_].Definition -Force
-            }
+            New-Module -ScriptBlock ([Scriptblock]::Create($PSEditModule)) -Name PSEdit | Import-Module -Global
         ";
 
         private const string RemovePSEditFunctionScript = @"
-            Get-Command | Where-Object {$_.Source -eq 'PSEdit'} | ForEach-Object {
-                Remove-Item -Path function:\global:$($_.Name) -Force
-            }
-
-            if (Test-Path -Path 'alias:\psedit')
-            {
-                Remove-Item -Path 'alias:\psedit' -Force
-            }
+            Get-Module PSEdit | Remove-Module
 
             Get-EventSubscriber -SourceIdentifier PSESRemoteSessionOpenFile -EA Ignore | Unregister-Event
         ";
@@ -533,7 +529,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
         }
 
-        private void HandlePSEventReceived(object sender, PSEventArgs args)
+        private async void HandlePSEventReceived(object sender, PSEventArgs args)
         {
             if (string.Equals(RemoteSessionOpenFile, args.SourceIdentifier, StringComparison.CurrentCultureIgnoreCase))
             {
@@ -555,10 +551,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
                             if (args.SourceArgs.Length == 2)
                             {
+                                // Try to cast as a PSObject to get the BaseObject, if not, then try to case as a byte[]
                                 PSObject sourceObj = args.SourceArgs[1] as PSObject;
                                 if (sourceObj != null)
                                 {
                                     fileContent = sourceObj.BaseObject as byte[];
+                                }
+                                else
+                                {
+                                    fileContent = args.SourceArgs[1] as byte[];
                                 }
                             }
 
@@ -567,11 +568,20 @@ namespace Microsoft.PowerShell.EditorServices.Session
                             // array.
                             fileContent = fileContent ?? new byte[0];
 
-                            localFilePath =
-                                this.StoreRemoteFile(
-                                    remoteFilePath,
-                                    fileContent,
-                                    this.powerShellContext.CurrentRunspace);
+                            if (remoteFilePath != null)
+                            {
+                                localFilePath =
+                                    this.StoreRemoteFile(
+                                        remoteFilePath,
+                                        fileContent,
+                                        this.powerShellContext.CurrentRunspace);
+                            }
+                            else
+                            {
+                                await this.editorOperations?.NewFile();
+                                EditorContext context = await this.editorOperations?.GetEditorContext();
+                                context?.CurrentFile.InsertText(Encoding.UTF8.GetString(fileContent, 0, fileContent.Length));
+                            }
                         }
 
                         // Open the file in the editor

@@ -102,8 +102,9 @@ function Unregister-EditorCommand {
 function New-EditorFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [String[]]
+        [ValidateNotNullOrEmpty()]
         $Path,
 
         [Parameter(ValueFromPipeline=$true)]
@@ -115,27 +116,33 @@ function New-EditorFile {
     )
 
     begin {
-        $container = @()
+        $valueList = @()
     }
 
     process {
-        $container += $Value
+        $valueList += $Value
     }
 
     end {
-        foreach ($fileName in $Path)
-        {
-            if (-not (Test-Path $fileName) -or $Force) {
-                $container > $fileName
-                $psEditor.Workspace.OpenFile($fileName)
-            } else {
-                $PSCmdlet.WriteError( (
-                    New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList @(
-                        [System.Exception]'File already exists.'
-                        $Null
-                        [System.Management.Automation.ErrorCategory]::ResourceExists
-                        $fileName ) ) )
+        if ($Path) {
+            foreach ($fileName in $Path)
+            {
+                if (-not (Test-Path $fileName) -or $Force) {
+                    New-Item -Path $fileName -ItemType File | Out-Null
+                    $psEditor.Workspace.OpenFile($fileName)
+                    $psEditor.GetEditorContext().CurrentFile.InsertText(($valueList | Out-String))
+                } else {
+                    $PSCmdlet.WriteError( (
+                        New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList @(
+                            [System.IO.IOException]"The file '$fileName' already exists.",
+                            'NewEditorFileIOError',
+                            [System.Management.Automation.ErrorCategory]::WriteError,
+                            $fileName) ) )
+                }
             }
+        } else {
+            $psEditor.Workspace.NewFile()
+            $psEditor.GetEditorContext().CurrentFile.InsertText(($valueList | Out-String))
         }
     }
 }
