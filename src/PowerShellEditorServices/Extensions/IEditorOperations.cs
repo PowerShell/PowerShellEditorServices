@@ -48,6 +48,16 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         Task OpenFile(string filePath);
 
         /// <summary>
+        /// Causes a file to be opened in the editor.  If the file is
+        /// already open, the editor must switch to the file.
+        /// You can specify whether the file opens as a preview or as a durable editor.
+        /// </summary>
+        /// <param name="filePath">The path of the file to be opened.</param>
+        /// <param name="preview">Determines wether the file is opened as a preview or as a durable editor.</param>
+        /// <returns>A Task that can be tracked for completion.</returns>
+        Task OpenFile(string filePath, bool preview);
+
+        /// <summary>
         /// Causes a file to be closed in the editor.
         /// </summary>
         /// <param name="filePath">The path of the file to be closed.</param>

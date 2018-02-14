@@ -195,6 +195,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
             throw new NotImplementedException();
         }
 
+        public Task OpenFile(string filePath, bool preview)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task CloseFile(string filePath)
         {
             throw new NotImplementedException();

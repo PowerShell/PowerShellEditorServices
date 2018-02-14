@@ -111,8 +111,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class OpenFileRequest
     {
         public static readonly
-            RequestType<string, EditorCommandResponse, object, object> Type =
-            RequestType<string, EditorCommandResponse, object, object>.Create("editor/openFile");
+        RequestType<OpenFileDetails, EditorCommandResponse, object, object> Type =
+            RequestType<OpenFileDetails, EditorCommandResponse, object, object>.Create("editor/openFile");
+    }
+
+    public class OpenFileDetails
+    {
+        public string FilePath { get; set; }
+
+        public bool Preview { get; set; }
     }
 
     public class CloseFileRequest

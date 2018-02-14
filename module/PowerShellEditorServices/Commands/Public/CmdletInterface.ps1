@@ -129,7 +129,14 @@ function New-EditorFile {
             {
                 if (-not (Test-Path $fileName) -or $Force) {
                     New-Item -Path $fileName -ItemType File | Out-Null
-                    $psEditor.Workspace.OpenFile($fileName)
+
+                    if ($Path.Count -gt 1) {
+                        $preview = $false
+                    } else {
+                        $preview = $true
+                    }
+
+                    $psEditor.Workspace.OpenFile($fileName, $preview)
                     $psEditor.GetEditorContext().CurrentFile.InsertText(($valueList | Out-String))
                 } else {
                     $PSCmdlet.WriteError( (
@@ -164,8 +171,14 @@ function Open-EditorFile {
     }
 
     end {
+        if ($Paths.Count -gt 1) {
+            $preview = $false
+        } else {
+            $preview = $true
+        }
+
         Get-ChildItem $Paths -File | ForEach-Object {
-            $psEditor.Workspace.OpenFile($_.FullName)
+            $psEditor.Workspace.OpenFile($_.FullName, $preview)
         }
     }
 }

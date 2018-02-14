@@ -12,6 +12,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     internal class LanguageServerEditorOperations : IEditorOperations
     {
+        private const bool DefaultPreviewSetting = true;
+
         private EditorSession editorSession;
         private IMessageSender messageSender;
 
@@ -115,7 +117,24 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             return
                 this.messageSender.SendRequest(
                     OpenFileRequest.Type,
-                    filePath,
+                    new OpenFileDetails
+                    {
+                        FilePath = filePath,
+                        Preview = DefaultPreviewSetting
+                    },
+                    true);
+        }
+
+        public Task OpenFile(string filePath, bool preview)
+        {
+            return
+                this.messageSender.SendRequest(
+                    OpenFileRequest.Type,
+                    new OpenFileDetails
+                    {
+                        FilePath = filePath,
+                        Preview = preview
+                    },
                     true);
         }
 

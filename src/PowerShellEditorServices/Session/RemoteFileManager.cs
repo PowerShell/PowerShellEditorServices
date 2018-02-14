@@ -67,6 +67,12 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 }
 
                 end {
+                    if ($Paths.Count -gt 1) {
+                        $preview = $false
+                    } else {
+                        $preview = $true
+                    }
+
                     foreach ($fileName in $Paths)
                     {
                         dir $fileName | where { ! $_.PSIsContainer } | foreach {
@@ -86,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                             $contentBytes = Get-Content @params
 
                             # Notify client for file open.
-                            New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($filePathName, $contentBytes) > $null
+                            New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($filePathName, $contentBytes, $preview) > $null
                         }
                     }
                 }
@@ -158,8 +164,14 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
                                 $contentBytes = Get-Content @params
 
+                                if ($Path.Count -gt 1) {
+                                    $preview = $false
+                                } else {
+                                    $preview = $true
+                                }
+
                                 # Notify client for file open.
-                                New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($fileName, $contentBytes) > $null
+                                New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($fileName, $contentBytes, $preview) > $null
                             } else {
                                 $PSCmdlet.WriteError( (
                                     New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList @(
@@ -549,7 +561,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                         {
                             byte[] fileContent = null;
 
-                            if (args.SourceArgs.Length == 2)
+                            if (args.SourceArgs.Length >= 2)
                             {
                                 // Try to cast as a PSObject to get the BaseObject, if not, then try to case as a byte[]
                                 PSObject sourceObj = args.SourceArgs[1] as PSObject;
@@ -584,8 +596,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
                             }
                         }
 
+                        bool preview = true;
+                        if (args.SourceArgs.Length >= 3)
+                        {
+                            bool? previewCheck = args.SourceArgs[2] as bool?;
+                            preview = previewCheck ?? true;
+                        }
+
                         // Open the file in the editor
-                        this.editorOperations?.OpenFile(localFilePath);
+                        this.editorOperations?.OpenFile(localFilePath, preview);
                     }
                 }
                 catch (NullReferenceException e)
