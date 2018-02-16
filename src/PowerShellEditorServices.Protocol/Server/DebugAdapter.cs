@@ -645,7 +645,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             SetExceptionBreakpointsRequestArguments setExceptionBreakpointsParams,
             RequestContext<object> requestContext)
         {
-            // TODO: Handle this appropriately
+            // TODO: When support for exception breakpoints (unhandled and/or first chance)
+            //       are added to the PowerShell engine, wire up the VSCode exception 
+            //       breakpoints here using the pattern below to prevent bug regressions.
             //if (!this.noDebug)
             //{
             //    this.setBreakpointInProgress = true;
