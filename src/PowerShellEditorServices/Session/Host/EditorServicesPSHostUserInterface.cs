@@ -704,10 +704,11 @@ namespace Microsoft.PowerShell.EditorServices
                         OutputType.Normal,
                         foregroundColor: ConsoleColor.Red);
                 }
+                // Do nothing here, the while loop condition will exit.
                 catch (TaskCanceledException)
-                {
-                    // Do nothing here, the while loop condition will exit.
-                }
+                { }
+                catch (OperationCanceledException)
+                { }
                 catch (Exception e) // Narrow this if possible
                 {
                     this.WriteOutput(
