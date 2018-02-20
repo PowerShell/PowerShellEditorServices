@@ -58,6 +58,18 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             this.editorOperations.OpenFile(filePath).Wait();
         }
 
+        /// <summary>
+        /// Opens a file in the workspace.  If the file is already open
+        /// its buffer will be made active.
+        /// You can specify whether the file opens as a preview or as a durable editor.
+        /// </summary>
+        /// <param name="filePath">The path to the file to be opened.</param>
+        /// <param name="preview">Determines wether the file is opened as a preview or as a durable editor.</param>
+        public void OpenFile(string filePath, bool preview)
+        {
+            this.editorOperations.OpenFile(filePath, preview).Wait();
+        }
+
         #endregion
     }
 }
