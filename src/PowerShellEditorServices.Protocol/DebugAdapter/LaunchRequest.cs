@@ -53,6 +53,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public string Cwd { get; set; }
 
         /// <summary>
+        /// Gets or sets a boolean value that determines whether to create a temporary
+        /// integrated console for the debug session. Default is false.
+        /// </summary>
+        public bool CreateTemporaryIntegratedConsole { get; set; }
+
+        /// <summary>
         /// Gets or sets the absolute path to the runtime executable to be used.
         /// Default is the runtime executable on the PATH.
         /// </summary>

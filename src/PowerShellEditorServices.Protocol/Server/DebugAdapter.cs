@@ -54,6 +54,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.ownsEditorSession = ownsEditorSession;
         }
 
+        /// <summary>
+        /// Gets a boolean that indicates whether the current debug adapter is 
+        /// using a temporary integrated console.
+        /// </summary>
+        public bool IsUsingTempIntegratedConsole { get; private set; }
+
         public void Start()
         {
             // Register all supported message types
@@ -313,6 +319,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.scriptToLaunch = launchParams.Script ?? launchParams.Program;
 #pragma warning restore 618
             this.arguments = arguments;
+            this.IsUsingTempIntegratedConsole = launchParams.CreateTemporaryIntegratedConsole;
 
             // If the current session is remote, map the script path to the remote
             // machine if necessary

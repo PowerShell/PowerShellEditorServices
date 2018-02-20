@@ -303,6 +303,12 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
                         this.debugServiceListener.Start();
                     }
+                    else if (this.debugAdapter.IsUsingTempIntegratedConsole)
+                    {
+                        this.logger.Write(
+                            LogLevel.Normal,
+                            "Previous temp debug session ended");
+                    }
                     else
                     {
                         // Exit the host process
