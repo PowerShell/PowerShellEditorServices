@@ -613,9 +613,23 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             CommandBreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
             if (!this.noDebug)
             {
-                updatedBreakpointDetails =
-                    await editorSession.DebugService.SetCommandBreakpoints(
-                        breakpointDetails);
+                this.setBreakpointInProgress = true;
+
+                try
+                {
+                    updatedBreakpointDetails =
+                        await editorSession.DebugService.SetCommandBreakpoints(
+                            breakpointDetails);
+                }
+                catch (Exception e)
+                {
+                    // Log whatever the error is
+                    Logger.WriteException($"Caught error while setting command breakpoints", e);
+                }
+                finally
+                {
+                    this.setBreakpointInProgress = false;
+                }
             }
 
             await requestContext.SendResult(
@@ -631,7 +645,27 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             SetExceptionBreakpointsRequestArguments setExceptionBreakpointsParams,
             RequestContext<object> requestContext)
         {
-            // TODO: Handle this appropriately
+            // TODO: When support for exception breakpoints (unhandled and/or first chance)
+            //       are added to the PowerShell engine, wire up the VSCode exception 
+            //       breakpoints here using the pattern below to prevent bug regressions.
+            //if (!this.noDebug)
+            //{
+            //    this.setBreakpointInProgress = true;
+
+            //    try
+            //    {
+            //        // Set exception breakpoints in DebugService
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        // Log whatever the error is
+            //        Logger.WriteException($"Caught error while setting exception breakpoints", e);
+            //    }
+            //    finally
+            //    {
+            //        this.setBreakpointInProgress = false;
+            //    }
+            //}
 
             await requestContext.SendResult(null);
         }
@@ -1034,8 +1068,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     break;
             }
 
-            var breakpoint = Protocol.DebugAdapter.Breakpoint.Create(
-                BreakpointDetails.Create(e.Breakpoint));
+            Protocol.DebugAdapter.Breakpoint breakpoint;
+            if (e.Breakpoint is LineBreakpoint)
+            {
+                breakpoint = Protocol.DebugAdapter.Breakpoint.Create(BreakpointDetails.Create(e.Breakpoint));
+            }
+            else if (e.Breakpoint is CommandBreakpoint)
+            {
+                //breakpoint = Protocol.DebugAdapter.Breakpoint.Create(CommandBreakpointDetails.Create(e.Breakpoint));
+                Logger.Write(LogLevel.Verbose, "Function breakpoint updated event is not supported yet");
+                return;
+            }
+            else
+            {
+                Logger.Write(LogLevel.Error, $"Unrecognized breakpoint type {e.Breakpoint.GetType().FullName}");
+                return;
+            }
 
             breakpoint.Verified = e.UpdateType != BreakpointUpdateType.Disabled;
 
