@@ -60,13 +60,13 @@ Fix remote editing in PSCore by fixing *-Content calls in psedit scripts and set
 - [PowerShell/PowerShellEditorServices #588](https://github.com/PowerShell/PowerShellEditorServices/pull/588) -
   Fix bad pssa settings path crashes PSES.
 
-- [PowerShell/PowerShellEditorServices](https://github.com/PowerShell/PowerShellEditorServices/issues/582) -
+- [PowerShell/PowerShellEditorServices #582](https://github.com/PowerShell/PowerShellEditorServices/issues/582) -
   Fix Very Large String crashes PS Editor Services.
 
-- [PowerShell/vscode-powershell](https://github.com/PowerShell/vscode-powershell/issues/1114) -
+- [PowerShell/vscode-powershell #1114](https://github.com/PowerShell/vscode-powershell/issues/1114) -
   Fix breakpoint on nonexisting file.
 
-- [PowerShell/vscode-powershell](https://github.com/PowerShell/vscode-powershell/issues/1014) -
+- [PowerShell/vscode-powershell #1014](https://github.com/PowerShell/vscode-powershell/issues/1014) -
   Fix crash of PSES on startup when workspace folder has [] in path.
 
 ## 1.5.1
