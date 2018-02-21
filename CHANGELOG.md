@@ -1,5 +1,74 @@
 # PowerShell Editor Services Release History
 
+## 1.6.0
+### Thursday, February 22, 2018
+
+#### Fixes and Improvements
+
+- [PowerShell/vscode-powershell #863](https://github.com/PowerShell/vscode-powershell/issues/863) -
+  Eliminate duplicate dgb prompt.
+
+- [PowerShell/PowerShellEditorServices #626](https://github.com/PowerShell/PowerShellEditorServices/pull/626) -
+  Switch to w3c log file timestamp format.
+
+- [PowerShell/vscode-powershell #907](https://github.com/PowerShell/vscode-powershell/issues/907) -
+  Track tempIntegratedConsole launch param, do not exit when session ends.
+
+- [PowerShell/vscode-powershell #1159](https://github.com/PowerShell/vscode-powershell/issues/1159) -
+  Fix PSES crash on debug start when function breakpoint defined.
+
+- [PowerShell/PowerShellEditorServices #586](https://github.com/PowerShell/PowerShellEditorServices/issues/586) -
+  Add build.ps1 to follow consistent guidelines.
+
+- [PowerShell/PowerShellEditorServices #414](https://github.com/PowerShell/PowerShellEditorServices/issues/414) -
+  Enable piping text to `psedit` to open a new untitled buffer.
+
+- [PowerShell/PowerShellEditorServices #413](https://github.com/PowerShell/PowerShellEditorServices/issues/413) -
+  Enable piping multiple file paths through `psedit` to open those files.
+
+- [PowerShell/vscode-powershell #1185](https://github.com/PowerShell/vscode-powershell/issues/1185) -
+  Fix `PowerShell: Expand Alias` command in macOS.
+
+- [PowerShell/PowerShellEditorServices #612](https://github.com/PowerShell/PowerShellEditorServices/issues/612),
+[PowerShell/vscode-powershell](https://github.com/PowerShell/vscode-powershell/issues/908) -
+  Fix macOS/linux crash with "too many open files".
+
+- [PowerShell/PowerShellEditorServices #528](https://github.com/PowerShell/PowerShellEditorServices/issues/528) -
+  Change psedit to Open-EditorFile and alias psedit to it.
+
+- [PowerShell/PowerShellEditorServices #597](https://github.com/PowerShell/PowerShellEditorServices/issues/597),
+[PowerShell/vscode-powershell #789](https://github.com/PowerShell/vscode-powershell/issues/789) -
+Fix remote editing in PSCore by fixing *-Content calls in psedit scripts and setting ComputerName default.
+
+- [PowerShell/PowerShellEditorServices #598](https://github.com/PowerShell/PowerShellEditorServices/pull/598) -
+  Improve error logging for exec of pscommands.
+
+- [PowerShell/PowerShellEditorServices #594](https://github.com/PowerShell/PowerShellEditorServices/pull/594) -
+  Fixed markdown typo to correct the link to the contributing guidelines. Thanks to [dee-see](https://github.com/dee-see)!
+
+- [PowerShell/vscode-powershell #987](https://github.com/PowerShell/vscode-powershell/issues/987),
+[PowerShell/vscode-powershell #1107](https://github.com/PowerShell/vscode-powershell/issues/1107),
+[PowerShell/PowerShellEditorServices #554](https://github.com/PowerShell/PowerShellEditorServices/issues/554),
+[PowerShell/vscode-powershell #1146](https://github.com/PowerShell/vscode-powershell/issues/1146),
+[PowerShell/vscode-powershell #1119](https://github.com/PowerShell/vscode-powershell/issues/1119),
+[PowerShell/vscode-powershell #120](https://github.com/PowerShell/vscode-powershell/issues/120) -
+  Fix debugger step through on Unix platforms.
+
+- [PowerShell/PowerShellEditorServices #590](https://github.com/PowerShell/PowerShellEditorServices/pull/590) -
+  Add .Save() to FileContext API.
+
+- [PowerShell/PowerShellEditorServices #588](https://github.com/PowerShell/PowerShellEditorServices/pull/588) -
+  Fix bad pssa settings path crashes PSES.
+
+- [PowerShell/PowerShellEditorServices](https://github.com/PowerShell/PowerShellEditorServices/issues/582) -
+  Fix Very Large String crashes PS Editor Services.
+
+- [PowerShell/vscode-powershell](https://github.com/PowerShell/vscode-powershell/issues/1114) -
+  Fix breakpoint on nonexisting file.
+
+- [PowerShell/vscode-powershell](https://github.com/PowerShell/vscode-powershell/issues/1014) -
+  Fix crash of PSES on startup when workspace folder has [] in path.
+
 ## 1.5.1
 ### Tuesday, November 14, 2017
 
