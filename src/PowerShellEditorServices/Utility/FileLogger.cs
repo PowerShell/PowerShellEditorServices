@@ -82,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 // Print the timestamp and log level
                 this.textWriter.WriteLine(
                     "{0} [{1}] - Method \"{2}\" at line {3} of {4}\r\n",
-                    DateTime.Now,
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                     logLevel.ToString().ToUpper(),
                     callerName,
                     callerLineNumber,
