@@ -642,8 +642,8 @@ namespace Microsoft.PowerShell.EditorServices
                     .OfType<string>()
                     .FirstOrDefault() ?? "PS> ";
 
-            // Add the [DBG] prefix if we're stopped in the debugger
-            if (this.powerShellContext.IsDebuggerStopped)
+            // Add the [DBG] prefix if we're stopped in the debugger and the prompt doesn't already have [DBG] in it
+            if (this.powerShellContext.IsDebuggerStopped && !promptString.Contains("[DBG]"))
             {
                 promptString =
                     string.Format(
