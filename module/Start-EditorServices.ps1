@@ -51,7 +51,16 @@ param(
     $WaitForDebugger,
 
     [switch]
-    $ConfirmInstall
+    $ConfirmInstall,
+
+    [switch]
+    $Stdio,
+
+    [string]
+    $LanguageServicePipeName = $null,
+
+    [string]
+    $DebugServicePipeName = $null
 )
 
 # This variable will be assigned later to contain information about
@@ -149,8 +158,9 @@ if ((Test-ModuleAvailable "PowerShellEditorServices" -RequiredVersion $parsedVer
 Import-Module PowerShellEditorServices -RequiredVersion $parsedVersion -ErrorAction Stop
 
 # Locate available port numbers for services
-$languageServicePort = Get-AvailablePort
-$debugServicePort = Get-AvailablePort
+
+if (-not ($Stdio.IsPresent -or $LanguageServicePipeName)) { $languageServicePort = Get-AvailablePort }
+if (-not ($Stdio.IsPresent -or $DebugServicePipeName)) { $debugServicePort = Get-AvailablePort }
 
 $editorServicesHost =
     Start-EditorServicesHost `
@@ -162,6 +172,9 @@ $editorServicesHost =
         -AdditionalModules @() `
         -LanguageServicePort $languageServicePort `
         -DebugServicePort $debugServicePort `
+        -Stdio $Stdio.IsPresent`
+        -LanguageServiceNamedPipe $LanguageServicePipeName `
+        -DebugServiceNamedPipe $DebugServicePipeName `
         -BundledModulesPath $BundledModulesPath `
         -WaitForDebugger:$WaitForDebugger.IsPresent
 
@@ -169,9 +182,11 @@ $editorServicesHost =
 
 $resultDetails = @{
     "status" = "started";
-    "channel" = "tcp";
     "languageServicePort" = $languageServicePort;
     "debugServicePort" = $debugServicePort;
+    "languageServiceNamedPipe" = $LanguageServicePipeName;
+    "debugServiceNamedPipe" = $DebugServicePipeName;
+    "Stdio" = $Stdio.IsPresent;
 };
 
 # Notify the client that the services have started

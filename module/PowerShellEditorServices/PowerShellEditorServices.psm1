@@ -31,15 +31,20 @@ function Start-EditorServicesHost {
         [string]
         $HostVersion,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
         [int]
         $LanguageServicePort,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
         [int]
         $DebugServicePort,
+
+        [bool]
+        $Stdio,
+
+        [string]
+        $LanguageServiceNamedPipe,
+
+        [string]
+        $DebugServiceNamedPipe,
 
         [ValidateNotNullOrEmpty()]
         [string]
@@ -89,12 +94,39 @@ function Start-EditorServicesHost {
 
     $editorServicesHost.StartLogging($LogPath, $LogLevel);
 
-    if ($DebugServiceOnly.IsPresent) {
-        $editorServicesHost.StartDebugService($DebugServicePort, $profilePaths, $false);
+    $languageServiceConfig = New-Object Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportConfig
+    $debugServiceConfig    = New-Object Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportConfig
+
+    if ($Stdio) {
+        $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
+        $debugServiceConfig.TransportType    = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
     }
-    else {
-        $editorServicesHost.StartLanguageService($LanguageServicePort, $profilePaths);
-        $editorServicesHost.StartDebugService($DebugServicePort, $profilePaths, $true);
+
+    if ($LanguageServicePort) {
+        $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Tcp
+        $languageServiceConfig.Endpoint = "$LanguageServicePort"
+    }
+
+    if ($DebugServicePort) {
+        $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Tcp
+        $debugServiceConfig.Endpoint = "$DebugServicePort"
+    }
+
+    if ($LanguageServiceNamedPipe) {
+        $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
+        $languageServiceConfig.Endpoint = "$LanguageServiceNamedPipe"
+    }
+
+    if ($DebugServicePort) {
+        $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
+        $debugServiceConfig.Endpoint = "$DebugServiceNamedPipe"
+    }
+
+    if ($DebugServiceOnly.IsPresent) {
+        $editorServicesHost.StartDebugService($debugServiceConfig, $profilePaths, $false);
+    } else {
+        $editorServicesHost.StartLanguageService($languageServiceConfig, $profilePaths);
+        $editorServicesHost.StartDebugService($debugServiceConfig, $profilePaths, $true);
     }
 
     return $editorServicesHost
