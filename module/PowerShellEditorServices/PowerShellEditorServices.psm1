@@ -117,7 +117,7 @@ function Start-EditorServicesHost {
         $languageServiceConfig.Endpoint = "$LanguageServiceNamedPipe"
     }
 
-    if ($DebugServicePort) {
+    if ($DebugServiceNamedPipe) {
         $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
         $debugServiceConfig.Endpoint = "$DebugServiceNamedPipe"
     }
