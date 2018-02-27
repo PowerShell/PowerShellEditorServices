@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
-    public abstract class ServerListenerBase<TChannel>
+    public abstract class ServerListenerBase<TChannel> : IServerListener
         where TChannel : ChannelBase
     {
         private MessageProtocolType messageProtocolType;
@@ -22,12 +22,21 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         public abstract void Stop();
 
-        public event EventHandler<TChannel> ClientConnect;
+        public event EventHandler<ChannelBase> ClientConnect;
 
         protected void OnClientConnect(TChannel channel)
         {
             channel.Start(this.messageProtocolType);
             this.ClientConnect?.Invoke(this, channel);
         }
+    }
+
+    public interface IServerListener
+    {
+        void Start();
+
+        void Stop();
+
+        event EventHandler<ChannelBase> ClientConnect;
     }
 }
