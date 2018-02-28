@@ -56,6 +56,9 @@ param(
     [switch]
     $Stdio,
 
+    [switch]
+    $DebugServiceOnly,
+
     [string]
     $LanguageServicePipeName = $null,
 
@@ -158,9 +161,9 @@ if ((Test-ModuleAvailable "PowerShellEditorServices" -RequiredVersion $parsedVer
 Import-Module PowerShellEditorServices -RequiredVersion $parsedVersion -ErrorAction Stop
 
 # Locate available port numbers for services
-
-if (-not ($Stdio.IsPresent -or $LanguageServicePipeName)) { $languageServicePort = Get-AvailablePort }
-if (-not ($Stdio.IsPresent -or $DebugServicePipeName)) { $debugServicePort = Get-AvailablePort }
+# There could be only one service on Stdio channel
+if (-not (($Stdio.IsPresent -and -not $DebugServiceOnly.IsPresent) -or $LanguageServicePipeName)) { $languageServicePort = Get-AvailablePort }
+if (-not (($Stdio.IsPresent -and $DebugServiceOnly.IsPresent)      -or $DebugServicePipeName))    { $debugServicePort = Get-AvailablePort }
 
 $editorServicesHost =
     Start-EditorServicesHost `
@@ -176,6 +179,7 @@ $editorServicesHost =
         -LanguageServiceNamedPipe $LanguageServicePipeName `
         -DebugServiceNamedPipe $DebugServicePipeName `
         -BundledModulesPath $BundledModulesPath `
+        -DebugServiceOnly:$DebugServiceOnly.IsPresent`
         -WaitForDebugger:$WaitForDebugger.IsPresent
 
 # TODO: Verify that the service is started
