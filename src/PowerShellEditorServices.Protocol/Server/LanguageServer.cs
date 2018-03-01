@@ -1348,13 +1348,16 @@ function __Expand-Alias {
         {
             // The protocol's positions are zero-based so add 1 to all offsets
 
+            if (changeRange == null) return new FileChange { InsertString = insertString, Reloaded = true };
+
             return new FileChange
             {
                 InsertString = insertString,
                 Line = changeRange.Start.Line + 1,
                 Offset = changeRange.Start.Character + 1,
                 EndLine = changeRange.End.Line + 1,
-                EndOffset = changeRange.End.Character + 1
+                EndOffset = changeRange.End.Character + 1,
+                Reloaded = false
             };
         }
 
