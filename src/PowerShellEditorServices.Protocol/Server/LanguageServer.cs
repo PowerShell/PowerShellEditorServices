@@ -1280,7 +1280,6 @@ function __Expand-Alias {
         /// </summary>
         /// <param name="sender">the PowerShell context sending the execution event</param>
         /// <param name="e">details of the execution status change</param>
-        /// <returns></returns>
         private async void PowerShellContext_ExecutionStatusChanged(object sender, ExecutionStatusChangedEventArgs e)
         {
             await this.messageSender.SendEvent(
