@@ -78,7 +78,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
         $env:DOTNET_INSTALL_DIR = $dotnetExeDir
     }
 
-    Write-Host "`n### Using dotnet v$(& $dotnetExePath --version) at path $script:dotnetExe`n" -ForegroundColor Green
+    Write-Host "`n### Using dotnet v$(& $script:dotnetExe --version) at path $script:dotnetExe`n" -ForegroundColor Green
 }
 
 task Clean {
