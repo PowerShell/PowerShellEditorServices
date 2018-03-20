@@ -318,7 +318,7 @@ namespace Microsoft.PowerShell.EditorServices
             // Break up the change lines
             string[] changeLines = fileChange.InsertString.Split('\n');
 
-            if (fileChange.Reloaded)
+            if (fileChange.IsReload)
             {
                 this.FileLines.Clear();
                 foreach (var changeLine in changeLines)
