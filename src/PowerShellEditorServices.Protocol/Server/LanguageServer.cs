@@ -56,7 +56,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             this.Logger = logger;
             this.editorSession = editorSession;
+            // Attach to the underlying PowerShell context to listen for changes in the runspace or execution status
             this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;
+            this.editorSession.PowerShellContext.ExecutionStatusChanged += PowerShellContext_ExecutionStatusChanged;
 
             // Attach to ExtensionService events
             this.editorSession.ExtensionService.CommandAdded += ExtensionService_ExtensionAdded;
@@ -1271,6 +1273,18 @@ function __Expand-Alias {
             await this.messageSender.SendEvent(
                 RunspaceChangedEvent.Type,
                 new Protocol.LanguageServer.RunspaceDetails(e.NewRunspace));
+        }
+
+        /// <summary>
+        /// Event hook on the PowerShell context to listen for changes in script execution status
+        /// </summary>
+        /// <param name="sender">the PowerShell context sending the execution event</param>
+        /// <param name="e">details of the execution status change</param>
+        private async void PowerShellContext_ExecutionStatusChanged(object sender, ExecutionStatusChangedEventArgs e)
+        {
+            await this.messageSender.SendEvent(
+                ExecutionStatusChangedEvent.Type,
+                e);
         }
 
         private async void ExtensionService_ExtensionAdded(object sender, EditorCommand e)
