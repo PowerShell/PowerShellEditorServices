@@ -58,7 +58,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     "-HostVersion \"1.0.0\" " +
                     "-BundledModulesPath \\\"" + modulePath + "\\\" " +
                     "-LogLevel \"Verbose\" " +
-                    "-LogPath \"" + logPath + "\" ",
+                    "-LogPath \"" + logPath + "\" " +
+                    "-SessionDetailsPath \".\\sessionDetails\" " +
+                    "-FeatureFlags @() " +
+                    "-AdditionalModules @() ",
                    editorServicesModuleVersion);
 
             if (waitForDebugger)
