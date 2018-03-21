@@ -305,7 +305,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         public void LanguageServiceFindsSymbolsInPesterFile()
         {
             var symbolsResult = this.FindSymbolsInFile(FindSymbolsInPesterFile.SourceDetails);
-            Assert.Equal(5, symbolsResult.FoundOccurrences.Count());
+            Assert.Equal(10, symbolsResult.FoundOccurrences.Count());
         }
 
         [Fact]
