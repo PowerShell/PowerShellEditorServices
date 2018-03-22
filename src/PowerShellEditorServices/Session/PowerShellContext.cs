@@ -845,8 +845,12 @@ namespace Microsoft.PowerShell.EditorServices
 
                 if (typeof(TResult) != typeof(PSObject))
                 {
-                    return
-                       results
+                    return (results.FirstOrDefault() == null)
+                        // Evaluates to null but couldn't put just null (needs to be a TResult) and also couldn't cast null to TResult
+                        ? results
+                            .OfType<TResult>()
+                            .FirstOrDefault()
+                        : results
                             .Select(pso => pso.BaseObject)
                             .OfType<TResult>()
                             .FirstOrDefault();
