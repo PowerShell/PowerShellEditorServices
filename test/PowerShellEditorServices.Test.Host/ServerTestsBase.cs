@@ -10,9 +10,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
-#if CoreCLR
 using System.Reflection;
-#endif
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class ServerTestsBase
     {
+        private static int sessionCounter;        
         private Process serviceProcess;
         protected IMessageSender messageSender;
         protected IMessageHandlers messageHandlers;
@@ -39,15 +38,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             string scriptPath = Path.Combine(modulePath, "Start-EditorServices.ps1");
 
 #if CoreCLR
-            string assemblyPath = this.GetType().GetTypeInfo().Assembly.Location;
-            FileVersionInfo fileVersionInfo =
-                FileVersionInfo.GetVersionInfo(assemblyPath);
+            Assembly assembly = this.GetType().GetTypeInfo().Assembly;
 #else
-            string assemblyPath = this.GetType().Assembly.Location;
+            Assembly assembly = this.GetType().Assembly;
+#endif
+
+            string assemblyPath = new Uri(assembly.CodeBase).LocalPath;
             FileVersionInfo fileVersionInfo =
                 FileVersionInfo.GetVersionInfo(assemblyPath);
-#endif
-            string sessionPath = Path.Combine(Path.GetDirectoryName(assemblyPath), "session.json");
+
+            string sessionPath = 
+                Path.Combine(
+                    Path.GetDirectoryName(assemblyPath), $"session-{++sessionCounter}.json");
 
             string editorServicesModuleVersion =
                 string.Format(
@@ -105,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             this.serviceProcess.Start();
 
             // Wait for the server to finish initializing
-            while(!File.Exists(sessionPath) && new FileInfo(assemblyPath).Length > 0)
+            while (!File.Exists(sessionPath) || (new FileInfo(sessionPath).Length == 0))
             {
                 Thread.Sleep(100);
             }
