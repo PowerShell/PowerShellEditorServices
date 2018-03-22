@@ -61,6 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     "-LogPath \"" + logPath + "\" " +
                     "-SessionDetailsPath \".\\sessionDetails\" " +
                     "-FeatureFlags @() " +
+                    "-EnableConsoleRepl " +
                     "-AdditionalModules @() ",
                    editorServicesModuleVersion);
 
