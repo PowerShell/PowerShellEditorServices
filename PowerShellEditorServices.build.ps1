@@ -37,7 +37,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
     }
 
     # Make sure the dotnet we found is the right version
-    if ($dotnetExePath -and (& $dotnetExePath --version) -eq $requiredSdkVersion) {
+    if ($dotnetExePath -and [version](& $dotnetExePath --version) -ge [version]$requiredSdkVersion) {
         $script:dotnetExe = $dotnetExePath
     }
     else {
@@ -78,7 +78,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
         $env:DOTNET_INSTALL_DIR = $dotnetExeDir
     }
 
-    Write-Host "`n### Using dotnet v$requiredSDKVersion at path $script:dotnetExe`n" -ForegroundColor Green
+    Write-Host "`n### Using dotnet v$(& $script:dotnetExe --version) at path $script:dotnetExe`n" -ForegroundColor Green
 }
 
 task Clean {
