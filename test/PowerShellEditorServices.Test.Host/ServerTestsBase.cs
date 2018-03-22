@@ -10,6 +10,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+#if CoreCLR
+using System.Reflection;
+#endif
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
