@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             this.serviceProcess.Start();
 
             // Wait for the server to finish initializing
-            while(!File.Exists(sessionPath))
+            while(!File.Exists(sessionPath) && new FileInfo(assemblyPath).Length > 0)
             {
                 Thread.Sleep(100);
             }
