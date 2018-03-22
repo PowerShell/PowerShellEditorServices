@@ -43,9 +43,10 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// <returns>true if the Ast represents a PowerShell command with arguments, false otherwise</returns>
         private static bool IsNamedCommandWithArguments(Ast ast)
         {
+            CommandAst commandAst = ast as CommandAst;
 
                 return
-                    ast is CommandAst commandAst &&
+                    commandAst != null &&
                     commandAst.InvocationOperator != TokenKind.Dot &&
                     PesterSymbolReference.GetCommandType(commandAst.GetCommandName()).HasValue &&
                     commandAst.CommandElements.Count >= 2;
