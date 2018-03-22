@@ -10,13 +10,16 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class ServerTestsBase
     {
+        private static int sessionCounter;        
         private Process serviceProcess;
         protected IMessageSender messageSender;
         protected IMessageHandlers messageHandlers;
@@ -35,12 +38,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             string scriptPath = Path.Combine(modulePath, "Start-EditorServices.ps1");
 
 #if CoreCLR
-            FileVersionInfo fileVersionInfo =
-                FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
+            Assembly assembly = this.GetType().GetTypeInfo().Assembly;
 #else
-            FileVersionInfo fileVersionInfo =
-                FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
+            Assembly assembly = this.GetType().Assembly;
 #endif
+
+            string assemblyPath = new Uri(assembly.CodeBase).LocalPath;
+            FileVersionInfo fileVersionInfo =
+                FileVersionInfo.GetVersionInfo(assemblyPath);
+
+            string sessionPath = 
+                Path.Combine(
+                    Path.GetDirectoryName(assemblyPath), $"session-{++sessionCounter}.json");
 
             string editorServicesModuleVersion =
                 string.Format(
@@ -58,7 +67,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     "-HostVersion \"1.0.0\" " +
                     "-BundledModulesPath \\\"" + modulePath + "\\\" " +
                     "-LogLevel \"Verbose\" " +
-                    "-LogPath \"" + logPath + "\" ",
+                    "-LogPath \"" + logPath + "\" " +
+                    "-SessionDetailsPath \"" + sessionPath + "\" " +
+                    "-FeatureFlags @() " +
+                    "-AdditionalModules @() ",
                    editorServicesModuleVersion);
 
             if (waitForDebugger)
@@ -95,40 +107,20 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             this.serviceProcess.Start();
 
             // Wait for the server to finish initializing
-            Task<string> stdoutTask = this.serviceProcess.StandardOutput.ReadLineAsync();
-            Task<string> stderrTask = this.serviceProcess.StandardError.ReadLineAsync();
-            Task<string> completedRead = await Task.WhenAny<string>(stdoutTask, stderrTask);
-
-            if (completedRead == stdoutTask)
+            while (!File.Exists(sessionPath) || (new FileInfo(sessionPath).Length == 0))
             {
-                JObject result = JObject.Parse(completedRead.Result);
-                if (result["status"].Value<string>() == "started")
-                {
-                    return new Tuple<int, int>(
-                        result["languageServicePort"].Value<int>(),
-                        result["debugServicePort"].Value<int>());
-                }
-
-                return null;
+                Thread.Sleep(100);
             }
-            else
+
+            JObject result = JObject.Parse(File.ReadAllText(sessionPath));
+            if (result["status"].Value<string>() == "started")
             {
-                // Must have read an error?  Keep reading from error stream
-                string errorString = completedRead.Result;
-                Task<string> errorRead = this.serviceProcess.StandardError.ReadToEndAsync();
-
-                // Lets give the read operation 5 seconds to complete. Ideally, it shouldn't
-                // take that long at all, but just in case...
-                if (errorRead.Wait(5000))
-                {
-                    if (!string.IsNullOrEmpty(errorRead.Result))
-                    {
-                        errorString += errorRead.Result + Environment.NewLine;
-                    }
-                }
-
-                throw new Exception("Could not launch powershell.exe:\r\n\r\n" + errorString);
+                return new Tuple<int, int>(
+                    result["languageServicePort"].Value<int>(),
+                    result["debugServicePort"].Value<int>());
             }
+
+            return null;
         }
 
         protected void KillService()
