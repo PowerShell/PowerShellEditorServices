@@ -535,7 +535,7 @@ namespace Microsoft.PowerShell.EditorServices
                         if (this.powerShell.HadErrors)
                         {
                             var strBld = new StringBuilder(1024);
-                            strBld.AppendFormat("Execution of the following command(s) completed with errors:\r\n\r\n{0}\r\n", 
+                            strBld.AppendFormat("Execution of the following command(s) completed with errors:\r\n\r\n{0}\r\n",
                                 GetStringForPSCommand(psCommand));
 
                             int i = 1;
@@ -838,19 +838,14 @@ namespace Microsoft.PowerShell.EditorServices
 
                 Collection<PSObject> results = pipeline.Invoke();
 
-                if (results.Count == 0)
+                if (results.Count == 0 || results.FirstOrDefault() == null)
                 {
                     return defaultValue;
                 }
 
                 if (typeof(TResult) != typeof(PSObject))
                 {
-                    return (results.FirstOrDefault() == null)
-                        // Evaluates to null but couldn't put just null (needs to be a TResult) and also couldn't cast null to TResult
-                        ? results
-                            .OfType<TResult>()
-                            .FirstOrDefault()
-                        : results
+                    return results
                             .Select(pso => pso.BaseObject)
                             .OfType<TResult>()
                             .FirstOrDefault();
