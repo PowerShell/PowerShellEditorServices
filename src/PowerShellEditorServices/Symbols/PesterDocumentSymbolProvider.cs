@@ -90,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         private static PesterSymbolReference ConvertPesterAstToSymbolReference(ScriptFile scriptFile, CommandAst pesterCommandAst)
         {
             string testLine = scriptFile.GetLine(pesterCommandAst.Extent.StartLineNumber);
-            string commandName = (pesterCommandAst.CommandElements[0] as StringConstantExpressionAst)?.Value;
+            string commandName = pesterCommandAst.GetCommandName();
 
             // Search for a name for the test
             string testName = null;
@@ -159,12 +159,9 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// Lookup for Pester keywords we support. Ideally we could extract these from Pester itself
         /// </summary>
         internal static readonly IReadOnlyDictionary<string, PesterCommandType> PesterKeywords =
-            new Dictionary<string, PesterCommandType>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "Describe", PesterCommandType.Describe },
-                { "Context", PesterCommandType.Context },
-                { "It", PesterCommandType.It }
-            };
+            Enum.GetValues(typeof(PesterCommandType))
+                .Cast<PesterCommandType>()
+                .ToDictionary(pct => pct.ToString(), pct => pct);
 
         private static char[] DefinitionTrimChars = new char[] { ' ', '{' };
 
