@@ -51,6 +51,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 Path.Combine(
                     Path.GetDirectoryName(assemblyPath), $"session-{++sessionCounter}.json");
 
+            if (File.Exists(sessionPath))
+            {
+                File.Delete(sessionPath);
+            }
+
             string editorServicesModuleVersion =
                 string.Format(
                     "{0}.{1}.{2}",
@@ -106,19 +111,41 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             // Start the process
             this.serviceProcess.Start();
 
-            // Wait for the server to finish initializing
-            while (!File.Exists(sessionPath) || (new FileInfo(sessionPath).Length == 0))
+            string sessionDetailsText = string.Empty;
+
+            // Wait up to ~5 seconds for the server to finish initializing
+            var maxRetryAttempts = 10;
+            while (maxRetryAttempts-- > 0)
             {
-                Thread.Sleep(100);
+                try
+                {
+                    using (var stream = new FileStream(sessionPath, FileMode.Open, FileAccess.Read, FileShare.None))
+                    using (var reader = new StreamReader(stream))
+                    {
+                        sessionDetailsText = reader.ReadToEnd();
+                        break;
+                    }
+                }
+                catch (FileNotFoundException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Session details at '{sessionPath}' not available: {ex.Message}");
+                }
+
+                Thread.Sleep(500);
             }
 
-            JObject result = JObject.Parse(File.ReadAllText(sessionPath));
+            JObject result = JObject.Parse(sessionDetailsText);
             if (result["status"].Value<string>() == "started")
             {
                 return new Tuple<int, int>(
                     result["languageServicePort"].Value<int>(),
                     result["debugServicePort"].Value<int>());
             }
+
+            Debug.WriteLine($"Failed to read session details from '{sessionPath}'");
 
             return null;
         }

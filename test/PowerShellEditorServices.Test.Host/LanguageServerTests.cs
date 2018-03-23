@@ -825,7 +825,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.StartsWith("5.", versionDetails.Version);
             Assert.StartsWith("5.", versionDetails.DisplayVersion);
             Assert.Equal("Desktop", versionDetails.Edition);
-            Assert.Equal("x86", versionDetails.Architecture);
+
+            string expectedArchitecture = (IntPtr.Size == 8) ? "x64" : "x86";
+            Assert.Equal(expectedArchitecture, versionDetails.Architecture);
         }
 
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)
