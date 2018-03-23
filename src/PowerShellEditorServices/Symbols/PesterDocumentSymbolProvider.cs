@@ -65,8 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
             }
 
             // Ensure the first word is a Pester keyword
-            if (!(commandAst.CommandElements[0] is StringConstantExpressionAst pesterKeywordAst &&
-                PesterSymbolReference.PesterKeywords.ContainsKey(pesterKeywordAst.Value)))
+            if (!PesterSymbolReference.PesterKeywords.ContainsKey(commandAst.GetCommandName()))
             {
                 return false;
             }
@@ -93,7 +92,9 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
             string commandName = pesterCommandAst.GetCommandName();
 
             // Search for a name for the test
+            // If the test has more than one argument for names, we set it to null
             string testName = null;
+            bool alreadySawName = false;
             for (int i = 1; i < pesterCommandAst.CommandElements.Count; i++)
             {
                 CommandElementAst currentCommandElement = pesterCommandAst.CommandElements[i];
@@ -104,17 +105,18 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
                     i++;
                     if (parameterAst.ParameterName == "Name" && i < pesterCommandAst.CommandElements.Count)
                     {
-                        testName = (pesterCommandAst.CommandElements[i] as StringConstantExpressionAst)?.Value;
-                        break;
+                        testName = alreadySawName ? null : (pesterCommandAst.CommandElements[i] as StringConstantExpressionAst)?.Value;
+                        alreadySawName = true;
                     }
                     continue;
                 }
 
                 // Otherwise, if an argument is given with no parameter, we assume it's the name
+                // If we've already seen a name, we set the name to null
                 if (pesterCommandAst.CommandElements[i] is StringConstantExpressionAst testNameStrAst)
                 {
-                    testName = testNameStrAst.Value;
-                    break;
+                    testName = alreadySawName ? null : testNameStrAst.Value;
+                    alreadySawName = true;
                 }
             }
 
