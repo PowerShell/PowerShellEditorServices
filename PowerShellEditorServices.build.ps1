@@ -37,8 +37,17 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
     }
 
     # Make sure the dotnet we found is the right version
-    if ($dotnetExePath -and [version](& $dotnetExePath --version) -ge [version]$requiredSdkVersion) {
-        $script:dotnetExe = $dotnetExePath
+    if ($dotnetExePath) {
+        # dotnet --version can return a semver that System.Version can't handle
+        # e.g.: 2.1.300-preview-01. The replace operator is used to remove any build suffix.
+        $version = (& $dotnetExePath --version) -replace '[+-].*$',''
+        if ([version]$version -ge [version]$requiredSdkVersion) {
+            $script:dotnetExe = $dotnetExePath
+        }
+        else {
+            # Clear the path so that we invoke installation
+            $script:dotnetExe = $null
+        }
     }
     else {
         # Clear the path so that we invoke installation
