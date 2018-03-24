@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Security;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -249,11 +250,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
 
             var sendresult = requestContext.SendResult(null);
-            var scripFile = editorSession.Workspace.GetFile((string)dynParams.filepath);
+            ScriptFile scriptFile = null;
+            try
+            {
+                scriptFile = editorSession.Workspace.GetFile((string)dynParams.filepath);
+            }
+            catch (Exception ex) when (
+                ex is FileNotFoundException ||
+                ex is NotSupportedException ||
+                ex is PathTooLongException ||
+                ex is SecurityException)
+            {
+                var errMsg = $"Failed to get ScriptFile path for '{(string)dynParams.filepath}'";
+                Logger.WriteException(errMsg, ex);
+            }
+
             await RunScriptDiagnostics(
-                    new ScriptFile[] { scripFile },
-                        editorSession,
-                        this.messageSender.SendEvent);
+                    (scriptFile != null) ? new ScriptFile[] { scriptFile } : new ScriptFile[0],
+                    editorSession,
+                    this.messageSender.SendEvent);
             await sendresult;
         }
 
