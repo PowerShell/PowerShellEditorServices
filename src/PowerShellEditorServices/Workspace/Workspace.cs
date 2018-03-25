@@ -390,22 +390,26 @@ namespace Microsoft.PowerShell.EditorServices
             // view of the current file or an untitled file.
             try
             {
-                // NotSupportedException or ArgumentException gets thrown when
-                // given an invalid path.  Since any non-standard path will
-                // trigger this, assume that it means it's an in-memory file
-                // unless the path starts with file:
-                Path.GetFullPath(filePath);
+                // File system absoulute paths will have a URI scheme of file:.
+                // Other schemes like "untitled:" and "gitlens-git:" will return false for IsFile.
+                var uri = new Uri(filePath);
+                isInMemory = !uri.IsFile;
             }
-            catch (ArgumentException)
+            catch (UriFormatException)
             {
-                isInMemory = true;
-            }
-            catch (NotSupportedException)
-            {
-                isInMemory = true;
+                // Relative file paths cause a UriFormatException.
+                // In this case, fallback to using Path.GetFullPath().
+                try
+                {
+                    Path.GetFullPath(filePath);
+                }
+                catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException)
+                {
+                    isInMemory = true;
+                }
             }
 
-            return !filePath.ToLower().StartsWith("file:") && isInMemory;
+            return isInMemory;
         }
 
         private string GetBaseFilePath(string filePath)
