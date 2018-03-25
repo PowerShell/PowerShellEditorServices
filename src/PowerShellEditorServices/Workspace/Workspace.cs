@@ -407,6 +407,10 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     isInMemory = true;
                 }
+                catch (PathTooLongException)
+                {
+                    // If we ever get here, it should be an actual file so, not in memory
+                }
             }
 
             return isInMemory;
