@@ -27,8 +27,22 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
                 return Enumerable.Empty<SymbolReference>();
             }
 
-            var commandAsts = scriptFile.ScriptAst.FindAll(ast =>
-            {
+            // Find plausible Pester commands
+            IEnumerable<Ast> commandAsts = scriptFile.ScriptAst.FindAll(IsNamedCommandWithArguments, true);
+
+            return commandAsts.OfType<CommandAst>()
+                              .Where(IsPesterCommand)
+                              .Select(ast => ConvertPesterAstToSymbolReference(scriptFile, ast))
+                              .Where(pesterSymbol => pesterSymbol?.TestName != null);
+        }
+
+        /// <summary>
+        /// Test if the given Ast is a regular CommandAst with arguments
+        /// </summary>
+        /// <param name="ast">the PowerShell Ast to test</param>
+        /// <returns>true if the Ast represents a PowerShell command with arguments, false otherwise</returns>
+        private static bool IsNamedCommandWithArguments(Ast ast)
+        {
             CommandAst commandAst = ast as CommandAst;
 
                 return
@@ -36,54 +50,83 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
                     commandAst.InvocationOperator != TokenKind.Dot &&
                     PesterSymbolReference.GetCommandType(commandAst.GetCommandName()).HasValue &&
                     commandAst.CommandElements.Count >= 2;
-            },
-            true);
+        }
 
-            return commandAsts.Select(
-                ast =>
+        /// <summary>
+        /// Test whether the given CommandAst represents a Pester command
+        /// </summary>
+        /// <param name="commandAst">the CommandAst to test</param>
+        /// <returns>true if the CommandAst represents a Pester command, false otherwise</returns>
+        private static bool IsPesterCommand(CommandAst commandAst)
+        {
+            if (commandAst == null)
+            {
+                return false;
+            }
+
+            // Ensure the first word is a Pester keyword
+            if (!PesterSymbolReference.PesterKeywords.ContainsKey(commandAst.GetCommandName()))
+            {
+                return false;
+            }
+
+            // Ensure that the last argument of the command is a scriptblock
+            if (!(commandAst.CommandElements[commandAst.CommandElements.Count-1] is ScriptBlockExpressionAst))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Convert a CommandAst known to represent a Pester command and a reference to the scriptfile
+        /// it is in into symbol representing a Pester call for code lens
+        /// </summary>
+        /// <param name="scriptFile">the scriptfile the Pester call occurs in</param>
+        /// <param name="pesterCommandAst">the CommandAst representing the Pester call</param>
+        /// <returns>a symbol representing the Pester call containing metadata for CodeLens to use</returns>
+        private static PesterSymbolReference ConvertPesterAstToSymbolReference(ScriptFile scriptFile, CommandAst pesterCommandAst)
+        {
+            string testLine = scriptFile.GetLine(pesterCommandAst.Extent.StartLineNumber);
+            string commandName = pesterCommandAst.GetCommandName();
+
+            // Search for a name for the test
+            // If the test has more than one argument for names, we set it to null
+            string testName = null;
+            bool alreadySawName = false;
+            for (int i = 1; i < pesterCommandAst.CommandElements.Count; i++)
+            {
+                CommandElementAst currentCommandElement = pesterCommandAst.CommandElements[i];
+
+                // Check for an explicit "-Name" parameter
+                if (currentCommandElement is CommandParameterAst parameterAst)
                 {
-                    // By this point we know the Ast is a CommandAst with 2 or more CommandElements
-                    int testNameParamIndex = 1;
-                    CommandAst testAst = (CommandAst)ast;
-
-                    // The -Name parameter
-                    for (int i = 1; i < testAst.CommandElements.Count; i++)
+                    i++;
+                    if (parameterAst.ParameterName == "Name" && i < pesterCommandAst.CommandElements.Count)
                     {
-                        CommandParameterAst paramAst = testAst.CommandElements[i] as CommandParameterAst;
-                        if (paramAst != null &&
-                            paramAst.ParameterName.Equals("Name", StringComparison.OrdinalIgnoreCase))
-                        {
-                            testNameParamIndex = i + 1;
-                            break;
-                        }
+                        testName = alreadySawName ? null : (pesterCommandAst.CommandElements[i] as StringConstantExpressionAst)?.Value;
+                        alreadySawName = true;
                     }
+                    continue;
+                }
 
-                    if (testNameParamIndex > testAst.CommandElements.Count - 1)
-                    {
-                        return null;
-                    }
+                // Otherwise, if an argument is given with no parameter, we assume it's the name
+                // If we've already seen a name, we set the name to null
+                if (pesterCommandAst.CommandElements[i] is StringConstantExpressionAst testNameStrAst)
+                {
+                    testName = alreadySawName ? null : testNameStrAst.Value;
+                    alreadySawName = true;
+                }
+            }
 
-                    StringConstantExpressionAst stringAst =
-                        testAst.CommandElements[testNameParamIndex] as StringConstantExpressionAst;
-
-                    if (stringAst == null)
-                    {
-                        return null;
-                    }
-
-                    string testDefinitionLine =
-                        scriptFile.GetLine(
-                            ast.Extent.StartLineNumber);
-
-                    return
-                        new PesterSymbolReference(
-                            scriptFile,
-                            testAst.GetCommandName(),
-                            testDefinitionLine,
-                            stringAst.Value,
-                            ast.Extent);
-
-                }).Where(s => s != null);
+            return new PesterSymbolReference(
+                scriptFile,
+                commandName,
+                testLine,
+                testName,
+                pesterCommandAst.Extent
+            );
         }
     }
 
@@ -114,6 +157,14 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
     /// </summary>
     public class PesterSymbolReference : SymbolReference
     {
+        /// <summary>
+        /// Lookup for Pester keywords we support. Ideally we could extract these from Pester itself
+        /// </summary>
+        internal static readonly IReadOnlyDictionary<string, PesterCommandType> PesterKeywords =
+            Enum.GetValues(typeof(PesterCommandType))
+                .Cast<PesterCommandType>()
+                .ToDictionary(pct => pct.ToString(), pct => pct);
+
         private static char[] DefinitionTrimChars = new char[] { ' ', '{' };
 
         /// <summary>
@@ -145,25 +196,12 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
 
         internal static PesterCommandType? GetCommandType(string commandName)
         {
-            if (commandName == null)
+            PesterCommandType pesterCommandType;
+            if (!PesterKeywords.TryGetValue(commandName, out pesterCommandType))
             {
                 return null;
             }
-
-            switch (commandName.ToLower())
-            {
-                case "describe":
-                    return PesterCommandType.Describe;
-
-                case "context":
-                    return PesterCommandType.Context;
-
-                case "it":
-                    return PesterCommandType.It;
-
-                default:
-                    return null;
-            }
+            return pesterCommandType;
         }
     }
 }

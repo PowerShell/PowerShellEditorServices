@@ -44,8 +44,25 @@ param(
     [ValidateNotNullOrEmpty()]
     $LogPath,
 
-    [ValidateSet("Normal", "Verbose", "Error","Diagnostic")]
+    [ValidateSet("Diagnostic", "Normal", "Verbose", "Error", "Diagnostic")]
     $LogLevel,
+
+	[Parameter(Mandatory=$true)]
+	[ValidateNotNullOrEmpty()]
+	[string]
+	$SessionDetailsPath,
+
+    [switch]
+    $EnableConsoleRepl,
+
+    [switch]
+    $DebugServiceOnly,
+
+    [string[]]
+    $AdditionalModules,
+
+    [string[]]
+    $FeatureFlags,
 
     [switch]
     $WaitForDebugger,
@@ -56,9 +73,6 @@ param(
     [switch]
     $Stdio,
 
-    [switch]
-    $DebugServiceOnly,
-
     [string]
     $LanguageServicePipeName = $null,
 
@@ -66,89 +80,186 @@ param(
     $DebugServicePipeName = $null
 )
 
+$minPortNumber = 10000
+$maxPortNumber = 30000
+
+if ($LogLevel -eq "Diagnostic") {
+    $VerbosePreference = 'Continue'
+    Start-Transcript (Join-Path (Split-Path $LogPath -Parent) Start-EditorServices.log) -Force
+}
+
+function LogSection([string]$msg) {
+    Write-Verbose "`n#-- $msg $('-' * ([Math]::Max(0, 73 - $msg.Length)))"
+}
+
+function Log([string[]]$msg) {
+    $msg | Write-Verbose
+}
+
+function ExitWithError($errorString) {
+    Write-Host -ForegroundColor Red "`n`n$errorString"
+
+    # Sleep for a while to make sure the user has time to see and copy the
+    # error message
+    Start-Sleep -Seconds 300
+
+    exit 1;
+}
+
+# Are we running in PowerShell 2 or earlier?
+if ($PSVersionTable.PSVersion.Major -le 2) {
+    # No ConvertTo-Json on PSv2 and below, so write out the JSON manually
+    "{`"status`": `"failed`", `"reason`": `"unsupported`", `"powerShellVersion`": `"$($PSVersionTable.PSVersion.ToString())`"}" |
+        Set-Content -Force -Path "$SessionDetailsPath" -ErrorAction Stop
+
+    ExitWithError "Unsupported PowerShell version $($PSVersionTable.PSVersion), language features are disabled."
+}
+
+function WriteSessionFile($sessionInfo) {
+    $sessionInfoJson = ConvertTo-Json -InputObject $sessionInfo -Compress
+    Log "Writing session file with contents:"
+    Log $sessionInfoJson
+    $sessionInfoJson | Set-Content -Force -Path "$SessionDetailsPath" -ErrorAction Stop
+}
+
+if ($host.Runspace.LanguageMode -eq 'ConstrainedLanguage') {
+    WriteSessionFile @{
+        "status" = "failed"
+        "reason" = "languageMode"
+        "detail" = $host.Runspace.LanguageMode.ToString()
+    }
+
+    ExitWithError "PowerShell is configured with an unsupported LanguageMode (ConstrainedLanguage), language features are disabled."
+}
+
+# Are we running in PowerShell 5 or later?
+$isPS5orLater = $PSVersionTable.PSVersion.Major -ge 5
+
+# If PSReadline is present in the session, remove it so that runspace
+# management is easier
+if ((Get-Module PSReadline).Count -gt 0) {
+    LogSection "Removing PSReadLine module"
+    Remove-Module PSReadline -ErrorAction SilentlyContinue
+}
+
 # This variable will be assigned later to contain information about
 # what happened while attempting to launch the PowerShell Editor
 # Services host
 $resultDetails = $null;
 
 function Test-ModuleAvailable($ModuleName, $ModuleVersion) {
+    Log "Testing module availability $ModuleName $ModuleVersion"
+
     $modules = Get-Module -ListAvailable $moduleName
     if ($modules -ne $null) {
         if ($ModuleVersion -ne $null) {
             foreach ($module in $modules) {
                 if ($module.Version.Equals($moduleVersion)) {
+                    Log "$ModuleName $ModuleVersion found"
                     return $true;
                 }
             }
         }
         else {
+            Log "$ModuleName $ModuleVersion found"
             return $true;
         }
     }
 
+    Log "$ModuleName $ModuleVersion NOT found"
     return $false;
 }
 
-function Test-PortAvailability($PortNumber) {
-    $portAvailable = $true;
+function Test-PortAvailability {
+    param(
+        [Parameter(Mandatory=$true)]
+        [int]
+        $PortNumber
+    )
+
+    $portAvailable = $true
 
     try {
-        $ipAddress = [System.Net.Dns]::GetHostEntryAsync("localhost").Result.AddressList[0];
-        $tcpListener = [System.Net.Sockets.TcpListener]::new($ipAddress, $portNumber);
-        $tcpListener.Start();
-        $tcpListener.Stop();
-
-    }
-    catch [System.Net.Sockets.SocketException] {
-        # Check the SocketErrorCode to see if it's the expected exception
-        if ($error[0].Exception.InnerException.SocketErrorCode -eq [System.Net.Sockets.SocketError]::AddressAlreadyInUse) {
-            $portAvailable = $false;
+        if ($isPS5orLater) {
+            $ipAddresses = [System.Net.Dns]::GetHostEntryAsync("localhost").Result.AddressList
         }
         else {
-            Write-Output ("Error code: " + $error[0].SocketErrorCode)
+            $ipAddresses = [System.Net.Dns]::GetHostEntry("localhost").AddressList
+        }
+
+        foreach ($ipAddress in $ipAddresses)
+        {
+            Log "Testing availability of port ${PortNumber} at address ${ipAddress} / $($ipAddress.AddressFamily)"
+
+            $tcpListener = New-Object System.Net.Sockets.TcpListener @($ipAddress, $PortNumber)
+            $tcpListener.Start()
+            $tcpListener.Stop()
+        }
+    }
+    catch [System.Net.Sockets.SocketException] {
+        $portAvailable = $false
+
+        # Check the SocketErrorCode to see if it's the expected exception
+        if ($_.Exception.SocketErrorCode -eq [System.Net.Sockets.SocketError]::AddressAlreadyInUse) {
+            Log "Port $PortNumber is in use."
+        }
+        else {
+            Log "SocketException on port ${PortNumber}: $($_.Exception)"
         }
     }
 
-    return $portAvailable;
+    $portAvailable
 }
 
-$rand = [System.Random]::new()
-function Get-AvailablePort {
+$portsInUse = @{}
+$rand = New-Object System.Random
+function Get-AvailablePort() {
     $triesRemaining = 10;
 
     while ($triesRemaining -gt 0) {
-        $port = $rand.Next(10000, 30000)
-        if ((Test-PortAvailability -PortAvailability $port) -eq $true) {
+        do {
+            $port = $rand.Next($minPortNumber, $maxPortNumber)
+        }
+        while ($portsInUse.ContainsKey($port))
+
+        # Whether we succeed or fail, don't try this port again
+        $portsInUse[$port] = 1
+
+        Log "Checking port: $port, attempts remaining $triesRemaining --------------------"
+        if ((Test-PortAvailability -PortNumber $port) -eq $true) {
+            Log "Port: $port is available"
             return $port
         }
 
+        Log "Port: $port is NOT available"
         $triesRemaining--;
     }
 
+    Log "Did not find any available ports!!"
     return $null
 }
 
-# OUTPUT PROTOCOL
-# - "started 29981 39898" - Server(s) are started, language and debug server ports (respectively)
-# - "failed Error message describing the failure" - General failure while starting, show error message to user (?)
-# - "needs_install" - User should be prompted to install PowerShell Editor Services via the PowerShell Gallery
-
 # Add BundledModulesPath to $env:PSModulePath
 if ($BundledModulesPath) {
-    $env:PSMODULEPATH = $BundledModulesPath + [System.IO.Path]::PathSeparator + $env:PSMODULEPATH
+    $env:PSModulePath = $env:PSModulePath.TrimEnd([System.IO.Path]::PathSeparator) + [System.IO.Path]::PathSeparator + $BundledModulesPath
+    LogSection "Updated PSModulePath to:"
+    Log ($env:PSModulePath -split [System.IO.Path]::PathSeparator)
 }
 
+LogSection "Check required modules available"
 # Check if PowerShellGet module is available
 if ((Test-ModuleAvailable "PowerShellGet") -eq $false) {
+    Log "Failed to find PowerShellGet module"
     # TODO: WRITE ERROR
 }
 
 # Check if the expected version of the PowerShell Editor Services
 # module is installed
-$parsedVersion = [System.Version]::new($EditorServicesVersion)
-if ((Test-ModuleAvailable "PowerShellEditorServices" -RequiredVersion $parsedVersion) -eq $false) {
-    if ($ConfirmInstall) {
+$parsedVersion = New-Object System.Version @($EditorServicesVersion)
+if ((Test-ModuleAvailable "PowerShellEditorServices" $parsedVersion) -eq $false) {
+    if ($ConfirmInstall -and $isPS5orLater) {
         # TODO: Check for error and return failure if necessary
+        LogSection "Install PowerShellEditorServices"
         Install-Module "PowerShellEditorServices" -RequiredVersion $parsedVersion -Confirm
     }
     else {
@@ -158,56 +269,97 @@ if ((Test-ModuleAvailable "PowerShellEditorServices" -RequiredVersion $parsedVer
     }
 }
 
-Import-Module PowerShellEditorServices -RequiredVersion $parsedVersion -ErrorAction Stop
-
-# Locate available port numbers for services
-# There could be only one service on Stdio channel
-if (-not (($Stdio.IsPresent -and -not $DebugServiceOnly.IsPresent) -or $LanguageServicePipeName)) { $languageServicePort = Get-AvailablePort }
-if (-not (($Stdio.IsPresent -and $DebugServiceOnly.IsPresent)      -or $DebugServicePipeName))    { $debugServicePort = Get-AvailablePort }
-
-$editorServicesHost =
-    Start-EditorServicesHost `
-        -HostName $HostName `
-        -HostProfileId $HostProfileId `
-        -HostVersion $HostVersion `
-        -LogPath $LogPath `
-        -LogLevel $LogLevel `
-        -AdditionalModules @() `
-        -LanguageServicePort $languageServicePort `
-        -DebugServicePort $debugServicePort `
-        -Stdio $Stdio.IsPresent`
-        -LanguageServiceNamedPipe $LanguageServicePipeName `
-        -DebugServiceNamedPipe $DebugServicePipeName `
-        -BundledModulesPath $BundledModulesPath `
-        -DebugServiceOnly:$DebugServiceOnly.IsPresent`
-        -WaitForDebugger:$WaitForDebugger.IsPresent
-
-# TODO: Verify that the service is started
-
-$resultDetails = @{
-    "status" = "started";
-    "languageServicePort" = $languageServicePort;
-    "debugServicePort" = $debugServicePort;
-    "languageServiceNamedPipe" = $LanguageServicePipeName;
-    "debugServiceNamedPipe" = $DebugServicePipeName;
-    "Stdio" = $Stdio.IsPresent;
-};
-
-# Notify the client that the services have started
-Write-Output (ConvertTo-Json -InputObject $resultDetails -Compress)
-
 try {
-    # Wait for the host to complete execution before exiting
-    $editorServicesHost.WaitForCompletion()
+    LogSection "Start up PowerShellEditorServices"
+    Log "Importing PowerShellEditorServices"
+
+    if ($isPS5orLater) {
+        Import-Module PowerShellEditorServices -RequiredVersion $parsedVersion -ErrorAction Stop
+    }
+    else {
+        Import-Module PowerShellEditorServices -Version $parsedVersion -ErrorAction Stop
+    }
+
+	# Locate available port numbers for services
+	# There could be only one service on Stdio channel
+	if (-not (($Stdio.IsPresent -and -not $DebugServiceOnly.IsPresent) -or $LanguageServicePipeName)) { $languageServicePort = Get-AvailablePort }
+	if (-not (($Stdio.IsPresent -and $DebugServiceOnly.IsPresent)      -or $DebugServicePipeName))    { $debugServicePort = Get-AvailablePort }
+
+    if (!$languageServicePort -or !$debugServicePort) {
+        ExitWithError "Failed to find an open socket port for either the language or debug service."
+    }
+
+    if ($EnableConsoleRepl) {
+        Write-Host "PowerShell Integrated Console`n"
+    }
+
+    # Create the Editor Services host
+    Log "Invoking Start-EditorServicesHost"
+    $editorServicesHost =
+        Start-EditorServicesHost `
+            -HostName $HostName `
+            -HostProfileId $HostProfileId `
+            -HostVersion $HostVersion `
+            -LogPath $LogPath `
+            -LogLevel $LogLevel `
+            -AdditionalModules $AdditionalModules `
+            -LanguageServicePort $languageServicePort `
+            -DebugServicePort $debugServicePort `
+            -LanguageServiceNamedPipe $LanguageServicePipeName `
+            -DebugServiceNamedPipe $DebugServicePipeName `
+            -Stdio:$Stdio.IsPresent`
+            -BundledModulesPath $BundledModulesPath `
+            -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
+            -DebugServiceOnly:$DebugServiceOnly.IsPresent `
+            -WaitForDebugger:$WaitForDebugger.IsPresent
+
+    # TODO: Verify that the service is started
+    Log "Start-EditorServicesHost returned $editorServicesHost"
+
+    $resultDetails = @{
+        "status" = "started";
+        "languageServicePort" = $languageServicePort;
+        "debugServicePort" = $debugServicePort;
+        "languageServiceNamedPipe" = $LanguageServicePipeName;
+        "debugServiceNamedPipe" = $DebugServicePipeName;
+        "Stdio" = $Stdio.IsPresent;
+    };
+
+    # Notify the client that the services have started
+    WriteSessionFile $resultDetails
+
+    Log "Wrote out session file"
 }
 catch [System.Exception] {
-    $e = $_.Exception; #.InnerException;
+    $e = $_.Exception;
     $errorString = ""
+
+    Log "ERRORS caught starting up EditorServicesHost"
 
     while ($e -ne $null) {
         $errorString = $errorString + ($e.Message + "`r`n" + $e.StackTrace + "`r`n")
         $e = $e.InnerException;
+        Log $errorString
     }
 
-    Write-Error ("`r`nCaught error while waiting for EditorServicesHost to complete:`r`n" + $errorString)
+    ExitWithError ("An error occurred while starting PowerShell Editor Services:`r`n`r`n" + $errorString)
+}
+
+try {
+    # Wait for the host to complete execution before exiting
+    LogSection "Waiting for EditorServicesHost to complete execution"
+    $editorServicesHost.WaitForCompletion()
+    Log "EditorServicesHost has completed execution"
+}
+catch [System.Exception] {
+    $e = $_.Exception;
+    $errorString = ""
+
+    Log "ERRORS caught while waiting for EditorServicesHost to complete execution"
+
+    while ($e -ne $null) {
+        $errorString = $errorString + ($e.Message + "`r`n" + $e.StackTrace + "`r`n")
+        $e = $e.InnerException;
+        Log $errorString
+    }
 }

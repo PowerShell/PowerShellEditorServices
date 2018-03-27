@@ -37,7 +37,7 @@ function Start-EditorServicesHost {
         [int]
         $DebugServicePort,
 
-        [bool]
+        [switch]
         $Stdio,
 
         [string]
@@ -97,7 +97,7 @@ function Start-EditorServicesHost {
     $languageServiceConfig = New-Object Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportConfig
     $debugServiceConfig    = New-Object Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportConfig
 
-    if ($Stdio) {
+    if ($Stdio.IsPresent) {
         $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
         $debugServiceConfig.TransportType    = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
     }
