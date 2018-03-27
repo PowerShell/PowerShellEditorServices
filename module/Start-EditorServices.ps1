@@ -282,12 +282,19 @@ try {
 
 	# Locate available port numbers for services
 	# There could be only one service on Stdio channel
-	if (-not (($Stdio.IsPresent -and -not $DebugServiceOnly.IsPresent) -or $LanguageServicePipeName)) { $languageServicePort = Get-AvailablePort }
-	if (-not (($Stdio.IsPresent -and $DebugServiceOnly.IsPresent)      -or $DebugServicePipeName))    { $debugServicePort = Get-AvailablePort }
 
-    if (!$languageServicePort -or !$debugServicePort) {
-        ExitWithError "Failed to find an open socket port for either the language or debug service."
-    }
+	$languageServiceTransport = $null
+	$debugServiceTransport = $null
+
+	if ($Stdio.IsPresent -and -not $DebugServiceOnly.IsPresent) { $languageServiceTransport = "Stdio" }
+	elseif ($LanguageServicePipeName)                           { $languageServiceTransport = "Named pipe $LanguageServicePipeName" }
+	elseif ($languageServicePort = Get-AvailablePort)           { $languageServiceTransport = "Tcp port $languageServicePort"}
+	else                                                        { ExitWithError "Failed to find an open socket port for language service." }
+
+	if ($Stdio.IsPresent -and $DebugServiceOnly.IsPresent)      { $debugServiceTransport = "Stdio" }
+	elseif ($DebugServicePipeName)                              { $debugServiceTransport = "Named pipe $DebugServicePipeName" }
+	elseif ($debugServicePort = Get-AvailablePort)              { $debugServiceTransport = "Tcp port $debugServicePort"}
+	else                                                        { ExitWithError "Failed to find an open socket port for debug service." }
 
     if ($EnableConsoleRepl) {
         Write-Host "PowerShell Integrated Console`n"
@@ -318,11 +325,8 @@ try {
 
     $resultDetails = @{
         "status" = "started";
-        "languageServicePort" = $languageServicePort;
-        "debugServicePort" = $debugServicePort;
-        "languageServiceNamedPipe" = $LanguageServicePipeName;
-        "debugServiceNamedPipe" = $DebugServicePipeName;
-        "Stdio" = $Stdio.IsPresent;
+        "languageServiceTransport" = $languageServiceTransport;
+        "debugServiceTransport" = $debugServiceTransport;
     };
 
     # Notify the client that the services have started
