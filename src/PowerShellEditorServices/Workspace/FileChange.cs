@@ -40,6 +40,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// of the content, and all stale content and metadata
         /// should be discarded.
         /// </summary>
-        public bool Reloaded { get; set; }
+        public bool IsReload { get; set; }
     }
 }
