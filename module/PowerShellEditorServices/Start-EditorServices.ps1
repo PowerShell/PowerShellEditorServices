@@ -14,14 +14,9 @@
 #       canonical version of this script at the PowerShell Editor
 #       Services GitHub repository:
 #
-#       https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/Start-EditorServices.ps1
+#       https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/PowerShellEditorServices/Start-EditorServices.ps1
 
 param(
-    [Parameter(Mandatory=$true)]
-    [ValidateNotNullOrEmpty()]
-    [string]
-    $EditorServicesVersion,
-
     [Parameter(Mandatory=$true)]
     [ValidateNotNullOrEmpty()]
     [string]
@@ -97,6 +92,13 @@ function ExitWithError($errorString) {
     exit 1;
 }
 
+function WriteSessionFile($sessionInfo) {
+    $sessionInfoJson = ConvertTo-Json -InputObject $sessionInfo -Compress
+    Log "Writing session file with contents:"
+    Log $sessionInfoJson
+    $sessionInfoJson | Set-Content -Force -Path "$SessionDetailsPath" -ErrorAction Stop
+}
+
 # Are we running in PowerShell 2 or earlier?
 if ($PSVersionTable.PSVersion.Major -le 2) {
     # No ConvertTo-Json on PSv2 and below, so write out the JSON manually
@@ -106,12 +108,6 @@ if ($PSVersionTable.PSVersion.Major -le 2) {
     ExitWithError "Unsupported PowerShell version $($PSVersionTable.PSVersion), language features are disabled."
 }
 
-function WriteSessionFile($sessionInfo) {
-    $sessionInfoJson = ConvertTo-Json -InputObject $sessionInfo -Compress
-    Log "Writing session file with contents:"
-    Log $sessionInfoJson
-    $sessionInfoJson | Set-Content -Force -Path "$SessionDetailsPath" -ErrorAction Stop
-}
 
 if ($host.Runspace.LanguageMode -eq 'ConstrainedLanguage') {
     WriteSessionFile @{
@@ -244,32 +240,11 @@ if ((Test-ModuleAvailable "PowerShellGet") -eq $false) {
     # TODO: WRITE ERROR
 }
 
-# Check if the expected version of the PowerShell Editor Services
-# module is installed
-$parsedVersion = New-Object System.Version @($EditorServicesVersion)
-if ((Test-ModuleAvailable "PowerShellEditorServices" $parsedVersion) -eq $false) {
-    if ($ConfirmInstall -and $isPS5orLater) {
-        # TODO: Check for error and return failure if necessary
-        LogSection "Install PowerShellEditorServices"
-        Install-Module "PowerShellEditorServices" -RequiredVersion $parsedVersion -Confirm
-    }
-    else {
-        # Indicate to the client that the PowerShellEditorServices module
-        # needs to be installed
-        Write-Output "needs_install"
-    }
-}
-
 try {
     LogSection "Start up PowerShellEditorServices"
     Log "Importing PowerShellEditorServices"
 
-    if ($isPS5orLater) {
-        Import-Module PowerShellEditorServices -RequiredVersion $parsedVersion -ErrorAction Stop
-    }
-    else {
-        Import-Module PowerShellEditorServices -Version $parsedVersion -ErrorAction Stop
-    }
+    Import-Module PowerShellEditorServices -ErrorAction Stop
 
     # Locate available port numbers for services
     Log "Searching for available socket port for the language service"
