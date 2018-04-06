@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Management.Automation.Language;
 
@@ -237,6 +238,28 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public void Save()
         {
             this.editorOperations.SaveFile(this.scriptFile.FilePath);
+        }
+
+        /// <summary>
+        /// Save this file under a new path and open a new editor window on that file.
+        /// </summary>
+        /// <param name="newFilePath">
+        /// the path where the file should be saved,
+        /// including the file name with extension as the leaf
+        /// </param>
+        public void SaveAs(string newFilePath)
+        {
+            // Do some validation here so that we can provide a helpful error if the path won't work
+            string absolutePath = System.IO.Path.IsPathRooted(newFilePath) ?
+                newFilePath :
+                System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(this.scriptFile.FilePath), newFilePath));
+
+            if (File.Exists(absolutePath))
+            {
+                throw new IOException(String.Format("The file '{0}' already exists", absolutePath));
+            }
+
+            this.editorOperations.SaveFile(this.scriptFile.FilePath, newFilePath);
         }
 
         #endregion

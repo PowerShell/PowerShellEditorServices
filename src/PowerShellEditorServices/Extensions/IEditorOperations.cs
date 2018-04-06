@@ -72,6 +72,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         Task SaveFile(string filePath);
 
         /// <summary>
+        /// Causes a file to be saved as a new file in a new editor window.
+        /// </summary>
+        /// <param name="oldFilePath">the path of the current file being saved</param>
+        /// <param name="newFilePath">the path of the new file where the current window content will be saved</param>
+        /// <returns></returns>
+        Task SaveFile(string oldFilePath, string newFilePath);
+
+        /// <summary>
         /// Inserts text into the specified range for the file at the specified path.
         /// </summary>
         /// <param name="filePath">The path of the file which will have text inserted.</param>

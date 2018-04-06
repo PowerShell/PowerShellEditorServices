@@ -132,8 +132,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class SaveFileRequest
     {
         public static readonly
-            RequestType<string, EditorCommandResponse, object, object> Type =
-            RequestType<string, EditorCommandResponse, object, object>.Create("editor/saveFile");
+            RequestType<SaveFileDetails, EditorCommandResponse, object, object> Type =
+            RequestType<SaveFileDetails, EditorCommandResponse, object, object>.Create("editor/saveFile");
+    }
+
+    public class SaveFileDetails
+    {
+        public string FilePath { get; set; }
+
+        public string NewPath { get; set; }
     }
 
     public class ShowInformationMessageRequest
