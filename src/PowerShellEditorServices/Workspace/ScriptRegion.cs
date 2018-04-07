@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 scriptExtentText = scriptExtent.Text;
             }
-            catch (ArgumentOutOfRangeException e)
+            catch (ArgumentOutOfRangeException)
             {
                 scriptExtentText = string.Empty;
             }
