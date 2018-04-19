@@ -529,7 +529,8 @@ namespace Microsoft.PowerShell.EditorServices
                 DebugMessagePrefix + message,
                 true,
                 OutputType.Debug,
-                foregroundColor: ConsoleColor.Yellow);
+                foregroundColor: this.DebugForegroundColor,
+                backgroundColor: this.DebugBackgroundColor);
         }
 
         /// <summary>
@@ -542,7 +543,8 @@ namespace Microsoft.PowerShell.EditorServices
                 VerboseMessagePrefix + message,
                 true,
                 OutputType.Verbose,
-                foregroundColor: ConsoleColor.Blue);
+                foregroundColor: this.VerboseForegroundColor,
+                backgroundColor: this.VerboseBackgroundColor);
         }
 
         /// <summary>
@@ -555,7 +557,8 @@ namespace Microsoft.PowerShell.EditorServices
                 WarningMessagePrefix + message,
                 true,
                 OutputType.Warning,
-                foregroundColor: ConsoleColor.Yellow);
+                foregroundColor: this.WarningForegroundColor,
+                backgroundColor: this.WarningBackgroundColor);
         }
 
         /// <summary>
@@ -568,7 +571,8 @@ namespace Microsoft.PowerShell.EditorServices
                 value,
                 true,
                 OutputType.Error,
-                ConsoleColor.Red);
+                foregroundColor: this.ErrorForegroundColor,
+                backgroundColor: this.ErrorBackgroundColor);
         }
 
         /// <summary>
@@ -683,6 +687,60 @@ namespace Microsoft.PowerShell.EditorServices
                     ConsoleColor.Blue);
             }
         }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public static ConsoleColor BackgroundColor
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public ConsoleColor ErrorForegroundColor { get; set; } = ConsoleColor.Red;
+        /// <summary>
+        ///
+        /// </summary>
+        public ConsoleColor ErrorBackgroundColor { get; set; } = BackgroundColor;
+
+        /// <summary>
+        ///
+        /// </summary>
+        public ConsoleColor WarningForegroundColor { get; set; } = ConsoleColor.Yellow;
+        /// <summary>
+        ///
+        /// </summary>
+        public ConsoleColor WarningBackgroundColor { get; set; } = BackgroundColor;
+
+        /// <summary>
+        ///
+        /// </summary>
+        public ConsoleColor DebugForegroundColor { get; set; } = ConsoleColor.Yellow;
+        /// <summary>
+        ///
+        /// </summary>
+        public ConsoleColor DebugBackgroundColor { get; set; } = BackgroundColor;
+
+        /// <summary>
+        ///
+        /// </summary>
+        public ConsoleColor VerboseForegroundColor { get; set; } = ConsoleColor.Yellow;
+        /// <summary>
+        ///
+        /// </summary>
+        public ConsoleColor VerboseBackgroundColor { get; set; } = BackgroundColor;
+
+        /// <summary>
+        ///
+        /// </summary>
+        public ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Yellow;
+        /// <summary>
+        ///
+        /// </summary>
+        public ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.DarkCyan;
 
         private async Task StartReplLoop(CancellationToken cancellationToken)
         {
