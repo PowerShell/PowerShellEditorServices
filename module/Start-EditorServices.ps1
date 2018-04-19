@@ -287,13 +287,13 @@ try {
 	$debugServiceTransport = $null
 
 	if ($Stdio.IsPresent -and -not $DebugServiceOnly.IsPresent) { $languageServiceTransport = "Stdio" }
-	elseif ($LanguageServicePipeName)                           { $languageServiceTransport = "Named pipe $LanguageServicePipeName" }
-	elseif ($languageServicePort = Get-AvailablePort)           { $languageServiceTransport = "Tcp port $languageServicePort"}
+	elseif ($LanguageServicePipeName)                           { $languageServiceTransport = "NamedPipe"; $languageServicePipeName = "$LanguageServicePipeName" }
+	elseif ($languageServicePort = Get-AvailablePort)           { $languageServiceTransport = "Tcp" }
 	else                                                        { ExitWithError "Failed to find an open socket port for language service." }
 
 	if ($Stdio.IsPresent -and $DebugServiceOnly.IsPresent)      { $debugServiceTransport = "Stdio" }
-	elseif ($DebugServicePipeName)                              { $debugServiceTransport = "Named pipe $DebugServicePipeName" }
-	elseif ($debugServicePort = Get-AvailablePort)              { $debugServiceTransport = "Tcp port $debugServicePort"}
+	elseif ($DebugServicePipeName)                              { $debugServiceTransport = "NamedPipe"; $debugServicePipeName = "$DebugServicePipeName" }
+	elseif ($debugServicePort = Get-AvailablePort)              { $debugServiceTransport = "Tcp" }
 	else                                                        { ExitWithError "Failed to find an open socket port for debug service." }
 
     if ($EnableConsoleRepl) {
@@ -328,6 +328,12 @@ try {
         "languageServiceTransport" = $languageServiceTransport;
         "debugServiceTransport" = $debugServiceTransport;
     };
+
+    if ($languageServicePipeName) { $resultDetails["languageServicePipeName"] = "$languageServicePipeName" }
+    if ($debugServicePipeName)    { $resultDetails["debugServicePipeName"]    = "$debugServicePipeName" }
+
+    if ($languageServicePort)     { $resultDetails["languageServicePort"]     = $languageServicePort }
+    if ($debugServicePort)        { $resultDetails["debugServicePort"]        = $debugServicePort }
 
     # Notify the client that the services have started
     WriteSessionFile $resultDetails
