@@ -6,7 +6,6 @@
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
@@ -81,14 +80,14 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         ///
         /// </summary>
-        public class ConsoleColorProxy
+        internal class ConsoleColorProxy
         {
             private EditorServicesPSHostUserInterface _hostUserInterface;
 
             /// <summary>
             ///
             /// </summary>
-            public ConsoleColorProxy(EditorServicesPSHostUserInterface hostUserInterface)
+            internal ConsoleColorProxy(EditorServicesPSHostUserInterface hostUserInterface)
             {
                 if (hostUserInterface == null) throw new ArgumentNullException("hostUserInterface");
                 _hostUserInterface = hostUserInterface;
@@ -99,10 +98,8 @@ namespace Microsoft.PowerShell.EditorServices
             /// </summary>
             public ConsoleColor ErrorForegroundColor
             {
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 get
                 { return _hostUserInterface.ErrorForegroundColor; }
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 set
                 { _hostUserInterface.ErrorForegroundColor = value; }
             }
@@ -112,10 +109,8 @@ namespace Microsoft.PowerShell.EditorServices
             /// </summary>
             public ConsoleColor ErrorBackgroundColor
             {
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 get
                 { return _hostUserInterface.ErrorBackgroundColor; }
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 set
                 { _hostUserInterface.ErrorBackgroundColor = value; }
             }
@@ -125,10 +120,8 @@ namespace Microsoft.PowerShell.EditorServices
             /// </summary>
             public ConsoleColor WarningForegroundColor
             {
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 get
                 { return _hostUserInterface.WarningForegroundColor; }
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 set
                 { _hostUserInterface.WarningForegroundColor = value; }
             }
@@ -138,10 +131,8 @@ namespace Microsoft.PowerShell.EditorServices
             /// </summary>
             public ConsoleColor WarningBackgroundColor
             {
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 get
                 { return _hostUserInterface.WarningBackgroundColor; }
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 set
                 { _hostUserInterface.WarningBackgroundColor = value; }
             }
@@ -151,10 +142,8 @@ namespace Microsoft.PowerShell.EditorServices
             /// </summary>
             public ConsoleColor DebugForegroundColor
             {
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 get
                 { return _hostUserInterface.DebugForegroundColor; }
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 set
                 { _hostUserInterface.DebugForegroundColor = value; }
             }
@@ -164,10 +153,8 @@ namespace Microsoft.PowerShell.EditorServices
             /// </summary>
             public ConsoleColor DebugBackgroundColor
             {
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 get
                 { return _hostUserInterface.DebugBackgroundColor; }
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 set
                 { _hostUserInterface.DebugBackgroundColor = value; }
             }
@@ -177,10 +164,8 @@ namespace Microsoft.PowerShell.EditorServices
             /// </summary>
             public ConsoleColor VerboseForegroundColor
             {
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 get
                 { return _hostUserInterface.VerboseForegroundColor; }
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 set
                 { _hostUserInterface.VerboseForegroundColor = value; }
             }
@@ -190,10 +175,8 @@ namespace Microsoft.PowerShell.EditorServices
             /// </summary>
             public ConsoleColor VerboseBackgroundColor
             {
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 get
                 { return _hostUserInterface.VerboseBackgroundColor; }
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 set
                 { _hostUserInterface.VerboseBackgroundColor = value; }
             }
@@ -203,10 +186,8 @@ namespace Microsoft.PowerShell.EditorServices
             /// </summary>
             public ConsoleColor ProgressForegroundColor
             {
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 get
                 { return _hostUserInterface.ProgressForegroundColor; }
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 set
                 { _hostUserInterface.ProgressForegroundColor = value; }
             }
@@ -216,10 +197,8 @@ namespace Microsoft.PowerShell.EditorServices
             /// </summary>
             public ConsoleColor ProgressBackgroundColor
             {
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 get
                 { return _hostUserInterface.ProgressBackgroundColor; }
-                [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
                 set
                 { _hostUserInterface.ProgressBackgroundColor = value; }
             }

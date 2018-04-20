@@ -691,56 +691,52 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         ///
         /// </summary>
-        public static ConsoleColor BackgroundColor
-        {
-            get;
-            set;
-        }
+        internal static ConsoleColor BackgroundColor { get; set; }
 
         /// <summary>
         ///
         /// </summary>
-        public ConsoleColor ErrorForegroundColor { get; set; } = ConsoleColor.Red;
+        internal ConsoleColor ErrorForegroundColor { get; set; } = ConsoleColor.Red;
         /// <summary>
         ///
         /// </summary>
-        public ConsoleColor ErrorBackgroundColor { get; set; } = BackgroundColor;
+        internal ConsoleColor ErrorBackgroundColor { get; set; } = BackgroundColor;
 
         /// <summary>
         ///
         /// </summary>
-        public ConsoleColor WarningForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal ConsoleColor WarningForegroundColor { get; set; } = ConsoleColor.Yellow;
         /// <summary>
         ///
         /// </summary>
-        public ConsoleColor WarningBackgroundColor { get; set; } = BackgroundColor;
+        internal ConsoleColor WarningBackgroundColor { get; set; } = BackgroundColor;
 
         /// <summary>
         ///
         /// </summary>
-        public ConsoleColor DebugForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal ConsoleColor DebugForegroundColor { get; set; } = ConsoleColor.Yellow;
         /// <summary>
         ///
         /// </summary>
-        public ConsoleColor DebugBackgroundColor { get; set; } = BackgroundColor;
+        internal ConsoleColor DebugBackgroundColor { get; set; } = BackgroundColor;
 
         /// <summary>
         ///
         /// </summary>
-        public ConsoleColor VerboseForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal ConsoleColor VerboseForegroundColor { get; set; } = ConsoleColor.Yellow;
         /// <summary>
         ///
         /// </summary>
-        public ConsoleColor VerboseBackgroundColor { get; set; } = BackgroundColor;
+        internal ConsoleColor VerboseBackgroundColor { get; set; } = BackgroundColor;
 
         /// <summary>
         ///
         /// </summary>
-        public ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Yellow;
         /// <summary>
         ///
         /// </summary>
-        public ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.DarkCyan;
+        internal ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.DarkCyan;
 
         private async Task StartReplLoop(CancellationToken cancellationToken)
         {
