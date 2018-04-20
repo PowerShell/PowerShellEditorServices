@@ -688,54 +688,21 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        /// <summary>
-        ///
-        /// </summary>
         internal static ConsoleColor BackgroundColor { get; set; }
 
-        /// <summary>
-        ///
-        /// </summary>
         internal ConsoleColor ErrorForegroundColor { get; set; } = ConsoleColor.Red;
-        /// <summary>
-        ///
-        /// </summary>
         internal ConsoleColor ErrorBackgroundColor { get; set; } = BackgroundColor;
 
-        /// <summary>
-        ///
-        /// </summary>
         internal ConsoleColor WarningForegroundColor { get; set; } = ConsoleColor.Yellow;
-        /// <summary>
-        ///
-        /// </summary>
         internal ConsoleColor WarningBackgroundColor { get; set; } = BackgroundColor;
 
-        /// <summary>
-        ///
-        /// </summary>
         internal ConsoleColor DebugForegroundColor { get; set; } = ConsoleColor.Yellow;
-        /// <summary>
-        ///
-        /// </summary>
         internal ConsoleColor DebugBackgroundColor { get; set; } = BackgroundColor;
 
-        /// <summary>
-        ///
-        /// </summary>
         internal ConsoleColor VerboseForegroundColor { get; set; } = ConsoleColor.Yellow;
-        /// <summary>
-        ///
-        /// </summary>
         internal ConsoleColor VerboseBackgroundColor { get; set; } = BackgroundColor;
 
-        /// <summary>
-        ///
-        /// </summary>
         internal ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Yellow;
-        /// <summary>
-        ///
-        /// </summary>
         internal ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.DarkCyan;
 
         private async Task StartReplLoop(CancellationToken cancellationToken)

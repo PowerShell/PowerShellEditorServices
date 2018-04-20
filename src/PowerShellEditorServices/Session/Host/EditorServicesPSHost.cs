@@ -77,16 +77,10 @@ namespace Microsoft.PowerShell.EditorServices
             get { return this.hostDetails.Name; }
         }
 
-        /// <summary>
-        ///
-        /// </summary>
         internal class ConsoleColorProxy
         {
             private EditorServicesPSHostUserInterface _hostUserInterface;
 
-            /// <summary>
-            ///
-            /// </summary>
             internal ConsoleColorProxy(EditorServicesPSHostUserInterface hostUserInterface)
             {
                 if (hostUserInterface == null) throw new ArgumentNullException("hostUserInterface");
