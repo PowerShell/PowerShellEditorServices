@@ -88,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             /// <summary>
-            ///
+            /// The ForegroundColor for Error
             /// </summary>
             public ConsoleColor ErrorForegroundColor
             {
@@ -99,7 +99,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             /// <summary>
-            ///
+            /// The BackgroundColor for Error
             /// </summary>
             public ConsoleColor ErrorBackgroundColor
             {
@@ -110,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             /// <summary>
-            ///
+            /// The ForegroundColor for Warning
             /// </summary>
             public ConsoleColor WarningForegroundColor
             {
@@ -121,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             /// <summary>
-            ///
+            /// The BackgroundColor for Warning
             /// </summary>
             public ConsoleColor WarningBackgroundColor
             {
@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             /// <summary>
-            ///
+            /// The ForegroundColor for Debug
             /// </summary>
             public ConsoleColor DebugForegroundColor
             {
@@ -143,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             /// <summary>
-            ///
+            /// The BackgroundColor for Debug
             /// </summary>
             public ConsoleColor DebugBackgroundColor
             {
@@ -154,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             /// <summary>
-            ///
+            /// The ForegroundColor for Verbose
             /// </summary>
             public ConsoleColor VerboseForegroundColor
             {
@@ -165,7 +165,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             /// <summary>
-            ///
+            /// The BackgroundColor for Verbose
             /// </summary>
             public ConsoleColor VerboseBackgroundColor
             {
@@ -176,7 +176,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             /// <summary>
-            ///
+            /// The ForegroundColor for Progress
             /// </summary>
             public ConsoleColor ProgressForegroundColor
             {
@@ -187,7 +187,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             /// <summary>
-            ///
+            /// The BackgroundColor for Progress
             /// </summary>
             public ConsoleColor ProgressBackgroundColor
             {
