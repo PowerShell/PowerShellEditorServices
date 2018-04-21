@@ -77,15 +77,140 @@ namespace Microsoft.PowerShell.EditorServices
             get { return this.hostDetails.Name; }
         }
 
+        internal class ConsoleColorProxy
+        {
+            private EditorServicesPSHostUserInterface _hostUserInterface;
+
+            internal ConsoleColorProxy(EditorServicesPSHostUserInterface hostUserInterface)
+            {
+                if (hostUserInterface == null) throw new ArgumentNullException("hostUserInterface");
+                _hostUserInterface = hostUserInterface;
+            }
+
+            /// <summary>
+            /// The ForegroundColor for Error
+            /// </summary>
+            public ConsoleColor ErrorForegroundColor
+            {
+                get
+                { return _hostUserInterface.ErrorForegroundColor; }
+                set
+                { _hostUserInterface.ErrorForegroundColor = value; }
+            }
+
+            /// <summary>
+            /// The BackgroundColor for Error
+            /// </summary>
+            public ConsoleColor ErrorBackgroundColor
+            {
+                get
+                { return _hostUserInterface.ErrorBackgroundColor; }
+                set
+                { _hostUserInterface.ErrorBackgroundColor = value; }
+            }
+
+            /// <summary>
+            /// The ForegroundColor for Warning
+            /// </summary>
+            public ConsoleColor WarningForegroundColor
+            {
+                get
+                { return _hostUserInterface.WarningForegroundColor; }
+                set
+                { _hostUserInterface.WarningForegroundColor = value; }
+            }
+
+            /// <summary>
+            /// The BackgroundColor for Warning
+            /// </summary>
+            public ConsoleColor WarningBackgroundColor
+            {
+                get
+                { return _hostUserInterface.WarningBackgroundColor; }
+                set
+                { _hostUserInterface.WarningBackgroundColor = value; }
+            }
+
+            /// <summary>
+            /// The ForegroundColor for Debug
+            /// </summary>
+            public ConsoleColor DebugForegroundColor
+            {
+                get
+                { return _hostUserInterface.DebugForegroundColor; }
+                set
+                { _hostUserInterface.DebugForegroundColor = value; }
+            }
+
+            /// <summary>
+            /// The BackgroundColor for Debug
+            /// </summary>
+            public ConsoleColor DebugBackgroundColor
+            {
+                get
+                { return _hostUserInterface.DebugBackgroundColor; }
+                set
+                { _hostUserInterface.DebugBackgroundColor = value; }
+            }
+
+            /// <summary>
+            /// The ForegroundColor for Verbose
+            /// </summary>
+            public ConsoleColor VerboseForegroundColor
+            {
+                get
+                { return _hostUserInterface.VerboseForegroundColor; }
+                set
+                { _hostUserInterface.VerboseForegroundColor = value; }
+            }
+
+            /// <summary>
+            /// The BackgroundColor for Verbose
+            /// </summary>
+            public ConsoleColor VerboseBackgroundColor
+            {
+                get
+                { return _hostUserInterface.VerboseBackgroundColor; }
+                set
+                { _hostUserInterface.VerboseBackgroundColor = value; }
+            }
+
+            /// <summary>
+            /// The ForegroundColor for Progress
+            /// </summary>
+            public ConsoleColor ProgressForegroundColor
+            {
+                get
+                { return _hostUserInterface.ProgressForegroundColor; }
+                set
+                { _hostUserInterface.ProgressForegroundColor = value; }
+            }
+
+            /// <summary>
+            /// The BackgroundColor for Progress
+            /// </summary>
+            public ConsoleColor ProgressBackgroundColor
+            {
+                get
+                { return _hostUserInterface.ProgressBackgroundColor; }
+                set
+                { _hostUserInterface.ProgressBackgroundColor = value; }
+            }
+        }
+
         /// <summary>
-        ///  
+        /// Return the actual console host object so that the user can get at
+        /// the unproxied methods.
         /// </summary>
         public override PSObject PrivateData
         {
-            // There is no PrivateData yet but by returning an empty object we can get past PowerShell's
-            // check for $host.PrivateData["window"] which errors on the null returned by default.
-            get { return new PSObject(); }
+            get
+            {
+                if (hostUserInterface == null) return null;
+                return _consoleColorProxy ?? (_consoleColorProxy = PSObject.AsPSObject(new ConsoleColorProxy(hostUserInterface)));
+            }
         }
+        private PSObject _consoleColorProxy;
 
         /// <summary>
         ///

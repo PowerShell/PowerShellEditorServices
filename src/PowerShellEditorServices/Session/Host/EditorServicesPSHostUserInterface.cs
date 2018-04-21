@@ -529,7 +529,8 @@ namespace Microsoft.PowerShell.EditorServices
                 DebugMessagePrefix + message,
                 true,
                 OutputType.Debug,
-                foregroundColor: ConsoleColor.Yellow);
+                foregroundColor: this.DebugForegroundColor,
+                backgroundColor: this.DebugBackgroundColor);
         }
 
         /// <summary>
@@ -542,7 +543,8 @@ namespace Microsoft.PowerShell.EditorServices
                 VerboseMessagePrefix + message,
                 true,
                 OutputType.Verbose,
-                foregroundColor: ConsoleColor.Blue);
+                foregroundColor: this.VerboseForegroundColor,
+                backgroundColor: this.VerboseBackgroundColor);
         }
 
         /// <summary>
@@ -555,7 +557,8 @@ namespace Microsoft.PowerShell.EditorServices
                 WarningMessagePrefix + message,
                 true,
                 OutputType.Warning,
-                foregroundColor: ConsoleColor.Yellow);
+                foregroundColor: this.WarningForegroundColor,
+                backgroundColor: this.WarningBackgroundColor);
         }
 
         /// <summary>
@@ -568,7 +571,8 @@ namespace Microsoft.PowerShell.EditorServices
                 value,
                 true,
                 OutputType.Error,
-                ConsoleColor.Red);
+                foregroundColor: this.ErrorForegroundColor,
+                backgroundColor: this.ErrorBackgroundColor);
         }
 
         /// <summary>
@@ -683,6 +687,23 @@ namespace Microsoft.PowerShell.EditorServices
                     ConsoleColor.Blue);
             }
         }
+
+        internal static ConsoleColor BackgroundColor { get; set; }
+
+        internal ConsoleColor ErrorForegroundColor { get; set; } = ConsoleColor.Red;
+        internal ConsoleColor ErrorBackgroundColor { get; set; } = BackgroundColor;
+
+        internal ConsoleColor WarningForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal ConsoleColor WarningBackgroundColor { get; set; } = BackgroundColor;
+
+        internal ConsoleColor DebugForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal ConsoleColor DebugBackgroundColor { get; set; } = BackgroundColor;
+
+        internal ConsoleColor VerboseForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal ConsoleColor VerboseBackgroundColor { get; set; } = BackgroundColor;
+
+        internal ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.DarkCyan;
 
         private async Task StartReplLoop(CancellationToken cancellationToken)
         {
