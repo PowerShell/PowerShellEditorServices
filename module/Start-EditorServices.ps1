@@ -68,7 +68,16 @@ param(
     $WaitForDebugger,
 
     [switch]
-    $ConfirmInstall
+    $ConfirmInstall,
+
+    [switch]
+    $Stdio,
+
+    [string]
+    $LanguageServicePipeName = $null,
+
+    [string]
+    $DebugServicePipeName = $null
 )
 
 $minPortNumber = 10000
@@ -271,16 +280,21 @@ try {
         Import-Module PowerShellEditorServices -Version $parsedVersion -ErrorAction Stop
     }
 
-    # Locate available port numbers for services
-    Log "Searching for available socket port for the language service"
-    $languageServicePort = Get-AvailablePort
+	# Locate available port numbers for services
+	# There could be only one service on Stdio channel
 
-    Log "Searching for available socket port for the debug service"
-    $debugServicePort = Get-AvailablePort
+	$languageServiceTransport = $null
+	$debugServiceTransport = $null
 
-    if (!$languageServicePort -or !$debugServicePort) {
-        ExitWithError "Failed to find an open socket port for either the language or debug service."
-    }
+	if ($Stdio.IsPresent -and -not $DebugServiceOnly.IsPresent) { $languageServiceTransport = "Stdio" }
+	elseif ($LanguageServicePipeName)                           { $languageServiceTransport = "NamedPipe"; $languageServicePipeName = "$LanguageServicePipeName" }
+	elseif ($languageServicePort = Get-AvailablePort)           { $languageServiceTransport = "Tcp" }
+	else                                                        { ExitWithError "Failed to find an open socket port for language service." }
+
+	if ($Stdio.IsPresent -and $DebugServiceOnly.IsPresent)      { $debugServiceTransport = "Stdio" }
+	elseif ($DebugServicePipeName)                              { $debugServiceTransport = "NamedPipe"; $debugServicePipeName = "$DebugServicePipeName" }
+	elseif ($debugServicePort = Get-AvailablePort)              { $debugServiceTransport = "Tcp" }
+	else                                                        { ExitWithError "Failed to find an open socket port for debug service." }
 
     if ($EnableConsoleRepl) {
         Write-Host "PowerShell Integrated Console`n"
@@ -298,6 +312,9 @@ try {
             -AdditionalModules $AdditionalModules `
             -LanguageServicePort $languageServicePort `
             -DebugServicePort $debugServicePort `
+            -LanguageServiceNamedPipe $LanguageServicePipeName `
+            -DebugServiceNamedPipe $DebugServicePipeName `
+            -Stdio:$Stdio.IsPresent`
             -BundledModulesPath $BundledModulesPath `
             -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
             -DebugServiceOnly:$DebugServiceOnly.IsPresent `
@@ -308,10 +325,15 @@ try {
 
     $resultDetails = @{
         "status" = "started";
-        "channel" = "tcp";
-        "languageServicePort" = $languageServicePort;
-        "debugServicePort" = $debugServicePort;
-    }
+        "languageServiceTransport" = $languageServiceTransport;
+        "debugServiceTransport" = $debugServiceTransport;
+    };
+
+    if ($languageServicePipeName) { $resultDetails["languageServicePipeName"] = "$languageServicePipeName" }
+    if ($debugServicePipeName)    { $resultDetails["debugServicePipeName"]    = "$debugServicePipeName" }
+
+    if ($languageServicePort)     { $resultDetails["languageServicePort"]     = $languageServicePort }
+    if ($debugServicePort)        { $resultDetails["debugServicePort"]        = $debugServicePort }
 
     # Notify the client that the services have started
     WriteSessionFile $resultDetails

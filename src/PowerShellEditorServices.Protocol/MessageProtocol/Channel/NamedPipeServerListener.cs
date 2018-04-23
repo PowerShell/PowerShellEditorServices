@@ -38,6 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                         1,
                         PipeTransmissionMode.Byte,
                         PipeOptions.Asynchronous);
+                ListenForConnection();
             }
             catch (IOException e)
             {
