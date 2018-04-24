@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class ServerTestsBase
     {
-        private static int sessionCounter;        
+        private static int sessionCounter;
         private Process serviceProcess;
         protected IMessageSender messageSender;
         protected IMessageHandlers messageHandlers;
@@ -38,7 +38,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             bool waitForDebugger = false)
         {
             string modulePath = Path.GetFullPath(@"..\..\..\..\..\module");
-            string scriptPath = Path.Combine(modulePath, "Start-EditorServices.ps1");
+            string scriptPath = Path.GetFullPath(Path.Combine(modulePath, @"PowerShellEditorServices\Start-EditorServices.ps1"));
+
+            if (!File.Exists(scriptPath))
+            {
+                throw new IOException(String.Format("Bad start script path: '{0}'", scriptPath));
+            }
 
 #if CoreCLR
             Assembly assembly = this.GetType().GetTypeInfo().Assembly;
@@ -50,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             FileVersionInfo fileVersionInfo =
                 FileVersionInfo.GetVersionInfo(assemblyPath);
 
-            string sessionPath = 
+            string sessionPath =
                 Path.Combine(
                     Path.GetDirectoryName(assemblyPath), $"session-{++sessionCounter}.json");
 
@@ -67,9 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     fileVersionInfo.FileBuildPart);
 
             string scriptArgs =
-                string.Format(
                     "\"" + scriptPath + "\" " +
-                    "-EditorServicesVersion \"{0}\" " +
                     "-HostName \\\"PowerShell Editor Services Test Host\\\" " +
                     "-HostProfileId \"Test.PowerShellEditorServices\" " +
                     "-HostVersion \"1.0.0\" " +
@@ -78,8 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     "-LogPath \"" + logPath + "\" " +
                     "-SessionDetailsPath \"" + sessionPath + "\" " +
                     "-FeatureFlags @() " +
-                    "-AdditionalModules @() ",
-                   editorServicesModuleVersion);
+                    "-AdditionalModules @() ";
 
             if (waitForDebugger)
             {
@@ -120,6 +122,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             var maxRetryAttempts = 10;
             while (maxRetryAttempts-- > 0)
             {
+                if (this.serviceProcess.HasExited)
+                {
+                    throw new Exception(String.Format("Server host process quit unexpectedly: '{0}'", this.serviceProcess.StandardError.ReadToEnd()));
+                }
+
                 try
                 {
                     using (var stream = new FileStream(sessionPath, FileMode.Open, FileAccess.Read, FileShare.None))
@@ -128,9 +135,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         sessionDetailsText = reader.ReadToEnd();
                         break;
                     }
-                }
-                catch (FileNotFoundException)
-                {
                 }
                 catch (Exception ex)
                 {
