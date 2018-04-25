@@ -1,12 +1,56 @@
 # PowerShell Editor Services Release History
 
+## 1.7.0
+### Wednesday, April 25, 2018
+
+#### Fixes and Improvements
+
+- [PowerShell/PowerShellEditorServices #629](https://github.com/PowerShell/PowerShellEditorServices/pull/629) -
+  Allow Tcp/NamedPipe/Stdio listeners to enable other editors to use PowerShell Editor Services. Thanks to [yatli](https://github.com/yatli) 🎉
+
+- [PowerShell/PowerShellEditorServices #632](https://github.com/PowerShell/PowerShellEditorServices/pull/632) -
+  Add events for PowerShell execution status (running, completed, etc).
+
+- [PowerShell/PowerShellEditorServices #638](https://github.com/PowerShell/PowerShellEditorServices/pull/638) -
+  Refactor pester script detection.
+
+- [PowerShell/PowerShellEditorServices #639](https://github.com/PowerShell/PowerShellEditorServices/pull/639) -
+  Add Start-EditorServices script from vscode-powershell repo.
+
+- [PowerShell/PowerShellEditorServices #641](https://github.com/PowerShell/PowerShellEditorServices/pull/641) -
+  Fix GetVersionDetails error on non-Windows platforms.
+
+- [PowerShell/PowerShellEditorServices #642](https://github.com/PowerShell/PowerShellEditorServices/pull/642) -
+  Add support for running xUnit tests in VS Test Explorer.
+
+- [PowerShell/PowerShellEditorServices #643](https://github.com/PowerShell/PowerShellEditorServices/pull/643/files) -
+  Fix issue using pre-release version of NET Core SDK.
+
+- [PowerShell/PowerShellEditorServices #645](https://github.com/PowerShell/PowerShellEditorServices/pull/645) -
+  Implemented a better way to test for in-memory file.
+
+- [PowerShell/PowerShellEditorServices #647](https://github.com/PowerShell/PowerShellEditorServices/pull/647) -
+  Change PSES to be buildable as a standalone.
+
+- [PowerShell/PowerShellEditorServices #649](https://github.com/PowerShell/PowerShellEditorServices/pull/649) -
+  Get rid of the unneeded exception variable causing a compile warning.
+
+- [PowerShell/PowerShellEditorServices #650](https://github.com/PowerShell/PowerShellEditorServices/pull/650) -
+  Add $psEditor.GetEditorContext().CurrentFile.SaveAs("Name") support.
+
+- [PowerShell/PowerShellEditorServices #652](https://github.com/PowerShell/PowerShellEditorServices/pull/652) -
+  Make the 'PSESRemoteSessionOpenFile' a support event.
+
+- [PowerShell/PowerShellEditorServices #654](https://github.com/PowerShell/PowerShellEditorServices/pull/654) -
+Add customize output color enhancement. Thanks to [KeroroLulu](https://github.com/KeroroLulu) 🎉
+
 ## 1.6.0
 ### Thursday, February 22, 2018
 
 #### Fixes and Improvements
 
 - [PowerShell/vscode-powershell #863](https://github.com/PowerShell/vscode-powershell/issues/863) -
-  Eliminate duplicate dgb prompt.
+  Eliminate duplicate [DBG] prompt.
 
 - [PowerShell/PowerShellEditorServices #626](https://github.com/PowerShell/PowerShellEditorServices/pull/626) -
   Switch to w3c log file timestamp format.
@@ -58,7 +102,7 @@ Fix remote editing in PSCore by fixing *-Content calls in psedit scripts and set
   Add .Save() to FileContext API.
 
 - [PowerShell/PowerShellEditorServices #588](https://github.com/PowerShell/PowerShellEditorServices/pull/588) -
-  Fix bad pssa settings path crashes PSES.
+  Fix bad PSScriptAnalyzer settings path crashes PSES.
 
 - [PowerShell/PowerShellEditorServices #582](https://github.com/PowerShell/PowerShellEditorServices/issues/582) -
   Fix Very Large String crashes PS Editor Services.
