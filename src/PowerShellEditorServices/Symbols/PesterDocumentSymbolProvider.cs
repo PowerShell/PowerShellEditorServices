@@ -45,11 +45,10 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         {
             CommandAst commandAst = ast as CommandAst;
 
-                return
-                    commandAst != null &&
-                    commandAst.InvocationOperator != TokenKind.Dot &&
-                    PesterSymbolReference.GetCommandType(commandAst.GetCommandName()).HasValue &&
-                    commandAst.CommandElements.Count >= 2;
+            return commandAst != null &&
+                commandAst.InvocationOperator != TokenKind.Dot &&
+                PesterSymbolReference.GetCommandType(commandAst.GetCommandName()).HasValue &&
+                commandAst.CommandElements.Count >= 2;
         }
 
         /// <summary>
@@ -89,7 +88,11 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         private static PesterSymbolReference ConvertPesterAstToSymbolReference(ScriptFile scriptFile, CommandAst pesterCommandAst)
         {
             string testLine = scriptFile.GetLine(pesterCommandAst.Extent.StartLineNumber);
-            string commandName = pesterCommandAst.GetCommandName();
+            PesterCommandType? commandName = PesterSymbolReference.GetCommandType(pesterCommandAst.GetCommandName());
+            if (commandName == null)
+            {
+                return null;
+            }
 
             // Search for a name for the test
             // If the test has more than one argument for names, we set it to null
@@ -122,7 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
 
             return new PesterSymbolReference(
                 scriptFile,
-                commandName,
+                commandName.Value,
                 testLine,
                 testName,
                 pesterCommandAst.Extent
@@ -179,7 +182,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
 
         internal PesterSymbolReference(
             ScriptFile scriptFile,
-            string commandName,
+            PesterCommandType commandType,
             string testLine,
             string testName,
             IScriptExtent scriptExtent)
@@ -190,14 +193,14 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
                     scriptFile.FilePath,
                     testLine)
         {
-            this.Command = GetCommandType(commandName).Value;
+            this.Command = commandType;
             this.TestName = testName;
         }
 
         internal static PesterCommandType? GetCommandType(string commandName)
         {
             PesterCommandType pesterCommandType;
-            if (!PesterKeywords.TryGetValue(commandName, out pesterCommandType))
+            if (commandName == null || !PesterKeywords.TryGetValue(commandName, out pesterCommandType))
             {
                 return null;
             }
