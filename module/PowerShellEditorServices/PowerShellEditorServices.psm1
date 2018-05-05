@@ -124,8 +124,6 @@ function Start-EditorServicesHost {
 
     if ($DebugServiceOnly.IsPresent) {
         $editorServicesHost.StartDebugService($debugServiceConfig, $profilePaths, $false);
-    } elseif ($Stdio.IsPresent) {
-        $editorServicesHost.StartLanguageService($languageServiceConfig, $profilePaths);
     } else {
         $editorServicesHost.StartLanguageService($languageServiceConfig, $profilePaths);
         $editorServicesHost.StartDebugService($debugServiceConfig, $profilePaths, $true);
