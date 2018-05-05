@@ -47,15 +47,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             get { return this.editorOperations; }
         }
 
-        /// <param name="editorSession"></param>
-        /// <param name="messageHandlers"></param>
-        /// <param name="messageSender"></param>
-        /// <param name="serverCompletedTask"></param>
-        /// <param name="logger"></param>
-        /// <param name="hostDetails">
-        /// Provides details about the host application.
-        /// </param>
-        public LanguageServer(EditorSession editorSession,
+        /// <summary>
+        /// Initializes a new language server that is used for handing language server protocol messages 
+        /// </summary>
+        /// <param name="editorSession">The editor session that handles the PowerShell runspace</param>
+        /// <param name="messageHandlers">An object that manages all of the message handlers</param>
+        /// <param name="messageSender">The message sender</param>
+        /// <param name="serverCompletedTask">A TaskCompletionSource<bool> that will be completed to stop the running process</param>
+        /// <param name="logger">The logger</param>
+        public LanguageServer(
+            EditorSession editorSession,
             IMessageHandlers messageHandlers,
             IMessageSender messageSender,
             TaskCompletionSource<bool> serverCompletedTask,
