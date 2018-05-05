@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
 
         /// <summary>
-        /// Initializes a new language server that is used for handing language server protocol messages 
+        /// Initializes a new language server that is used for handing language server protocol messages
         /// </summary>
         /// <param name="editorSession">The editor session that handles the PowerShell runspace</param>
         /// <param name="messageHandlers">An object that manages all of the message handlers</param>
@@ -154,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             Logger.Write(LogLevel.Normal, "Language service is shutting down...");
 
-            // TODO: Raise an event so that the host knows to shut down
+            // complete the task so that the host knows to shut down
             this.serverCompletedTask.SetResult(true);
 
             return Task.FromResult(true);
