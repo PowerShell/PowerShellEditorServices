@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private IServerListener languageServiceListener;
         private IServerListener debugServiceListener;
 
-        private TaskCompletionSource<bool> serverCompletedTask;
+        private TaskCompletionSource<bool> serverCompletedTask = new TaskCompletionSource<bool>();
 
         #endregion
 
@@ -226,6 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     this.editorSession,
                     messageDispatcher,
                     protocolEndpoint,
+                    this.serverCompletedTask,
                     this.logger);
 
             await this.editorSession.PowerShellContext.ImportCommandsModule(
@@ -348,7 +349,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
         public void WaitForCompletion()
         {
             // TODO: We need a way to know when to complete this task!
-            this.serverCompletedTask = new TaskCompletionSource<bool>();
             this.serverCompletedTask.Task.Wait();
         }
 
