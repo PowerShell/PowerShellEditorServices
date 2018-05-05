@@ -56,31 +56,30 @@ namespace Microsoft.PowerShell.EditorServices.Host
     {
         #region Private Fields
 
-        private ILogger logger;
-        private bool enableConsoleRepl;
-        private HostDetails hostDetails;
-        private ProfilePaths profilePaths;
+        private string[] additionalModules;
         private string bundledModulesPath;
         private DebugAdapter debugAdapter;
-        private string[] additionalModules;
         private EditorSession editorSession;
+        private bool enableConsoleRepl;
         private HashSet<string> featureFlags;
+        private HostDetails hostDetails;
         private LanguageServer languageServer;
+        private ILogger logger;
+        private ProfilePaths profilePaths;
+        private TaskCompletionSource<bool> serverCompletedTask;
 
         private IServerListener languageServiceListener;
         private IServerListener debugServiceListener;
-
-        private TaskCompletionSource<bool> serverCompletedTask = new TaskCompletionSource<bool>();
 
         #endregion
 
         #region Properties
 
-        public EditorServicesHostStatus Status { get; private set; }
+        public int DebugServicePort { get; private set; }
 
         public int LanguageServicePort { get; private set; }
 
-        public int DebugServicePort { get; private set; }
+        public EditorServicesHostStatus Status { get; private set; }
 
         #endregion
 
@@ -108,6 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.bundledModulesPath = bundledModulesPath;
             this.additionalModules = additionalModules ?? new string[0];
             this.featureFlags = new HashSet<string>(featureFlags ?? new string[0]);
+            this.serverCompletedTask = new TaskCompletionSource<bool>();
 
 #if DEBUG
             if (waitForDebugger)
