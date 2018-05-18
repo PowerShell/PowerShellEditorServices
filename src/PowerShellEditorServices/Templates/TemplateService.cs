@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
     {
         #region Private Fields
 
-        private ILogger logger;
+        private IPsesLogger logger;
         private bool isPlasterLoaded;
         private bool? isPlasterInstalled;
         private PowerShellContext powerShellContext;
@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
         /// </summary>
         /// <param name="powerShellContext">The PowerShellContext to use for this service.</param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public TemplateService(PowerShellContext powerShellContext, ILogger logger)
+        public TemplateService(PowerShellContext powerShellContext, IPsesLogger logger)
         {
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 

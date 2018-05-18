@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private ILogger logger;
+        private IPsesLogger logger;
         private bool areAliasesLoaded;
         private PowerShellContext powerShellContext;
         private CompletionResults mostRecentCompletions;
@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public LanguageService(
             PowerShellContext powerShellContext,
-            ILogger logger)
+            IPsesLogger logger)
         {
             Validate.IsNotNull("powerShellContext", powerShellContext);
 

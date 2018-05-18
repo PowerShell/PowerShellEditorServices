@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     {
         #region Private Fields
 
-        private ILogger logger;
+        private IPsesLogger logger;
         private BlockingCollection<Tuple<SendOrPostCallback, object>> requestQueue =
             new BlockingCollection<Tuple<SendOrPostCallback, object>>();
 
@@ -27,10 +27,10 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         #region Constructors
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public ThreadSynchronizationContext(ILogger logger)
+        public ThreadSynchronizationContext(IPsesLogger logger)
         {
             this.logger = logger;
         }

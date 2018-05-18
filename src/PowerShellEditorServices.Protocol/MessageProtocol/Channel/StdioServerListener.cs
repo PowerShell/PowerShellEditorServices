@@ -10,11 +10,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class StdioServerListener : ServerListenerBase<StdioServerChannel>
     {
-        private ILogger logger;
+        private IPsesLogger logger;
 
         public StdioServerListener(
             MessageProtocolType messageProtocolType,
-            ILogger logger)
+            IPsesLogger logger)
                 : base(messageProtocolType)
         {
             this.logger = logger;

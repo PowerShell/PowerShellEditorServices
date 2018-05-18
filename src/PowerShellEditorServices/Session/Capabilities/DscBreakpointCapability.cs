@@ -80,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
         public static DscBreakpointCapability CheckForCapability(
             RunspaceDetails runspaceDetails,
             PowerShellContext powerShellContext,
-            ILogger logger)
+            IPsesLogger logger)
         {
             DscBreakpointCapability capability = null;
 

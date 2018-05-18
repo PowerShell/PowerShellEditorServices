@@ -188,7 +188,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         internal static RunspaceDetails CreateFromRunspace(
             Runspace runspace,
             SessionDetails sessionDetails,
-            ILogger logger)
+            IPsesLogger logger)
         {
             Validate.IsNotNull(nameof(runspace), runspace);
             Validate.IsNotNull(nameof(sessionDetails), sessionDetails);

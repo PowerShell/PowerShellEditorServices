@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     /// Provides an implementation of ILogger for writing messages to
     /// a log file on disk.
     /// </summary>
-    public class FileLogger : ILogger, IDisposable
+    public class FileLogger : IPsesLogger, IDisposable
     {
         private TextWriter textWriter;
         private LogLevel minimumLogLevel = LogLevel.Verbose;

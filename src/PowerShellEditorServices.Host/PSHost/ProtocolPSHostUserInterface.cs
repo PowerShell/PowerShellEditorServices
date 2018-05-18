@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         public ProtocolPSHostUserInterface(
             PowerShellContext powerShellContext,
             IMessageSender messageSender,
-            ILogger logger)
+            IPsesLogger logger)
             : base(powerShellContext, new SimplePSHostRawUserInterface(logger), logger)
         {
             this.messageSender = messageSender;

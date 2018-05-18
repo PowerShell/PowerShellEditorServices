@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
     {
         #region Fields
 
-        private ILogger logger;
+        private IPsesLogger logger;
         private string remoteFilesPath;
         private string processTempPath;
         private PowerShellContext powerShellContext;
@@ -246,7 +246,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         public RemoteFileManager(
             PowerShellContext powerShellContext,
             IEditorOperations editorOperations,
-            ILogger logger)
+            IPsesLogger logger)
         {
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 

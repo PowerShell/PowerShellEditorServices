@@ -1,13 +1,8 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
-
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.File;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
@@ -45,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     /// <summary>
     /// Defines an interface for writing messages to a logging implementation.
     /// </summary>
-    public interface ILogger : IDisposable
+    public interface IPsesLogger
     {
         /// <summary>
         /// Writes a message to the log file.
@@ -76,5 +71,60 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerMemberName] string callerName = null,
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = 0);
+    }
+
+    public static class Logging
+    {
+        private static LogEventLevel ConvertLogLevel(LogLevel logLevel)
+        {
+            switch (logLevel)
+            {
+                case LogLevel.Diagnostic:
+                    return LogEventLevel.Verbose;
+
+                case LogLevel.Verbose:
+                    return LogEventLevel.Debug;
+
+                case LogLevel.Normal:
+                    return LogEventLevel.Information;
+
+                case LogLevel.Warning:
+                    return LogEventLevel.Warning;
+
+                case LogLevel.Error:
+                    return LogEventLevel.Error;
+            }
+
+            throw new ArgumentException(String.Format("Unknown LogLevel: '{0}'", logLevel), nameof(logLevel));
+        }
+
+        public static IPsesLogger CreateFileLogger(string filePath, LogLevel logLevel)
+        {
+            ILogger logger = new LoggerConfiguration()
+                .MinimumLevel.Is(ConvertLogLevel(logLevel))
+                .WriteTo.File(filePath)
+                .CreateLogger();
+
+            return new PsesLogger(logger);
+        }
+    }
+
+    internal class PsesLogger : IPsesLogger
+    {
+        private readonly ILogger _logger;
+
+        public PsesLogger(ILogger logger)
+        {
+            _logger = logger;
+        }
+
+        public void Write(LogLevel logLevel, string logMessage, [CallerMemberName] string callerName = null, [CallerFilePath] string callerSourceFile = null, [CallerLineNumber] int callerLineNumber = 0)
+        {
+        }
+
+        public void WriteException(string errorMessage, Exception errorException, [CallerMemberName] string callerName = null, [CallerFilePath] string callerSourceFile = null, [CallerLineNumber] int callerLineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

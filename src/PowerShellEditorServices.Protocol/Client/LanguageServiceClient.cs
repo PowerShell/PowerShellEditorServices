@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         private Dictionary<string, ScriptFileMarker[]> cachedDiagnostics =
             new Dictionary<string, ScriptFileMarker[]>();
 
-        public LanguageServiceClient(ChannelBase clientChannel, ILogger logger)
+        public LanguageServiceClient(ChannelBase clientChannel, IPsesLogger logger)
             : base(clientChannel, logger)
         {
         }

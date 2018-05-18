@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private const string PSSA_MODULE_NAME = "PSScriptAnalyzer";
 
-        private ILogger _logger;
+        private IPsesLogger _logger;
         private RunspacePool _analysisRunspacePool;
 
         private bool _hasScriptAnalyzerModule;
@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="settingsPath">Path to a PSScriptAnalyzer settings file.</param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public AnalysisService(string settingsPath, ILogger logger)
+        public AnalysisService(string settingsPath, IPsesLogger logger)
         {
             this._logger = logger;
 

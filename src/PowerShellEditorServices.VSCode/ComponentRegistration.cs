@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         /// </param>
         public static void Register(IComponentRegistry components)
         {
-            ILogger logger = components.Get<ILogger>();
+            IPsesLogger logger = components.Get<IPsesLogger>();
 
             components.Register<IHtmlContentViews>(
                 new HtmlContentViewsFeature(

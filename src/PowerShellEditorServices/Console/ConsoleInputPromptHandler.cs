@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public ConsoleInputPromptHandler(
             IHostOutput hostOutput,
-            ILogger logger)
+            IPsesLogger logger)
                 : base(logger)
         {
             this.hostOutput = hostOutput;

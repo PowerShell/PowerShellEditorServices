@@ -16,13 +16,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Gets the ILogger used for this instance.
         /// </summary>
-        protected ILogger Logger { get; private set; }
+        protected IPsesLogger Logger { get; private set; }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public PromptHandler(ILogger logger)
+        public PromptHandler(IPsesLogger logger)
         {
             this.Logger = logger;
         }

@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// for the thread.
         /// </param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public static void Start(Func<Task> asyncMainFunc, ILogger logger)
+        public static void Start(Func<Task> asyncMainFunc, IPsesLogger logger)
         {
             // Is there already a synchronization context?
             if (SynchronizationContext.Current != null)

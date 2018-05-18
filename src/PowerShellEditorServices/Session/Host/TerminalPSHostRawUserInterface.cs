@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices
         private const int DefaultConsoleHeight = 100;
         private const int DefaultConsoleWidth = 120;
 
-        private ILogger Logger;
+        private IPsesLogger Logger;
 
         #endregion
 
@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// class with the given IConsoleHost implementation.
         /// </summary>
         /// <param name="logger">The ILogger implementation to use for this instance.</param>
-        public TerminalPSHostRawUserInterface(ILogger logger)
+        public TerminalPSHostRawUserInterface(IPsesLogger logger)
         {
             this.Logger = logger;
         }

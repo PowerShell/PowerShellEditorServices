@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     /// Provides an implementation of ILogger that throws away all log messages,
     /// typically used when logging isn't needed.
     /// </summary>
-    public class NullLogger : ILogger, IDisposable
+    public class NullLogger : IPsesLogger, IDisposable
     {
         /// <summary>
         /// Writes a message to the log file.

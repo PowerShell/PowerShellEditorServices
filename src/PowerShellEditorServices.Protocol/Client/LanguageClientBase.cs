@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
     /// </summary>
     public abstract class LanguageClientBase : IMessageHandlers, IMessageSender
     {
-        ILogger logger;
+        IPsesLogger logger;
         private ProtocolEndpoint protocolEndpoint;
         private MessageDispatcher messageDispatcher;
 
@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
         /// specified channel for communication.
         /// </summary>
         /// <param name="clientChannel">The channel to use for communication with the server.</param>
-        public LanguageClientBase(ChannelBase clientChannel, ILogger logger)
+        public LanguageClientBase(ChannelBase clientChannel, IPsesLogger logger)
         {
             this.logger = logger;
             this.messageDispatcher = new MessageDispatcher(logger);

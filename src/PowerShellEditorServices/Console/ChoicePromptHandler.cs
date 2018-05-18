@@ -49,10 +49,10 @@ namespace Microsoft.PowerShell.EditorServices.Console
         #endregion
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public ChoicePromptHandler(ILogger logger) : base(logger)
+        public ChoicePromptHandler(IPsesLogger logger) : base(logger)
         {
         }
 

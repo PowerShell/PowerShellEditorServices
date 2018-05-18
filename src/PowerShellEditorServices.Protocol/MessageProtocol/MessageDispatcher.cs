@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     {
         #region Fields
 
-        private ILogger logger;
+        private IPsesLogger logger;
 
         private Dictionary<string, Func<Message, MessageWriter, Task>> requestHandlers =
             new Dictionary<string, Func<Message, MessageWriter, Task>>();
@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Constructors
 
-        public MessageDispatcher(ILogger logger)
+        public MessageDispatcher(IPsesLogger logger)
         {
             this.logger = logger;
         }

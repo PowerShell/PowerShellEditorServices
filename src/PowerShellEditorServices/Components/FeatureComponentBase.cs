@@ -30,14 +30,14 @@ namespace Microsoft.PowerShell.EditorServices.Components
         /// Gets the ILogger implementation to use for writing log
         /// messages.
         /// </summary>
-        protected ILogger Logger { get; private set; }
+        protected IPsesLogger Logger { get; private set; }
 
         /// <summary>
         /// Creates an instance of the FeatureComponentBase class with
         /// the specified ILoggger.
         /// </summary>
         /// <param name="logger">The ILogger to use for this instance.</param>
-        public FeatureComponentBase(ILogger logger)
+        public FeatureComponentBase(IPsesLogger logger)
         {
             this.Providers = new FeatureProviderCollection<TProvider>();
             this.Logger = logger;

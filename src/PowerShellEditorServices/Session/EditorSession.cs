@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private ILogger logger;
+        private IPsesLogger logger;
 
         #endregion
 
@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices
         ///
         /// </summary>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public EditorSession(ILogger logger)
+        public EditorSession(IPsesLogger logger)
         {
             this.logger = logger;
         }

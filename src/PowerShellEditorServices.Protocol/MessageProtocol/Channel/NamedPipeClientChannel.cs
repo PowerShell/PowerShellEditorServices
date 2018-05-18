@@ -12,12 +12,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class NamedPipeClientChannel : ChannelBase
     {
-        private ILogger logger;
+        private IPsesLogger logger;
         private NamedPipeClientStream pipeClient;
 
         public NamedPipeClientChannel(
             NamedPipeClientStream pipeClient,
-            ILogger logger)
+            IPsesLogger logger)
         {
             this.pipeClient = pipeClient;
             this.logger = logger;
@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         public static async Task<NamedPipeClientChannel> Connect(
             string pipeName,
             MessageProtocolType messageProtocolType,
-            ILogger logger)
+            IPsesLogger logger)
         {
             var pipeClient =
                 new NamedPipeClientStream(
