@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyTitle>PowerShell Editor Services</AssemblyTitle>
     <Description>Provides common PowerShell editor capabilities as a .NET library.</Description>
-    <TargetFrameworks>net451;netstandard1.6</TargetFrameworks>
+    <TargetFrameworks>netstandard1.6;net451</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices</AssemblyName>
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
