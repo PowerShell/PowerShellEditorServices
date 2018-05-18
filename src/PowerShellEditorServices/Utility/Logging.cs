@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Serilog;
 using Serilog.Events;
@@ -75,6 +76,30 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
     public static class Logging
     {
+        public class LoggerBuilder
+        {
+            private LogLevel _logLevel;
+            private List<string> _filePaths;
+
+            public LoggerBuilder()
+            {
+                _logLevel = Utility.LogLevel.Normal;
+                _filePaths = new List<string>();
+            }
+
+            public LoggerBuilder LogLevel(LogLevel logLevel)
+            {
+                _logLevel = logLevel;
+                return this;
+            }
+
+            public LoggerBuilder File(string filePath)
+            {
+                _filePaths.Add(filePath);
+                return this;
+            }
+        }
+
         private static LogEventLevel ConvertLogLevel(LogLevel logLevel)
         {
             switch (logLevel)
@@ -102,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         {
             ILogger logger = new LoggerConfiguration()
                 .MinimumLevel.Is(ConvertLogLevel(logLevel))
-                .WriteTo.File(filePath)
+                .WriteTo.File(filePath, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Message}{Newline}{Exception}")
                 .CreateLogger();
 
             return new PsesLogger(logger);
@@ -120,11 +145,49 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
         public void Write(LogLevel logLevel, string logMessage, [CallerMemberName] string callerName = null, [CallerFilePath] string callerSourceFile = null, [CallerLineNumber] int callerLineNumber = 0)
         {
+            string indentedLogMsg = IndentMsg(logMessage);
+
+            switch (logLevel)
+            {
+                case LogLevel.Diagnostic:
+                    _logger.Verbose("[{LogLevel}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    return;
+                case LogLevel.Verbose:
+                    _logger.Debug("[{LogLevel}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    return;
+                case LogLevel.Normal:
+                    _logger.Information("[{LogLevel}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    return;
+                case LogLevel.Warning:
+                    _logger.Warning("[{LogLevel}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    return;
+                case LogLevel.Error:
+                    _logger.Error("[{LogLevel}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    return;
+            }
         }
 
         public void WriteException(string errorMessage, Exception errorException, [CallerMemberName] string callerName = null, [CallerFilePath] string callerSourceFile = null, [CallerLineNumber] int callerLineNumber = 0)
         {
-            throw new NotImplementedException();
+            _logger.Error("{CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\nException: {ErrorMessage}\n{ErrorException}",
+                callerSourceFile, callerName, callerLineNumber, errorMessage, errorException);
+        }
+
+        private static string IndentMsg(string logMessage)
+        {
+            string[] msgLines = logMessage.Split('\n');
+
+            for (int i = 0; i < msgLines.Length; i++)
+            {
+                msgLines[i] = msgLines[i].Insert(0, "    ");
+            }
+
+            return String.Join("\n", msgLines);
         }
     }
 }
