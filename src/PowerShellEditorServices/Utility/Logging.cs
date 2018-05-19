@@ -119,6 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// The severity level of the messages to log.
             /// </summary>
             /// <param name="logLevel">The severity level of the messages to log.</param>
+            /// <returns>The logger builder for reuse.</returns>
             public LoggerBuilder LogLevel(LogLevel logLevel)
             {
                 _logLevel = logLevel;
@@ -129,6 +130,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// Add a path to output a log file to.
             /// </summary>
             /// <param name="filePath">The path ofethe file to log to.</param>
+            /// <param name="logLevel">The minimum log level for this file</param>
+            /// <returns>The logger builder for reuse.</returns>
             public LoggerBuilder AddLogFile(string filePath, LogLevel? logLevel = null)
             {
                 _filePaths.Add(filePath, logLevel);
@@ -138,6 +141,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// <summary>
             /// Configure the logger to send log messages to the console.
             /// </summary>
+            /// <param name="logLevel">The minimum log level for console logging.</param>
+            /// <returns>The logger builder for reuse.</returns>
             public LoggerBuilder AddConsoleLogging(LogLevel? logLevel = null)
             {
                 _useConsole = true;
