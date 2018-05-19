@@ -140,7 +140,10 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// <param name="logLevel">The minimum level of log messages to be written.</param>
         public void StartLogging(string logFilePath, LogLevel logLevel)
         {
-            this.logger = new FileLogger(logFilePath, logLevel);
+            this.logger = Logging.CreateLogger()
+                .LogLevel(logLevel)
+                .AddLogFile(logFilePath)
+                .Build();
 
 #if CoreCLR
             FileVersionInfo fileVersionInfo =

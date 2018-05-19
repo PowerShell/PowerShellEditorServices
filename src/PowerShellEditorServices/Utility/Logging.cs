@@ -74,32 +74,119 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerLineNumber] int callerLineNumber = 0);
     }
 
+    /// <summary>
+    /// Manages logging and logger constructor for EditorServices.
+    /// </summary>
     public static class Logging
     {
+        /// <summary>
+        /// Builder class for configuring and creating logger instances.
+        /// </summary>
         public class LoggerBuilder
         {
+            /// <summary>
+            /// The level at which to log.
+            /// </summary>
             private LogLevel _logLevel;
-            private List<string> _filePaths;
 
+            /// <summary>
+            /// Paths at which to create log files.
+            /// </summary>
+            private Dictionary<string, LogLevel?> _filePaths;
+
+            /// <summary>
+            /// Whether or not to send logging to the console.
+            /// </summary>
+            private bool _useConsole;
+
+            /// <summary>
+            /// The log level to use when logging to the console.
+            /// </summary>
+            private LogLevel? _consoleLogLevel;
+
+            /// <summary>
+            /// Constructs a logger builder instance with default configurations:
+            /// No log files, not logging to console, log level normal.
+            /// </summary>
             public LoggerBuilder()
             {
                 _logLevel = Utility.LogLevel.Normal;
-                _filePaths = new List<string>();
+                _filePaths = new Dictionary<string, LogLevel?>();
+                _useConsole = false;
             }
 
+            /// <summary>
+            /// The severity level of the messages to log.
+            /// </summary>
+            /// <param name="logLevel">The severity level of the messages to log.</param>
             public LoggerBuilder LogLevel(LogLevel logLevel)
             {
                 _logLevel = logLevel;
                 return this;
             }
 
-            public LoggerBuilder File(string filePath)
+            /// <summary>
+            /// Add a path to output a log file to.
+            /// </summary>
+            /// <param name="filePath">The path ofethe file to log to.</param>
+            public LoggerBuilder AddLogFile(string filePath, LogLevel? logLevel = null)
             {
-                _filePaths.Add(filePath);
+                _filePaths.Add(filePath, logLevel);
                 return this;
             }
+
+            /// <summary>
+            /// Configure the logger to send log messages to the console.
+            /// </summary>
+            public LoggerBuilder AddConsoleLogging(LogLevel? logLevel = null)
+            {
+                _useConsole = true;
+                _consoleLogLevel = logLevel;
+                return this;
+            }
+
+            /// <summary>
+            /// Take the log configuration use it to create a logger.
+            /// </summary>
+            /// <returns>The constructed logger.</returns>
+            public PsesLogger Build()
+            {
+                var configuration = new LoggerConfiguration()
+                    .MinimumLevel.Is(ConvertLogLevel(_logLevel));
+
+                if (_useConsole)
+                {
+                    configuration = configuration.WriteTo.Console(
+                        restrictedToMinimumLevel: ConvertLogLevel(_consoleLogLevel ?? _logLevel),
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Message}{Newline}{Exception}");
+                }
+
+                foreach (KeyValuePair<string, LogLevel?> logFile in _filePaths)
+                {
+                    configuration = configuration.WriteTo.File(logFile.Key,
+                        restrictedToMinimumLevel: ConvertLogLevel(logFile.Value ?? _logLevel),
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Message}{Newline}{Exception}");
+                }
+
+                return new PsesLogger(configuration.CreateLogger());
+            }
+
         }
 
+        /// <summary>
+        /// Contruct a logger with the applied configuration.
+        /// </summary>
+        /// <returns>The constructed logger.</returns>
+        public static LoggerBuilder CreateLogger()
+        {
+            return new LoggerBuilder();
+        }
+
+        /// <summary>
+        /// Convert an EditorServices log level to a Serilog log level.
+        /// </summary>
+        /// <param name="logLevel">The EditorServices log level.</param>
+        /// <returns>The Serilog LogEventLevel corresponding to the EditorServices log level.<returns>
         private static LogEventLevel ConvertLogLevel(LogLevel logLevel)
         {
             switch (logLevel)
@@ -122,28 +209,41 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
             throw new ArgumentException(String.Format("Unknown LogLevel: '{0}'", logLevel), nameof(logLevel));
         }
-
-        public static IPsesLogger CreateFileLogger(string filePath, LogLevel logLevel)
-        {
-            ILogger logger = new LoggerConfiguration()
-                .MinimumLevel.Is(ConvertLogLevel(logLevel))
-                .WriteTo.File(filePath, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Message}{Newline}{Exception}")
-                .CreateLogger();
-
-            return new PsesLogger(logger);
-        }
     }
 
-    internal class PsesLogger : IPsesLogger
+    /// <summary>
+    /// Logger object for EditorServices, acts as an adapter to Serilog.
+    /// </summary>
+    public class PsesLogger : IPsesLogger
     {
+        /// <summary>
+        /// The internal Serilog logger to log to.
+        /// </summary>
         private readonly ILogger _logger;
 
+        /// <summary>
+        /// Construct a new logger around a Serilog ILogger.
+        /// </summary>
+        /// <param name="logger">The Serilog logger to use internally.</param>
         public PsesLogger(ILogger logger)
         {
             _logger = logger;
         }
 
-        public void Write(LogLevel logLevel, string logMessage, [CallerMemberName] string callerName = null, [CallerFilePath] string callerSourceFile = null, [CallerLineNumber] int callerLineNumber = 0)
+        /// <summary>
+        /// Write a message with the given severity to the logs.
+        /// </summary>
+        /// <param name="logLevel">The severity level of the log message.</param>
+        /// <param name="logMessage">The log message itself.</param>
+        /// <param name="callerName">The name of the calling method.</param>
+        /// <param name="callerSourceFile">The name of the source file of the caller.</param>
+        /// <param name="callerLineNumber">The line number where the log is being called.</param>
+        public void Write(
+            LogLevel logLevel,
+            string logMessage,
+            [CallerMemberName] string callerName = null,
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = 0)
         {
             string indentedLogMsg = IndentMsg(logMessage);
 
@@ -172,12 +272,30 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
         }
 
-        public void WriteException(string errorMessage, Exception errorException, [CallerMemberName] string callerName = null, [CallerFilePath] string callerSourceFile = null, [CallerLineNumber] int callerLineNumber = 0)
+        /// <summary>
+        /// Log an exception in the logs.
+        /// </summary>
+        /// <param name="errorMessage">The error message of the exception to be logged.</param>
+        /// <param name="errorException">The exception itself that has been thrown.</param>
+        /// <param name="callerName">The name of the method in which the logger is being called.</param>
+        /// <param name="callerSourceFile">The name of the source file in which the logger is being called.</param>
+        /// <param name="callerLineNumber">The line number in the file where the logger is being called.</param>
+        public void WriteException(
+            string errorMessage,
+            Exception errorException,
+            [CallerMemberName] string callerName = null,
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = 0)
         {
             _logger.Error("{CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\nException: {ErrorMessage}\n{ErrorException}",
                 callerSourceFile, callerName, callerLineNumber, errorMessage, errorException);
         }
 
+        /// <summary>
+        /// Utility function to indent a log message by one level.
+        /// </summary>
+        /// <param name="logMessage">The log message to indent.</param>
+        /// <returns>The indented log message string.</returns>
         private static string IndentMsg(string logMessage)
         {
             string[] msgLines = logMessage.Split('\n');

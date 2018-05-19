@@ -177,13 +177,13 @@ task TestServer -If { !$script:IsUnix } {
     exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
 }
 
-task TestProtocol -If { !$script:IsUnix} {
+task TestProtocol -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
     exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
 }
 
-task TestHost -If { !$script:IsUnix} {
+task TestHost -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
     exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }

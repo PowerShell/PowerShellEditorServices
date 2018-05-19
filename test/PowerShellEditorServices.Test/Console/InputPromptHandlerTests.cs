@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public Exception LastError { get; private set; }
 
-        public TestInputPromptHandler() : base(new NullLogger())
+        public TestInputPromptHandler() : base(Logging.CreateLogger().Build())
         {
         }
 

@@ -71,11 +71,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         private void AssertWritesMessageAtLevel(LogLevel logLevel)
         {
             // Write a message at the desired level
-            var logger = new FileLogger(logFilePath, LogLevel.Verbose);
+            var logger = Logging.CreateLogger()
+                            .LogLevel(LogLevel.Verbose)
+                            .AddLogFile(logFilePath)
+                            .Build();
             logger.Write(logLevel, testMessage);
-
-            // Dispose of the logger
-            logger.Dispose();
 
             // Read the contents and verify that it's there
             string logContents = this.ReadLogContents();
@@ -85,7 +85,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
 
         private void AssertExcludesMessageBelowLevel(LogLevel minimumLogLevel)
         {
-            var logger = new FileLogger(logFilePath, minimumLogLevel);
+            var logger = Logging.CreateLogger()
+                            .LogLevel(minimumLogLevel)
+                            .AddLogFile(logFilePath)
+                            .Build();
 
             // Get all possible log levels
             LogLevel[] allLogLevels =
@@ -98,9 +101,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             {
                 logger.Write((LogLevel)logLevel, testMessage);
             }
-
-            // Dispose of the logger
-            logger.Dispose();
 
             // Make sure all excluded log levels aren't in the contents
             string logContents = this.ReadLogContents();

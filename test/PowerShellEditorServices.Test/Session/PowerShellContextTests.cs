@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public PowerShellContextTests()
         {
-            this.powerShellContext = PowerShellContextFactory.Create(new NullLogger());
+            this.powerShellContext = PowerShellContextFactory.Create(Logging.CreateLogger().Build());
             this.powerShellContext.SessionStateChanged += OnSessionStateChanged;
             this.stateChangeQueue = new AsyncQueue<SessionStateChangedEventArgs>();
         }
