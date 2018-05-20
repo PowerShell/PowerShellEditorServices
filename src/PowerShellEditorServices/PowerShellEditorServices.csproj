@@ -47,8 +47,6 @@
     <PackageReference Include="Microsoft.PowerShell.SDK">
       <Version>6.0.0-alpha13</Version>
     </PackageReference>
-    <PackageReference Include="Serilog" Version="2.7.1" />
-    <PackageReference Include="Serilog.Sinks.Async" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
@@ -63,8 +61,10 @@
 
   <ItemGroup>
     <PackageReference Include="UnixConsoleEcho" Version="0.1.0" />
+    <PackageReference Include="Serilog" Version="2.7.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.0.0" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="1.2.0" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
