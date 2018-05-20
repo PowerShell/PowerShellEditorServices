@@ -80,9 +80,36 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     public static class Logging
     {
         /// <summary>
+        /// Settings for file logging.
+        /// </summary>
+        public class FileLogConfiguration
+        {
+            /// <summary>
+            /// Construct a settings class for file logging.
+            /// </summary>
+            /// <param name="logLevel">The minimum event severity to log.</param>
+            /// <param name="useMultiprocess">Whether or not to use multiprocess input with the file</param>
+            public FileLogConfiguration(LogLevel? logLevel = null, bool useMultiprocess = false)
+            {
+                this.logLevel = logLevel;
+                this.useMultiprocess = useMultiprocess;
+            }
+
+            /// <summary>
+            /// The minimum log event severity to log.
+            /// </summary>
+            public readonly LogLevel? logLevel;
+
+            /// <summary>
+            /// True if the file should be available for multiprocess usage.
+            /// </summary>
+            public readonly bool useMultiprocess;
+        }
+
+        /// <summary>
         /// Builder class for configuring and creating logger instances.
         /// </summary>
-        public class LoggerBuilder
+        public class Builder
         {
             /// <summary>
             /// The level at which to log.
@@ -92,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// <summary>
             /// Paths at which to create log files.
             /// </summary>
-            private Dictionary<string, LogLevel?> _filePaths;
+            private Dictionary<string, FileLogConfiguration> _filePaths;
 
             /// <summary>
             /// Whether or not to send logging to the console.
@@ -108,10 +135,10 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// Constructs a logger builder instance with default configurations:
             /// No log files, not logging to console, log level normal.
             /// </summary>
-            public LoggerBuilder()
+            public Builder()
             {
                 _logLevel = Utility.LogLevel.Normal;
-                _filePaths = new Dictionary<string, LogLevel?>();
+                _filePaths = new Dictionary<string, FileLogConfiguration>();
                 _useConsole = false;
             }
 
@@ -120,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// </summary>
             /// <param name="logLevel">The severity level of the messages to log.</param>
             /// <returns>The logger builder for reuse.</returns>
-            public LoggerBuilder LogLevel(LogLevel logLevel)
+            public Builder LogLevel(LogLevel logLevel)
             {
                 _logLevel = logLevel;
                 return this;
@@ -132,9 +159,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// <param name="filePath">The path ofethe file to log to.</param>
             /// <param name="logLevel">The minimum log level for this file</param>
             /// <returns>The logger builder for reuse.</returns>
-            public LoggerBuilder AddLogFile(string filePath, LogLevel? logLevel = null)
+            public Builder AddLogFile(string filePath, LogLevel? logLevel = null, bool useMultiprocess = false)
             {
-                _filePaths.Add(filePath, logLevel);
+                _filePaths.Add(filePath, new FileLogConfiguration(logLevel, useMultiprocess));
                 return this;
             }
 
@@ -143,7 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// </summary>
             /// <param name="logLevel">The minimum log level for console logging.</param>
             /// <returns>The logger builder for reuse.</returns>
-            public LoggerBuilder AddConsoleLogging(LogLevel? logLevel = null)
+            public Builder AddConsoleLogging(LogLevel? logLevel = null)
             {
                 _useConsole = true;
                 _consoleLogLevel = logLevel;
@@ -166,10 +193,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Message}{Newline}{Exception}");
                 }
 
-                foreach (KeyValuePair<string, LogLevel?> logFile in _filePaths)
+                foreach (KeyValuePair<string, FileLogConfiguration> logFile in _filePaths)
                 {
                     configuration = configuration.WriteTo.File(logFile.Key,
-                        restrictedToMinimumLevel: ConvertLogLevel(logFile.Value ?? _logLevel),
+                        restrictedToMinimumLevel: ConvertLogLevel(logFile.Value.logLevel ?? _logLevel),
+                        shared: logFile.Value.useMultiprocess,
                         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Message}{Newline}{Exception}");
                 }
 
@@ -182,9 +210,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// Contruct a logger with the applied configuration.
         /// </summary>
         /// <returns>The constructed logger.</returns>
-        public static LoggerBuilder CreateLogger()
+        public static Builder CreateLogger()
         {
-            return new LoggerBuilder();
+            return new Builder();
         }
 
         /// <summary>

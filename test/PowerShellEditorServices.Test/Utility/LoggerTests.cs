@@ -73,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             // Write a message at the desired level
             var logger = Logging.CreateLogger()
                             .LogLevel(LogLevel.Verbose)
-                            .AddLogFile(logFilePath)
+                            .AddLogFile(logFilePath, useMultiprocess: true)
                             .Build();
             logger.Write(logLevel, testMessage);
 
@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         {
             var logger = Logging.CreateLogger()
                             .LogLevel(minimumLogLevel)
-                            .AddLogFile(logFilePath)
+                            .AddLogFile(logFilePath, useMultiprocess: true)
                             .Build();
 
             // Get all possible log levels
