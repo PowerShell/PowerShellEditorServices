@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         ///
         /// </summary>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        /// <param name="logger">A logger used for writing log messages.</param>
         public ChoicePromptHandler(IPsesLogger logger) : base(logger)
         {
         }

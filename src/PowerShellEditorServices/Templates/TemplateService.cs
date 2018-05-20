@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
         /// Creates a new instance of the TemplateService class.
         /// </summary>
         /// <param name="powerShellContext">The PowerShellContext to use for this service.</param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        /// <param name="logger">Logger used for writing log messages.</param>
         public TemplateService(PowerShellContext powerShellContext, IPsesLogger logger)
         {
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);

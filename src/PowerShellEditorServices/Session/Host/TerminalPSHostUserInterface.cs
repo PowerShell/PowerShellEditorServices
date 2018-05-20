@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// class with the given IConsoleHost implementation.
         /// </summary>
         /// <param name="powerShellContext">The PowerShellContext to use for executing commands.</param>
-        /// <param name="logger">An ILogger implementation to use for this host.</param>
+        /// <param name="logger">Logger to use for this host.</param>
         public TerminalPSHostUserInterface(
             PowerShellContext powerShellContext,
             IPsesLogger logger)

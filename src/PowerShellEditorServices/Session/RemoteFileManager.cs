@@ -242,7 +242,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <param name="editorOperations">
         /// The IEditorOperations instance to use for opening/closing files in the editor.
         /// </param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        /// <param name="logger">Logger used for writing log messages.</param>
         public RemoteFileManager(
             PowerShellContext powerShellContext,
             IEditorOperations editorOperations,

@@ -183,7 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <param name="sessionDetails">
         /// The SessionDetails for the runspace.
         /// </param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        /// <param name="logger">Logger used for writing log messages.</param>
         /// <returns>A new RunspaceDetails instance.</returns>
         internal static RunspaceDetails CreateFromRunspace(
             Runspace runspace,

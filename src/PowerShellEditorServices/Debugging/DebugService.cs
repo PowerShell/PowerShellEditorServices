@@ -80,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="powerShellContext">
         /// The PowerShellContext to use for all debugging operations.
         /// </param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        /// <param name="logger">Logger used for writing log messages.</param>
         public DebugService(PowerShellContext powerShellContext, IPsesLogger logger)
             : this(powerShellContext, null, logger)
         {
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="remoteFileManager">
         /// A RemoteFileManager instance to use for accessing files in remote sessions.
         /// </param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        /// <param name="logger">Logger used for writing log messages.</param>
         public DebugService(
             PowerShellContext powerShellContext,
             RemoteFileManager remoteFileManager,

@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="powerShellContext">
         /// The PowerShellContext to use for gathering completions.
         /// </param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        /// <param name="logger">Logger used for writing log messages.</param>
         /// <param name="cancellationToken">
         /// A CancellationToken to cancel completion requests.
         /// </param>

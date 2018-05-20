@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates a new instance of the TerminalPSHostRawUserInterface
         /// class with the given IConsoleHost implementation.
         /// </summary>
-        /// <param name="logger">The ILogger implementation to use for this instance.</param>
+        /// <param name="logger">The logger to use for this instance.</param>
         public TerminalPSHostRawUserInterface(IPsesLogger logger)
         {
             this.Logger = logger;

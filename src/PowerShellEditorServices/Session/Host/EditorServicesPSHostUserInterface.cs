@@ -79,7 +79,7 @@ namespace Microsoft.PowerShell.EditorServices
         private bool IsCommandLoopRunning { get; set; }
 
         /// <summary>
-        /// Gets the ILogger implementation used for this host.
+        /// Gets the logger used for this host.
         /// </summary>
         protected IPsesLogger Logger { get; private set; }
 
@@ -93,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="powerShellContext">The PowerShellContext to use for executing commands.</param>
         /// <param name="rawUserInterface">The PSHostRawUserInterface implementation to use for this host.</param>
-        /// <param name="logger">An ILogger implementation to use for this host.</param>
+        /// <param name="logger">Logger to use for this host.</param>
         public EditorServicesPSHostUserInterface(
             PowerShellContext powerShellContext,
             PSHostRawUserInterface rawUserInterface,

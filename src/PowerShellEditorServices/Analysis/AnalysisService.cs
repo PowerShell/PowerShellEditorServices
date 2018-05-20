@@ -101,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates an instance of the AnalysisService class.
         /// </summary>
         /// <param name="settingsPath">Path to a PSScriptAnalyzer settings file.</param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        /// <param name="logger">A logger used for writing log messages.</param>
         public AnalysisService(string settingsPath, IPsesLogger logger)
         {
             this._logger = logger;

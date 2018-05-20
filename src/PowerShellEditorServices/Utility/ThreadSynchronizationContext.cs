@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <summary>
         ///
         /// </summary>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        /// <param name="logger">Logger used for writing log messages.</param>
         public ThreadSynchronizationContext(IPsesLogger logger)
         {
             this.logger = logger;
