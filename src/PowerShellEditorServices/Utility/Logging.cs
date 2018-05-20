@@ -348,6 +348,10 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
+        /// <summary>
+        /// Internal disposer.
+        /// </summary>
+        /// <param name="disposing">Whether or not the object is being disposed.</param>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -361,7 +365,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
         }
 
-        // This code added to correctly implement the disposable pattern.
+        /// <summary>
+        /// Dispose of this object, using the Dispose pattern.
+        /// </summary>
         public void Dispose()
         {
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
