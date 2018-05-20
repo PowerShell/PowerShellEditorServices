@@ -187,6 +187,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             public PsesLogger Build()
             {
                 var configuration = new LoggerConfiguration()
+                    .Destructure.ByTransforming<LogLevel>(logLevel => logLevel.ToString().ToUpper())
                     .MinimumLevel.Is(ConvertLogLevel(_logLevel));
 
                 if (_useConsole)
@@ -283,29 +284,28 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerLineNumber] int callerLineNumber = 0)
         {
             string indentedLogMsg = IndentMsg(logMessage);
-            string logLevelName = logLevel.ToString().ToUpper();
 
             switch (logLevel)
             {
                 case LogLevel.Diagnostic:
-                    _logger.Verbose("[{LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
-                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Verbose("[{@LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Verbose:
-                    _logger.Debug("[{LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
-                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Debug("[{@LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Normal:
-                    _logger.Information("[{LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
-                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Information("[{@LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Warning:
-                    _logger.Warning("[{LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
-                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Warning("[{@LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Error:
-                    _logger.Error("[{LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
-                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Error("[{@LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
             }
         }
@@ -375,5 +375,43 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             Dispose(true);
         }
         #endregion
+    }
+
+    /// <summary>
+    /// Format provider for PowerShellEditorServices log levels
+    /// </summary>
+    internal class LogLevelFormatter : IFormatProvider, ICustomFormatter
+    {
+        /// <summary>
+        /// Format an object, if it is a LogLevel enum value.
+        /// </summary>
+        /// <param name="format">The format template to use, ignored by this implementation.</param>
+        /// <param name="arg">The LogLevel value to to format.</param>
+        /// <param name="formatProvider">The format provider class to use - should be this object.</param>
+        /// <returns></returns>
+        public string Format(string format, object arg, IFormatProvider formatProvider)
+        {
+            if (arg.GetType() != typeof(LogLevel))
+            {
+                throw new FormatException("Bad argument given to LogLevelFormatter: " + arg);
+            }
+
+            return ((LogLevel)arg).ToString().ToUpper();
+        }
+
+        /// <summary>
+        /// Get the formatter for a given type. This will only work for a LogLevel type for this formatter.
+        /// </summary>
+        /// <param name="formatType">The type of the object to be formatted.</param>
+        /// <returns>A reference to this object if the type is LogLevel, otherwise null</returns>
+        public object GetFormat(Type formatType)
+        {
+            if (formatType == typeof(LogLevel))
+            {
+                return this;
+            }
+
+            return null;
+        }
     }
 }

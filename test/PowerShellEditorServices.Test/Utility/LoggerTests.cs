@@ -82,6 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
 
             // Read the contents and verify that it's there
             string logContents = this.ReadLogContents();
+            File.Delete(logFilePath);
             Assert.Contains(this.GetLogLevelName(logLevel), logContents);
             Assert.Contains(testMessage, logContents);
         }
@@ -110,6 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
 
             // Make sure all excluded log levels aren't in the contents
             string logContents = this.ReadLogContents();
+            File.Delete(logFilePath);
             for (int i = 0; i < (int)minimumLogLevel; i++)
             {
                 LogLevel logLevel = allLogLevels[i];
