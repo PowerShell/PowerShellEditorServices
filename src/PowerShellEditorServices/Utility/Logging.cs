@@ -193,7 +193,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 {
                     configuration = configuration.WriteTo.Console(
                         restrictedToMinimumLevel: ConvertLogLevel(_consoleLogLevel ?? _logLevel),
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Message}{Newline}{Exception}");
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{Newline}{Exception}");
                 }
 
                 foreach (KeyValuePair<string, FileLogConfiguration> logFile in _filePaths)
@@ -201,7 +201,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                     configuration = configuration.WriteTo.Async(a => a.File(logFile.Key,
                         restrictedToMinimumLevel: ConvertLogLevel(logFile.Value.logLevel ?? _logLevel),
                         shared: logFile.Value.useMultiprocess,
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Message}{Newline}{Exception}")
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{Newline}{Exception}")
                     );
                 }
 
@@ -287,23 +287,23 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             switch (logLevel)
             {
                 case LogLevel.Diagnostic:
-                    _logger.Verbose("[{LogLevel}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                    _logger.Verbose("[{LogLevel:u}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
                         logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Verbose:
-                    _logger.Debug("[{LogLevel}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                    _logger.Debug("[{LogLevel:u}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
                         logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Normal:
-                    _logger.Information("[{LogLevel}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                    _logger.Information("[{LogLevel:u}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
                         logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Warning:
-                    _logger.Warning("[{LogLevel}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                    _logger.Warning("[{LogLevel:u}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
                         logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Error:
-                    _logger.Error("[{LogLevel}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                    _logger.Error("[{LogLevel:u}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
                         logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
             }
