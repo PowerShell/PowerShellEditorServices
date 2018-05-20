@@ -193,7 +193,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 {
                     configuration = configuration.WriteTo.Console(
                         restrictedToMinimumLevel: ConvertLogLevel(_consoleLogLevel ?? _logLevel),
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{Newline}{Exception}");
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{Newline}{Exception}{Newline}");
                 }
 
                 foreach (KeyValuePair<string, FileLogConfiguration> logFile in _filePaths)
@@ -201,7 +201,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                     configuration = configuration.WriteTo.Async(a => a.File(logFile.Key,
                         restrictedToMinimumLevel: ConvertLogLevel(logFile.Value.logLevel ?? _logLevel),
                         shared: logFile.Value.useMultiprocess,
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{Newline}{Exception}")
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{Newline}{Exception}{Newline}")
                     );
                 }
 
@@ -314,19 +314,19 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// Log an exception in the logs.
         /// </summary>
         /// <param name="errorMessage">The error message of the exception to be logged.</param>
-        /// <param name="errorException">The exception itself that has been thrown.</param>
+        /// <param name="exception">The exception itself that has been thrown.</param>
         /// <param name="callerName">The name of the method in which the logger is being called.</param>
         /// <param name="callerSourceFile">The name of the source file in which the logger is being called.</param>
         /// <param name="callerLineNumber">The line number in the file where the logger is being called.</param>
         public void WriteException(
             string errorMessage,
-            Exception errorException,
+            Exception exception,
             [CallerMemberName] string callerName = null,
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = 0)
         {
-            _logger.Error("[{Error:l}] {CallerSourceFile:l}: In '{CallerName:l}', line {CallerLineNumber}:\nException: {ErrorMessage:l}\n{ErrorException}",
-                LogLevel.Error.ToString().ToUpper(), callerSourceFile, callerName, callerLineNumber, errorMessage, errorException);
+            _logger.Error("[{Error:l}] {CallerSourceFile:l}: In '{CallerName:l}', line {CallerLineNumber}:\n    {ErrorMessage:l}\n    {Exception:l}\n",
+                LogLevel.Error.ToString().ToUpper(), callerSourceFile, callerName, callerLineNumber, errorMessage, exception);
         }
 
         /// <summary>
@@ -343,7 +343,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 msgLines[i] = msgLines[i].Insert(0, "    ");
             }
 
-            return String.Join("\n", msgLines);
+            return String.Join("\n", msgLines)+"\n";
         }
 
         #region IDisposable Support
