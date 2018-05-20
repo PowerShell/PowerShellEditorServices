@@ -158,6 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// </summary>
             /// <param name="filePath">The path ofethe file to log to.</param>
             /// <param name="logLevel">The minimum log level for this file</param>
+            /// <param name="useMultiprocess">Set whether the log file should be readable by other processes</param>
             /// <returns>The logger builder for reuse.</returns>
             public Builder AddLogFile(string filePath, LogLevel? logLevel = null, bool useMultiprocess = false)
             {
