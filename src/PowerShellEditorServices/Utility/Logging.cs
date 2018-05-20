@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.File;
 using Serilog.Sinks.Async;
@@ -42,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     /// <summary>
     /// Defines an interface for writing messages to a logging implementation.
     /// </summary>
-    public interface IPsesLogger
+    public interface IPsesLogger : IDisposable
     {
         /// <summary>
         /// Writes a message to the log file.
@@ -255,13 +256,13 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <summary>
         /// The internal Serilog logger to log to.
         /// </summary>
-        private readonly ILogger _logger;
+        private readonly Logger _logger;
 
         /// <summary>
         /// Construct a new logger around a Serilog ILogger.
         /// </summary>
         /// <param name="logger">The Serilog logger to use internally.</param>
-        public PsesLogger(ILogger logger)
+        internal PsesLogger(Logger logger)
         {
             _logger = logger;
         }
@@ -343,5 +344,29 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
             return String.Join("\n", msgLines);
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _logger.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+        }
+        #endregion
     }
 }
