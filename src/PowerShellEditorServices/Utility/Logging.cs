@@ -283,28 +283,29 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerLineNumber] int callerLineNumber = 0)
         {
             string indentedLogMsg = IndentMsg(logMessage);
+            string logLevelName = logLevel.ToString().ToUpper();
 
             switch (logLevel)
             {
                 case LogLevel.Diagnostic:
-                    _logger.Verbose("[{LogLevel:u}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
-                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Verbose("[{LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Verbose:
-                    _logger.Debug("[{LogLevel:u}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
-                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Debug("[{LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Normal:
-                    _logger.Information("[{LogLevel:u}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
-                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Information("[{LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Warning:
-                    _logger.Warning("[{LogLevel:u}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
-                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Warning("[{LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Error:
-                    _logger.Error("[{LogLevel:u}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
-                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Error("[{LogLevelName}] {CallerSourceFile}: In '{CallerName}', line {CallerLineNumber}:\n{IndentedLogMsg}",
+                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
             }
         }
