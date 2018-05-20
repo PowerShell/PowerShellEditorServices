@@ -48,6 +48,7 @@
       <Version>6.0.0-alpha13</Version>
     </PackageReference>
     <PackageReference Include="Serilog" Version="2.7.1" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">

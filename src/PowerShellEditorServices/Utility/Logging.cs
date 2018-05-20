@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.File;
+using Serilog.Sinks.Async;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
@@ -196,10 +197,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
                 foreach (KeyValuePair<string, FileLogConfiguration> logFile in _filePaths)
                 {
-                    configuration = configuration.WriteTo.File(logFile.Key,
+                    configuration = configuration.WriteTo.Async(a => a.File(logFile.Key,
                         restrictedToMinimumLevel: ConvertLogLevel(logFile.Value.logLevel ?? _logLevel),
                         shared: logFile.Value.useMultiprocess,
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Message}{Newline}{Exception}");
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Message}{Newline}{Exception}")
+                    );
                 }
 
                 return new PsesLogger(configuration.CreateLogger());
