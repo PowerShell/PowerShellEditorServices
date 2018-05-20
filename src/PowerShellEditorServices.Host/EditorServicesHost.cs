@@ -141,9 +141,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
         public void StartLogging(string logFilePath, LogLevel logLevel)
         {
             this.logger = Logging.CreateLogger()
-                .LogLevel(logLevel)
-                .AddLogFile(logFilePath)
-                .Build();
+                            .LogLevel(logLevel)
+                            .AddLogFile(logFilePath)
+                            .Build();
 
 #if CoreCLR
             FileVersionInfo fileVersionInfo =
