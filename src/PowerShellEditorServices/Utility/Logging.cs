@@ -289,23 +289,23 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             {
                 case LogLevel.Diagnostic:
                     _logger.Verbose("[{LogLevelName:l}] {CallerSourceFile:l}: In '{CallerName:l}', line {CallerLineNumber}:\n{IndentedLogMsg:l}",
-                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Verbose:
                     _logger.Debug("[{LogLevelName:l}] {CallerSourceFile:l}: In '{CallerName:l}', line {CallerLineNumber}:\n{IndentedLogMsg:l}",
-                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Normal:
                     _logger.Information("[{LogLevelName:l}] {CallerSourceFile:l}: In '{CallerName:l}', line {CallerLineNumber}:\n{IndentedLogMsg:l}",
-                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Warning:
                     _logger.Warning("[{LogLevelName:l}] {CallerSourceFile:l}: In '{CallerName:l}', line {CallerLineNumber}:\n{IndentedLogMsg:l}",
-                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Error:
                     _logger.Error("[{LogLevelName:l}] {CallerSourceFile:l}: In '{CallerName:l}', line {CallerLineNumber}:\n{IndentedLogMsg:l}",
-                        logLevel, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
             }
         }
