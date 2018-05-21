@@ -311,7 +311,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                         this.logger.Write(
                             LogLevel.Normal,
                             "Previous debug session ended, restarting debug service listener...");
-
+                        this.debugServiceListener.Stop();
                         this.debugServiceListener.Start();
                     }
                     else if (this.debugAdapter.IsUsingTempIntegratedConsole)
