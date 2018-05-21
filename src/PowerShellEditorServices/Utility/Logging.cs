@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             /// <summary>
-            /// The severity level of the messages to log.
+            /// The severity level of the messages to log. Not setting this makes the log level default to "Normal".
             /// </summary>
             /// <param name="logLevel">The severity level of the messages to log.</param>
             /// <returns>the ILogger builder for reuse.</returns>
@@ -132,10 +132,13 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// Add a path to output a log file to.
             /// </summary>
             /// <param name="filePath">The path ofethe file to log to.</param>
-            /// <param name="logLevel">The minimum log level for this file</param>
-            /// <param name="useMultiprocess">Set whether the log file should be readable by other processes</param>
+            /// <param name="logLevel">
+            /// The minimum log level for this file, null defaults to the configured global level.
+            /// Note that setting a more verbose level than the global configuration won't work --
+            /// messages are filtered by the global configuration before they hit file-specific filters.
+            /// </param>
             /// <returns>the ILogger builder for reuse.</returns>
-            public Builder AddLogFile(string filePath, LogLevel? logLevel = null, bool useMultiprocess = false)
+            public Builder AddLogFile(string filePath, LogLevel? logLevel = null)
             {
                 _filePaths.Add(filePath, logLevel);
                 return this;
@@ -154,7 +157,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             /// <summary>
-            /// Take the log configuration use it to create An ILogger implementation.
+            /// Take the log configuration and use it to create An ILogger implementation.
             /// </summary>
             /// <returns>The constructed logger.</returns>
             public ILogger Build()
