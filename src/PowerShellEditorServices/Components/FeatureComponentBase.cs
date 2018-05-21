@@ -27,16 +27,16 @@ namespace Microsoft.PowerShell.EditorServices.Components
         public IFeatureProviderCollection<TProvider> Providers { get; private set; }
 
         /// <summary>
-        /// Gets the ILogger to use for writing log
+        /// Gets the ILogger implementation to use for writing log
         /// messages.
         /// </summary>
         protected ILogger Logger { get; private set; }
 
         /// <summary>
         /// Creates an instance of the FeatureComponentBase class with
-        /// the specified ILoggger.
+        /// the specified ILogger.
         /// </summary>
-        /// <param name="logger">the ILogger to use for this instance.</param>
+        /// <param name="logger">The ILogger implementation to use for this instance.</param>
         public FeatureComponentBase(ILogger logger)
         {
             this.Providers = new FeatureProviderCollection<TProvider>();

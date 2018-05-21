@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <param name="taskReturningFunc">
         /// A Func which returns the task to be run on the thread.
         /// </param>
-        /// <param name="logger">Logger used for writing log messages.</param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         /// <returns>
         /// A Task which can be used to monitor the thread for completion.
         /// </returns>

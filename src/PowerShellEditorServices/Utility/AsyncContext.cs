@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// The Task-returning Func which represents the "main" function
         /// for the thread.
         /// </param>
-        /// <param name="logger">Logger used for writing log messages.</param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public static void Start(Func<Task> asyncMainFunc, ILogger logger)
         {
             // Is there already a synchronization context?

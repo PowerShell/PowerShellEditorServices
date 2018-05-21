@@ -84,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         ///
         /// </summary>
-        /// <param name="logger">Logger used for writing log messages.</param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public EditorSession(ILogger logger)
         {
             this.logger = logger;

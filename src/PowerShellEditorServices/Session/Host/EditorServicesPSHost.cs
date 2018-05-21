@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="hostUserInterface">
         /// The EditorServicesPSHostUserInterface implementation to use for this host.
         /// </param>
-        /// <param name="logger">Logger to use for this host.</param>
+        /// <param name="logger">An ILogger implementation to use for this host.</param>
         public EditorServicesPSHost(
             PowerShellContext powerShellContext,
             HostDetails hostDetails,

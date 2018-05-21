@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="powerShellContext">
         /// The PowerShellContext in which language service operations will be executed.
         /// </param>
-        /// <param name="logger">Logger used for writing log messages.</param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public LanguageService(
             PowerShellContext powerShellContext,
             ILogger logger)

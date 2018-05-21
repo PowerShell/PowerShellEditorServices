@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Creates a new instance of the Workspace class.
         /// </summary>
         /// <param name="powerShellVersion">The version of PowerShell for which scripts will be parsed.</param>
-        /// <param name="logger">Logger used for writing log messages.</param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public Workspace(Version powerShellVersion, ILogger logger)
         {
             this.powerShellVersion = powerShellVersion;

@@ -14,14 +14,14 @@ namespace Microsoft.PowerShell.EditorServices.Console
     public abstract class PromptHandler
     {
         /// <summary>
-        /// Gets the ILogger used for this instance.
+        /// Gets the ILogger implementation used for this instance.
         /// </summary>
         protected ILogger Logger { get; private set; }
 
         /// <summary>
         ///
         /// </summary>
-        /// <param name="logger">Logger used for writing log messages.</param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public PromptHandler(ILogger logger)
         {
             this.Logger = logger;

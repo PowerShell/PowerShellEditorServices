@@ -90,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// Gets the PowerShell version details for the given runspace.
         /// </summary>
         /// <param name="runspace">The runspace for which version details will be gathered.</param>
-        /// <param name="logger">Logger used for writing log messages.</param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         /// <returns>A new PowerShellVersionDetails instance.</returns>
         public static PowerShellVersionDetails GetVersionDetails(Runspace runspace, ILogger logger)
         {

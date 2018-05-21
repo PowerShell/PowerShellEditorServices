@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         ///
         /// </summary>
-        /// <param name="logger">Logger used for writing log messages.</param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public PowerShellContext(ILogger logger)
         {
             this.logger = logger;
@@ -130,7 +130,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="hostUserInterface">
         /// The EditorServicesPSHostUserInterface to use for this instance.
         /// </param>
-        /// <param name="logger">Logger to use for this instance.</param>
+        /// <param name="logger">An ILogger implementation to use for this instance.</param>
         /// <returns></returns>
         public static Runspace CreateRunspace(
             HostDetails hostDetails,
