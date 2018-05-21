@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices
         private const int DefaultConsoleHeight = 100;
         private const int DefaultConsoleWidth = 120;
 
-        private IPsesLogger Logger;
+        private PsesLogger Logger;
 
         private Size currentBufferSize = new Size(DefaultConsoleWidth, DefaultConsoleHeight);
 
@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// class with the given IConsoleHost implementation.
         /// </summary>
         /// <param name="logger">The logger to use for this instance.</param>
-        public SimplePSHostRawUserInterface(IPsesLogger logger)
+        public SimplePSHostRawUserInterface(PsesLogger logger)
         {
             this.Logger = logger;
             this.ForegroundColor = ConsoleColor.White;

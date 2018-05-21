@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         public TerminalChoicePromptHandler(
             ConsoleReadLine consoleReadLine,
             IHostOutput hostOutput,
-            IPsesLogger logger)
+            PsesLogger logger)
                 : base(hostOutput, logger)
         {
             this.hostOutput = hostOutput;

@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         private const int LF = 0x0A;
         private static string[] NewLineDelimiters = new string[] { Environment.NewLine };
 
-        private IPsesLogger logger;
+        private PsesLogger logger;
         private Stream inputStream;
         private IMessageSerializer messageSerializer;
         private Encoding messageEncoding;
@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         public MessageReader(
             Stream inputStream,
             IMessageSerializer messageSerializer,
-            IPsesLogger logger,
+            PsesLogger logger,
             Encoding messageEncoding = null)
         {
             Validate.IsNotNull("streamReader", inputStream);

@@ -13,14 +13,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class NamedPipeServerListener : ServerListenerBase<NamedPipeServerChannel>
     {
-        private IPsesLogger logger;
+        private PsesLogger logger;
         private string pipeName;
         private NamedPipeServerStream pipeServer;
 
         public NamedPipeServerListener(
             MessageProtocolType messageProtocolType,
             string pipeName,
-            IPsesLogger logger)
+            PsesLogger logger)
             : base(messageProtocolType)
         {
             this.logger = logger;

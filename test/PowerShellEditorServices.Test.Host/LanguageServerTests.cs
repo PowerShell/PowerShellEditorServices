@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class LanguageServerTests : ServerTestsBase, IAsyncLifetime
     {
-        private IPsesLogger logger;
+        private PsesLogger logger;
         private LanguageServiceClient languageServiceClient;
 
         public async Task InitializeAsync()

@@ -16,11 +16,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     /// </summary>
     public class StdioServerChannel : ChannelBase
     {
-        private IPsesLogger logger;
+        private PsesLogger logger;
         private Stream inputStream;
         private Stream outputStream;
 
-        public StdioServerChannel(IPsesLogger logger)
+        public StdioServerChannel(PsesLogger logger)
         {
             this.logger = logger;
         }

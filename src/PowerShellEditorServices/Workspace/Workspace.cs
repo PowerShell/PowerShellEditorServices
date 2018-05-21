@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private IPsesLogger logger;
+        private PsesLogger logger;
         private Version powerShellVersion;
         private Dictionary<string, ScriptFile> workspaceFiles = new Dictionary<string, ScriptFile>();
 
@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="powerShellVersion">The version of PowerShell for which scripts will be parsed.</param>
         /// <param name="logger">Logger used for writing log messages.</param>
-        public Workspace(Version powerShellVersion, IPsesLogger logger)
+        public Workspace(Version powerShellVersion, PsesLogger logger)
         {
             this.powerShellVersion = powerShellVersion;
             this.logger = logger;

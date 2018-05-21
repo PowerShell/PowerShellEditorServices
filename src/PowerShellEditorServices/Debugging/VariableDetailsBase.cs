@@ -54,6 +54,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// details of its children.  Otherwise it returns an empty array.
         /// </summary>
         /// <returns></returns>
-        public abstract VariableDetailsBase[] GetChildren(IPsesLogger logger);
+        public abstract VariableDetailsBase[] GetChildren(PsesLogger logger);
     }
 }

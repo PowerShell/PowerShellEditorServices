@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
 {
     internal static class PowerShellContextFactory
     {
-        public static PowerShellContext Create(IPsesLogger logger)
+        public static PowerShellContext Create(PsesLogger logger)
         {
             PowerShellContext powerShellContext = new PowerShellContext(logger);
             powerShellContext.Initialize(
@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
     {
         public TestPSHostUserInterface(
             PowerShellContext powerShellContext,
-            IPsesLogger logger)
+            PsesLogger logger)
             : base(
                 powerShellContext,
                 new SimplePSHostRawUserInterface(logger),

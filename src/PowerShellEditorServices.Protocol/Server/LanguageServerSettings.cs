@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public void Update(
             LanguageServerSettings settings,
             string workspaceRootPath,
-            IPsesLogger logger)
+            PsesLogger logger)
         {
             if (settings != null)
             {
@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public void Update(
             ScriptAnalysisSettings settings,
             string workspaceRootPath,
-            IPsesLogger logger)
+            PsesLogger logger)
         {
             if (settings != null)
             {

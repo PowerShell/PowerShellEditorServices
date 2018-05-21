@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
     {
         #region Private Fields
 
-        private IPsesLogger logger;
+        private PsesLogger logger;
         private Stream outputStream;
         private IMessageSerializer messageSerializer;
         private AsyncLock writeLock = new AsyncLock();
@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         public MessageWriter(
             Stream outputStream,
             IMessageSerializer messageSerializer,
-            IPsesLogger logger)
+            PsesLogger logger)
         {
             Validate.IsNotNull("streamWriter", outputStream);
             Validate.IsNotNull("messageSerializer", messageSerializer);

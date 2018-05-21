@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="logger">Logger to use for this host.</param>
         public TerminalPSHostUserInterface(
             PowerShellContext powerShellContext,
-            IPsesLogger logger)
+            PsesLogger logger)
             : base(
                 powerShellContext,
                 new TerminalPSHostRawUserInterface(logger),

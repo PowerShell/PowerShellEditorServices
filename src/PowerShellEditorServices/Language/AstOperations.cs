@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices
             Token[] currentTokens,
             int fileOffset,
             PowerShellContext powerShellContext,
-            IPsesLogger logger,
+            PsesLogger logger,
             CancellationToken cancellationToken)
         {
             var type = scriptAst.Extent.StartScriptPosition.GetType();

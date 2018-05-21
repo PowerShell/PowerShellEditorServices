@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private static CancellationTokenSource existingRequestCancellation;
 
-        private IPsesLogger Logger;
+        private PsesLogger Logger;
         private bool profilesLoaded;
         private bool consoleReplStarted;
         private EditorSession editorSession;
@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             IMessageHandlers messageHandlers,
             IMessageSender messageSender,
             TaskCompletionSource<bool> serverCompletedTask,
-            IPsesLogger logger)
+            PsesLogger logger)
         {
             this.Logger = logger;
             this.editorSession = editorSession;
@@ -1455,7 +1455,7 @@ function __Expand-Alias {
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EditorSession editorSession,
             EventContext eventContext,
-            IPsesLogger Logger,
+            PsesLogger Logger,
             CancellationToken cancellationToken)
         {
             await DelayThenInvokeDiagnostics(
@@ -1477,7 +1477,7 @@ function __Expand-Alias {
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EditorSession editorSession,
             Func<NotificationType<PublishDiagnosticsNotification, object>, PublishDiagnosticsNotification, Task> eventSender,
-            IPsesLogger Logger,
+            PsesLogger Logger,
             CancellationToken cancellationToken)
         {
             // First of all, wait for the desired delay period before

@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private EditorSession editorSession;
 
         private bool noDebug;
-        private IPsesLogger Logger;
+        private PsesLogger Logger;
         private string arguments;
         private bool isRemoteAttach;
         private bool isAttachSession;
@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             bool ownsEditorSession,
             IMessageHandlers messageHandlers,
             IMessageSender messageSender,
-            IPsesLogger logger)
+            PsesLogger logger)
         {
             this.Logger = logger;
             this.editorSession = editorSession;

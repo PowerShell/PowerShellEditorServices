@@ -64,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         private HashSet<string> featureFlags;
         private HostDetails hostDetails;
         private LanguageServer languageServer;
-        private IPsesLogger logger;
+        private PsesLogger logger;
         private ProfilePaths profilePaths;
         private TaskCompletionSource<bool> serverCompletedTask;
 

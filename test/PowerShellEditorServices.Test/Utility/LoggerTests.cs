@@ -71,9 +71,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         private void AssertWritesMessageAtLevel(LogLevel logLevel)
         {
             // Write a message at the desired level
-            IPsesLogger logger = Logging.CreateLogger()
+            PsesLogger logger = Logging.CreateLogger()
                             .LogLevel(LogLevel.Verbose)
-                            .AddLogFile(logFilePath, useMultiprocess: true)
+                            .AddLogFile(logFilePath)
                             .Build();
             logger.Write(logLevel, testMessage);
 
@@ -89,9 +89,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
 
         private void AssertExcludesMessageBelowLevel(LogLevel minimumLogLevel)
         {
-            IPsesLogger logger = Logging.CreateLogger()
+            PsesLogger logger = Logging.CreateLogger()
                             .LogLevel(minimumLogLevel)
-                            .AddLogFile(logFilePath, useMultiprocess: true)
+                            .AddLogFile(logFilePath)
                             .Build();
 
             // Get all possible log levels

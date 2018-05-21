@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <param name="logger">A logger used for writing log messages.</param>
         public ConsoleChoicePromptHandler(
             IHostOutput hostOutput,
-            IPsesLogger logger)
+            PsesLogger logger)
                 : base(logger)
         {
             this.hostOutput = hostOutput;

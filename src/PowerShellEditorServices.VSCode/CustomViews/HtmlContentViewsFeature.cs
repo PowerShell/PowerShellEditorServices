@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     {
         public HtmlContentViewsFeature(
             IMessageSender messageSender,
-            IPsesLogger logger)
+            PsesLogger logger)
                 : base(messageSender, logger)
         {
         }

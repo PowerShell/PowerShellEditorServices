@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         public CodeLensFeature(
             EditorSession editorSession,
             IMessageHandlers messageHandlers,
-            IPsesLogger logger)
+            PsesLogger logger)
                 : base(logger)
         {
             this.editorSession = editorSession;
@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 new CodeLensFeature(
                     editorSession,
                     components.Get<IMessageHandlers>(),
-                    components.Get<IPsesLogger>());
+                    components.Get<PsesLogger>());
 
             codeLenses.Providers.Add(
                 new ReferencesCodeLensProvider(

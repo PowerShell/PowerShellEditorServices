@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private IPsesLogger Logger;
+        private PsesLogger Logger;
         private HostDetails hostDetails;
         private Guid instanceId = Guid.NewGuid();
         private EditorServicesPSHostUserInterface hostUserInterface;
@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices
             PowerShellContext powerShellContext,
             HostDetails hostDetails,
             EditorServicesPSHostUserInterface hostUserInterface,
-            IPsesLogger logger)
+            PsesLogger logger)
         {
             this.Logger = logger;
             this.hostDetails = hostDetails;

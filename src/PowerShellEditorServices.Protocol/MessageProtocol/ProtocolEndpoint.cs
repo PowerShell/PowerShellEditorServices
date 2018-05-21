@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
-        protected IPsesLogger Logger { get; private set; }
+        protected PsesLogger Logger { get; private set; }
 
         /// <summary>
         /// Initializes an instance of the protocol server using the
@@ -67,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         public ProtocolEndpoint(
             ChannelBase protocolChannel,
             IMessageDispatcher messageDispatcher,
-            IPsesLogger logger)
+            PsesLogger logger)
         {
             this.protocolChannel = protocolChannel;
             this.messageDispatcher = messageDispatcher;

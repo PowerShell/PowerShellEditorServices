@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Gets the logger used for this host.
         /// </summary>
-        protected IPsesLogger Logger { get; private set; }
+        protected PsesLogger Logger { get; private set; }
 
         #endregion
 
@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices
         public EditorServicesPSHostUserInterface(
             PowerShellContext powerShellContext,
             PSHostRawUserInterface rawUserInterface,
-            IPsesLogger logger)
+            PsesLogger logger)
         {
             this.Logger = logger;
             this.powerShellContext = powerShellContext;

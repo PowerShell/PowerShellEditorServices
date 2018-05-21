@@ -13,14 +13,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class TcpSocketServerListener : ServerListenerBase<TcpSocketServerChannel>
     {
-        private IPsesLogger logger;
+        private PsesLogger logger;
         private int portNumber;
         private TcpListener tcpListener;
 
         public TcpSocketServerListener(
             MessageProtocolType messageProtocolType,
             int portNumber,
-            IPsesLogger logger)
+            PsesLogger logger)
                 : base(messageProtocolType)
         {
             this.portNumber = portNumber;
