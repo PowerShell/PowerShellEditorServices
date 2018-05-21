@@ -7,7 +7,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     /// <summary>
     /// Logger object for EditorServices, acts as an adapter to Serilog.
     /// </summary>
-    public class PsesLogger
+    public class PsesLogger : ILogger
     {
         /// <summary>
         /// The internal Serilog logger to log to.

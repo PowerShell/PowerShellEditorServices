@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         ///
         /// </summary>
         /// <param name="logger">A logger used for writing log messages.</param>
-        public ChoicePromptHandler(PsesLogger logger) : base(logger)
+        public ChoicePromptHandler(ILogger logger) : base(logger)
         {
         }
 

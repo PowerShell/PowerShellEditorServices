@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Fields
 
-        private PsesLogger logger;
+        private ILogger logger;
         private PowerShell powerShell;
         private bool ownsInitialRunspace;
         private RunspaceDetails initialRunspace;
@@ -117,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices
         ///
         /// </summary>
         /// <param name="logger">Logger used for writing log messages.</param>
-        public PowerShellContext(PsesLogger logger)
+        public PowerShellContext(ILogger logger)
         {
             this.logger = logger;
         }
@@ -136,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices
             HostDetails hostDetails,
             PowerShellContext powerShellContext,
             EditorServicesPSHostUserInterface hostUserInterface,
-            PsesLogger logger)
+            ILogger logger)
         {
             var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
             powerShellContext.ConsoleWriter = hostUserInterface;

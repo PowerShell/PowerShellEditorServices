@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <param name="runspace">The runspace for which version details will be gathered.</param>
         /// <param name="logger">Logger used for writing log messages.</param>
         /// <returns>A new PowerShellVersionDetails instance.</returns>
-        public static PowerShellVersionDetails GetVersionDetails(Runspace runspace, PsesLogger logger)
+        public static PowerShellVersionDetails GetVersionDetails(Runspace runspace, ILogger logger)
         {
             Version powerShellVersion = new Version(5, 0);
             string versionString = null;

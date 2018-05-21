@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class DebugAdapterTests : ServerTestsBase, IAsyncLifetime
     {
-        private PsesLogger logger;
+        private ILogger logger;
         private DebugAdapterClient debugAdapterClient;
         private string DebugScriptPath =
             Path.GetFullPath(@"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");

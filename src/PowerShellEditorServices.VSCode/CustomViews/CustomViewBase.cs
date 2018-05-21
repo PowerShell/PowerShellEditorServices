@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     internal abstract class CustomViewBase : ICustomView
     {
         protected IMessageSender messageSender;
-        protected PsesLogger logger;
+        protected ILogger logger;
 
         public Guid Id { get; private set; }
 
@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
             string viewTitle,
             CustomViewType viewType,
             IMessageSender messageSender,
-            PsesLogger logger)
+            ILogger logger)
         {
             this.Id = Guid.NewGuid();
             this.Title = viewTitle;

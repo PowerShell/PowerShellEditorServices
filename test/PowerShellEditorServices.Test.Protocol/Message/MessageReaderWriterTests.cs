@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
         const string TestEventFormatString = "{{\"event\":\"testEvent\",\"body\":{{\"someString\":\"{0}\"}},\"seq\":0,\"type\":\"event\"}}";
         readonly int ExpectedMessageByteCount = Encoding.UTF8.GetByteCount(TestEventString);
 
-        private PsesLogger logger;
+        private ILogger logger;
         private IMessageSerializer messageSerializer;
 
         public MessageReaderWriterTests()

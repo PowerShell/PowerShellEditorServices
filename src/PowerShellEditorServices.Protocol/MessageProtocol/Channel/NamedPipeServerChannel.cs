@@ -10,12 +10,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class NamedPipeServerChannel : ChannelBase
     {
-        private PsesLogger logger;
+        private ILogger logger;
         private NamedPipeServerStream pipeServer;
 
         public NamedPipeServerChannel(
             NamedPipeServerStream pipeServer,
-            PsesLogger logger)
+            ILogger logger)
         {
             this.pipeServer = pipeServer;
             this.logger = logger;

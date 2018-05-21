@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// details of its children.  Otherwise it returns an empty array.
         /// </summary>
         /// <returns></returns>
-        public override VariableDetailsBase[] GetChildren(PsesLogger logger)
+        public override VariableDetailsBase[] GetChildren(ILogger logger)
         {
             VariableDetails[] childVariables = null;
 
@@ -260,7 +260,7 @@ namespace Microsoft.PowerShell.EditorServices
             return result;
         }
 
-        private VariableDetails[] GetChildren(object obj, PsesLogger logger)
+        private VariableDetails[] GetChildren(object obj, ILogger logger)
         {
             List<VariableDetails> childVariables = new List<VariableDetails>();
 

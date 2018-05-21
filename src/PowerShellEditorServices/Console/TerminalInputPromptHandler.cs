@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         public TerminalInputPromptHandler(
             ConsoleReadLine consoleReadLine,
             IHostOutput hostOutput,
-            PsesLogger logger)
+            ILogger logger)
                 : base(hostOutput, logger)
         {
             this.consoleReadLine = consoleReadLine;

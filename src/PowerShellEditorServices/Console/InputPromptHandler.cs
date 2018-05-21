@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         ///
         /// </summary>
         /// <param name="logger">Logger used for writing log messages.</param>
-        public InputPromptHandler(PsesLogger logger) : base(logger)
+        public InputPromptHandler(ILogger logger) : base(logger)
         {
         }
 

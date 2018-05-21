@@ -12,12 +12,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class TcpSocketClientChannel : ChannelBase
     {
-        private PsesLogger logger;
+        private ILogger logger;
         private NetworkStream networkStream;
 
         public TcpSocketClientChannel(
             TcpClient tcpClient,
-            PsesLogger logger)
+            ILogger logger)
         {
             this.networkStream = tcpClient.GetStream();
             this.logger = logger;
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         public static async Task<TcpSocketClientChannel> Connect(
             int portNumber,
             MessageProtocolType messageProtocolType,
-            PsesLogger logger)
+            ILogger logger)
         {
             TcpClient tcpClient = new TcpClient();
             await tcpClient.ConnectAsync(IPAddress.Loopback, portNumber);

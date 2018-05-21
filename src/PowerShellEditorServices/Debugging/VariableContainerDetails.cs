@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Returns the details of the variable container's children.  If empty, returns an empty array.
         /// </summary>
         /// <returns></returns>
-        public override VariableDetailsBase[] GetChildren(PsesLogger logger)
+        public override VariableDetailsBase[] GetChildren(ILogger logger)
         {
             var variablesArray = new VariableDetailsBase[this.children.Count];
             this.children.Values.CopyTo(variablesArray, 0);

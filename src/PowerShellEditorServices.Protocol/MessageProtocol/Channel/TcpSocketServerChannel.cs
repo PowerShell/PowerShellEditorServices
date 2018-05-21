@@ -12,11 +12,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
     public class TcpSocketServerChannel : ChannelBase
     {
-        private PsesLogger logger;
+        private ILogger logger;
         private TcpClient tcpClient;
         private NetworkStream networkStream;
 
-        public TcpSocketServerChannel(TcpClient tcpClient, PsesLogger logger)
+        public TcpSocketServerChannel(TcpClient tcpClient, ILogger logger)
         {
             this.tcpClient = tcpClient;
             this.networkStream = this.tcpClient.GetStream();

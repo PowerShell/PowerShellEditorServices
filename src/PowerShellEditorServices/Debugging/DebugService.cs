@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices
         private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
         private const string TemporaryScriptFileName = "Script Listing.ps1";
 
-        private PsesLogger logger;
+        private ILogger logger;
         private PowerShellContext powerShellContext;
         private RemoteFileManager remoteFileManager;
 
@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// The PowerShellContext to use for all debugging operations.
         /// </param>
         /// <param name="logger">Logger used for writing log messages.</param>
-        public DebugService(PowerShellContext powerShellContext, PsesLogger logger)
+        public DebugService(PowerShellContext powerShellContext, ILogger logger)
             : this(powerShellContext, null, logger)
         {
         }
@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices
         public DebugService(
             PowerShellContext powerShellContext,
             RemoteFileManager remoteFileManager,
-            PsesLogger logger)
+            ILogger logger)
         {
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 

@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         private string serviceProcessPath;
         private string serviceProcessArguments;
 
-        private PsesLogger logger;
+        private ILogger logger;
         private Stream inputStream;
         private Stream outputStream;
         private Process serviceProcess;
@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         /// <param name="serverProcessArguments">Optional arguments to pass to the service process executable.</param>
         public StdioClientChannel(
             string serverProcessPath,
-            PsesLogger logger,
+            ILogger logger,
             params string[] serverProcessArguments)
         {
             this.logger = logger;

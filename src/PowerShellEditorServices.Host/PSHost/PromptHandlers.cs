@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             IMessageSender messageSender,
             IHostInput hostInput,
             IHostOutput hostOutput,
-            PsesLogger logger)
+            ILogger logger)
                 : base(hostOutput, logger)
         {
             this.hostInput = hostInput;
@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             IMessageSender messageSender,
             IHostInput hostInput,
             IHostOutput hostOutput,
-            PsesLogger logger)
+            ILogger logger)
                 : base(hostOutput, logger)
         {
             this.hostInput = hostInput;

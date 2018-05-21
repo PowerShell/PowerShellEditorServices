@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// complete.
         /// </summary>
         /// <returns>The field's final value.</returns>
-        public object GetValue(PsesLogger logger)
+        public object GetValue(ILogger logger)
         {
             object fieldValue = this.OnGetValue();
 
@@ -172,7 +172,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         internal static FieldDetails Create(
             FieldDescription fieldDescription,
-            PsesLogger logger)
+            ILogger logger)
         {
             Type fieldType =
                 GetFieldTypeFromTypeName(
@@ -210,7 +210,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private static Type GetFieldTypeFromTypeName(
             string assemblyFullName,
-            PsesLogger logger)
+            ILogger logger)
         {
             Type fieldType = typeof(string);
 

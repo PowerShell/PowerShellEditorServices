@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <returns>
         /// A Task which can be used to monitor the thread for completion.
         /// </returns>
-        public Task Run(Func<Task> taskReturningFunc, PsesLogger logger)
+        public Task Run(Func<Task> taskReturningFunc, ILogger logger)
         {
             // Start up a long-running task with the action as the
             // main entry point for the thread

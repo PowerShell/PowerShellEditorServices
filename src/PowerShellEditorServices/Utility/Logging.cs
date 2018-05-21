@@ -4,6 +4,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.File;
 using Serilog.Sinks.Async;
+using System.Runtime.CompilerServices;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
@@ -37,6 +38,43 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </summary>
         Error
     }
+
+    /// <summary>
+    /// Provides logging for EditorServices
+    /// </summary>
+    public interface ILogger : IDisposable
+    {
+        /// <summary>
+        /// Write a message with the given severity to the logs.
+        /// </summary>
+        /// <param name="logLevel">The severity level of the log message.</param>
+        /// <param name="logMessage">The log message itself.</param>
+        /// <param name="callerName">The name of the calling method.</param>
+        /// <param name="callerSourceFile">The name of the source file of the caller.</param>
+        /// <param name="callerLineNumber">The line number where the log is being called.</param>
+        void Write(
+            LogLevel logLevel,
+            string logMessage,
+            [CallerMemberName] string callerName = null,
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = 0);
+
+        /// <summary>
+        /// Log an exception in the logs.
+        /// </summary>
+        /// <param name="errorMessage">The error message of the exception to be logged.</param>
+        /// <param name="exception">The exception itself that has been thrown.</param>
+        /// <param name="callerName">The name of the method in which the logger is being called.</param>
+        /// <param name="callerSourceFile">The name of the source file in which the logger is being called.</param>
+        /// <param name="callerLineNumber">The line number in the file where the logger is being called.</param>
+        void WriteException(
+            string errorMessage,
+            Exception exception,
+            [CallerMemberName] string callerName = null,
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = 0);
+    }
+
 
     /// <summary>
     /// Manages logging and logger constructor for EditorServices.
@@ -119,7 +157,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// Take the log configuration use it to create a logger.
             /// </summary>
             /// <returns>The constructed logger.</returns>
-            public PsesLogger Build()
+            public ILogger Build()
             {
                 var configuration = new LoggerConfiguration()
                     .MinimumLevel.Is(ConvertLogLevel(_logLevel));
@@ -147,14 +185,14 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <summary>
         /// A do-nothing logger that simply discards messages.
         /// </summary>
-        public static PsesLogger NullLogger
+        public static ILogger NullLogger
         {
             get
             {
                 return s_nullLogger ?? (s_nullLogger = CreateLogger().Build());
             }
         }
-        private static PsesLogger s_nullLogger;
+        private static ILogger s_nullLogger;
 
         /// <summary>
         /// Contruct a logger with the applied configuration.

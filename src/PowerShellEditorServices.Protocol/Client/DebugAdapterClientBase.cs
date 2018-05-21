@@ -14,11 +14,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
 {
     public class DebugAdapterClient : IMessageSender, IMessageHandlers
     {
-        private PsesLogger logger;
+        private ILogger logger;
         private ProtocolEndpoint protocolEndpoint;
         private MessageDispatcher messageDispatcher;
 
-        public DebugAdapterClient(ChannelBase clientChannel, PsesLogger logger)
+        public DebugAdapterClient(ChannelBase clientChannel, ILogger logger)
         {
             this.logger = logger;
             this.messageDispatcher = new MessageDispatcher(logger);

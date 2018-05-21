@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         public DocumentSymbolFeature(
             EditorSession editorSession,
             IMessageHandlers messageHandlers,
-            PsesLogger logger)
+            ILogger logger)
                 : base(logger)
         {
             this.editorSession = editorSession;
@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
                 new DocumentSymbolFeature(
                     editorSession,
                     components.Get<IMessageHandlers>(),
-                    components.Get<PsesLogger>());
+                    components.Get<ILogger>());
 
             documentSymbols.Providers.Add(
                 new ScriptDocumentSymbolProvider(
