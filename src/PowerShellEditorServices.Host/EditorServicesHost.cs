@@ -134,7 +134,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         #region Public Methods
 
         /// <summary>
-        /// Starts the Logger for the specified file path and log level.
+        /// Starts the ILogger for the specified file path and log level.
         /// </summary>
         /// <param name="logFilePath">The path of the log file to be written.</param>
         /// <param name="logLevel">The minimum level of log messages to be written.</param>

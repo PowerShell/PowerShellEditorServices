@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// The IHostOutput implementation to use for writing to the
         /// console.
         /// </param>
-        /// <param name="logger">A logger used for writing log messages.</param>
+        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public ConsoleChoicePromptHandler(
             IHostOutput hostOutput,
             ILogger logger)

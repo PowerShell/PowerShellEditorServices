@@ -79,7 +79,7 @@ namespace Microsoft.PowerShell.EditorServices
         private bool IsCommandLoopRunning { get; set; }
 
         /// <summary>
-        /// Gets the logger used for this host.
+        /// Gets the ILogger used for this host.
         /// </summary>
         protected ILogger Logger { get; private set; }
 

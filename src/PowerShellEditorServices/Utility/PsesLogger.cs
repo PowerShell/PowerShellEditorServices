@@ -5,7 +5,7 @@ using Serilog.Core;
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
     /// <summary>
-    /// Logger object for EditorServices, acts as an adapter to Serilog.
+    /// An ILogger implementation object for EditorServices, acts as an adapter to Serilog.
     /// </summary>
     public class PsesLogger : ILogger
     {
@@ -71,9 +71,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </summary>
         /// <param name="errorMessage">The error message of the exception to be logged.</param>
         /// <param name="exception">The exception itself that has been thrown.</param>
-        /// <param name="callerName">The name of the method in which the logger is being called.</param>
-        /// <param name="callerSourceFile">The name of the source file in which the logger is being called.</param>
-        /// <param name="callerLineNumber">The line number in the file where the logger is being called.</param>
+        /// <param name="callerName">The name of the method in which the ILogger is being called.</param>
+        /// <param name="callerSourceFile">The name of the source file in which the ILogger is being called.</param>
+        /// <param name="callerLineNumber">The line number in the file where the ILogger is being called.</param>
         public void WriteException(
             string errorMessage,
             Exception exception,

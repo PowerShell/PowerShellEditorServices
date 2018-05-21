@@ -64,9 +64,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </summary>
         /// <param name="errorMessage">The error message of the exception to be logged.</param>
         /// <param name="exception">The exception itself that has been thrown.</param>
-        /// <param name="callerName">The name of the method in which the logger is being called.</param>
-        /// <param name="callerSourceFile">The name of the source file in which the logger is being called.</param>
-        /// <param name="callerLineNumber">The line number in the file where the logger is being called.</param>
+        /// <param name="callerName">The name of the method in which the ILogger is being called.</param>
+        /// <param name="callerSourceFile">The name of the source file in which the ILogger is being called.</param>
+        /// <param name="callerLineNumber">The line number in the file where the ILogger is being called.</param>
         void WriteException(
             string errorMessage,
             Exception exception,
@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             private LogLevel? _consoleLogLevel;
 
             /// <summary>
-            /// Constructs a logger builder instance with default configurations:
+            /// Constructs An ILogger implementation builder instance with default configurations:
             /// No log files, not logging to console, log level normal.
             /// </summary>
             public Builder()
@@ -121,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// The severity level of the messages to log.
             /// </summary>
             /// <param name="logLevel">The severity level of the messages to log.</param>
-            /// <returns>The logger builder for reuse.</returns>
+            /// <returns>the ILogger builder for reuse.</returns>
             public Builder LogLevel(LogLevel logLevel)
             {
                 _logLevel = logLevel;
@@ -134,7 +134,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             /// <param name="filePath">The path ofethe file to log to.</param>
             /// <param name="logLevel">The minimum log level for this file</param>
             /// <param name="useMultiprocess">Set whether the log file should be readable by other processes</param>
-            /// <returns>The logger builder for reuse.</returns>
+            /// <returns>the ILogger builder for reuse.</returns>
             public Builder AddLogFile(string filePath, LogLevel? logLevel = null, bool useMultiprocess = false)
             {
                 _filePaths.Add(filePath, logLevel);
@@ -142,10 +142,10 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             /// <summary>
-            /// Configure the logger to send log messages to the console.
+            /// Configure the ILogger to send log messages to the console.
             /// </summary>
             /// <param name="logLevel">The minimum log level for console logging.</param>
-            /// <returns>The logger builder for reuse.</returns>
+            /// <returns>the ILogger builder for reuse.</returns>
             public Builder AddConsoleLogging(LogLevel? logLevel = null)
             {
                 _useConsole = true;
@@ -154,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             /// <summary>
-            /// Take the log configuration use it to create a logger.
+            /// Take the log configuration use it to create An ILogger implementation.
             /// </summary>
             /// <returns>The constructed logger.</returns>
             public ILogger Build()
@@ -195,7 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         private static ILogger s_nullLogger;
 
         /// <summary>
-        /// Contruct a logger with the applied configuration.
+        /// Contruct An ILogger implementation with the applied configuration.
         /// </summary>
         /// <returns>The constructed logger.</returns>
         public static Builder CreateLogger()

@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
                             .Build();
             logger.Write(logLevel, testMessage);
 
-            // Dispose of the logger
+            // Dispose of the ILogger
             logger.Dispose();
 
             // Read the contents and verify that it's there
@@ -106,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
                 logger.Write((LogLevel)logLevel, testMessage);
             }
 
-            // Dispose of the logger
+            // Dispose of the ILogger
             logger.Dispose();
 
             // Make sure all excluded log levels aren't in the contents
