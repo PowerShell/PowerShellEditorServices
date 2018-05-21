@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         public LanguageServiceTests()
         {
-            var logger = Logging.CreateLogger().Build();
+            var logger = Logging.NullLogger;
             this.powerShellContext = PowerShellContextFactory.Create(logger);
             this.workspace = new Workspace(this.powerShellContext.LocalPowerShellVersion.Version, logger);
             this.languageService = new LanguageService(this.powerShellContext, logger);
@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             var definitionResult =
                 await this.GetDefinition(
                     FindsFunctionDefinitionInWorkspace.SourceDetails,
-                    new Workspace(this.powerShellContext.LocalPowerShellVersion.Version, Logging.CreateLogger().Build())
+                    new Workspace(this.powerShellContext.LocalPowerShellVersion.Version, Logging.NullLogger)
                     {
                         WorkspacePath = Path.Combine(baseSharedScriptPath, @"References")
                     });

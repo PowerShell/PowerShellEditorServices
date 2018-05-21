@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
 
         public MessageReaderWriterTests()
         {
-            this.logger = Logging.CreateLogger().Build();
+            this.logger = Logging.NullLogger;
             this.messageSerializer = new V8MessageSerializer();
         }
 

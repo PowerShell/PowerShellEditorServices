@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public int TimesPrompted { get; private set; }
 
-        public TestChoicePromptHandler() : base(Logging.CreateLogger().Build())
+        public TestChoicePromptHandler() : base(Logging.NullLogger)
         {
         }
 

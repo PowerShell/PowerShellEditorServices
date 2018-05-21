@@ -145,21 +145,24 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         }
 
         /// <summary>
+        /// A do-nothing logger that simply discards messages.
+        /// </summary>
+        public static PsesLogger NullLogger
+        {
+            get
+            {
+                return s_nullLogger ?? (s_nullLogger = CreateLogger().Build());
+            }
+        }
+        private static PsesLogger s_nullLogger;
+
+        /// <summary>
         /// Contruct a logger with the applied configuration.
         /// </summary>
         /// <returns>The constructed logger.</returns>
         public static Builder CreateLogger()
         {
             return new Builder();
-        }
-
-        /// <summary>
-        /// Create a No-Op logger, which just throws away log messages.
-        /// </summary>
-        /// <returns>A do-nothing logger, with no output anywhere.</returns>
-        public static PsesLogger CreateNullLogger()
-        {
-            return CreateLogger().Build();
         }
 
         /// <summary>

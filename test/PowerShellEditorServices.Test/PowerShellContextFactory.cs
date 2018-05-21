@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
             : base(
                 powerShellContext,
                 new SimplePSHostRawUserInterface(logger),
-                Logging.CreateLogger().Build())
+                Logging.NullLogger)
         {
         }
 

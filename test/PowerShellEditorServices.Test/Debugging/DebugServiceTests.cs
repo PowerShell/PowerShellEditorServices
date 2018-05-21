@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         public DebugServiceTests()
         {
-            var logger = Logging.CreateLogger().Build();
+            var logger = Logging.NullLogger;
 
             this.powerShellContext = PowerShellContextFactory.Create(logger);
             this.powerShellContext.SessionStateChanged += powerShellContext_SessionStateChanged;
