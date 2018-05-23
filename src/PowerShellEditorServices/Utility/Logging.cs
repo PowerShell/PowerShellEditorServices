@@ -169,20 +169,19 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 {
                     configuration = configuration.WriteTo.Console(
                         restrictedToMinimumLevel: ConvertLogLevel(_consoleLogLevel ?? _logLevel),
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{Newline}{Exception}{Newline}");
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{NewLine}");
                 }
 
                 foreach (KeyValuePair<string, LogLevel?> logFile in _filePaths)
                 {
                     configuration = configuration.WriteTo.Async(a => a.File(logFile.Key,
                         restrictedToMinimumLevel: ConvertLogLevel(logFile.Value ?? _logLevel),
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{Newline}{Exception}{Newline}")
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Message}{NewLine}")
                     );
                 }
 
                 return new PsesLogger(configuration.CreateLogger());
             }
-
         }
 
         /// <summary>
@@ -195,6 +194,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 return s_nullLogger ?? (s_nullLogger = CreateLogger().Build());
             }
         }
+
         private static ILogger s_nullLogger;
 
         /// <summary>

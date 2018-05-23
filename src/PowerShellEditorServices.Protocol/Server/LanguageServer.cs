@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         /// <param name="messageHandlers">An object that manages all of the message handlers</param>
         /// <param name="messageSender">The message sender</param>
         /// <param name="serverCompletedTask">A TaskCompletionSource<bool> that will be completed to stop the running process</param>
-        /// <param name="logger">the logger</param>
+        /// <param name="logger">The logger.</param>
         public LanguageServer(
             EditorSession editorSession,
             IMessageHandlers messageHandlers,

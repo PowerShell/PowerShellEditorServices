@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Serilog.Core;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
@@ -9,6 +10,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     /// </summary>
     public class PsesLogger : ILogger
     {
+        /// <summary>
+        /// The name of the ERROR log level.
+        /// </summary>
+        private static readonly string ErrorLevelName = LogLevel.Error.ToString().ToUpper();
+
         /// <summary>
         /// The internal Serilog logger to log to.
         /// </summary>
@@ -44,23 +50,23 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             switch (logLevel)
             {
                 case LogLevel.Diagnostic:
-                    _logger.Verbose("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:\n{IndentedLogMsg:l}\n",
+                    _logger.Verbose("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:{IndentedLogMsg:l}",
                         logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Verbose:
-                    _logger.Debug("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:\n{IndentedLogMsg:l}\n",
+                    _logger.Debug("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:{IndentedLogMsg:l}",
                         logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Normal:
-                    _logger.Information("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:\n{IndentedLogMsg:l}\n",
+                    _logger.Information("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:{IndentedLogMsg:l}",
                         logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Warning:
-                    _logger.Warning("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:\n{IndentedLogMsg:l}\n",
+                    _logger.Warning("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:{IndentedLogMsg:l}",
                         logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Error:
-                    _logger.Error("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:\n{IndentedLogMsg:l}\n",
+                    _logger.Error("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:{IndentedLogMsg:l}",
                         logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
                     return;
             }
@@ -81,8 +87,10 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = 0)
         {
-            _logger.Error("[{Error:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:\n    {ErrorMessage:l}\n    {Exception:l}\n",
-                LogLevel.Error.ToString().ToUpper(), callerSourceFile, callerName, callerLineNumber, errorMessage, exception);
+            string indentedException = IndentMsg(exception.ToString());
+
+            _logger.Error("[{ErrorLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}: {ErrorMessage:l}{IndentedException:l}",
+                ErrorLevelName, callerSourceFile, callerName, callerLineNumber, errorMessage, indentedException);
         }
 
         /// <summary>
@@ -92,18 +100,20 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <returns>The indented log message string.</returns>
         private static string IndentMsg(string logMessage)
         {
-            string[] msgLines = logMessage.Split('\n');
-
-            for (int i = 0; i < msgLines.Length; i++)
-            {
-                msgLines[i] = msgLines[i].Insert(0, "    ");
-            }
-
-            return String.Join("\n", msgLines)+"\n";
+            return new StringBuilder(logMessage)
+                .Replace(Environment.NewLine, s_indentedPrefix)
+                .Insert(0, s_indentedPrefix)
+                .AppendLine()
+                .ToString();
         }
 
+        /// <summary>
+        /// A newline followed by a single indentation prefix.
+        /// </summary>
+        private static readonly string s_indentedPrefix = Environment.NewLine + "    ";
+
         #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool _disposedValue = false; // To detect redundant calls
 
         /// <summary>
         /// Internal disposer.
@@ -111,14 +121,14 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <param name="disposing">Whether or not the object is being disposed.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!_disposedValue)
             {
                 if (disposing)
                 {
                     _logger.Dispose();
                 }
 
-                disposedValue = true;
+                _disposedValue = true;
             }
         }
 
