@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
 
         /// <summary>
-        /// Gets a boolean that indicates whether the current debug adapter is 
+        /// Gets a boolean that indicates whether the current debug adapter is
         /// using a temporary integrated console.
         /// </summary>
         public bool IsUsingTempIntegratedConsole { get; private set; }
@@ -506,7 +506,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
             }
             catch (Exception e) when (
-                e is FileNotFoundException || 
+                e is FileNotFoundException ||
                 e is DirectoryNotFoundException ||
                 e is IOException ||
                 e is NotSupportedException ||
@@ -653,7 +653,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<object> requestContext)
         {
             // TODO: When support for exception breakpoints (unhandled and/or first chance)
-            //       are added to the PowerShell engine, wire up the VSCode exception 
+            //       are added to the PowerShell engine, wire up the VSCode exception
             //       breakpoints here using the pattern below to prevent bug regressions.
             //if (!this.noDebug)
             //{

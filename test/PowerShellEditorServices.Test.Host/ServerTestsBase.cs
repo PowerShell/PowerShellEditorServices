@@ -14,9 +14,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-#if CoreCLR
-using System.Reflection;
-#endif
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {

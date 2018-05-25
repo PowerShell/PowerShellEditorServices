@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             string testPathOutside = @"c:\Test\PeerPath\FilePath.ps1";
             string testPathAnotherDrive = @"z:\TryAndFindMe\FilePath.ps1";
 
-            Workspace workspace = new Workspace(PowerShellVersion, new NullLogger());
+            Workspace workspace = new Workspace(PowerShellVersion, Logging.NullLogger);
 
             // Test without a workspace path
             Assert.Equal(testPathOutside, workspace.GetRelativePath(testPathOutside));

@@ -34,9 +34,9 @@ namespace Microsoft.PowerShell.EditorServices.Components
 
         /// <summary>
         /// Creates an instance of the FeatureComponentBase class with
-        /// the specified ILoggger.
+        /// the specified ILogger.
         /// </summary>
-        /// <param name="logger">The ILogger to use for this instance.</param>
+        /// <param name="logger">The ILogger implementation to use for this instance.</param>
         public FeatureComponentBase(ILogger logger)
         {
             this.Providers = new FeatureProviderCollection<TProvider>();
