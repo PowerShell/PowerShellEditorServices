@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices
             "PSAvoidUsingWriteHost",
             "PSAvoidUsingEmptyCatchBlock",
             "PSAvoidUsingWMICmdlet",
-            "PSUseSingularNouns"
+            "PSUseSingularNouns",
             "PSAvoidUsingInvokeExpression",
             "PSAvoidDefaultValueForMandatoryParameter"
         };
