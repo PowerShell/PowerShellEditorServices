@@ -354,7 +354,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             bool enableConsoleRepl)
         {
             EditorSession editorSession = new EditorSession(this.logger);
-            PowerShellContext powerShellContext = new PowerShellContext(this.logger);
+            PowerShellContext powerShellContext = new PowerShellContext(this.logger, this.featureFlags.Contains("PSReadLine"));
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl
@@ -394,7 +394,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
             bool enableConsoleRepl)
         {
             EditorSession editorSession = new EditorSession(this.logger);
-            PowerShellContext powerShellContext = new PowerShellContext(this.logger);
+            PowerShellContext powerShellContext = new PowerShellContext(
+                this.logger,
+                this.featureFlags.Contains("PSReadLine"));
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices.Session
@@ -78,6 +79,33 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
 
             return results;
+        }
+
+        public void StopCommandInDebugger(PowerShellContext powerShellContext)
+        {
+#if !PowerShellv3
+            powerShellContext.CurrentRunspace.Runspace.Debugger.StopProcessCommand();
+#endif
+        }
+
+        public virtual bool IsDebuggerStopped(PromptNest promptNest, Runspace runspace)
+        {
+            return promptNest.IsInDebugger;
+        }
+
+        public void ExitNestedPrompt(PSHost host)
+        {
+#if !PowerShellv3
+            try
+            {
+                host.ExitNestedPrompt();
+            }
+            catch (FlowControlException)
+            {
+            }
+#else
+            throw new NotSupportedException();
+#endif
         }
     }
 }

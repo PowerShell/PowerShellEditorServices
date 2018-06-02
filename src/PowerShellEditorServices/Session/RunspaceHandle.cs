@@ -28,14 +28,21 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        internal bool IsReadLine { get; }
+
         /// <summary>
         /// Initializes a new instance of the RunspaceHandle class using the
         /// given runspace.
         /// </summary>
         /// <param name="powerShellContext">The PowerShellContext instance which manages the runspace.</param>
         public RunspaceHandle(PowerShellContext powerShellContext)
+            : this(powerShellContext, false)
+        { }
+
+        internal RunspaceHandle(PowerShellContext powerShellContext, bool isReadLine)
         {
             this.powerShellContext = powerShellContext;
+            this.IsReadLine = isReadLine;
         }
 
         /// <summary>
