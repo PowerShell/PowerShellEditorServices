@@ -10,6 +10,8 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public class ExecutionOptions
     {
+        private bool? _shouldExecuteInOriginalRunspace;
+
         #region Properties
 
         /// <summary>
@@ -38,6 +40,39 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public bool InterruptCommandPrompt { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the text of the command
+        /// should be written to the host as if it was ran interactively.
+        /// </summary>
+        public bool WriteInputToHost { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the command to
+        /// be executed is a console input prompt, such as the
+        /// PSConsoleHostReadLine function.
+        /// </summary>
+        internal bool IsReadLine { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the command should
+        /// be invoked in the original runspace. In the majority of cases
+        /// this should remain unset.
+        /// </summary>
+        internal bool ShouldExecuteInOriginalRunspace
+        {
+            get
+            {
+                return
+                    _shouldExecuteInOriginalRunspace.HasValue
+                        ? _shouldExecuteInOriginalRunspace.Value
+                        : IsReadLine;
+            }
+            set
+            {
+                _shouldExecuteInOriginalRunspace = value;
+            }
+        }
+
         #endregion
 
         #region Constructors
@@ -50,6 +85,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             this.WriteOutputToHost = true;
             this.WriteErrorsToHost = true;
+            this.WriteInputToHost = false;
             this.AddToHistory = false;
             this.InterruptCommandPrompt = false;
         }
