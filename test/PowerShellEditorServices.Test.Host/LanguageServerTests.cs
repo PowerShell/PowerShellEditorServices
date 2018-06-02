@@ -593,6 +593,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                         Expression = "1 + 2"
                     });
 
+            await outputReader.ReadLine();
             Assert.Equal("1 + 2", await outputReader.ReadLine());
             Assert.Equal("3", await outputReader.ReadLine());
         }
@@ -654,7 +655,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 });
 
             // Skip the initial script and prompt lines (6 script lines plus 3 prompt lines)
-            string[] outputLines = await outputReader.ReadLines(9);
+            string[] outputLines = await outputReader.ReadLines(10);
 
             // Wait for the selection to appear as output
             await evaluateTask;
@@ -705,7 +706,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 });
 
             // Skip the initial 4 script lines
-            string[] scriptLines = await outputReader.ReadLines(4);
+            string[] scriptLines = await outputReader.ReadLines(5);
 
             // Verify the first line
             Assert.Equal("Name: John", await outputReader.ReadLine());

@@ -74,6 +74,31 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                     TaskScheduler.Default);
         }
 
+        /// <summary>
+        /// Obtains or waits for a lock which can be used to synchronize
+        /// access to a resource.
+        /// </summary>
+        /// <returns></returns>
+        public IDisposable Lock()
+        {
+            return Lock(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Obtains or waits for a lock which can be used to synchronize
+        /// access to a resource.  The wait may be cancelled with the
+        /// given CancellationToken.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A CancellationToken which can be used to cancel the lock.
+        /// </param>
+        /// <returns></returns>
+        public IDisposable Lock(CancellationToken cancellationToken)
+        {
+            lockSemaphore.Wait(cancellationToken);
+            return this.lockReleaseTask.Result;
+        }
+
         #endregion
 
         #region Private Classes

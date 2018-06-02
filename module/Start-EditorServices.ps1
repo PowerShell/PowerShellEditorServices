@@ -47,6 +47,9 @@ param(
     [ValidateSet("Normal", "Verbose", "Error","Diagnostic")]
     $LogLevel,
 
+    [string[]]
+    $FeatureFlags = @(),
+
     [switch]
     $WaitForDebugger,
 
@@ -163,7 +166,8 @@ $editorServicesHost =
         -LanguageServicePort $languageServicePort `
         -DebugServicePort $debugServicePort `
         -BundledModulesPath $BundledModulesPath `
-        -WaitForDebugger:$WaitForDebugger.IsPresent
+        -WaitForDebugger:$WaitForDebugger.IsPresent `
+        -FeatureFlags $FeatureFlags
 
 # TODO: Verify that the service is started
 

@@ -52,6 +52,21 @@ namespace Microsoft.PowerShell.EditorServices
                 return null;
             }
 
+            // Keeping this commented out for now.  It would be faster, but it doesn't automatically
+            // import modules. This may actually be preferred, but it's a big change that needs to
+            // be discussed more.
+            // if (powerShellContext.CurrentRunspace.Location == Session.RunspaceLocation.Local)
+            // {
+            //     return await powerShellContext.UsingEngine<CommandInfo>(
+            //         engine =>
+            //         {
+            //             return engine
+            //                 .SessionState
+            //                 .InvokeCommand
+            //                 .GetCommand(commandName, CommandTypes.All);
+            //         });
+            // }
+
             PSCommand command = new PSCommand();
             command.AddCommand(@"Microsoft.PowerShell.Core\Get-Command");
             command.AddArgument(commandName);

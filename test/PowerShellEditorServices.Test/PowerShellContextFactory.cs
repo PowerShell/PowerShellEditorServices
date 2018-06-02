@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
     {
         public static PowerShellContext Create(ILogger logger)
         {
-            PowerShellContext powerShellContext = new PowerShellContext(logger);
+            PowerShellContext powerShellContext = new PowerShellContext(logger, isPSReadLineEnabled: false);
             powerShellContext.Initialize(
                 PowerShellContextTests.TestProfilePaths,
                 PowerShellContext.CreateRunspace(
