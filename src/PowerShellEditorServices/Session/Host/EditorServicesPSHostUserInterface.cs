@@ -636,10 +636,20 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Private Methods
 
-        private async Task WritePromptStringToHost()
+        private Coordinates lastPromptLocation;
+
+        private async Task WritePromptStringToHost(CancellationToken cancellationToken)
         {
+            if (this.lastPromptLocation != null &&
+                this.lastPromptLocation.X == await ConsoleProxy.GetCursorLeftAsync(cancellationToken) &&
+                this.lastPromptLocation.Y == await ConsoleProxy.GetCursorTopAsync(cancellationToken))
+            {
+                return;
+            }
+
             PSCommand promptCommand = new PSCommand().AddScript("prompt");
 
+            cancellationToken.ThrowIfCancellationRequested();
             string promptString =
                 (await this.powerShellContext.ExecuteCommand<PSObject>(promptCommand, false, false))
                     .Select(pso => pso.BaseObject)
@@ -669,8 +679,13 @@ namespace Microsoft.PowerShell.EditorServices
                         promptString);
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             // Write the prompt string
             this.WriteOutput(promptString, false);
+            this.lastPromptLocation = new Coordinates(
+                await ConsoleProxy.GetCursorLeftAsync(cancellationToken),
+                await ConsoleProxy.GetCursorTopAsync(cancellationToken));
         }
 
         private void WriteDebuggerBanner(DebuggerStopEventArgs eventArgs)
@@ -707,14 +722,23 @@ namespace Microsoft.PowerShell.EditorServices
 
         private async Task StartReplLoop(CancellationToken cancellationToken)
         {
-            do
+            while (!cancellationToken.IsCancellationRequested)
             {
                 string commandString = null;
-
-                await this.WritePromptStringToHost();
+                int originalCursorTop = 0;
 
                 try
                 {
+                    await this.WritePromptStringToHost(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+
+                try
+                {
+                    originalCursorTop = await ConsoleProxy.GetCursorTopAsync(cancellationToken);
                     commandString = await this.ReadCommandLine(cancellationToken);
                 }
                 catch (PipelineStoppedException)
@@ -739,29 +763,29 @@ namespace Microsoft.PowerShell.EditorServices
 
                     Logger.WriteException("Caught exception while reading command line", e);
                 }
-
-                if (commandString != null)
+                finally
                 {
-                    if (!string.IsNullOrWhiteSpace(commandString))
+                    if (!cancellationToken.IsCancellationRequested &&
+                        originalCursorTop == await ConsoleProxy.GetCursorTopAsync(cancellationToken))
                     {
-                        var unusedTask =
-                            this.powerShellContext
-                                .ExecuteScriptString(
-                                    commandString,
-                                    false,
-                                    true,
-                                    true)
-                                .ConfigureAwait(false);
-
-                        break;
-                    }
-                    else
-                    {
-                        this.WriteOutput(string.Empty);
+                        this.WriteLine();
                     }
                 }
+
+                if (!string.IsNullOrWhiteSpace(commandString))
+                {
+                    var unusedTask =
+                        this.powerShellContext
+                            .ExecuteScriptString(
+                                commandString,
+                                false,
+                                true,
+                                true)
+                            .ConfigureAwait(false);
+
+                    break;
+                }
             }
-            while (!cancellationToken.IsCancellationRequested);
         }
 
         private InputPromptHandler CreateInputPromptHandler()
@@ -856,6 +880,12 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void PowerShellContext_DebuggerStop(object sender, System.Management.Automation.DebuggerStopEventArgs e)
         {
+            if (!this.IsCommandLoopRunning)
+            {
+                ((IHostInput)this).StartCommandLoop();
+                return;
+            }
+
             // Cancel any existing prompt first
             this.CancelCommandPrompt();
 
@@ -871,44 +901,49 @@ namespace Microsoft.PowerShell.EditorServices
         private void PowerShellContext_ExecutionStatusChanged(object sender, ExecutionStatusChangedEventArgs eventArgs)
         {
             // The command loop should only be manipulated if it's already started
-            if (this.IsCommandLoopRunning)
+            if (eventArgs.ExecutionStatus == ExecutionStatus.Aborted)
             {
-                if (eventArgs.ExecutionStatus == ExecutionStatus.Aborted)
+                // When aborted, cancel any lingering prompts
+                if (this.activePromptHandler != null)
                 {
-                    // When aborted, cancel any lingering prompts
-                    if (this.activePromptHandler != null)
-                    {
-                        this.activePromptHandler.CancelPrompt();
-                        this.WriteOutput(string.Empty);
-                    }
+                    this.activePromptHandler.CancelPrompt();
+                    this.WriteOutput(string.Empty);
                 }
-                else if (
-                    eventArgs.ExecutionOptions.WriteOutputToHost ||
-                    eventArgs.ExecutionOptions.InterruptCommandPrompt)
+            }
+            else if (
+                eventArgs.ExecutionOptions.WriteOutputToHost ||
+                eventArgs.ExecutionOptions.InterruptCommandPrompt)
+            {
+                // Any command which writes output to the host will affect
+                // the display of the prompt
+                if (eventArgs.ExecutionStatus != ExecutionStatus.Running)
                 {
-                    // Any command which writes output to the host will affect
-                    // the display of the prompt
-                    if (eventArgs.ExecutionStatus != ExecutionStatus.Running)
-                    {
-                        // Execution has completed, start the input prompt
-                        this.ShowCommandPrompt();
-                    }
-                    else
-                    {
-                        // A new command was started, cancel the input prompt
-                        this.CancelCommandPrompt();
-                        this.WriteOutput(string.Empty);
-                    }
+                    // Execution has completed, start the input prompt
+                    this.ShowCommandPrompt();
+                    ((IHostInput)this).StartCommandLoop();
                 }
-                else if (
-                    eventArgs.ExecutionOptions.WriteErrorsToHost &&
-                    (eventArgs.ExecutionStatus == ExecutionStatus.Failed ||
-                        eventArgs.HadErrors))
+                else
                 {
+                    // A new command was started, cancel the input prompt
+                    ((IHostInput)this).StopCommandLoop();
                     this.CancelCommandPrompt();
                     this.WriteOutput(string.Empty);
-                    this.ShowCommandPrompt();
                 }
+            }
+            else if (
+                eventArgs.ExecutionOptions.WriteErrorsToHost &&
+                (eventArgs.ExecutionStatus == ExecutionStatus.Failed ||
+                    eventArgs.HadErrors))
+            {
+                // this.CancelCommandPrompt();
+                // this.WriteOutput(string.Empty);
+                // this.ShowCommandPrompt();
+                // ((IHostInput)this).StopCommandLoop();
+                // this.CancelCommandPrompt();
+                // ((IHostInput)this).StartCommandLoop();
+                // this.ShowCommandPrompt();
+                this.WriteOutput(string.Empty, true);
+                var unusedTask = this.WritePromptStringToHost(CancellationToken.None);
             }
         }
 

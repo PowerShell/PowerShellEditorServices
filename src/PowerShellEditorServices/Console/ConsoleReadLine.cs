@@ -6,7 +6,6 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,8 +19,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
     internal class ConsoleReadLine
     {
         #region Private Field
-        private static IConsoleOperations s_consoleProxy;
-
         private PowerShellContext powerShellContext;
 
         #endregion
@@ -29,18 +26,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
         #region Constructors
         static ConsoleReadLine()
         {
-            // Maybe we should just include the RuntimeInformation package for FullCLR?
-            #if CoreCLR
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                s_consoleProxy = new WindowsConsoleOperations();
-                return;
-            }
-
-            s_consoleProxy = new UnixConsoleOperations();
-            #else
-            s_consoleProxy = new WindowsConsoleOperations();
-            #endif
         }
 
         public ConsoleReadLine(PowerShellContext powerShellContext)
@@ -66,8 +51,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             SecureString secureString = new SecureString();
 
-            int initialPromptRow = Console.CursorTop;
-            int initialPromptCol = Console.CursorLeft;
+            int initialPromptRow = await ConsoleProxy.GetCursorTopAsync(cancellationToken);
+            int initialPromptCol = await ConsoleProxy.GetCursorLeftAsync(cancellationToken);
             int previousInputLength = 0;
 
             Console.TreatControlCAsInput = true;
@@ -114,7 +99,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     }
                     else if (previousInputLength > 0 && currentInputLength < previousInputLength)
                     {
-                        int row = Console.CursorTop, col = Console.CursorLeft;
+                        int row = await ConsoleProxy.GetCursorTopAsync(cancellationToken);
+                        int col = await ConsoleProxy.GetCursorLeftAsync(cancellationToken);
 
                         // Back up the cursor before clearing the character
                         col--;
@@ -146,10 +132,30 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private static async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken)
         {
-            return await s_consoleProxy.ReadKeyAsync(cancellationToken);
+            return await ConsoleProxy.ReadKeyAsync(cancellationToken);
         }
 
         private async Task<string> ReadLine(bool isCommandLine, CancellationToken cancellationToken)
+        {
+            return await this.powerShellContext.InvokeReadLine(isCommandLine, cancellationToken);
+        }
+
+        /// <summary>
+        /// Invokes a custom ReadLine method that is similar to but more basic than PSReadLine.
+        /// This method should be used when PSReadLine is disabled, either by user settings or
+        /// unsupported PowerShell versions.
+        /// </summary>
+        /// <param name="isCommandLine">
+        /// Indicates whether ReadLine should act like a command line.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// The cancellation token that will be checked prior to completing the returned task.
+        /// </param>
+        /// <returns>
+        /// A task object representing the asynchronus operation. The Result property on
+        /// the task object returns the user input string.
+        /// </returns>
+        internal async Task<string> InvokeLegacyReadLine(bool isCommandLine, CancellationToken cancellationToken)
         {
             string inputBeforeCompletion = null;
             string inputAfterCompletion = null;
@@ -160,8 +166,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             StringBuilder inputLine = new StringBuilder();
 
-            int initialCursorCol = Console.CursorLeft;
-            int initialCursorRow = Console.CursorTop;
+            int initialCursorCol = await ConsoleProxy.GetCursorLeftAsync(cancellationToken);
+            int initialCursorRow = await ConsoleProxy.GetCursorTopAsync(cancellationToken);
 
             int initialWindowLeft = Console.WindowLeft;
             int initialWindowTop = Console.WindowTop;
@@ -492,8 +498,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
             int consoleWidth)
         {
             return
-                ((Console.CursorTop - promptStartRow) * consoleWidth) +
-                Console.CursorLeft - promptStartCol;
+                ((ConsoleProxy.GetCursorTop() - promptStartRow) * consoleWidth) +
+                ConsoleProxy.GetCursorLeft() - promptStartCol;
         }
 
         private void CalculateCursorFromIndex(

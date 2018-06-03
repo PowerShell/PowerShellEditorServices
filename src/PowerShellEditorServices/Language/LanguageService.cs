@@ -34,6 +34,7 @@ namespace Microsoft.PowerShell.EditorServices
         private Dictionary<String, List<String>> CmdletToAliasDictionary;
         private Dictionary<String, String> AliasToCmdletDictionary;
         private IDocumentSymbolProvider[] documentSymbolProviders;
+        private SemaphoreSlim aliasHandle = new SemaphoreSlim(1, 1);
 
         const int DefaultWaitTimeoutMilliseconds = 5000;
 
@@ -323,30 +324,39 @@ namespace Microsoft.PowerShell.EditorServices
                 foreach (var fileName in fileMap.Keys)
                 {
                     var file = (ScriptFile)fileMap[fileName];
-                    IEnumerable<SymbolReference> symbolReferencesinFile =
-                    AstOperations
-                        .FindReferencesOfSymbol(
-                            file.ScriptAst,
-                            foundSymbol,
-                            CmdletToAliasDictionary,
-                            AliasToCmdletDictionary)
-                        .Select(
-                            reference =>
-                            {
-                                try
-                                {
-                                    reference.SourceLine =
-                                        file.GetLine(reference.ScriptRegion.StartLineNumber);
-                                }
-                                catch (ArgumentOutOfRangeException e)
-                                {
-                                    reference.SourceLine = string.Empty;
-                                    this.logger.WriteException("Found reference is out of range in script file", e);
-                                }
+                    IEnumerable<SymbolReference> symbolReferencesinFile;
+                    await this.aliasHandle.WaitAsync();
+                    try
+                    {
+                        symbolReferencesinFile =
+                            AstOperations
+                                .FindReferencesOfSymbol(
+                                    file.ScriptAst,
+                                    foundSymbol,
+                                    CmdletToAliasDictionary,
+                                    AliasToCmdletDictionary)
+                                .Select(
+                                    reference =>
+                                    {
+                                        try
+                                        {
+                                            reference.SourceLine =
+                                                file.GetLine(reference.ScriptRegion.StartLineNumber);
+                                        }
+                                        catch (ArgumentOutOfRangeException e)
+                                        {
+                                            reference.SourceLine = string.Empty;
+                                            this.logger.WriteException("Found reference is out of range in script file", e);
+                                        }
 
-                                reference.FilePath = file.FilePath;
-                                return reference;
-                            });
+                                        reference.FilePath = file.FilePath;
+                                        return reference;
+                                    });
+                    }
+                    finally
+                    {
+                        this.aliasHandle.Release();
+                    }
 
                     symbolReferences.AddRange(symbolReferencesinFile);
                 }
@@ -669,21 +679,33 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         private async Task GetAliases()
         {
-            if (!this.areAliasesLoaded)
+            await this.aliasHandle.WaitAsync();
+            try
             {
-                try
+                if (!this.areAliasesLoaded)
                 {
-                    RunspaceHandle runspaceHandle =
-                        await this.powerShellContext.GetRunspaceHandle(
-                            new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
+                    if (this.powerShellContext.IsCurrentRunspaceOutOfProcess())
+                    {
+                        this.areAliasesLoaded = true;
+                        return;
+                    }
 
-                    CommandInvocationIntrinsics invokeCommand = runspaceHandle.Runspace.SessionStateProxy.InvokeCommand;
-                    IEnumerable<CommandInfo> aliases = invokeCommand.GetCommands("*", CommandTypes.Alias, true);
-
-                    runspaceHandle.Dispose();
+                    var aliases = await this.powerShellContext.ExecuteCommand<AliasInfo>(
+                        new PSCommand()
+                            .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
+                            .AddParameter("CommandType", CommandTypes.Alias),
+                        false,
+                        false);
 
                     foreach (AliasInfo aliasInfo in aliases)
                     {
+                        // Using Get-Command will obtain aliases from modules not yet loaded,
+                        // these aliases will not have a definition.
+                        if (string.IsNullOrEmpty(aliasInfo.Definition))
+                        {
+                            continue;
+                        }
+
                         if (!CmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
                         {
                             CmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
@@ -698,19 +720,10 @@ namespace Microsoft.PowerShell.EditorServices
 
                     this.areAliasesLoaded = true;
                 }
-                catch (PSNotSupportedException e)
-                {
-                    this.logger.Write(
-                        LogLevel.Warning,
-                        $"Caught PSNotSupportedException while attempting to get aliases from remote session:\n\n{e.ToString()}");
-
-                    // Prevent the aliases from being fetched again - no point if the remote doesn't support InvokeCommand.
-                    this.areAliasesLoaded = true;
-                }
-                catch (TaskCanceledException)
-                {
-                    // The wait for a RunspaceHandle has timed out, skip aliases for now
-                }
+            }
+            finally
+            {
+                this.aliasHandle.Release();
             }
         }
 

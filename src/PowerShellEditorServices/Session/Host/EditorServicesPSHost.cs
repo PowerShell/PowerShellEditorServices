@@ -26,6 +26,7 @@ namespace Microsoft.PowerShell.EditorServices
         private Guid instanceId = Guid.NewGuid();
         private EditorServicesPSHostUserInterface hostUserInterface;
         private IHostSupportsInteractiveSession hostSupportsInteractiveSession;
+        private PowerShellContext powerShellContext;
 
         #endregion
 
@@ -55,6 +56,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.hostDetails = hostDetails;
             this.hostUserInterface = hostUserInterface;
             this.hostSupportsInteractiveSession = powerShellContext;
+            this.powerShellContext = powerShellContext;
         }
 
         #endregion
@@ -199,8 +201,12 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+<<<<<<< HEAD
+        ///
+=======
         /// Return the actual console host object so that the user can get at
         /// the unproxied methods.
+>>>>>>> 8a1e9bdcdf2c756950b1c4494162582c1b68ccd0
         /// </summary>
         public override PSObject PrivateData
         {
@@ -251,7 +257,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void EnterNestedPrompt()
         {
-            Logger.Write(LogLevel.Verbose, "EnterNestedPrompt() called.");
+            this.powerShellContext.EnterNestedPrompt();
         }
 
         /// <summary>
@@ -259,7 +265,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override void ExitNestedPrompt()
         {
-            Logger.Write(LogLevel.Verbose, "ExitNestedPrompt() called.");
+            this.powerShellContext.ExitNestedPrompt();
         }
 
         /// <summary>

@@ -16,13 +16,14 @@ namespace Microsoft.PowerShell.EditorServices
     using System.Diagnostics;
     using System.Management.Automation;
     using System.Management.Automation.Language;
-    using System.Management.Automation.Runspaces;
 
     /// <summary>
     /// Provides common operations for the syntax tree of a parsed script.
     /// </summary>
     internal static class AstOperations
     {
+        private static readonly SemaphoreSlim s_completionHandle = new SemaphoreSlim(1, 1);
+
         /// <summary>
         /// Gets completions for the symbol found in the Ast at
         /// the given file offset.
@@ -55,88 +56,95 @@ namespace Microsoft.PowerShell.EditorServices
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            var type = scriptAst.Extent.StartScriptPosition.GetType();
-            var method =
+            if (!s_completionHandle.Wait(0))
+            {
+                return null;
+            }
+
+            try
+            {
+                var type = scriptAst.Extent.StartScriptPosition.GetType();
+                var method =
 #if CoreCLR
-                type.GetMethod(
-                    "CloneWithNewOffset",
-                    BindingFlags.Instance | BindingFlags.NonPublic);
+                    type.GetMethod(
+                        "CloneWithNewOffset",
+                        BindingFlags.Instance | BindingFlags.NonPublic);
 #else
-                type.GetMethod(
-                    "CloneWithNewOffset",
-                    BindingFlags.Instance | BindingFlags.NonPublic,
-                    null,
-                    new[] { typeof(int) }, null);
+                    type.GetMethod(
+                        "CloneWithNewOffset",
+                        BindingFlags.Instance | BindingFlags.NonPublic,
+                        null,
+                        new[] { typeof(int) }, null);
 #endif
 
-            IScriptPosition cursorPosition =
-                (IScriptPosition)method.Invoke(
-                    scriptAst.Extent.StartScriptPosition,
-                    new object[] { fileOffset });
+                IScriptPosition cursorPosition =
+                    (IScriptPosition)method.Invoke(
+                        scriptAst.Extent.StartScriptPosition,
+                        new object[] { fileOffset });
 
-            logger.Write(
-                LogLevel.Verbose,
-                string.Format(
-                    "Getting completions at offset {0} (line: {1}, column: {2})",
-                    fileOffset,
-                    cursorPosition.LineNumber,
-                    cursorPosition.ColumnNumber));
+                logger.Write(
+                    LogLevel.Verbose,
+                    string.Format(
+                        "Getting completions at offset {0} (line: {1}, column: {2})",
+                        fileOffset,
+                        cursorPosition.LineNumber,
+                        cursorPosition.ColumnNumber));
 
-            CommandCompletion commandCompletion = null;
-            if (powerShellContext.IsDebuggerStopped)
-            {
-                PSCommand command = new PSCommand();
-                command.AddCommand("TabExpansion2");
-                command.AddParameter("Ast", scriptAst);
-                command.AddParameter("Tokens", currentTokens);
-                command.AddParameter("PositionOfCursor", cursorPosition);
-                command.AddParameter("Options", null);
-
-                PSObject outputObject =
-                    (await powerShellContext.ExecuteCommand<PSObject>(command, false, false))
-                        .FirstOrDefault();
-
-                if (outputObject != null)
+                if (!powerShellContext.IsAvailable)
                 {
-                    ErrorRecord errorRecord = outputObject.BaseObject as ErrorRecord;
-                    if (errorRecord != null)
+                    return null;
+                }
+
+                Stopwatch stopwatch = new Stopwatch();
+
+                // If the current runspace is out of process we can use
+                // CommandCompletion.CompleteInput because PSReadLine won't be taking up the
+                // main runspace.
+                if (powerShellContext.IsCurrentRunspaceOutOfProcess())
+                {
+                    using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandle(cancellationToken))
+                    using (PowerShell powerShell = PowerShell.Create())
                     {
-                        logger.WriteException(
-                            "Encountered an error while invoking TabExpansion2 in the debugger",
-                            errorRecord.Exception);
-                    }
-                    else
-                    {
-                        commandCompletion = outputObject.BaseObject as CommandCompletion;
+                        powerShell.Runspace = runspaceHandle.Runspace;
+                        stopwatch.Start();
+                        try
+                        {
+                            return CommandCompletion.CompleteInput(
+                                scriptAst,
+                                currentTokens,
+                                cursorPosition,
+                                null,
+                                powerShell);
+                        }
+                        finally
+                        {
+                            stopwatch.Stop();
+                            logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
+                        }
                     }
                 }
-            }
-            else if (powerShellContext.CurrentRunspace.Runspace.RunspaceAvailability ==
-                        RunspaceAvailability.Available)
-            {
-                using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandle(cancellationToken))
-                using (PowerShell powerShell = PowerShell.Create())
-                {
-                    powerShell.Runspace = runspaceHandle.Runspace;
 
-                    Stopwatch stopwatch = new Stopwatch();
-                    stopwatch.Start();
-
-                    commandCompletion =
-                        CommandCompletion.CompleteInput(
+                CommandCompletion commandCompletion = null;
+                await powerShellContext.InvokeOnPipelineThread(
+                    pwsh =>
+                    {
+                        stopwatch.Start();
+                        commandCompletion = CommandCompletion.CompleteInput(
                             scriptAst,
                             currentTokens,
                             cursorPosition,
                             null,
-                            powerShell);
+                            pwsh);
+                    });
+                stopwatch.Stop();
+                logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
 
-                    stopwatch.Stop();
-
-                    logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
-                }
+                return commandCompletion;
             }
-
-            return commandCompletion;
+            finally
+            {
+                s_completionHandle.Release();
+            }
         }
 
         /// <summary>
