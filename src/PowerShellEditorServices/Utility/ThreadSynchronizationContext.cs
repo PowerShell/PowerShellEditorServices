@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         #region Constructors
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public ThreadSynchronizationContext(ILogger logger)

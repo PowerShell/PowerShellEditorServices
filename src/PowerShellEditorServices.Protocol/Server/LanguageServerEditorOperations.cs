@@ -149,10 +149,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         public Task SaveFile(string filePath)
         {
+            return SaveFile(filePath, null);
+        }
+
+        public Task SaveFile(string currentPath, string newSavePath)
+        {
             return
                 this.messageSender.SendRequest(
                     SaveFileRequest.Type,
-                    filePath,
+                    new SaveFileDetails
+                    {
+                        FilePath = currentPath,
+                        NewPath = newSavePath
+                    },
                     true);
         }
 

@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Gets a string containing the full contents of the file.
         /// </summary>
-        public string Contents 
+        public string Contents
         {
             get
             {
@@ -175,7 +175,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="filePath">The path at which the script file resides.</param>
         /// <param name="clientFilePath">The path which the client uses to identify the file.</param>
         /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
-        public ScriptFile (
+        public ScriptFile(
             string filePath,
             string clientFilePath,
             Version powerShellVersion)
@@ -184,9 +184,9 @@ namespace Microsoft.PowerShell.EditorServices
                   clientFilePath,
                   File.ReadAllText(filePath),
                   powerShellVersion)
-            {
+        {
 
-            }
+        }
 
         #endregion
 
@@ -315,52 +315,64 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="fileChange">The FileChange to apply to the file's contents.</param>
         public void ApplyChange(FileChange fileChange)
         {
-            this.ValidatePosition(fileChange.Line, fileChange.Offset);
-            this.ValidatePosition(fileChange.EndLine, fileChange.EndOffset);
-
             // Break up the change lines
             string[] changeLines = fileChange.InsertString.Split('\n');
 
-            // Get the first fragment of the first line
-            string firstLineFragment = 
+            if (fileChange.IsReload)
+            {
+                this.FileLines.Clear();
+                foreach (var changeLine in changeLines)
+                {
+                    this.FileLines.Add(changeLine);
+                }
+            }
+            else
+            {
+                this.ValidatePosition(fileChange.Line, fileChange.Offset);
+                this.ValidatePosition(fileChange.EndLine, fileChange.EndOffset);
+
+                // Get the first fragment of the first line
+                string firstLineFragment =
                 this.FileLines[fileChange.Line - 1]
                     .Substring(0, fileChange.Offset - 1);
 
-            // Get the last fragment of the last line
-            string endLine = this.FileLines[fileChange.EndLine - 1];
-            string lastLineFragment = 
+                // Get the last fragment of the last line
+                string endLine = this.FileLines[fileChange.EndLine - 1];
+                string lastLineFragment =
                 endLine.Substring(
-                    fileChange.EndOffset - 1, 
+                    fileChange.EndOffset - 1,
                     (this.FileLines[fileChange.EndLine - 1].Length - fileChange.EndOffset) + 1);
 
-            // Remove the old lines
-            for (int i = 0; i <= fileChange.EndLine - fileChange.Line; i++)
-            {
-                this.FileLines.RemoveAt(fileChange.Line - 1); 
-            }
-
-            // Build and insert the new lines
-            int currentLineNumber = fileChange.Line;
-            for (int changeIndex = 0; changeIndex < changeLines.Length; changeIndex++)
-            {
-                // Since we split the lines above using \n, make sure to
-                // trim the ending \r's off as well.
-                string finalLine = changeLines[changeIndex].TrimEnd('\r');
-
-                // Should we add first or last line fragments?
-                if (changeIndex == 0)
+                // Remove the old lines
+                for (int i = 0; i <= fileChange.EndLine - fileChange.Line; i++)
                 {
-                    // Append the first line fragment
-                    finalLine = firstLineFragment + finalLine;
-                }
-                if (changeIndex == changeLines.Length - 1)
-                {
-                    // Append the last line fragment
-                    finalLine = finalLine + lastLineFragment;
+                    this.FileLines.RemoveAt(fileChange.Line - 1);
                 }
 
-                this.FileLines.Insert(currentLineNumber - 1, finalLine);
-                currentLineNumber++;
+                // Build and insert the new lines
+                int currentLineNumber = fileChange.Line;
+                for (int changeIndex = 0; changeIndex < changeLines.Length; changeIndex++)
+                {
+                    // Since we split the lines above using \n, make sure to
+                    // trim the ending \r's off as well.
+                    string finalLine = changeLines[changeIndex].TrimEnd('\r');
+
+                    // Should we add first or last line fragments?
+                    if (changeIndex == 0)
+                    {
+                        // Append the first line fragment
+                        finalLine = firstLineFragment + finalLine;
+                    }
+                    if (changeIndex == changeLines.Length - 1)
+                    {
+                        // Append the last line fragment
+                        finalLine = finalLine + lastLineFragment;
+                    }
+
+                    this.FileLines.Insert(currentLineNumber - 1, finalLine);
+                    currentLineNumber++;
+                }
+
             }
 
             // Parse the script again to be up-to-date
@@ -381,12 +393,12 @@ namespace Microsoft.PowerShell.EditorServices
 
             int offset = 0;
 
-            for(int i = 0; i < lineNumber; i++)
+            for (int i = 0; i < lineNumber; i++)
             {
                 if (i == lineNumber - 1)
                 {
                     // Subtract 1 to account for 1-based column numbering
-                    offset += columnNumber - 1; 
+                    offset += columnNumber - 1;
                 }
                 else
                 {
@@ -430,7 +442,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A new BufferPosition containing the position of the offset.</returns>
         public BufferPosition GetPositionAtOffset(int bufferOffset)
         {
-            BufferRange bufferRange = 
+            BufferRange bufferRange =
                 GetRangeBetweenOffsets(
                     bufferOffset, bufferOffset);
 
@@ -572,7 +584,7 @@ namespace Microsoft.PowerShell.EditorServices
                 var parseError =
                     new ParseError(
                         null,
-                        ex.ErrorRecord.FullyQualifiedErrorId, 
+                        ex.ErrorRecord.FullyQualifiedErrorId,
                         ex.Message);
 
                 parseErrors = new[] { parseError };
@@ -585,12 +597,12 @@ namespace Microsoft.PowerShell.EditorServices
                 parseErrors
                     .Select(ScriptFileMarker.FromParseError)
                     .ToArray();
-            
+
             //Get all dot sourced referenced files and store  them
             this.ReferencedFiles =
                 AstOperations.FindDotSourcedIncludes(this.ScriptAst);
         }
 
-#endregion
+        #endregion
     }
 }

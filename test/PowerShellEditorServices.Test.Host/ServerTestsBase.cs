@@ -10,13 +10,16 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Host
 {
     public class ServerTestsBase
     {
+        private static int sessionCounter;
         private Process serviceProcess;
         protected IMessageSender messageSender;
         protected IMessageHandlers messageHandlers;
@@ -32,15 +35,31 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             bool waitForDebugger = false)
         {
             string modulePath = Path.GetFullPath(@"..\..\..\..\..\module");
-            string scriptPath = Path.Combine(modulePath, "Start-EditorServices.ps1");
+            string scriptPath = Path.GetFullPath(Path.Combine(modulePath, @"PowerShellEditorServices\Start-EditorServices.ps1"));
+
+            if (!File.Exists(scriptPath))
+            {
+                throw new IOException(String.Format("Bad start script path: '{0}'", scriptPath));
+            }
 
 #if CoreCLR
-            FileVersionInfo fileVersionInfo =
-                FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
+            Assembly assembly = this.GetType().GetTypeInfo().Assembly;
 #else
-            FileVersionInfo fileVersionInfo =
-                FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
+            Assembly assembly = this.GetType().Assembly;
 #endif
+
+            string assemblyPath = new Uri(assembly.CodeBase).LocalPath;
+            FileVersionInfo fileVersionInfo =
+                FileVersionInfo.GetVersionInfo(assemblyPath);
+
+            string sessionPath =
+                Path.Combine(
+                    Path.GetDirectoryName(assemblyPath), $"session-{++sessionCounter}.json");
+
+            if (File.Exists(sessionPath))
+            {
+                File.Delete(sessionPath);
+            }
 
             string editorServicesModuleVersion =
                 string.Format(
@@ -50,16 +69,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     fileVersionInfo.FileBuildPart);
 
             string scriptArgs =
-                string.Format(
                     "\"" + scriptPath + "\" " +
-                    "-EditorServicesVersion \"{0}\" " +
                     "-HostName \\\"PowerShell Editor Services Test Host\\\" " +
                     "-HostProfileId \"Test.PowerShellEditorServices\" " +
                     "-HostVersion \"1.0.0\" " +
                     "-BundledModulesPath \\\"" + modulePath + "\\\" " +
                     "-LogLevel \"Verbose\" " +
-                    "-LogPath \"" + logPath + "\" ",
-                   editorServicesModuleVersion);
+                    "-LogPath \"" + logPath + "\" " +
+                    "-SessionDetailsPath \"" + sessionPath + "\" " +
+                    "-FeatureFlags @() " +
+                    "-AdditionalModules @() ";
 
             if (waitForDebugger)
             {
@@ -94,41 +113,45 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             // Start the process
             this.serviceProcess.Start();
 
-            // Wait for the server to finish initializing
-            Task<string> stdoutTask = this.serviceProcess.StandardOutput.ReadLineAsync();
-            Task<string> stderrTask = this.serviceProcess.StandardError.ReadLineAsync();
-            Task<string> completedRead = await Task.WhenAny<string>(stdoutTask, stderrTask);
+            string sessionDetailsText = string.Empty;
 
-            if (completedRead == stdoutTask)
+            // Wait up to ~5 seconds for the server to finish initializing
+            var maxRetryAttempts = 10;
+            while (maxRetryAttempts-- > 0)
             {
-                JObject result = JObject.Parse(completedRead.Result);
-                if (result["status"].Value<string>() == "started")
+                if (this.serviceProcess.HasExited)
                 {
-                    return new Tuple<int, int>(
-                        result["languageServicePort"].Value<int>(),
-                        result["debugServicePort"].Value<int>());
+                    throw new Exception(String.Format("Server host process quit unexpectedly: '{0}'", this.serviceProcess.StandardError.ReadToEnd()));
                 }
 
-                return null;
-            }
-            else
-            {
-                // Must have read an error?  Keep reading from error stream
-                string errorString = completedRead.Result;
-                Task<string> errorRead = this.serviceProcess.StandardError.ReadToEndAsync();
-
-                // Lets give the read operation 5 seconds to complete. Ideally, it shouldn't
-                // take that long at all, but just in case...
-                if (errorRead.Wait(5000))
+                try
                 {
-                    if (!string.IsNullOrEmpty(errorRead.Result))
+                    using (var stream = new FileStream(sessionPath, FileMode.Open, FileAccess.Read, FileShare.None))
+                    using (var reader = new StreamReader(stream))
                     {
-                        errorString += errorRead.Result + Environment.NewLine;
+                        sessionDetailsText = reader.ReadToEnd();
+                        break;
                     }
                 }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Session details at '{sessionPath}' not available: {ex.Message}");
+                }
 
-                throw new Exception("Could not launch powershell.exe:\r\n\r\n" + errorString);
+                Thread.Sleep(500);
             }
+
+            JObject result = JObject.Parse(sessionDetailsText);
+            if (result["status"].Value<string>() == "started")
+            {
+                return new Tuple<int, int>(
+                    result["languageServicePort"].Value<int>(),
+                    result["debugServicePort"].Value<int>());
+            }
+
+            Debug.WriteLine($"Failed to read session details from '{sessionPath}'");
+
+            return null;
         }
 
         protected void KillService()

@@ -38,10 +38,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8));
 
-            this.logger =
-                new FileLogger(
-                    testLogPath + "-client.log",
-                    LogLevel.Verbose);
+            this.logger = Logging.CreateLogger()
+                            .LogLevel(LogLevel.Verbose)
+                            .AddLogFile(testLogPath + "-client.log")
+                            .Build();
 
             testLogPath += "-server.log";
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);
@@ -826,7 +826,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.StartsWith("5.", versionDetails.Version);
             Assert.StartsWith("5.", versionDetails.DisplayVersion);
             Assert.Equal("Desktop", versionDetails.Edition);
-            Assert.Equal("x86", versionDetails.Architecture);
+
+            string expectedArchitecture = (IntPtr.Size == 8) ? "x64" : "x86";
+            Assert.Equal(expectedArchitecture, versionDetails.Architecture);
         }
 
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)

@@ -40,23 +40,34 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private Dictionary<string, Dictionary<string, MarkerCorrection>> codeActionsPerFile =
             new Dictionary<string, Dictionary<string, MarkerCorrection>>();
 
+        private TaskCompletionSource<bool> serverCompletedTask;
+
         public IEditorOperations EditorOperations
         {
             get { return this.editorOperations; }
         }
 
-        /// <param name="hostDetails">
-        /// Provides details about the host application.
-        /// </param>
+        /// <summary>
+        /// Initializes a new language server that is used for handing language server protocol messages
+        /// </summary>
+        /// <param name="editorSession">The editor session that handles the PowerShell runspace</param>
+        /// <param name="messageHandlers">An object that manages all of the message handlers</param>
+        /// <param name="messageSender">The message sender</param>
+        /// <param name="serverCompletedTask">A TaskCompletionSource<bool> that will be completed to stop the running process</param>
+        /// <param name="logger">The logger.</param>
         public LanguageServer(
             EditorSession editorSession,
             IMessageHandlers messageHandlers,
             IMessageSender messageSender,
+            TaskCompletionSource<bool> serverCompletedTask,
             ILogger logger)
         {
             this.Logger = logger;
             this.editorSession = editorSession;
+            this.serverCompletedTask = serverCompletedTask;
+            // Attach to the underlying PowerShell context to listen for changes in the runspace or execution status
             this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;
+            this.editorSession.PowerShellContext.ExecutionStatusChanged += PowerShellContext_ExecutionStatusChanged;
 
             // Attach to ExtensionService events
             this.editorSession.ExtensionService.CommandAdded += ExtensionService_ExtensionAdded;
@@ -143,7 +154,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             Logger.Write(LogLevel.Normal, "Language service is shutting down...");
 
-            // TODO: Raise an event so that the host knows to shut down
+            // complete the task so that the host knows to shut down
+            this.serverCompletedTask.SetResult(true);
 
             return Task.FromResult(true);
         }
@@ -154,7 +166,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<object> requestContext)
         {
             // Allow the implementor to shut down gracefully
-            await this.Stop();
 
             await requestContext.SendResult(new object());
         }
@@ -1273,6 +1284,18 @@ function __Expand-Alias {
                 new Protocol.LanguageServer.RunspaceDetails(e.NewRunspace));
         }
 
+        /// <summary>
+        /// Event hook on the PowerShell context to listen for changes in script execution status
+        /// </summary>
+        /// <param name="sender">the PowerShell context sending the execution event</param>
+        /// <param name="e">details of the execution status change</param>
+        private async void PowerShellContext_ExecutionStatusChanged(object sender, ExecutionStatusChangedEventArgs e)
+        {
+            await this.messageSender.SendEvent(
+                ExecutionStatusChangedEvent.Type,
+                e);
+        }
+
         private async void ExtensionService_ExtensionAdded(object sender, EditorCommand e)
         {
             await this.messageSender.SendEvent(
@@ -1348,13 +1371,16 @@ function __Expand-Alias {
         {
             // The protocol's positions are zero-based so add 1 to all offsets
 
+            if (changeRange == null) return new FileChange { InsertString = insertString, IsReload = true };
+
             return new FileChange
             {
                 InsertString = insertString,
                 Line = changeRange.Start.Line + 1,
                 Offset = changeRange.Start.Character + 1,
                 EndLine = changeRange.End.Line + 1,
-                EndOffset = changeRange.End.Character + 1
+                EndOffset = changeRange.End.Character + 1,
+                IsReload = false
             };
         }
 

@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
 
         public async Task InitializeAsync()
         {
-            var logger = new NullLogger();
+            var logger = Logging.NullLogger;
             this.powerShellContext = PowerShellContextFactory.Create(logger);
             await this.powerShellContext.ImportCommandsModule(@"..\..\..\..\..\module\PowerShellEditorServices\Commands");
 
@@ -174,7 +174,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
 
     public class TestEditorOperations : IEditorOperations
     {
-        
+
         public string GetWorkspacePath()
         {
             throw new NotImplementedException();
@@ -206,6 +206,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
         }
 
         public Task SaveFile(string filePath)
+        {
+            return SaveFile(filePath, null);
+        }
+
+        public Task SaveFile(string filePath, string newSavePath)
         {
             throw new NotImplementedException();
         }

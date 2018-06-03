@@ -33,6 +33,7 @@ docs/_site/
 docs/_repo/
 docs/metadata/
 tools/
+*.zip
 
 # quickbuild.exe
 /VersionGeneratingLogs/
@@ -68,3 +69,6 @@ module/PowerShellEditorServices/Third\ Party\ Notices.txt
 
 # Visual Studio for Mac generated file
 *.userprefs
+
+# JetBrains generated file (Rider, intelliJ)
+.idea/

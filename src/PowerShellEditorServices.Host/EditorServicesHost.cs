@@ -29,6 +29,25 @@ namespace Microsoft.PowerShell.EditorServices.Host
         Ended
     }
 
+    public enum EditorServiceTransportType
+    {
+        Tcp,
+        NamedPipe,
+        Stdio
+    }
+
+    public class EditorServiceTransportConfig
+    {
+        public EditorServiceTransportType TransportType { get; set; }
+        /// <summary>
+        /// Configures the endpoint of the transport.
+        /// For Tcp it's an integer specifying the port.
+        /// For Stdio it's ignored.
+        /// For NamedPipe it's the pipe name.
+        /// </summary>
+        public string Endpoint { get; set; }
+    }
+
     /// <summary>
     /// Provides a simplified interface for hosting the language and debug services
     /// over the named pipe server protocol.
@@ -37,31 +56,30 @@ namespace Microsoft.PowerShell.EditorServices.Host
     {
         #region Private Fields
 
-        private ILogger logger;
-        private bool enableConsoleRepl;
-        private HostDetails hostDetails;
-        private ProfilePaths profilePaths;
+        private string[] additionalModules;
         private string bundledModulesPath;
         private DebugAdapter debugAdapter;
-        private string[] additionalModules;
         private EditorSession editorSession;
+        private bool enableConsoleRepl;
         private HashSet<string> featureFlags;
+        private HostDetails hostDetails;
         private LanguageServer languageServer;
-
-        private TcpSocketServerListener languageServiceListener;
-        private TcpSocketServerListener debugServiceListener;
-
+        private ILogger logger;
+        private ProfilePaths profilePaths;
         private TaskCompletionSource<bool> serverCompletedTask;
+
+        private IServerListener languageServiceListener;
+        private IServerListener debugServiceListener;
 
         #endregion
 
         #region Properties
 
-        public EditorServicesHostStatus Status { get; private set; }
+        public int DebugServicePort { get; private set; }
 
         public int LanguageServicePort { get; private set; }
 
-        public int DebugServicePort { get; private set; }
+        public EditorServicesHostStatus Status { get; private set; }
 
         #endregion
 
@@ -89,6 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.bundledModulesPath = bundledModulesPath;
             this.additionalModules = additionalModules ?? new string[0];
             this.featureFlags = new HashSet<string>(featureFlags ?? new string[0]);
+            this.serverCompletedTask = new TaskCompletionSource<bool>();
 
 #if DEBUG
             if (waitForDebugger)
@@ -121,7 +140,10 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// <param name="logLevel">The minimum level of log messages to be written.</param>
         public void StartLogging(string logFilePath, LogLevel logLevel)
         {
-            this.logger = new FileLogger(logFilePath, logLevel);
+            this.logger = Logging.CreateLogger()
+                            .LogLevel(logLevel)
+                            .AddLogFile(logFilePath)
+                            .Build();
 
 #if CoreCLR
             FileVersionInfo fileVersionInfo =
@@ -164,15 +186,11 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// </summary>
         /// <param name="languageServicePort">The port number for the language service.</param>
         /// <param name="profilePaths">The object containing the profile paths to load for this session.</param>
-        public void StartLanguageService(int languageServicePort, ProfilePaths profilePaths)
+        public void StartLanguageService(EditorServiceTransportConfig config, ProfilePaths profilePaths)
         {
             this.profilePaths = profilePaths;
 
-            this.languageServiceListener =
-                new TcpSocketServerListener(
-                    MessageProtocolType.LanguageServer,
-                    languageServicePort,
-                    this.logger);
+            this.languageServiceListener = CreateServiceListener(MessageProtocolType.LanguageServer, config);
 
             this.languageServiceListener.ClientConnect += this.OnLanguageServiceClientConnect;
             this.languageServiceListener.Start();
@@ -180,13 +198,13 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.logger.Write(
                 LogLevel.Normal,
                 string.Format(
-                    "Language service started, listening on port {0}",
-                    languageServicePort));
+                    "Language service started, type = {0}, endpoint = {1}",
+                    config.TransportType, config.Endpoint));
         }
 
         private async void OnLanguageServiceClientConnect(
             object sender,
-            TcpSocketServerChannel serverChannel)
+            ChannelBase serverChannel)
         {
             MessageDispatcher messageDispatcher = new MessageDispatcher(this.logger);
 
@@ -211,6 +229,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     this.editorSession,
                     messageDispatcher,
                     protocolEndpoint,
+                    this.serverCompletedTask,
                     this.logger);
 
             await this.editorSession.PowerShellContext.ImportCommandsModule(
@@ -238,27 +257,22 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// </summary>
         /// <param name="debugServicePort">The port number for the debug service.</param>
         public void StartDebugService(
-            int debugServicePort,
+            EditorServiceTransportConfig config,
             ProfilePaths profilePaths,
             bool useExistingSession)
         {
-            this.debugServiceListener =
-                new TcpSocketServerListener(
-                    MessageProtocolType.DebugAdapter,
-                    debugServicePort,
-                    this.logger);
-
+            this.debugServiceListener = CreateServiceListener(MessageProtocolType.DebugAdapter, config);
             this.debugServiceListener.ClientConnect += OnDebugServiceClientConnect;
             this.debugServiceListener.Start();
 
             this.logger.Write(
                 LogLevel.Normal,
                 string.Format(
-                    "Debug service started, listening on port {0}",
-                    debugServicePort));
+                    "Debug service started, type = {0}, endpoint = {1}",
+                    config.TransportType, config.Endpoint));
         }
 
-        private void OnDebugServiceClientConnect(object sender, TcpSocketServerChannel serverChannel)
+        private void OnDebugServiceClientConnect(object sender, ChannelBase serverChannel)
         {
             MessageDispatcher messageDispatcher = new MessageDispatcher(this.logger);
 
@@ -300,7 +314,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                         this.logger.Write(
                             LogLevel.Normal,
                             "Previous debug session ended, restarting debug service listener...");
-
+                        this.debugServiceListener.Stop();
                         this.debugServiceListener.Start();
                     }
                     else if (this.debugAdapter.IsUsingTempIntegratedConsole)
@@ -338,7 +352,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
         public void WaitForCompletion()
         {
             // TODO: We need a way to know when to complete this task!
-            this.serverCompletedTask = new TaskCompletionSource<bool>();
             this.serverCompletedTask.Task.Wait();
         }
 
@@ -443,6 +456,31 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     e.ExceptionObject.ToString()));
         }
 #endif
+        private IServerListener CreateServiceListener(MessageProtocolType protocol, EditorServiceTransportConfig config)
+        {
+            switch (config.TransportType)
+            {
+                case EditorServiceTransportType.Tcp:
+                {
+                    return new TcpSocketServerListener(protocol, int.Parse(config.Endpoint), this.logger);
+                }
+
+                case EditorServiceTransportType.Stdio:
+                {
+                    return new StdioServerListener(protocol, this.logger);
+                }
+
+                case EditorServiceTransportType.NamedPipe:
+                {
+                    return new NamedPipeServerListener(protocol, config.Endpoint, this.logger);
+                }
+
+                default:
+                {
+                    throw new NotSupportedException();
+                }
+            }
+        }
 
         #endregion
     }

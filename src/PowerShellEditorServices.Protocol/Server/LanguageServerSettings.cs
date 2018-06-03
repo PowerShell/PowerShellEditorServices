@@ -95,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     logger.Write(LogLevel.Verbose, $"Using Script Analyzer settings path - '{settingsPath ?? ""}'.");
                 }
                 catch (Exception ex) when (
-                    ex is NotSupportedException || 
+                    ex is NotSupportedException ||
                     ex is PathTooLongException ||
                     ex is SecurityException)
                 {

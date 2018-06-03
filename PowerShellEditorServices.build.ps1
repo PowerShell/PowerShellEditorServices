@@ -5,7 +5,13 @@
 
 param(
     [ValidateSet("Debug", "Release")]
-    [string]$Configuration = "Debug"
+    [string]$Configuration = "Debug",
+
+    [string]$PsesSubmodulePath = "$PSScriptRoot/module",
+
+    [string]$ModulesJsonPath = "$PSScriptRoot/modules.json",
+
+    [string]$DefaultModuleRepository = "PSGallery"
 )
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
@@ -13,6 +19,7 @@ param(
 $script:IsCIBuild = $env:APPVEYOR -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:TargetFrameworksParam = "/p:TargetFrameworks=\`"$(if (!$script:IsUnix) { "net451;" })netstandard1.6\`""
+$script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
 
 if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
@@ -37,8 +44,17 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
     }
 
     # Make sure the dotnet we found is the right version
-    if ($dotnetExePath -and (& $dotnetExePath --version) -eq $requiredSdkVersion) {
-        $script:dotnetExe = $dotnetExePath
+    if ($dotnetExePath) {
+        # dotnet --version can return a semver that System.Version can't handle
+        # e.g.: 2.1.300-preview-01. The replace operator is used to remove any build suffix.
+        $version = (& $dotnetExePath --version) -replace '[+-].*$',''
+        if ([version]$version -ge [version]$requiredSdkVersion) {
+            $script:dotnetExe = $dotnetExePath
+        }
+        else {
+            # Clear the path so that we invoke installation
+            $script:dotnetExe = $null
+        }
     }
     else {
         # Clear the path so that we invoke installation
@@ -78,7 +94,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
         $env:DOTNET_INSTALL_DIR = $dotnetExeDir
     }
 
-    Write-Host "`n### Using dotnet v$requiredSDKVersion at path $script:dotnetExe`n" -ForegroundColor Green
+    Write-Host "`n### Using dotnet v$(& $script:dotnetExe --version) at path $script:dotnetExe`n" -ForegroundColor Green
 }
 
 task Clean {
@@ -161,16 +177,16 @@ task TestServer -If { !$script:IsUnix } {
     exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
 }
 
-task TestProtocol -If { !$script:IsUnix} {
+task TestProtocol -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
     exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
 }
 
-task TestHost -If { !$script:IsUnix} {
+task TestHost -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild -x86 }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
 }
 
 task CITest ?Test, {
@@ -188,6 +204,8 @@ task LayoutModule -After Build {
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop -Type Directory | Out-Null
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Core -Type Directory | Out-Null
 
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
     if ($Configuration -eq 'Debug') {
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
@@ -196,6 +214,8 @@ task LayoutModule -After Build {
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\libdisablekeyecho.* -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
     if (!$script:IsUnix) {
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net451\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop
+
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
         if ($Configuration -eq 'Debug') {
             Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
@@ -217,6 +237,67 @@ task LayoutModule -After Build {
     if (!$script:IsUnix) {
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
     }
+}
+
+task RestorePsesModules -After Build {
+    $submodulePath = (Resolve-Path $PsesSubmodulePath).Path + [IO.Path]::DirectorySeparatorChar
+    Write-Host "`nRestoring EditorServices modules..."
+
+    # Read in the modules.json file as a hashtable so it can be splatted
+    $moduleInfos = @{}
+
+    (Get-Content -Raw $ModulesJsonPath | ConvertFrom-Json).PSObject.Properties | ForEach-Object {
+        $name = $_.Name
+        $body = @{
+            Name = $name
+            MinimumVersion = $_.Value.MinimumVersion
+            MaximumVersion = $_.Value.MaximumVersion
+            Repository = if ($_.Value.Repository) { $_.Value.Repository } else { $DefaultModuleRepository }
+            Path = $submodulePath
+        }
+
+        if (-not $name)
+        {
+            throw "EditorServices module listed without name in '$ModulesJsonPath'"
+        }
+
+        if ($script:SaveModuleSupportsAllowPrerelease)
+        {
+            $body += @{ AllowPrerelease = $_.Value.AllowPrerelease }
+        }
+
+        $moduleInfos.Add($name, $body)
+    }
+
+    # Save each module in the modules.json file
+    foreach ($moduleName in $moduleInfos.Keys)
+    {
+        if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName))
+        {
+            Write-Host "`tModule '${moduleName}' already detected. Skipping"
+            continue
+        }
+
+        $moduleInstallDetails = $moduleInfos[$moduleName]
+
+        $splatParameters = @{
+           Name = $moduleName
+           MinimumVersion = $moduleInstallDetails.MinimumVersion
+           MaximumVersion = $moduleInstallDetails.MaximumVersion
+           Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
+           Path = $submodulePath
+        }
+
+        if ($script:SaveModuleSupportsAllowPrerelease)
+        {
+            $splatParameters += @{ AllowPrerelease = $moduleInstallDetails.AllowPrerelease }
+        }
+
+        Write-Host "`tInstalling module: ${moduleName}"
+
+        Save-Module @splatParameters
+    }
+    Write-Host "`n"
 }
 
 task BuildCmdletHelp {

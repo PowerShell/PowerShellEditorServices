@@ -4,7 +4,7 @@
   <PropertyGroup>
     <AssemblyTitle>PowerShell Editor Services, Visual Studio Code Extensions</AssemblyTitle>
     <Description>Provides added functionality to PowerShell Editor Services for the Visual Studio Code editor.</Description>
-    <TargetFrameworks>net451;netstandard1.6</TargetFrameworks>
+    <TargetFrameworks>netstandard1.6;net451</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.VSCode</AssemblyName>
   </PropertyGroup>
 

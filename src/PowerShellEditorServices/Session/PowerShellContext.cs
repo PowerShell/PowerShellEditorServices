@@ -1022,15 +1022,14 @@ namespace Microsoft.PowerShell.EditorServices
 
                 Collection<PSObject> results = pipeline.Invoke();
 
-                if (results.Count == 0)
+                if (results.Count == 0 || results.FirstOrDefault() == null)
                 {
                     return defaultValue;
                 }
 
                 if (typeof(TResult) != typeof(PSObject))
                 {
-                    return
-                       results
+                    return results
                             .Select(pso => pso.BaseObject)
                             .OfType<TResult>()
                             .FirstOrDefault();

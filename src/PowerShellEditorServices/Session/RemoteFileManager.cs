@@ -199,14 +199,14 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 [string] $PSEditModule
             )
 
-            Register-EngineEvent -SourceIdentifier PSESRemoteSessionOpenFile -Forward
+            Register-EngineEvent -SourceIdentifier PSESRemoteSessionOpenFile -Forward -SupportEvent
             New-Module -ScriptBlock ([Scriptblock]::Create($PSEditModule)) -Name PSEdit | Import-Module -Global
         ";
 
         private const string RemovePSEditFunctionScript = @"
             Get-Module PSEdit | Remove-Module
 
-            Get-EventSubscriber -SourceIdentifier PSESRemoteSessionOpenFile -EA Ignore | Unregister-Event
+            Unregister-Event -SourceIdentifier PSESRemoteSessionOpenFile -Force -ErrorAction Ignore
         ";
 
         private const string SetRemoteContentsScript = @"

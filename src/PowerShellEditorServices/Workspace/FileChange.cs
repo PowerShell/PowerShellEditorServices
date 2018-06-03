@@ -34,5 +34,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// The 1-based column offset where the change ends.
         /// </summary>
         public int EndOffset { get; set; }
+
+        /// <summary>
+        /// Indicates that the InsertString is an overwrite
+        /// of the content, and all stale content and metadata
+        /// should be discarded.
+        /// </summary>
+        public bool IsReload { get; set; }
     }
 }

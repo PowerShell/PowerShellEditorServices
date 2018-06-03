@@ -13,6 +13,7 @@ using System.Management.Automation;
 using System.Collections.Generic;
 using System.Text;
 using System.Collections;
+using System.IO;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -26,17 +27,12 @@ namespace Microsoft.PowerShell.EditorServices
 
         private const int NumRunspaces = 1;
 
-        private ILogger logger;
-        private RunspacePool analysisRunspacePool;
-        private PSModuleInfo scriptAnalyzerModuleInfo;
+        private const string PSSA_MODULE_NAME = "PSScriptAnalyzer";
 
-        private bool hasScriptAnalyzerModule
-        {
-            get
-            {
-                return scriptAnalyzerModuleInfo != null;
-            }
-        }
+        private ILogger _logger;
+        private RunspacePool _analysisRunspacePool;
+
+        private bool _hasScriptAnalyzerModule;
 
         private string[] activeRules;
         private string settingsPath;
@@ -108,25 +104,30 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public AnalysisService(string settingsPath, ILogger logger)
         {
-            this.logger = logger;
+            this._logger = logger;
 
             try
             {
                 this.SettingsPath = settingsPath;
 
-                scriptAnalyzerModuleInfo = FindPSScriptAnalyzerModule(logger);
-                var sessionState = InitialSessionState.CreateDefault2();
-                sessionState.ImportPSModulesFromPath(scriptAnalyzerModuleInfo.ModuleBase);
+                if (!(_hasScriptAnalyzerModule = VerifyPSScriptAnalyzerAvailable()))
+                {
+                    throw new Exception("PSScriptAnalyzer module not available");
+                }
+
+                // Create a base session state with PSScriptAnalyzer loaded
+                InitialSessionState sessionState = InitialSessionState.CreateDefault2();
+                sessionState.ImportPSModule(new [] { PSSA_MODULE_NAME });
 
                 // runspacepool takes care of queuing commands for us so we do not
                 // need to worry about executing concurrent commands
-                this.analysisRunspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
+                this._analysisRunspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
 
                 // having more than one runspace doesn't block code formatting if one
                 // runspace is occupied for diagnostics
-                this.analysisRunspacePool.SetMaxRunspaces(NumRunspaces);
-                this.analysisRunspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
-                this.analysisRunspacePool.Open();
+                this._analysisRunspacePool.SetMaxRunspaces(NumRunspaces);
+                this._analysisRunspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
+                this._analysisRunspacePool.Open();
 
                 ActiveRules = IncludedRules.ToArray();
                 EnumeratePSScriptAnalyzerCmdlets();
@@ -137,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices
                 var sb = new StringBuilder();
                 sb.AppendLine("PSScriptAnalyzer cannot be imported, AnalysisService will be disabled.");
                 sb.AppendLine(e.Message);
-                this.logger.Write(LogLevel.Warning, sb.ToString());
+                this._logger.Write(LogLevel.Warning, sb.ToString());
             }
         }
 
@@ -234,7 +235,7 @@ namespace Microsoft.PowerShell.EditorServices
         public IEnumerable<string> GetPSScriptAnalyzerRules()
         {
             List<string> ruleNames = new List<string>();
-            if (hasScriptAnalyzerModule)
+            if (_hasScriptAnalyzerModule)
             {
                 var ruleObjects = InvokePowerShell("Get-ScriptAnalyzerRule", new Dictionary<string, object>());
                 foreach (var rule in ruleObjects)
@@ -259,7 +260,7 @@ namespace Microsoft.PowerShell.EditorServices
             int[] rangeList)
         {
             // we cannot use Range type therefore this workaround of using -1 default value
-            if (!hasScriptAnalyzerModule)
+            if (!_hasScriptAnalyzerModule)
             {
                 return null;
             }
@@ -282,11 +283,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void Dispose()
         {
-            if (this.analysisRunspacePool != null)
+            if (this._analysisRunspacePool != null)
             {
-                this.analysisRunspacePool.Close();
-                this.analysisRunspacePool.Dispose();
-                this.analysisRunspacePool = null;
+                this._analysisRunspacePool.Close();
+                this._analysisRunspacePool.Dispose();
+                this._analysisRunspacePool = null;
             }
         }
 
@@ -299,7 +300,7 @@ namespace Microsoft.PowerShell.EditorServices
             string[] rules,
             TSettings settings) where TSettings : class
         {
-            if (hasScriptAnalyzerModule
+            if (_hasScriptAnalyzerModule
                 && file.IsAnalysisEnabled)
             {
                 return await GetSemanticMarkersAsync<TSettings>(
@@ -332,44 +333,9 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private static PSModuleInfo FindPSScriptAnalyzerModule(ILogger logger)
-        {
-            using (var ps = System.Management.Automation.PowerShell.Create())
-            {
-                ps.AddCommand("Get-Module")
-                  .AddParameter("ListAvailable")
-                  .AddParameter("Name", "PSScriptAnalyzer");
-
-                ps.AddCommand("Sort-Object")
-                  .AddParameter("Descending")
-                  .AddParameter("Property", "Version");
-
-                ps.AddCommand("Select-Object")
-                  .AddParameter("First", 1);
-
-                var modules = ps.Invoke<PSModuleInfo>();
-                var psModuleInfo = modules == null ? null : modules.FirstOrDefault();
-                if (psModuleInfo != null)
-                {
-                    logger.Write(
-                        LogLevel.Normal,
-                            string.Format(
-                                "PSScriptAnalyzer found at {0}",
-                                psModuleInfo.Path));
-
-                    return psModuleInfo;
-                }
-
-                logger.Write(
-                    LogLevel.Normal,
-                    "PSScriptAnalyzer module was not found.");
-                return null;
-            }
-        }
-
         private void EnumeratePSScriptAnalyzerCmdlets()
         {
-            if (hasScriptAnalyzerModule)
+            if (_hasScriptAnalyzerModule)
             {
                 var sb = new StringBuilder();
                 var commands = InvokePowerShell(
@@ -386,13 +352,13 @@ namespace Microsoft.PowerShell.EditorServices
 
                 sb.AppendLine("The following cmdlets are available in the imported PSScriptAnalyzer module:");
                 sb.AppendLine(String.Join(Environment.NewLine, commandNames.Select(s => "    " + s)));
-                this.logger.Write(LogLevel.Verbose, sb.ToString());
+                this._logger.Write(LogLevel.Verbose, sb.ToString());
             }
         }
 
         private void EnumeratePSScriptAnalyzerRules()
         {
-            if (hasScriptAnalyzerModule)
+            if (_hasScriptAnalyzerModule)
             {
                 var rules = GetPSScriptAnalyzerRules();
                 var sb = new StringBuilder();
@@ -402,7 +368,7 @@ namespace Microsoft.PowerShell.EditorServices
                     sb.AppendLine(rule);
                 }
 
-                this.logger.Write(LogLevel.Verbose, sb.ToString());
+                this._logger.Write(LogLevel.Verbose, sb.ToString());
             }
         }
 
@@ -421,7 +387,7 @@ namespace Microsoft.PowerShell.EditorServices
                 return diagnosticRecords;
             }
 
-            if (hasScriptAnalyzerModule
+            if (_hasScriptAnalyzerModule
                 && (typeof(TSettings) == typeof(string)
                     || typeof(TSettings) == typeof(Hashtable)))
             {
@@ -448,7 +414,7 @@ namespace Microsoft.PowerShell.EditorServices
                     });
             }
 
-            this.logger.Write(
+            this._logger.Write(
                 LogLevel.Verbose,
                 String.Format("Found {0} violations", diagnosticRecords.Count()));
 
@@ -460,7 +426,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             using (var powerShell = System.Management.Automation.PowerShell.Create())
             {
-                powerShell.RunspacePool = this.analysisRunspacePool;
+                powerShell.RunspacePool = this._analysisRunspacePool;
                 powerShell.AddCommand(command);
                 foreach (var kvp in paramArgMap)
                 {
@@ -472,13 +438,19 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     result = powerShell.Invoke()?.ToArray();
                 }
+                catch (CommandNotFoundException ex)
+                {
+                    // This exception is possible if the module path loaded
+                    // is wrong even though PSScriptAnalyzer is available as a module
+                    this._logger.Write(LogLevel.Error, ex.Message);
+                }
                 catch (CmdletInvocationException ex)
                 {
                     // We do not want to crash EditorServices for exceptions caused by cmdlet invocation.
                     // Two main reasons that cause the exception are:
                     // * PSCmdlet.WriteOutput being called from another thread than Begin/Process
                     // * CompositionContainer.ComposeParts complaining that "...Only one batch can be composed at a time"
-                    this.logger.Write(LogLevel.Error, ex.Message);
+                    this._logger.Write(LogLevel.Error, ex.Message);
                 }
 
                 return result;
@@ -493,6 +465,25 @@ namespace Microsoft.PowerShell.EditorServices
             });
 
             return await task;
+        }
+
+        private bool VerifyPSScriptAnalyzerAvailable()
+        {
+            using (var ps = System.Management.Automation.PowerShell.Create())
+            {
+                ps.AddCommand("Get-Module")
+                    .AddParameter("ListAvailable")
+                    .AddParameter("Name", PSSA_MODULE_NAME);
+
+                try
+                {
+                    return ps.Invoke()?.Any() ?? false;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
         }
 
         #endregion //private methods
