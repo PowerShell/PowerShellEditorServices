@@ -19,30 +19,6 @@ namespace Microsoft.PowerShell.EditorServices.Session {
                 $ExecutionContext,
                 $args[0])";
 
-        // private const string ReadLineScript = @"
-        //     [System.Diagnostics.DebuggerHidden()]
-        //     [System.Diagnostics.DebuggerStepThrough()]
-        //     param(
-        //         [Parameter(Mandatory)]
-        //         [Threading.CancellationToken] $CancellationToken,
-
-        //         [ValidateNotNull()]
-        //         [runspace] $Runspace = $Host.Runspace,
-
-        //         [ValidateNotNull()]
-        //         [System.Management.Automation.EngineIntrinsics] $EngineIntrinsics = $ExecutionContext
-        //     )
-        //     end {
-        //         if ($CancellationToken.IsCancellationRequested) {
-        //             return [string]::Empty
-        //         }
-
-        //         return [Microsoft.PowerShell.PSConsoleReadLine]::ReadLine(
-        //             $Runspace,
-        //             $EngineIntrinsics,
-        //             $CancellationToken)
-        //     }";
-
         private const string ReadLineInitScript = @"
             [System.Diagnostics.DebuggerHidden()]
             [System.Diagnostics.DebuggerStepThrough()]

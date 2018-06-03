@@ -526,7 +526,6 @@ namespace Microsoft.PowerShell.EditorServices
                     // If a ReadLine pipeline is running in the debugger then we'll hang here
                     // if we don't cancel it. Typically we can rely on OnExecutionStatusChanged but
                     // the pipeline request won't even start without clearing the current task.
-                    // await this.PromptContext.AbortReadLineAsync();
                     this.ConsoleReader.StopCommandLoop();
                 }
 
@@ -1199,7 +1198,6 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     // Set the result so that the execution thread resumes.
                     // The execution thread will clean up the task.
-
                     if (shouldWaitForExit)
                     {
                         this.PromptNest.WaitForCurrentFrameExit(
@@ -1510,9 +1508,9 @@ namespace Microsoft.PowerShell.EditorServices
             await ExecuteCommand<PSObject>(
                 new PSCommand().AddCommand("Set-Location").AddParameter("Path", path),
                 null,
-                false,
-                false,
-                false);
+                sendOutputToHost: false,
+                sendErrorToHost: false,
+                addToHistory: false);
         }
 
         /// <summary>
@@ -1633,7 +1631,9 @@ namespace Microsoft.PowerShell.EditorServices
             if (debuggerResumeAction.HasValue)
             {
                 // Resume the debugger with the specificed action
-                this.ResumeDebugger(debuggerResumeAction.Value, false);
+                this.ResumeDebugger(
+                    debuggerResumeAction.Value,
+                    shouldWaitForExit: false);
             }
 
             return output;

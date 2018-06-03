@@ -62,6 +62,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// Determines whether to display the pressed key in the console window.
         /// true to not display the pressed key; otherwise, false.
         /// </param>
+        /// <param name="cancellationToken">
+        /// The <see cref="CancellationToken" /> that can be used to cancel the request.
+        /// </param>
         /// <returns>
         /// An object that describes the ConsoleKey constant and Unicode character, if any,
         /// that correspond to the pressed console key. The ConsoleKeyInfo object also describes,

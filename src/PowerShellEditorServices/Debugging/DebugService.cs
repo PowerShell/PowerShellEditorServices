@@ -936,53 +936,43 @@ namespace Microsoft.PowerShell.EditorServices
 
             var callStackFrames = results.ToArray();
 
-            // If access to stackFrameDetails isn't controlled there is a race condition where
-            // the array isn't finished populating before
-            // await this.stackFramesHandle.WaitAsync();
-            // try
-            // {
-                this.stackFrameDetails = new StackFrameDetails[callStackFrames.Length];
+            this.stackFrameDetails = new StackFrameDetails[callStackFrames.Length];
 
-                for (int i = 0; i < callStackFrames.Length; i++)
+            for (int i = 0; i < callStackFrames.Length; i++)
+            {
+                VariableContainerDetails autoVariables =
+                    new VariableContainerDetails(
+                        this.nextVariableId++,
+                        VariableContainerDetails.AutoVariablesName);
+
+                this.variables.Add(autoVariables);
+
+                VariableContainerDetails localVariables =
+                    await FetchVariableContainer(i.ToString(), autoVariables);
+
+                // When debugging, this is the best way I can find to get what is likely the workspace root.
+                // This is controlled by the "cwd:" setting in the launch config.
+                string workspaceRootPath = this.powerShellContext.InitialWorkingDirectory;
+
+                this.stackFrameDetails[i] =
+                    StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables, workspaceRootPath);
+
+                string stackFrameScriptPath = this.stackFrameDetails[i].ScriptPath;
+                if (scriptNameOverride != null &&
+                    string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
-                    VariableContainerDetails autoVariables =
-                        new VariableContainerDetails(
-                            this.nextVariableId++,
-                            VariableContainerDetails.AutoVariablesName);
-
-                    this.variables.Add(autoVariables);
-
-                    VariableContainerDetails localVariables =
-                        await FetchVariableContainer(i.ToString(), autoVariables);
-
-                    // When debugging, this is the best way I can find to get what is likely the workspace root.
-                    // This is controlled by the "cwd:" setting in the launch config.
-                    string workspaceRootPath = this.powerShellContext.InitialWorkingDirectory;
-
-                    this.stackFrameDetails[i] =
-                        StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables, workspaceRootPath);
-
-                    string stackFrameScriptPath = this.stackFrameDetails[i].ScriptPath;
-                    if (scriptNameOverride != null &&
-                        string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
-                    {
-                        this.stackFrameDetails[i].ScriptPath = scriptNameOverride;
-                    }
-                    else if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                        this.remoteFileManager != null &&
-                        !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
-                    {
-                        this.stackFrameDetails[i].ScriptPath =
-                            this.remoteFileManager.GetMappedPath(
-                                stackFrameScriptPath,
-                                this.powerShellContext.CurrentRunspace);
-                    }
+                    this.stackFrameDetails[i].ScriptPath = scriptNameOverride;
                 }
-            // }
-            // finally
-            // {
-            //     this.stackFramesHandle.Release();
-            // }
+                else if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                    this.remoteFileManager != null &&
+                    !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
+                {
+                    this.stackFrameDetails[i].ScriptPath =
+                        this.remoteFileManager.GetMappedPath(
+                            stackFrameScriptPath,
+                            this.powerShellContext.CurrentRunspace);
+                }
+            }
         }
 
         /// <summary>

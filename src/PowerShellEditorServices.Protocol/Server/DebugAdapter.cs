@@ -803,7 +803,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         i));
             }
 
-            await requestContext.SendResult( new StackTraceResponseBody
+            await requestContext.SendResult(
+                new StackTraceResponseBody
                 {
                     StackFrames = newStackFrames.ToArray(),
                     TotalFrames = newStackFrames.Count
