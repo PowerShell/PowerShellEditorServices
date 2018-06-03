@@ -45,8 +45,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// on Unix platforms.
         /// </summary>
         /// <returns>
-        /// A <see cref="Task{int}" /> representing the asynchronous operation. The
-        /// <see cref="Task{int}.Result" /> property will return the horizontal position
+        /// A <see cref="Task{T}" /> representing the asynchronous operation. The
+        /// <see cref="Task{T}.Result" /> property will return the horizontal position
         /// of the console cursor.
         /// </returns>
         Task<int> GetCursorLeftAsync();
@@ -59,8 +59,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
         /// <returns>
-        /// A <see cref="Task{int}" /> representing the asynchronous operation. The
-        /// <see cref="Task{int}.Result" /> property will return the horizontal position
+        /// A <see cref="Task{T}" /> representing the asynchronous operation. The
+        /// <see cref="Task{T}.Result" /> property will return the horizontal position
         /// of the console cursor.
         /// </returns>
         Task<int> GetCursorLeftAsync(CancellationToken cancellationToken);
@@ -91,8 +91,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// on Unix platforms.
         /// </summary>
         /// <returns>
-        /// A <see cref="Task{int}" /> representing the asynchronous operation. The
-        /// <see cref="Task{int}.Result" /> property will return the vertical position
+        /// A <see cref="Task{T}" /> representing the asynchronous operation. The
+        /// <see cref="Task{T}.Result" /> property will return the vertical position
         /// of the console cursor.
         /// </returns>
         Task<int> GetCursorTopAsync();
@@ -105,8 +105,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
         /// <returns>
-        /// A <see cref="Task{int}" /> representing the asynchronous operation. The
-        /// <see cref="Task{int}.Result" /> property will return the vertical position
+        /// A <see cref="Task{T}" /> representing the asynchronous operation. The
+        /// <see cref="Task{T}.Result" /> property will return the vertical position
         /// of the console cursor.
         /// </returns>
         Task<int> GetCursorTopAsync(CancellationToken cancellationToken);

@@ -526,7 +526,7 @@ namespace Microsoft.PowerShell.EditorServices
                     // If a ReadLine pipeline is running in the debugger then we'll hang here
                     // if we don't cancel it. Typically we can rely on OnExecutionStatusChanged but
                     // the pipeline request won't even start without clearing the current task.
-                    this.ConsoleReader.StopCommandLoop();
+                    this.ConsoleReader?.StopCommandLoop();
                 }
 
                 // Send the pipeline execution request to the pipeline thread
@@ -994,7 +994,16 @@ namespace Microsoft.PowerShell.EditorServices
         /// </remarks>
         internal async Task InvokeOnPipelineThread(Action<PowerShell> invocationAction)
         {
-            await this.InvocationEventQueue.InvokeOnPipelineThread(invocationAction);
+            if (this.PromptNest.IsReadLineBusy())
+            {
+                await this.InvocationEventQueue.InvokeOnPipelineThread(invocationAction);
+                return;
+            }
+
+            // If this is invoked when ReadLine isn't busy then there shouldn't be any running
+            // pipelines. Right now this method is only used by command completion which doesn't
+            // actually require running on the pipeline thread, as long as nothing else is running.
+            invocationAction.Invoke(this.PromptNest.GetPowerShell());
         }
 
         internal async Task<string> InvokeReadLine(bool isCommandLine, CancellationToken cancellationToken)
@@ -1105,12 +1114,8 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     if (shouldAbortDebugSession)
                     {
-                        this.PromptNest.WaitForCurrentFrameExit(
-                            frame =>
-                            {
-                                this.versionSpecificOperations.StopCommandInDebugger(this);
-                                this.ResumeDebugger(DebuggerResumeAction.Stop);
-                            });
+                        this.versionSpecificOperations.StopCommandInDebugger(this);
+                        this.ResumeDebugger(DebuggerResumeAction.Stop);
                     }
                     else
                     {
@@ -1204,7 +1209,7 @@ namespace Microsoft.PowerShell.EditorServices
                             frame =>
                             {
                                 frame.ThreadController.StartThreadExit(resumeAction);
-                                this.ConsoleReader.StopCommandLoop();
+                                this.ConsoleReader?.StopCommandLoop();
                                 if (this.SessionState != PowerShellContextState.Ready)
                                 {
                                     this.versionSpecificOperations.StopCommandInDebugger(this);
@@ -1214,7 +1219,7 @@ namespace Microsoft.PowerShell.EditorServices
                     else
                     {
                         this.PromptNest.GetThreadController().StartThreadExit(resumeAction);
-                        this.ConsoleReader.StopCommandLoop();
+                        this.ConsoleReader?.StopCommandLoop();
                         if (this.SessionState != PowerShellContextState.Ready)
                         {
                             this.versionSpecificOperations.StopCommandInDebugger(this);
@@ -1435,8 +1440,8 @@ namespace Microsoft.PowerShell.EditorServices
                     null));
 
             // Reset command loop mainly for PSReadLine
-            this.ConsoleReader.StopCommandLoop();
-            this.ConsoleReader.StartCommandLoop();
+            this.ConsoleReader?.StopCommandLoop();
+            this.ConsoleReader?.StartCommandLoop();
 
             var localPipelineExecutionTask = localThreadController.TakeExecutionRequest();
             var localDebuggerStoppedTask = localThreadController.Exit();
@@ -1456,7 +1461,7 @@ namespace Microsoft.PowerShell.EditorServices
                     continue;
                 }
 
-                this.ConsoleReader.StopCommandLoop();
+                this.ConsoleReader?.StopCommandLoop();
                 this.PromptNest.PopPromptContext();
                 break;
             }
@@ -1477,7 +1482,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             // Stop the command input loop so PSReadLine isn't invoked between ExitNestedPrompt
             // being invoked and EnterNestedPrompt getting the message to exit.
-            this.ConsoleReader.StopCommandLoop();
+            this.ConsoleReader?.StopCommandLoop();
             this.PromptNest.GetThreadController().StartThreadExit(DebuggerResumeAction.Stop);
         }
 
@@ -2064,14 +2069,14 @@ namespace Microsoft.PowerShell.EditorServices
             handler = (runspace, eventArgs) =>
             {
                 if (eventArgs.RunspaceAvailability != RunspaceAvailability.Available ||
-                    ((Runspace)runspace).Debugger.InBreakpoint)
+                    this.versionSpecificOperations.IsDebuggerStopped(this.PromptNest, (Runspace)runspace))
                 {
                     return;
                 }
 
                 ((Runspace)runspace).AvailabilityChanged -= handler;
                 this.isCommandLoopRestarterSet = false;
-                this.ConsoleReader.StartCommandLoop();
+                this.ConsoleReader?.StartCommandLoop();
             };
 
             this.CurrentRunspace.Runspace.AvailabilityChanged += handler;
@@ -2179,7 +2184,9 @@ namespace Microsoft.PowerShell.EditorServices
 
                     this.logger.Write(LogLevel.Verbose, "Pipeline thread execution completed.");
 
-                    if (!this.CurrentRunspace.Runspace.Debugger.InBreakpoint)
+                    if (!this.versionSpecificOperations.IsDebuggerStopped(
+                        this.PromptNest,
+                        this.CurrentRunspace.Runspace))
                     {
                         if (this.CurrentRunspace.Context == RunspaceContext.DebuggedRunspace)
                         {

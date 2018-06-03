@@ -640,11 +640,19 @@ namespace Microsoft.PowerShell.EditorServices
 
         private async Task WritePromptStringToHost(CancellationToken cancellationToken)
         {
-            if (this.lastPromptLocation != null &&
-                this.lastPromptLocation.X == await ConsoleProxy.GetCursorLeftAsync(cancellationToken) &&
-                this.lastPromptLocation.Y == await ConsoleProxy.GetCursorTopAsync(cancellationToken))
+            try
             {
-                return;
+                if (this.lastPromptLocation != null &&
+                    this.lastPromptLocation.X == await ConsoleProxy.GetCursorLeftAsync(cancellationToken) &&
+                    this.lastPromptLocation.Y == await ConsoleProxy.GetCursorTopAsync(cancellationToken))
+                {
+                    return;
+                }
+            }
+            // When output is redirected (like when running tests) attempting to get
+            // the cursor position will throw.
+            catch (System.IO.IOException)
+            {
             }
 
             PSCommand promptCommand = new PSCommand().AddScript("prompt");
@@ -935,13 +943,6 @@ namespace Microsoft.PowerShell.EditorServices
                 (eventArgs.ExecutionStatus == ExecutionStatus.Failed ||
                     eventArgs.HadErrors))
             {
-                // this.CancelCommandPrompt();
-                // this.WriteOutput(string.Empty);
-                // this.ShowCommandPrompt();
-                // ((IHostInput)this).StopCommandLoop();
-                // this.CancelCommandPrompt();
-                // ((IHostInput)this).StartCommandLoop();
-                // this.ShowCommandPrompt();
                 this.WriteOutput(string.Empty, true);
                 var unusedTask = this.WritePromptStringToHost(CancellationToken.None);
             }

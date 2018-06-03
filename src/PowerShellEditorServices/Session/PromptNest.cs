@@ -27,6 +27,8 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private object _syncObject = new object();
 
+        private object _disposeSyncObject = new object();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="PromptNest" /> class.
         /// </summary>
@@ -107,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         protected virtual void Dispose(bool disposing)
         {
-            lock (_syncObject)
+            lock (_disposeSyncObject)
             {
                 if (_isDisposed || !disposing)
                 {
@@ -297,8 +299,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         }
 
         /// <summary>
-        /// Releases control of the <see cref="Runspace" /> aquired via the
-        /// <see cref="RunspaceHandle" />.
+        /// Releases control of the runspace aquired via the <see cref="RunspaceHandle" />.
         /// </summary>
         /// <param name="runspaceHandle">
         /// The <see cref="RunspaceHandle" /> representing the control to release.
@@ -318,8 +319,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         }
 
         /// <summary>
-        /// Releases control of the <see cref="Runspace" /> aquired via the
-        /// <see cref="RunspaceHandle" />.
+        /// Releases control of the runspace aquired via the <see cref="RunspaceHandle" />.
         /// </summary>
         /// <param name="runspaceHandle">
         /// The <see cref="RunspaceHandle" /> representing the control to release.

@@ -126,9 +126,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             await this.LaunchScript(DebugScriptPath);
 
-            // Skip the first 2 lines which just report the script
+            // Skip the first 3 lines which just report the script
             // that is being executed
-            await outputReader.ReadLines(2);
+            await outputReader.ReadLines(3);
 
             // Make sure we're getting output from the script
             Assert.Equal("Output 1", await outputReader.ReadLine());
