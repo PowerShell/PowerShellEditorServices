@@ -74,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Constructors
 
-        public AnalysisService(RunspacePool analysisRunspacePool, string pssaSettingsPath, IEnumerable<string> activeRules, ILogger logger)
+        private AnalysisService(RunspacePool analysisRunspacePool, string pssaSettingsPath, IEnumerable<string> activeRules, ILogger logger)
         {
             _analysisRunspacePool = analysisRunspacePool;
             SettingsPath = pssaSettingsPath;
