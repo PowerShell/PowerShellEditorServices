@@ -345,12 +345,19 @@ namespace Microsoft.PowerShell.EditorServices
                     {"Module", "PSScriptAnalyzer"}
                 });
 
-                var commandNames = commands?
+                var cmdletInfos = commands?
                     .Select(c => c.ImmediateBaseObject as CmdletInfo)
-                    .Where(c => c != null)
+                    .Where(c => c != null);
+
+                var moduleVersion = cmdletInfos?
+                    .Select(c => c.Version?.ToString())
+                    .FirstOrDefault();
+
+                var commandNames = cmdletInfos?
                     .Select(c => c.Name) ?? Enumerable.Empty<string>();
 
-                sb.AppendLine("The following cmdlets are available in the imported PSScriptAnalyzer module:");
+                sb.Append("The following cmdlets are available in the imported PSScriptAnalyzer module");
+                sb.AppendLine((moduleVersion != null) ? $" (version {moduleVersion}):" : ":");
                 sb.AppendLine(String.Join(Environment.NewLine, commandNames.Select(s => "    " + s)));
                 this._logger.Write(LogLevel.Verbose, sb.ToString());
             }
