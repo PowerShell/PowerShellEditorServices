@@ -575,7 +575,7 @@ function __Expand-Alias {
             bool oldScriptAnalysisEnabled =
                 this.currentSettings.ScriptAnalysis.Enable.HasValue ? this.currentSettings.ScriptAnalysis.Enable.Value : false;
             string oldScriptAnalysisSettingsPath =
-                this.currentSettings.ScriptAnalysis.SettingsPath;
+                this.currentSettings.ScriptAnalysis?.SettingsPath;
 
             this.currentSettings.Update(
                 configChangeParams.Settings.Powershell,
@@ -604,12 +604,15 @@ function __Expand-Alias {
             string newSettingsPath = this.currentSettings.ScriptAnalysis.SettingsPath;
             if (!string.Equals(oldScriptAnalysisSettingsPath, newSettingsPath, StringComparison.OrdinalIgnoreCase))
             {
-                this.editorSession.AnalysisService.SettingsPath = newSettingsPath;
-                settingsPathChanged = true;
+                if (this.editorSession.AnalysisService != null)
+                {
+                    this.editorSession.AnalysisService.SettingsPath = newSettingsPath;
+                    settingsPathChanged = true;
+                }
             }
 
             // If script analysis settings have changed we need to clear & possibly update the current diagnostic records.
-            if ((oldScriptAnalysisEnabled != this.currentSettings.ScriptAnalysis.Enable) || settingsPathChanged)
+            if ((oldScriptAnalysisEnabled != this.currentSettings.ScriptAnalysis?.Enable) || settingsPathChanged)
             {
                 // If the user just turned off script analysis or changed the settings path, send a diagnostics
                 // event to clear the analysis markers that they already have.
@@ -1443,7 +1446,7 @@ function __Expand-Alias {
                     DelayThenInvokeDiagnostics(
                         750,
                         filesToAnalyze,
-                        this.currentSettings.ScriptAnalysis.Enable.Value,
+                        this.currentSettings.ScriptAnalysis?.Enable.Value ?? false,
                         this.codeActionsPerFile,
                         editorSession,
                         eventSender,
