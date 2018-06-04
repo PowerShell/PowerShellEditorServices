@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices
             "PSPossibleIncorrectComparisonWithNull",
             "PSAvoidDefaultValueForMandatoryParameter",
             "PSAvoidTrailingWhitespace",
-            "PossibleIncorrectUsageOfRedirectionOperator"
+            "PSPossibleIncorrectUsageOfRedirectionOperator"
         };
 
         #endregion // Private Fields
