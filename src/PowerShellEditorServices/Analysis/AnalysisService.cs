@@ -55,12 +55,9 @@ namespace Microsoft.PowerShell.EditorServices
             "PSAvoidDefaultValueSwitchParameter",
             "PSUseDeclaredVarsMoreThanAssignments",
             "PSPossibleIncorrectComparisonWithNull",
-            "PSAvoidUsingWriteHost",
-            "PSAvoidUsingEmptyCatchBlock",
-            "PSAvoidUsingWMICmdlet",
-            "PSUseSingularNouns",
-            "PSAvoidUsingInvokeExpression",
-            "PSAvoidDefaultValueForMandatoryParameter"
+            "PSAvoidDefaultValueForMandatoryParameter",
+            "PSAvoidTrailingWhitespace",
+            "PossibleIncorrectUsageOfRedirectionOperator"
         };
 
         #endregion // Private Fields
