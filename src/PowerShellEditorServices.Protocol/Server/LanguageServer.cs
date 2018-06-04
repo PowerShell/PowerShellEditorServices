@@ -99,6 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetEventHandler(ExitNotification.Type, this.HandleExitNotification);
 
             this.messageHandlers.SetRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
+            this.messageHandlers.SetEventHandler(InitializedNotification.Type, this.HandleInitializedNotification);
 
             this.messageHandlers.SetEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotification);
             this.messageHandlers.SetEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotification);
@@ -176,6 +177,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             // Stop the server channel
             await this.Stop();
+        }
+
+        private Task HandleInitializedNotification(InitializedParams initializedParams,
+            EventContext eventContext)
+        {
+            // Can do dynamic registration of capabilities in this notification handler
+            return Task.FromResult(true);
         }
 
         protected async Task HandleInitializeRequest(
