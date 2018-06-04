@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices
             // Script Analyzer binaries are not included.
             try
             {
-                this.AnalysisService = new AnalysisService(settingsPath, this.logger);
+                this.AnalysisService = AnalysisService.Create(settingsPath, this.logger);
             }
             catch (FileNotFoundException)
             {
