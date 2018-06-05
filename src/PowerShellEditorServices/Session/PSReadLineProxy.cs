@@ -30,32 +30,30 @@ namespace Microsoft.PowerShell.EditorServices.Session
         internal PSReadLineProxy(Type psConsoleReadLine)
         {
             ForcePSEventHandling =
-                (Action)GetMethod(
-                    psConsoleReadLine,
+                (Action)psConsoleReadLine.GetMethod(
                     ForcePSEventHandlingMethodName,
-                    Type.EmptyTypes,
                     BindingFlags.Static | BindingFlags.NonPublic)
-                .CreateDelegate(typeof(Action));
+                    ?.CreateDelegate(typeof(Action));
 
-            AddToHistory =
-                (Action<string>)GetMethod(
-                    psConsoleReadLine,
-                    AddToHistoryMethodName,
-                    s_addToHistoryTypes)
-                .CreateDelegate(typeof(Action<string>));
+            AddToHistory = (Action<string>)psConsoleReadLine.GetMethod(
+                AddToHistoryMethodName,
+                s_addToHistoryTypes)
+                ?.CreateDelegate(typeof(Action<string>));
 
             SetKeyHandler =
-                (Action<string[], Action<ConsoleKeyInfo?, object>, string, string>)GetMethod(
-                    psConsoleReadLine,
+                (Action<string[], Action<ConsoleKeyInfo?, object>, string, string>)psConsoleReadLine.GetMethod(
                     SetKeyHandlerMethodName,
                     s_setKeyHandlerTypes)
-                .CreateDelegate(typeof(Action<string[], Action<ConsoleKeyInfo?, object>, string, string>));
+                    ?.CreateDelegate(typeof(Action<string[], Action<ConsoleKeyInfo?, object>, string, string>));
 
             _readKeyOverrideField = psConsoleReadLine.GetTypeInfo().Assembly
                 .GetType(VirtualTerminalTypeName)
                 ?.GetField(ReadKeyOverrideFieldName, BindingFlags.Static | BindingFlags.NonPublic);
 
-            if (_readKeyOverrideField == null)
+            if (_readKeyOverrideField == null ||
+                SetKeyHandler == null ||
+                AddToHistory == null ||
+                ForcePSEventHandling == null)
             {
                 throw new InvalidOperationException();
             }
@@ -70,34 +68,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
         internal void OverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyFunc)
         {
             _readKeyOverrideField.SetValue(null, readKeyFunc);
-        }
-
-        private static MethodInfo GetMethod(
-            Type psConsoleReadLine,
-            string name,
-            Type[] types,
-            BindingFlags flags = BindingFlags.Public | BindingFlags.Static)
-        {
-            // Shouldn't need this compiler directive after switching to netstandard2.0
-            #if CoreCLR
-            var method = psConsoleReadLine.GetMethod(
-                name,
-                flags);
-            #else
-            var method = psConsoleReadLine.GetMethod(
-                name,
-                flags,
-                null,
-                types,
-                types.Length == 0 ? new ParameterModifier[0] : new[] { new ParameterModifier(types.Length) });
-            #endif
-
-            if (method == null)
-            {
-                throw new InvalidOperationException();
-            }
-
-            return method;
         }
     }
 }
