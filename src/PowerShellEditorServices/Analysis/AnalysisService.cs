@@ -26,14 +26,38 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
+        /// <summary>
+        /// Maximum number of runspaces we allow to be in use for script analysis.
+        /// </summary>
         private const int NumRunspaces = 1;
 
+        /// <summary>
+        /// Name of the PSScriptAnalyzer module, to be used for PowerShell module interactions.
+        /// </summary>
         private const string PSSA_MODULE_NAME = "PSScriptAnalyzer";
 
+        /// <summary>
+        /// The minimum version of the PSScriptAnalyzer module with which we maintain
+        /// compatibility.
+        /// </summary>
         private static readonly Version s_pssaMinimumVersion = new Version(1, 16);
 
+        /// <summary>
+        /// Provides logging.
+        /// </summary>
         private ILogger _logger;
+
+        /// <summary>
+        /// Runspace pool to generate runspaces for script analysis and handle
+        /// ansynchronous analysis requests.
+        /// </summary>
         private RunspacePool _analysisRunspacePool;
+
+        /// <summary>
+        /// Info object describing the PSScriptAnalyzer module that has been loaded in
+        /// to provide analysis services.
+        /// </summary>
+        private PSModuleInfo _pssaModuleInfo;
 
         /// <summary>
         /// Defines the list of Script Analyzer rules to include by default if
@@ -74,12 +98,18 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Constructors
 
-        private AnalysisService(RunspacePool analysisRunspacePool, string pssaSettingsPath, IEnumerable<string> activeRules, ILogger logger)
+        private AnalysisService(
+            RunspacePool analysisRunspacePool,
+            string pssaSettingsPath,
+            IEnumerable<string> activeRules,
+            ILogger logger,
+            PSModuleInfo pssaModuleInfo = null)
         {
             _analysisRunspacePool = analysisRunspacePool;
             SettingsPath = pssaSettingsPath;
             ActiveRules = activeRules.ToArray();
             _logger = logger;
+            _pssaModuleInfo = pssaModuleInfo;
         }
 
         #endregion // constructors
@@ -98,12 +128,13 @@ namespace Microsoft.PowerShell.EditorServices
             try
             {
                 RunspacePool analysisRunspacePool;
+                PSModuleInfo pssaModuleInfo;
                 try
                 {
                     // Try and load a PSScriptAnalyzer module with the required version
                     // by looking on the script path. Deep down, this internally runs Get-Module -ListAvailable,
                     // so we'll use this to check whether such a module exists
-                    analysisRunspacePool = CreatePssaRunspacePool();
+                    analysisRunspacePool = CreatePssaRunspacePool(out pssaModuleInfo);
 
                 }
                 catch (Exception e)
@@ -122,7 +153,12 @@ namespace Microsoft.PowerShell.EditorServices
                 analysisRunspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
                 analysisRunspacePool.Open();
 
-                var analysisService = new AnalysisService(analysisRunspacePool, settingsPath, s_includedRules, logger);
+                var analysisService = new AnalysisService(
+                    analysisRunspacePool,
+                    settingsPath,
+                    s_includedRules,
+                    logger,
+                    pssaModuleInfo);
 
                 // Log what features are available in PSSA here
                 analysisService.LogAvailablePssaFeatures();
@@ -326,16 +362,20 @@ namespace Microsoft.PowerShell.EditorServices
                 return;
             }
 
-            PSObject[] modules = InvokePowerShell(
-                "Get-Module",
-                new Dictionary<string, object>{ {"Name", PSSA_MODULE_NAME} });
+            // If we already know the module that was imported, save some work
+            if (_pssaModuleInfo == null)
+            {
+                PSObject[] modules = InvokePowerShell(
+                    "Get-Module",
+                    new Dictionary<string, object>{ {"Name", PSSA_MODULE_NAME} });
 
-            PSModuleInfo pssaModuleInfo = modules
-                .Select(m => m.BaseObject)
-                .OfType<PSModuleInfo>()
-                .FirstOrDefault();
+                _pssaModuleInfo = modules
+                    .Select(m => m.BaseObject)
+                    .OfType<PSModuleInfo>()
+                    .FirstOrDefault();
+            }
 
-            if (pssaModuleInfo == null)
+            if (_pssaModuleInfo == null)
             {
                 throw new Exception("Unable to find loaded PSScriptAnalyzer module for logging");
             }
@@ -344,11 +384,11 @@ namespace Microsoft.PowerShell.EditorServices
             sb.AppendLine("PSScriptAnalyzer successfully imported:");
 
             // Log version
-            sb.AppendLine($"    Version: {pssaModuleInfo.Version}");
+            sb.AppendLine($"    Version: {_pssaModuleInfo.Version}");
 
             // Log exported cmdlets
             sb.AppendLine("    Exported Cmdlets:");
-            foreach (string cmdletName in pssaModuleInfo.ExportedCmdlets.Keys.OrderBy(name => name))
+            foreach (string cmdletName in _pssaModuleInfo.ExportedCmdlets.Keys.OrderBy(name => name))
             {
                 sb.AppendLine("        " + cmdletName);
             }
@@ -462,26 +502,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// session state.
         /// </summary>
         /// <returns>A runspace pool with PSScriptAnalyzer loaded for running script analysis tasks.</returns>
-#if PowerShellv5
-        private static RunspacePool CreatePssaRunspacePool()
-        {
-            // Use public but unfriendly APIs to import a PSScriptAnalyzer module with the needed minimum version
-            var pssaModuleSpec = new ModuleSpecification(new Hashtable()
-            {
-                { "ModuleName", PSSA_MODULE_NAME },
-                { "ModuleVersion", s_pssaMinimumVersion }
-            });
-
-            // Create a base session state with PSScriptAnalyzer loaded
-            InitialSessionState sessionState = InitialSessionState.CreateDefault2();
-            sessionState.ImportPSModule(new [] { pssaModuleSpec });
-
-            // RunspacePool takes care of queuing commands for us so we do not
-            // need to worry about executing concurrent commands
-            return RunspaceFactory.CreateRunspacePool(sessionState);
-        }
-#else
-        private static RunspacePool CreatePssaRunspacePool()
+        private static RunspacePool CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo)
         {
             using (var ps = System.Management.Automation.PowerShell.Create())
             {
@@ -493,8 +514,6 @@ namespace Microsoft.PowerShell.EditorServices
                         .AddParameter("ge")
                         .AddParameter("Value", s_pssaMinimumVersion);
 
-
-                PSModuleInfo pssaModuleInfo;
                 try
                 {
                     pssaModuleInfo = ps.Invoke()?
@@ -521,7 +540,6 @@ namespace Microsoft.PowerShell.EditorServices
                 return RunspaceFactory.CreateRunspacePool(sessionState);
             }
         }
-#endif
 
         #endregion //private methods
     }
