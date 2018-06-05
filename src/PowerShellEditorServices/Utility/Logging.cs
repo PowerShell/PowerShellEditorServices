@@ -45,6 +45,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     public interface ILogger : IDisposable
     {
         /// <summary>
+        /// The minimum log level that this logger instance is configured to log at.
+        /// </summary>
+        LogLevel MinimumConfiguredLogLevel { get; }
+
+        /// <summary>
         /// Write a message with the given severity to the logs.
         /// </summary>
         /// <param name="logLevel">The severity level of the log message.</param>
@@ -180,7 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                     );
                 }
 
-                return new PsesLogger(configuration.CreateLogger());
+                return new PsesLogger(configuration.CreateLogger(), _logLevel);
             }
         }
 

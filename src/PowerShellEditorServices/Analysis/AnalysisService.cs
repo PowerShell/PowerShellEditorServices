@@ -125,8 +125,7 @@ namespace Microsoft.PowerShell.EditorServices
                 var analysisService = new AnalysisService(analysisRunspacePool, settingsPath, s_includedRules, logger);
 
                 // Log what features are available in PSSA here
-                analysisService.LogAvailablePssaCmdlets();
-                analysisService.LogAvailablePssaRules();
+                analysisService.LogAvailablePssaFeatures();
 
                 return analysisService;
             }
@@ -315,43 +314,53 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Write a list of all PSSA cmdlets that are available to the logs.
+        /// Log the features available from the PSScriptAnalyzer module that has been imported
+        /// for use with the AnalysisService.
         /// </summary>
-        private void LogAvailablePssaCmdlets()
+        private void LogAvailablePssaFeatures()
         {
-            var commands = InvokePowerShell(
-                "Get-Command",
-                new Dictionary<string, object>
-                {
-                    {"Module", "PSScriptAnalyzer"}
-                });
-
-            var commandNames = commands?
-                .Select(c => c.ImmediateBaseObject as CmdletInfo)
-                .Where(c => c != null)
-                .Select(c => c.Name) ?? Enumerable.Empty<string>();
-
-            var sb = new StringBuilder();
-            sb.AppendLine("The following cmdlets are available in the imported PSScriptAnalyzer module:");
-            sb.AppendLine(String.Join(Environment.NewLine, commandNames.Select(s => "    " + s)));
-            _logger.Write(LogLevel.Verbose, sb.ToString());
-        }
-
-        /// <summary>
-        /// Write a list of all the available PSSA rules to the logs.
-        /// </summary>
-        private void LogAvailablePssaRules()
-        {
-            var rules = GetPSScriptAnalyzerRules();
-
-            var sb = new StringBuilder();
-            sb.AppendLine("Available PSScriptAnalyzer Rules:");
-            foreach (var rule in rules)
+            // Save ourselves some work here
+            var featureLogLevel = LogLevel.Verbose;
+            if (_logger.MinimumConfiguredLogLevel > featureLogLevel)
             {
-                sb.AppendLine(rule);
+                return;
             }
 
-            _logger.Write(LogLevel.Verbose, sb.ToString());
+            PSObject[] modules = InvokePowerShell(
+                "Get-Module",
+                new Dictionary<string, object>{ {"Name", PSSA_MODULE_NAME} });
+
+            PSModuleInfo pssaModuleInfo = modules
+                .Select(m => m.BaseObject)
+                .OfType<PSModuleInfo>()
+                .FirstOrDefault();
+
+            if (pssaModuleInfo == null)
+            {
+                throw new Exception("Unable to find loaded PSScriptAnalyzer module for logging");
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("PSScriptAnalyzer successfully imported:");
+
+            // Log version
+            sb.AppendLine($"    Version: {pssaModuleInfo.Version}");
+
+            // Log exported cmdlets
+            sb.AppendLine("    Exported Cmdlets:");
+            foreach (string cmdletName in pssaModuleInfo.ExportedCmdlets.Keys.OrderBy(name => name))
+            {
+                sb.AppendLine("        " + cmdletName);
+            }
+
+            // Log available rules
+            sb.AppendLine("    Available Rules:");
+            foreach (string ruleName in GetPSScriptAnalyzerRules())
+            {
+                sb.AppendLine("        " + ruleName);
+            }
+
+            _logger.Write(featureLogLevel, sb.ToString());
         }
 
         private async Task<PSObject[]> GetDiagnosticRecordsAsync<TSettings>(
@@ -464,7 +473,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             // Create a base session state with PSScriptAnalyzer loaded
             InitialSessionState sessionState = InitialSessionState.CreateDefault2();
-            sessionState.ImportPSModule(new [] { pssaModuleSpec });
+            sessionState.ImportPSModule(new ModuleSpecification[] { pssaModuleSpec });
 
             // runspacepool takes care of queuing commands for us so we do not
             // need to worry about executing concurrent commands
