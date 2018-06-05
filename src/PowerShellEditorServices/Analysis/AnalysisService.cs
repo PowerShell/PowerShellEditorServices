@@ -98,6 +98,22 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Constructors
 
+        /// <summary>
+        /// Construct a new AnalysisService object.
+        /// </summary>
+        /// <param name="analysisRunspacePool">
+        /// The runspace pool with PSScriptAnalyzer module loaded that will handle
+        /// analysis tasks.
+        /// </param>
+        /// <param name="pssaSettingsPath">
+        /// The path to the PSScriptAnalyzer settings file to handle analysis settings.
+        /// </param>
+        /// <param name="activeRules">An array of rules to be used for analysis.</param>
+        /// <param name="logger">Maintains logs for the analysis service.</param>
+        /// <param name="pssaModuleInfo">
+        /// Optional module info of the loaded PSScriptAnalyzer module. If not provided,
+        /// the analysis service will populate it, but it can be given here to save time.
+        /// </param>
         private AnalysisService(
             RunspacePool analysisRunspacePool,
             string pssaSettingsPath,
@@ -506,6 +522,8 @@ namespace Microsoft.PowerShell.EditorServices
         {
             using (var ps = System.Management.Automation.PowerShell.Create())
             {
+                // Encode an equivalent of the PowerShell pipeline:
+                //   Get-Module -ListAvailable -Name "PSScriptAnalyzer" | Where-Object -Property "Version" -ge "1.16"
                 ps.AddCommand("Get-Module")
                         .AddParameter("ListAvailable")
                         .AddParameter("Name", PSSA_MODULE_NAME)
