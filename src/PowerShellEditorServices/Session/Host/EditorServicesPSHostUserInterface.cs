@@ -935,7 +935,6 @@ namespace Microsoft.PowerShell.EditorServices
                     // A new command was started, cancel the input prompt
                     ((IHostInput)this).StopCommandLoop();
                     this.CancelCommandPrompt();
-                    this.WriteOutput(string.Empty);
                 }
             }
             else if (
