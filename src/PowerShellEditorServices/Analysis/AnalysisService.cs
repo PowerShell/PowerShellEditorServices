@@ -486,8 +486,13 @@ namespace Microsoft.PowerShell.EditorServices
             using (var ps = System.Management.Automation.PowerShell.Create())
             {
                 ps.AddCommand("Get-Module")
-                    .AddParameter("ListAvailable")
-                    .AddParameter("Name", PSSA_MODULE_NAME);
+                        .AddParameter("ListAvailable")
+                        .AddParameter("Name", PSSA_MODULE_NAME)
+                    .AddCommand("Where-Object")
+                        .AddParameter("Property", "Version")
+                        .AddParameter("ge")
+                        .AddParameter("Value", s_pssaMinimumVersion);
+
 
                 PSModuleInfo pssaModuleInfo;
                 try
