@@ -215,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// Convert an EditorServices log level to a Serilog log level.
         /// </summary>
         /// <param name="logLevel">The EditorServices log level.</param>
-        /// <returns>The Serilog LogEventLevel corresponding to the EditorServices log level.<returns>
+        /// <returns>The Serilog LogEventLevel corresponding to the EditorServices log level.</returns>
         private static LogEventLevel ConvertLogLevel(LogLevel logLevel)
         {
             switch (logLevel)

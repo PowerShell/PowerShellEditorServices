@@ -93,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Returns all registered EditorCommands.
         /// </summary>
-        /// <returns>An Array of all registered EditorCommands.</return>
+        /// <returns>An Array of all registered EditorCommands.</returns>
         public EditorCommand[] GetCommands()
         {
             return this.extensionService.GetCommands();
