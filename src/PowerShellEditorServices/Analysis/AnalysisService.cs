@@ -462,6 +462,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// session state.
         /// </summary>
         /// <returns>A runspace pool with PSScriptAnalyzer loaded for running script analysis tasks.</returns>
+#if PowerShellv5
         private static RunspacePool CreatePssaRunspacePool()
         {
             // Use public but unfriendly APIs to import a PSScriptAnalyzer module with the needed minimum version
@@ -473,12 +474,49 @@ namespace Microsoft.PowerShell.EditorServices
 
             // Create a base session state with PSScriptAnalyzer loaded
             InitialSessionState sessionState = InitialSessionState.CreateDefault2();
-            sessionState.ImportPSModule(new ModuleSpecification[] { pssaModuleSpec });
+            sessionState.ImportPSModule(new [] { pssaModuleSpec });
 
-            // runspacepool takes care of queuing commands for us so we do not
+            // RunspacePool takes care of queuing commands for us so we do not
             // need to worry about executing concurrent commands
             return RunspaceFactory.CreateRunspacePool(sessionState);
         }
+#else
+        private static RunspacePool CreatePssaRunspacePool()
+        {
+            using (var ps = System.Management.Automation.PowerShell.Create())
+            {
+                ps.AddCommand("Get-Module")
+                    .AddParameter("ListAvailable")
+                    .AddParameter("Name", PSSA_MODULE_NAME);
+
+                PSModuleInfo pssaModuleInfo;
+                try
+                {
+                    pssaModuleInfo = ps.Invoke()?
+                        .Select(psObj => psObj.BaseObject)
+                        .OfType<PSModuleInfo>()
+                        .FirstOrDefault();
+                }
+                catch (Exception e)
+                {
+                    throw new Exception("Unable to find PSScriptAnalyzer module", e);
+                }
+
+                if (pssaModuleInfo == null)
+                {
+                    throw new Exception("Unable to find PSScriptAnalyzer module");
+                }
+
+                // Create a base session state with PSScriptAnalyzer loaded
+                InitialSessionState sessionState = InitialSessionState.CreateDefault2();
+                sessionState.ImportPSModule(new [] { pssaModuleInfo.ModuleBase });
+
+                // RunspacePool takes care of queuing commands for us so we do not
+                // need to worry about executing concurrent commands
+                return RunspaceFactory.CreateRunspacePool(sessionState);
+            }
+        }
+#endif
 
         #endregion //private methods
     }
