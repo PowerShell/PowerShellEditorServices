@@ -16,10 +16,13 @@ namespace Microsoft.PowerShell.EditorServices.Session
     internal class InvocationEventQueue
     {
         private readonly PromptNest _promptNest;
+
         private readonly Runspace _runspace;
+
         private readonly PowerShellContext _powerShellContext;
+
         private InvocationRequest _invocationRequest;
-        private Task _currentWaitTask;
+
         private SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
         internal InvocationEventQueue(PowerShellContext powerShellContext, PromptNest promptNest)
