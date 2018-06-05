@@ -53,7 +53,11 @@ namespace Microsoft.PowerShell.EditorServices
             "PSShouldProcess",
             "PSMissingModuleManifestField",
             "PSAvoidDefaultValueSwitchParameter",
-            "PSUseDeclaredVarsMoreThanAssignments"
+            "PSUseDeclaredVarsMoreThanAssignments",
+            "PSPossibleIncorrectComparisonWithNull",
+            "PSAvoidDefaultValueForMandatoryParameter",
+            "PSAvoidTrailingWhitespace",
+            "PSPossibleIncorrectUsageOfRedirectionOperator"
         };
 
         #endregion // Private Fields
