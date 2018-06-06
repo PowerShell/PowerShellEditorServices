@@ -555,6 +555,10 @@ namespace Microsoft.PowerShell.EditorServices
 
         private bool disposedValue = false; // To detect redundant calls
 
+        /// <summary>
+        /// Dispose of this object.
+        /// </summary>
+        /// <param name="disposing">True if the method is called by the Dispose method, false if called by the finalizer.</param>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
