@@ -311,19 +311,6 @@ namespace Microsoft.PowerShell.EditorServices
             return result?.Select(r => r?.ImmediateBaseObject as string).FirstOrDefault();
         }
 
-        /// <summary>
-        /// Disposes the runspace being used by the analysis service.
-        /// </summary>
-        public void Dispose()
-        {
-            if (_analysisRunspacePool != null)
-            {
-                _analysisRunspacePool.Close();
-                _analysisRunspacePool.Dispose();
-                _analysisRunspacePool = null;
-            }
-        }
-
         #endregion // public methods
 
         #region Private Methods
@@ -400,20 +387,23 @@ namespace Microsoft.PowerShell.EditorServices
             sb.AppendLine("PSScriptAnalyzer successfully imported:");
 
             // Log version
-            sb.AppendLine($"    Version: {_pssaModuleInfo.Version}");
+            sb.Append("    Version: ");
+            sb.AppendLine(_pssaModuleInfo.Version.ToString());
 
             // Log exported cmdlets
             sb.AppendLine("    Exported Cmdlets:");
             foreach (string cmdletName in _pssaModuleInfo.ExportedCmdlets.Keys.OrderBy(name => name))
             {
-                sb.AppendLine("        " + cmdletName);
+                sb.Append("    ");
+                sb.AppendLine(cmdletName);
             }
 
             // Log available rules
             sb.AppendLine("    Available Rules:");
             foreach (string ruleName in GetPSScriptAnalyzerRules())
             {
-                sb.AppendLine("        " + ruleName);
+                sb.Append("        ");
+                sb.AppendLine(ruleName);
             }
 
             _logger.Write(featureLogLevel, sb.ToString());
@@ -560,5 +550,35 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         #endregion //private methods
+
+        #region IDisposable Support
+
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _analysisRunspacePool.Close();
+                    _analysisRunspacePool.Dispose();
+                    _analysisRunspacePool = null;
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        /// <summary>
+        /// Clean up all internal resources and dispose of the analysis service.
+        /// </summary>
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+        }
+
+        #endregion
     }
 }
