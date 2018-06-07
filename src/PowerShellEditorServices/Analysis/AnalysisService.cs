@@ -37,12 +37,6 @@ namespace Microsoft.PowerShell.EditorServices
         private const string PSSA_MODULE_NAME = "PSScriptAnalyzer";
 
         /// <summary>
-        /// The minimum version of the PSScriptAnalyzer module with which we maintain
-        /// compatibility.
-        /// </summary>
-        private static readonly Version s_pssaMinimumVersion = new Version(1, 16);
-
-        /// <summary>
         /// Provides logging.
         /// </summary>
         private ILogger _logger;
@@ -512,21 +506,18 @@ namespace Microsoft.PowerShell.EditorServices
         {
             using (var ps = System.Management.Automation.PowerShell.Create())
             {
-                // Encode an equivalent of the PowerShell pipeline:
-                //   Get-Module -ListAvailable -Name "PSScriptAnalyzer" | Where-Object -Property "Version" -ge "1.16"
+                // Run `Get-Module -ListAvailable -Name "PSScriptAnalyzer"`
                 ps.AddCommand("Get-Module")
-                        .AddParameter("ListAvailable")
-                        .AddParameter("Name", PSSA_MODULE_NAME)
-                    .AddCommand("Where-Object")
-                        .AddParameter("Property", "Version")
-                        .AddParameter("ge")
-                        .AddParameter("Value", s_pssaMinimumVersion);
+                    .AddParameter("ListAvailable")
+                    .AddParameter("Name", PSSA_MODULE_NAME);
 
                 try
                 {
+                    // Get the latest version of PSScriptAnalyzer we can find
                     pssaModuleInfo = ps.Invoke()?
                         .Select(psObj => psObj.BaseObject)
                         .OfType<PSModuleInfo>()
+                        .OrderBy(moduleInfo => moduleInfo.Version)
                         .FirstOrDefault();
                 }
                 catch (Exception e)
