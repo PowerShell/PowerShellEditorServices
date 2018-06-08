@@ -544,7 +544,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region IDisposable Support
 
-        private bool disposedValue = false; // To detect redundant calls
+        private bool _disposedValue = false; // To detect redundant calls
 
         /// <summary>
         /// Dispose of this object.
@@ -552,7 +552,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="disposing">True if the method is called by the Dispose method, false if called by the finalizer.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!_disposedValue)
             {
                 if (disposing)
                 {
@@ -561,7 +561,7 @@ namespace Microsoft.PowerShell.EditorServices
                     _analysisRunspacePool = null;
                 }
 
-                disposedValue = true;
+                _disposedValue = true;
             }
         }
 
