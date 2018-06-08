@@ -1,0 +1,16 @@
+# https://help.github.com/articles/about-codeowners/
+
+# Global reviewers
+* @tylerl0706
+
+# Area: Analysis & Formatting
+src/PowerShellEditorServices/Analysis/                 @rjmholt
+
+# Area: Debugging
+src/PowerShellEditorServices/Debugging/                @rkeithhill
+src/PowerShellEditorServices.Protocol/DebugAdapter/    @rkeithhill
+
+# Area: Integrated Console / Host
+src/PowerShellEditorServices/Console/                  @SeeminglyScience
+src/PowerShellEditorServices/Session/*ReadLine*.cs     @SeeminglyScience
+src/PowerShellEditorServices.Host/                     @SeeminglyScience
