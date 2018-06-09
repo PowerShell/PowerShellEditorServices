@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private static int breakpointHitCounter = 0;
 
-        private SemaphoreSlim stackFramesHandle = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim debugInfoHandle = AsyncUtils.CreateSimpleLockingSemaphore();
         #endregion
 
         #region Properties
@@ -364,7 +364,7 @@ namespace Microsoft.PowerShell.EditorServices
         public VariableDetailsBase[] GetVariables(int variableReferenceId)
         {
             VariableDetailsBase[] childVariables;
-            this.stackFramesHandle.Wait();
+            this.debugInfoHandle.Wait();
             try
             {
                 if ((variableReferenceId < 0) || (variableReferenceId >= this.variables.Count))
@@ -396,7 +396,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             finally
             {
-                this.stackFramesHandle.Release();
+                this.debugInfoHandle.Release();
             }
         }
 
@@ -420,14 +420,16 @@ namespace Microsoft.PowerShell.EditorServices
 
             VariableDetailsBase resolvedVariable = null;
             IEnumerable<VariableDetailsBase> variableList;
-            this.stackFramesHandle.Wait();
+
+            // Ensure debug info isn't currently being built.
+            this.debugInfoHandle.Wait();
             try
             {
                 variableList = this.variables;
             }
             finally
             {
-                this.stackFramesHandle.Release();
+                this.debugInfoHandle.Release();
             }
 
             foreach (var variableName in variablePathParts)
@@ -510,14 +512,14 @@ namespace Microsoft.PowerShell.EditorServices
             // OK, now we have a PS object from the supplied value string (expression) to assign to a variable.
             // Get the variable referenced by variableContainerReferenceId and variable name.
             VariableContainerDetails variableContainer = null;
-            await this.stackFramesHandle.WaitAsync();
+            await this.debugInfoHandle.WaitAsync();
             try
             {
                 variableContainer = (VariableContainerDetails)this.variables[variableContainerReferenceId];
             }
             finally
             {
-                this.stackFramesHandle.Release();
+                this.debugInfoHandle.Release();
             }
 
             VariableDetailsBase variable = variableContainer.Children[name];
@@ -665,53 +667,53 @@ namespace Microsoft.PowerShell.EditorServices
         /// </returns>
         public StackFrameDetails[] GetStackFrames()
         {
-            this.stackFramesHandle.Wait();
+            this.debugInfoHandle.Wait();
             try
             {
                 return this.stackFrameDetails;
             }
             finally
             {
-                this.stackFramesHandle.Release();
+                this.debugInfoHandle.Release();
             }
         }
 
         internal StackFrameDetails[] GetStackFrames(CancellationToken cancellationToken)
         {
-            this.stackFramesHandle.Wait(cancellationToken);
+            this.debugInfoHandle.Wait(cancellationToken);
             try
             {
                 return this.stackFrameDetails;
             }
             finally
             {
-                this.stackFramesHandle.Release();
+                this.debugInfoHandle.Release();
             }
         }
 
         internal async Task<StackFrameDetails[]> GetStackFramesAsync()
         {
-            await this.stackFramesHandle.WaitAsync();
+            await this.debugInfoHandle.WaitAsync();
             try
             {
                 return this.stackFrameDetails;
             }
             finally
             {
-                this.stackFramesHandle.Release();
+                this.debugInfoHandle.Release();
             }
         }
 
         internal async Task<StackFrameDetails[]> GetStackFramesAsync(CancellationToken cancellationToken)
         {
-            await this.stackFramesHandle.WaitAsync(cancellationToken);
+            await this.debugInfoHandle.WaitAsync(cancellationToken);
             try
             {
                 return this.stackFrameDetails;
             }
             finally
             {
-                this.stackFramesHandle.Release();
+                this.debugInfoHandle.Release();
             }
         }
 
@@ -785,7 +787,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private async Task FetchStackFramesAndVariables(string scriptNameOverride)
         {
-            await this.stackFramesHandle.WaitAsync();
+            await this.debugInfoHandle.WaitAsync();
             try
             {
                 this.nextVariableId = VariableDetailsBase.FirstVariableId;
@@ -801,7 +803,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
             finally
             {
-                this.stackFramesHandle.Release();
+                this.debugInfoHandle.Release();
             }
         }
 
