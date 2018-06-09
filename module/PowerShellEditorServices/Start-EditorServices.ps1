@@ -315,7 +315,7 @@ try {
             -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
             -DebugServiceOnly:$DebugServiceOnly.IsPresent `
             -WaitForDebugger:$WaitForDebugger.IsPresent `
-            -FeatureFlags:$FeatureFlags
+            -FeatureFlags $FeatureFlags
 
     # TODO: Verify that the service is started
     Log "Start-EditorServicesHost returned $editorServicesHost"

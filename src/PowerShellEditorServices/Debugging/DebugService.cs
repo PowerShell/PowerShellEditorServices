@@ -534,7 +534,7 @@ namespace Microsoft.PowerShell.EditorServices
             else
             {
                 // Determine which stackframe's local scope the variable is in.
-                var stackFrames = await this.GetStackFramesAsync();
+                StackFrameDetails[] stackFrames = await this.GetStackFramesAsync();
                 for (int i = 0; i < stackFrames.Length; i++)
                 {
                     var stackFrame = stackFrames[i];

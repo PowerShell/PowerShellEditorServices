@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices
         private Dictionary<String, List<String>> CmdletToAliasDictionary;
         private Dictionary<String, String> AliasToCmdletDictionary;
         private IDocumentSymbolProvider[] documentSymbolProviders;
-        private SemaphoreSlim aliasHandle = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim aliasHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
         const int DefaultWaitTimeoutMilliseconds = 5000;
 
@@ -694,8 +694,8 @@ namespace Microsoft.PowerShell.EditorServices
                         new PSCommand()
                             .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
                             .AddParameter("CommandType", CommandTypes.Alias),
-                        false,
-                        false);
+                        sendOutputToHost: false,
+                        sendErrorToHost: false);
 
                     foreach (AliasInfo aliasInfo in aliases)
                     {

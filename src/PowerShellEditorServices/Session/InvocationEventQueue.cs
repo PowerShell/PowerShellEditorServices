@@ -1,3 +1,8 @@
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using System;
 using System.Collections.Generic;
 using System.Management.Automation.Runspaces;
@@ -5,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Session
 {
@@ -15,6 +21,14 @@ namespace Microsoft.PowerShell.EditorServices.Session
     /// </summary>
     internal class InvocationEventQueue
     {
+        private const string ShouldProcessInExecutionThreadPropertyName = "ShouldProcessInExecutionThread";
+
+        private static readonly PropertyInfo s_shouldProcessInExecutionThreadProperty =
+            typeof(PSEventSubscriber)
+                .GetProperty(
+                    ShouldProcessInExecutionThreadPropertyName,
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+
         private readonly PromptNest _promptNest;
 
         private readonly Runspace _runspace;
@@ -23,14 +37,20 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private InvocationRequest _invocationRequest;
 
-        private SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim _lock = AsyncUtils.CreateSimpleLockingSemaphore();
 
-        internal InvocationEventQueue(PowerShellContext powerShellContext, PromptNest promptNest)
+        private InvocationEventQueue(PowerShellContext powerShellContext, PromptNest promptNest)
         {
             _promptNest = promptNest;
             _powerShellContext = powerShellContext;
             _runspace = powerShellContext.CurrentRunspace.Runspace;
-            CreateInvocationSubscriber();
+        }
+
+        internal static InvocationEventQueue Create(PowerShellContext powerShellContext, PromptNest promptNest)
+        {
+            var eventQueue = new InvocationEventQueue(powerShellContext, promptNest);
+            eventQueue.CreateInvocationSubscriber();
+            return eventQueue;
         }
 
         /// <summary>
@@ -75,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
             finally
             {
-                await SetInvocationRequestAsync(null);
+                await SetInvocationRequestAsync(request: null);
             }
         }
 
@@ -208,18 +228,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
         private void SetSubscriberExecutionThreadWithReflection(PSEventSubscriber subscriber)
         {
             // We need to create the PowerShell object in the same thread so we can get a nested
-            // PowerShell.  Without changes to PSReadLine directly, this is the only way to achieve
-            // that consistently.  The alternative is to make the subscriber a script block and have
-            // that create and process the PowerShell object, but that puts us in a different
-            // SessionState and is a lot slower.
-
-            // This should be safe as PSReadline should be waiting for pipeline input due to the
-            // OnIdle event sent along with it.
-            typeof(PSEventSubscriber)
-                .GetProperty(
-                    "ShouldProcessInExecutionThread",
-                    BindingFlags.Instance | BindingFlags.NonPublic)
-                .SetValue(subscriber, true);
+            // PowerShell.  This is the only way to consistently take control of the pipeline.  The
+            // alternative is to make the subscriber a script block and have that create and process
+            // the PowerShell object, but that puts us in a different SessionState and is a lot slower.
+            s_shouldProcessInExecutionThreadProperty.SetValue(subscriber, true);
         }
 
         private class InvocationRequest : TaskCompletionSource<bool>

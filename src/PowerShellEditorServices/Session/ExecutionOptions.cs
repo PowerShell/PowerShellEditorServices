@@ -62,10 +62,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             get
             {
-                return
-                    _shouldExecuteInOriginalRunspace.HasValue
-                        ? _shouldExecuteInOriginalRunspace.Value
-                        : IsReadLine;
+                return _shouldExecuteInOriginalRunspace ?? IsReadLine;
             }
             set
             {

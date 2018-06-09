@@ -1,21 +1,24 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 using UnixConsoleEcho;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
     internal class UnixConsoleOperations : IConsoleOperations
     {
-        private const int LONG_READ_DELAY = 300;
+        private const int LongWaitForKeySleepTime = 300;
 
-        private const int SHORT_READ_TIMEOUT = 5000;
+        private const int ShortWaitForKeyTimeout = 5000;
+
+        private const int ShortWaitForKeySpinUntilSleepTime = 30;
 
         private static readonly ManualResetEventSlim s_waitHandle = new ManualResetEventSlim();
 
-        private static readonly SemaphoreSlim s_readKeyHandle = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim s_readKeyHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
-        private static readonly SemaphoreSlim s_stdInHandle = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim s_stdInHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
         private Func<CancellationToken, bool> WaitForKeyAvailable;
 
@@ -34,9 +37,19 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             s_readKeyHandle.Wait(cancellationToken);
 
+            // On Unix platforms System.Console.ReadKey has an internal lock on stdin.  Because
+            // of this, if a ReadKey call is pending in one thread and in another thread
+            // Console.CursorLeft is called, both threads block until a key is pressed.
+
+            // To work around this we wait for a key to be pressed before actually calling Console.ReadKey.
+            // However, any pressed keys during this time will be echoed to the console. To get around
+            // this we use the UnixConsoleEcho package to disable echo prior to waiting.
             InputEcho.Disable();
             try
             {
+                // The WaitForKeyAvailable delegate switches between a long delay between waits and
+                // a short timeout depending on how recently a key has been pressed. This allows us
+                // to let the CPU enter low power mode without compromising responsiveness.
                 while (!WaitForKeyAvailable(cancellationToken));
             }
             finally
@@ -45,6 +58,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 s_readKeyHandle.Release();
             }
 
+            // A key has been pressed, so aquire a lock on our internal stdin handle. This is done
+            // so any of our calls to cursor position API's do not release ReadKey.
             s_stdInHandle.Wait(cancellationToken);
             try
             {
@@ -158,11 +173,15 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private bool LongWaitForKey(CancellationToken cancellationToken)
         {
+            // Wait for a key to be buffered (in other words, wait for Console.KeyAvailable to become
+            // true) with a long delay between checks.
             while (!IsKeyAvailable(cancellationToken))
             {
-                s_waitHandle.Wait(LONG_READ_DELAY, cancellationToken);
+                s_waitHandle.Wait(LongWaitForKeySleepTime, cancellationToken);
             }
 
+            // As soon as a key is buffered, return true and switch the wait logic to be more
+            // responsive, but also more expensive.
             WaitForKeyAvailable = ShortWaitForKey;
             return true;
         }
@@ -171,7 +190,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         {
             while (!await IsKeyAvailableAsync(cancellationToken))
             {
-                await Task.Delay(LONG_READ_DELAY, cancellationToken);
+                await Task.Delay(LongWaitForKeySleepTime, cancellationToken);
             }
 
             WaitForKeyAvailableAsync = ShortWaitForKeyAsync;
@@ -180,12 +199,15 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private bool ShortWaitForKey(CancellationToken cancellationToken)
         {
-            if (SpinUntilKeyAvailable(SHORT_READ_TIMEOUT, cancellationToken))
+            // Check frequently for a new key to be buffered.
+            if (SpinUntilKeyAvailable(ShortWaitForKeyTimeout, cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 return true;
             }
 
+            // If the user has not pressed a key before the end of the SpinUntil timeout then
+            // the user is idle and we can switch back to long delays between KeyAvailable checks.
             cancellationToken.ThrowIfCancellationRequested();
             WaitForKeyAvailable = LongWaitForKey;
             return false;
@@ -193,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private async Task<bool> ShortWaitForKeyAsync(CancellationToken cancellationToken)
         {
-            if (await SpinUntilKeyAvailableAsync(SHORT_READ_TIMEOUT, cancellationToken))
+            if (await SpinUntilKeyAvailableAsync(ShortWaitForKeyTimeout, cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 return true;
@@ -209,7 +231,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             return SpinWait.SpinUntil(
                 () =>
                 {
-                    s_waitHandle.Wait(30, cancellationToken);
+                    s_waitHandle.Wait(ShortWaitForKeySpinUntilSleepTime, cancellationToken);
                     return IsKeyAvailable(cancellationToken);
                 },
                 millisecondsTimeout);
@@ -222,7 +244,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     () =>
                     {
                         // The wait handle is never set, it's just used to enable cancelling the wait.
-                        s_waitHandle.Wait(30, cancellationToken);
+                        s_waitHandle.Wait(ShortWaitForKeySpinUntilSleepTime, cancellationToken);
                         return IsKeyAvailable(cancellationToken);
                     },
                     millisecondsTimeout));

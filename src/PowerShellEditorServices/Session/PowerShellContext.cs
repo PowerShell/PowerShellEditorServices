@@ -307,7 +307,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.powerShell,
                 this.ConsoleReader,
                 this.versionSpecificOperations);
-            this.InvocationEventQueue = new InvocationEventQueue(this, this.PromptNest);
+            this.InvocationEventQueue = InvocationEventQueue.Create(this, this.PromptNest);
 
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&

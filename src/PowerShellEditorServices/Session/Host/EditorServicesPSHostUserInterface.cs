@@ -112,7 +112,10 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Public Methods
 
-        void IHostInput.StartCommandLoop()
+        /// <summary>
+        /// Starts the host's interactive command loop.
+        /// </summary>
+        public void StartCommandLoop()
         {
             if (!this.IsCommandLoopRunning)
             {
@@ -121,7 +124,10 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        void IHostInput.StopCommandLoop()
+        /// <summary>
+        /// Stops the host's interactive command loop.
+        /// </summary>
+        public void StopCommandLoop()
         {
             if (this.IsCommandLoopRunning)
             {
@@ -786,10 +792,10 @@ namespace Microsoft.PowerShell.EditorServices
                         this.powerShellContext
                             .ExecuteScriptString(
                                 commandString,
-                                false,
-                                true,
-                                true)
-                            .ConfigureAwait(false);
+                                writeInputToHost: false,
+                                writeOutputToHost: true,
+                                addToHistory: true)
+                            .ConfigureAwait(continueOnCapturedContext: false);
 
                     break;
                 }
@@ -890,7 +896,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (!this.IsCommandLoopRunning)
             {
-                ((IHostInput)this).StartCommandLoop();
+                StartCommandLoop();
                 return;
             }
 
@@ -928,12 +934,12 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     // Execution has completed, start the input prompt
                     this.ShowCommandPrompt();
-                    ((IHostInput)this).StartCommandLoop();
+                    StartCommandLoop();
                 }
                 else
                 {
                     // A new command was started, cancel the input prompt
-                    ((IHostInput)this).StopCommandLoop();
+                    StopCommandLoop();
                     this.CancelCommandPrompt();
                 }
             }

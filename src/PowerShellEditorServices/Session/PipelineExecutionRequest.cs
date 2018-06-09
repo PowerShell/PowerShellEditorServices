@@ -70,7 +70,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     _executionOptions);
 
             var unusedTask = Task.Run(() => _resultsTask.SetResult(results));
-            // TODO: Deal with errors?
         }
     }
 }

@@ -1,3 +1,8 @@
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -57,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             _consoleReadLine = new ConsoleReadLine(powerShellContext);
             _readLineProxy = readLineProxy;
 
-            #if CoreCLR
+#if CoreCLR
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return;
@@ -67,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Session {
                 intercept => ConsoleProxy.UnixReadKey(
                     intercept,
                     _readLineCancellationSource.Token));
-            #endif
+#endif
         }
 
         internal static bool TryGetPSReadLineProxy(Runspace runspace, out PSReadLineProxy readLineProxy)

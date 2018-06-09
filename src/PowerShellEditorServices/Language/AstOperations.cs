@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     internal static class AstOperations
     {
-        private static readonly SemaphoreSlim s_completionHandle = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim s_completionHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
         /// <summary>
         /// Gets completions for the symbol found in the Ast at
@@ -95,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices
                     return null;
                 }
 
-                Stopwatch stopwatch = new Stopwatch();
+                var stopwatch = new Stopwatch();
 
                 // If the current runspace is out of process we can use
                 // CommandCompletion.CompleteInput because PSReadLine won't be taking up the
@@ -113,8 +113,8 @@ namespace Microsoft.PowerShell.EditorServices
                                 scriptAst,
                                 currentTokens,
                                 cursorPosition,
-                                null,
-                                powerShell);
+                                options: null,
+                                powershell: powerShell);
                         }
                         finally
                         {
@@ -133,8 +133,8 @@ namespace Microsoft.PowerShell.EditorServices
                             scriptAst,
                             currentTokens,
                             cursorPosition,
-                            null,
-                            pwsh);
+                            options: null,
+                            powershell: pwsh);
                     });
                 stopwatch.Stop();
                 logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
