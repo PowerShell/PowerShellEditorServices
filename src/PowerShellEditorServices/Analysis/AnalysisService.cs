@@ -132,7 +132,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="settingsPath">Path to the PSSA settings file to be used for this service instance.</param>
         /// <param name="logger">EditorServices logger for logging information.</param>
-        /// <returns>A new analysis service instance with a freshly imported PSScriptAnalyzer module and runspace pool.</returns>
+        /// <returns>
+        /// A new analysis service instance with a freshly imported PSScriptAnalyzer module and runspace pool.
+        /// Returns null if problems occur. This method should never throw.
+        /// </returns>
         public static AnalysisService Create(string settingsPath, ILogger logger)
         {
             try
@@ -149,12 +152,12 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 catch (Exception e)
                 {
-                    throw new Exception("PSScriptAnalyzer module of the required minimum version not available", e);
+                    throw new AnalysisServiceLoadException("PSScriptAnalyzer runspace pool could not be created", e);
                 }
 
                 if (analysisRunspacePool == null)
                 {
-                    throw new Exception("PSScriptAnalyzer module of the required minimum version not available");
+                    throw new AnalysisServiceLoadException("PSScriptAnalyzer runspace pool failed to be created");
                 }
 
                 // Having more than one runspace doesn't block code formatting if one
@@ -175,9 +178,14 @@ namespace Microsoft.PowerShell.EditorServices
 
                 return analysisService;
             }
+            catch (AnalysisServiceLoadException e)
+            {
+                logger.WriteException("PSScriptAnalyzer cannot be imported, AnalysisService will be disabled", e);
+                return null;
+            }
             catch (Exception e)
             {
-                logger.WriteException("PSScriptAnalyzer cannot be imported, AnalysisService will be disabled.", e);
+                logger.WriteException("AnalysisService could not be started due to an unexpected exception", e);
                 return null;
             }
         }
@@ -374,7 +382,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (_pssaModuleInfo == null)
             {
-                throw new Exception("Unable to find loaded PSScriptAnalyzer module for logging");
+                throw new AnalysisServiceLoadException("Unable to find loaded PSScriptAnalyzer module for logging");
             }
 
             var sb = new StringBuilder();
@@ -497,9 +505,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         /// <summary>
         /// Create a new runspace pool around a PSScriptAnalyzer module for asynchronous script analysis tasks.
-        /// This uses the PowerShell module API to load the first PSScriptAnalyzer module on the module path with
-        /// with the required minimum version and then creates a runspace pool with that module loaded in the initial
-        /// session state.
+        /// This looks for the latest version of PSScriptAnalyzer on the path and loads that.
         /// </summary>
         /// <returns>A runspace pool with PSScriptAnalyzer loaded for running script analysis tasks.</returns>
         private static RunspacePool CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo)
@@ -522,12 +528,12 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 catch (Exception e)
                 {
-                    throw new Exception("Unable to find PSScriptAnalyzer module", e);
+                    throw new AnalysisServiceLoadException("Unable to find PSScriptAnalyzer module on the module path", e);
                 }
 
                 if (pssaModuleInfo == null)
                 {
-                    throw new Exception("Unable to find PSScriptAnalyzer module");
+                    throw new AnalysisServiceLoadException("Unable to find PSScriptAnalyzer module on the module path");
                 }
 
                 // Create a base session state with PSScriptAnalyzer loaded
@@ -556,7 +562,6 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (disposing)
                 {
-                    _analysisRunspacePool.Close();
                     _analysisRunspacePool.Dispose();
                     _analysisRunspacePool = null;
                 }
@@ -575,5 +580,30 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Class to catch known failure modes for starting the AnalysisService.
+    /// </summary>
+    public class AnalysisServiceLoadException : Exception
+    {
+        /// <summary>
+        /// Instantiate an AnalysisService error based on a simple message.
+        /// </summary>
+        /// <param name="message">The message to display to the user detailing the error.</param>
+        public AnalysisServiceLoadException(string message)
+            : base(message)
+        {
+        }
+
+        /// <summary>
+        /// Instantiate an AnalysisService error based on another error that occurred internally.
+        /// </summary>
+        /// <param name="message">The message to display to the user detailing the error.</param>
+        /// <param name="innerException">The inner exception that occurred to trigger this error.</param>
+        public AnalysisServiceLoadException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
     }
 }

@@ -160,18 +160,8 @@ namespace Microsoft.PowerShell.EditorServices
 
         internal void InstantiateAnalysisService(string settingsPath = null)
         {
-            // AnalysisService will throw FileNotFoundException if
-            // Script Analyzer binaries are not included.
-            try
-            {
-                this.AnalysisService = AnalysisService.Create(settingsPath, this.logger);
-            }
-            catch (FileNotFoundException)
-            {
-                this.logger.Write(
-                    LogLevel.Warning,
-                    "Script Analyzer binaries not found, AnalysisService will be disabled.");
-            }
+            // Create the analysis service. If this fails, the result will be null -- any exceptions are caught and logged
+            this.AnalysisService = AnalysisService.Create(settingsPath, this.logger);
         }
 
         #endregion
