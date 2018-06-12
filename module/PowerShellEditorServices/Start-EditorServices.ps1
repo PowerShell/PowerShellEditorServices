@@ -102,17 +102,17 @@ function ExitWithError($errorString) {
 }
 
 function WriteSessionFile($sessionInfo) {
-    $sessionInfoJson = ConvertTo-Json -InputObject $sessionInfo -Compress
+    $sessionInfoJson = Microsoft.PowerShell.Utility\ConvertTo-Json -InputObject $sessionInfo -Compress
     Log "Writing session file with contents:"
     Log $sessionInfoJson
-    $sessionInfoJson | Set-Content -Force -Path "$SessionDetailsPath" -ErrorAction Stop
+    $sessionInfoJson | Microsoft.PowerShell.Management\Set-Content -Force -Path "$SessionDetailsPath" -ErrorAction Stop
 }
 
 # Are we running in PowerShell 2 or earlier?
 if ($PSVersionTable.PSVersion.Major -le 2) {
     # No ConvertTo-Json on PSv2 and below, so write out the JSON manually
     "{`"status`": `"failed`", `"reason`": `"unsupported`", `"powerShellVersion`": `"$($PSVersionTable.PSVersion.ToString())`"}" |
-        Set-Content -Force -Path "$SessionDetailsPath" -ErrorAction Stop
+        Microsoft.PowerShell.Management\Set-Content -Force -Path "$SessionDetailsPath" -ErrorAction Stop
 
     ExitWithError "Unsupported PowerShell version $($PSVersionTable.PSVersion), language features are disabled."
 }
@@ -133,9 +133,9 @@ $isPS5orLater = $PSVersionTable.PSVersion.Major -ge 5
 
 # If PSReadline is present in the session, remove it so that runspace
 # management is easier
-if ((Get-Module PSReadline).Count -gt 0) {
+if ((Microsoft.PowerShell.Core\Get-Module PSReadline).Count -gt 0) {
     LogSection "Removing PSReadLine module"
-    Remove-Module PSReadline -ErrorAction SilentlyContinue
+    Microsoft.PowerShell.Core\Remove-Module PSReadline -ErrorAction SilentlyContinue
 }
 
 # This variable will be assigned later to contain information about
@@ -146,7 +146,7 @@ $resultDetails = $null;
 function Test-ModuleAvailable($ModuleName, $ModuleVersion) {
     Log "Testing module availability $ModuleName $ModuleVersion"
 
-    $modules = Get-Module -ListAvailable $moduleName
+    $modules = Microsoft.PowerShell.Core\Get-Module -ListAvailable $moduleName
     if ($modules -ne $null) {
         if ($ModuleVersion -ne $null) {
             foreach ($module in $modules) {
@@ -182,7 +182,7 @@ function Test-PortAvailability {
         $ipAddress = [System.Net.IPAddress]::Loopback
         Log "Testing availability of port ${PortNumber} at address ${ipAddress} / $($ipAddress.AddressFamily)"
 
-        $tcpListener = New-Object System.Net.Sockets.TcpListener @($ipAddress, $PortNumber)
+        $tcpListener = Microsoft.PowerShell.Utility\New-Object System.Net.Sockets.TcpListener @($ipAddress, $PortNumber)
         $tcpListener.Start()
         $tcpListener.Stop()
     }
@@ -202,7 +202,7 @@ function Test-PortAvailability {
 }
 
 $portsInUse = @{}
-$rand = New-Object System.Random
+$rand = Microsoft.PowerShell.Utility\New-Object System.Random
 function Get-AvailablePort() {
     $triesRemaining = 10;
 
@@ -247,7 +247,7 @@ try {
     LogSection "Start up PowerShellEditorServices"
     Log "Importing PowerShellEditorServices"
 
-    Import-Module PowerShellEditorServices -ErrorAction Stop
+    Microsoft.PowerShell.Core\Import-Module PowerShellEditorServices -ErrorAction Stop
 
 	# Locate available port numbers for services
 	# There could be only one service on Stdio channel
