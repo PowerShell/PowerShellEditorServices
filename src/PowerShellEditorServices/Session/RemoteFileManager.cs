@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
                     foreach ($fileName in $Paths)
                     {
-                        dir $fileName | where { ! $_.PSIsContainer } | foreach {
+                        Microsoft.PowerShell.Management\Get-ChildItem $fileName | Where-Object { ! $_.PSIsContainer } | Foreach-Object {
                             $filePathName = $_.FullName
 
                             # Get file contents
@@ -89,10 +89,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
                                 $params['Encoding']='Byte'
                             }
 
-                            $contentBytes = Get-Content @params
+                            $contentBytes = Microsoft.PowerShell.Management\Get-Content @params
 
                             # Notify client for file open.
-                            New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($filePathName, $contentBytes, $preview) > $null
+                            Microsoft.PowerShell.Utility\New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($filePathName, $contentBytes, $preview) > $null
                         }
                     }
                 }
@@ -148,7 +148,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     if ($Path) {
                         foreach ($fileName in $Path)
                         {
-                            if (-not (Test-Path $fileName) -or $Force) {
+                            if (-not (Microsoft.PowerShell.Management\Test-Path $fileName) -or $Force) {
                                 $valueList > $fileName
 
                                 # Get file contents
@@ -162,7 +162,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                                     $params['Encoding']='Byte'
                                 }
 
-                                $contentBytes = Get-Content @params
+                                $contentBytes = Microsoft.PowerShell.Management\Get-Content @params
 
                                 if ($Path.Count -gt 1) {
                                     $preview = $false
@@ -171,10 +171,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
                                 }
 
                                 # Notify client for file open.
-                                New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($fileName, $contentBytes, $preview) > $null
+                                Microsoft.PowerShell.Utility\New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($fileName, $contentBytes, $preview) > $null
                             } else {
                                 $PSCmdlet.WriteError( (
-                                    New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList @(
+                                    Microsoft.PowerShell.Utility\New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList @(
                                         [System.Exception]'File already exists.'
                                         $Null
                                         [System.Management.Automation.ErrorCategory]::ResourceExists
@@ -182,14 +182,14 @@ namespace Microsoft.PowerShell.EditorServices.Session
                             }
                         }
                     } else {
-                        $bytes = [System.Text.Encoding]::UTF8.GetBytes(($valueList | Out-String))
-                        New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($null, $bytes) > $null
+                        $bytes = [System.Text.Encoding]::UTF8.GetBytes(($valueList | Microsoft.PowerShell.Utility\Out-String))
+                        Microsoft.PowerShell.Utility\New-Event -SourceIdentifier PSESRemoteSessionOpenFile -EventArguments @($null, $bytes) > $null
                     }
                 }
             }
 
-            Set-Alias psedit Open-EditorFile -Scope Global
-            Export-ModuleMember -Function Open-EditorFile, New-EditorFile
+            Microsoft.PowerShell.Utility\Set-Alias psedit Open-EditorFile -Scope Global
+            Microsoft.PowerShell.Core\Export-ModuleMember -Function Open-EditorFile, New-EditorFile
         ";
 
         // This script is templated so that the '-Forward' parameter can be added
@@ -199,14 +199,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 [string] $PSEditModule
             )
 
-            Register-EngineEvent -SourceIdentifier PSESRemoteSessionOpenFile -Forward -SupportEvent
-            New-Module -ScriptBlock ([Scriptblock]::Create($PSEditModule)) -Name PSEdit | Import-Module -Global
+            Microsoft.PowerShell.Utility\Register-EngineEvent -SourceIdentifier PSESRemoteSessionOpenFile -Forward -SupportEvent
+            Microsoft.PowerShell.Core\New-Module -ScriptBlock ([Scriptblock]::Create($PSEditModule)) -Name PSEdit |
+                Microsoft.PowerShell.Core\Import-Module -Global
         ";
 
         private const string RemovePSEditFunctionScript = @"
-            Get-Module PSEdit | Remove-Module
+            Microsoft.PowerShell.Core\Get-Module PSEdit | Microsoft.PowerShell.Core\Remove-Module
 
-            Unregister-Event -SourceIdentifier PSESRemoteSessionOpenFile -Force -ErrorAction Ignore
+            Microsoft.PowerShell.Utility\Unregister-Event -SourceIdentifier PSESRemoteSessionOpenFile -Force -ErrorAction Ignore
         ";
 
         private const string SetRemoteContentsScript = @"
@@ -226,7 +227,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 $params['Encoding']='Byte'
             }
 
-            Set-Content @params 2>&1
+            Microsoft.PowerShell.Management\Set-Content @params 2>&1
         ";
 
         #endregion
