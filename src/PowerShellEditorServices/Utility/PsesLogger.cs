@@ -24,10 +24,17 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// Construct a new logger around a Serilog ILogger.
         /// </summary>
         /// <param name="logger">The Serilog logger to use internally.</param>
-        internal PsesLogger(Logger logger)
+        /// <param name="minimumLogLevel">The minimum severity level the logger is configured to log messages at.</param>
+        internal PsesLogger(Logger logger, LogLevel minimumLogLevel)
         {
             _logger = logger;
+            MinimumConfiguredLogLevel = minimumLogLevel;
         }
+
+        /// <summary>
+        /// The minimum log level that this logger is configured to log at.
+        /// </summary>
+        public LogLevel MinimumConfiguredLogLevel { get; }
 
         /// <summary>
         /// Write a message with the given severity to the logs.

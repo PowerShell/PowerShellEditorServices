@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Collections;
 using System.IO;
+using Microsoft.PowerShell.Commands;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -25,23 +26,38 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
+        /// <summary>
+        /// Maximum number of runspaces we allow to be in use for script analysis.
+        /// </summary>
         private const int NumRunspaces = 1;
 
+        /// <summary>
+        /// Name of the PSScriptAnalyzer module, to be used for PowerShell module interactions.
+        /// </summary>
         private const string PSSA_MODULE_NAME = "PSScriptAnalyzer";
 
+        /// <summary>
+        /// Provides logging.
+        /// </summary>
         private ILogger _logger;
+
+        /// <summary>
+        /// Runspace pool to generate runspaces for script analysis and handle
+        /// ansynchronous analysis requests.
+        /// </summary>
         private RunspacePool _analysisRunspacePool;
 
-        private bool _hasScriptAnalyzerModule;
-
-        private string[] activeRules;
-        private string settingsPath;
+        /// <summary>
+        /// Info object describing the PSScriptAnalyzer module that has been loaded in
+        /// to provide analysis services.
+        /// </summary>
+        private PSModuleInfo _pssaModuleInfo;
 
         /// <summary>
         /// Defines the list of Script Analyzer rules to include by default if
         /// no settings file is specified.
         /// </summary>
-        private static readonly string[] IncludedRules = new string[]
+        private static readonly string[] s_includedRules = new string[]
         {
             "PSUseToExportFieldsInManifest",
             "PSMisleadingBacktick",
@@ -66,89 +82,117 @@ namespace Microsoft.PowerShell.EditorServices
         #region Properties
 
         /// <summary>
-        /// Set of PSScriptAnalyzer rules used for analysis
+        /// Set of PSScriptAnalyzer rules used for analysis.
         /// </summary>
-        public string[] ActiveRules
-        {
-            get
-            {
-                return activeRules;
-            }
-
-            set
-            {
-                activeRules = value;
-            }
-        }
+        public string[] ActiveRules { get; set; }
 
         /// <summary>
         /// Gets or sets the path to a settings file (.psd1)
         /// containing PSScriptAnalyzer settings.
         /// </summary>
-        public string SettingsPath
-        {
-            get
-            {
-                return settingsPath;
-            }
-            set
-            {
-                settingsPath = value;
-            }
-        }
+        public string SettingsPath { get; set; }
 
         #endregion
 
         #region Constructors
 
         /// <summary>
-        /// Creates an instance of the AnalysisService class.
+        /// Construct a new AnalysisService object.
         /// </summary>
-        /// <param name="settingsPath">Path to a PSScriptAnalyzer settings file.</param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public AnalysisService(string settingsPath, ILogger logger)
+        /// <param name="analysisRunspacePool">
+        /// The runspace pool with PSScriptAnalyzer module loaded that will handle
+        /// analysis tasks.
+        /// </param>
+        /// <param name="pssaSettingsPath">
+        /// The path to the PSScriptAnalyzer settings file to handle analysis settings.
+        /// </param>
+        /// <param name="activeRules">An array of rules to be used for analysis.</param>
+        /// <param name="logger">Maintains logs for the analysis service.</param>
+        /// <param name="pssaModuleInfo">
+        /// Optional module info of the loaded PSScriptAnalyzer module. If not provided,
+        /// the analysis service will populate it, but it can be given here to save time.
+        /// </param>
+        private AnalysisService(
+            RunspacePool analysisRunspacePool,
+            string pssaSettingsPath,
+            IEnumerable<string> activeRules,
+            ILogger logger,
+            PSModuleInfo pssaModuleInfo = null)
         {
-            this._logger = logger;
-
-            try
-            {
-                this.SettingsPath = settingsPath;
-
-                if (!(_hasScriptAnalyzerModule = VerifyPSScriptAnalyzerAvailable()))
-                {
-                    throw new Exception("PSScriptAnalyzer module not available");
-                }
-
-                // Create a base session state with PSScriptAnalyzer loaded
-                InitialSessionState sessionState = InitialSessionState.CreateDefault2();
-                sessionState.ImportPSModule(new [] { PSSA_MODULE_NAME });
-
-                // runspacepool takes care of queuing commands for us so we do not
-                // need to worry about executing concurrent commands
-                this._analysisRunspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
-
-                // having more than one runspace doesn't block code formatting if one
-                // runspace is occupied for diagnostics
-                this._analysisRunspacePool.SetMaxRunspaces(NumRunspaces);
-                this._analysisRunspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
-                this._analysisRunspacePool.Open();
-
-                ActiveRules = IncludedRules.ToArray();
-                EnumeratePSScriptAnalyzerCmdlets();
-                EnumeratePSScriptAnalyzerRules();
-            }
-            catch (Exception e)
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("PSScriptAnalyzer cannot be imported, AnalysisService will be disabled.");
-                sb.AppendLine(e.Message);
-                this._logger.Write(LogLevel.Warning, sb.ToString());
-            }
+            _analysisRunspacePool = analysisRunspacePool;
+            SettingsPath = pssaSettingsPath;
+            ActiveRules = activeRules.ToArray();
+            _logger = logger;
+            _pssaModuleInfo = pssaModuleInfo;
         }
 
         #endregion // constructors
 
         #region Public Methods
+
+        /// <summary>
+        /// Factory method for producing AnalysisService instances. Handles loading of the PSScriptAnalyzer module
+        /// and runspace pool instantiation before creating the service instance.
+        /// </summary>
+        /// <param name="settingsPath">Path to the PSSA settings file to be used for this service instance.</param>
+        /// <param name="logger">EditorServices logger for logging information.</param>
+        /// <returns>
+        /// A new analysis service instance with a freshly imported PSScriptAnalyzer module and runspace pool.
+        /// Returns null if problems occur. This method should never throw.
+        /// </returns>
+        public static AnalysisService Create(string settingsPath, ILogger logger)
+        {
+            try
+            {
+                RunspacePool analysisRunspacePool;
+                PSModuleInfo pssaModuleInfo;
+                try
+                {
+                    // Try and load a PSScriptAnalyzer module with the required version
+                    // by looking on the script path. Deep down, this internally runs Get-Module -ListAvailable,
+                    // so we'll use this to check whether such a module exists
+                    analysisRunspacePool = CreatePssaRunspacePool(out pssaModuleInfo);
+
+                }
+                catch (Exception e)
+                {
+                    throw new AnalysisServiceLoadException("PSScriptAnalyzer runspace pool could not be created", e);
+                }
+
+                if (analysisRunspacePool == null)
+                {
+                    throw new AnalysisServiceLoadException("PSScriptAnalyzer runspace pool failed to be created");
+                }
+
+                // Having more than one runspace doesn't block code formatting if one
+                // runspace is occupied for diagnostics
+                analysisRunspacePool.SetMaxRunspaces(NumRunspaces);
+                analysisRunspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
+                analysisRunspacePool.Open();
+
+                var analysisService = new AnalysisService(
+                    analysisRunspacePool,
+                    settingsPath,
+                    s_includedRules,
+                    logger,
+                    pssaModuleInfo);
+
+                // Log what features are available in PSSA here
+                analysisService.LogAvailablePssaFeatures();
+
+                return analysisService;
+            }
+            catch (AnalysisServiceLoadException e)
+            {
+                logger.WriteException("PSScriptAnalyzer cannot be imported, AnalysisService will be disabled", e);
+                return null;
+            }
+            catch (Exception e)
+            {
+                logger.WriteException("AnalysisService could not be started due to an unexpected exception", e);
+                return null;
+            }
+        }
 
         /// <summary>
         /// Get PSScriptAnalyzer settings hashtable for PSProvideCommentHelp rule.
@@ -206,7 +250,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
         public async Task<ScriptFileMarker[]> GetSemanticMarkersAsync(ScriptFile file)
         {
-            return await GetSemanticMarkersAsync<string>(file, activeRules, settingsPath);
+            return await GetSemanticMarkersAsync<string>(file, ActiveRules, SettingsPath);
         }
 
         /// <summary>
@@ -239,13 +283,10 @@ namespace Microsoft.PowerShell.EditorServices
         public IEnumerable<string> GetPSScriptAnalyzerRules()
         {
             List<string> ruleNames = new List<string>();
-            if (_hasScriptAnalyzerModule)
+            var ruleObjects = InvokePowerShell("Get-ScriptAnalyzerRule", new Dictionary<string, object>());
+            foreach (var rule in ruleObjects)
             {
-                var ruleObjects = InvokePowerShell("Get-ScriptAnalyzerRule", new Dictionary<string, object>());
-                foreach (var rule in ruleObjects)
-                {
-                    ruleNames.Add((string)rule.Members["RuleName"].Value);
-                }
+                ruleNames.Add((string)rule.Members["RuleName"].Value);
             }
 
             return ruleNames;
@@ -265,7 +306,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             // We cannot use Range type therefore this workaround of using -1 default value.
             // Invoke-Formatter throws a ParameterBinderValidationException if the ScriptDefinition is an empty string.
-            if (!_hasScriptAnalyzerModule || string.IsNullOrEmpty(scriptDefinition))
+            if (string.IsNullOrEmpty(scriptDefinition))
             {
                 return null;
             }
@@ -283,19 +324,6 @@ namespace Microsoft.PowerShell.EditorServices
             return result?.Select(r => r?.ImmediateBaseObject as string).FirstOrDefault();
         }
 
-        /// <summary>
-        /// Disposes the runspace being used by the analysis service.
-        /// </summary>
-        public void Dispose()
-        {
-            if (this._analysisRunspacePool != null)
-            {
-                this._analysisRunspacePool.Close();
-                this._analysisRunspacePool.Dispose();
-                this._analysisRunspacePool = null;
-            }
-        }
-
         #endregion // public methods
 
         #region Private Methods
@@ -305,8 +333,7 @@ namespace Microsoft.PowerShell.EditorServices
             string[] rules,
             TSettings settings) where TSettings : class
         {
-            if (_hasScriptAnalyzerModule
-                && file.IsAnalysisEnabled)
+            if (file.IsAnalysisEnabled)
             {
                 return await GetSemanticMarkersAsync<TSettings>(
                     file.Contents,
@@ -338,43 +365,61 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private void EnumeratePSScriptAnalyzerCmdlets()
+        /// <summary>
+        /// Log the features available from the PSScriptAnalyzer module that has been imported
+        /// for use with the AnalysisService.
+        /// </summary>
+        private void LogAvailablePssaFeatures()
         {
-            if (_hasScriptAnalyzerModule)
+            // Save ourselves some work here
+            var featureLogLevel = LogLevel.Verbose;
+            if (_logger.MinimumConfiguredLogLevel > featureLogLevel)
             {
-                var sb = new StringBuilder();
-                var commands = InvokePowerShell(
-                "Get-Command",
-                new Dictionary<string, object>
-                {
-                    {"Module", "PSScriptAnalyzer"}
-                });
-
-                var commandNames = commands?
-                    .Select(c => c.ImmediateBaseObject as CmdletInfo)
-                    .Where(c => c != null)
-                    .Select(c => c.Name) ?? Enumerable.Empty<string>();
-
-                sb.AppendLine("The following cmdlets are available in the imported PSScriptAnalyzer module:");
-                sb.AppendLine(String.Join(Environment.NewLine, commandNames.Select(s => "    " + s)));
-                this._logger.Write(LogLevel.Verbose, sb.ToString());
+                return;
             }
-        }
 
-        private void EnumeratePSScriptAnalyzerRules()
-        {
-            if (_hasScriptAnalyzerModule)
+            // If we already know the module that was imported, save some work
+            if (_pssaModuleInfo == null)
             {
-                var rules = GetPSScriptAnalyzerRules();
-                var sb = new StringBuilder();
-                sb.AppendLine("Available PSScriptAnalyzer Rules:");
-                foreach (var rule in rules)
-                {
-                    sb.AppendLine(rule);
-                }
+                PSObject[] modules = InvokePowerShell(
+                    "Get-Module",
+                    new Dictionary<string, object>{ {"Name", PSSA_MODULE_NAME} });
 
-                this._logger.Write(LogLevel.Verbose, sb.ToString());
+                _pssaModuleInfo = modules
+                    .Select(m => m.BaseObject)
+                    .OfType<PSModuleInfo>()
+                    .FirstOrDefault();
             }
+
+            if (_pssaModuleInfo == null)
+            {
+                throw new AnalysisServiceLoadException("Unable to find loaded PSScriptAnalyzer module for logging");
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("PSScriptAnalyzer successfully imported:");
+
+            // Log version
+            sb.Append("    Version: ");
+            sb.AppendLine(_pssaModuleInfo.Version.ToString());
+
+            // Log exported cmdlets
+            sb.AppendLine("    Exported Cmdlets:");
+            foreach (string cmdletName in _pssaModuleInfo.ExportedCmdlets.Keys.OrderBy(name => name))
+            {
+                sb.Append("    ");
+                sb.AppendLine(cmdletName);
+            }
+
+            // Log available rules
+            sb.AppendLine("    Available Rules:");
+            foreach (string ruleName in GetPSScriptAnalyzerRules())
+            {
+                sb.Append("        ");
+                sb.AppendLine(ruleName);
+            }
+
+            _logger.Write(featureLogLevel, sb.ToString());
         }
 
         private async Task<PSObject[]> GetDiagnosticRecordsAsync<TSettings>(
@@ -392,9 +437,7 @@ namespace Microsoft.PowerShell.EditorServices
                 return diagnosticRecords;
             }
 
-            if (_hasScriptAnalyzerModule
-                && (typeof(TSettings) == typeof(string)
-                    || typeof(TSettings) == typeof(Hashtable)))
+            if (typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
             {
                 //Use a settings file if one is provided, otherwise use the default rule list.
                 string settingParameter;
@@ -419,19 +462,18 @@ namespace Microsoft.PowerShell.EditorServices
                     });
             }
 
-            this._logger.Write(
+            _logger.Write(
                 LogLevel.Verbose,
                 String.Format("Found {0} violations", diagnosticRecords.Count()));
 
             return diagnosticRecords;
         }
 
-
         private PSObject[] InvokePowerShell(string command, IDictionary<string, object> paramArgMap)
         {
             using (var powerShell = System.Management.Automation.PowerShell.Create())
             {
-                powerShell.RunspacePool = this._analysisRunspacePool;
+                powerShell.RunspacePool = _analysisRunspacePool;
                 powerShell.AddCommand(command);
                 foreach (var kvp in paramArgMap)
                 {
@@ -447,7 +489,7 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     // This exception is possible if the module path loaded
                     // is wrong even though PSScriptAnalyzer is available as a module
-                    this._logger.Write(LogLevel.Error, ex.Message);
+                    _logger.Write(LogLevel.Error, ex.Message);
                 }
                 catch (CmdletInvocationException ex)
                 {
@@ -455,7 +497,7 @@ namespace Microsoft.PowerShell.EditorServices
                     // Two main reasons that cause the exception are:
                     // * PSCmdlet.WriteOutput being called from another thread than Begin/Process
                     // * CompositionContainer.ComposeParts complaining that "...Only one batch can be composed at a time"
-                    this._logger.Write(LogLevel.Error, ex.Message);
+                    _logger.Write(LogLevel.Error, ex.Message);
                 }
 
                 return result;
@@ -472,25 +514,107 @@ namespace Microsoft.PowerShell.EditorServices
             return await task;
         }
 
-        private bool VerifyPSScriptAnalyzerAvailable()
+        /// <summary>
+        /// Create a new runspace pool around a PSScriptAnalyzer module for asynchronous script analysis tasks.
+        /// This looks for the latest version of PSScriptAnalyzer on the path and loads that.
+        /// </summary>
+        /// <returns>A runspace pool with PSScriptAnalyzer loaded for running script analysis tasks.</returns>
+        private static RunspacePool CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo)
         {
             using (var ps = System.Management.Automation.PowerShell.Create())
             {
+                // Run `Get-Module -ListAvailable -Name "PSScriptAnalyzer"`
                 ps.AddCommand("Get-Module")
                     .AddParameter("ListAvailable")
                     .AddParameter("Name", PSSA_MODULE_NAME);
 
                 try
                 {
-                    return ps.Invoke()?.Any() ?? false;
+                    // Get the latest version of PSScriptAnalyzer we can find
+                    pssaModuleInfo = ps.Invoke()?
+                        .Select(psObj => psObj.BaseObject)
+                        .OfType<PSModuleInfo>()
+                        .OrderBy(moduleInfo => moduleInfo.Version)
+                        .FirstOrDefault();
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    return false;
+                    throw new AnalysisServiceLoadException("Unable to find PSScriptAnalyzer module on the module path", e);
                 }
+
+                if (pssaModuleInfo == null)
+                {
+                    throw new AnalysisServiceLoadException("Unable to find PSScriptAnalyzer module on the module path");
+                }
+
+                // Create a base session state with PSScriptAnalyzer loaded
+                InitialSessionState sessionState = InitialSessionState.CreateDefault2();
+                sessionState.ImportPSModule(new [] { pssaModuleInfo.ModuleBase });
+
+                // RunspacePool takes care of queuing commands for us so we do not
+                // need to worry about executing concurrent commands
+                return RunspaceFactory.CreateRunspacePool(sessionState);
             }
         }
 
         #endregion //private methods
+
+        #region IDisposable Support
+
+        private bool _disposedValue = false; // To detect redundant calls
+
+        /// <summary>
+        /// Dispose of this object.
+        /// </summary>
+        /// <param name="disposing">True if the method is called by the Dispose method, false if called by the finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    _analysisRunspacePool.Dispose();
+                    _analysisRunspacePool = null;
+                }
+
+                _disposedValue = true;
+            }
+        }
+
+        /// <summary>
+        /// Clean up all internal resources and dispose of the analysis service.
+        /// </summary>
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Class to catch known failure modes for starting the AnalysisService.
+    /// </summary>
+    public class AnalysisServiceLoadException : Exception
+    {
+        /// <summary>
+        /// Instantiate an AnalysisService error based on a simple message.
+        /// </summary>
+        /// <param name="message">The message to display to the user detailing the error.</param>
+        public AnalysisServiceLoadException(string message)
+            : base(message)
+        {
+        }
+
+        /// <summary>
+        /// Instantiate an AnalysisService error based on another error that occurred internally.
+        /// </summary>
+        /// <param name="message">The message to display to the user detailing the error.</param>
+        /// <param name="innerException">The inner exception that occurred to trigger this error.</param>
+        public AnalysisServiceLoadException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
     }
 }
