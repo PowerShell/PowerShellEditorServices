@@ -263,8 +263,9 @@ namespace Microsoft.PowerShell.EditorServices
             Hashtable settings,
             int[] rangeList)
         {
-            // we cannot use Range type therefore this workaround of using -1 default value
-            if (!_hasScriptAnalyzerModule)
+            // We cannot use Range type therefore this workaround of using -1 default value.
+            // Invoke-Formatter throws a ParameterBinderValidationException if the ScriptDefinition is an empty string.
+            if (!_hasScriptAnalyzerModule || string.IsNullOrEmpty(scriptDefinition))
             {
                 return null;
             }
