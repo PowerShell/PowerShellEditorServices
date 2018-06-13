@@ -69,7 +69,11 @@ namespace Microsoft.PowerShell.EditorServices
             "PSShouldProcess",
             "PSMissingModuleManifestField",
             "PSAvoidDefaultValueSwitchParameter",
-            "PSUseDeclaredVarsMoreThanAssignments"
+            "PSUseDeclaredVarsMoreThanAssignments",
+            "PSPossibleIncorrectComparisonWithNull",
+            "PSAvoidDefaultValueForMandatoryParameter",
+            "PSAvoidTrailingWhitespace",
+            "PSPossibleIncorrectUsageOfRedirectionOperator"
         };
 
         #endregion // Private Fields
@@ -300,6 +304,13 @@ namespace Microsoft.PowerShell.EditorServices
             Hashtable settings,
             int[] rangeList)
         {
+            // We cannot use Range type therefore this workaround of using -1 default value.
+            // Invoke-Formatter throws a ParameterBinderValidationException if the ScriptDefinition is an empty string.
+            if (string.IsNullOrEmpty(scriptDefinition))
+            {
+                return null;
+            }
+
             var argsDict = new Dictionary<string, object> {
                     {"ScriptDefinition", scriptDefinition},
                     {"Settings", settings}

@@ -229,6 +229,20 @@ task LayoutModule -After Build {
     if (!$script:IsUnix) {
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
     }
+
+    if ($Configuration -eq "Debug") {
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+
+        if (!$script:IsUnix) {
+            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
+            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        }
+    }
 }
 
 task RestorePsesModules -After Build {
