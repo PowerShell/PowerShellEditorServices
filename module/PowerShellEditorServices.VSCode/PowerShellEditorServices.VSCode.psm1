@@ -4,10 +4,10 @@
 #
 
 if (!$PSVersionTable.PSEdition -or $PSVersionTable.PSEdition -eq "Desktop") {
-    Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.VSCode.dll"
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.VSCode.dll"
 }
 else {
-    Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.VSCode.dll"
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.VSCode.dll"
 }
 
 if ($psEditor -is [Microsoft.PowerShell.EditorServices.Extensions.EditorObject]) {
@@ -17,6 +17,6 @@ else {
     Write-Verbose '$psEditor object not found in the session, components will not be registered.'
 }
 
-Get-ChildItem -Path $PSScriptRoot\Public\*.ps1 -Recurse | ForEach-Object {
+Microsoft.PowerShell.Management\Get-ChildItem -Path $PSScriptRoot\Public\*.ps1 -Recurse | ForEach-Object {
     . $PSItem.FullName
 }

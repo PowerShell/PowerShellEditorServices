@@ -4,13 +4,13 @@
 #
 
 if (!$PSVersionTable.PSEdition -or $PSVersionTable.PSEdition -eq "Desktop") {
-    Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.dll"
-    Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.Host.dll"
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.dll"
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.Host.dll"
 }
 else {
-    Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.dll"
-    Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.Protocol.dll"
-    Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.Host.dll"
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.dll"
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.Protocol.dll"
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.Host.dll"
 }
 
 function Start-EditorServicesHost {
@@ -75,10 +75,14 @@ function Start-EditorServicesHost {
     )
 
     $editorServicesHost = $null
-    $hostDetails = New-Object Microsoft.PowerShell.EditorServices.Session.HostDetails @($HostName, $HostProfileId, (New-Object System.Version @($HostVersion)))
+    $hostDetails =
+        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Session.HostDetails @(
+            $HostName,
+            $HostProfileId,
+            (Microsoft.PowerShell.Utility\New-Object System.Version @($HostVersion)))
 
     $editorServicesHost =
-        New-Object Microsoft.PowerShell.EditorServices.Host.EditorServicesHost @(
+        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Host.EditorServicesHost @(
             $hostDetails,
             $BundledModulesPath,
             $EnableConsoleRepl.IsPresent,
@@ -87,15 +91,19 @@ function Start-EditorServicesHost {
             $FeatureFlags)
 
     # Build the profile paths using the root paths of the current $profile variable
-    $profilePaths = New-Object Microsoft.PowerShell.EditorServices.Session.ProfilePaths @(
-        $hostDetails.ProfileId,
-        [System.IO.Path]::GetDirectoryName($profile.AllUsersAllHosts),
-        [System.IO.Path]::GetDirectoryName($profile.CurrentUserAllHosts));
+    $profilePaths =
+        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Session.ProfilePaths @(
+            $hostDetails.ProfileId,
+            [System.IO.Path]::GetDirectoryName($profile.AllUsersAllHosts),
+            [System.IO.Path]::GetDirectoryName($profile.CurrentUserAllHosts))
 
     $editorServicesHost.StartLogging($LogPath, $LogLevel);
 
-    $languageServiceConfig = New-Object Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportConfig
-    $debugServiceConfig    = New-Object Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportConfig
+    $languageServiceConfig =
+        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportConfig
+
+    $debugServiceConfig =
+        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportConfig
 
     if ($Stdio.IsPresent) {
         $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
@@ -143,15 +151,16 @@ function Compress-LogDir {
 
     begin {
         function LegacyZipFolder($Path, $ZipPath) {
-            if (!(Test-Path($ZipPath))) {
-                Set-Content -LiteralPath $ZipPath -Value ("PK" + [char]5 + [char]6 + ("$([char]0)" * 18))
-                (Get-Item $ZipPath).IsReadOnly = $false
+            if (!(Microsoft.PowerShell.Management\Test-Path($ZipPath))) {
+                $zipMagicHeader = "PK" + [char]5 + [char]6 + ("$([char]0)" * 18)
+                Microsoft.PowerShell.Management\Set-Content -LiteralPath $ZipPath -Value $zipMagicHeader
+                (Microsoft.PowerShell.Management\Get-Item $ZipPath).IsReadOnly = $false
             }
 
-            $shellApplication = New-Object -ComObject Shell.Application
+            $shellApplication = Microsoft.PowerShell.Utility\New-Object -ComObject Shell.Application
             $zipPackage = $shellApplication.NameSpace($ZipPath)
 
-            foreach ($file in (Get-ChildItem -LiteralPath $Path)) {
+            foreach ($file in (Microsoft.PowerShell.Management\Get-ChildItem -LiteralPath $Path)) {
                 $zipPackage.CopyHere($file.FullName)
                 Start-Sleep -MilliSeconds 500
             }
@@ -159,7 +168,7 @@ function Compress-LogDir {
     }
 
     end {
-        $zipPath = ((Convert-Path $Path) -replace '(\\|/)$','') + ".zip"
+        $zipPath = ((Microsoft.PowerShell.Management\Convert-Path $Path) -replace '(\\|/)$','') + ".zip"
 
         if (Get-Command Microsoft.PowerShell.Archive\Compress-Archive) {
             if ($PSCmdlet.ShouldProcess($zipPath, "Create ZIP")) {
@@ -196,7 +205,7 @@ function Get-PowerShellEditorServicesVersion {
         $versionInfo += "macOS $(lsb_release -d -s)$nl"
     }
     else {
-        $osInfo = Get-CimInstance Win32_OperatingSystem
+        $osInfo = CimCmdlets\Get-CimInstance Win32_OperatingSystem
         $versionInfo += "Windows $($osInfo.OSArchitecture) $($osInfo.Version)$nl"
     }
 
