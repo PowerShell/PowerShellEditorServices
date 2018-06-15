@@ -11,6 +11,10 @@ don't match the goals of the project.  The core maintainer team has the right of
 any contribution to this project.  However, we are very happy to hear community feedback on any decision 
 so that we can ensure we are solving the right problems in the right way.
 
+> NOTE: If you believe that there is a security vulnerability in the PowerShell extension for VSCode,
+it **must** be reported to [secure@microsoft.com](https://technet.microsoft.com/security/ff852094.aspx) to allow for [Coordinated Vulnerability Disclosure](https://technet.microsoft.com/security/dn467923).
+**Only** file an issue, if secure@microsoft.com has confirmed filing an issue is appropriate.
+
 ## Ways to Contribute
 
 - File a bug or feature request as an [issue](https://github.com/PowerShell/PowerShellEditorServices/issues)
