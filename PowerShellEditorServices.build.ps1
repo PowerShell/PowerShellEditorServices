@@ -330,9 +330,7 @@ task UploadArtifacts -If ($script:IsCIBuild) {
         Push-AppveyorArtifact .\src\PowerShellEditorServices.Protocol\bin\$Configuration\Microsoft.PowerShell.EditorServices.Protocol.$($script:FullVersion).nupkg
         Push-AppveyorArtifact .\src\PowerShellEditorServices.Host\bin\$Configuration\Microsoft.PowerShell.EditorServices.Host.$($script:FullVersion).nupkg
         Push-AppveyorArtifact .\PowerShellEditorServices-$($script:FullVersion).zip
-    }# elseif ($env:TF_BUILD) {
-#
- #   }
+    }
 }
 
 # The default task is to run the entire CI build
