@@ -11,7 +11,7 @@ don't match the goals of the project.  The core maintainer team has the right of
 any contribution to this project.  However, we are very happy to hear community feedback on any decision 
 so that we can ensure we are solving the right problems in the right way.
 
-**NOTE**: If you believe there is a security vulnerability, please see [Security Reporting](#security_reporting).
+**NOTE**: If you believe there is a security vulnerability, please see [Security Reporting](#security-reporting).
 
 ## Ways to Contribute
 
@@ -19,8 +19,7 @@ so that we can ensure we are solving the right problems in the right way.
 - Comment on existing issues to give your feedback on how they should be fixed/implemented
 - Contribute a bug fix or feature implementation by submitting a pull request
 - Contribute more unit tests for feature areas that lack good coverage
-- Review the pull requests that others submit to ensure they follow [established guidelines]
-  (#pull-request-guidelines)
+- Review the pull requests that others submit to ensure they follow [established guidelines](#follow-the-pull-request-process)
 - Help others gets started with the project by contributing documentation or hanging out
   in the #editors room in the [PowerShell community Slack chat](http://slack.poshcode.org).
 
