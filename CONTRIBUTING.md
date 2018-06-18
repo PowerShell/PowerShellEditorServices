@@ -11,14 +11,15 @@ don't match the goals of the project.  The core maintainer team has the right of
 any contribution to this project.  However, we are very happy to hear community feedback on any decision 
 so that we can ensure we are solving the right problems in the right way.
 
+**NOTE**: If you believe there is a security vulnerability, please see [Security Reporting](#security-reporting).
+
 ## Ways to Contribute
 
 - File a bug or feature request as an [issue](https://github.com/PowerShell/PowerShellEditorServices/issues)
 - Comment on existing issues to give your feedback on how they should be fixed/implemented
 - Contribute a bug fix or feature implementation by submitting a pull request
 - Contribute more unit tests for feature areas that lack good coverage
-- Review the pull requests that others submit to ensure they follow [established guidelines]
-  (#pull-request-guidelines)
+- Review the pull requests that others submit to ensure they follow [established guidelines](#follow-the-pull-request-process)
 - Help others gets started with the project by contributing documentation or hanging out
   in the #editors room in the [PowerShell community Slack chat](http://slack.poshcode.org).
 
@@ -145,3 +146,9 @@ on this check so that our project will always have good generated documentation.
   rebasing your commits.  Once you do your final push and we see the AppVeyor build pass, we will
   merge your changes!
   
+### Security Reporting
+
+If you believe that there is a security vulnerability in the PowerShell extension for VSCode,
+it **must** be reported to [secure@microsoft.com](https://technet.microsoft.com/security/ff852094.aspx) to allow for [Coordinated Vulnerability Disclosure](https://technet.microsoft.com/security/dn467923).
+**Only** file an issue, if secure@microsoft.com has confirmed filing an issue is appropriate.
+Please also CC in [vscode-powershell@microsoft.com](mailto:vscode-powershell@microsoft.com).
