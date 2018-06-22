@@ -153,9 +153,9 @@ namespace Microsoft.PowerShell.EditorServices
             var initialSessionState = InitialSessionState.CreateDefault2();
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
-#if !CoreCLR
-            runspace.ApartmentState = ApartmentState.STA;
-#endif
+// #if !CoreCLR
+//             runspace.ApartmentState = ApartmentState.STA;
+// #endif
             runspace.ThreadOptions = PSThreadOptions.ReuseThread;
             runspace.Open();
 

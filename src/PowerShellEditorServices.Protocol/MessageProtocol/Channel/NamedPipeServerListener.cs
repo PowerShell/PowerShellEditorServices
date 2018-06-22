@@ -69,13 +69,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                 {
                     try
                     {
-#if CoreCLR
                         await this.pipeServer.WaitForConnectionAsync();
-#else
-                        await Task.Factory.FromAsync(
-                            this.pipeServer.BeginWaitForConnection,
-                            this.pipeServer.EndWaitForConnection, null);
-#endif
+
                         this.OnClientConnect(
                             new NamedPipeServerChannel(
                                 this.pipeServer,

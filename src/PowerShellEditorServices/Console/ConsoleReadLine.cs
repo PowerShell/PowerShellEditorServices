@@ -29,18 +29,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
         #region Constructors
         static ConsoleReadLine()
         {
-            // Maybe we should just include the RuntimeInformation package for FullCLR?
-            #if CoreCLR
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 s_consoleProxy = new WindowsConsoleOperations();
                 return;
             }
-
             s_consoleProxy = new UnixConsoleOperations();
-            #else
-            s_consoleProxy = new WindowsConsoleOperations();
-            #endif
         }
 
         public ConsoleReadLine(PowerShellContext powerShellContext)
