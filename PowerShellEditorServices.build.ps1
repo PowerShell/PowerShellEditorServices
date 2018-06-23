@@ -172,17 +172,17 @@ task Test TestServer,TestProtocol,TestHost
 
 task TestServer -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test\
-    exec { & $script:dotnetExe test -verbose }
+    exec { & $script:dotnetExe test }
 }
 
 task TestProtocol -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
-    exec { & $script:dotnetExe test -verbose }
+    exec { & $script:dotnetExe test }
 }
 
 task TestHost -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
-    exec { & $script:dotnetExe test -verbose }
+    exec { & $script:dotnetExe test }
 }
 
 task CITest ?Test, {
