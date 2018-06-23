@@ -172,20 +172,17 @@ task Test TestServer,TestProtocol,TestHost
 
 task TestServer -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test\
-    exec { & $script:dotnetExe build -c $Configuration }
-    exec { & $script:dotnetExe test -configuration $Configuration -verbose -nobuild }
+    exec { & $script:dotnetExe test -verbose }
 }
 
 task TestProtocol -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
-    exec { & $script:dotnetExe build -c $Configuration }
-    exec { & $script:dotnetExe test -configuration $Configuration -verbose -nobuild }
+    exec { & $script:dotnetExe test -verbose }
 }
 
 task TestHost -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
-    exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe test -configuration $Configuration -verbose -nobuild }
+    exec { & $script:dotnetExe test -verbose }
 }
 
 task CITest ?Test, {
