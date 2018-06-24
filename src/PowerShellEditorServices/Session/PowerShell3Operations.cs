@@ -6,11 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices.Session
 {
+    using System.Management.Automation;
+
     internal class PowerShell3Operations : IVersionSpecificOperations
     {
         public void ConfigureDebugger(Runspace runspace)
@@ -32,27 +33,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
             out DebuggerResumeAction? debuggerResumeAction)
         {
             IEnumerable<TResult> executionResult = null;
-
-            using (var nestedPipeline = currentRunspace.CreateNestedPipeline())
+            using (var pwsh = PowerShell.Create())
             {
-                foreach (var command in psCommand.Commands)
-                {
-                    nestedPipeline.Commands.Add(command);
-                }
-
-                var results = nestedPipeline.Invoke();
-
-                if (typeof(TResult) != typeof(PSObject))
-                {
-                    executionResult =
-                        results
-                            .Select(pso => pso.BaseObject)
-                            .Cast<TResult>();
-                }
-                else
-                {
-                    executionResult = results.Cast<TResult>();
-                }
+                pwsh.Runspace = currentRunspace;
+                pwsh.Commands = psCommand;
+                executionResult = pwsh.Invoke<TResult>();
             }
 
             // Write the output to the host if necessary

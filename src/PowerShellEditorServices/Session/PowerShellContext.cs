@@ -823,44 +823,16 @@ namespace Microsoft.PowerShell.EditorServices
 
         internal static TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default(TResult))
         {
-            Pipeline pipeline = null;
-
-            try
+            using (var pwsh = PowerShell.Create())
             {
-                if (runspace.RunspaceAvailability == RunspaceAvailability.AvailableForNestedCommand)
-                {
-                    pipeline = runspace.CreateNestedPipeline(scriptToExecute, false);
-                }
-                else
-                {
-                    pipeline = runspace.CreatePipeline(scriptToExecute, false);
-                }
-
-                Collection<PSObject> results = pipeline.Invoke();
+                pwsh.Runspace = runspace;
+                Collection<TResult> results = pwsh.AddScript(scriptToExecute).Invoke<TResult>();
 
                 if (results.Count == 0 || results.FirstOrDefault() == null)
                 {
                     return defaultValue;
                 }
-
-                if (typeof(TResult) != typeof(PSObject))
-                {
-                    return results
-                            .Select(pso => pso.BaseObject)
-                            .OfType<TResult>()
-                            .FirstOrDefault();
-                }
-                else
-                {
-                    return
-                        results
-                            .OfType<TResult>()
-                            .FirstOrDefault();
-                }
-            }
-            finally
-            {
-                pipeline.Dispose();
+                return results.FirstOrDefault();
             }
         }
 
@@ -1526,6 +1498,12 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
+        private SessionDetails GetSessionDetailsInNestedPipeline()
+        {
+
+            return GetSessionDetailsInRunspace(this.CurrentRunspace.Runspace);
+        }
+
         private SessionDetails GetSessionDetailsInRunspace(Runspace runspace)
         {
             SessionDetails sessionDetails =
@@ -1559,24 +1537,6 @@ namespace Microsoft.PowerShell.EditorServices
                         this.ExecuteCommandInDebugger<PSObject>(command, false)
                             .LastOrDefault();
                 });
-        }
-
-        private SessionDetails GetSessionDetailsInNestedPipeline()
-        {
-            using (var pipeline = this.CurrentRunspace.Runspace.CreateNestedPipeline())
-            {
-                return this.GetSessionDetails(
-                    command =>
-                    {
-                        pipeline.Commands.Clear();
-                        pipeline.Commands.Add(command.Commands[0]);
-
-                        return
-                            pipeline
-                                .Invoke()
-                                .FirstOrDefault();
-                    });
-            }
         }
 
         private void SetProfileVariableInCurrentRunspace(ProfilePaths profilePaths)
