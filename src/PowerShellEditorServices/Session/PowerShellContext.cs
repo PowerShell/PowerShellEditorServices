@@ -826,28 +826,13 @@ namespace Microsoft.PowerShell.EditorServices
             using (var pwsh = PowerShell.Create())
             {
                 pwsh.Runspace = runspace;
-                Collection<PSObject> results = pwsh.AddScript(scriptToExecute)
-                    .Invoke(null, new PSInvocationSettings() { AddToHistory = false });
+                Collection<TResult> results = pwsh.AddScript(scriptToExecute).Invoke<TResult>();
 
                 if (results.Count == 0 || results.FirstOrDefault() == null)
                 {
                     return defaultValue;
                 }
-
-                if (typeof(TResult) != typeof(PSObject))
-                {
-                    return results
-                            .Select(pso => pso.BaseObject)
-                            .OfType<TResult>()
-                            .FirstOrDefault();
-                }
-                else
-                {
-                    return
-                        results
-                            .OfType<TResult>()
-                            .FirstOrDefault();
-                }
+                return results.FirstOrDefault();
             }
         }
 
