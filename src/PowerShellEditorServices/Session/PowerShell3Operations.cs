@@ -37,19 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             {
                 pwsh.Runspace = currentRunspace;
                 pwsh.Commands = psCommand;
-                var results = pwsh.Invoke();
-
-                if (typeof(TResult) != typeof(PSObject))
-                {
-                    executionResult =
-                        results
-                            .Select(pso => pso.BaseObject)
-                            .Cast<TResult>();
-                }
-                else
-                {
-                    executionResult = results.Cast<TResult>();
-                }
+                executionResult = pwsh.Invoke<TResult>();
             }
 
             // Write the output to the host if necessary
