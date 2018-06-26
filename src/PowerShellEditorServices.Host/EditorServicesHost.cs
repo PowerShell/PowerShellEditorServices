@@ -31,7 +31,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
     public enum EditorServiceTransportType
     {
-        Tcp,
         NamedPipe,
         Stdio
     }
@@ -41,7 +40,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
         public EditorServiceTransportType TransportType { get; set; }
         /// <summary>
         /// Configures the endpoint of the transport.
-        /// For Tcp it's an integer specifying the port.
         /// For Stdio it's ignored.
         /// For NamedPipe it's the pipe name.
         /// </summary>
@@ -74,10 +72,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
         #endregion
 
         #region Properties
-
-        public int DebugServicePort { get; private set; }
-
-        public int LanguageServicePort { get; private set; }
 
         public EditorServicesHostStatus Status { get; private set; }
 
@@ -182,11 +176,13 @@ namespace Microsoft.PowerShell.EditorServices.Host
         }
 
         /// <summary>
-        /// Starts the language service with the specified TCP socket port.
+        /// Starts the language service with the specified config.
         /// </summary>
-        /// <param name="languageServicePort">The port number for the language service.</param>
-        /// <param name="profilePaths">The object containing the profile paths to load for this session.</param>
-        public void StartLanguageService(EditorServiceTransportConfig config, ProfilePaths profilePaths)
+        /// <param name="config">The config that contains information on the communication protocol that will be used.</param>
+        /// <param name="profilePaths">The profiles that will be loaded in the session.</param>
+        public void StartLanguageService(
+            EditorServiceTransportConfig config,
+            ProfilePaths profilePaths)
         {
             this.profilePaths = profilePaths;
 
@@ -253,9 +249,11 @@ namespace Microsoft.PowerShell.EditorServices.Host
         }
 
         /// <summary>
-        /// Starts the debug service with the specified TCP socket port.
+        /// Starts the debug service with the specified config.
         /// </summary>
-        /// <param name="debugServicePort">The port number for the debug service.</param>
+        /// <param name="config">The config that contains information on the communication protocol that will be used.</param>
+        /// <param name="profilePaths">The profiles that will be loaded in the session.</param>
+        /// <param name="useExistingSession">Determines if we will reuse the session that we have.</param>
         public void StartDebugService(
             EditorServiceTransportConfig config,
             ProfilePaths profilePaths,
@@ -458,11 +456,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
         {
             switch (config.TransportType)
             {
-                case EditorServiceTransportType.Tcp:
-                {
-                    return new TcpSocketServerListener(protocol, int.Parse(config.Endpoint), this.logger);
-                }
-
                 case EditorServiceTransportType.Stdio:
                 {
                     return new StdioServerListener(protocol, this.logger);

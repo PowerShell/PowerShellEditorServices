@@ -5,6 +5,7 @@
 
 using System;
 using System.IO.Pipes;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Utility;
 
@@ -14,6 +15,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     {
         private ILogger logger;
         private NamedPipeClientStream pipeClient;
+
+        private const string NAMED_PIPE_UNIX_PREFIX = "CoreFxPipe_";
 
         public NamedPipeClientChannel(
             NamedPipeClientStream pipeClient,
@@ -47,10 +50,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         }
 
         public static async Task<NamedPipeClientChannel> Connect(
-            string pipeName,
+            string pipeFile,
             MessageProtocolType messageProtocolType,
             ILogger logger)
         {
+            string pipeName = System.IO.Path.GetFileName(pipeFile);
+
+            // on macOS and Linux, the named pipe name is prefixed by .NET Core
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                pipeName = pipeFile.Split(new [] {NAMED_PIPE_UNIX_PREFIX}, StringSplitOptions.None)[1];
+            }
+
             var pipeClient =
                 new NamedPipeClientStream(
                     ".",

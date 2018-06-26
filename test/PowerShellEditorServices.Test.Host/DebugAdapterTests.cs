@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             testLogPath += "-server.log";
             System.Console.WriteLine("        Output log at path: {0}", testLogPath);
 
-            Tuple<int, int> portNumbers =
+            Tuple<string, string> pipeNames =
                 await this.LaunchService(
                     testLogPath,
                     waitForDebugger: false);
@@ -51,8 +51,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             this.debugAdapterClient =
                 new DebugAdapterClient(
-                    await TcpSocketClientChannel.Connect(
-                        portNumbers.Item2,
+                    await NamedPipeClientChannel.Connect(
+                        pipeNames.Item2,
                         MessageProtocolType.DebugAdapter,
                         this.logger),
                     this.logger);

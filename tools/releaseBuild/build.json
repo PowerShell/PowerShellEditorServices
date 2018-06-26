@@ -7,6 +7,10 @@
         "DockerImageName": "powershelleditorservices",
         "BinaryBucket": "release",
         "PublishAsFolder": true,
+        "BuildDockerOptions": [
+            "-m",
+            "4096m"
+        ],
         "AdditionalContextFiles" : [
             ".\\tools\\releaseBuild\\Image\\build.ps1",
             ".\\tools\\releaseBuild\\Image\\dockerInstall.psm1"

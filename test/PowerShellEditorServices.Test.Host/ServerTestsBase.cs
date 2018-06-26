@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         private ConcurrentDictionary<string, AsyncQueue<object>> requestQueuePerType =
             new ConcurrentDictionary<string, AsyncQueue<object>>();
 
-        protected async Task<Tuple<int, int>> LaunchService(
+        protected async Task<Tuple<string, string>> LaunchService(
             string logPath,
             bool waitForDebugger = false)
         {
@@ -144,9 +144,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             JObject result = JObject.Parse(sessionDetailsText);
             if (result["status"].Value<string>() == "started")
             {
-                return new Tuple<int, int>(
-                    result["languageServicePort"].Value<int>(),
-                    result["debugServicePort"].Value<int>());
+                return new Tuple<string, string>(
+                    result["languageServicePipeName"].Value<string>(),
+                    result["debugServicePipeName"].Value<string>());
             }
 
             Debug.WriteLine($"Failed to read session details from '{sessionPath}'");

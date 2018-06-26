@@ -31,12 +31,6 @@ function Start-EditorServicesHost {
         [string]
         $HostVersion,
 
-        [int]
-        $LanguageServicePort,
-
-        [int]
-        $DebugServicePort,
-
         [switch]
         $Stdio,
 
@@ -108,16 +102,6 @@ function Start-EditorServicesHost {
     if ($Stdio.IsPresent) {
         $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
         $debugServiceConfig.TransportType    = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
-    }
-
-    if ($LanguageServicePort) {
-        $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Tcp
-        $languageServiceConfig.Endpoint = "$LanguageServicePort"
-    }
-
-    if ($DebugServicePort) {
-        $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Tcp
-        $debugServiceConfig.Endpoint = "$DebugServicePort"
     }
 
     if ($LanguageServiceNamedPipe) {

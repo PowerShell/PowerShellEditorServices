@@ -6,7 +6,7 @@
 # - Verifying the existence of dependencies like PowerShellGet
 # - Verifying that the expected version of the PowerShellEditorServices module is installed
 # - Installing the PowerShellEditorServices module if confirmed by the user
-# - Finding unused TCP port numbers for the language and debug services to use
+# - Creating named pipes for the language and debug services to use (if using named pipes)
 # - Starting the language and debug services from the PowerShellEditorServices module
 #
 # NOTE: If editor integration authors make modifications to this
@@ -39,7 +39,7 @@ param(
     [ValidateNotNullOrEmpty()]
     $LogPath,
 
-    [ValidateSet("Diagnostic", "Normal", "Verbose", "Error", "Diagnostic")]
+    [ValidateSet("Diagnostic", "Normal", "Verbose", "Error")]
     $LogLevel,
 
 	[Parameter(Mandatory=$true)]
@@ -75,8 +75,7 @@ param(
     $DebugServicePipeName = $null
 )
 
-$minPortNumber = 10000
-$maxPortNumber = 30000
+$DEFAULT_USER_MODE = "600"
 
 if ($LogLevel -eq "Diagnostic") {
     $VerbosePreference = 'Continue'
@@ -168,67 +167,71 @@ function Test-ModuleAvailable($ModuleName, $ModuleVersion) {
     return $false;
 }
 
-function Test-PortAvailability {
-    param(
-        [Parameter(Mandatory=$true)]
-        [int]
-        $PortNumber
-    )
+function New-NamedPipeName {
 
-    $portAvailable = $true
+    # We try 10 times to find a valid pipe name
+    for ($i = 0; $i -lt 10; $i++) {
+        # add a guid to make the pipe unique
+        $PipeName = "PSES_$((New-Guid).Guid)"
 
-    try {
-        # After some research, I don't believe we should run into problems using an IPv4 port
-        # that happens to be in use via an IPv6 address.  That is based on this info:
-        # https://www.ibm.com/support/knowledgecenter/ssw_i5_54/rzai2/rzai2compipv4ipv6.htm#rzai2compipv4ipv6__compports
-        $ipAddress = [System.Net.IPAddress]::Loopback
-        Log "Testing availability of port ${PortNumber} at address ${ipAddress} / $($ipAddress.AddressFamily)"
-
-        $tcpListener = Microsoft.PowerShell.Utility\New-Object System.Net.Sockets.TcpListener @($ipAddress, $PortNumber)
-        $tcpListener.Start()
-        $tcpListener.Stop()
-    }
-    catch [System.Net.Sockets.SocketException] {
-        $portAvailable = $false
-
-        # Check the SocketErrorCode to see if it's the expected exception
-        if ($_.Exception.SocketErrorCode -eq [System.Net.Sockets.SocketError]::AddressAlreadyInUse) {
-            Log "Port $PortNumber is in use."
-        }
-        else {
-            Log "SocketException on port ${PortNumber}: $($_.Exception)"
+        if ((Test-NamedPipeName -PipeName $PipeName)) {
+            return $PipeName
         }
     }
-
-    $portAvailable
+    ExitWithError "Could not find valid a pipe name."
 }
 
-$portsInUse = @{}
-$rand = Microsoft.PowerShell.Utility\New-Object System.Random
-function Get-AvailablePort() {
-    $triesRemaining = 10;
+function Get-NamedPipePath {
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $PipeName
+    )
 
-    while ($triesRemaining -gt 0) {
-        do {
-            $port = $rand.Next($minPortNumber, $maxPortNumber)
-        }
-        while ($portsInUse.ContainsKey($port))
-
-        # Whether we succeed or fail, don't try this port again
-        $portsInUse[$port] = 1
-
-        Log "Checking port: $port, attempts remaining $triesRemaining --------------------"
-        if ((Test-PortAvailability -PortNumber $port) -eq $true) {
-            Log "Port: $port is available"
-            return $port
-        }
-
-        Log "Port: $port is NOT available"
-        $triesRemaining--;
+    if (-not $IsLinux -and -not $IsMacOS) {
+        return "\\.\pipe\$PipeName";
+    }
+    else {
+        # Windows uses NamedPipes where non-Windows platforms use Unix Domain Sockets.
+        # the Unix Domain Sockets live in the tmp directory and are prefixed with "CoreFxPipe_"
+        return (Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "CoreFxPipe_$PipeName")
     }
 
-    Log "Did not find any available ports!!"
-    return $null
+}
+
+# Returns True if it's a valid pipe name
+# A valid pipe name is a file that does not exist either
+# in the temp directory (macOS & Linux) or in the pipe directory (Windows)
+function Test-NamedPipeName {
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $PipeName
+    )
+
+    $path = Get-NamedPipePath -PipeName $PipeName
+    return -not (Test-Path $path)
+}
+
+function Set-NamedPipeMode {
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $PipeFile
+    )
+    chmod $DEFAULT_USER_MODE $PipeFile
+    if ($IsLinux) {
+        $mode = stat -c "%A" $PipeFile
+    }
+    else {
+        $mode = stat -f "%A" $PipeFile
+    }
+    if ($mode -ne $DEFAULT_USER_MODE) {
+        ExitWithError "Permissions to the pipe file were not set properly. Expected: $DEFAULT_USER_MODE Actual: $mode for file: $PipeFile"
+    }
 }
 
 # Add BundledModulesPath to $env:PSModulePath
@@ -251,21 +254,36 @@ try {
 
     Microsoft.PowerShell.Core\Import-Module PowerShellEditorServices -ErrorAction Stop
 
-	# Locate available port numbers for services
-	# There could be only one service on Stdio channel
+    # Locate available port numbers for services
+    # There could be only one service on Stdio channel
 
-	$languageServiceTransport = $null
-	$debugServiceTransport = $null
+    $languageServiceTransport = $null
+    $debugServiceTransport = $null
 
-	if ($Stdio.IsPresent -and -not $DebugServiceOnly.IsPresent) { $languageServiceTransport = "Stdio" }
-	elseif ($LanguageServicePipeName)                           { $languageServiceTransport = "NamedPipe"; $languageServicePipeName = "$LanguageServicePipeName" }
-	elseif ($languageServicePort = Get-AvailablePort)           { $languageServiceTransport = "Tcp" }
-	else                                                        { ExitWithError "Failed to find an open socket port for language service." }
-
-	if ($Stdio.IsPresent -and $DebugServiceOnly.IsPresent)      { $debugServiceTransport = "Stdio" }
-	elseif ($DebugServicePipeName)                              { $debugServiceTransport = "NamedPipe"; $debugServicePipeName = "$DebugServicePipeName" }
-	elseif ($debugServicePort = Get-AvailablePort)              { $debugServiceTransport = "Tcp" }
-	else                                                        { ExitWithError "Failed to find an open socket port for debug service." }
+    if ($Stdio.IsPresent) {
+        $languageServiceTransport = "Stdio"
+        $debugServiceTransport = "Stdio"
+    }
+    else {
+        $languageServiceTransport = "NamedPipe"
+        $debugServiceTransport = "NamedPipe"
+        if (-not $LanguageServicePipeName) {
+            $LanguageServicePipeName = New-NamedPipeName
+        }
+        else {
+            if (-not (Test-NamedPipeName -PipeName $LanguageServicePipeName)) {
+                ExitWithError "Pipe name supplied is already taken: $LanguageServicePipeName"
+            }
+        }
+        if (-not $DebugServicePipeName) {
+            $DebugServicePipeName = New-NamedPipeName
+        }
+        else {
+            if (-not (Test-NamedPipeName -PipeName $DebugServicePipeName)) {
+                ExitWithError "Pipe name supplied is already taken: $DebugServicePipeName"
+            }
+        }
+    }
 
     if ($EnableConsoleRepl) {
         Write-Host "PowerShell Integrated Console`n"
@@ -281,11 +299,9 @@ try {
             -LogPath $LogPath `
             -LogLevel $LogLevel `
             -AdditionalModules $AdditionalModules `
-            -LanguageServicePort $languageServicePort `
-            -DebugServicePort $debugServicePort `
             -LanguageServiceNamedPipe $LanguageServicePipeName `
             -DebugServiceNamedPipe $DebugServicePipeName `
-            -Stdio:$Stdio.IsPresent`
+            -Stdio:($TransportType -eq "Stdio")`
             -BundledModulesPath $BundledModulesPath `
             -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
             -DebugServiceOnly:$DebugServiceOnly.IsPresent `
@@ -300,11 +316,18 @@ try {
         "debugServiceTransport" = $debugServiceTransport;
     };
 
-    if ($languageServicePipeName) { $resultDetails["languageServicePipeName"] = "$languageServicePipeName" }
-    if ($debugServicePipeName)    { $resultDetails["debugServicePipeName"]    = "$debugServicePipeName" }
-
-    if ($languageServicePort)     { $resultDetails["languageServicePort"]     = $languageServicePort }
-    if ($debugServicePort)        { $resultDetails["debugServicePort"]        = $debugServicePort }
+    if ($LanguageServicePipeName) {
+        $resultDetails["languageServicePipeName"] = Get-NamedPipePath -PipeName $LanguageServicePipeName
+        if ($IsLinux -or $IsMacOS) {
+            Set-NamedPipeMode -PipeFile $resultDetails["languageServicePipeName"]
+        }
+    }
+    if ($DebugServicePipeName) {
+        $resultDetails["debugServicePipeName"] = Get-NamedPipePath -PipeName $DebugServicePipeName
+        if ($IsLinux -or $IsMacOS) {
+            Set-NamedPipeMode -PipeFile $resultDetails["debugServicePipeName"]
+        }
+    }
 
     # Notify the client that the services have started
     WriteSessionFile $resultDetails

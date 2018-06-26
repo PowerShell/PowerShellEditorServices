@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<SignConfigXML>
+  <job platform="" configuration="" dest="__OUTPATHROOT__" jobname="PowerShell Editor Services File Catalog" approvers="vigarg;gstolt">
+    <file src="__INPATHROOT__\PowerShellEditorServices.cat" signType="Authenticode" dest="__OUTPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\PowerShellEditorServices.cat" />
+    <file src="__INPATHROOT__\PowerShellEditorServices.VSCode.cat" signType="Authenticode" dest="__OUTPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.cat" />
+  </job>
+</SignConfigXML>

@@ -30,7 +30,7 @@ of the following classes:
 - TemplateService
 
 The intended usage model is now to host PowerShell Editor Services within powershell.exe
-and communicate with it over TCP sockets via the [Language Server Protocol](https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md)
+and communicate with it over named pipes (or Unix domain sockets on macOS & Linux) via the [Language Server Protocol](https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md)
 and [Debug Adapter Protocol](https://github.com/Microsoft/vscode-debugadapter-node/blob/master/protocol/src/debugProtocol.ts).
 Detailed usage documentation for this module is coming soon!
 
