@@ -80,7 +80,9 @@ $maxPortNumber = 30000
 
 if ($LogLevel -eq "Diagnostic") {
     $VerbosePreference = 'Continue'
-    Start-Transcript (Join-Path (Split-Path $LogPath -Parent) Start-EditorServices.log) -Force
+    $scriptName = [System.IO.Path]::GetFileNameWithoutExtension($MyInvocation.MyCommand.Name)
+    $logFileName = [System.IO.Path]::GetFileName($LogPath)
+    Start-Transcript (Join-Path (Split-Path $LogPath -Parent) "$scriptName-$logFileName") -Force
 }
 
 function LogSection([string]$msg) {
