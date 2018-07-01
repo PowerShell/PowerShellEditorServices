@@ -291,11 +291,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             if (string.IsNullOrEmpty(workingDir))
             {
-#if CoreCLR
                 workingDir = AppContext.BaseDirectory;
-#else
-                workingDir = Environment.CurrentDirectory;
-#endif
             }
 
             if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local &&

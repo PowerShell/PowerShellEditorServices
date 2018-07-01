@@ -153,9 +153,9 @@ namespace Microsoft.PowerShell.EditorServices
             var initialSessionState = InitialSessionState.CreateDefault2();
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
-#if !CoreCLR
-            runspace.ApartmentState = ApartmentState.STA;
-#endif
+// #if !CoreCLR
+//             runspace.ApartmentState = ApartmentState.STA;
+// #endif
             runspace.ThreadOptions = PSThreadOptions.ReuseThread;
             runspace.Open();
 
@@ -228,14 +228,6 @@ namespace Microsoft.PowerShell.EditorServices
             if (powerShellVersion >= new Version(5, 0))
             {
                 this.versionSpecificOperations = new PowerShell5Operations();
-            }
-            else if (powerShellVersion.Major == 4)
-            {
-                this.versionSpecificOperations = new PowerShell4Operations();
-            }
-            else if (powerShellVersion.Major == 3)
-            {
-                this.versionSpecificOperations = new PowerShell3Operations();
             }
             else
             {
@@ -823,20 +815,10 @@ namespace Microsoft.PowerShell.EditorServices
 
         internal static TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default(TResult))
         {
-            Pipeline pipeline = null;
-
-            try
+            using (var pwsh = PowerShell.Create(RunspaceMode.CurrentRunspace))
             {
-                if (runspace.RunspaceAvailability == RunspaceAvailability.AvailableForNestedCommand)
-                {
-                    pipeline = runspace.CreateNestedPipeline(scriptToExecute, false);
-                }
-                else
-                {
-                    pipeline = runspace.CreatePipeline(scriptToExecute, false);
-                }
-
-                Collection<PSObject> results = pipeline.Invoke();
+                Collection<PSObject> results = pwsh.AddScript(scriptToExecute)
+                    .Invoke(null, new PSInvocationSettings() { AddToHistory = false });
 
                 if (results.Count == 0 || results.FirstOrDefault() == null)
                 {
@@ -858,10 +840,44 @@ namespace Microsoft.PowerShell.EditorServices
                             .FirstOrDefault();
                 }
             }
-            finally
-            {
-                pipeline.Dispose();
-            }
+
+            // try
+            // {
+            //     if (runspace.RunspaceAvailability == RunspaceAvailability.AvailableForNestedCommand)
+            //     {
+            //         pipeline = runspace.CreateNestedPipeline(scriptToExecute, false);
+            //     }
+            //     else
+            //     {
+            //         pipeline = runspace.CreatePipeline(scriptToExecute, false);
+            //     }
+
+            //     Collection<PSObject> results = pipeline.Invoke();
+
+            //     if (results.Count == 0 || results.FirstOrDefault() == null)
+            //     {
+            //         return defaultValue;
+            //     }
+
+            //     if (typeof(TResult) != typeof(PSObject))
+            //     {
+            //         return results
+            //                 .Select(pso => pso.BaseObject)
+            //                 .OfType<TResult>()
+            //                 .FirstOrDefault();
+            //     }
+            //     else
+            //     {
+            //         return
+            //             results
+            //                 .OfType<TResult>()
+            //                 .FirstOrDefault();
+            //     }
+            // }
+            // finally
+            // {
+            //     pipeline.Dispose();
+            // }
         }
 
         /// <summary>
@@ -1563,20 +1579,34 @@ namespace Microsoft.PowerShell.EditorServices
 
         private SessionDetails GetSessionDetailsInNestedPipeline()
         {
-            using (var pipeline = this.CurrentRunspace.Runspace.CreateNestedPipeline())
+            using (var pwsh = PowerShell.Create(RunspaceMode.CurrentRunspace))
             {
                 return this.GetSessionDetails(
                     command =>
                     {
-                        pipeline.Commands.Clear();
-                        pipeline.Commands.Add(command.Commands[0]);
+                        // pwsh.Commands.Clear();
+                        pwsh.AddCommand(command.Commands[0].CommandText);
 
                         return
-                            pipeline
+                            pwsh
                                 .Invoke()
                                 .FirstOrDefault();
                     });
             }
+            // using (var pipeline = this.CurrentRunspace.Runspace.CreateNestedPipeline())
+            // {
+            //     return this.GetSessionDetails(
+            //         command =>
+            //         {
+            //             pipeline.Commands.Clear();
+            //             pipeline.Commands.Add(command.Commands[0]);
+
+            //             return
+            //                 pipeline
+            //                     .Invoke()
+            //                     .FirstOrDefault();
+            //         });
+            // }
         }
 
         private void SetProfileVariableInCurrentRunspace(ProfilePaths profilePaths)

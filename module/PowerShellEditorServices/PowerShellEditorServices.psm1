@@ -3,15 +3,11 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
-if (!$PSVersionTable.PSEdition -or $PSVersionTable.PSEdition -eq "Desktop") {
-    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.dll"
-    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.Host.dll"
-}
-else {
+
     Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.dll"
     Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.Protocol.dll"
     Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.Host.dll"
-}
+
 
 function Start-EditorServicesHost {
     [CmdletBinding()]
