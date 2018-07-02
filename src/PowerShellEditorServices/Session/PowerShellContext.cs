@@ -827,12 +827,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 pwsh.Runspace = runspace;
                 Collection<TResult> results = pwsh.AddScript(scriptToExecute).Invoke<TResult>();
-
-                if (results.Count == 0 || results.FirstOrDefault() == null)
-                {
-                    return defaultValue;
-                }
-                return results.FirstOrDefault();
+                return results.DefaultIfEmpty(defaultValue).First();
             }
         }
 
