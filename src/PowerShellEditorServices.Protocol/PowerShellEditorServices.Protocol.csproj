@@ -4,7 +4,7 @@
   <PropertyGroup>
     <AssemblyTitle>PowerShell Editor Services Host Protocol Library</AssemblyTitle>
     <Description>Provides message types and client/server APIs for the PowerShell Editor Services JSON protocol.</Description>
-    <TargetFrameworks>netstandard1.6;net451;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net451;</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Protocol</AssemblyName>
   </PropertyGroup>
 
@@ -21,7 +21,7 @@
     </PackageReference>
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
   </PropertyGroup>
 
