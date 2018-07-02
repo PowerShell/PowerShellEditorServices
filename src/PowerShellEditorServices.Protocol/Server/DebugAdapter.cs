@@ -255,22 +255,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.RegisterEventHandlers();
 
             // Set the working directory for the PowerShell runspace to the cwd passed in via launch.json.
-            // In case that is null, use the the folder of the script to be executed.  If the resulting
-            // working dir path is a file path then extract the directory and use that.
-            string workingDir =
-                launchParams.Cwd ??
-                launchParams.Script ??
-#pragma warning disable 618
-                launchParams.Program;
-#pragma warning restore 618
+            string workingDir = launchParams.Cwd;
 
-            // When debugging an "untitled" (unsaved) file - the working dir can't be derived
-            // from the Script path.  OTOH, if the launch params specifies a Cwd, use it.
-            if (ScriptFile.IsUntitledPath(workingDir) && string.IsNullOrEmpty(launchParams.Cwd))
-            {
-                workingDir = null;
-            }
-
+            // Assuming we have a specified working dir, unescape the path and verify it.
             if (!string.IsNullOrEmpty(workingDir))
             {
                 workingDir = PowerShellContext.UnescapePath(workingDir);
@@ -289,18 +276,28 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
             }
 
-            if (string.IsNullOrEmpty(workingDir))
+            // A null or empty string value for CWD is an indicator to NOT change the working directory
+            // but only if we are debugging in the integrated console where there is an existing cwd.
+            // However, if we are running in a temporary integrated console, there is no pre-existing
+            // cwd, so fall through to the "else if: where we set a working directory.
+            if (string.IsNullOrEmpty(workingDir) && !launchParams.CreateTemporaryIntegratedConsole)
             {
-#if CoreCLR
-                workingDir = AppContext.BaseDirectory;
-#else
-                workingDir = Environment.CurrentDirectory;
-#endif
+                Logger.Write(LogLevel.Verbose, "Launch config requested working dir not be changed/set");
             }
-
-            if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local &&
-                !this.editorSession.DebugService.IsDebuggerStopped)
+            else if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local &&
+                     !this.editorSession.DebugService.IsDebuggerStopped)
             {
+                // If we have no working dir by this point, pick some reasonable default.
+                if (string.IsNullOrEmpty(workingDir))
+                {
+#if CoreCLR
+                    //TODO: RKH 2018-06-26 .NET standard 2.0 has added Environment.CurrentDirectory - let's use it.
+                    workingDir = AppContext.BaseDirectory;
+#else
+                    workingDir = Environment.CurrentDirectory;
+#endif
+                }
+
                 await editorSession.PowerShellContext.SetWorkingDirectory(workingDir, isPathAlreadyEscaped: false);
                 Logger.Write(LogLevel.Verbose, "Working dir set to: " + workingDir);
             }
@@ -316,7 +313,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Store the launch parameters so that they can be used later
             this.noDebug = launchParams.NoDebug;
 #pragma warning disable 618
-            this.scriptToLaunch = launchParams.Script ?? launchParams.Program;
+            this.scriptToLaunch = launchParams.Script;
 #pragma warning restore 618
             this.arguments = arguments;
             this.IsUsingTempIntegratedConsole = launchParams.CreateTemporaryIntegratedConsole;
