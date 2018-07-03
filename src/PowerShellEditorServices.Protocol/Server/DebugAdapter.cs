@@ -254,41 +254,38 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             this.RegisterEventHandlers();
 
-            // Set the working directory for the PowerShell runspace to the cwd passed in via launch.json.
-            string workingDir = launchParams.Cwd;
-
-            // Assuming we have a specified working dir, unescape the path and verify it.
-            if (!string.IsNullOrEmpty(workingDir))
+            // Determine whether or not the working directory should be set in the PowerShellContext.
+            if ((this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local) &&
+                !this.editorSession.DebugService.IsDebuggerStopped)
             {
-                workingDir = PowerShellContext.UnescapePath(workingDir);
-                try
+                // Get the working directory that was passed via the debug config
+                // (either via launch.json or generated via no-config debug).
+                string workingDir = launchParams.Cwd;
+
+                // Assuming we have a non-empty/null working dir, unescape the path and verify
+                // the path exists and is a directory.
+                if (!string.IsNullOrEmpty(workingDir))
                 {
-                    if ((File.GetAttributes(workingDir) & FileAttributes.Directory) != FileAttributes.Directory)
+                    workingDir = PowerShellContext.UnescapePath(workingDir);
+                    try
                     {
-                        workingDir = Path.GetDirectoryName(workingDir);
+                        if ((File.GetAttributes(workingDir) & FileAttributes.Directory) != FileAttributes.Directory)
+                        {
+                            workingDir = Path.GetDirectoryName(workingDir);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        workingDir = null;
+                        Logger.Write(
+                            LogLevel.Error, 
+                            $"The specified 'cwd' path is invalid: '{launchParams.Cwd}'. Error: {ex.Message}");
                     }
                 }
-                catch (Exception ex)
-                {
-                    Logger.Write(LogLevel.Error, "cwd path is invalid: " + ex.Message);
 
-                    workingDir = null;
-                }
-            }
-
-            // A null or empty string value for CWD is an indicator to NOT change the working directory
-            // but only if we are debugging in the integrated console where there is an existing cwd.
-            // However, if we are running in a temporary integrated console, there is no pre-existing
-            // cwd, so fall through to the "else if: where we set a working directory.
-            if (string.IsNullOrEmpty(workingDir) && !launchParams.CreateTemporaryIntegratedConsole)
-            {
-                Logger.Write(LogLevel.Verbose, "Launch config requested working dir not be changed/set");
-            }
-            else if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local &&
-                     !this.editorSession.DebugService.IsDebuggerStopped)
-            {
-                // If we have no working dir by this point, pick some reasonable default.
-                if (string.IsNullOrEmpty(workingDir))
+                // If we have no working dir by this point and we are running in a temp console, 
+                // pick some reasonable default.
+                if (string.IsNullOrEmpty(workingDir) && launchParams.CreateTemporaryIntegratedConsole)
                 {
 #if CoreCLR
                     //TODO: RKH 2018-06-26 .NET standard 2.0 has added Environment.CurrentDirectory - let's use it.
@@ -298,8 +295,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 #endif
                 }
 
-                await editorSession.PowerShellContext.SetWorkingDirectory(workingDir, isPathAlreadyEscaped: false);
-                Logger.Write(LogLevel.Verbose, "Working dir set to: " + workingDir);
+                // At this point, we will either have a working dir that should be set to cwd in
+                // the PowerShellContext or the user has requested (via an empty/null cwd) that
+                // the working dir should not be changed.
+                if (!string.IsNullOrEmpty(workingDir))
+                {
+                    await editorSession.PowerShellContext.SetWorkingDirectory(workingDir, isPathAlreadyEscaped: false);
+                }
+
+                Logger.Write(LogLevel.Verbose, $"Working dir " + (string.IsNullOrEmpty(workingDir) ? "not set." : $"set to '{workingDir}'"));
             }
 
             // Prepare arguments to the script - if specified
