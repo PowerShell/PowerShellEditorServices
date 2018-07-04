@@ -316,9 +316,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // Store the launch parameters so that they can be used later
             this.noDebug = launchParams.NoDebug;
-#pragma warning disable 618
             this.scriptToLaunch = launchParams.Script;
-#pragma warning restore 618
             this.arguments = arguments;
             this.IsUsingTempIntegratedConsole = launchParams.CreateTemporaryIntegratedConsole;
 
