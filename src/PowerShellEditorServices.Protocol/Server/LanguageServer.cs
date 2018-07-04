@@ -225,7 +225,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                             TriggerCharacters = new string[] { " " } // TODO: Other characters here?
                         },
                         DocumentFormattingProvider = false,
-                        DocumentRangeFormattingProvider = false
+                        DocumentRangeFormattingProvider = false,
+                        RenameProvider = false
                     }
                 });
         }
