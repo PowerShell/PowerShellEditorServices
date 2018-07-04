@@ -19,12 +19,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
     public class LaunchRequestArguments
     {
         /// <summary>
-        /// Gets or sets the absolute path to the program to debug.
-        /// </summary>
-        [Obsolete("This property has been deprecated in favor of the Script property.")]
-        public string Program { get; set; }
-
-        /// <summary>
         /// Gets or sets the absolute path to the script to debug.
         /// </summary>
         public string Script { get; set; }
