@@ -136,6 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
 
             this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
+            this.messageHandlers.SetRequestHandler(GetCommandsRequest.Type, this.HandleGetCommandsRequest);
 
             this.messageHandlers.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
             this.messageHandlers.SetRequestHandler(InstallModuleRequest.Type, this.HandleInstallModuleRequest);
@@ -518,6 +519,20 @@ function __Expand-Alias {
 
             psCommand = new PSCommand();
             psCommand.AddCommand("__Expand-Alias").AddArgument(content);
+            var result = await this.editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
+
+            await requestContext.SendResult(result.First().ToString());
+        }
+
+        private async Task HandleGetCommandsRequest(
+            string content,
+            RequestContext<string> requestContext)
+        {
+            var script = @"
+            Get-Command Get-Command | ConvertTo-Json
+";
+            var psCommand = new PSCommand();
+            psCommand.AddScript("Get-Command Get-Command | Select-Object Name,Parameters,ParameterSets | ConvertTo-Json");
             var result = await this.editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
 
             await requestContext.SendResult(result.First().ToString());
