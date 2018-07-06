@@ -525,17 +525,30 @@ function __Expand-Alias {
         }
 
         private async Task HandleGetCommandsRequest(
-            string content,
-            RequestContext<string> requestContext)
+            object param,
+            RequestContext<object> requestContext)
         {
-            var script = @"
-            Get-Command Get-Command | ConvertTo-Json
-";
             var psCommand = new PSCommand();
-            psCommand.AddScript("Get-Command Get-Command | Select-Object Name,Parameters,ParameterSets | ConvertTo-Json");
-            var result = await this.editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
+            psCommand.AddScript("Get-Command -CommandType Function, Cmdlet, ExternalScript");
+            var result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
 
-            await requestContext.SendResult(result.First().ToString());
+            var commandList = new List<PSCommandMessage>();
+
+            if (result != null)
+            {
+                foreach (dynamic c in result)
+                {
+                    commandList.Add(new PSCommandMessage {
+                        Name = c.Name,
+                        ModuleName = c.ModuleName,
+                        Parameters = c.Parameters,
+                        ParameterSets = c.ParameterSets,
+                        DefaultParameterSet = c.DefaultParameterSet,
+                        CommandType = c.CommandType });
+                }
+            }
+
+            await requestContext.SendResult(commandList);
         }
 
         private async Task HandleFindModuleRequest(

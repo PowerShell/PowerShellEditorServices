@@ -4,13 +4,24 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
+using System.Collections.Generic;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
     public class GetCommandsRequest
     {
         public static readonly
-            RequestType<string, string, object, object> Type =
-            RequestType<string, string, object, object>.Create("powerShell/getCommands");
+            RequestType<List<PSCommandMessage>, object, object, object> Type =
+            RequestType<List<PSCommandMessage>, object, object, object>.Create("powerShell/getCommands");
+    }
+
+    public class PSCommandMessage
+    {
+        public string Name { get; set; }
+        public string ModuleName { get; set; }
+        public string DefaultParameterSet { get; set; }
+        public System.Management.Automation.CommandTypes CommandType { get; set; }
+        public Dictionary<string, System.Management.Automation.ParameterMetadata> Parameters { get; set; }
+        public System.Collections.ObjectModel.ReadOnlyCollection<System.Management.Automation.CommandParameterSetInfo> ParameterSets { get; set; }
     }
 }
