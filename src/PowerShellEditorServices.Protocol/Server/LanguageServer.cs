@@ -529,7 +529,7 @@ function __Expand-Alias {
             RequestContext<object> requestContext)
         {
             var psCommand = new PSCommand();
-            psCommand.AddScript("Get-Command -CommandType Function, Cmdlet, ExternalScript");
+            psCommand.AddScript("Get-Command -CommandType Function, Cmdlet, ExternalScript | Sort-Object Name");
             var result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
 
             var commandList = new List<PSCommandMessage>();
