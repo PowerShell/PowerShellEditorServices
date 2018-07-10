@@ -1,5 +1,67 @@
 # PowerShell Editor Services Release History
 
+## v1.8.0
+### Tuesday, July 10, 2018
+
+#### Fixes and Improvements
+
+- [PowerShell/PowerShellEditorServices](https://github.com/PowerShell/PowerShellEditorServices/) -
+  (Breaking Change) Remove TCP as a transport and secure named-pipe usage
+
+- [Powershell/PowerShellEditorServices #696](https://github.com/PowerShell/PowerShellEditorServices/pull/696) -
+  Add RenameProvider capability (Thanks @adamdriscoll!)
+
+- [Powershell/PowerShellEditorServices #667](https://github.com/PowerShell/PowerShellEditorServices/pull/667) -
+  Add .gitattributes, .editorconfig and extensions.json (Thanks @rkeithhill!)
+
+- [Powershell/PowerShellEditorServices #668](https://github.com/PowerShell/PowerShellEditorServices/pull/668) -
+  Stop the debugger service before we restart it
+
+- [Powershell/PowerShellEditorServices #666](https://github.com/PowerShell/PowerShellEditorServices/pull/666) -
+  Change logging to use Serilog
+
+- [Powershell/PowerShellEditorServices #674](https://github.com/PowerShell/PowerShellEditorServices/pull/674) -
+  Implement initialized notification handler to get rid of log error (Thanks @rkeithhill!)
+
+- [Powershell/PowerShellEditorServices #675](https://github.com/PowerShell/PowerShellEditorServices/pull/675) -
+  Add symbols to modules built in Debug configuration
+
+- [Powershell/PowerShellEditorServices #669](https://github.com/PowerShell/PowerShellEditorServices/pull/669) -
+  Add more useful PSSA rules that should be enabled by default (Thanks @bergmeister!)
+
+- [Powershell/PowerShellEditorServices #681](https://github.com/PowerShell/PowerShellEditorServices/pull/681) -
+  Initial CODEOWNERS file to auto assign PR reviewers (Thanks @rkeithhill!)
+
+- [Powershell/PowerShellEditorServices](https://github.com/PowerShell/PowerShellEditorServices/) -
+  Include ThirdPartyNotices.txt
+
+- [Powershell/PowerShellEditorServices #685](https://github.com/PowerShell/PowerShellEditorServices/pull/685) -
+  Fix PSES crash that happens if you format an empty PS doc (Thanks @rkeithhill!)
+
+- [Powershell/PowerShellEditorServices #677](https://github.com/PowerShell/PowerShellEditorServices/pull/677) -
+  Make AnalysisService use the latest version of PSScriptAnalyzer
+
+- [Powershell/PowerShellEditorServices #686](https://github.com/PowerShell/PowerShellEditorServices/pull/686) -
+  Fix issue where MS Dynamics CRM (Thanks @rkeithhill!)
+
+- [Powershell/PowerShellEditorServices #687](https://github.com/PowerShell/PowerShellEditorServices/pull/687) -
+  Add what to do when there's a vulnerability to docs
+
+- [Powershell/PowerShellEditorServices #693](https://github.com/PowerShell/PowerShellEditorServices/pull/693) -
+  Set DocumentRangeFormattingProvider value to false. (Thanks @adamdriscoll!)
+
+- [Powershell/PowerShellEditorServices #691](https://github.com/PowerShell/PowerShellEditorServices/pull/691) -
+  Fix error w/Start-EditorServices transcript logging using temp console (Thanks @rkeithhill!)
+
+- [Powershell/PowerShellEditorServices #694](https://github.com/PowerShell/PowerShellEditorServices/pull/694) -
+  Change debug launch handler to treat null/empty cwd to not change dir (Thanks @rkeithhill!)
+
+- [Powershell/PowerShellEditorServices #664](https://github.com/PowerShell/PowerShellEditorServices/pull/664) -
+  Ignore .idea folder that jetbrains products like to spit out (Rider, IntelliJ, Resharper) (#664)
+
+- [Powershell/PowerShellEditorServices #663](https://github.com/PowerShell/PowerShellEditorServices/pull/663) -
+  Close stray processes on exit (#663)
+
 ## 1.7.0
 ### Wednesday, April 25, 2018
 
