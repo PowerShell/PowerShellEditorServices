@@ -813,7 +813,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("PROFILE: True", outputString);
         }
 
-        [Fact(Skip = "Test takes too long")]
         public async Task ServiceReturnsPowerShellVersionDetails()
         {
             PowerShellVersion versionDetails =

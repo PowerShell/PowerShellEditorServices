@@ -25,6 +25,9 @@ RUN Import-Module ./containerFiles/dockerInstall.psm1; `
 # Copy build script over
 COPY build.ps1 containerFiles/build.ps1
 
+# Add env var for release build logic
+ENV VSTS_BUILD=1
+
 # Uncomment to debug locally
 # RUN Import-Module ./containerFiles/dockerInstall.psm1; `
 #     Install-ChocolateyPackage -PackageName git -Executable git.exe; `
