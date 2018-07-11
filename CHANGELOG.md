@@ -1,5 +1,16 @@
 # PowerShell Editor Services Release History
 
+## v1.8.1
+### Wednesday, July 11, 2018
+
+#### Fixes and Improvements
+
+- [PowerShell/PowerShellEditorServices #699](https://github.com/PowerShell/PowerShellEditorServices/pull/699) -
+  Replace `New-Guid` with `[guid]::NewGuid()` in startup script for PowerShell v3/4 compatibility
+
+- [PowerShell/PowerShellEditorServices #698](https://github.com/PowerShell/PowerShellEditorServices/pull/698) -
+  Fix usage of `stat` on Linux in startup script
+
 ## v1.8.0
 ### Tuesday, July 10, 2018
 
