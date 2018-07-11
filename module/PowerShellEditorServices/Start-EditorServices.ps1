@@ -222,13 +222,20 @@ function Set-NamedPipeMode {
         [string]
         $PipeFile
     )
+
+    if ($IsWindows) {
+        return
+    }
+
     chmod $DEFAULT_USER_MODE $PipeFile
+
     if ($IsLinux) {
         $mode = stat -c "%a" $PipeFile
     }
-    else {
+    elseif ($IsMacOS) {
         $mode = stat -f "%A" $PipeFile
     }
+
     if ($mode -ne $DEFAULT_USER_MODE) {
         ExitWithError "Permissions to the pipe file were not set properly. Expected: $DEFAULT_USER_MODE Actual: $mode for file: $PipeFile"
     }
