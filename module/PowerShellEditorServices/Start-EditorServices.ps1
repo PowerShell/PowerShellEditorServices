@@ -224,7 +224,7 @@ function Set-NamedPipeMode {
     )
     chmod $DEFAULT_USER_MODE $PipeFile
     if ($IsLinux) {
-        $mode = stat -c "%A" $PipeFile
+        $mode = stat -c "%a" $PipeFile
     }
     else {
         $mode = stat -f "%A" $PipeFile
