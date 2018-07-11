@@ -172,7 +172,7 @@ function New-NamedPipeName {
     # We try 10 times to find a valid pipe name
     for ($i = 0; $i -lt 10; $i++) {
         # add a guid to make the pipe unique
-        $PipeName = "PSES_$((New-Guid).Guid)"
+        $PipeName = "PSES_$([guid]::NewGuid())"
 
         if ((Test-NamedPipeName -PipeName $PipeName)) {
             return $PipeName
