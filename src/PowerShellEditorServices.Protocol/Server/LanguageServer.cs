@@ -240,9 +240,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             var psCommand = new PSCommand();
             psCommand.AddCommand("Get-Help");
             psCommand.AddArgument(helpParams);
-            psCommand.AddParameter("Online");
+            psCommand.AddParameter("Full");
 
-            await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
+            await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand, true);
 
             await requestContext.SendResult(null);
         }
