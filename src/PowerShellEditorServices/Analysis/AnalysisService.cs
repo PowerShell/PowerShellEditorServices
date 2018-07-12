@@ -72,7 +72,6 @@ namespace Microsoft.PowerShell.EditorServices
             "PSUseDeclaredVarsMoreThanAssignments",
             "PSPossibleIncorrectComparisonWithNull",
             "PSAvoidDefaultValueForMandatoryParameter",
-            "PSAvoidTrailingWhitespace",
             "PSPossibleIncorrectUsageOfRedirectionOperator"
         };
 
