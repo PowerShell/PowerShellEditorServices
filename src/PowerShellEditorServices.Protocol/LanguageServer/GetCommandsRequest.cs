@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System.Collections.Generic;
+using System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
@@ -20,8 +21,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public string Name { get; set; }
         public string ModuleName { get; set; }
         public string DefaultParameterSet { get; set; }
-        public System.Management.Automation.CommandTypes CommandType { get; set; }
-        public Dictionary<string, System.Management.Automation.ParameterMetadata> Parameters { get; set; }
-        public System.Collections.ObjectModel.ReadOnlyCollection<System.Management.Automation.CommandParameterSetInfo> ParameterSets { get; set; }
+        public CommandTypes CommandType { get; set; }
+        public Dictionary<string, ParameterMetadata> Parameters { get; set; }
+        public System.Collections.ObjectModel.ReadOnlyCollection<CommandParameterSetInfo> ParameterSets { get; set; }
     }
 }
