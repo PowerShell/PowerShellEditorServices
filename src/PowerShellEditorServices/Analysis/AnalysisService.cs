@@ -533,7 +533,7 @@ namespace Microsoft.PowerShell.EditorServices
                     pssaModuleInfo = ps.Invoke()?
                         .Select(psObj => psObj.BaseObject)
                         .OfType<PSModuleInfo>()
-                        .OrderBy(moduleInfo => moduleInfo.Version)
+                        .OrderByDescending(moduleInfo => moduleInfo.Version)
                         .FirstOrDefault();
                 }
                 catch (Exception e)
