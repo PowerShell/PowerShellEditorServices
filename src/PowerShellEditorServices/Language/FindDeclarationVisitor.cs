@@ -4,6 +4,8 @@
 //
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -76,19 +78,68 @@ namespace Microsoft.PowerShell.EditorServices
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitAssignmentStatement(AssignmentStatementAst assignmentStatementAst)
         {
-            var variableExprAst = assignmentStatementAst.Left as VariableExpressionAst;
-            if (variableExprAst == null ||
-                variableName == null ||
-                !variableExprAst.VariablePath.UserPath.Equals(
-                    variableName,
-                    StringComparison.OrdinalIgnoreCase))
+            if (variableName == null)
             {
                 return AstVisitAction.Continue;
             }
 
-            // TODO also find instances of set-variable
-            FoundDeclaration = new SymbolReference(SymbolType.Variable, variableExprAst.Extent);
-            return AstVisitAction.StopVisit;
+            // The AssignmentStatementAst could contain either of the following Ast types:
+            // VariableExpressionAst, ArrayLiteralAst, ConvertExpressionAst, AttributedExpressionAst
+            // We might need to recurse down the tree to find the VariableExpressionAst we're looking for
+            List<VariableExpressionAst> asts = FindMatchingAsts(assignmentStatementAst.Left, variableName);
+            if (asts.Count > 0)
+            {
+                FoundDeclaration = new SymbolReference(SymbolType.Variable, asts.FirstOrDefault().Extent);
+                return AstVisitAction.StopVisit;
+            }
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Takes in an ExpressionAst and recurses until it finds all VariableExpressionAst and returns the list of them.
+        /// We expect this ExpressionAst to be either: VariableExpressionAst, ArrayLiteralAst, ConvertExpressionAst, AttributedExpressionAst
+        /// </summary>
+        /// <param name="ast">An ExpressionAst</param>
+        /// <param name="variableName">The name of the variable we are trying to find</param>
+        /// <returns>A list of ExpressionAsts that match the variable name provided</returns>
+        private static List<VariableExpressionAst> FindMatchingAsts (ExpressionAst ast, string variableName) {
+
+            // VaraibleExpressionAst case - aka base case. This will return a list with the variableExpressionAst in it or an empty list if it's not the right one.
+            var variableExprAst = ast as VariableExpressionAst;
+            if (variableExprAst != null)
+            {
+                if (variableExprAst.VariablePath.UserPath.Equals(
+                    variableName,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return new List<VariableExpressionAst>{ variableExprAst };
+                }
+                return new List<VariableExpressionAst>();
+            }
+
+            // VariableExpressionAsts could be an element of an ArrayLiteralAst. This adds all the elements to the call stack.
+            var arrayLiteralAst = ast as ArrayLiteralAst;
+            if (arrayLiteralAst != null)
+            {
+                return (arrayLiteralAst.Elements.SelectMany(e => FindMatchingAsts(e, variableName)).ToList());
+            }
+
+            // The ConvertExpressionAst (static casting for example `[string]$foo = "asdf"`) could contain a VariableExpressionAst so we recurse down
+            var convertExprAst = ast as ConvertExpressionAst;
+            if (convertExprAst != null && convertExprAst.Child != null)
+            {
+                return FindMatchingAsts(convertExprAst.Child, variableName);
+            }
+
+            // The AttributedExpressionAst (any attribute for example `[NotNull()]$foo = "asdf"`) could contain a VariableExpressionAst so we recurse down
+            var attributedExprAst = ast as AttributedExpressionAst;
+            if (attributedExprAst != null && attributedExprAst.Child != null)
+            {
+                return FindMatchingAsts(attributedExprAst.Child, variableName);
+            };
+
+            // We shouldn't ever get here, but in case a new Ast type is added to PowerShell, this fails gracefully
+            return new List<VariableExpressionAst>();
         }
     }
 }
