@@ -86,60 +86,54 @@ namespace Microsoft.PowerShell.EditorServices
             // The AssignmentStatementAst could contain either of the following Ast types:
             // VariableExpressionAst, ArrayLiteralAst, ConvertExpressionAst, AttributedExpressionAst
             // We might need to recurse down the tree to find the VariableExpressionAst we're looking for
-            List<VariableExpressionAst> asts = FindMatchingAsts(assignmentStatementAst.Left, variableName);
-            if (asts.Count > 0)
+            //                    if (variableExpressionAst.VariablePath.UserPath.Equals(variableName, StringComparison.OrdinalIgnoreCase))
+            FindDeclarationVariableExpressionVisitor visitor = new FindDeclarationVariableExpressionVisitor(symbolRef);
+            assignmentStatementAst.Visit(visitor);
+
+            if (visitor.FoundDeclaration != null)
             {
-                FoundDeclaration = new SymbolReference(SymbolType.Variable, asts.FirstOrDefault().Extent);
+                FoundDeclaration = visitor.FoundDeclaration;
                 return AstVisitAction.StopVisit;
             }
             return AstVisitAction.Continue;
         }
 
         /// <summary>
-        /// Takes in an ExpressionAst and recurses until it finds all VariableExpressionAst and returns the list of them.
-        /// We expect this ExpressionAst to be either: VariableExpressionAst, ArrayLiteralAst, ConvertExpressionAst, AttributedExpressionAst
+        /// The private visitor used to find the variable expression that matches a symbol
         /// </summary>
-        /// <param name="ast">An ExpressionAst</param>
-        /// <param name="variableName">The name of the variable we are trying to find</param>
-        /// <returns>A list of ExpressionAsts that match the variable name provided</returns>
-        private static List<VariableExpressionAst> FindMatchingAsts (ExpressionAst ast, string variableName) {
+        private class FindDeclarationVariableExpressionVisitor : AstVisitor
+        {
+            private SymbolReference symbolRef;
+            private string variableName;
 
-            // VaraibleExpressionAst case - aka base case. This will return a list with the variableExpressionAst in it or an empty list if it's not the right one.
-            var variableExprAst = ast as VariableExpressionAst;
-            if (variableExprAst != null)
+            public SymbolReference FoundDeclaration{ get; private set; }
+
+            public FindDeclarationVariableExpressionVisitor(SymbolReference symbolRef)
             {
-                if (variableExprAst.VariablePath.UserPath.Equals(
-                    variableName,
-                    StringComparison.OrdinalIgnoreCase))
+                this.symbolRef = symbolRef;
+                if (this.symbolRef.SymbolType == SymbolType.Variable)
                 {
-                    return new List<VariableExpressionAst>{ variableExprAst };
+                    // converts `$varName` to `varName` or of the form ${varName} to varName
+                    variableName = symbolRef.SymbolName.TrimStart('$').Trim('{', '}');
                 }
-                return new List<VariableExpressionAst>();
             }
 
-            // VariableExpressionAsts could be an element of an ArrayLiteralAst. This adds all the elements to the call stack.
-            var arrayLiteralAst = ast as ArrayLiteralAst;
-            if (arrayLiteralAst != null)
+        /// <summary>
+        /// Check if the VariableExpressionAst has the same name as that of symbolRef.
+        /// </summary>
+        /// <param name="variableExpressionAst">A VariableExpressionAst</param>
+        /// <returns>A decision to stop searching if the right VariableExpressionAst was found,
+        /// or a decision to continue if it wasn't found</returns>
+            public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
             {
-                return (arrayLiteralAst.Elements.SelectMany(e => FindMatchingAsts(e, variableName)).ToList());
+                if(variableExpressionAst.VariablePath.UserPath.Equals(variableName, StringComparison.OrdinalIgnoreCase))
+                {
+                    // TODO also find instances of set-variable
+                    FoundDeclaration = new SymbolReference(SymbolType.Variable, variableExpressionAst.Extent);
+                    return AstVisitAction.StopVisit;
+                }
+                return AstVisitAction.Continue;
             }
-
-            // The ConvertExpressionAst (static casting for example `[string]$foo = "asdf"`) could contain a VariableExpressionAst so we recurse down
-            var convertExprAst = ast as ConvertExpressionAst;
-            if (convertExprAst != null && convertExprAst.Child != null)
-            {
-                return FindMatchingAsts(convertExprAst.Child, variableName);
-            }
-
-            // The AttributedExpressionAst (any attribute for example `[NotNull()]$foo = "asdf"`) could contain a VariableExpressionAst so we recurse down
-            var attributedExprAst = ast as AttributedExpressionAst;
-            if (attributedExprAst != null && attributedExprAst.Child != null)
-            {
-                return FindMatchingAsts(attributedExprAst.Child, variableName);
-            };
-
-            // We shouldn't ever get here, but in case a new Ast type is added to PowerShell, this fails gracefully
-            return new List<VariableExpressionAst>();
         }
     }
 }
