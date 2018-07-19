@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             // We want to check VariableExpressionAsts from within this AssignmentStatementAst so we visit it.
             FindDeclarationVariableExpressionVisitor visitor = new FindDeclarationVariableExpressionVisitor(symbolRef);
-            assignmentStatementAst.Visit(visitor);
+            assignmentStatementAst.Left.Visit(visitor);
 
             if (visitor.FoundDeclaration != null)
             {
@@ -123,7 +123,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// or a decision to continue if it wasn't found</returns>
             public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
             {
-                if(variableExpressionAst.VariablePath.UserPath.Equals(variableName, StringComparison.OrdinalIgnoreCase))
+                if (variableExpressionAst.VariablePath.UserPath.Equals(variableName, StringComparison.OrdinalIgnoreCase))
                 {
                     // TODO also find instances of set-variable
                     FoundDeclaration = new SymbolReference(SymbolType.Variable, variableExpressionAst.Extent);
@@ -132,21 +132,15 @@ namespace Microsoft.PowerShell.EditorServices
                 return AstVisitAction.Continue;
             }
 
-            public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
+            public override AstVisitAction VisitMemberExpression(MemberExpressionAst functionDefinitionAst)
             {
-                // We don't want to discover any variables in nested functions - they get their own scope.
+                // We don't want to discover any variables in member expressisons (`$something.Foo`)
                 return AstVisitAction.SkipChildren;
             }
 
-            public override AstVisitAction VisitScriptBlockExpression(ScriptBlockExpressionAst scriptBlockExpressionAst)
+            public override AstVisitAction VisitIndexExpression(IndexExpressionAst functionDefinitionAst)
             {
-                // We don't want to discover any variables in script block expressions - they get their own scope.
-                return AstVisitAction.SkipChildren;
-            }
-
-            public override AstVisitAction VisitTrap(TrapStatementAst trapStatementAst)
-            {
-                // We don't want to discover any variables in traps - they get their own scope.
+                // We don't want to discover any variables in index expressions (`$something[0]`)
                 return AstVisitAction.SkipChildren;
             }
         }
