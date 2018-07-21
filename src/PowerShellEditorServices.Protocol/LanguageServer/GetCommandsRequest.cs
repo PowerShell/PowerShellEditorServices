@@ -9,11 +9,18 @@ using System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
-    public class GetCommandsRequest
+    public class GetAllCommandsRequest
     {
         public static readonly
-            RequestType<List<PSCommandMessage>, object, object, object> Type =
-            RequestType<List<PSCommandMessage>, object, object, object>.Create("powerShell/getCommands");
+            RequestType<List<PSAllCommandsMessage>, object, object, object> Type =
+            RequestType<List<PSAllCommandsMessage>, object, object, object>.Create("powerShell/getAllCommands");
+    }
+
+        public class GetCommandRequest
+    {
+        public static readonly
+            RequestType<string, object, object, object> Type =
+            RequestType<string, object, object, object>.Create("powerShell/getCommand");
     }
 
     public class PSCommandMessage
@@ -21,8 +28,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public string Name { get; set; }
         public string ModuleName { get; set; }
         public string DefaultParameterSet { get; set; }
-        public CommandTypes CommandType { get; set; }
         public Dictionary<string, ParameterMetadata> Parameters { get; set; }
         public System.Collections.ObjectModel.ReadOnlyCollection<CommandParameterSetInfo> ParameterSets { get; set; }
+    }
+
+    public class PSAllCommandsMessage
+    {
+        public string Name { get; set; }
+        public string ModuleName { get; set; }
     }
 }

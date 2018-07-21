@@ -13,6 +13,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
@@ -136,7 +137,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
 
             this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
-            this.messageHandlers.SetRequestHandler(GetCommandsRequest.Type, this.HandleGetCommandsRequest);
+            this.messageHandlers.SetRequestHandler(GetAllCommandsRequest.Type, this.HandleGetAllCommandsRequest);
+            this.messageHandlers.SetRequestHandler(GetCommandRequest.Type, this.HandleGetCommandRequest);
 
             this.messageHandlers.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
             this.messageHandlers.SetRequestHandler(InstallModuleRequest.Type, this.HandleInstallModuleRequest);
@@ -524,28 +526,66 @@ function __Expand-Alias {
             await requestContext.SendResult(result.First().ToString());
         }
 
-        private async Task HandleGetCommandsRequest(
+        private async Task HandleGetAllCommandsRequest(
             object param,
             RequestContext<object> requestContext)
         {
             var psCommand = new PSCommand();
-            psCommand.AddScript("Get-Command -CommandType Function, Cmdlet, ExternalScript | Sort-Object Name");
+            psCommand.AddScript("Get-Command -CommandType Function, Cmdlet, ExternalScript | Select-Object Name,ModuleName | Sort-Object Name");
+            Logger.Write(LogLevel.Verbose, $"Calling {psCommand.Commands}");
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
             var result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+            stopwatch.Stop();
+            Logger.Write(LogLevel.Verbose, $"Returned from Get-Command with {result.Count()} results in {stopwatch.ElapsedMilliseconds}ms");
+            var commandList = new List<PSAllCommandsMessage>();
 
+            if (result != null)
+            {
+                Logger.Write(LogLevel.Verbose, "Starting conversion of results");
+                foreach (dynamic c in result)
+                {
+                    commandList.Add(new PSAllCommandsMessage
+                    {
+                        Name = c.Name,
+                        ModuleName = c.ModuleName,
+                    });
+                }
+                Logger.Write(LogLevel.Verbose, "Finished conversion of results");
+            }
+
+            await requestContext.SendResult(commandList);
+        }
+
+        private async Task HandleGetCommandRequest(
+            string param,
+            RequestContext<object> requestContext)
+        {
+            var psCommand = new PSCommand();
+            psCommand.AddCommand("Get-Command").AddArgument(param);
+            Logger.Write(LogLevel.Verbose, $"Calling {psCommand.Commands}");
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+            stopwatch.Stop();
+            Logger.Write(LogLevel.Verbose, $"Returned from Get-Command with {result.Count()} results in {stopwatch.ElapsedMilliseconds}ms");
             var commandList = new List<PSCommandMessage>();
 
             if (result != null)
             {
+                Logger.Write(LogLevel.Verbose, "Starting conversion of results");
                 foreach (dynamic c in result)
                 {
-                    commandList.Add(new PSCommandMessage {
+                    commandList.Add(new PSCommandMessage
+                    {
                         Name = c.Name,
                         ModuleName = c.ModuleName,
                         Parameters = c.Parameters,
                         ParameterSets = c.ParameterSets,
-                        DefaultParameterSet = c.DefaultParameterSet,
-                        CommandType = c.CommandType });
+                        DefaultParameterSet = c.DefaultParameterSet
+                    });
                 }
+                Logger.Write(LogLevel.Verbose, "Finished conversion of results");
             }
 
             await requestContext.SendResult(commandList);
