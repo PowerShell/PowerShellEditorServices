@@ -179,7 +179,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             InvocationRequest currentRequest = null;
             try
             {
-                if (_invocationRequest == null || System.Console.KeyAvailable)
+                if (_invocationRequest == null)
                 {
                     return;
                 }
