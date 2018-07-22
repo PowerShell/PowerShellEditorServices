@@ -115,12 +115,12 @@ namespace Microsoft.PowerShell.EditorServices
                 }
             }
 
-        /// <summary>
-        /// Check if the VariableExpressionAst has the same name as that of symbolRef.
-        /// </summary>
-        /// <param name="variableExpressionAst">A VariableExpressionAst</param>
-        /// <returns>A decision to stop searching if the right VariableExpressionAst was found,
-        /// or a decision to continue if it wasn't found</returns>
+            /// <summary>
+            /// Check if the VariableExpressionAst has the same name as that of symbolRef.
+            /// </summary>
+            /// <param name="variableExpressionAst">A VariableExpressionAst</param>
+            /// <returns>A decision to stop searching if the right VariableExpressionAst was found,
+            /// or a decision to continue if it wasn't found</returns>
             public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
             {
                 if (variableExpressionAst.VariablePath.UserPath.Equals(variableName, StringComparison.OrdinalIgnoreCase))
