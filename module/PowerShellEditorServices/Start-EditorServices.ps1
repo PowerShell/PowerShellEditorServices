@@ -308,7 +308,7 @@ try {
             -AdditionalModules $AdditionalModules `
             -LanguageServiceNamedPipe $LanguageServicePipeName `
             -DebugServiceNamedPipe $DebugServicePipeName `
-            -Stdio:($TransportType -eq "Stdio")`
+            -Stdio:$Stdio.IsPresent`
             -BundledModulesPath $BundledModulesPath `
             -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
             -DebugServiceOnly:$DebugServiceOnly.IsPresent `
