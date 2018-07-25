@@ -4,6 +4,8 @@
 //
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -54,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices
             };
 
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
-                 nameExtent.Text.Equals(symbolRef.ScriptRegion.Text, StringComparison.CurrentCultureIgnoreCase))
+                nameExtent.Text.Equals(symbolRef.ScriptRegion.Text, StringComparison.CurrentCultureIgnoreCase))
             {
                 this.FoundDeclaration =
                     new SymbolReference(
@@ -76,19 +78,71 @@ namespace Microsoft.PowerShell.EditorServices
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitAssignmentStatement(AssignmentStatementAst assignmentStatementAst)
         {
-            var variableExprAst = assignmentStatementAst.Left as VariableExpressionAst;
-            if (variableExprAst == null ||
-                variableName == null ||
-                !variableExprAst.VariablePath.UserPath.Equals(
-                    variableName,
-                    StringComparison.OrdinalIgnoreCase))
+            if (variableName == null)
             {
                 return AstVisitAction.Continue;
             }
 
-            // TODO also find instances of set-variable
-            FoundDeclaration = new SymbolReference(SymbolType.Variable, variableExprAst.Extent);
-            return AstVisitAction.StopVisit;
+            // We want to check VariableExpressionAsts from within this AssignmentStatementAst so we visit it.
+            FindDeclarationVariableExpressionVisitor visitor = new FindDeclarationVariableExpressionVisitor(symbolRef);
+            assignmentStatementAst.Left.Visit(visitor);
+
+            if (visitor.FoundDeclaration != null)
+            {
+                FoundDeclaration = visitor.FoundDeclaration;
+                return AstVisitAction.StopVisit;
+            }
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// The private visitor used to find the variable expression that matches a symbol
+        /// </summary>
+        private class FindDeclarationVariableExpressionVisitor : AstVisitor
+        {
+            private SymbolReference symbolRef;
+            private string variableName;
+
+            public SymbolReference FoundDeclaration{ get; private set; }
+
+            public FindDeclarationVariableExpressionVisitor(SymbolReference symbolRef)
+            {
+                this.symbolRef = symbolRef;
+                if (this.symbolRef.SymbolType == SymbolType.Variable)
+                {
+                    // converts `$varName` to `varName` or of the form ${varName} to varName
+                    variableName = symbolRef.SymbolName.TrimStart('$').Trim('{', '}');
+                }
+            }
+
+            /// <summary>
+            /// Check if the VariableExpressionAst has the same name as that of symbolRef.
+            /// </summary>
+            /// <param name="variableExpressionAst">A VariableExpressionAst</param>
+            /// <returns>A decision to stop searching if the right VariableExpressionAst was found,
+            /// or a decision to continue if it wasn't found</returns>
+            public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
+            {
+                if (variableExpressionAst.VariablePath.UserPath.Equals(variableName, StringComparison.OrdinalIgnoreCase))
+                {
+                    // TODO also find instances of set-variable
+                    FoundDeclaration = new SymbolReference(SymbolType.Variable, variableExpressionAst.Extent);
+                    return AstVisitAction.StopVisit;
+                }
+                return AstVisitAction.Continue;
+            }
+
+            public override AstVisitAction VisitMemberExpression(MemberExpressionAst functionDefinitionAst)
+            {
+                // We don't want to discover any variables in member expressisons (`$something.Foo`)
+                return AstVisitAction.SkipChildren;
+            }
+
+            public override AstVisitAction VisitIndexExpression(IndexExpressionAst functionDefinitionAst)
+            {
+                // We don't want to discover any variables in index expressions (`$something[0]`)
+                return AstVisitAction.SkipChildren;
+            }
         }
     }
 }
