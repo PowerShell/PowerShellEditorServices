@@ -78,10 +78,12 @@ param(
 $DEFAULT_USER_MODE = "600"
 
 if ($LogLevel -eq "Diagnostic") {
-    $VerbosePreference = 'Continue'
+    if (!$Stdio.IsPresent) {
+        $VerbosePreference = 'Continue'
+    }
     $scriptName = [System.IO.Path]::GetFileNameWithoutExtension($MyInvocation.MyCommand.Name)
     $logFileName = [System.IO.Path]::GetFileName($LogPath)
-    Start-Transcript (Join-Path (Split-Path $LogPath -Parent) "$scriptName-$logFileName") -Force
+    Start-Transcript (Join-Path (Split-Path $LogPath -Parent) "$scriptName-$logFileName") -Force | Out-Null
 }
 
 function LogSection([string]$msg) {
