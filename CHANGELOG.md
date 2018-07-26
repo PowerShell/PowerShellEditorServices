@@ -1,5 +1,17 @@
 # PowerShell Editor Services Release History
 
+## v1.8.2
+### Thursday, July 26, 2018
+
+#### Fixes and Improvements
+
+- [PowerShell/PowerShellEditorServices #712](https://github.com/PowerShell/PowerShellEditorServices/pull/712) workaround to support inmemory:// (#712)
+- [PowerShell/PowerShellEditorServices #706](https://github.com/PowerShell/PowerShellEditorServices/pull/706) Go To Definition works with different Ast types (#706)
+- [PowerShell/PowerShellEditorServices #707](https://github.com/PowerShell/PowerShellEditorServices/pull/707) fix stdio passing (#707)
+- [PowerShell/PowerShellEditorServices #709](https://github.com/PowerShell/PowerShellEditorServices/pull/709) Stop Diagnostic logging from logging to stdio when the communication protocol is set to stdio (#709)
+- [PowerShell/PowerShellEditorServices #710](https://github.com/PowerShell/PowerShellEditorServices/pull/710) stdio should only launch language service not debug (#710)
+- [PowerShell/PowerShellEditorServices #705](https://github.com/PowerShell/PowerShellEditorServices/pull/705) Fix load order of PSSA modules (#705)
+
 ## v1.8.1
 ### Wednesday, July 11, 2018
 
