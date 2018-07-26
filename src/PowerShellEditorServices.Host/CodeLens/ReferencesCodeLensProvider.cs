@@ -109,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         {
             // If the file isn't untitled, return a URI-style path
             return
-                !filePath.StartsWith("untitled")
+                !filePath.StartsWith("untitled") && !filePath.StartsWith("inmemory")
                     ? new Uri("file://" + filePath).AbsoluteUri
                     : filePath;
         }
