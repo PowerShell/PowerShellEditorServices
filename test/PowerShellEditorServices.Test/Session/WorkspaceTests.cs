@@ -57,6 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
                 // Test short non-file paths
                 new { IsInMemory = true,  Path = "untitled:untitled-1" },
                 new { IsInMemory = true,  Path = shortUriForm },
+                new { IsInMemory = true, Path = "inmemory://foo.ps1" },
 
                 // Test long non-file path - known to have crashed PSES
                 new { IsInMemory = true,  Path = longUriForm },
