@@ -1096,6 +1096,7 @@ function __Expand-Alias {
                 triggerLine1b,
                 out helpLocation);
             var result = new CommentHelpRequestResult();
+            IList<string> lines = null;
             if (functionDefinitionAst != null)
             {
                 var funcExtent = functionDefinitionAst.Extent;
@@ -1104,7 +1105,7 @@ function __Expand-Alias {
                 {
                     // check if the previous character is `<` because it invalidates
                     // the param block the follows it.
-                    var lines = ScriptFile.GetLines(funcText).ToArray();
+                    lines = ScriptFile.GetLines(funcText);
                     var relativeTriggerLine0b = triggerLine1b - funcExtent.StartLineNumber;
                     if (relativeTriggerLine0b > 0 && lines[relativeTriggerLine0b].IndexOf("<") > -1)
                     {
@@ -1122,8 +1123,12 @@ function __Expand-Alias {
                         requestParams.BlockComment,
                         true,
                         helpLocation));
+
                 var help = analysisResults?.FirstOrDefault()?.Correction?.Edits[0].Text;
-                result.Content = help == null ? null : ScriptFile.GetLines(help).ToArray();
+                result.Content = help != null 
+                    ? (lines ?? ScriptFile.GetLines(funcText)).ToArray() 
+                    : null;
+
                 if (helpLocation != null &&
                     !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
                 {

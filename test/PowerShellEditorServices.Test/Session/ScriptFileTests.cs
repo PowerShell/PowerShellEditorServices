@@ -296,6 +296,35 @@ namespace PSLanguageService.Test
 
             Assert.Equal(expectedLines, lines);
         }
+
+        [Fact]
+        public void CanSplitLines()
+        {
+            Assert.Equal(TestStringLines, scriptFile.FileLines);
+        }
+
+        [Fact]
+        public void CanGetSameLinesWithUnixLineBreaks()
+        {
+            var unixFile = ScriptFileChangeTests.CreateScriptFile(TestString.Replace("\r\n", "\n"));
+            Assert.Equal(scriptFile.FileLines, unixFile.FileLines);
+        }
+
+        [Fact]
+        public void CanGetLineForEmptyString()
+        {
+            var emptyFile = ScriptFileChangeTests.CreateScriptFile(string.Empty);
+            Assert.Equal(1, emptyFile.FileLines.Count);
+            Assert.Equal(string.Empty, emptyFile.FileLines[0]);
+        }
+
+        [Fact]
+        public void CanGetLineForSpace()
+        {
+            var spaceFile = ScriptFileChangeTests.CreateScriptFile(" ");
+            Assert.Equal(1, spaceFile.FileLines.Count);
+            Assert.Equal(" ", spaceFile.FileLines[0]);
+        }
     }
 
     public class ScriptFilePositionTests
