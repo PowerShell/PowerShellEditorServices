@@ -29,8 +29,8 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             [System.Diagnostics.DebuggerStepThrough()]
             param()
             end {
-                $module = Get-Module -ListAvailable PSReadLine | Select-Object -First 1
-                if (-not $module -or $module.Version -lt ([version]'2.0.0')) {
+                $module = Get-Module -ListAvailable PSReadLine | Where-Object Version -ge '2.0.0' | Sort-Object -Descending Version | Select-Object -First 1
+                if (-not $module) {
                     return
                 }
 
