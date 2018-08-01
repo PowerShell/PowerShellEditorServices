@@ -309,6 +309,25 @@ task RestorePsesModules -After Build {
 
         Save-Module @splatParameters
     }
+
+    # TODO: Replace this with adding a new module to Save when a new PSReadLine release comes out to the Gallery
+    if (-not (Test-Path $PSScriptRoot/module/PSReadLine))
+    {
+        Write-Host "`tInstalling module: PSReadLine"
+
+        # Download AppVeyor zip
+        $jobId = (Invoke-RestMethod https://ci.appveyor.com/api/projects/lzybkr/PSReadLine).build.jobs[0].jobId
+        Invoke-RestMethod https://ci.appveyor.com/api/buildjobs/$jobId/artifacts/bin%2FRelease%2FPSReadLine.zip -OutFile $PSScriptRoot/module/PSRL
+
+        # Position PSReadLine
+        Expand-Archive $PSScriptRoot/module/PSRL.zip $PSScriptRoot/module/PSRL
+        Move-Item $PSScriptRoot/module/PSRL/PSReadLine $PSScriptRoot/module
+
+        # Clean up
+        Remove-Item -Force -Recurse $PSScriptRoot/module/PSRL.zip
+        Remove-Item -Force -Recurse $PSScriptRoot/module/PSRL
+    }
+
     Write-Host "`n"
 }
 
