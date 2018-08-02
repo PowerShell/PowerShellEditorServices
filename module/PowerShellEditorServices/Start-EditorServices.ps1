@@ -232,10 +232,10 @@ function Set-NamedPipeMode {
     chmod $DEFAULT_USER_MODE $PipeFile
 
     if ($IsLinux) {
-        $mode = stat -c "%a" $PipeFile
+        $mode = /usr/bin/stat -c "%a" $PipeFile
     }
     elseif ($IsMacOS) {
-        $mode = stat -f "%A" $PipeFile
+        $mode = /usr/bin/stat -f "%A" $PipeFile
     }
 
     if ($mode -ne $DEFAULT_USER_MODE) {
