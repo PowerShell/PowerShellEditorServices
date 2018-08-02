@@ -317,7 +317,7 @@ task RestorePsesModules -After Build {
 
         # Download AppVeyor zip
         $jobId = (Invoke-RestMethod https://ci.appveyor.com/api/projects/lzybkr/PSReadLine).build.jobs[0].jobId
-        Invoke-RestMethod https://ci.appveyor.com/api/buildjobs/$jobId/artifacts/bin%2FRelease%2FPSReadLine.zip -OutFile $PSScriptRoot/module/PSRL
+        Invoke-RestMethod https://ci.appveyor.com/api/buildjobs/$jobId/artifacts/bin%2FRelease%2FPSReadLine.zip -OutFile $PSScriptRoot/module/PSRL.zip
 
         # Position PSReadLine
         Expand-Archive $PSScriptRoot/module/PSRL.zip $PSScriptRoot/module/PSRL
