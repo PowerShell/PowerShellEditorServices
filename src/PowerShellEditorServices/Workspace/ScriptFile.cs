@@ -197,14 +197,33 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="text">Input string to be split up into lines.</param>
         /// <returns>The lines in the string.</returns>
-        public static IEnumerable<string> GetLines(string text)
+        public static IList<string> GetLines(string text)
         {
             if (text == null)
             {
                 throw new ArgumentNullException(nameof(text));
             }
 
-            return text.Split('\n').Select(line => line.TrimEnd('\r'));
+            // ReadLine returns null immediately for empty string, so special case it.
+            if (text.Length == 0)
+            {
+                return new List<string> {string.Empty};
+            }
+
+            using (var reader = new StringReader(text))
+            {
+                // 50 is a rough guess for typical average line length, this saves some list
+                // resizes in the common case and does not hurt meaningfully if we're wrong.
+                var list = new List<string>(text.Length / 50);
+                string line;
+
+                while ((line = reader.ReadLine()) != null)
+                {
+                    list.Add(line);
+                }
+
+                return list;
+            }
         }
 
         /// <summary>
@@ -517,7 +536,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             // Split the file contents into lines and trim
             // any carriage returns from the strings.
-            this.FileLines = GetLines(fileContents).ToList();
+            this.FileLines = GetLines(fileContents);
 
             // Parse the contents to get syntax tree and errors
             this.ParseFileContents();
