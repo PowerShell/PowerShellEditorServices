@@ -155,7 +155,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 CodeLensData codeLensData = codeLens.Data.ToObject<CodeLensData>();
 
                 ICodeLensProvider originalProvider =
-                    this.Providers.FirstOrDefault(
+                    Providers.FirstOrDefault(
                         provider => provider.ProviderId.Equals(codeLensData.ProviderId));
 
                 if (originalProvider != null)
