@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             RequestContext<LanguageServer.CodeLens[]> requestContext)
         {
             var scriptFile =
-                this._editorSession.Workspace.GetFile(
+                _editorSession.Workspace.GetFile(
                     codeLensParams.TextDocument.Uri);
 
             CodeLens[] codeLensResults = ProvideCodeLenses(scriptFile);
@@ -161,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 if (originalProvider != null)
                 {
                     ScriptFile scriptFile =
-                        this._editorSession.Workspace.GetFile(
+                        _editorSession.Workspace.GetFile(
                             codeLensData.Uri);
 
                     ScriptRegion region = new ScriptRegion
@@ -185,7 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
                     await requestContext.SendResult(
                         resolvedCodeLens.ToProtocolCodeLens(
-                            this._jsonSerializer));
+                            _jsonSerializer));
                 }
                 else
                 {
