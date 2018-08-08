@@ -9,6 +9,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,27 +22,19 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         FeatureComponentBase<ICodeLensProvider>,
         ICodeLenses
     {
-        private EditorSession editorSession;
+        private readonly EditorSession _editorSession;
 
-        private JsonSerializer jsonSerializer =
-             JsonSerializer.Create(
-                 Constants.JsonSerializerSettings);
+        private readonly JsonSerializer _jsonSerializer;
 
-        public CodeLensFeature(
+        private CodeLensFeature(
             EditorSession editorSession,
-            IMessageHandlers messageHandlers,
+            JsonSerializer jsonSerializer,
             ILogger logger)
                 : base(logger)
         {
-            this.editorSession = editorSession;
+            _editorSession = editorSession;
 
-            messageHandlers.SetRequestHandler(
-                CodeLensRequest.Type,
-                this.HandleCodeLensRequest);
-
-            messageHandlers.SetRequestHandler(
-                CodeLensResolveRequest.Type,
-                this.HandleCodeLensResolveRequest);
+            _jsonSerializer = jsonSerializer;
         }
 
         public static CodeLensFeature Create(
@@ -51,8 +44,18 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             var codeLenses =
                 new CodeLensFeature(
                     editorSession,
-                    components.Get<IMessageHandlers>(),
+                    JsonSerializer.Create(Constants.JsonSerializerSettings),
                     components.Get<ILogger>());
+
+            var messageHandlers = components.Get<IMessageHandlers>();
+
+            messageHandlers.SetRequestHandler(
+                CodeLensRequest.Type,
+                codeLenses.HandleCodeLensRequest);
+
+            messageHandlers.SetRequestHandler(
+                CodeLensResolveRequest.Type,
+                codeLenses.HandleCodeLensResolveRequest);
 
             codeLenses.Providers.Add(
                 new ReferencesCodeLensProvider(
@@ -79,28 +82,23 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             CodeLensRequest codeLensParams,
             RequestContext<LanguageServer.CodeLens[]> requestContext)
         {
-            JsonSerializer jsonSerializer =
-                JsonSerializer.Create(
-                    Constants.JsonSerializerSettings);
-
             var scriptFile =
-                this.editorSession.Workspace.GetFile(
+                this._editorSession.Workspace.GetFile(
                     codeLensParams.TextDocument.Uri);
 
-            var codeLenses =
-                this.ProvideCodeLenses(scriptFile)
-                    .Select(
-                        codeLens =>
-                            codeLens.ToProtocolCodeLens(
-                                new CodeLensData
-                                {
-                                    Uri = codeLens.File.ClientFilePath,
-                                    ProviderId = codeLens.Provider.ProviderId
-                                },
-                                this.jsonSerializer))
-                    .ToArray();
+            CodeLens[] codeLensResults = ProvideCodeLenses(scriptFile);
 
-            await requestContext.SendResult(codeLenses);
+            var clMsg = new LanguageServer.CodeLens[codeLensResults.Length];
+            for (int i = 0; i < codeLensResults.Length; i++)
+            {
+                clMsg[i] = codeLensResults[i].ToProtocolCodeLens(new CodeLensData
+                    {
+                        Uri = codeLensResults[i].File.ClientFilePath,
+                        ProviderId = codeLensResults[i].Provider.ProviderId
+                    }, _jsonSerializer);
+            }
+
+            await requestContext.SendResult(clMsg);
         }
 
         private async Task HandleCodeLensResolveRequest(
@@ -119,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 if (originalProvider != null)
                 {
                     ScriptFile scriptFile =
-                        this.editorSession.Workspace.GetFile(
+                        this._editorSession.Workspace.GetFile(
                             codeLensData.Uri);
 
                     ScriptRegion region = new ScriptRegion
@@ -143,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
                     await requestContext.SendResult(
                         resolvedCodeLens.ToProtocolCodeLens(
-                            this.jsonSerializer));
+                            this._jsonSerializer));
                 }
                 else
                 {
