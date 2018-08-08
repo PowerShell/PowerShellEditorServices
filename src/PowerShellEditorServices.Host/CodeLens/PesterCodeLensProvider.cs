@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
         {
             var lenses = new List<CodeLens>();
-            foreach (var symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
+            foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
                 if (symbol is PesterSymbolReference pesterSymbol)
                 {

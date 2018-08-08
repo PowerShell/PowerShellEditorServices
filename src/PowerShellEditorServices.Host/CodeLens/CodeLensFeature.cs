@@ -119,9 +119,8 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             CodeLensRequest codeLensParams,
             RequestContext<LanguageServer.CodeLens[]> requestContext)
         {
-            var scriptFile =
-                _editorSession.Workspace.GetFile(
-                    codeLensParams.TextDocument.Uri);
+            ScriptFile scriptFile = _editorSession.Workspace.GetFile(
+                codeLensParams.TextDocument.Uri);
 
             CodeLens[] codeLensResults = ProvideCodeLenses(scriptFile);
 

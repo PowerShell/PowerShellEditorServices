@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             ScriptFile[] references = _editorSession.Workspace.ExpandScriptReferences(
                 codeLens.File);
 
-            var foundSymbol = _editorSession.LanguageService.FindFunctionDefinitionAtLocation(
+            SymbolReference foundSymbol = _editorSession.LanguageService.FindFunctionDefinitionAtLocation(
                 codeLens.File,
                 codeLens.ScriptExtent.StartLineNumber,
                 codeLens.ScriptExtent.StartColumnNumber);
