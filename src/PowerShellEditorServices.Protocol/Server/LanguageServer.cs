@@ -238,29 +238,38 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             if (helpParams == null) { helpParams = "get-help"; }
 
             var psCommand = new PSCommand();
-            psCommand.AddCommand("Get-Help");
-            psCommand.AddArgument(helpParams);
-            psCommand.AddCommand("Select-Object").AddArgument("RelatedLinks");
-            var relatedLinks = await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
+            // Check if it's an actual command first. This returns near instant. Get-Help takes a good 5 seconds to return when not a command.
+            psCommand.AddCommand("Get-Command").AddArgument(helpParams);
+            var isCommand = await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
+            if (isCommand.Count() > 0){
+                psCommand = new PSCommand();
+                psCommand.AddCommand("Get-Help");
+                psCommand.AddArgument(helpParams);
+                psCommand.AddCommand("Select-Object").AddArgument("RelatedLinks");
+                var relatedLinks = await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
+                psCommand = new PSCommand();
+                psCommand.AddCommand("Get-Help");
+                psCommand.AddArgument(helpParams);
+                bool sendOutput = false;
+                // Check if the first returned item converted to string is an empty object.
+                // From experience this is the return when there are no RelatedLinks.
+                if (relatedLinks.First().ToString() != "@{RelatedLinks=}")
+                {
+                    psCommand.AddParameter("Online");
+                }
+                else
+                {
+                    psCommand.AddParameter("Full");
+                    sendOutput = true;
+                }
+                await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand, sendOutput);
 
-            psCommand = new PSCommand();
-            psCommand.AddCommand("Get-Help");
-            psCommand.AddArgument(helpParams);
-            bool sendOutput = false;
-            // Check if the first returned item converted to string is an empty object.
-            // From experience this appears to be the return when there are no RelatedLinks.
-            if (relatedLinks.First().ToString() != "@{RelatedLinks=}")
-            {
-                psCommand.AddParameter("Online");
-            } else
-            {
-                psCommand.AddParameter("Full");
-                sendOutput = true;
+                await requestContext.SendResult(null);
             }
-
-            await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand, sendOutput);
-
-            await requestContext.SendResult(null);
+            else
+            {
+                // TODO: write error or something...
+            }
         }
 
         private async Task HandleSetPSSARulesRequest(
