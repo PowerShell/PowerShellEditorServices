@@ -240,9 +240,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             var psCommand = new PSCommand();
             psCommand.AddCommand("Get-Help");
             psCommand.AddArgument(helpParams);
-            psCommand.AddParameter("Full");
+            psCommand.AddCommand("Select-Object").AddArgument("RelatedLinks");
+            var relatedLinks = await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
 
-            await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand, true);
+            psCommand = new PSCommand();
+            psCommand.AddCommand("Get-Help");
+            psCommand.AddArgument(helpParams);
+            bool sendOutput = false;
+            // Check if the first returned item converted to string is an empty object.
+            // From experience this appears to be the return when there are no RelatedLinks.
+            if (relatedLinks.First().ToString() != "@{RelatedLinks=}")
+            {
+                psCommand.AddParameter("Online");
+            } else
+            {
+                psCommand.AddParameter("Full");
+                sendOutput = true;
+            }
+
+            await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand, sendOutput);
 
             await requestContext.SendResult(null);
         }
