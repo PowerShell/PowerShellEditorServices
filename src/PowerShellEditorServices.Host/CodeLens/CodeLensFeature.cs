@@ -101,13 +101,9 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <returns>All generated CodeLenses for the given script file.</returns>
         public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
         {
-            var acc = new List<CodeLens>();
-            foreach (CodeLens[] providerResult in InvokeProviders(provider => provider.ProvideCodeLenses(scriptFile)))
-            {
-                acc.AddRange(providerResult);
-            }
-
-            return acc.ToArray();
+            return InvokeProviders(provider => provider.ProvideCodeLenses(scriptFile))
+                .SelectMany(codeLens => codeLens)
+                .ToArray();
         }
 
         /// <summary>
