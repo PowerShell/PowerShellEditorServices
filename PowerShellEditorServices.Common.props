@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>1.8.2</VersionPrefix>
+    <VersionPrefix>1.8.3</VersionPrefix>
     <Company>Microsoft</Company>
     <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <PackageTags>PowerShell;editor;development;language;debugging</PackageTags>
