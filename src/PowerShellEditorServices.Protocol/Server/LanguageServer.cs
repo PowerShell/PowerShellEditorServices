@@ -530,19 +530,14 @@ function __Expand-Alias {
             object param,
             RequestContext<object> requestContext)
         {
-            var psCommand = new PSCommand();
+            PSCommand psCommand = new PSCommand();
             psCommand.AddScript("Get-Command -CommandType Function, Cmdlet, ExternalScript | Select-Object Name,ModuleName | Sort-Object Name");
-            Logger.Write(LogLevel.Verbose, $"Calling {psCommand.Commands}");
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-            var result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
-            stopwatch.Stop();
-            Logger.Write(LogLevel.Verbose, $"Returned from Get-Command with {result.Count()} results in {stopwatch.ElapsedMilliseconds}ms");
-            var commandList = new List<PSAllCommandsMessage>();
+            IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+
+            List<PSAllCommandsMessage> commandList = new List<PSAllCommandsMessage>();
 
             if (result != null)
             {
-                Logger.Write(LogLevel.Verbose, "Starting conversion of results");
                 foreach (dynamic c in result)
                 {
                     commandList.Add(new PSAllCommandsMessage
@@ -551,7 +546,6 @@ function __Expand-Alias {
                         ModuleName = c.ModuleName,
                     });
                 }
-                Logger.Write(LogLevel.Verbose, "Finished conversion of results");
             }
 
             await requestContext.SendResult(commandList);
@@ -561,19 +555,13 @@ function __Expand-Alias {
             string param,
             RequestContext<object> requestContext)
         {
-            var psCommand = new PSCommand();
+            PSCommand psCommand = new PSCommand();
             psCommand.AddCommand("Get-Command").AddArgument(param);
-            Logger.Write(LogLevel.Verbose, $"Calling {psCommand.Commands}");
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-            var result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
-            stopwatch.Stop();
-            Logger.Write(LogLevel.Verbose, $"Returned from Get-Command with {result.Count()} results in {stopwatch.ElapsedMilliseconds}ms");
-            var commandList = new List<PSCommandMessage>();
+            IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+            List<PSCommandMessage> commandList = new List<PSCommandMessage>();
 
             if (result != null)
             {
-                Logger.Write(LogLevel.Verbose, "Starting conversion of results");
                 foreach (dynamic c in result)
                 {
                     commandList.Add(new PSCommandMessage
