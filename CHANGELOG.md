@@ -2,7 +2,8 @@
 
 ## v1.8.3
 ### Wednesday, August 15, 2018
-#### [PowerShellEditorServices](https://github.com/powershell/PowerShellEditorServices)
+
+#### Fixes and Improvements
 
 - [PowerShell/PowerShellEditorServices #722](https://github.com/PowerShell/PowerShellEditorServices/pull/722) -
   Add VSTS signing step
