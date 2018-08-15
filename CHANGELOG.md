@@ -9,7 +9,7 @@
 - [PowerShell/PowerShellEditorServices #717](https://github.com/PowerShell/PowerShellEditorServices/pull/717) -
   Increment version for prerelease
 - [PowerShell/PowerShellEditorServices #715](https://github.com/PowerShell/PowerShellEditorServices/pull/715) -
-  Reduce allocations when parsing files (#715) (Thanks @mattpwhite!)
+  Reduce allocations when parsing files (Thanks @mattpwhite!)
 
 ## v1.8.2
 ### Thursday, July 26, 2018
