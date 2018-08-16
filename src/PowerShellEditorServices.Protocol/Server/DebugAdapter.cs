@@ -89,28 +89,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             _messageHandlers.SetRequestHandler(EvaluateRequest.Type, HandleEvaluateRequest);
         }
 
-        protected Task LaunchScript(RequestContext<object> requestContext)
+        protected Task LaunchScript(RequestContext<object> requestContext, string scriptToLaunch)
         {
             // Is this an untitled script?
             Task launchTask = null;
 
-            if (ScriptFile.IsUntitledPath(_scriptToLaunch))
+            if (ScriptFile.IsUntitledPath(scriptToLaunch))
             {
-                ScriptFile untitledScript =
-                    _editorSession.Workspace.GetFile(
-                        _scriptToLaunch);
+                ScriptFile untitledScript = _editorSession.Workspace.GetFile(scriptToLaunch);
 
-                launchTask =
-                    _editorSession
-                        .PowerShellContext
-                        .ExecuteScriptString(untitledScript.Contents, true, true);
+                launchTask = _editorSession.PowerShellContext
+                    .ExecuteScriptString(untitledScript.Contents, true, true);
             }
             else
             {
-                launchTask =
-                    _editorSession
-                        .PowerShellContext
-                        .ExecuteScriptWithArgs(_scriptToLaunch, _arguments, writeInputToHost: true);
+                launchTask = _editorSession.PowerShellContext
+                    .ExecuteScriptWithArgs(scriptToLaunch, _arguments, writeInputToHost: true);
             }
 
             return launchTask.ContinueWith(OnExecutionCompleted);
@@ -214,7 +208,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 if (_editorSession.PowerShellContext.SessionState == PowerShellContextState.Ready)
                 {
                     // Configuration is done, launch the script
-                    var nonAwaitedTask = LaunchScript(requestContext)
+                    var nonAwaitedTask = LaunchScript(requestContext, _scriptToLaunch)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
                 else
