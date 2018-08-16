@@ -20,6 +20,8 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
     /// </summary>
     internal class ReferencesCodeLensProvider : FeatureProviderBase, ICodeLensProvider
     {
+        private static readonly Location[] s_emptyLocationArray = new Location[0];
+
         /// <summary>
         /// The editor session code lenses are being provided from.
         /// </summary>
@@ -88,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             Location[] referenceLocations;
             if (referencesResult == null)
             {
-                referenceLocations = Array.Empty<Location>();
+                referenceLocations = s_emptyLocationArray;
             }
             else
             {
