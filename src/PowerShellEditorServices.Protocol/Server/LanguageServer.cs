@@ -1125,8 +1125,8 @@ function __Expand-Alias {
                         helpLocation));
 
                 var help = analysisResults?.FirstOrDefault()?.Correction?.Edits[0].Text;
-                result.Content = help != null 
-                    ? (lines ?? ScriptFile.GetLines(funcText)).ToArray() 
+                result.Content = help != null
+                    ? (lines ?? ScriptFile.GetLines(help)).ToArray()
                     : null;
 
                 if (helpLocation != null &&
