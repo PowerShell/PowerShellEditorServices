@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Console
 {
@@ -13,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
     {
         private ConsoleKeyInfo? _bufferedKey;
 
-        private SemaphoreSlim _readKeyHandle = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim _readKeyHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
         public int GetCursorLeft() => System.Console.CursorLeft;
 

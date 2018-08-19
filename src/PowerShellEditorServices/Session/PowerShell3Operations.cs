@@ -73,7 +73,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         public void StopCommandInDebugger(PowerShellContext powerShellContext)
         {
-            // TODO: Possibly save the pipeline to a field and initiate stop here. Or just throw.
         }
 
         public bool IsDebuggerStopped(PromptNest promptNest, Runspace runspace)

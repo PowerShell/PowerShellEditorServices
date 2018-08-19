@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                             PowerShell.Runspace = null;
                             PowerShell.Dispose();
                         },
-                        null);
+                        state: null);
                 }
                 else
                 {

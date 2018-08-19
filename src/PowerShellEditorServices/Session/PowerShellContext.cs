@@ -3,26 +3,26 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Utility;
 using System;
-using System.Globalization;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Management.Automation.Host;
+using System.Management.Automation.Remoting;
+using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Session.Capabilities;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    using Session;
     using System.Management.Automation;
-    using System.Management.Automation.Host;
-    using System.Management.Automation.Runspaces;
-    using Microsoft.PowerShell.EditorServices.Session.Capabilities;
-    using System.IO;
-    using System.Management.Automation.Remoting;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Fields
 
-        private readonly SemaphoreSlim resumeRequestHandle = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim resumeRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
         private bool isPSReadLineEnabled;
         private ILogger logger;
@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private Stack<RunspaceDetails> runspaceStack = new Stack<RunspaceDetails>();
 
-        private bool isCommandLoopRestarterSet;
+        private int isCommandLoopRestarterSet;
 
         #endregion
 
@@ -307,11 +307,11 @@ namespace Microsoft.PowerShell.EditorServices
                 this.powerShell,
                 this.ConsoleReader,
                 this.versionSpecificOperations);
-            this.InvocationEventQueue = InvocationEventQueue.Create(this, this.PromptNest);
+            this.InvocationEventQueue = InvocationEventQueue.Create(this, this.PromptNest, this.logger);
 
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
-                PSReadLinePromptContext.TryGetPSReadLineProxy(initialRunspace, out PSReadLineProxy proxy))
+                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, out PSReadLineProxy proxy))
             {
                 this.PromptContext = new PSReadLinePromptContext(
                     this,
@@ -1006,9 +1006,9 @@ namespace Microsoft.PowerShell.EditorServices
             invocationAction.Invoke(this.PromptNest.GetPowerShell());
         }
 
-        internal async Task<string> InvokeReadLine(bool isCommandLine, CancellationToken cancellationToken)
+        internal async Task<string> InvokeReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
-            return await PromptContext.InvokeReadLine(
+            return await PromptContext.InvokeReadLineAsync(
                 isCommandLine,
                 cancellationToken);
         }
@@ -2060,7 +2060,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private void StartCommandLoopOnRunspaceAvailable()
         {
-            if (this.isCommandLoopRestarterSet)
+            if (Interlocked.CompareExchange(ref this.isCommandLoopRestarterSet, 1, 1) == 1)
             {
                 return;
             }
@@ -2075,12 +2075,12 @@ namespace Microsoft.PowerShell.EditorServices
                 }
 
                 ((Runspace)runspace).AvailabilityChanged -= handler;
-                this.isCommandLoopRestarterSet = false;
+                Interlocked.Exchange(ref this.isCommandLoopRestarterSet, 0);
                 this.ConsoleReader?.StartCommandLoop();
             };
 
             this.CurrentRunspace.Runspace.AvailabilityChanged += handler;
-            this.isCommandLoopRestarterSet = true;
+            Interlocked.Exchange(ref this.isCommandLoopRestarterSet, 1);
         }
 
         private void OnDebuggerStop(object sender, DebuggerStopEventArgs e)

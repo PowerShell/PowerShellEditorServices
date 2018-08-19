@@ -39,12 +39,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         public Task<string> ReadCommandLine(CancellationToken cancellationToken)
         {
-            return this.ReadLine(true, cancellationToken);
+            return this.ReadLineAsync(true, cancellationToken);
         }
 
         public Task<string> ReadSimpleLine(CancellationToken cancellationToken)
         {
-            return this.ReadLine(false, cancellationToken);
+            return this.ReadLineAsync(false, cancellationToken);
         }
 
         public async Task<SecureString> ReadSecureLine(CancellationToken cancellationToken)
@@ -135,9 +135,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
             return await ConsoleProxy.ReadKeyAsync(cancellationToken);
         }
 
-        private async Task<string> ReadLine(bool isCommandLine, CancellationToken cancellationToken)
+        private async Task<string> ReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
-            return await this.powerShellContext.InvokeReadLine(isCommandLine, cancellationToken);
+            return await this.powerShellContext.InvokeReadLineAsync(isCommandLine, cancellationToken);
         }
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A task object representing the asynchronus operation. The Result property on
         /// the task object returns the user input string.
         /// </returns>
-        internal async Task<string> InvokeLegacyReadLine(bool isCommandLine, CancellationToken cancellationToken)
+        internal async Task<string> InvokeLegacyReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
             string inputBeforeCompletion = null;
             string inputAfterCompletion = null;

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System;
 using System.Management.Automation.Runspaces;
 using Microsoft.PowerShell.EditorServices.Console;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Session {
     using System.Management.Automation;
@@ -75,7 +76,10 @@ namespace Microsoft.PowerShell.EditorServices.Session {
 #endif
         }
 
-        internal static bool TryGetPSReadLineProxy(Runspace runspace, out PSReadLineProxy readLineProxy)
+        internal static bool TryGetPSReadLineProxy(
+            ILogger logger,
+            Runspace runspace,
+            out PSReadLineProxy readLineProxy)
         {
             readLineProxy = null;
             using (var pwsh = PowerShell.Create())
@@ -93,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Session {
 
                 try
                 {
-                    readLineProxy = new PSReadLineProxy(psReadLineType);
+                    readLineProxy = new PSReadLineProxy(psReadLineType, logger);
                 }
                 catch (InvalidOperationException)
                 {
@@ -107,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             return true;
         }
 
-        public async Task<string> InvokeReadLine(bool isCommandLine, CancellationToken cancellationToken)
+        public async Task<string> InvokeReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
             _readLineCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             var localTokenSource = _readLineCancellationSource;
@@ -120,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             {
                 if (!isCommandLine)
                 {
-                    return await _consoleReadLine.InvokeLegacyReadLine(
+                    return await _consoleReadLine.InvokeLegacyReadLineAsync(
                         false,
                         _readLineCancellationSource.Token);
                 }

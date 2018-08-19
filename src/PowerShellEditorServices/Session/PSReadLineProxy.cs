@@ -5,11 +5,16 @@
 
 using System;
 using System.Reflection;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Session
 {
     internal class PSReadLineProxy
     {
+        private const string FieldMemberType = "field";
+
+        private const string MethodMemberType = "method";
+
         private const string AddToHistoryMethodName = "AddToHistory";
 
         private const string SetKeyHandlerMethodName = "SetKeyHandler";
@@ -20,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private const string ForcePSEventHandlingMethodName = "ForcePSEventHandling";
 
-        private static readonly Type[] s_setKeyHandlerTypes = new Type[4]
+        private static readonly Type[] s_setKeyHandlerTypes =
         {
             typeof(string[]),
             typeof(Action<ConsoleKeyInfo?, object>),
@@ -28,11 +33,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
             typeof(string)
         };
 
-        private static readonly Type[] s_addToHistoryTypes = new Type[1] { typeof(string) };
+        private static readonly Type[] s_addToHistoryTypes = { typeof(string) };
 
         private readonly FieldInfo _readKeyOverrideField;
 
-        internal PSReadLineProxy(Type psConsoleReadLine)
+        internal PSReadLineProxy(Type psConsoleReadLine, ILogger logger)
         {
             ForcePSEventHandling =
                 (Action)psConsoleReadLine.GetMethod(
@@ -55,12 +60,36 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 .GetType(VirtualTerminalTypeName)
                 ?.GetField(ReadKeyOverrideFieldName, BindingFlags.Static | BindingFlags.NonPublic);
 
-            if (_readKeyOverrideField == null ||
-                SetKeyHandler == null ||
-                AddToHistory == null ||
-                ForcePSEventHandling == null)
+            if (_readKeyOverrideField == null)
             {
-                throw new InvalidOperationException();
+                throw NewInvalidPSReadLineVersionException(
+                    FieldMemberType,
+                    ReadKeyOverrideFieldName,
+                    logger);
+            }
+
+            if (SetKeyHandler == null)
+            {
+                throw NewInvalidPSReadLineVersionException(
+                    MethodMemberType,
+                    SetKeyHandlerMethodName,
+                    logger);
+            }
+
+            if (AddToHistory == null)
+            {
+                throw NewInvalidPSReadLineVersionException(
+                    MethodMemberType,
+                    AddToHistoryMethodName,
+                    logger);
+            }
+
+            if (ForcePSEventHandling == null)
+            {
+                throw NewInvalidPSReadLineVersionException(
+                    MethodMemberType,
+                    ForcePSEventHandlingMethodName,
+                    logger);
             }
         }
 
@@ -73,6 +102,18 @@ namespace Microsoft.PowerShell.EditorServices.Session
         internal void OverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyFunc)
         {
             _readKeyOverrideField.SetValue(null, readKeyFunc);
+        }
+
+        private static InvalidOperationException NewInvalidPSReadLineVersionException(
+            string memberType,
+            string memberName,
+            ILogger logger)
+        {
+            logger.Write(
+                LogLevel.Error,
+                $"The loaded version of PSReadLine is not supported. The {memberType} \"{memberName}\" was not found.");
+
+            return new InvalidOperationException();
         }
     }
 }

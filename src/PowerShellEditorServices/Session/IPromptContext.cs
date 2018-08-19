@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// A task object that represents the completion of reading input. The Result property will
         /// return the input string.
         /// </returns>
-        Task<string> InvokeReadLine(bool isCommandLine, CancellationToken cancellationToken);
+        Task<string> InvokeReadLineAsync(bool isCommandLine, CancellationToken cancellationToken);
 
         /// <summary>
         /// Performs any additional actions required to cancel the current ReadLine invocation.
