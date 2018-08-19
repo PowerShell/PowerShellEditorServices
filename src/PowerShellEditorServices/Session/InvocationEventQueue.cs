@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
     /// <summary>
     /// Provides the ability to take over the current pipeline in a runspace.
     /// </summary>
-    internal class InvocationEventQueue
+    internal class InvocationEventQueue : IDisposable
     {
         private const string ShouldProcessInExecutionThreadPropertyName = "ShouldProcessInExecutionThread";
 
@@ -35,22 +35,123 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private readonly PowerShellContext _powerShellContext;
 
+        private readonly ILogger _logger;
+
+        private bool _isDisposed;
+
         private InvocationRequest _invocationRequest;
 
-        private SemaphoreSlim _lock = AsyncUtils.CreateSimpleLockingSemaphore();
+        private PSEventSubscriber _onIdleSubscriber;
 
-        private InvocationEventQueue(PowerShellContext powerShellContext, PromptNest promptNest)
+        private SemaphoreSlim _pipelineRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
+
+        private SemaphoreSlim _subscriberHandle = AsyncUtils.CreateSimpleLockingSemaphore();
+
+        private InvocationEventQueue(
+            PowerShellContext powerShellContext,
+            PromptNest promptNest,
+            ILogger logger)
         {
             _promptNest = promptNest;
             _powerShellContext = powerShellContext;
             _runspace = powerShellContext.CurrentRunspace.Runspace;
+            _logger = logger;
         }
 
-        internal static InvocationEventQueue Create(PowerShellContext powerShellContext, PromptNest promptNest)
+        public void Dispose() => Dispose(true);
+
+        protected virtual void Dispose(bool disposing)
         {
-            var eventQueue = new InvocationEventQueue(powerShellContext, promptNest);
+            if (!_isDisposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                RemoveInvocationSubscriber();
+            }
+
+            _isDisposed = true;
+        }
+
+        internal static InvocationEventQueue Create(
+            PowerShellContext powerShellContext,
+            PromptNest promptNest,
+            ILogger logger)
+        {
+            var eventQueue = new InvocationEventQueue(powerShellContext, promptNest, logger);
             eventQueue.CreateInvocationSubscriber();
             return eventQueue;
+        }
+
+        /// <summary>
+        /// Creates a <see cref="PSEventSubscriber" /> subscribed the engine event
+        /// <see cref="PSEngineEvent.OnIdle" /> that handles requests for pipeline thread access.
+        /// </summary>
+        /// <returns>
+        /// The newly created <see cref="PSEventSubscriber" /> or an existing subscriber if
+        /// creation already occurred.
+        /// </returns>
+        internal PSEventSubscriber CreateInvocationSubscriber()
+        {
+            _subscriberHandle.Wait();
+            try
+            {
+                if (_onIdleSubscriber != null)
+                {
+                    _logger.Write(
+                        LogLevel.Error,
+                        "An attempt to create the ReadLine OnIdle subscriber was made when one already exists.");
+                    return _onIdleSubscriber;
+                }
+
+                _onIdleSubscriber = _runspace.Events.SubscribeEvent(
+                    source: null,
+                    eventName: PSEngineEvent.OnIdle,
+                    sourceIdentifier: PSEngineEvent.OnIdle,
+                    data: null,
+                    handlerDelegate: OnPowerShellIdle,
+                    supportEvent: true,
+                    forwardEvent: false);
+
+                SetSubscriberExecutionThreadWithReflection(_onIdleSubscriber);
+
+                _onIdleSubscriber.Unsubscribed += OnInvokerUnsubscribed;
+
+                return _onIdleSubscriber;
+            }
+            finally
+            {
+                _subscriberHandle.Release();
+            }
+        }
+
+        /// <summary>
+        /// Unsubscribes the existing <see cref="PSEventSubscriber" /> handling pipeline thread
+        /// access requests.
+        /// </summary>
+        internal void RemoveInvocationSubscriber()
+        {
+            _subscriberHandle.Wait();
+            try
+            {
+                if (_onIdleSubscriber == null)
+                {
+                    _logger.Write(
+                        LogLevel.Error,
+                        "An attempt to remove the ReadLine OnIdle subscriber was made before it was created.");
+                    return;
+                }
+
+                _onIdleSubscriber.Unsubscribed -= OnInvokerUnsubscribed;
+                _runspace.Events.UnsubscribeEvent(_onIdleSubscriber);
+                _onIdleSubscriber = null;
+            }
+            finally
+            {
+                _subscriberHandle.Release();
+            }
         }
 
         /// <summary>
@@ -136,7 +237,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         private async Task WaitForExistingRequestAsync()
         {
             InvocationRequest existingRequest;
-            await _lock.WaitAsync();
+            await _pipelineRequestHandle.WaitAsync();
             try
             {
                 existingRequest = _invocationRequest;
@@ -147,7 +248,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
             finally
             {
-                _lock.Release();
+                _pipelineRequestHandle.Release();
             }
 
             await existingRequest.Task;
@@ -156,14 +257,14 @@ namespace Microsoft.PowerShell.EditorServices.Session
         private async Task SetInvocationRequestAsync(InvocationRequest request)
         {
             await WaitForExistingRequestAsync();
-            await _lock.WaitAsync();
+            await _pipelineRequestHandle.WaitAsync();
             try
             {
                 _invocationRequest = request;
             }
             finally
             {
-                _lock.Release();
+                _pipelineRequestHandle.Release();
             }
 
             _powerShellContext.ForcePSEventHandling();
@@ -171,7 +272,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         private void OnPowerShellIdle(object sender, EventArgs e)
         {
-            if (!_lock.Wait(0))
+            if (!_pipelineRequestHandle.Wait(0))
             {
                 return;
             }
@@ -188,7 +289,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
             finally
             {
-                _lock.Release();
+                _pipelineRequestHandle.Release();
             }
 
             _promptNest.PushPromptContext();
@@ -200,24 +301,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
             {
                 _promptNest.PopPromptContext();
             }
-        }
-
-        private PSEventSubscriber CreateInvocationSubscriber()
-        {
-            PSEventSubscriber subscriber = _runspace.Events.SubscribeEvent(
-                source: null,
-                eventName: PSEngineEvent.OnIdle,
-                sourceIdentifier: PSEngineEvent.OnIdle,
-                data: null,
-                handlerDelegate: OnPowerShellIdle,
-                supportEvent: true,
-                forwardEvent: false);
-
-            SetSubscriberExecutionThreadWithReflection(subscriber);
-
-            subscriber.Unsubscribed += OnInvokerUnsubscribed;
-
-            return subscriber;
         }
 
         private void OnInvokerUnsubscribed(object sender, PSEventUnsubscribedEventArgs e)
