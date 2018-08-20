@@ -23,22 +23,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class DebugAdapter
     {
-        private EditorSession editorSession;
+        private EditorSession _editorSession;
 
-        private bool noDebug;
+        private bool _noDebug;
         private ILogger Logger;
-        private string arguments;
-        private bool isRemoteAttach;
-        private bool isAttachSession;
-        private bool waitingForAttach;
-        private string scriptToLaunch;
-        private bool ownsEditorSession;
-        private bool executionCompleted;
-        private IMessageSender messageSender;
-        private IMessageHandlers messageHandlers;
-        private bool isInteractiveDebugSession;
-        private bool setBreakpointInProgress;
-        private RequestContext<object> disconnectRequestContext = null;
+        private string _arguments;
+        private bool _isRemoteAttach;
+        private bool _isAttachSession;
+        private bool _waitingForAttach;
+        private string _scriptToLaunch;
+        private bool _ownsEditorSession;
+        private bool _executionCompleted;
+        private IMessageSender _messageSender;
+        private IMessageHandlers _messageHandlers;
+        private bool _isInteractiveDebugSession;
+        private bool _setBreakpointInProgress;
+        private RequestContext<object> _disconnectRequestContext = null;
 
         public DebugAdapter(
             EditorSession editorSession,
@@ -47,11 +47,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             IMessageSender messageSender,
             ILogger logger)
         {
-            this.Logger = logger;
-            this.editorSession = editorSession;
-            this.messageSender = messageSender;
-            this.messageHandlers = messageHandlers;
-            this.ownsEditorSession = ownsEditorSession;
+            Logger = logger;
+            _editorSession = editorSession;
+            _messageSender = messageSender;
+            _messageHandlers = messageHandlers;
+            _ownsEditorSession = ownsEditorSession;
         }
 
         /// <summary>
@@ -63,80 +63,74 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public void Start()
         {
             // Register all supported message types
-            this.messageHandlers.SetRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
+            _messageHandlers.SetRequestHandler(InitializeRequest.Type, HandleInitializeRequest);
 
-            this.messageHandlers.SetRequestHandler(LaunchRequest.Type, this.HandleLaunchRequest);
-            this.messageHandlers.SetRequestHandler(AttachRequest.Type, this.HandleAttachRequest);
-            this.messageHandlers.SetRequestHandler(ConfigurationDoneRequest.Type, this.HandleConfigurationDoneRequest);
-            this.messageHandlers.SetRequestHandler(DisconnectRequest.Type, this.HandleDisconnectRequest);
+            _messageHandlers.SetRequestHandler(LaunchRequest.Type, HandleLaunchRequest);
+            _messageHandlers.SetRequestHandler(AttachRequest.Type, HandleAttachRequest);
+            _messageHandlers.SetRequestHandler(ConfigurationDoneRequest.Type, HandleConfigurationDoneRequest);
+            _messageHandlers.SetRequestHandler(DisconnectRequest.Type, HandleDisconnectRequest);
 
-            this.messageHandlers.SetRequestHandler(SetBreakpointsRequest.Type, this.HandleSetBreakpointsRequest);
-            this.messageHandlers.SetRequestHandler(SetExceptionBreakpointsRequest.Type, this.HandleSetExceptionBreakpointsRequest);
-            this.messageHandlers.SetRequestHandler(SetFunctionBreakpointsRequest.Type, this.HandleSetFunctionBreakpointsRequest);
+            _messageHandlers.SetRequestHandler(SetBreakpointsRequest.Type, HandleSetBreakpointsRequest);
+            _messageHandlers.SetRequestHandler(SetExceptionBreakpointsRequest.Type, HandleSetExceptionBreakpointsRequest);
+            _messageHandlers.SetRequestHandler(SetFunctionBreakpointsRequest.Type, HandleSetFunctionBreakpointsRequest);
 
-            this.messageHandlers.SetRequestHandler(ContinueRequest.Type, this.HandleContinueRequest);
-            this.messageHandlers.SetRequestHandler(NextRequest.Type, this.HandleNextRequest);
-            this.messageHandlers.SetRequestHandler(StepInRequest.Type, this.HandleStepInRequest);
-            this.messageHandlers.SetRequestHandler(StepOutRequest.Type, this.HandleStepOutRequest);
-            this.messageHandlers.SetRequestHandler(PauseRequest.Type, this.HandlePauseRequest);
+            _messageHandlers.SetRequestHandler(ContinueRequest.Type, HandleContinueRequest);
+            _messageHandlers.SetRequestHandler(NextRequest.Type, HandleNextRequest);
+            _messageHandlers.SetRequestHandler(StepInRequest.Type, HandleStepInRequest);
+            _messageHandlers.SetRequestHandler(StepOutRequest.Type, HandleStepOutRequest);
+            _messageHandlers.SetRequestHandler(PauseRequest.Type, HandlePauseRequest);
 
-            this.messageHandlers.SetRequestHandler(ThreadsRequest.Type, this.HandleThreadsRequest);
-            this.messageHandlers.SetRequestHandler(StackTraceRequest.Type, this.HandleStackTraceRequest);
-            this.messageHandlers.SetRequestHandler(ScopesRequest.Type, this.HandleScopesRequest);
-            this.messageHandlers.SetRequestHandler(VariablesRequest.Type, this.HandleVariablesRequest);
-            this.messageHandlers.SetRequestHandler(SetVariableRequest.Type, this.HandleSetVariablesRequest);
-            this.messageHandlers.SetRequestHandler(SourceRequest.Type, this.HandleSourceRequest);
-            this.messageHandlers.SetRequestHandler(EvaluateRequest.Type, this.HandleEvaluateRequest);
+            _messageHandlers.SetRequestHandler(ThreadsRequest.Type, HandleThreadsRequest);
+            _messageHandlers.SetRequestHandler(StackTraceRequest.Type, HandleStackTraceRequest);
+            _messageHandlers.SetRequestHandler(ScopesRequest.Type, HandleScopesRequest);
+            _messageHandlers.SetRequestHandler(VariablesRequest.Type, HandleVariablesRequest);
+            _messageHandlers.SetRequestHandler(SetVariableRequest.Type, HandleSetVariablesRequest);
+            _messageHandlers.SetRequestHandler(SourceRequest.Type, HandleSourceRequest);
+            _messageHandlers.SetRequestHandler(EvaluateRequest.Type, HandleEvaluateRequest);
         }
 
-        protected Task LaunchScript(RequestContext<object> requestContext)
+        protected Task LaunchScript(RequestContext<object> requestContext, string scriptToLaunch)
         {
             // Is this an untitled script?
             Task launchTask = null;
 
-            if (ScriptFile.IsUntitledPath(this.scriptToLaunch))
+            if (ScriptFile.IsUntitledPath(scriptToLaunch))
             {
-                ScriptFile untitledScript =
-                    this.editorSession.Workspace.GetFile(
-                        this.scriptToLaunch);
+                ScriptFile untitledScript = _editorSession.Workspace.GetFile(scriptToLaunch);
 
-                launchTask =
-                    this.editorSession
-                        .PowerShellContext
-                        .ExecuteScriptString(untitledScript.Contents, true, true);
+                launchTask = _editorSession.PowerShellContext
+                    .ExecuteScriptString(untitledScript.Contents, true, true);
             }
             else
             {
-                launchTask =
-                    this.editorSession
-                        .PowerShellContext
-                        .ExecuteScriptWithArgs(this.scriptToLaunch, this.arguments, writeInputToHost: true);
+                launchTask = _editorSession.PowerShellContext
+                    .ExecuteScriptWithArgs(scriptToLaunch, _arguments, writeInputToHost: true);
             }
 
-            return launchTask.ContinueWith(this.OnExecutionCompleted);
+            return launchTask.ContinueWith(OnExecutionCompleted);
         }
 
         private async Task OnExecutionCompleted(Task executeTask)
         {
             Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
 
-            this.executionCompleted = true;
+            _executionCompleted = true;
 
-            this.UnregisterEventHandlers();
+            UnregisterEventHandlers();
 
-            if (this.isAttachSession)
+            if (_isAttachSession)
             {
                 // Pop the sessions
-                if (this.editorSession.PowerShellContext.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
+                if (_editorSession.PowerShellContext.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
                 {
                     try
                     {
-                        await this.editorSession.PowerShellContext.ExecuteScriptString("Exit-PSHostProcess");
+                        await _editorSession.PowerShellContext.ExecuteScriptString("Exit-PSHostProcess");
 
-                        if (this.isRemoteAttach &&
-                            this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+                        if (_isRemoteAttach &&
+                            _editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
                         {
-                            await this.editorSession.PowerShellContext.ExecuteScriptString("Exit-PSSession");
+                            await _editorSession.PowerShellContext.ExecuteScriptString("Exit-PSSession");
                         }
                     }
                     catch (Exception e)
@@ -146,17 +140,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
             }
 
-            this.editorSession.DebugService.IsClientAttached = false;
+            _editorSession.DebugService.IsClientAttached = false;
 
-            if (this.disconnectRequestContext != null)
+            if (_disconnectRequestContext != null)
             {
                 // Respond to the disconnect request and stop the server
-                await this.disconnectRequestContext.SendResult(null);
-                this.Stop();
+                await _disconnectRequestContext.SendResult(null);
+                Stop();
             }
             else
             {
-                await this.messageSender.SendEvent(
+                await _messageSender.SendEvent(
                     TerminatedEvent.Type,
                     new TerminatedEvent());
             }
@@ -166,21 +160,21 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             Logger.Write(LogLevel.Normal, "Debug adapter is shutting down...");
 
-            if (this.editorSession != null)
+            if (_editorSession != null)
             {
-                this.editorSession.PowerShellContext.RunspaceChanged -= this.powerShellContext_RunspaceChanged;
-                this.editorSession.DebugService.DebuggerStopped -= this.DebugService_DebuggerStopped;
-                this.editorSession.PowerShellContext.DebuggerResumed -= this.powerShellContext_DebuggerResumed;
+                _editorSession.PowerShellContext.RunspaceChanged -= powerShellContext_RunspaceChanged;
+                _editorSession.DebugService.DebuggerStopped -= DebugService_DebuggerStopped;
+                _editorSession.PowerShellContext.DebuggerResumed -= powerShellContext_DebuggerResumed;
 
-                if (this.ownsEditorSession)
+                if (_ownsEditorSession)
                 {
-                    this.editorSession.Dispose();
+                    _editorSession.Dispose();
                 }
 
-                this.editorSession = null;
+                _editorSession = null;
             }
 
-            this.OnSessionEnded();
+            OnSessionEnded();
         }
 
         #region Built-in Message Handlers
@@ -190,7 +184,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<InitializeResponseBody> requestContext)
         {
             // Clear any existing breakpoints before proceeding
-            await this.ClearSessionBreakpoints();
+            await ClearSessionBreakpoints();
 
             // Now send the Initialize response to continue setup
             await requestContext.SendResult(
@@ -207,16 +201,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object args,
             RequestContext<object> requestContext)
         {
-            this.editorSession.DebugService.IsClientAttached = true;
+            _editorSession.DebugService.IsClientAttached = true;
 
-            if (!string.IsNullOrEmpty(this.scriptToLaunch))
+            if (!string.IsNullOrEmpty(_scriptToLaunch))
             {
-                if (this.editorSession.PowerShellContext.SessionState == PowerShellContextState.Ready)
+                if (_editorSession.PowerShellContext.SessionState == PowerShellContextState.Ready)
                 {
                     // Configuration is done, launch the script
-                    var nonAwaitedTask =
-                        this.LaunchScript(requestContext)
-                            .ConfigureAwait(false);
+                    var nonAwaitedTask = LaunchScript(requestContext, _scriptToLaunch)
+                        .ConfigureAwait(continueOnCapturedContext: false);
                 }
                 else
                 {
@@ -228,22 +221,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             await requestContext.SendResult(null);
 
-            if (this.isInteractiveDebugSession)
+            if (_isInteractiveDebugSession)
             {
-                if (this.ownsEditorSession)
+                if (_ownsEditorSession)
                 {
                     // If this is a debug-only session, we need to start
                     // the command loop manually
-                    this.editorSession.HostInput.StartCommandLoop();
+                    _editorSession.HostInput.StartCommandLoop();
                 }
 
-                if (this.editorSession.DebugService.IsDebuggerStopped)
+                if (_editorSession.DebugService.IsDebuggerStopped)
                 {
                     // If this is an interactive session and there's a pending breakpoint,
                     // send that information along to the debugger client
-                    this.DebugService_DebuggerStopped(
+                    DebugService_DebuggerStopped(
                         this,
-                        this.editorSession.DebugService.CurrentDebuggerStoppedEventArgs);
+                        _editorSession.DebugService.CurrentDebuggerStoppedEventArgs);
                 }
             }
         }
@@ -252,11 +245,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             LaunchRequestArguments launchParams,
             RequestContext<object> requestContext)
         {
-            this.RegisterEventHandlers();
+            RegisterEventHandlers();
 
             // Determine whether or not the working directory should be set in the PowerShellContext.
-            if ((this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local) &&
-                !this.editorSession.DebugService.IsDebuggerStopped)
+            if ((_editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Local) &&
+                !_editorSession.DebugService.IsDebuggerStopped)
             {
                 // Get the working directory that was passed via the debug config
                 // (either via launch.json or generated via no-config debug).
@@ -278,12 +271,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     {
                         workingDir = null;
                         Logger.Write(
-                            LogLevel.Error, 
+                            LogLevel.Error,
                             $"The specified 'cwd' path is invalid: '{launchParams.Cwd}'. Error: {ex.Message}");
                     }
                 }
 
-                // If we have no working dir by this point and we are running in a temp console, 
+                // If we have no working dir by this point and we are running in a temp console,
                 // pick some reasonable default.
                 if (string.IsNullOrEmpty(workingDir) && launchParams.CreateTemporaryIntegratedConsole)
                 {
@@ -300,7 +293,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // the working dir should not be changed.
                 if (!string.IsNullOrEmpty(workingDir))
                 {
-                    await editorSession.PowerShellContext.SetWorkingDirectory(workingDir, isPathAlreadyEscaped: false);
+                    await _editorSession.PowerShellContext.SetWorkingDirectory(workingDir, isPathAlreadyEscaped: false);
                 }
 
                 Logger.Write(LogLevel.Verbose, $"Working dir " + (string.IsNullOrEmpty(workingDir) ? "not set." : $"set to '{workingDir}'"));
@@ -315,31 +308,31 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
 
             // Store the launch parameters so that they can be used later
-            this.noDebug = launchParams.NoDebug;
-            this.scriptToLaunch = launchParams.Script;
-            this.arguments = arguments;
-            this.IsUsingTempIntegratedConsole = launchParams.CreateTemporaryIntegratedConsole;
+            _noDebug = launchParams.NoDebug;
+            _scriptToLaunch = launchParams.Script;
+            _arguments = arguments;
+            IsUsingTempIntegratedConsole = launchParams.CreateTemporaryIntegratedConsole;
 
             // If the current session is remote, map the script path to the remote
             // machine if necessary
-            if (this.scriptToLaunch != null &&
-                this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+            if (_scriptToLaunch != null &&
+                _editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
             {
-                this.scriptToLaunch =
-                    this.editorSession.RemoteFileManager.GetMappedPath(
-                        this.scriptToLaunch,
-                        this.editorSession.PowerShellContext.CurrentRunspace);
+                _scriptToLaunch =
+                    _editorSession.RemoteFileManager.GetMappedPath(
+                        _scriptToLaunch,
+                        _editorSession.PowerShellContext.CurrentRunspace);
             }
 
             await requestContext.SendResult(null);
 
             // If no script is being launched, mark this as an interactive
             // debugging session
-            this.isInteractiveDebugSession = string.IsNullOrEmpty(this.scriptToLaunch);
+            _isInteractiveDebugSession = string.IsNullOrEmpty(_scriptToLaunch);
 
             // Send the InitializedEvent so that the debugger will continue
             // sending configuration requests
-            await this.messageSender.SendEvent(
+            await _messageSender.SendEvent(
                 InitializedEvent.Type,
                 null);
         }
@@ -348,9 +341,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             AttachRequestArguments attachParams,
             RequestContext<object> requestContext)
         {
-            this.isAttachSession = true;
+            _isAttachSession = true;
 
-            this.RegisterEventHandlers();
+            RegisterEventHandlers();
 
             // If there are no host processes to attach to or the user cancels selection, we get a null for the process id.
             // This is not an error, just a request to stop the original "attach to" request.
@@ -373,7 +366,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             if (attachParams.ComputerName != null)
             {
                 PowerShellVersionDetails runspaceVersion =
-                    this.editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
+                    _editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
 
                 if (runspaceVersion.Version.Major < 4)
                 {
@@ -382,7 +375,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                     return;
                 }
-                else if (this.editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+                else if (_editorSession.PowerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
                 {
                     await requestContext.SendError(
                         $"Cannot attach to a process in a remote session when already in a remote session.");
@@ -390,7 +383,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     return;
                 }
 
-                await this.editorSession.PowerShellContext.ExecuteScriptString(
+                await _editorSession.PowerShellContext.ExecuteScriptString(
                     $"Enter-PSSession -ComputerName \"{attachParams.ComputerName}\"",
                     errorMessages);
 
@@ -402,13 +395,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     return;
                 }
 
-                this.isRemoteAttach = true;
+                _isRemoteAttach = true;
             }
 
             if (int.TryParse(attachParams.ProcessId, out int processId) && (processId > 0))
             {
                 PowerShellVersionDetails runspaceVersion =
-                    this.editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
+                    _editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
 
                 if (runspaceVersion.Version.Major < 5)
                 {
@@ -418,7 +411,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     return;
                 }
 
-                await this.editorSession.PowerShellContext.ExecuteScriptString(
+                await _editorSession.PowerShellContext.ExecuteScriptString(
                     $"Enter-PSHostProcess -Id {processId}",
                     errorMessages);
 
@@ -431,18 +424,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
 
                 // Clear any existing breakpoints before proceeding
-                await this.ClearSessionBreakpoints();
+                await ClearSessionBreakpoints();
 
                 // Execute the Debug-Runspace command but don't await it because it
                 // will block the debug adapter initialization process.  The
                 // InitializedEvent will be sent as soon as the RunspaceChanged
                 // event gets fired with the attached runspace.
                 int runspaceId = attachParams.RunspaceId > 0 ? attachParams.RunspaceId : 1;
-                this.waitingForAttach = true;
+                _waitingForAttach = true;
                 Task nonAwaitedTask =
-                    this.editorSession.PowerShellContext
+                    _editorSession.PowerShellContext
                         .ExecuteScriptString($"\nDebug-Runspace -Id {runspaceId}")
-                        .ContinueWith(this.OnExecutionCompleted);
+                        .ContinueWith(OnExecutionCompleted);
             }
             else
             {
@@ -465,24 +458,24 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             // In some rare cases, the EditorSession will already be disposed
             // so we shouldn't try to abort because PowerShellContext will be null
-            if (this.editorSession != null && this.editorSession.PowerShellContext != null)
+            if (_editorSession != null && _editorSession.PowerShellContext != null)
             {
-                if (this.executionCompleted == false)
+                if (_executionCompleted == false)
                 {
-                    this.disconnectRequestContext = requestContext;
-                    this.editorSession.PowerShellContext.AbortExecution();
+                    _disconnectRequestContext = requestContext;
+                    _editorSession.PowerShellContext.AbortExecution();
 
-                    if (this.isInteractiveDebugSession)
+                    if (_isInteractiveDebugSession)
                     {
-                        await this.OnExecutionCompleted(null);
+                        await OnExecutionCompleted(null);
                     }
                 }
                 else
                 {
-                    this.UnregisterEventHandlers();
+                    UnregisterEventHandlers();
 
                     await requestContext.SendResult(null);
-                    this.Stop();
+                    Stop();
                 }
             }
         }
@@ -501,7 +494,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // the Source.Path comes through as Untitled-X.
                 if (!ScriptFile.IsUntitledPath(setBreakpointsParams.Source.Path))
                 {
-                    scriptFile = editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
+                    scriptFile = _editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
                 }
             }
             catch (Exception e) when (
@@ -517,10 +510,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     $"Failed to set breakpoint on file: {setBreakpointsParams.Source.Path}",
                     e);
 
-                string message = this.noDebug ? string.Empty : "Source file could not be accessed, breakpoint not set - " + e.Message;
+                string message = _noDebug ? string.Empty : "Source file could not be accessed, breakpoint not set - " + e.Message;
                 var srcBreakpoints = setBreakpointsParams.Breakpoints
                     .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
-                        srcBkpt, setBreakpointsParams.Source.Path, message, verified: this.noDebug));
+                        srcBkpt, setBreakpointsParams.Source.Path, message, verified: _noDebug));
 
                 // Return non-verified breakpoint message.
                 await requestContext.SendResult(
@@ -539,11 +532,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     LogLevel.Warning,
                     $"Attempted to set breakpoints on a non-PowerShell file: {setBreakpointsParams.Source.Path}");
 
-                string message = this.noDebug ? string.Empty : "Source is not a PowerShell script, breakpoint not set.";
+                string message = _noDebug ? string.Empty : "Source is not a PowerShell script, breakpoint not set.";
 
                 var srcBreakpoints = setBreakpointsParams.Breakpoints
                     .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
-                        srcBkpt, setBreakpointsParams.Source.Path, message, verified: this.noDebug));
+                        srcBkpt, setBreakpointsParams.Source.Path, message, verified: _noDebug));
 
                 // Return non-verified breakpoint message.
                 await requestContext.SendResult(
@@ -570,14 +563,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
             BreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
-            if (!this.noDebug)
+            if (!_noDebug)
             {
-                this.setBreakpointInProgress = true;
+                _setBreakpointInProgress = true;
 
                 try
                 {
                     updatedBreakpointDetails =
-                        await editorSession.DebugService.SetLineBreakpoints(
+                        await _editorSession.DebugService.SetLineBreakpoints(
                             scriptFile,
                             breakpointDetails);
                 }
@@ -588,7 +581,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
                 finally
                 {
-                    this.setBreakpointInProgress = false;
+                    _setBreakpointInProgress = false;
                 }
             }
 
@@ -617,14 +610,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
             CommandBreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
-            if (!this.noDebug)
+            if (!_noDebug)
             {
-                this.setBreakpointInProgress = true;
+                _setBreakpointInProgress = true;
 
                 try
                 {
                     updatedBreakpointDetails =
-                        await editorSession.DebugService.SetCommandBreakpoints(
+                        await _editorSession.DebugService.SetCommandBreakpoints(
                             breakpointDetails);
                 }
                 catch (Exception e)
@@ -634,7 +627,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
                 finally
                 {
-                    this.setBreakpointInProgress = false;
+                    _setBreakpointInProgress = false;
                 }
             }
 
@@ -654,9 +647,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // TODO: When support for exception breakpoints (unhandled and/or first chance)
             //       are added to the PowerShell engine, wire up the VSCode exception
             //       breakpoints here using the pattern below to prevent bug regressions.
-            //if (!this.noDebug)
+            //if (!noDebug)
             //{
-            //    this.setBreakpointInProgress = true;
+            //    setBreakpointInProgress = true;
 
             //    try
             //    {
@@ -669,7 +662,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             //    }
             //    finally
             //    {
-            //        this.setBreakpointInProgress = false;
+            //        setBreakpointInProgress = false;
             //    }
             //}
 
@@ -680,7 +673,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object continueParams,
             RequestContext<object> requestContext)
         {
-            editorSession.DebugService.Continue();
+            _editorSession.DebugService.Continue();
 
             await requestContext.SendResult(null);
         }
@@ -689,7 +682,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object nextParams,
             RequestContext<object> requestContext)
         {
-            editorSession.DebugService.StepOver();
+            _editorSession.DebugService.StepOver();
 
             await requestContext.SendResult(null);
         }
@@ -700,7 +693,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             try
             {
-                editorSession.DebugService.Break();
+                _editorSession.DebugService.Break();
             }
             catch (NotSupportedException e)
             {
@@ -715,7 +708,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object stepInParams,
             RequestContext<object> requestContext)
         {
-            editorSession.DebugService.StepIn();
+            _editorSession.DebugService.StepIn();
 
             await requestContext.SendResult(null);
         }
@@ -724,7 +717,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             object stepOutParams,
             RequestContext<object> requestContext)
         {
-            editorSession.DebugService.StepOut();
+            _editorSession.DebugService.StepOut();
 
             await requestContext.SendResult(null);
         }
@@ -753,7 +746,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<StackTraceResponseBody> requestContext)
         {
             StackFrameDetails[] stackFrames =
-                editorSession.DebugService.GetStackFrames();
+                _editorSession.DebugService.GetStackFrames();
 
             List<StackFrame> newStackFrames = new List<StackFrame>();
 
@@ -791,7 +784,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<ScopesResponseBody> requestContext)
         {
             VariableScope[] variableScopes =
-                editorSession.DebugService.GetVariableScopes(
+                _editorSession.DebugService.GetVariableScopes(
                     scopesParams.FrameId);
 
             await requestContext.SendResult(
@@ -809,7 +802,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<VariablesResponseBody> requestContext)
         {
             VariableDetailsBase[] variables =
-                editorSession.DebugService.GetVariables(
+                _editorSession.DebugService.GetVariables(
                     variablesParams.VariablesReference);
 
             VariablesResponseBody variablesResponse = null;
@@ -839,7 +832,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             try
             {
                 string updatedValue =
-                    await editorSession.DebugService.SetVariable(
+                    await _editorSession.DebugService.SetVariable(
                         setVariableParams.VariablesReference,
                         setVariableParams.Name,
                         setVariableParams.Value);
@@ -894,7 +887,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             if (isFromRepl)
             {
                 var notAwaited =
-                    this.editorSession
+                    _editorSession
                         .PowerShellContext
                         .ExecuteScriptString(evaluateParams.Expression, false, true)
                         .ConfigureAwait(false);
@@ -905,17 +898,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                 // VS Code might send this request after the debugger
                 // has been resumed, return an empty result in this case.
-                if (editorSession.PowerShellContext.IsDebuggerStopped)
+                if (_editorSession.PowerShellContext.IsDebuggerStopped)
                 {
                     // First check to see if the watch expression refers to a naked variable reference.
                     result =
-                        editorSession.DebugService.GetVariableFromExpression(evaluateParams.Expression, evaluateParams.FrameId);
+                        _editorSession.DebugService.GetVariableFromExpression(evaluateParams.Expression, evaluateParams.FrameId);
 
                     // If the expression is not a naked variable reference, then evaluate the expression.
                     if (result == null)
                     {
                         result =
-                            await editorSession.DebugService.EvaluateExpression(
+                            await _editorSession.DebugService.EvaluateExpression(
                                 evaluateParams.Expression,
                                 evaluateParams.FrameId,
                                 isFromRepl);
@@ -941,7 +934,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private async Task WriteUseIntegratedConsoleMessage()
         {
-            await this.messageSender.SendEvent(
+            await _messageSender.SendEvent(
                 OutputEvent.Type,
                 new OutputEventBody
                 {
@@ -952,25 +945,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private void RegisterEventHandlers()
         {
-            this.editorSession.PowerShellContext.RunspaceChanged += this.powerShellContext_RunspaceChanged;
-            this.editorSession.DebugService.BreakpointUpdated += DebugService_BreakpointUpdated;
-            this.editorSession.DebugService.DebuggerStopped += this.DebugService_DebuggerStopped;
-            this.editorSession.PowerShellContext.DebuggerResumed += this.powerShellContext_DebuggerResumed;
+            _editorSession.PowerShellContext.RunspaceChanged += powerShellContext_RunspaceChanged;
+            _editorSession.DebugService.BreakpointUpdated += DebugService_BreakpointUpdated;
+            _editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStopped;
+            _editorSession.PowerShellContext.DebuggerResumed += powerShellContext_DebuggerResumed;
         }
 
         private void UnregisterEventHandlers()
         {
-            this.editorSession.PowerShellContext.RunspaceChanged -= this.powerShellContext_RunspaceChanged;
-            this.editorSession.DebugService.BreakpointUpdated -= DebugService_BreakpointUpdated;
-            this.editorSession.DebugService.DebuggerStopped -= this.DebugService_DebuggerStopped;
-            this.editorSession.PowerShellContext.DebuggerResumed -= this.powerShellContext_DebuggerResumed;
+            _editorSession.PowerShellContext.RunspaceChanged -= powerShellContext_RunspaceChanged;
+            _editorSession.DebugService.BreakpointUpdated -= DebugService_BreakpointUpdated;
+            _editorSession.DebugService.DebuggerStopped -= DebugService_DebuggerStopped;
+            _editorSession.PowerShellContext.DebuggerResumed -= powerShellContext_DebuggerResumed;
         }
 
         private async Task ClearSessionBreakpoints()
         {
             try
             {
-                await this.editorSession.DebugService.ClearAllBreakpoints();
+                await _editorSession.DebugService.ClearAllBreakpoints();
             }
             catch (Exception e)
             {
@@ -999,7 +992,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         : "breakpoint";
             }
 
-            await this.messageSender.SendEvent(
+            await _messageSender.SendEvent(
                 StoppedEvent.Type,
                 new StoppedEventBody
                 {
@@ -1014,24 +1007,24 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         async void powerShellContext_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
-            if (this.waitingForAttach &&
+            if (_waitingForAttach &&
                 e.ChangeAction == RunspaceChangeAction.Enter &&
                 e.NewRunspace.Context == RunspaceContext.DebuggedRunspace)
             {
                 // Send the InitializedEvent so that the debugger will continue
                 // sending configuration requests
-                this.waitingForAttach = false;
-                await this.messageSender.SendEvent(InitializedEvent.Type, null);
+                _waitingForAttach = false;
+                await _messageSender.SendEvent(InitializedEvent.Type, null);
             }
             else if (
                 e.ChangeAction == RunspaceChangeAction.Exit &&
-                (this.editorSession == null ||
-                 this.editorSession.PowerShellContext.IsDebuggerStopped))
+                (_editorSession == null ||
+                 _editorSession.PowerShellContext.IsDebuggerStopped))
             {
                 // Exited the session while the debugger is stopped,
                 // send a ContinuedEvent so that the client changes the
                 // UI to appear to be running again
-                await this.messageSender.SendEvent<ContinuedEvent, Object>(
+                await _messageSender.SendEvent<ContinuedEvent, Object>(
                     ContinuedEvent.Type,
                     new ContinuedEvent
                     {
@@ -1043,7 +1036,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private async void powerShellContext_DebuggerResumed(object sender, DebuggerResumeAction e)
         {
-            await this.messageSender.SendEvent(
+            await _messageSender.SendEvent(
                 ContinuedEvent.Type,
                 new ContinuedEvent
                 {
@@ -1056,7 +1049,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             string reason = "changed";
 
-            if (this.setBreakpointInProgress)
+            if (_setBreakpointInProgress)
             {
                 // Don't send breakpoint update notifications when setting
                 // breakpoints on behalf of the client.
@@ -1093,7 +1086,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             breakpoint.Verified = e.UpdateType != BreakpointUpdateType.Disabled;
 
-            await this.messageSender.SendEvent(
+            await _messageSender.SendEvent(
                 BreakpointEvent.Type,
                 new BreakpointEvent
                 {
@@ -1110,7 +1103,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         protected virtual void OnSessionEnded()
         {
-            this.SessionEnded?.Invoke(this, null);
+            SessionEnded?.Invoke(this, null);
         }
 
         #endregion
