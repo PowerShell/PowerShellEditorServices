@@ -271,7 +271,6 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Logger.Write(LogLevel.Verbose, "NotifyBeginApplication() called.");
             this.hostUserInterface.IsNativeApplicationRunning = true;
-            this.powerShellContext.NotifyBeginApplication();
         }
 
         /// <summary>
@@ -281,7 +280,6 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Logger.Write(LogLevel.Verbose, "NotifyEndApplication() called.");
             this.hostUserInterface.IsNativeApplicationRunning = false;
-            this.powerShellContext.NotifyEndApplication();
         }
 
         /// <summary>

@@ -963,30 +963,6 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Called by the active <see cref="EditorServicesPSHost" /> to prepare for a native
-        /// application execution.
-        /// </summary>
-        internal void NotifyBeginApplication()
-        {
-            // The OnIdle subscriber causes PSReadLine to query cursor position periodically. On
-            // Unix based platforms this can cause native applications to read the cursor position
-            // response query emitted to STDIN as input.
-            this.InvocationEventQueue.RemoveInvocationSubscriber();
-        }
-
-        /// <summary>
-        /// Called by the active <see cref="EditorServicesPSHost" /> to cleanup after a native
-        /// application execution.
-        /// </summary>
-        internal void NotifyEndApplication()
-        {
-            // The OnIdle subscriber causes PSReadLine to query cursor position periodically. On
-            // Unix based platforms this can cause native applications to read the cursor position
-            // response query emitted to STDIN as input.
-            this.InvocationEventQueue.CreateInvocationSubscriber();
-        }
-
-        /// <summary>
         /// Forces the <see cref="PromptContext" /> to trigger PowerShell event handling,
         /// reliquishing control of the pipeline thread during event processing.
         /// </summary>
@@ -1270,7 +1246,6 @@ namespace Microsoft.PowerShell.EditorServices
         public void Dispose()
         {
             this.PromptNest.Dispose();
-            this.InvocationEventQueue.Dispose();
             this.SessionState = PowerShellContextState.Disposed;
 
             // Clean up the active runspace
