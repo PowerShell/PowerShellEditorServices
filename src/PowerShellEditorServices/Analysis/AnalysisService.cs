@@ -299,8 +299,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public IEnumerable<string> GetPSScriptAnalyzerRules()
         {
-            List<string> ruleNames = new List<string>();
-            var ruleObjects = InvokePowerShell("Get-ScriptAnalyzerRule", new Dictionary<string, object>()).Output;
+            var ruleNames = new List<string>();
+            IEnumerable<PSObject> ruleObjects = InvokePowerShell("Get-ScriptAnalyzerRule", new Dictionary<string, object>()).Output;
             foreach (var rule in ruleObjects)
             {
                 ruleNames.Add((string)rule.Members["RuleName"].Value);
@@ -427,7 +427,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 PSObject[] modules = InvokePowerShell(
                     "Get-Module",
-                    new Dictionary<string, object>{ {"Name", PSSA_MODULE_NAME} }).Output;
+                    new Dictionary<string, object>{ {"Name", PSSA_MODULE_NAME} })?.Output;
 
                 _pssaModuleInfo = modules
                     .Select(m => m.BaseObject)
@@ -505,7 +505,7 @@ namespace Microsoft.PowerShell.EditorServices
                         { settingParameter, settingArgument }
                     });
 
-                diagnosticRecords = result.Output;
+                diagnosticRecords = result?.Output;
             }
 
             _logger.Write(
@@ -640,6 +640,10 @@ namespace Microsoft.PowerShell.EditorServices
 
         #endregion
 
+        /// <summary>
+        /// Wraps the result of an execution of PowerShell to send back through
+        /// asynchronous calls.
+        /// </summary>
         private class PowerShellResult
         {
             public PowerShellResult(
