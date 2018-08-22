@@ -29,6 +29,7 @@ registered_data.ini
 .dotnet/
 module/Plaster
 module/PSScriptAnalyzer
+module/PSReadLine
 docs/_site/
 docs/_repo/
 docs/metadata/

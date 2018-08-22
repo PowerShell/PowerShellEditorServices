@@ -345,6 +345,26 @@ try {
         Write-Host "PowerShell Integrated Console`n"
     }
 
+# <<<<<<< HEAD
+# =======
+    $editorServicesHost =
+        Start-EditorServicesHost `
+            -HostName $HostName `
+            -HostProfileId $HostProfileId `
+            -HostVersion $HostVersion `
+            -LogPath $LogPath `
+            -LogLevel $LogLevel `
+            -AdditionalModules $AdditionalModules `
+            -LanguageServiceNamedPipe $LanguageServicePipeName `
+            -DebugServiceNamedPipe $DebugServicePipeName `
+            -Stdio:$Stdio.IsPresent`
+            -BundledModulesPath $BundledModulesPath `
+            -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
+            -DebugServiceOnly:$DebugServiceOnly.IsPresent `
+            -WaitForDebugger:$WaitForDebugger.IsPresent `
+            -FeatureFlags $FeatureFlags
+
+# >>>>>>> 0d0889e... PSReadLine integration (#672)
     $resultDetails = @{
         "status" = "not started";
         "languageServiceTransport" = $PSCmdlet.ParameterSetName;
@@ -353,46 +373,37 @@ try {
 
     # Create the Editor Services host
     Log "Invoking Start-EditorServicesHost"
+
+    $splat = @{
+        HostName = $HostName
+        HostProfileId = $HostProfileId
+        HostVersion = $HostVersion
+        LogPath = $LogPath
+        LogLevel = $LogLevel
+        AdditionalModules = $AdditionalModules
+        BundledModulesPath = $BundledModulesPath
+        EnableConsoleRepl = $EnableConsoleRepl.IsPresent
+        DebugServiceOnly = $DebugServiceOnly.IsPresent
+        WaitForDebugger = $WaitForDebugger.IsPresent
+        FeatureFlags = $FeatureFlags
+    }
+
     # There could be only one service on Stdio channel
     # Locate available port numbers for services
     switch ($PSCmdlet.ParameterSetName) {
         "Stdio" {
-            $editorServicesHost = Start-EditorServicesHost `
-                                        -HostName $HostName `
-                                        -HostProfileId $HostProfileId `
-                                        -HostVersion $HostVersion `
-                                        -LogPath $LogPath `
-                                        -LogLevel $LogLevel `
-                                        -AdditionalModules $AdditionalModules `
-                                        -Stdio `
-                                        -BundledModulesPath $BundledModulesPath `
-                                        -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
-                                        -DebugServiceOnly:$DebugServiceOnly.IsPresent `
-                                        -WaitForDebugger:$WaitForDebugger.IsPresent
+            $splat.Stdio = $true
+            $editorServicesHost = Start-EditorServicesHost @splat
             break
         }
 
         "NamedPipeSimplex" {
-            $LanguageServiceInPipeName = Get-ValidatedNamedPipeName $LanguageServiceInPipeName
-            $LanguageServiceOutPipeName = Get-ValidatedNamedPipeName $LanguageServiceOutPipeName
-            $DebugServiceInPipeName = Get-ValidatedNamedPipeName $DebugServiceInPipeName
-            $DebugServiceOutPipeName = Get-ValidatedNamedPipeName $DebugServiceOutPipeName
+            $splat.LanguageServiceInNamedPipe = Get-ValidatedNamedPipeName $LanguageServiceInPipeName
+            $splat.LanguageServiceOutNamedPipe = Get-ValidatedNamedPipeName $LanguageServiceOutPipeName
+            $splat.DebugServiceInNamedPipe = Get-ValidatedNamedPipeName $DebugServiceInPipeName
+            $splat.DebugServiceOutNamedPipe = Get-ValidatedNamedPipeName $DebugServiceOutPipeName
 
-            $editorServicesHost = Start-EditorServicesHost `
-                                        -HostName $HostName `
-                                        -HostProfileId $HostProfileId `
-                                        -HostVersion $HostVersion `
-                                        -LogPath $LogPath `
-                                        -LogLevel $LogLevel `
-                                        -AdditionalModules $AdditionalModules `
-                                        -LanguageServiceInNamedPipe $LanguageServiceInPipeName `
-                                        -LanguageServiceOutNamedPipe $LanguageServiceOutPipeName `
-                                        -DebugServiceInNamedPipe $DebugServiceInPipeName `
-                                        -DebugServiceOutNamedPipe $DebugServiceOutPipeName `
-                                        -BundledModulesPath $BundledModulesPath `
-                                        -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
-                                        -DebugServiceOnly:$DebugServiceOnly.IsPresent `
-                                        -WaitForDebugger:$WaitForDebugger.IsPresent
+            $editorServicesHost = Start-EditorServicesHost @splat
 
             Set-PipeFileResult $resultDetails "languageServiceReadPipeName" $LanguageServiceInPipeName
             Set-PipeFileResult $resultDetails "languageServiceWritePipeName" $LanguageServiceOutPipeName
@@ -402,22 +413,10 @@ try {
         }
 
         Default {
-            $LanguageServicePipeName = Get-ValidatedNamedPipeName $LanguageServicePipeName
-            $DebugServicePipeName = Get-ValidatedNamedPipeName $DebugServicePipeName
+            $splat.LanguageServiceNamedPipe = Get-ValidatedNamedPipeName $LanguageServicePipeName
+            $splat.DebugServiceNamedPipe = Get-ValidatedNamedPipeName $DebugServicePipeName
 
-            $editorServicesHost = Start-EditorServicesHost `
-                                        -HostName $HostName `
-                                        -HostProfileId $HostProfileId `
-                                        -HostVersion $HostVersion `
-                                        -LogPath $LogPath `
-                                        -LogLevel $LogLevel `
-                                        -AdditionalModules $AdditionalModules `
-                                        -LanguageServiceNamedPipe $LanguageServicePipeName `
-                                        -DebugServiceNamedPipe $DebugServicePipeName `
-                                        -BundledModulesPath $BundledModulesPath `
-                                        -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
-                                        -DebugServiceOnly:$DebugServiceOnly.IsPresent `
-                                        -WaitForDebugger:$WaitForDebugger.IsPresent
+            $editorServicesHost = Start-EditorServicesHost @splat
 
             Set-PipeFileResult $resultDetails "languageServicePipeName" $LanguageServicePipeName
             Set-PipeFileResult $resultDetails "debugServicePipeName" $DebugServicePipeName
