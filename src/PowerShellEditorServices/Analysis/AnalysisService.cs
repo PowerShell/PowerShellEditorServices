@@ -24,6 +24,47 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public class AnalysisService : IDisposable
     {
+        #region Static fields
+
+        /// <summary>
+        /// Defines the list of Script Analyzer rules to include by default if
+        /// no settings file is specified.
+        /// </summary>
+        private static readonly string[] s_includedRules = new string[]
+        {
+            "PSUseToExportFieldsInManifest",
+            "PSMisleadingBacktick",
+            "PSAvoidUsingCmdletAliases",
+            "PSUseApprovedVerbs",
+            "PSAvoidUsingPlainTextForPassword",
+            "PSReservedCmdletChar",
+            "PSReservedParams",
+            "PSShouldProcess",
+            "PSMissingModuleManifestField",
+            "PSAvoidDefaultValueSwitchParameter",
+            "PSUseDeclaredVarsMoreThanAssignments",
+            "PSPossibleIncorrectComparisonWithNull",
+            "PSAvoidDefaultValueForMandatoryParameter",
+            "PSPossibleIncorrectUsageOfRedirectionOperator"
+        };
+
+        /// <summary>
+        /// An empty diagnostic result to return when a script fails analysis.
+        /// </summary>
+        private static readonly PSObject[] s_emptyDiagnosticResult = new PSObject[0];
+
+        /// <summary>
+        /// An empty script marker result to return when no script markers can be returned.
+        /// </summary>
+        private static readonly ScriptFileMarker[] s_emptyScriptMarkerResult = new ScriptFileMarker[0];
+
+        /// <summary>
+        /// The indentation to add when the logger lists errors.
+        /// </summary>
+        private static readonly string s_indentJoin = Environment.NewLine + "    ";
+
+        #endregion // Static fields
+
         #region Private Fields
 
         /// <summary>
@@ -53,30 +94,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         private PSModuleInfo _pssaModuleInfo;
 
-        /// <summary>
-        /// Defines the list of Script Analyzer rules to include by default if
-        /// no settings file is specified.
-        /// </summary>
-        private static readonly string[] s_includedRules = new string[]
-        {
-            "PSUseToExportFieldsInManifest",
-            "PSMisleadingBacktick",
-            "PSAvoidUsingCmdletAliases",
-            "PSUseApprovedVerbs",
-            "PSAvoidUsingPlainTextForPassword",
-            "PSReservedCmdletChar",
-            "PSReservedParams",
-            "PSShouldProcess",
-            "PSMissingModuleManifestField",
-            "PSAvoidDefaultValueSwitchParameter",
-            "PSUseDeclaredVarsMoreThanAssignments",
-            "PSPossibleIncorrectComparisonWithNull",
-            "PSAvoidDefaultValueForMandatoryParameter",
-            "PSPossibleIncorrectUsageOfRedirectionOperator"
-        };
-
         #endregion // Private Fields
-
 
         #region Properties
 
@@ -282,7 +300,7 @@ namespace Microsoft.PowerShell.EditorServices
         public IEnumerable<string> GetPSScriptAnalyzerRules()
         {
             List<string> ruleNames = new List<string>();
-            var ruleObjects = InvokePowerShell("Get-ScriptAnalyzerRule", new Dictionary<string, object>());
+            var ruleObjects = InvokePowerShell("Get-ScriptAnalyzerRule", new Dictionary<string, object>()).Output;
             foreach (var rule in ruleObjects)
             {
                 ruleNames.Add((string)rule.Members["RuleName"].Value);
@@ -319,8 +337,35 @@ namespace Microsoft.PowerShell.EditorServices
                 argsDict.Add("Range", rangeList);
             }
 
-            var result = await InvokePowerShellAsync("Invoke-Formatter", argsDict);
-            return result?.Select(r => r?.ImmediateBaseObject as string).FirstOrDefault();
+            PowerShellResult result = await InvokePowerShellAsync("Invoke-Formatter", argsDict);
+
+            if (result == null)
+            {
+                _logger.Write(LogLevel.Error, $"Formatter returned null result");
+                return null;
+            }
+
+            if (result.HasErrors)
+            {
+                var errorBuilder = new StringBuilder().Append(s_indentJoin);
+                foreach (ErrorRecord err in result.Errors)
+                {
+                    errorBuilder.Append(err).Append(s_indentJoin);
+                }
+                _logger.Write(LogLevel.Warning, $"Errors found while formatting file: {errorBuilder}");
+                return null;
+            }
+
+            foreach (PSObject resultObj in result.Output)
+            {
+                string formatResult = resultObj?.BaseObject as string;
+                if (formatResult != null)
+                {
+                    return formatResult;
+                }
+            }
+
+            return null;
         }
 
         #endregion // public methods
@@ -342,7 +387,7 @@ namespace Microsoft.PowerShell.EditorServices
             else
             {
                 // Return an empty marker list
-                return new ScriptFileMarker[0];
+                return s_emptyScriptMarkerResult;
             }
         }
 
@@ -360,7 +405,7 @@ namespace Microsoft.PowerShell.EditorServices
             else
             {
                 // Return an empty marker list
-                return new ScriptFileMarker[0];
+                return s_emptyScriptMarkerResult;
             }
         }
 
@@ -382,7 +427,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 PSObject[] modules = InvokePowerShell(
                     "Get-Module",
-                    new Dictionary<string, object>{ {"Name", PSSA_MODULE_NAME} });
+                    new Dictionary<string, object>{ {"Name", PSSA_MODULE_NAME} }).Output;
 
                 _pssaModuleInfo = modules
                     .Select(m => m.BaseObject)
@@ -426,7 +471,7 @@ namespace Microsoft.PowerShell.EditorServices
              string[] rules,
              TSettings settings) where TSettings : class
         {
-            var diagnosticRecords = new PSObject[0];
+            var diagnosticRecords = s_emptyDiagnosticResult;
 
             // When a new, empty file is created there are by definition no issues.
             // Furthermore, if you call Invoke-ScriptAnalyzer with an empty ScriptDefinition
@@ -452,13 +497,15 @@ namespace Microsoft.PowerShell.EditorServices
                     settingArgument = rules;
                 }
 
-                diagnosticRecords = await InvokePowerShellAsync(
+                PowerShellResult result = await InvokePowerShellAsync(
                     "Invoke-ScriptAnalyzer",
                     new Dictionary<string, object>
                     {
                         { "ScriptDefinition", scriptContent },
                         { settingParameter, settingArgument }
                     });
+
+                diagnosticRecords = result.Output;
             }
 
             _logger.Write(
@@ -468,7 +515,7 @@ namespace Microsoft.PowerShell.EditorServices
             return diagnosticRecords;
         }
 
-        private PSObject[] InvokePowerShell(string command, IDictionary<string, object> paramArgMap)
+        private PowerShellResult InvokePowerShell(string command, IDictionary<string, object> paramArgMap)
         {
             using (var powerShell = System.Management.Automation.PowerShell.Create())
             {
@@ -479,10 +526,12 @@ namespace Microsoft.PowerShell.EditorServices
                     powerShell.AddParameter(kvp.Key, kvp.Value);
                 }
 
-                var result = new PSObject[0];
+                PowerShellResult result = null;
                 try
                 {
-                    result = powerShell.Invoke()?.ToArray();
+                    PSObject[] output = powerShell.Invoke()?.ToArray();
+                    ErrorRecord[] errors = powerShell.Streams?.Error?.ToArray();
+                    result = new PowerShellResult(output, errors, powerShell.HadErrors);
                 }
                 catch (CommandNotFoundException ex)
                 {
@@ -503,7 +552,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private async Task<PSObject[]> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
+        private async Task<PowerShellResult> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
         {
             var task = Task.Run(() =>
             {
@@ -590,6 +639,25 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         #endregion
+
+        private class PowerShellResult
+        {
+            public PowerShellResult(
+                PSObject[] output,
+                ErrorRecord[] errors,
+                bool hasErrors)
+            {
+                Output = output;
+                Errors = errors;
+                HasErrors = hasErrors;
+            }
+
+            public PSObject[] Output { get; }
+
+            public ErrorRecord[] Errors { get; }
+
+            public bool HasErrors { get; }
+        }
     }
 
     /// <summary>
