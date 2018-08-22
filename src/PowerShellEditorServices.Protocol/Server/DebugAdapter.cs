@@ -118,6 +118,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private async Task OnExecutionCompleted(Task executeTask)
         {
+            try
+            {
+                await executeTask;
+            }
+            catch (Exception e)
+            {
+                Logger.Write(
+                    LogLevel.Error,
+                    "Exception occurred while awaiting debug launch task.\n\n" + e.ToString());
+            }
+
             Logger.Write(LogLevel.Verbose, "Execution completed, terminating...");
 
             this.executionCompleted = true;
@@ -470,7 +481,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 if (this.executionCompleted == false)
                 {
                     this.disconnectRequestContext = requestContext;
-                    this.editorSession.PowerShellContext.AbortExecution();
+                    this.editorSession.PowerShellContext.AbortExecution(shouldAbortDebugSession: true);
 
                     if (this.isInteractiveDebugSession)
                     {
@@ -754,6 +765,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             StackFrameDetails[] stackFrames =
                 editorSession.DebugService.GetStackFrames();
+
+            // Handle a rare race condition where the adapter requests stack frames before they've
+            // begun building.
+            if (stackFrames == null)
+            {
+                await requestContext.SendResult(
+                    new StackTraceResponseBody
+                    {
+                        StackFrames = new StackFrame[0],
+                        TotalFrames = 0
+                    });
+
+                return;
+            }
 
             List<StackFrame> newStackFrames = new List<StackFrame>();
 
