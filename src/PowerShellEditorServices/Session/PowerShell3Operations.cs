@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices.Session
@@ -68,6 +69,27 @@ namespace Microsoft.PowerShell.EditorServices.Session
             debuggerResumeAction = null;
 
             return executionResult;
+        }
+
+        public void StopCommandInDebugger(PowerShellContext powerShellContext)
+        {
+        }
+
+        public bool IsDebuggerStopped(PromptNest promptNest, Runspace runspace)
+        {
+            return promptNest.IsInDebugger;
+        }
+
+        public void ExitNestedPrompt(PSHost host)
+        {
+            try
+            {
+                host.ExitNestedPrompt();
+            }
+            // FlowControlException is not accessible in PSv3
+            catch (Exception)
+            {
+            }
         }
     }
 }

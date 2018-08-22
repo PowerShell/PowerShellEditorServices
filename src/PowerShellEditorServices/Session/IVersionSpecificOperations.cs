@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Management.Automation;
+using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices.Session
@@ -21,6 +22,12 @@ namespace Microsoft.PowerShell.EditorServices.Session
             PSCommand psCommand,
             bool sendOutputToHost,
             out DebuggerResumeAction? debuggerResumeAction);
+
+        void StopCommandInDebugger(PowerShellContext powerShellContext);
+
+        bool IsDebuggerStopped(PromptNest promptNest, Runspace runspace);
+
+        void ExitNestedPrompt(PSHost host);
     }
 }
 

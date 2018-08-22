@@ -18,6 +18,16 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
 #endif
         }
+
+        public override bool IsDebuggerStopped(PromptNest promptNest, Runspace runspace)
+        {
+#if !PowerShellv3 && !PowerShellv4
+            return runspace.Debugger.InBreakpoint ||
+            (promptNest.IsRemote && promptNest.IsInDebugger);
+#else
+            throw new System.NotSupportedException();
+#endif
+        }
     }
 }
 

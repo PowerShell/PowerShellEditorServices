@@ -87,11 +87,36 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                         return;
                     }
                 }
-                               
+
                 // No more requests waiting, queue the item for a later request
                 this.itemQueue.Enqueue(item);
                 this.IsEmpty = false;
             }
+        }
+
+        /// <summary>
+        /// Enqueues an item onto the end of the queue.
+        /// </summary>
+        /// <param name="item">The item to be added to the queue.</param>
+        public void Enqueue(T item)
+        {
+            using (queueLock.Lock())
+            {
+                while (this.requestQueue.Count > 0)
+                {
+                    var requestTaskSource = this.requestQueue.Dequeue();
+                    if (requestTaskSource.Task.IsCanceled)
+                    {
+                        continue;
+                    }
+
+                    requestTaskSource.SetResult(item);
+                    return;
+                }
+            }
+
+            this.itemQueue.Enqueue(item);
+            this.IsEmpty = false;
         }
 
         /// <summary>
@@ -147,6 +172,50 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
             // Wait for the request task to complete outside of the lock
             return await requestTask;
+        }
+
+        /// <summary>
+        /// Dequeues an item from the queue or waits asynchronously
+        /// until an item is available.
+        /// </summary>
+        /// <returns></returns>
+        public T Dequeue()
+        {
+            return Dequeue(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Dequeues an item from the queue or waits asynchronously
+        /// until an item is available.  The wait can be cancelled
+        /// using the given CancellationToken.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A CancellationToken with which a dequeue wait can be cancelled.
+        /// </param>
+        /// <returns></returns>
+        public T Dequeue(CancellationToken cancellationToken)
+        {
+            TaskCompletionSource<T> requestTask;
+            using (queueLock.Lock(cancellationToken))
+            {
+                if (this.itemQueue.Count > 0)
+                {
+                    T item = this.itemQueue.Dequeue();
+                    this.IsEmpty = this.itemQueue.Count == 0;
+
+                    return item;
+                }
+
+                requestTask = new TaskCompletionSource<T>();
+                this.requestQueue.Enqueue(requestTask);
+
+                if (cancellationToken.CanBeCanceled)
+                {
+                    cancellationToken.Register(() => requestTask.TrySetCanceled());
+                }
+            }
+
+            return requestTask.Task.GetAwaiter().GetResult();
         }
 
         #endregion

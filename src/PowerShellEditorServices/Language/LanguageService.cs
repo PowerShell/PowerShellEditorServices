@@ -40,6 +40,8 @@ namespace Microsoft.PowerShell.EditorServices
 
         private readonly IDocumentSymbolProvider[] _documentSymbolProviders;
 
+        private readonly SemaphoreSlim _aliasHandle = AsyncUtils.CreateSimpleLockingSemaphore();
+
         private bool _areAliasesLoaded;
 
         private CompletionResults _mostRecentCompletions;
@@ -353,26 +355,35 @@ namespace Microsoft.PowerShell.EditorServices
             foreach (object fileName in fileMap.Keys)
             {
                 var file = (ScriptFile)fileMap[fileName];
-
-                IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(
-                    file.ScriptAst,
-                    foundSymbol,
-                    _cmdletToAliasDictionary,
-                    _aliasToCmdletDictionary);
-
-                foreach (SymbolReference reference in references)
+                IEnumerable<SymbolReference> symbolReferencesinFile;
+                await _aliasHandle.WaitAsync();
+                try
                 {
-                    try
+
+                    IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(
+                        file.ScriptAst,
+                        foundSymbol,
+                        _cmdletToAliasDictionary,
+                        _aliasToCmdletDictionary);
+
+                    foreach (SymbolReference reference in references)
                     {
-                        reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
+                        try
+                        {
+                            reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
+                        }
+                        catch (ArgumentOutOfRangeException e)
+                        {
+                            reference.SourceLine = string.Empty;
+                            _logger.WriteException("Found reference is out of range in script file", e);
+                        }
+                        reference.FilePath = file.FilePath;
+                        symbolReferences.Add(reference);
                     }
-                    catch (ArgumentOutOfRangeException e)
-                    {
-                        reference.SourceLine = string.Empty;
-                        _logger.WriteException("Found reference is out of range in script file", e);
-                    }
-                    reference.FilePath = file.FilePath;
-                    symbolReferences.Add(reference);
+                }
+                finally
+                {
+                    _aliasHandle.Release();
                 }
             }
 
@@ -724,19 +735,31 @@ namespace Microsoft.PowerShell.EditorServices
                 return;
             }
 
+            await _aliasHandle.WaitAsync();
             try
             {
-                RunspaceHandle runspaceHandle =
-                    await _powerShellContext.GetRunspaceHandle(
-                        new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
+                if (_powerShellContext.IsCurrentRunspaceOutOfProcess())
+                {
+                    _areAliasesLoaded = true;
+                    return;
+                }
 
-                CommandInvocationIntrinsics invokeCommand = runspaceHandle.Runspace.SessionStateProxy.InvokeCommand;
-                IEnumerable<CommandInfo> aliases = invokeCommand.GetCommands("*", CommandTypes.Alias, true);
-
-                runspaceHandle.Dispose();
+                var aliases = await _powerShellContext.ExecuteCommand<AliasInfo>(
+                    new PSCommand()
+                        .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
+                        .AddParameter("CommandType", CommandTypes.Alias),
+                    sendOutputToHost: false,
+                    sendErrorToHost: false);
 
                 foreach (AliasInfo aliasInfo in aliases)
                 {
+                    // Using Get-Command will obtain aliases from modules not yet loaded,
+                    // these aliases will not have a definition.
+                    if (string.IsNullOrEmpty(aliasInfo.Definition))
+                    {
+                        continue;
+                    }
+
                     if (!_cmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
                     {
                         _cmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String> { aliasInfo.Name });
@@ -763,6 +786,10 @@ namespace Microsoft.PowerShell.EditorServices
             catch (TaskCanceledException)
             {
                 // The wait for a RunspaceHandle has timed out, skip aliases for now
+            }
+            finally
+            {
+                _aliasHandle.Release();
             }
         }
 

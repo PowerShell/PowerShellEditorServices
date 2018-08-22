@@ -378,7 +378,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             bool enableConsoleRepl)
         {
             EditorSession editorSession = new EditorSession(this.logger);
-            PowerShellContext powerShellContext = new PowerShellContext(this.logger);
+            PowerShellContext powerShellContext = new PowerShellContext(this.logger, this.featureFlags.Contains("PSReadLine"));
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl
@@ -418,7 +418,9 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             bool enableConsoleRepl)
         {
             EditorSession editorSession = new EditorSession(this.logger);
-            PowerShellContext powerShellContext = new PowerShellContext(this.logger);
+            PowerShellContext powerShellContext = new PowerShellContext(
+                this.logger,
+                this.featureFlags.Contains("PSReadLine"));
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl

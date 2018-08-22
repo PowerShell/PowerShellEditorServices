@@ -72,9 +72,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // TODO: Needed?
         }
 
-        async void debugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
+        void debugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
         {
-            await this.debuggerStoppedQueue.EnqueueAsync(e);
+            // We need to ensure this is run on a different thread than the one it's
+            // called on because it can cause PowerShellContext.OnDebuggerStopped to
+            // never hit the while loop.
+            Task.Run(() => this.debuggerStoppedQueue.Enqueue(e));
         }
 
         public void Dispose()
@@ -491,9 +494,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // Abort execution and wait for the debugger to exit
             this.debugService.Abort();
+
             await this.AssertStateChange(
                 PowerShellContextState.Ready,
-                PowerShellExecutionResult.Aborted);
+                PowerShellExecutionResult.Stopped);
         }
 
         [Fact]
@@ -514,9 +518,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // Abort execution and wait for the debugger to exit
             this.debugService.Abort();
+
             await this.AssertStateChange(
                 PowerShellContextState.Ready,
-                PowerShellExecutionResult.Aborted);
+                PowerShellExecutionResult.Stopped);
         }
 
         [Fact]
@@ -908,7 +913,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             SynchronizationContext syncContext = SynchronizationContext.Current;
 
             DebuggerStoppedEventArgs eventArgs =
-                await this.debuggerStoppedQueue.DequeueAsync();
+                await this.debuggerStoppedQueue.DequeueAsync(new CancellationTokenSource(5000).Token);
 
             Assert.Equal(0, eventArgs.OriginalEvent.Breakpoints.Count);
         }
@@ -920,7 +925,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             SynchronizationContext syncContext = SynchronizationContext.Current;
 
             DebuggerStoppedEventArgs eventArgs =
-                await this.debuggerStoppedQueue.DequeueAsync();
+                await this.debuggerStoppedQueue.DequeueAsync(new CancellationTokenSource(5000).Token);
 
 
 
@@ -936,7 +941,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             PowerShellExecutionResult expectedResult = PowerShellExecutionResult.Completed)
         {
             SessionStateChangedEventArgs newState =
-                await this.sessionStateQueue.DequeueAsync();
+                await this.sessionStateQueue.DequeueAsync(new CancellationTokenSource(5000).Token);
 
             Assert.Equal(expectedState, newState.NewSessionState);
             Assert.Equal(expectedResult, newState.ExecutionResult);
