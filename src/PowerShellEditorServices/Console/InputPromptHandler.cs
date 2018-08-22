@@ -275,8 +275,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     }
                     catch (PSInvalidCastException e)
                     {
-                        this.ShowErrorMessage(e.InnerException);
-
+                        this.ShowErrorMessage(e.InnerException ?? e);
                         continue;
                     }
                 }
