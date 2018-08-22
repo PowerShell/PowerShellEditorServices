@@ -15,6 +15,7 @@ using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Session.Capabilities;
+using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -47,6 +48,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private static int breakpointHitCounter = 0;
 
+        private SemaphoreSlim debugInfoHandle = AsyncUtils.CreateSimpleLockingSemaphore();
         #endregion
 
         #region Properties
@@ -350,7 +352,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void Abort()
         {
-            this.powerShellContext.AbortExecution();
+            this.powerShellContext.AbortExecution(shouldAbortDebugSession: true);
         }
 
         /// <summary>
@@ -362,33 +364,40 @@ namespace Microsoft.PowerShell.EditorServices
         public VariableDetailsBase[] GetVariables(int variableReferenceId)
         {
             VariableDetailsBase[] childVariables;
-
-            if ((variableReferenceId < 0) || (variableReferenceId >= this.variables.Count))
+            this.debugInfoHandle.Wait();
+            try
             {
-                logger.Write(LogLevel.Warning, $"Received request for variableReferenceId {variableReferenceId} that is out of range of valid indices.");
-                return new VariableDetailsBase[0];
-            }
-
-            VariableDetailsBase parentVariable = this.variables[variableReferenceId];
-            if (parentVariable.IsExpandable)
-            {
-                childVariables = parentVariable.GetChildren(this.logger);
-                foreach (var child in childVariables)
+                if ((variableReferenceId < 0) || (variableReferenceId >= this.variables.Count))
                 {
-                    // Only add child if it hasn't already been added.
-                    if (child.Id < 0)
+                    logger.Write(LogLevel.Warning, $"Received request for variableReferenceId {variableReferenceId} that is out of range of valid indices.");
+                    return new VariableDetailsBase[0];
+                }
+
+                VariableDetailsBase parentVariable = this.variables[variableReferenceId];
+                if (parentVariable.IsExpandable)
+                {
+                    childVariables = parentVariable.GetChildren(this.logger);
+                    foreach (var child in childVariables)
                     {
-                        child.Id = this.nextVariableId++;
-                        this.variables.Add(child);
+                        // Only add child if it hasn't already been added.
+                        if (child.Id < 0)
+                        {
+                            child.Id = this.nextVariableId++;
+                            this.variables.Add(child);
+                        }
                     }
                 }
-            }
-            else
-            {
-                childVariables = new VariableDetailsBase[0];
-            }
+                else
+                {
+                    childVariables = new VariableDetailsBase[0];
+                }
 
-            return childVariables;
+                return childVariables;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
         }
 
         /// <summary>
@@ -410,7 +419,18 @@ namespace Microsoft.PowerShell.EditorServices
             string[] variablePathParts = variableExpression.Split('.');
 
             VariableDetailsBase resolvedVariable = null;
-            IEnumerable<VariableDetailsBase> variableList = this.variables;
+            IEnumerable<VariableDetailsBase> variableList;
+
+            // Ensure debug info isn't currently being built.
+            this.debugInfoHandle.Wait();
+            try
+            {
+                variableList = this.variables;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
 
             foreach (var variableName in variablePathParts)
             {
@@ -491,9 +511,18 @@ namespace Microsoft.PowerShell.EditorServices
 
             // OK, now we have a PS object from the supplied value string (expression) to assign to a variable.
             // Get the variable referenced by variableContainerReferenceId and variable name.
-            VariableContainerDetails variableContainer = (VariableContainerDetails)this.variables[variableContainerReferenceId];
-            VariableDetailsBase variable = variableContainer.Children[name];
+            VariableContainerDetails variableContainer = null;
+            await this.debugInfoHandle.WaitAsync();
+            try
+            {
+                variableContainer = (VariableContainerDetails)this.variables[variableContainerReferenceId];
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
 
+            VariableDetailsBase variable = variableContainer.Children[name];
             // Determine scope in which the variable lives. This is required later for the call to Get-Variable -Scope.
             string scope = null;
             if (variableContainerReferenceId == this.scriptScopeVariables.Id)
@@ -507,9 +536,10 @@ namespace Microsoft.PowerShell.EditorServices
             else
             {
                 // Determine which stackframe's local scope the variable is in.
-                for (int i = 0; i < this.stackFrameDetails.Length; i++)
+                StackFrameDetails[] stackFrames = await this.GetStackFramesAsync();
+                for (int i = 0; i < stackFrames.Length; i++)
                 {
-                    var stackFrame = this.stackFrameDetails[i];
+                    var stackFrame = stackFrames[i];
                     if (stackFrame.LocalVariables.ContainsVariable(variable.Id))
                     {
                         scope = i.ToString();
@@ -637,7 +667,54 @@ namespace Microsoft.PowerShell.EditorServices
         /// </returns>
         public StackFrameDetails[] GetStackFrames()
         {
-            return this.stackFrameDetails;
+            this.debugInfoHandle.Wait();
+            try
+            {
+                return this.stackFrameDetails;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
+        }
+
+        internal StackFrameDetails[] GetStackFrames(CancellationToken cancellationToken)
+        {
+            this.debugInfoHandle.Wait(cancellationToken);
+            try
+            {
+                return this.stackFrameDetails;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
+        }
+
+        internal async Task<StackFrameDetails[]> GetStackFramesAsync()
+        {
+            await this.debugInfoHandle.WaitAsync();
+            try
+            {
+                return this.stackFrameDetails;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
+        }
+
+        internal async Task<StackFrameDetails[]> GetStackFramesAsync(CancellationToken cancellationToken)
+        {
+            await this.debugInfoHandle.WaitAsync(cancellationToken);
+            try
+            {
+                return this.stackFrameDetails;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
         }
 
         /// <summary>
@@ -648,8 +725,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>The list of VariableScope instances which describe the available variable scopes.</returns>
         public VariableScope[] GetVariableScopes(int stackFrameId)
         {
-            int localStackFrameVariableId = this.stackFrameDetails[stackFrameId].LocalVariables.Id;
-            int autoVariablesId = this.stackFrameDetails[stackFrameId].AutoVariables.Id;
+            var stackFrames = this.GetStackFrames();
+            int localStackFrameVariableId = stackFrames[stackFrameId].LocalVariables.Id;
+            int autoVariablesId = stackFrames[stackFrameId].AutoVariables.Id;
 
             return new VariableScope[]
             {
@@ -709,16 +787,24 @@ namespace Microsoft.PowerShell.EditorServices
 
         private async Task FetchStackFramesAndVariables(string scriptNameOverride)
         {
-            this.nextVariableId = VariableDetailsBase.FirstVariableId;
-            this.variables = new List<VariableDetailsBase>();
+            await this.debugInfoHandle.WaitAsync();
+            try
+            {
+                this.nextVariableId = VariableDetailsBase.FirstVariableId;
+                this.variables = new List<VariableDetailsBase>();
 
-            // Create a dummy variable for index 0, should never see this.
-            this.variables.Add(new VariableDetails("Dummy", null));
+                // Create a dummy variable for index 0, should never see this.
+                this.variables.Add(new VariableDetails("Dummy", null));
 
-            // Must retrieve global/script variales before stack frame variables
-            // as we check stack frame variables against globals.
-            await FetchGlobalAndScriptVariables();
-            await FetchStackFrames(scriptNameOverride);
+                // Must retrieve global/script variales before stack frame variables
+                // as we check stack frame variables against globals.
+                await FetchGlobalAndScriptVariables();
+                await FetchStackFrames(scriptNameOverride);
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
         }
 
         private async Task FetchGlobalAndScriptVariables()
@@ -851,6 +937,7 @@ namespace Microsoft.PowerShell.EditorServices
             var results = await this.powerShellContext.ExecuteCommand<PSObject>(psCommand);
 
             var callStackFrames = results.ToArray();
+
             this.stackFrameDetails = new StackFrameDetails[callStackFrames.Length];
 
             for (int i = 0; i < callStackFrames.Length; i++)

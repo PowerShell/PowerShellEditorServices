@@ -1543,6 +1543,15 @@ function __Expand-Alias {
             catch (TaskCanceledException)
             {
                 // If the task is cancelled, exit directly
+                foreach (var script in filesToAnalyze)
+                {
+                    await PublishScriptDiagnostics(
+                        script,
+                        script.SyntaxMarkers,
+                        correctionIndex,
+                        eventSender);
+                }
+
                 return;
             }
 
