@@ -309,8 +309,19 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="line">The 1-based line to be validated.</param>
         /// <param name="column">The 1-based column to be validated.</param>
-        /// <param name="isInsertion">If true, the position to validate is for an applied changnvokee.</param>
-        public void ValidatePosition(int line, int column, bool isInsertion = false)
+        public void ValidatePosition(int line, int column)
+        {
+            ValidatePosition(line, column, isInsertion: false);
+        }
+
+        /// <summary>
+        /// Throws ArgumentOutOfRangeException if the given position is outside
+        /// of the file's buffer extents.
+        /// </summary>
+        /// <param name="line">The 1-based line to be validated.</param>
+        /// <param name="column">The 1-based column to be validated.</param>
+        /// <param name="isInsertion">If true, the position to validate is for an applied change.</param>
+        public void ValidatePosition(int line, int column, bool isInsertion)
         {
             int maxLine = isInsertion ? this.FileLines.Count + 1 : this.FileLines.Count;
             if (line < 1 || line > maxLine)
