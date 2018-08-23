@@ -30,8 +30,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Defines the list of Script Analyzer rules to include by default if
         /// no settings file is specified.
         /// </summary>
-        private static readonly string[] s_includedRules = new string[]
-        {
+        private static readonly string[] s_includedRules = {
             "PSUseToExportFieldsInManifest",
             "PSMisleadingBacktick",
             "PSAvoidUsingCmdletAliases",
@@ -57,6 +56,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// An empty script marker result to return when no script markers can be returned.
         /// </summary>
         private static readonly ScriptFileMarker[] s_emptyScriptMarkerResult = new ScriptFileMarker[0];
+
+        private static readonly string[] s_emptyGetRuleResult = new string[0];
 
         /// <summary>
         /// The indentation to add when the logger lists errors.
@@ -299,9 +300,15 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public IEnumerable<string> GetPSScriptAnalyzerRules()
         {
+            PowerShellResult getRuleResult = InvokePowerShell("Get-ScriptAnalyzerRule");
+            if (getRuleResult == null)
+            {
+                _logger.Write(LogLevel.Warning, "Get-ScriptAnalyzerRule returned null result");
+                return s_emptyGetRuleResult;
+            }
+
             var ruleNames = new List<string>();
-            IEnumerable<PSObject> ruleObjects = InvokePowerShell("Get-ScriptAnalyzerRule", new Dictionary<string, object>()).Output;
-            foreach (var rule in ruleObjects)
+            foreach (var rule in getRuleResult.Output)
             {
                 ruleNames.Add((string)rule.Members["RuleName"].Value);
             }
@@ -341,7 +348,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (result == null)
             {
-                _logger.Write(LogLevel.Error, $"Formatter returned null result");
+                _logger.Write(LogLevel.Error, "Formatter returned null result");
                 return null;
             }
 
@@ -425,11 +432,16 @@ namespace Microsoft.PowerShell.EditorServices
             // If we already know the module that was imported, save some work
             if (_pssaModuleInfo == null)
             {
-                PSObject[] modules = InvokePowerShell(
+                PowerShellResult getModuleResult = InvokePowerShell(
                     "Get-Module",
-                    new Dictionary<string, object>{ {"Name", PSSA_MODULE_NAME} })?.Output;
+                    new Dictionary<string, object>{ {"Name", PSSA_MODULE_NAME} });
 
-                _pssaModuleInfo = modules
+                if (getModuleResult == null)
+                {
+                    throw new AnalysisServiceLoadException("Get-Module call to find PSScriptAnalyzer module failed");
+                }
+
+                _pssaModuleInfo = getModuleResult.Output
                     .Select(m => m.BaseObject)
                     .OfType<PSModuleInfo>()
                     .FirstOrDefault();
@@ -515,22 +527,25 @@ namespace Microsoft.PowerShell.EditorServices
             return diagnosticRecords;
         }
 
-        private PowerShellResult InvokePowerShell(string command, IDictionary<string, object> paramArgMap)
+        private PowerShellResult InvokePowerShell(string command, IDictionary<string, object> paramArgMap = null)
         {
             using (var powerShell = System.Management.Automation.PowerShell.Create())
             {
                 powerShell.RunspacePool = _analysisRunspacePool;
                 powerShell.AddCommand(command);
-                foreach (var kvp in paramArgMap)
+                if (paramArgMap != null)
                 {
-                    powerShell.AddParameter(kvp.Key, kvp.Value);
+                    foreach (KeyValuePair<string, object> kvp in paramArgMap)
+                    {
+                        powerShell.AddParameter(kvp.Key, kvp.Value);
+                    }
                 }
 
                 PowerShellResult result = null;
                 try
                 {
-                    PSObject[] output = powerShell.Invoke()?.ToArray();
-                    ErrorRecord[] errors = powerShell.Streams?.Error?.ToArray();
+                    PSObject[] output = powerShell.Invoke().ToArray();
+                    ErrorRecord[] errors = powerShell.Streams.Error.ToArray();
                     result = new PowerShellResult(output, errors, powerShell.HadErrors);
                 }
                 catch (CommandNotFoundException ex)
@@ -552,7 +567,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private async Task<PowerShellResult> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap)
+        private async Task<PowerShellResult> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap = null)
         {
             var task = Task.Run(() =>
             {
