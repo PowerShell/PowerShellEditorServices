@@ -294,72 +294,76 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile[] referencedFiles,
             Workspace workspace)
         {
-            if (foundSymbol != null)
+            if (foundSymbol == null)
             {
-                int symbolOffset = referencedFiles[0].GetOffsetAtPosition(
-                    foundSymbol.ScriptRegion.StartLineNumber,
-                    foundSymbol.ScriptRegion.StartColumnNumber);
-
-                // Make sure aliases have been loaded
-                await GetAliases();
-
-                // We want to look for references first in referenced files, hence we use ordered dictionary
-                var fileMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
-                foreach (ScriptFile file in referencedFiles)
-                {
-                    fileMap.Add(file.FilePath, file);
-                }
-
-                var allFiles = workspace.EnumeratePSFiles();
-                foreach (var file in allFiles)
-                {
-                    if (!fileMap.Contains(file))
-                    {
-                        fileMap.Add(file, new ScriptFile(file, null, this.powerShellContext.LocalPowerShellVersion.Version));
-                    }
-                }
-
-                List<SymbolReference> symbolReferences = new List<SymbolReference>();
-                foreach (var fileName in fileMap.Keys)
-                {
-                    var file = (ScriptFile)fileMap[fileName];
-                    IEnumerable<SymbolReference> symbolReferencesinFile =
-                    AstOperations
-                        .FindReferencesOfSymbol(
-                            file.ScriptAst,
-                            foundSymbol,
-                            CmdletToAliasDictionary,
-                            AliasToCmdletDictionary)
-                        .Select(
-                            reference =>
-                            {
-                                try
-                                {
-                                    reference.SourceLine =
-                                        file.GetLine(reference.ScriptRegion.StartLineNumber);
-                                }
-                                catch (ArgumentOutOfRangeException e)
-                                {
-                                    reference.SourceLine = string.Empty;
-                                    this.logger.WriteException("Found reference is out of range in script file", e);
-                                }
-
-                                reference.FilePath = file.FilePath;
-                                return reference;
-                            });
-
-                    symbolReferences.AddRange(symbolReferencesinFile);
-                }
-
-                return
-                    new FindReferencesResult
-                    {
-                        SymbolFileOffset = symbolOffset,
-                        SymbolName = foundSymbol.SymbolName,
-                        FoundReferences = symbolReferences
-                    };
+                return null;
             }
-            else { return null; }
+
+            int symbolOffset = referencedFiles[0].GetOffsetAtPosition(
+                foundSymbol.ScriptRegion.StartLineNumber,
+                foundSymbol.ScriptRegion.StartColumnNumber);
+
+            // Make sure aliases have been loaded
+            await GetAliases();
+
+            // We want to look for references first in referenced files, hence we use ordered dictionary
+            var fileMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
+            foreach (ScriptFile file in referencedFiles)
+            {
+                fileMap.Add(file.FilePath, file);
+            }
+
+            IEnumerable<string> allFiles = workspace.EnumeratePSFiles();
+            foreach (string file in allFiles)
+            {
+                if (!fileMap.Contains(file))
+                {
+                    fileMap.Add(
+                        file,
+                        new ScriptFile(
+                            file,
+                            clientFilePath: null,
+                            powerShellVersion: this.powerShellContext.LocalPowerShellVersion.Version));
+                }
+            }
+
+            var symbolReferences = new List<SymbolReference>();
+            foreach (object fileName in fileMap.Keys)
+            {
+                var file = (ScriptFile)fileMap[fileName];
+                IEnumerable<SymbolReference> symbolReferencesinFile =
+                AstOperations
+                    .FindReferencesOfSymbol(
+                        file.ScriptAst,
+                        foundSymbol,
+                        CmdletToAliasDictionary,
+                        AliasToCmdletDictionary)
+                    .Select(
+                        reference =>
+                        {
+                            try
+                            {
+                                reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
+                            }
+                            catch (ArgumentOutOfRangeException e)
+                            {
+                                reference.SourceLine = string.Empty;
+                                this.logger.WriteException("Found reference is out of range in script file", e);
+                            }
+
+                            reference.FilePath = file.FilePath;
+                            return reference;
+                        });
+
+                symbolReferences.AddRange(symbolReferencesinFile);
+            }
+
+            return new FindReferencesResult
+            {
+                SymbolFileOffset = symbolOffset,
+                SymbolName = foundSymbol.SymbolName,
+                FoundReferences = symbolReferences
+            };
         }
 
         /// <summary>
