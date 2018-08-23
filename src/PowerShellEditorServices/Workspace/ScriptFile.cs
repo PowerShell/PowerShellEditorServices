@@ -114,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Gets the array of filepaths dot sourced in this ScriptFile 
+        /// Gets the array of filepaths dot sourced in this ScriptFile
         /// </summary>
         public string[] ReferencedFiles
         {
@@ -227,7 +227,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Deterines whether the supplied path indicates the file is an "untitled:Unitled-X" 
+        /// Deterines whether the supplied path indicates the file is an "untitled:Unitled-X"
         /// which has not been saved to file.
         /// </summary>
         /// <param name="path">The path to check.</param>
@@ -309,12 +309,22 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="line">The 1-based line to be validated.</param>
         /// <param name="column">The 1-based column to be validated.</param>
-        public void ValidatePosition(int line, int column)
+        public void ValidatePosition(int line, int column, bool isInsertion = false)
         {
-            int maxLine = this.FileLines.Count;
+            int maxLine = isInsertion ? this.FileLines.Count + 1 : this.FileLines.Count;
             if (line < 1 || line > maxLine)
             {
                 throw new ArgumentOutOfRangeException($"Position {line}:{column} is outside of the line range of 1 to {maxLine}.");
+            }
+
+            // If we are inserting at the end of the file, the column should be 1
+            if (isInsertion && line == maxLine)
+            {
+                if (column != 1)
+                {
+                    throw new ArgumentOutOfRangeException($"Insertion at the end of a file must occur at column 1");
+                }
+                return;
             }
 
             // The maximum column is either **one past** the length of the string
@@ -347,51 +357,63 @@ namespace Microsoft.PowerShell.EditorServices
             }
             else
             {
-                this.ValidatePosition(fileChange.Line, fileChange.Offset);
-                this.ValidatePosition(fileChange.EndLine, fileChange.EndOffset);
+                this.ValidatePosition(fileChange.Line, fileChange.Offset, isInsertion: true);
+                this.ValidatePosition(fileChange.EndLine, fileChange.EndOffset, isInsertion: true);
 
-                // Get the first fragment of the first line
-                string firstLineFragment =
-                this.FileLines[fileChange.Line - 1]
-                    .Substring(0, fileChange.Offset - 1);
-
-                // Get the last fragment of the last line
-                string endLine = this.FileLines[fileChange.EndLine - 1];
-                string lastLineFragment =
-                endLine.Substring(
-                    fileChange.EndOffset - 1,
-                    (this.FileLines[fileChange.EndLine - 1].Length - fileChange.EndOffset) + 1);
-
-                // Remove the old lines
-                for (int i = 0; i <= fileChange.EndLine - fileChange.Line; i++)
+                // If the change is a pure append to the file, we just need to add the new lines on the end
+                if (fileChange.EndLine == this.FileLines.Count + 1)
                 {
-                    this.FileLines.RemoveAt(fileChange.Line - 1);
-                }
-
-                // Build and insert the new lines
-                int currentLineNumber = fileChange.Line;
-                for (int changeIndex = 0; changeIndex < changeLines.Length; changeIndex++)
-                {
-                    // Since we split the lines above using \n, make sure to
-                    // trim the ending \r's off as well.
-                    string finalLine = changeLines[changeIndex].TrimEnd('\r');
-
-                    // Should we add first or last line fragments?
-                    if (changeIndex == 0)
+                    foreach (string addedLine in changeLines)
                     {
-                        // Append the first line fragment
-                        finalLine = firstLineFragment + finalLine;
+                        string finalLine = addedLine.TrimEnd('\r');
+                        this.FileLines.Add(finalLine);
                     }
-                    if (changeIndex == changeLines.Length - 1)
+                }
+                // Otherwise, the change needs to go between existing content
+                else
+                {
+                    // Get the first fragment of the first line
+                    string firstLineFragment =
+                    this.FileLines[fileChange.Line - 1]
+                        .Substring(0, fileChange.Offset - 1);
+
+                    // Get the last fragment of the last line
+                    string endLine = this.FileLines[fileChange.EndLine - 1];
+                    string lastLineFragment =
+                    endLine.Substring(
+                        fileChange.EndOffset - 1,
+                        (this.FileLines[fileChange.EndLine - 1].Length - fileChange.EndOffset) + 1);
+
+                    // Remove the old lines
+                    for (int i = 0; i <= fileChange.EndLine - fileChange.Line; i++)
                     {
-                        // Append the last line fragment
-                        finalLine = finalLine + lastLineFragment;
+                        this.FileLines.RemoveAt(fileChange.Line - 1);
                     }
 
-                    this.FileLines.Insert(currentLineNumber - 1, finalLine);
-                    currentLineNumber++;
-                }
+                    // Build and insert the new lines
+                    int currentLineNumber = fileChange.Line;
+                    for (int changeIndex = 0; changeIndex < changeLines.Length; changeIndex++)
+                    {
+                        // Since we split the lines above using \n, make sure to
+                        // trim the ending \r's off as well.
+                        string finalLine = changeLines[changeIndex].TrimEnd('\r');
 
+                        // Should we add first or last line fragments?
+                        if (changeIndex == 0)
+                        {
+                            // Append the first line fragment
+                            finalLine = firstLineFragment + finalLine;
+                        }
+                        if (changeIndex == changeLines.Length - 1)
+                        {
+                            // Append the last line fragment
+                            finalLine = finalLine + lastLineFragment;
+                        }
+
+                        this.FileLines.Insert(currentLineNumber - 1, finalLine);
+                        currentLineNumber++;
+                    }
+                }
             }
 
             // Parse the script again to be up-to-date
