@@ -309,7 +309,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="line">The 1-based line to be validated.</param>
         /// <param name="column">The 1-based column to be validated.</param>
-        /// <param name="isInsertion">If true, the position to validate is for an applied change.</param>
+        /// <param name="isInsertion">If true, the position to validate is for an applied changnvokee.</param>
         public void ValidatePosition(int line, int column, bool isInsertion = false)
         {
             int maxLine = isInsertion ? this.FileLines.Count + 1 : this.FileLines.Count;
@@ -362,7 +362,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.ValidatePosition(fileChange.EndLine, fileChange.EndOffset, isInsertion: true);
 
                 // If the change is a pure append to the file, we just need to add the new lines on the end
-                if (fileChange.EndLine == this.FileLines.Count + 1)
+                if (fileChange.Line == this.FileLines.Count + 1)
                 {
                     foreach (string addedLine in changeLines)
                     {

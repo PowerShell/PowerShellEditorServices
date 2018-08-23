@@ -131,15 +131,15 @@ namespace PSLanguageService.Test
         public void CanApplyEditsToEndOfFile()
         {
             this.AssertFileChange(
-                "line1\n\rline2\n\rline3\n\r",
-                "line1\n\rline2\n\rline3\n\r\n\r\n\r",
+                "line1\r\nline2\r\nline3\r\n\r\n",
+                "line1\r\nline2\r\nline3\r\n\r\n\r\n\r\n",
                 new FileChange
                 {
                     Line = 5,
                     EndLine = 5,
                     Offset = 1,
                     EndOffset = 1,
-                    InsertString = "\n\r\n\r"
+                    InsertString = "\r\n\r\n"
                 });
         }
 
