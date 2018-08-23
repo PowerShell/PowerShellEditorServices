@@ -8,6 +8,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
@@ -318,12 +319,21 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (!fileMap.Contains(file))
                 {
-                    fileMap.Add(
-                        file,
-                        new ScriptFile(
+                    ScriptFile scriptFile;
+                    try
+                    {
+                        scriptFile = new ScriptFile(
                             file,
                             clientFilePath: null,
-                            powerShellVersion: this.powerShellContext.LocalPowerShellVersion.Version));
+                            powerShellVersion: this.powerShellContext.LocalPowerShellVersion.Version);
+                    }
+                    catch (IOException)
+                    {
+                        // If the file has ceased to exist for some reason, we just skip it
+                        continue;
+                    }
+
+                    fileMap.Add(file, scriptFile);
                 }
             }
 
@@ -338,8 +348,7 @@ namespace Microsoft.PowerShell.EditorServices
                         foundSymbol,
                         CmdletToAliasDictionary,
                         AliasToCmdletDictionary)
-                    .Select(
-                        reference =>
+                    .Select(reference =>
                         {
                             try
                             {
