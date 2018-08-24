@@ -9,6 +9,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,33 +18,23 @@ using LanguageServer = Microsoft.PowerShell.EditorServices.Protocol.LanguageServ
 
 namespace Microsoft.PowerShell.EditorServices.CodeLenses
 {
+    /// <summary>
+    /// Implements the CodeLens feature for EditorServices.
+    /// </summary>
     internal class CodeLensFeature :
         FeatureComponentBase<ICodeLensProvider>,
         ICodeLenses
     {
-        private EditorSession editorSession;
 
-        private JsonSerializer jsonSerializer =
-             JsonSerializer.Create(
-                 Constants.JsonSerializerSettings);
-
-        public CodeLensFeature(
-            EditorSession editorSession,
-            IMessageHandlers messageHandlers,
-            ILogger logger)
-                : base(logger)
-        {
-            this.editorSession = editorSession;
-
-            messageHandlers.SetRequestHandler(
-                CodeLensRequest.Type,
-                this.HandleCodeLensRequest);
-
-            messageHandlers.SetRequestHandler(
-                CodeLensResolveRequest.Type,
-                this.HandleCodeLensResolveRequest);
-        }
-
+        /// <summary>
+        /// Create a new CodeLens instance around a given editor session
+        /// from the component registry.
+        /// </summary>
+        /// <param name="components">
+        /// The component registry to provider other components and to register the CodeLens provider in.
+        /// </param>
+        /// <param name="editorSession">The editor session context of the CodeLens provider.</param>
+        /// <returns>A new CodeLens provider for the given editor session.</returns>
         public static CodeLensFeature Create(
             IComponentRegistry components,
             EditorSession editorSession)
@@ -51,8 +42,18 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             var codeLenses =
                 new CodeLensFeature(
                     editorSession,
-                    components.Get<IMessageHandlers>(),
+                    JsonSerializer.Create(Constants.JsonSerializerSettings),
                     components.Get<ILogger>());
+
+            var messageHandlers = components.Get<IMessageHandlers>();
+
+            messageHandlers.SetRequestHandler(
+                CodeLensRequest.Type,
+                codeLenses.HandleCodeLensRequest);
+
+            messageHandlers.SetRequestHandler(
+                CodeLensResolveRequest.Type,
+                codeLenses.HandleCodeLensResolveRequest);
 
             codeLenses.Providers.Add(
                 new ReferencesCodeLensProvider(
@@ -67,42 +68,78 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             return codeLenses;
         }
 
-        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
+        /// <summary>
+        /// The editor session context to get workspace and language server data from.
+        /// </summary>
+        private readonly EditorSession _editorSession;
+
+        /// <summary>
+        /// The json serializer instance for CodeLens object translation.
+        /// </summary>
+        private readonly JsonSerializer _jsonSerializer;
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="editorSession"></param>
+        /// <param name="jsonSerializer"></param>
+        /// <param name="logger"></param>
+        private CodeLensFeature(
+            EditorSession editorSession,
+            JsonSerializer jsonSerializer,
+            ILogger logger)
+                : base(logger)
         {
-            return
-                this.InvokeProviders(p => p.ProvideCodeLenses(scriptFile))
-                    .SelectMany(r => r)
-                    .ToArray();
+            _editorSession = editorSession;
+            _jsonSerializer = jsonSerializer;
         }
 
+        /// <summary>
+        /// Get all the CodeLenses for a given script file.
+        /// </summary>
+        /// <param name="scriptFile">The PowerShell script file to get CodeLenses for.</param>
+        /// <returns>All generated CodeLenses for the given script file.</returns>
+        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
+        {
+            return InvokeProviders(provider => provider.ProvideCodeLenses(scriptFile))
+                .SelectMany(codeLens => codeLens)
+                .ToArray();
+        }
+
+        /// <summary>
+        /// Handles a request for CodeLenses from VSCode.
+        /// </summary>
+        /// <param name="codeLensParams">Parameters on the CodeLens request that was received.</param>
+        /// <param name="requestContext"></param>
         private async Task HandleCodeLensRequest(
             CodeLensRequest codeLensParams,
             RequestContext<LanguageServer.CodeLens[]> requestContext)
         {
-            JsonSerializer jsonSerializer =
-                JsonSerializer.Create(
-                    Constants.JsonSerializerSettings);
+            ScriptFile scriptFile = _editorSession.Workspace.GetFile(
+                codeLensParams.TextDocument.Uri);
 
-            var scriptFile =
-                this.editorSession.Workspace.GetFile(
-                    codeLensParams.TextDocument.Uri);
+            CodeLens[] codeLensResults = ProvideCodeLenses(scriptFile);
 
-            var codeLenses =
-                this.ProvideCodeLenses(scriptFile)
-                    .Select(
-                        codeLens =>
-                            codeLens.ToProtocolCodeLens(
-                                new CodeLensData
-                                {
-                                    Uri = codeLens.File.ClientFilePath,
-                                    ProviderId = codeLens.Provider.ProviderId
-                                },
-                                this.jsonSerializer))
-                    .ToArray();
+            var codeLensResponse = new LanguageServer.CodeLens[codeLensResults.Length];
+            for (int i = 0; i < codeLensResults.Length; i++)
+            {
+                codeLensResponse[i] = codeLensResults[i].ToProtocolCodeLens(
+                    new CodeLensData
+                    {
+                        Uri = codeLensResults[i].File.ClientFilePath,
+                        ProviderId = codeLensResults[i].Provider.ProviderId
+                    },
+                    _jsonSerializer);
+            }
 
-            await requestContext.SendResult(codeLenses);
+            await requestContext.SendResult(codeLensResponse);
         }
 
+        /// <summary>
+        /// Handle a CodeLens resolve request from VSCode.
+        /// </summary>
+        /// <param name="codeLens">The CodeLens to be resolved/updated.</param>
+        /// <param name="requestContext"></param>
         private async Task HandleCodeLensResolveRequest(
             LanguageServer.CodeLens codeLens,
             RequestContext<LanguageServer.CodeLens> requestContext)
@@ -113,13 +150,13 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 CodeLensData codeLensData = codeLens.Data.ToObject<CodeLensData>();
 
                 ICodeLensProvider originalProvider =
-                    this.Providers.FirstOrDefault(
+                    Providers.FirstOrDefault(
                         provider => provider.ProviderId.Equals(codeLensData.ProviderId));
 
                 if (originalProvider != null)
                 {
                     ScriptFile scriptFile =
-                        this.editorSession.Workspace.GetFile(
+                        _editorSession.Workspace.GetFile(
                             codeLensData.Uri);
 
                     ScriptRegion region = new ScriptRegion
@@ -143,7 +180,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
                     await requestContext.SendResult(
                         resolvedCodeLens.ToProtocolCodeLens(
-                            this.jsonSerializer));
+                            _jsonSerializer));
                 }
                 else
                 {
@@ -153,6 +190,9 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             }
         }
 
+        /// <summary>
+        /// Represents data expected back in an LSP CodeLens response.
+        /// </summary>
         private class CodeLensData
         {
             public string Uri { get; set; }
