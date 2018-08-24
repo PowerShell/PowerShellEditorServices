@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 completionResults.Completions[0]);
         }
 
-        [Fact(Skip = "This test does not run correctly on AppVeyor, need to investigate.")]
+        [Fact]
         public async Task LanguageServiceCompletesCommandFromModule()
         {
             CompletionResults completionResults =
