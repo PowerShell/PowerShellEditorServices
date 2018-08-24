@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -308,24 +309,23 @@ namespace Microsoft.PowerShell.EditorServices
             await GetAliases();
 
             // We want to look for references first in referenced files, hence we use ordered dictionary
-            var fileMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
+            // TODO: File system case-sensitivity is based on filesystem not OS, but OS is a much cheaper heuristic
+            var fileMap = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                ? new OrderedDictionary()
+                : new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
             foreach (ScriptFile file in referencedFiles)
             {
                 fileMap.Add(file.FilePath, file);
             }
 
-            IEnumerable<string> allFiles = workspace.EnumeratePSFiles();
-            foreach (string file in allFiles)
+            foreach (string file in workspace.EnumeratePSFiles())
             {
                 if (!fileMap.Contains(file))
                 {
                     ScriptFile scriptFile;
                     try
                     {
-                        scriptFile = new ScriptFile(
-                            file,
-                            clientFilePath: null,
-                            powerShellVersion: this.powerShellContext.LocalPowerShellVersion.Version);
+                        scriptFile = workspace.GetFile(file);
                     }
                     catch (IOException)
                     {
