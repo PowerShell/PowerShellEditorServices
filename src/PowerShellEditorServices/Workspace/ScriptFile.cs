@@ -324,7 +324,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="isInsertion">If true, the position to validate is for an applied change.</param>
         public void ValidatePosition(int line, int column, bool isInsertion)
         {
-            // If new content is being added, VSCode sometimes likes to add it a (FileLines.Count + 1),
+            // If new content is being added, VSCode sometimes likes to add it at (FileLines.Count + 1),
             // which used to crash EditorServices. Now we append it on to the end of the file.
             // See https://github.com/PowerShell/vscode-powershell/issues/1283
             int maxLine = isInsertion ? this.FileLines.Count + 1 : this.FileLines.Count;
