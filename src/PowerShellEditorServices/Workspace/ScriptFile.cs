@@ -316,13 +316,17 @@ namespace Microsoft.PowerShell.EditorServices
 
         /// <summary>
         /// Throws ArgumentOutOfRangeException if the given position is outside
-        /// of the file's buffer extents.
+        /// of the file's buffer extents. If the position is for an insertion (an applied change)
+        /// the index may be 1 past the end of the file, which is just appended.
         /// </summary>
         /// <param name="line">The 1-based line to be validated.</param>
         /// <param name="column">The 1-based column to be validated.</param>
         /// <param name="isInsertion">If true, the position to validate is for an applied change.</param>
         public void ValidatePosition(int line, int column, bool isInsertion)
         {
+            // If new content is being added, VSCode sometimes likes to add it a (FileLines.Count + 1),
+            // which used to crash EditorServices. Now we append it on to the end of the file.
+            // See https://github.com/PowerShell/vscode-powershell/issues/1283
             int maxLine = isInsertion ? this.FileLines.Count + 1 : this.FileLines.Count;
             if (line < 1 || line > maxLine)
             {
@@ -372,7 +376,9 @@ namespace Microsoft.PowerShell.EditorServices
                 this.ValidatePosition(fileChange.Line, fileChange.Offset, isInsertion: true);
                 this.ValidatePosition(fileChange.EndLine, fileChange.EndOffset, isInsertion: true);
 
-                // If the change is a pure append to the file, we just need to add the new lines on the end
+                // VSCode sometimes likes to give the change start line as (FileLines.Count + 1).
+                // This used to crash EditorServices, but we now treat it as an append.
+                // See https://github.com/PowerShell/vscode-powershell/issues/1283
                 if (fileChange.Line == this.FileLines.Count + 1)
                 {
                     foreach (string addedLine in changeLines)
