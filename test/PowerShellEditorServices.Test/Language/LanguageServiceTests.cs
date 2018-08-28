@@ -420,12 +420,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
     {
         public static async Task<T> RunWithTimeout<T>(this Task<T> task, int timeoutMillis = 10000)
         {
-            Task<T> newThreadTask = Task<T>.Run(() => task);
-            if (!((IAsyncResult)newThreadTask).AsyncWaitHandle.WaitOne(timeoutMillis))
+            if (await Task.WhenAny(task, Task.Delay(timeoutMillis)) == task)
             {
-                throw new TimeoutException();
+                return task.Result;
             }
-            return await newThreadTask;
+
+            throw new TimeoutException();
         }
     }
 }
