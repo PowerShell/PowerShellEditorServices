@@ -13,7 +13,7 @@ namespace PSLanguageService.Test
 {
     public class ScriptFileChangeTests
     {
-        private static readonly Version PowerShellVersion = new Version("5.0"); 
+        private static readonly Version PowerShellVersion = new Version("5.0");
 
         [Fact]
         public void CanApplySingleLineInsert()
@@ -128,6 +128,22 @@ namespace PSLanguageService.Test
         }
 
         [Fact]
+        public void CanApplyEditsToEndOfFile()
+        {
+            this.AssertFileChange(
+                "line1\r\nline2\r\nline3\r\n\r\n",
+                "line1\r\nline2\r\nline3\r\n\r\n\r\n\r\n",
+                new FileChange
+                {
+                    Line = 5,
+                    EndLine = 5,
+                    Offset = 1,
+                    EndOffset = 1,
+                    InsertString = "\r\n\r\n"
+                });
+        }
+
+        [Fact]
         public void FindsDotSourcedFiles()
         {
             string exampleScriptContents =
@@ -139,7 +155,7 @@ namespace PSLanguageService.Test
 
             using (StringReader stringReader = new StringReader(exampleScriptContents))
             {
-                ScriptFile scriptFile = 
+                ScriptFile scriptFile =
                     new ScriptFile(
                         "DotSourceTestFile.ps1",
                         "DotSourceTestFile.ps1",
@@ -178,7 +194,7 @@ namespace PSLanguageService.Test
             using (StringReader stringReader = new StringReader(initialString))
             {
                 // Create an in-memory file from the StringReader
-                ScriptFile fileToChange = 
+                ScriptFile fileToChange =
                     new ScriptFile(
                         "TestFile.ps1",
                         "TestFile.ps1",
