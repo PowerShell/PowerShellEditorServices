@@ -8,9 +8,11 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -294,72 +296,88 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile[] referencedFiles,
             Workspace workspace)
         {
-            if (foundSymbol != null)
+            if (foundSymbol == null)
             {
-                int symbolOffset = referencedFiles[0].GetOffsetAtPosition(
-                    foundSymbol.ScriptRegion.StartLineNumber,
-                    foundSymbol.ScriptRegion.StartColumnNumber);
-
-                // Make sure aliases have been loaded
-                await GetAliases();
-
-                // We want to look for references first in referenced files, hence we use ordered dictionary
-                var fileMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
-                foreach (ScriptFile file in referencedFiles)
-                {
-                    fileMap.Add(file.FilePath, file);
-                }
-
-                var allFiles = workspace.EnumeratePSFiles();
-                foreach (var file in allFiles)
-                {
-                    if (!fileMap.Contains(file))
-                    {
-                        fileMap.Add(file, new ScriptFile(file, null, this.powerShellContext.LocalPowerShellVersion.Version));
-                    }
-                }
-
-                List<SymbolReference> symbolReferences = new List<SymbolReference>();
-                foreach (var fileName in fileMap.Keys)
-                {
-                    var file = (ScriptFile)fileMap[fileName];
-                    IEnumerable<SymbolReference> symbolReferencesinFile =
-                    AstOperations
-                        .FindReferencesOfSymbol(
-                            file.ScriptAst,
-                            foundSymbol,
-                            CmdletToAliasDictionary,
-                            AliasToCmdletDictionary)
-                        .Select(
-                            reference =>
-                            {
-                                try
-                                {
-                                    reference.SourceLine =
-                                        file.GetLine(reference.ScriptRegion.StartLineNumber);
-                                }
-                                catch (ArgumentOutOfRangeException e)
-                                {
-                                    reference.SourceLine = string.Empty;
-                                    this.logger.WriteException("Found reference is out of range in script file", e);
-                                }
-
-                                reference.FilePath = file.FilePath;
-                                return reference;
-                            });
-
-                    symbolReferences.AddRange(symbolReferencesinFile);
-                }
-
-                return
-                    new FindReferencesResult
-                    {
-                        SymbolFileOffset = symbolOffset,
-                        SymbolName = foundSymbol.SymbolName,
-                        FoundReferences = symbolReferences
-                    };
+                return null;
             }
-            else { return null; }
+
+            int symbolOffset = referencedFiles[0].GetOffsetAtPosition(
+                foundSymbol.ScriptRegion.StartLineNumber,
+                foundSymbol.ScriptRegion.StartColumnNumber);
+
+            // Make sure aliases have been loaded
+            await GetAliases();
+
+            // We want to look for references first in referenced files, hence we use ordered dictionary
+            // TODO: File system case-sensitivity is based on filesystem not OS, but OS is a much cheaper heuristic
+#if CoreCLR
+            // The RuntimeInformation.IsOSPlatform is not supported in .NET Framework
+            var fileMap = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                ? new OrderedDictionary()
+                : new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
+#else
+            var fileMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
+#endif
+            foreach (ScriptFile file in referencedFiles)
+            {
+                fileMap.Add(file.FilePath, file);
+            }
+
+            foreach (string file in workspace.EnumeratePSFiles())
+            {
+                if (!fileMap.Contains(file))
+                {
+                    ScriptFile scriptFile;
+                    try
+                    {
+                        scriptFile = workspace.GetFile(file);
+                    }
+                    catch (IOException)
+                    {
+                        // If the file has ceased to exist for some reason, we just skip it
+                        continue;
+                    }
+
+                    fileMap.Add(file, scriptFile);
+                }
+            }
+
+            var symbolReferences = new List<SymbolReference>();
+            foreach (object fileName in fileMap.Keys)
+            {
+                var file = (ScriptFile)fileMap[fileName];
+                IEnumerable<SymbolReference> symbolReferencesinFile =
+                AstOperations
+                    .FindReferencesOfSymbol(
+                        file.ScriptAst,
+                        foundSymbol,
+                        CmdletToAliasDictionary,
+                        AliasToCmdletDictionary)
+                    .Select(reference =>
+                        {
+                            try
+                            {
+                                reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
+                            }
+                            catch (ArgumentOutOfRangeException e)
+                            {
+                                reference.SourceLine = string.Empty;
+                                this.logger.WriteException("Found reference is out of range in script file", e);
+                            }
+
+                            reference.FilePath = file.FilePath;
+                            return reference;
+                        });
+
+                symbolReferences.AddRange(symbolReferencesinFile);
+            }
+
+            return new FindReferencesResult
+            {
+                SymbolFileOffset = symbolOffset,
+                SymbolName = foundSymbol.SymbolName,
+                FoundReferences = symbolReferences
+            };
         }
 
         /// <summary>
