@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteCommandInFile.SourceDetails);
+                    CompleteCommandInFile.SourceDetails).RunWithTimeout();
 
             Assert.NotEqual(0, completionResults.Completions.Length);
             Assert.Equal(
@@ -52,12 +52,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 completionResults.Completions[0]);
         }
 
-        [Fact(Skip = "This test does not run correctly on AppVeyor, need to investigate.")]
+        [Fact]
         public async Task LanguageServiceCompletesCommandFromModule()
         {
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteCommandFromModule.SourceDetails);
+                    CompleteCommandFromModule.SourceDetails).RunWithTimeout();
 
             Assert.NotEqual(0, completionResults.Completions.Length);
             Assert.Equal(
@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteVariableInFile.SourceDetails);
+                    CompleteVariableInFile.SourceDetails).RunWithTimeout();
 
             Assert.Equal(1, completionResults.Completions.Length);
             Assert.Equal(
@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteAttributeValue.SourceDetails);
+                    CompleteAttributeValue.SourceDetails).RunWithTimeout();
 
             Assert.NotEqual(0, completionResults.Completions.Length);
             Assert.Equal(
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteFilePath.SourceDetails);
+                    CompleteFilePath.SourceDetails).RunWithTimeout();
 
             Assert.NotEqual(0, completionResults.Completions.Length);
             Assert.Equal(
@@ -109,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             ParameterSetSignatures paramSignatures =
                 await this.GetParamSetSignatures(
-                    FindsParameterSetsOnCommand.SourceDetails);
+                    FindsParameterSetsOnCommand.SourceDetails).RunWithTimeout();
 
             Assert.NotNull(paramSignatures);
             Assert.Equal("Get-Process", paramSignatures.CommandName);
@@ -121,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             ParameterSetSignatures paramSignatures =
                 await this.GetParamSetSignatures(
-                    FindsParameterSetsOnCommandWithSpaces.SourceDetails);
+                    FindsParameterSetsOnCommandWithSpaces.SourceDetails).RunWithTimeout();
 
             Assert.NotNull(paramSignatures);
             Assert.Equal("Write-Host", paramSignatures.CommandName);
@@ -133,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             GetDefinitionResult definitionResult =
                 await this.GetDefinition(
-                    FindsFunctionDefinition.SourceDetails);
+                    FindsFunctionDefinition.SourceDetails).RunWithTimeout();
 
             SymbolReference definition = definitionResult.FoundDefinition;
             Assert.Equal(1, definition.ScriptRegion.StartLineNumber);
@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             GetDefinitionResult definitionResult =
                 await this.GetDefinition(
-                    FindsFunctionDefinitionInDotSourceReference.SourceDetails);
+                    FindsFunctionDefinitionInDotSourceReference.SourceDetails).RunWithTimeout();
 
             SymbolReference definition = definitionResult.FoundDefinition;
             Assert.True(
@@ -167,7 +167,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     new Workspace(this.powerShellContext.LocalPowerShellVersion.Version, Logging.NullLogger)
                     {
                         WorkspacePath = Path.Combine(baseSharedScriptPath, @"References")
-                    });
+                    }).RunWithTimeout();
             var definition = definitionResult.FoundDefinition;
             Assert.EndsWith("ReferenceFileE.ps1", definition.FilePath);
             Assert.Equal("My-FunctionInFileE", definition.SymbolName);
@@ -178,7 +178,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             GetDefinitionResult definitionResult =
                 await this.GetDefinition(
-                    FindsVariableDefinition.SourceDetails);
+                    FindsVariableDefinition.SourceDetails).RunWithTimeout();
 
             SymbolReference definition = definitionResult.FoundDefinition;
             Assert.Equal(6, definition.ScriptRegion.StartLineNumber);
@@ -215,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             FindReferencesResult refsResult =
                 await this.GetReferences(
-                    FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
+                    FindsReferencesOnBuiltInCommandWithAlias.SourceDetails).RunWithTimeout();
 
             Assert.Equal(6, refsResult.FoundReferences.Count());
             Assert.Equal("Get-ChildItem", refsResult.FoundReferences.Last().SymbolName);
@@ -227,7 +227,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             FindReferencesResult refsResult =
                 await this.GetReferences(
-                    FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
+                    FindsReferencesOnBuiltInCommandWithAlias.SourceDetails).RunWithTimeout();
 
             Assert.Equal(6, refsResult.FoundReferences.Count());
             Assert.Equal("Get-ChildItem", refsResult.FoundReferences.Last().SymbolName);
@@ -240,7 +240,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             FindReferencesResult refsResult =
                 await this.GetReferences(
-                    FindsReferencesOnFunctionMultiFileDotSourceFileB.SourceDetails);
+                    FindsReferencesOnFunctionMultiFileDotSourceFileB.SourceDetails).RunWithTimeout();
 
             Assert.Equal(4, refsResult.FoundReferences.Count());
         }
@@ -250,7 +250,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             FindReferencesResult refsResult =
                 await this.GetReferences(
-                    FindsReferencesOnFunctionMultiFileDotSourceFileC.SourceDetails);
+                    FindsReferencesOnFunctionMultiFileDotSourceFileC.SourceDetails).RunWithTimeout();
             Assert.Equal(4, refsResult.FoundReferences.Count());
         }
 
@@ -261,7 +261,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.languageService.FindSymbolDetailsAtLocation(
                     this.GetScriptFile(FindsDetailsForBuiltInCommand.SourceDetails),
                     FindsDetailsForBuiltInCommand.SourceDetails.StartLineNumber,
-                    FindsDetailsForBuiltInCommand.SourceDetails.StartColumnNumber);
+                    FindsDetailsForBuiltInCommand.SourceDetails.StartColumnNumber).RunWithTimeout();
 
             Assert.NotNull(symbolDetails.Documentation);
             Assert.NotEqual("", symbolDetails.Documentation);
@@ -344,7 +344,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.languageService.GetCompletionsInFile(
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
-                    scriptRegion.StartColumnNumber);
+                    scriptRegion.StartColumnNumber).RunWithTimeout();
         }
 
         private async Task<ParameterSetSignatures> GetParamSetSignatures(ScriptRegion scriptRegion)
@@ -353,7 +353,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.languageService.FindParameterSetsInFile(
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
-                    scriptRegion.StartColumnNumber);
+                    scriptRegion.StartColumnNumber).RunWithTimeout();
         }
 
         private async Task<GetDefinitionResult> GetDefinition(ScriptRegion scriptRegion, Workspace workspace)
@@ -372,12 +372,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.languageService.GetDefinitionOfSymbol(
                     scriptFile,
                     symbolReference,
-                    workspace);
+                    workspace).RunWithTimeout();
         }
 
         private async Task<GetDefinitionResult> GetDefinition(ScriptRegion scriptRegion)
         {
-            return await GetDefinition(scriptRegion, this.workspace);
+            return await GetDefinition(scriptRegion, this.workspace).RunWithTimeout();
         }
 
         private async Task<FindReferencesResult> GetReferences(ScriptRegion scriptRegion)
@@ -396,7 +396,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.languageService.FindReferencesOfSymbol(
                     symbolReference,
                     this.workspace.ExpandScriptReferences(scriptFile),
-                    this.workspace);
+                    this.workspace).RunWithTimeout();
         }
 
         private FindOccurrencesResult GetOccurrences(ScriptRegion scriptRegion)
@@ -413,6 +413,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             return
                 this.languageService.FindSymbolsInFile(
                     GetScriptFile(scriptRegion));
+        }
+    }
+
+    internal static class TaskExtensions
+    {
+        public static async Task<T> RunWithTimeout<T>(this Task<T> task, int timeoutMillis = 10000)
+        {
+            if (await Task.WhenAny(task, Task.Delay(timeoutMillis)) == task)
+            {
+                return task.Result;
+            }
+
+            throw new TimeoutException();
         }
     }
 }
