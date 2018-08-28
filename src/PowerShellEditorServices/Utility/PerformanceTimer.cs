@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
@@ -25,23 +26,42 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
         private readonly Stopwatch _stopwatch;
 
+        private readonly string _callerMemberName;
+
+        private readonly string _callerFilePath;
+
+        private readonly int _callerLineNumber;
+
         /// <summary>
         /// Create a new execution timer and start it.
         /// </summary>
         /// <param name="logger">The logger to log the execution timer message in.</param>
         /// <param name="message">The message to prefix the execution time with.</param>
         /// <returns></returns>
-        public static ExecutionTimer Start(ILogger logger, string message)
+        public static ExecutionTimer Start(
+            ILogger logger,
+            string message,
+            [CallerMemberName] string callerMemberName = null,
+            [CallerFilePath] string callerFilePath = null,
+            [CallerLineNumber] int callerLineNumber = -1)
         {
-            var timer = new ExecutionTimer(logger, message);
+            var timer = new ExecutionTimer(logger, message, callerMemberName, callerFilePath, callerLineNumber);
             timer._stopwatch.Start();
             return timer;
         }
 
-        internal ExecutionTimer(ILogger logger, string message)
+        internal ExecutionTimer(
+            ILogger logger,
+            string message,
+            string callerMemberName,
+            string callerFilePath,
+            int callerLineNumber)
         {
             _logger = logger;
             _message = message;
+            _callerMemberName = callerMemberName;
+            _callerFilePath = callerFilePath;
+            _callerLineNumber = callerLineNumber;
             _stopwatch = new Stopwatch();
         }
 
@@ -60,7 +80,12 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 .Append("ms]")
                 .ToString();
 
-            _logger.Write(LogLevel.Verbose, logMessage);
+            _logger.Write(
+                LogLevel.Verbose,
+                logMessage,
+                callerName: _callerMemberName,
+                callerSourceFile: _callerFilePath,
+                callerLineNumber: _callerLineNumber);
         }
     }
 }
