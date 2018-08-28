@@ -37,7 +37,10 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </summary>
         /// <param name="logger">The logger to log the execution timer message in.</param>
         /// <param name="message">The message to prefix the execution time with.</param>
-        /// <returns></returns>
+        /// <param name="callerMemberName">The name of the calling method or property.</param>
+        /// <param name="callerFilePath">The path to the source file of the caller.</param>
+        /// <param name="callerLineNumber">The line where the timer is called.</param>
+        /// <returns>A new, started execution timer.</returns>
         public static ExecutionTimer Start(
             ILogger logger,
             string message,
