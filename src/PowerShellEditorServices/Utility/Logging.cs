@@ -239,4 +239,12 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             throw new ArgumentException($"Unknown LogLevel: '{logLevel}')", nameof(logLevel));
         }
     }
+
+    public static class ILoggerExtensions
+    {
+        public static ExecutionTimer LogExecutionTime(this ILogger logger, string message)
+        {
+            return ExecutionTimer.Start(logger, message);
+        }
+    }
 }

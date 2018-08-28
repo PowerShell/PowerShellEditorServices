@@ -1523,11 +1523,10 @@ function __Expand-Alias {
                 ScriptFileMarker[] semanticMarkers = null;
                 if (isScriptAnalysisEnabled && editorSession.AnalysisService != null)
                 {
-                    Logger.Write(LogLevel.Verbose, "Analyzing script file: " + scriptFile.FilePath);
-
-                    semanticMarkers = await editorSession.AnalysisService.GetSemanticMarkersAsync(scriptFile);
-
-                    Logger.Write(LogLevel.Verbose, "Analysis complete.");
+                    using (Logger.LogExecutionTime($"Script analysis of {scriptFile.FilePath} completed."))
+                    {
+                        semanticMarkers = await editorSession.AnalysisService.GetSemanticMarkersAsync(scriptFile);
+                    }
                 }
                 else
                 {
