@@ -90,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 string.IsNullOrEmpty(diagnostics.Diagnostics[0].Message));
         }
 
-        [Fact]
+        [Fact(Skip = "Skipping until Script Analyzer integration is added back")]
         public async Task ServiceReturnsSemanticMarkers()
         {
             // Send the 'didOpen' event
@@ -292,7 +292,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal(12, locations[2].Range.Start.Character);
         }
 
-        [Fact(Skip = "AppVeyor is currently hanging on this test it seems")]
+        [Fact]
         public async Task FindsNoReferencesOfEmptyLine()
         {
             await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
@@ -548,7 +548,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal(2, highlights[1].Range.Start.Line);
         }
 
-        [Fact]
+        [Fact(Skip = "This test hangs in VSTS for some reason...")]
         public async Task GetsParameterHintsOnCommand()
         {
             await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
