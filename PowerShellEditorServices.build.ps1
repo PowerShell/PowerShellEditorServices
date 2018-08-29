@@ -162,7 +162,7 @@ task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe build -c $Configuration -f net452 }
+        exec { & $script:dotnetExe build -c $Configuration -f net461 }
         exec { & $script:dotnetExe xunit -configuration $Configuration -framework net461 -verbose -nobuild }
     }
 
