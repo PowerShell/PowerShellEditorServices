@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>1.8.2</VersionPrefix>
+    <VersionPrefix>2.0.0</VersionPrefix>
     <Company>Microsoft</Company>
     <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <PackageTags>PowerShell;editor;development;language;debugging</PackageTags>
@@ -9,6 +9,6 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PowerShell/PowerShellEditorServices</RepositoryUrl>
     <DebugType>portable</DebugType>
-    <RuntimeFrameworkVersion>1.0.3</RuntimeFrameworkVersion>
+    <!--<RuntimeFrameworkVersion>1.0.3</RuntimeFrameworkVersion>-->
   </PropertyGroup>
 </Project>

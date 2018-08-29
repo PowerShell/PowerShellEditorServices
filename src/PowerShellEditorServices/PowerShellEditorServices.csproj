@@ -3,74 +3,23 @@
   <PropertyGroup>
     <AssemblyTitle>PowerShell Editor Services</AssemblyTitle>
     <Description>Provides common PowerShell editor capabilities as a .NET library.</Description>
-    <TargetFrameworks>netstandard1.6;net451</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices</AssemblyName>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
-
-  <PropertyGroup>
-    <!-- NOTE: -->
-    <!-- For PowerShell v5 there are some differences between the APIs released with -->
-    <!-- Windows 10 RTM and Windows 10 Update 1, thus we need to distinguish between -->
-    <!-- the two in our code.  v5r1 indicates Win 10 RTM (10240) and v5r2 indicates  -->
-    <!-- Win10 Update 1 (10586).  The PowerShellv5 constant will be defined for both -->
-    <!-- of these versions for anything that should work against both APIs.          -->
-    <DefineConstants Condition="'$(PowerShellVersion)' == 'v3'">$(DefineConstants);PowerShellv3</DefineConstants>
-    <DefineConstants Condition="'$(PowerShellVersion)' == 'v4'">$(DefineConstants);PowerShellv4</DefineConstants>
-    <DefineConstants Condition="'$(PowerShellVersion)' == 'v5r1'">$(DefineConstants);PowerShellv5r1;PowerShellv5</DefineConstants>
-    <DefineConstants Condition="'$(PowerShellVersion)' == 'v5r2' Or '$(PowerShellVersion)' == ''">$(DefineConstants);PowerShellv5r2;PowerShellv5</DefineConstants>
-  </PropertyGroup>
-
   <!-- Fail the release build if there are missing public API documentation comments -->
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+  <PropertyGroup>
     <WarningsAsErrors>1591,1573,1572</WarningsAsErrors>
     <DocumentationFile>bin\$(TargetFramework)\$(Configuration)\Microsoft.PowerShell.EditorServices.xml</DocumentationFile>
   </PropertyGroup>
-
-  <Target Name="PowerShellVersionOutput" BeforeTargets="Compile">
-    <Message Condition=" '$(TargetFramework)' == 'net451' And '$(PowerShellVersion)' != '' " Text="Target PowerShell Version: $(PowerShellVersion) -- Constants: $(DefineConstants)" Importance="High" />
-  </Target>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' And '$(PowerShellVersion)' == 'v3' ">
-    <PackageReference Include="Microsoft.PowerShell.3.ReferenceAssemblies" Version="1.0.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' And '$(PowerShellVersion)' == 'v4' ">
-    <PackageReference Include="Microsoft.PowerShell.4.ReferenceAssemblies" Version="1.0.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' And ('$(PowerShellVersion)' == 'v5r2' Or '$(PowerShellVersion)' == 'v5r1')">
-    <PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.0.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(PowerShellVersion)' == '' Or '$(PowerShellVersion)' == 'v5r2'">
-    <PackageReference Include="Microsoft.PowerShell.SDK">
-      <Version>6.0.0-alpha13</Version>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-
   <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+    <PackageReference Include="PowerShellStandard.Library" Version="5.1.0-preview-06" />
     <PackageReference Include="UnixConsoleEcho" Version="0.1.0" />
     <PackageReference Include="Serilog" Version="2.7.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.0.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="1.2.0" />
   </ItemGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
-  </PropertyGroup>
-
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
   </PropertyGroup>

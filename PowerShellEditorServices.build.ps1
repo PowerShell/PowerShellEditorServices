@@ -18,14 +18,15 @@ param(
 
 $script:IsCIBuild = $env:APPVEYOR -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
-$script:TargetFrameworksParam = "/p:TargetFrameworks=\`"$(if (!$script:IsUnix) { "net451;" })netstandard1.6\`""
+$script:TargetPlatform = "netstandard2.0"
+$script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
 $script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
 
 if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
 }
 
-task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi, PackageNuGet {
+task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, PackageNuGet {
 
     $requiredSdkVersion = "2.0.0"
 
@@ -128,30 +129,13 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
     Write-Host "`n### Product Version: $script:FullVersion`n" -ForegroundColor Green
 }
 
-function BuildForPowerShellVersion($version) {
-    Write-Host -ForegroundColor Green "`n### Testing API usage for PowerShell $version...`n"
-    exec { & $script:dotnetExe build -f net451 .\src\PowerShellEditorServices\PowerShellEditorServices.csproj /p:PowerShellVersion=$version }
-}
-
-task TestPowerShellApi -If { !$script:IsUnix } {
-    BuildForPowerShellVersion v3
-    BuildForPowerShellVersion v4
-    BuildForPowerShellVersion v5r1
-
-    # Do a final restore to put everything back to normal
-    exec { & $script:dotnetExe restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj }
-}
-
 task Build {
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f netstandard1.6 }
-    if (!$script:IsUnix) {
-        exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f net451 }
-    }
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f $script:TargetPlatform }
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f netstandard1.6 }
-    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\UnixConsoleEcho.dll -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
-    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\runtimes\osx-64\native\libdisablekeyecho.dylib -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
-    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\runtimes\linux-64\native\libdisablekeyecho.so -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:TargetPlatform }
+    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\UnixConsoleEcho.dll -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform
+    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\runtimes\osx-64\native\libdisablekeyecho.dylib -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform
+    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\runtimes\linux-64\native\libdisablekeyecho.so -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform
 }
 
 function UploadTestLogs {
@@ -174,22 +158,40 @@ function UploadTestLogs {
 
 task Test TestServer,TestProtocol,TestHost
 
-task TestServer -If { !$script:IsUnix } {
+task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
-    exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
+
+    if (-not $script:IsUnix) {
+        exec { & $script:dotnetExe build -c $Configuration -f net452 }
+        exec { & $script:dotnetExe xunit -configuration $Configuration -framework net461 -verbose -nobuild }
+    }
+
+    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.0 }
+    exec { & $script:dotnetExe test -f netcoreapp2.0 }
 }
 
-task TestProtocol -If { !$script:IsUnix } {
+task TestProtocol {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
-    exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
+
+    if (-not $script:IsUnix) {
+        exec { & $script:dotnetExe build -c $Configuration -f net461 }
+        exec { & $script:dotnetExe xunit -configuration $Configuration -framework net461 -verbose -nobuild }
+    }
+
+    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.0 }
+    exec { & $script:dotnetExe test -f netcoreapp2.0 }
 }
 
-task TestHost -If { !$script:IsUnix } {
+task TestHost -If {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
-    exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
+
+    if (-not $script:IsUnix) {
+        exec { & $script:dotnetExe build -c $Configuration -f net461 }
+        exec { & $script:dotnetExe xunit -configuration $Configuration -framework net461 -verbose -nobuild }
+    }
+
+    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.0 }
+    exec { & $script:dotnetExe test -f netcoreapp2.0 }
 }
 
 task CITest ?Test, {
@@ -207,21 +209,12 @@ task LayoutModule -After Build {
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop -Type Directory | Out-Null
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Core -Type Directory | Out-Null
 
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
 
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\libdisablekeyecho.* -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\publish\runtimes\win\lib\netstandard1.3\* -Filter System.IO.Pipes*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-
-    if (!$script:IsUnix) {
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net451\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop
-
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\publish\System.Runtime.InteropServices.RuntimeInformation.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-    }
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\libdisablekeyecho.* -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\runtimes\win\lib\netstandard1.3\* -Filter System.IO.Pipes*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
 
     # Copy Third Party Notices.txt to module folder
     Copy-Item -Force -Path "$PSScriptRoot\Third Party Notices.txt" -Destination $PSScriptRoot\module\PowerShellEditorServices
@@ -231,23 +224,13 @@ task LayoutModule -After Build {
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop -Type Directory | Out-Null
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core -Type Directory | Out-Null
 
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
-    if (!$script:IsUnix) {
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
-    }
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
 
     if ($Configuration -eq "Debug") {
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-
-        if (!$script:IsUnix) {
-            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
-            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        }
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
     }
 }
 
@@ -359,4 +342,4 @@ task UploadArtifacts -If ($script:IsCIBuild) {
 }
 
 # The default task is to run the entire CI build
-task . GetProductVersion, Clean, Build, TestPowerShellApi, CITest, BuildCmdletHelp, PackageNuGet, PackageModule, UploadArtifacts
+task . GetProductVersion, Clean, Build, CITest, BuildCmdletHelp, PackageNuGet, PackageModule, UploadArtifacts
