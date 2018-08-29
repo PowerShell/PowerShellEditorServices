@@ -66,7 +66,6 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             _callerMemberName = callerMemberName;
             _callerFilePath = callerFilePath;
             _callerLineNumber = callerLineNumber;
-            _stopwatch = new Stopwatch();
         }
 
         /// <summary>
