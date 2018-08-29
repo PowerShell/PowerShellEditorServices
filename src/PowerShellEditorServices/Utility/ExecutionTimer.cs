@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     public struct ExecutionTimer : IDisposable
     {
         [ThreadStatic]
-        private static readonly Stopwatch s_stopwatch = new Stopwatch();
+        private static Stopwatch s_stopwatch;
 
         private readonly ILogger _logger;
 
@@ -91,6 +91,18 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 callerName: _callerMemberName,
                 callerSourceFile: _callerFilePath,
                 callerLineNumber: _callerLineNumber);
+        }
+
+        private Stopwatch Stopwatch
+        {
+            get
+            {
+                if (s_stopwatch == null)
+                {
+                    s_stopwatch = new Stopwatch();
+                }
+                return s_stopwatch;
+            }
         }
     }
 }
