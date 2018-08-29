@@ -114,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Gets the array of filepaths dot sourced in this ScriptFile 
+        /// Gets the array of filepaths dot sourced in this ScriptFile
         /// </summary>
         public string[] ReferencedFiles
         {
@@ -208,7 +208,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Deterines whether the supplied path indicates the file is an "untitled:Unitled-X" 
+        /// Deterines whether the supplied path indicates the file is an "untitled:Unitled-X"
         /// which has not been saved to file.
         /// </summary>
         /// <param name="path">The path to check.</param>
@@ -549,7 +549,6 @@ namespace Microsoft.PowerShell.EditorServices
 
             try
             {
-#if PowerShellv5r2
                 // This overload appeared with Windows 10 Update 1
                 if (this.powerShellVersion.Major >= 5 &&
                     this.powerShellVersion.Build >= 10586)
@@ -571,13 +570,6 @@ namespace Microsoft.PowerShell.EditorServices
                             out this.scriptTokens,
                             out parseErrors);
                 }
-#else
-                this.ScriptAst =
-                    Parser.ParseInput(
-                        this.Contents,
-                        out this.scriptTokens,
-                        out parseErrors);
-#endif
             }
             catch (RuntimeException ex)
             {

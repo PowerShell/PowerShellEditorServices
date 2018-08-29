@@ -19,6 +19,7 @@ using System.IO;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -118,9 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 #endif
 
             // Catch unhandled exceptions for logging purposes
-#if !CoreCLR
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-#endif
         }
 
         #endregion
@@ -139,21 +138,12 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             .AddLogFile(logFilePath)
                             .Build();
 
-#if CoreCLR
             FileVersionInfo fileVersionInfo =
                 FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
 
-            // TODO #278: Need the correct dependency package for this to work correctly
-            //string osVersionString = RuntimeInformation.OSDescription;
-            //string processArchitecture = RuntimeInformation.ProcessArchitecture == Architecture.X64 ? "64-bit" : "32-bit";
-            //string osArchitecture = RuntimeInformation.OSArchitecture == Architecture.X64 ? "64-bit" : "32-bit";
-#else
-            FileVersionInfo fileVersionInfo =
-                FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
-            string osVersionString = Environment.OSVersion.VersionString;
-            string processArchitecture = Environment.Is64BitProcess ? "64-bit" : "32-bit";
-            string osArchitecture = Environment.Is64BitOperatingSystem ? "64-bit" : "32-bit";
-#endif
+            string osVersionString = RuntimeInformation.OSDescription;
+            string processArchitecture = RuntimeInformation.ProcessArchitecture == Architecture.X64 ? "64-bit" : "32-bit";
+            string osArchitecture = RuntimeInformation.OSArchitecture == Architecture.X64 ? "64-bit" : "32-bit";
 
             string newLine = Environment.NewLine;
 
@@ -165,14 +155,10 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     $"    Name:      {this.hostDetails.Name}" + newLine +
                     $"    ProfileId: {this.hostDetails.ProfileId}" + newLine +
                     $"    Version:   {this.hostDetails.Version}" + newLine +
-#if !CoreCLR
                     $"    Arch:      {processArchitecture}" + newLine + newLine +
                      "  Operating system details:" + newLine + newLine +
                     $"    Version: {osVersionString}" + newLine +
                     $"    Arch:    {osArchitecture}"));
-#else
-                    ""));
-#endif
         }
 
         /// <summary>
@@ -441,19 +427,13 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.serverCompletedTask.SetException(e);
         }
 
-#if !CoreCLR
         private void CurrentDomain_UnhandledException(
             object sender,
             UnhandledExceptionEventArgs e)
         {
             // Log the exception
-            this.logger.Write(
-                LogLevel.Error,
-                string.Format(
-                    "FATAL UNHANDLED EXCEPTION:\r\n\r\n{0}",
-                    e.ExceptionObject.ToString()));
+            this.logger.Write(LogLevel.Error, $"FATAL UNHANDLED EXCEPTION: {e.ExceptionObject}");
         }
-#endif
         private IServerListener CreateServiceListener(MessageProtocolType protocol, EditorServiceTransportConfig config)
         {
             switch (config.TransportType)
