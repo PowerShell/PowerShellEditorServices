@@ -20,11 +20,12 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     /// </example>
     public struct ExecutionTimer : IDisposable
     {
+        [ThreadStatic]
+        private static readonly Stopwatch s_stopwatch = new Stopwatch();
+
         private readonly ILogger _logger;
 
         private readonly string _message;
-
-        private readonly Stopwatch _stopwatch;
 
         private readonly string _callerMemberName;
 
@@ -49,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerLineNumber] int callerLineNumber = -1)
         {
             var timer = new ExecutionTimer(logger, message, callerMemberName, callerFilePath, callerLineNumber);
-            timer._stopwatch.Start();
+            s_stopwatch.Start();
             return timer;
         }
 
@@ -74,14 +75,16 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </summary>
         public void Dispose()
         {
-            _stopwatch.Stop();
+            s_stopwatch.Stop();
 
             string logMessage = new StringBuilder()
                 .Append(_message)
                 .Append(" [")
-                .Append(_stopwatch.ElapsedMilliseconds)
+                .Append(s_stopwatch.ElapsedMilliseconds)
                 .Append("ms]")
                 .ToString();
+
+            s_stopwatch.Reset();
 
             _logger.Write(
                 LogLevel.Verbose,
