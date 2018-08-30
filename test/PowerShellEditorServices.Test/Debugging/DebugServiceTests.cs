@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,11 +42,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Load the test debug file
             this.debugScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/VariableTest.ps1"));
 
             this.variableScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/VariableTest.ps1"));
 
             this.debugService = new DebugService(this.powerShellContext, logger);
             this.debugService.DebuggerStopped += debugService_DebuggerStopped;
@@ -55,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Load the test debug file
             this.debugScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/DebugTest.ps1"));
         }
 
         async void powerShellContext_SessionStateChanged(object sender, SessionStateChangedEventArgs e)
@@ -108,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // it should not escape already escaped chars.
             ScriptFile debugWithParamsFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\Debug` With Params `[Test].ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/Debug` With Params `[Test].ps1"));
 
             await this.debugService.SetLineBreakpoints(
                 debugWithParamsFile,
@@ -875,6 +876,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.powerShellContext.AbortExecution();
         }
 
+// TODO: Make this test cross platform by using the PowerShell process
+//       (the only process we can guarantee cross-platform)
+#if !CoreCLR
         // Verifies fix for issue #86, $proc = Get-Process foo displays just the
         // ETS property set and not all process properties.
         [Fact]
@@ -896,7 +900,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] variables =
                 debugService.GetVariables(stackFrames[0].LocalVariables.Id);
 
-            var var = variables.FirstOrDefault(v => v.Name == "$procVar");
+            var var = variables.FirstOrDefault(v => v.Name == "$psObjVar");
             Assert.NotNull(var);
             Assert.Equal("System.Diagnostics.Process (System)", var.ValueString);
             Assert.True(var.IsExpandable);
@@ -906,7 +910,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
-        }
+    }
+#endif
 
         public async Task AssertDebuggerPaused()
         {

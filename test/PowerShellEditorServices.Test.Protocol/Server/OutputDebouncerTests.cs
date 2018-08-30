@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -39,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             // Assert that there's only one event with the expected string
             Assert.Equal(1, messageSender.OutputEvents.Count);
             Assert.Equal(
-                "This is a test\r\nAnother line",
+                TestUtilities.NormalizeNewlines("This is a test\nAnother line"),
                 messageSender.OutputEvents[0].Output);
 
             // Wait for the next output to be flushed
@@ -48,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             // Assert that there's only one event with the expected string
             Assert.Equal(2, messageSender.OutputEvents.Count);
             Assert.Equal(
-                "Another test line\r\nfor great justice",
+                TestUtilities.NormalizeNewlines("Another test line\nfor great justice"),
                 messageSender.OutputEvents[1].Output);
         }
 
@@ -76,8 +77,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
 
             // Ensure that the two events start with the correct lines
             Assert.Equal(2, messageSender.OutputEvents.Count);
-            Assert.Equal("Output 1", messageSender.OutputEvents[0].Output.Split('\r')[0]);
-            Assert.Equal("Output 26", messageSender.OutputEvents[1].Output.Split('\r')[0]);
+            Assert.Equal("Output 1", messageSender.OutputEvents[0].Output.Split('\n')[0]);
+            Assert.Equal("Output 26", messageSender.OutputEvents[1].Output.Split('\n')[0]);
         }
 
         private static Task SendOutput(

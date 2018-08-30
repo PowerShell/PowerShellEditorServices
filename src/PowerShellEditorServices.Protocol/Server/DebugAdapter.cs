@@ -289,21 +289,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     {
                         workingDir = null;
                         Logger.Write(
-                            LogLevel.Error, 
+                            LogLevel.Error,
                             $"The specified 'cwd' path is invalid: '{launchParams.Cwd}'. Error: {ex.Message}");
                     }
                 }
 
-                // If we have no working dir by this point and we are running in a temp console, 
+                // If we have no working dir by this point and we are running in a temp console,
                 // pick some reasonable default.
                 if (string.IsNullOrEmpty(workingDir) && launchParams.CreateTemporaryIntegratedConsole)
                 {
-#if CoreCLR
-                    //TODO: RKH 2018-06-26 .NET standard 2.0 has added Environment.CurrentDirectory - let's use it.
-                    workingDir = AppContext.BaseDirectory;
-#else
                     workingDir = Environment.CurrentDirectory;
-#endif
                 }
 
                 // At this point, we will either have a working dir that should be set to cwd in

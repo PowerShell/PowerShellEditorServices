@@ -9,10 +9,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 {
     public class CompleteCommandFromModule
     {
-        public static readonly ScriptRegion SourceDetails = 
+        public static readonly ScriptRegion SourceDetails =
             new ScriptRegion
             {
-                File = @"Completion\CompletionExamples.psm1",
+                File = TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
                 StartLineNumber = 13,
                 StartColumnNumber = 11
             };

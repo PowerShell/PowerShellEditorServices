@@ -550,8 +550,8 @@ namespace Microsoft.PowerShell.EditorServices
             try
             {
                 // This overload appeared with Windows 10 Update 1
-                if (this.powerShellVersion.Major >= 5 &&
-                    this.powerShellVersion.Build >= 10586)
+                if (this.powerShellVersion.Major > 5 ||
+                    (this.powerShellVersion.Major == 5 && this.powerShellVersion.Build >= 10586))
                 {
                     // Include the file path so that module relative
                     // paths are evaluated correctly

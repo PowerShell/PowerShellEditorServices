@@ -63,7 +63,6 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             _consoleReadLine = new ConsoleReadLine(powerShellContext);
             _readLineProxy = readLineProxy;
 
-#if CoreCLR
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return;
@@ -73,7 +72,6 @@ namespace Microsoft.PowerShell.EditorServices.Session {
                 intercept => ConsoleProxy.UnixReadKey(
                     intercept,
                     _readLineCancellationSource.Token));
-#endif
         }
 
         internal static bool TryGetPSReadLineProxy(

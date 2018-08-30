@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using System;
@@ -35,8 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             string logPath,
             bool waitForDebugger = false)
         {
-            string modulePath = Path.GetFullPath(@"..\..\..\..\..\module");
-            string scriptPath = Path.GetFullPath(Path.Combine(modulePath, @"PowerShellEditorServices\Start-EditorServices.ps1"));
+            string modulePath = Path.GetFullPath(TestUtilities.NormalizePath("../../../../../module"));
+            string scriptPath = Path.GetFullPath(Path.Combine(modulePath, "PowerShellEditorServices", "Start-EditorServices.ps1"));
 
             if (!File.Exists(scriptPath))
             {

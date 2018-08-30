@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj" />
     <ProjectReference Include="..\..\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj" />
+    <ProjectReference Include="..\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">

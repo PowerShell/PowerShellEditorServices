@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint
         public static readonly ScriptRegion SourceDetails =
             new ScriptRegion
             {
-                File = @"ParameterHints\ParamHints.ps1",
+                File = TestUtilities.NormalizePath("ParameterHints/ParamHints.ps1"),
                 StartLineNumber = 1,
                 StartColumnNumber = 14
             };

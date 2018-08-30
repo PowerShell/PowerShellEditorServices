@@ -16,6 +16,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Language
 {
@@ -24,7 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private Workspace workspace;
         private LanguageService languageService;
         private PowerShellContext powerShellContext;
-        private const string baseSharedScriptPath = @"..\..\..\..\PowerShellEditorServices.Test.Shared\";
+        private static readonly string s_baseSharedScriptPath =
+            TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/");
 
         public LanguageServiceTests()
         {
@@ -94,6 +96,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [Fact]
         public async Task LanguageServiceCompletesFilePath()
         {
+            TestUtilities.AWAIT_DEBUGGER_HERE();
+
             CompletionResults completionResults =
                 await this.GetCompletionResults(
                     CompleteFilePath.SourceDetails);
@@ -166,7 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     FindsFunctionDefinitionInWorkspace.SourceDetails,
                     new Workspace(this.powerShellContext.LocalPowerShellVersion.Version, Logging.NullLogger)
                     {
-                        WorkspacePath = Path.Combine(baseSharedScriptPath, @"References")
+                        WorkspacePath = Path.Combine(s_baseSharedScriptPath, @"References")
                     });
             var definition = definitionResult.FoundDefinition;
             Assert.EndsWith("ReferenceFileE.ps1", definition.FilePath);
@@ -329,7 +333,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             string resolvedPath =
                 Path.Combine(
-                    baseSharedScriptPath,
+                    s_baseSharedScriptPath,
                     scriptRegion.File);
 
             return

@@ -9,7 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Symbols
     {
         public static readonly ScriptRegion SourceDetails =
             new ScriptRegion {
-                File = @"Symbols\MultipleSymbols.ps1"
+                File = TestUtilities.NormalizePath("Symbols/MultipleSymbols.ps1")
             };
     }
 }

@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails
         public static readonly ScriptRegion SourceDetails =
             new ScriptRegion
             {
-                File = @"SymbolDetails\SymbolDetails.ps1",
+                File = TestUtilities.NormalizePath("SymbolDetails/SymbolDetails.ps1"),
                 StartLineNumber = 1,
                 StartColumnNumber = 10
             };
