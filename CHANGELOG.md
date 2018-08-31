@@ -1,5 +1,23 @@
 # PowerShell Editor Services Release History
 
+## v1.8.4
+### Friday, August 31, 2018
+
+- [PowerShellEditorServices #728](https://github.com/PowerShell/PowerShellEditorServices/pulls/728) -
+  Fix formatter crash when script contains parse errors
+- [PowerShellEditorServices #730](https://github.com/PowerShell/PowerShellEditorServices/pulls/730) -
+  Fix crash where lines appended to end of script file causes out of bounds exception
+- [PowerShellEditorServices #732](https://github.com/PowerShell/PowerShellEditorServices/pulls/732) -
+  Fix CodeLens crash when a file cannot be opened, stop unnecessary file reads in CodeLens
+- [PowerShellEditorServices #729](https://github.com/PowerShell/PowerShellEditorServices/pulls/729) -
+  Fix a null dereference when an invalid cast exception has no inner exception
+- [PowerShellEditorServices #719](https://github.com/PowerShell/PowerShellEditorServices/pulls/719) -
+  Reduce allocations in the CodeLens providers (Thanks @mattpwhite!)
+- [PowerShellEditorServices #725](https://github.com/PowerShell/PowerShellEditorServices/pulls/725) -
+  Fix null dereference when debugging untitlted filesj
+- [PowerShellEditorServices #726](https://github.com/PowerShell/PowerShellEditorServices/pulls/726) -
+  Fix comment-based help snippet
+
 ## v1.8.3
 ### Wednesday, August 15, 2018
 
