@@ -23,6 +23,8 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     internal static class AstOperations
     {
+        private static MethodInfo s_extentCloneWithNewOffset;
+
         /// <summary>
         /// Gets completions for the symbol found in the Ast at
         /// the given file offset.
@@ -55,22 +57,9 @@ namespace Microsoft.PowerShell.EditorServices
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            var type = scriptAst.Extent.StartScriptPosition.GetType();
-            var method =
-#if CoreCLR
-                type.GetMethod(
-                    "CloneWithNewOffset",
-                    BindingFlags.Instance | BindingFlags.NonPublic);
-#else
-                type.GetMethod(
-                    "CloneWithNewOffset",
-                    BindingFlags.Instance | BindingFlags.NonPublic,
-                    null,
-                    new[] { typeof(int) }, null);
-#endif
 
             IScriptPosition cursorPosition =
-                (IScriptPosition)method.Invoke(
+                (IScriptPosition)GetExtentCloneMethod(scriptAst).Invoke(
                     scriptAst.Extent.StartScriptPosition,
                     new object[] { fileOffset });
 
@@ -337,5 +326,28 @@ namespace Microsoft.PowerShell.EditorServices
 
             return dotSourcedVisitor.DotSourcedFiles.ToArray();
         }
+
+        private static MethodInfo GetExtentCloneMethod(Ast scriptAst)
+        {
+            if (s_extentCloneWithNewOffset == null)
+            {
+                Type type = scriptAst.Extent.StartScriptPosition.GetType();
+                s_extentCloneWithNewOffset =
+#if CoreCLR
+                    type.GetMethod(
+                        "CloneWithNewOffset",
+                        BindingFlags.Instance | BindingFlags.NonPublic);
+#else
+                    type.GetMethod(
+                        "CloneWithNewOffset",
+                        BindingFlags.Instance | BindingFlags.NonPublic,
+                        null,
+                        new[] { typeof(int) }, null);
+#endif
+            }
+
+            return s_extentCloneWithNewOffset;
+        }
+
     }
 }
