@@ -154,19 +154,21 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile file,
             string entryName)
         {
-            // Makes sure the most recent completions request was the same line and column as this request
-            if (file.Id.Equals(mostRecentRequestFile))
-            {
-                CompletionDetails completionResult =
-                    mostRecentCompletions.Completions.FirstOrDefault(
-                        result => result.CompletionText.Equals(entryName));
-
-                return completionResult;
-            }
-            else
+            if (!file.Id.Equals(this.mostRecentRequestFile))
             {
                 return null;
             }
+
+            foreach (CompletionDetails completion in this.mostRecentCompletions.Completions)
+            {
+                if (completion.CompletionText.Equals(entryName))
+                {
+                    return completion;
+                }
+            }
+
+            // If we found no completions, return null
+            return null;
         }
 
         /// <summary>
@@ -245,19 +247,17 @@ namespace Microsoft.PowerShell.EditorServices
                     lineNumber,
                     columnNumber);
 
-            if (symbolReference != null)
-            {
-                symbolReference.FilePath = scriptFile.FilePath;
-                symbolDetails =
-                    await SymbolDetails.Create(
-                        symbolReference,
-                        this.powerShellContext);
-            }
-            else
+            if (symbolReference == null)
             {
                 // TODO #21: Return Result<T>
                 return null;
             }
+
+            symbolReference.FilePath = scriptFile.FilePath;
+            symbolDetails =
+                await SymbolDetails.Create(
+                    symbolReference,
+                    this.powerShellContext);
 
             return symbolDetails;
         }
@@ -270,17 +270,21 @@ namespace Microsoft.PowerShell.EditorServices
         public FindOccurrencesResult FindSymbolsInFile(ScriptFile scriptFile)
         {
             Validate.IsNotNull("scriptFile", scriptFile);
+
+            var foundOccurrences = new List<SymbolReference>();
+            foreach (IDocumentSymbolProvider symbolProvider in documentSymbolProviders)
+            {
+                foreach (SymbolReference reference in symbolProvider.ProvideDocumentSymbols(scriptFile))
+                {
+                    reference.SourceLine = scriptFile.GetLine(reference.ScriptRegion.StartLineNumber);
+                    reference.FilePath = scriptFile.FilePath;
+                    foundOccurrences.Add(reference);
+                }
+            }
+
             return new FindOccurrencesResult
             {
-                FoundOccurrences = documentSymbolProviders
-                    .SelectMany(p => p.ProvideDocumentSymbols(scriptFile))
-                    .Select(reference =>
-                        {
-                            reference.SourceLine =
-                                scriptFile.GetLine(reference.ScriptRegion.StartLineNumber);
-                            reference.FilePath = scriptFile.FilePath;
-                            return reference;
-                        })
+                FoundOccurrences = foundOccurrences
             };
         }
 
@@ -346,30 +350,29 @@ namespace Microsoft.PowerShell.EditorServices
             foreach (object fileName in fileMap.Keys)
             {
                 var file = (ScriptFile)fileMap[fileName];
-                IEnumerable<SymbolReference> symbolReferencesinFile =
-                AstOperations
-                    .FindReferencesOfSymbol(
-                        file.ScriptAst,
-                        foundSymbol,
-                        CmdletToAliasDictionary,
-                        AliasToCmdletDictionary)
-                    .Select(reference =>
-                        {
-                            try
-                            {
-                                reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
-                            }
-                            catch (ArgumentOutOfRangeException e)
-                            {
-                                reference.SourceLine = string.Empty;
-                                this.logger.WriteException("Found reference is out of range in script file", e);
-                            }
 
-                            reference.FilePath = file.FilePath;
-                            return reference;
-                        });
+                IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(
+                    file.ScriptAst,
+                    foundSymbol,
+                    CmdletToAliasDictionary,
+                    AliasToCmdletDictionary);
 
-                symbolReferences.AddRange(symbolReferencesinFile);
+                foreach (SymbolReference reference in references)
+                {
+                    try
+                    {
+                        reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
+                    }
+                    catch (ArgumentOutOfRangeException e)
+                    {
+                        reference.SourceLine = string.Empty;
+                        this.logger.WriteException("Found reference is out of range in script file", e);
+                    }
+                    reference.FilePath = file.FilePath;
+                    symbolReferences.Add(reference);
+                }
+
+                symbolReferences.AddRange(symbolReferences);
             }
 
             return new FindReferencesResult
@@ -768,7 +771,7 @@ namespace Microsoft.PowerShell.EditorServices
                 return scriptFiles.ToArray();
             }
 
-            return new List<ScriptFile>().ToArray();
+            return new ScriptFile[0];
         }
 
         private SymbolReference FindDeclarationForBuiltinCommand(
@@ -808,13 +811,21 @@ namespace Microsoft.PowerShell.EditorServices
 
         private Ast FindSmallestStatementAst(ScriptFile scriptFile, int lineNumber, int columnNumber)
         {
-            var asts = scriptFile.ScriptAst.FindAll(ast =>
+            IEnumerable<Ast> asts = scriptFile.ScriptAst.FindAll(ast =>
             {
                 return ast is StatementAst && ast.Extent.Contains(lineNumber, columnNumber);
             }, true);
 
-            // Find ast with the smallest extent
-            return asts.MinElement((astX, astY) => astX.Extent.ExtentWidthComparer(astY.Extent));
+            Ast minAst = scriptFile.ScriptAst;
+            foreach (Ast ast in asts)
+            {
+                if (ast.Extent.ExtentWidthComparer(minAst.Extent) == -1)
+                {
+                    minAst = ast;
+                }
+            }
+
+            return minAst;
         }
 
         #endregion
