@@ -439,8 +439,8 @@ namespace Microsoft.PowerShell.EditorServices
             if (foundDefinition == null)
             {
                 // Get a list of all powershell files in the workspace path
-                var allFiles = workspace.EnumeratePSFiles();
-                foreach (var file in allFiles)
+                IEnumerable<string> allFiles = workspace.EnumeratePSFiles();
+                foreach (string file in allFiles)
                 {
                     if (filesSearched.Contains(file))
                     {
@@ -592,7 +592,7 @@ namespace Microsoft.PowerShell.EditorServices
             int lineNumber,
             int columnNumber)
         {
-            var ast = FindSmallestStatementAst(scriptFile, lineNumber, columnNumber);
+            Ast ast = FindSmallestStatementAst(scriptFile, lineNumber, columnNumber);
             if (ast == null)
             {
                 return null;
@@ -611,7 +611,7 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile scriptFile,
             int lineNumber)
         {
-            var functionDefinitionAst = scriptFile.ScriptAst.Find(
+            Ast functionDefinitionAst = scriptFile.ScriptAst.Find(
                 ast => ast is FunctionDefinitionAst && ast.Extent.StartLineNumber == lineNumber,
                 true);
 
@@ -631,7 +631,7 @@ namespace Microsoft.PowerShell.EditorServices
             out string helpLocation)
         {
             // check if the next line contains a function definition
-            var funcDefnAst = GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
+            FunctionDefinitionAst funcDefnAst = GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
             if (funcDefnAst != null)
             {
                 helpLocation = "before";
@@ -639,7 +639,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             // find all the script definitions that contain the line `lineNumber`
-            var foundAsts = scriptFile.ScriptAst.FindAll(
+            IEnumerable<Ast> foundAsts = scriptFile.ScriptAst.FindAll(
                 ast =>
                 {
                     var fdAst = ast as FunctionDefinitionAst;
