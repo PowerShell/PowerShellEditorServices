@@ -137,7 +137,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
 
             this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
-            this.messageHandlers.SetRequestHandler(GetAllCommandsRequest.Type, this.HandleGetAllCommandsRequest);
             this.messageHandlers.SetRequestHandler(GetCommandRequest.Type, this.HandleGetCommandRequest);
 
             this.messageHandlers.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
@@ -525,38 +524,16 @@ function __Expand-Alias {
 
             await requestContext.SendResult(result.First().ToString());
         }
-
-        private async Task HandleGetAllCommandsRequest(
-            object param,
-            RequestContext<object> requestContext)
-        {
-            PSCommand psCommand = new PSCommand();
-            psCommand.AddScript("Get-Command -CommandType Function, Cmdlet, ExternalScript | Select-Object Name,ModuleName | Sort-Object Name");
-            IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
-
-            List<PSAllCommandsMessage> commandList = new List<PSAllCommandsMessage>();
-
-            if (result != null)
-            {
-                foreach (dynamic c in result)
-                {
-                    commandList.Add(new PSAllCommandsMessage
-                    {
-                        Name = c.Name,
-                        ModuleName = c.ModuleName,
-                    });
-                }
-            }
-
-            await requestContext.SendResult(commandList);
-        }
-
         private async Task HandleGetCommandRequest(
             string param,
             RequestContext<object> requestContext)
         {
             PSCommand psCommand = new PSCommand();
-            psCommand.AddCommand("Get-Command").AddArgument(param);
+            if(param != "") {
+                psCommand.AddCommand("Get-Command").AddArgument(param);
+            } else {
+                psCommand.AddScript("Get-Command -CommandType Function, Cmdlet, ExternalScript | Select-Object Name,ModuleName | Sort-Object Name");
+            }
             IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
             List<PSCommandMessage> commandList = new List<PSCommandMessage>();
 
@@ -573,7 +550,6 @@ function __Expand-Alias {
                         DefaultParameterSet = c.DefaultParameterSet
                     });
                 }
-                Logger.Write(LogLevel.Verbose, "Finished conversion of results");
             }
 
             await requestContext.SendResult(commandList);

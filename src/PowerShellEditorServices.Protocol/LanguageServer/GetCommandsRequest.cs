@@ -9,15 +9,6 @@ using System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
-    /// <summary>
-    /// Defines a class that describes the request to get all PowerShell Commands from the current session
-    /// </summary>
-    public class GetAllCommandsRequest
-    {
-        public static readonly
-            RequestType<List<PSAllCommandsMessage>, object, object, object> Type =
-            RequestType<List<PSAllCommandsMessage>, object, object, object>.Create("powerShell/getAllCommands");
-    }
 
     /// <summary>
     /// Defines a class that describes the request to get the details for a single PowerShell Command
@@ -41,14 +32,5 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public string DefaultParameterSet { get; set; }
         public Dictionary<string, ParameterMetadata> Parameters { get; set; }
         public System.Collections.ObjectModel.ReadOnlyCollection<CommandParameterSetInfo> ParameterSets { get; set; }
-    }
-
-    /// <summary>
-    /// Defines a class that describes the message to get all PowerShell Commands from the current session
-    /// </summary>
-    public class PSAllCommandsMessage
-    {
-        public string Name { get; set; }
-        public string ModuleName { get; set; }
     }
 }
