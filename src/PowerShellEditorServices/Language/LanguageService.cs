@@ -26,18 +26,27 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private ILogger logger;
-        private bool areAliasesLoaded;
-        private PowerShellContext powerShellContext;
-        private CompletionResults mostRecentCompletions;
-        private int mostRecentRequestLine;
-        private int mostRecentRequestOffest;
-        private string mostRecentRequestFile;
-        private Dictionary<String, List<String>> CmdletToAliasDictionary;
-        private Dictionary<String, String> AliasToCmdletDictionary;
-        private IDocumentSymbolProvider[] documentSymbolProviders;
-
         const int DefaultWaitTimeoutMilliseconds = 5000;
+
+        private readonly ILogger _logger;
+
+        private readonly PowerShellContext _powerShellContext;
+
+        private readonly Dictionary<String, List<String>> _cmdletToAliasDictionary;
+
+        private readonly Dictionary<String, String> _aliasToCmdletDictionary;
+
+        private readonly IDocumentSymbolProvider[] _documentSymbolProviders;
+
+        private bool _areAliasesLoaded;
+
+        private CompletionResults _mostRecentCompletions;
+
+        private int _mostRecentRequestLine;
+
+        private int _mostRecentRequestOffest;
+
+        private string _mostRecentRequestFile;
 
         #endregion
 
@@ -57,12 +66,12 @@ namespace Microsoft.PowerShell.EditorServices
         {
             Validate.IsNotNull("powerShellContext", powerShellContext);
 
-            this.powerShellContext = powerShellContext;
-            this.logger = logger;
+            _powerShellContext = powerShellContext;
+            _logger = logger;
 
-            this.CmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
-            this.AliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
-            this.documentSymbolProviders = new IDocumentSymbolProvider[]
+            _cmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
+            _aliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
+            _documentSymbolProviders = new IDocumentSymbolProvider[]
             {
                 new ScriptDocumentSymbolProvider(powerShellContext.LocalPowerShellVersion.Version),
                 new PsdDocumentSymbolProvider(),
@@ -109,8 +118,8 @@ namespace Microsoft.PowerShell.EditorServices
                     scriptFile.ScriptAst,
                     scriptFile.ScriptTokens,
                     fileOffset,
-                    this.powerShellContext,
-                    this.logger,
+                    _powerShellContext,
+                    _logger,
                     new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
 
             if (commandCompletion == null)
@@ -126,10 +135,10 @@ namespace Microsoft.PowerShell.EditorServices
                         commandCompletion);
 
                 // save state of most recent completion
-                mostRecentCompletions = completionResults;
-                mostRecentRequestFile = scriptFile.Id;
-                mostRecentRequestLine = lineNumber;
-                mostRecentRequestOffest = columnNumber;
+                _mostRecentCompletions = completionResults;
+                _mostRecentRequestFile = scriptFile.Id;
+                _mostRecentRequestLine = lineNumber;
+                _mostRecentRequestOffest = columnNumber;
 
                 return completionResults;
             }
@@ -137,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 // Bad completion results could return an invalid
                 // replacement range, catch that here
-                this.logger.Write(
+                _logger.Write(
                     LogLevel.Error,
                     $"Caught exception while trying to create CompletionResults:\n\n{e.ToString()}");
 
@@ -155,12 +164,12 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile file,
             string entryName)
         {
-            if (!file.Id.Equals(this.mostRecentRequestFile))
+            if (!file.Id.Equals(_mostRecentRequestFile))
             {
                 return null;
             }
 
-            foreach (CompletionDetails completion in this.mostRecentCompletions.Completions)
+            foreach (CompletionDetails completion in _mostRecentCompletions.Completions)
             {
                 if (completion.CompletionText.Equals(entryName))
                 {
@@ -258,7 +267,7 @@ namespace Microsoft.PowerShell.EditorServices
             symbolDetails =
                 await SymbolDetails.Create(
                     symbolReference,
-                    this.powerShellContext);
+                    _powerShellContext);
 
             return symbolDetails;
         }
@@ -273,7 +282,7 @@ namespace Microsoft.PowerShell.EditorServices
             Validate.IsNotNull("scriptFile", scriptFile);
 
             var foundOccurrences = new List<SymbolReference>();
-            foreach (IDocumentSymbolProvider symbolProvider in documentSymbolProviders)
+            foreach (IDocumentSymbolProvider symbolProvider in _documentSymbolProviders)
             {
                 foreach (SymbolReference reference in symbolProvider.ProvideDocumentSymbols(scriptFile))
                 {
@@ -355,8 +364,8 @@ namespace Microsoft.PowerShell.EditorServices
                 IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(
                     file.ScriptAst,
                     foundSymbol,
-                    CmdletToAliasDictionary,
-                    AliasToCmdletDictionary);
+                    _cmdletToAliasDictionary,
+                    _aliasToCmdletDictionary);
 
                 foreach (SymbolReference reference in references)
                 {
@@ -367,7 +376,7 @@ namespace Microsoft.PowerShell.EditorServices
                     catch (ArgumentOutOfRangeException e)
                     {
                         reference.SourceLine = string.Empty;
-                        this.logger.WriteException("Found reference is out of range in script file", e);
+                        _logger.WriteException("Found reference is out of range in script file", e);
                     }
                     reference.FilePath = file.FilePath;
                     symbolReferences.Add(reference);
@@ -462,7 +471,7 @@ namespace Microsoft.PowerShell.EditorServices
                 CommandInfo cmdInfo =
                     await CommandHelpers.GetCommandInfo(
                         foundSymbol.SymbolName,
-                        this.powerShellContext);
+                        _powerShellContext);
 
                 foundDefinition =
                     FindDeclarationForBuiltinCommand(
@@ -540,7 +549,7 @@ namespace Microsoft.PowerShell.EditorServices
             CommandInfo commandInfo =
                 await CommandHelpers.GetCommandInfo(
                     foundSymbol.SymbolName,
-                    this.powerShellContext);
+                    _powerShellContext);
 
             if (commandInfo == null)
             {
@@ -557,7 +566,7 @@ namespace Microsoft.PowerShell.EditorServices
                 // A RuntimeException will be thrown when an invalid attribute is
                 // on a parameter binding block and then that command/script has
                 // its signatures resolved by typing it into a script.
-                this.logger.WriteException("RuntimeException encountered while accessing command parameter sets", e);
+                _logger.WriteException("RuntimeException encountered while accessing command parameter sets", e);
 
                 return null;
             }
@@ -694,7 +703,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         private async Task GetAliases()
         {
-            if (this.areAliasesLoaded)
+            if (_areAliasesLoaded)
             {
                 return;
             }
@@ -702,7 +711,7 @@ namespace Microsoft.PowerShell.EditorServices
             try
             {
                 RunspaceHandle runspaceHandle =
-                    await this.powerShellContext.GetRunspaceHandle(
+                    await _powerShellContext.GetRunspaceHandle(
                         new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
 
                 CommandInvocationIntrinsics invokeCommand = runspaceHandle.Runspace.SessionStateProxy.InvokeCommand;
@@ -712,28 +721,28 @@ namespace Microsoft.PowerShell.EditorServices
 
                 foreach (AliasInfo aliasInfo in aliases)
                 {
-                    if (!CmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
+                    if (!_cmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
                     {
-                        CmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
+                        _cmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
                     }
                     else
                     {
-                        CmdletToAliasDictionary[aliasInfo.Definition].Add(aliasInfo.Name);
+                        _cmdletToAliasDictionary[aliasInfo.Definition].Add(aliasInfo.Name);
                     }
 
-                    AliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
+                    _aliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
                 }
 
-                this.areAliasesLoaded = true;
+                _areAliasesLoaded = true;
             }
             catch (PSNotSupportedException e)
             {
-                this.logger.Write(
+                _logger.Write(
                     LogLevel.Warning,
                     $"Caught PSNotSupportedException while attempting to get aliases from remote session:\n\n{e.ToString()}");
 
                 // Prevent the aliases from being fetched again - no point if the remote doesn't support InvokeCommand.
-                this.areAliasesLoaded = true;
+                _areAliasesLoaded = true;
             }
             catch (TaskCanceledException)
             {
