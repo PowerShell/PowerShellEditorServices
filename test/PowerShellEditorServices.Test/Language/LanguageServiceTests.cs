@@ -246,7 +246,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.Equal("LS", refsResult.FoundReferences.ToArray()[4].SymbolName);
 #endif
             Assert.Equal("Get-ChildItem", refsResult.FoundReferences.Last().SymbolName);
-            Assert.Equal("gci", refsResult.FoundReferences.ToArray()[2].SymbolName);
+            Assert.Equal("dir", refsResult.FoundReferences.ToArray()[2].SymbolName);
         }
 
         [Fact]

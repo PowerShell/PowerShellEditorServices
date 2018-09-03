@@ -21,6 +21,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             CompletionDetails.Create(
                 "Import-Module",
                 CompletionType.Command,
-                "Import-Module");
+                "Import-Module [-Name] <string[]> [-Global] [-Prefi");
     }
 }
