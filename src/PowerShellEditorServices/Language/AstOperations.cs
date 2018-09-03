@@ -5,19 +5,18 @@
 
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Management.Automation.Language;
+using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    using System.Diagnostics;
-    using System.Linq.Expressions;
     using System.Management.Automation;
-    using System.Management.Automation.Language;
-    using System.Management.Automation.Runspaces;
 
     /// <summary>
     /// Provides common operations for the syntax tree of a parsed script.
