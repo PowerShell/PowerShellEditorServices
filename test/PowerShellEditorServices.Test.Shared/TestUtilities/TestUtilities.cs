@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared
@@ -67,11 +68,20 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
         /// <summary>
         /// Not for use in production -- convenience code for debugging tests.
         /// </summary>
-        public static void AWAIT_DEBUGGER_HERE()
+        public static void AWAIT_DEBUGGER_HERE(
+            [CallerMemberName] string callerName = null,
+            [CallerFilePath] string callerPath = null,
+            [CallerLineNumber] int callerLine = -1)
         {
+            if (Debugger.IsAttached)
+            {
+                return;
+            }
+
             System.Console.WriteLine();
             System.Console.WriteLine("===== AWAITING DEBUGGER =====");
             System.Console.WriteLine($"  PID: {Process.GetCurrentProcess().Id}");
+            System.Console.WriteLine($"  Waiting at {callerPath} line {callerLine} ({callerName})");
             System.Console.WriteLine("  PRESS ANY KEY TO CONTINUE");
             System.Console.WriteLine("=============================");
             System.Console.ReadKey();

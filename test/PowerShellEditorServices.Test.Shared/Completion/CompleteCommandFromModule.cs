@@ -19,8 +19,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 
         public static readonly CompletionDetails ExpectedCompletion =
             CompletionDetails.Create(
-                "Install-Module",
+                "Import-Module",
                 CompletionType.Command,
-                "Install-Module");
+                "Import-Module");
     }
 }

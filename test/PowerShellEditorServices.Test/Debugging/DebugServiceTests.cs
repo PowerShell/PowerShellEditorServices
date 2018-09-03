@@ -639,7 +639,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Test set of global scope int variable (not strongly typed)
             VariableScope globalScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.GlobalScopeName);
             string newGlobalIntValue = "4242";
-            string setGlobalIntValue = await debugService.SetVariable(globalScope.Id, "$MaximumAliasCount", newGlobalIntValue);
+            string setGlobalIntValue = await debugService.SetVariable(globalScope.Id, "$MaximumHistoryCount", newGlobalIntValue);
             Assert.Equal(newGlobalIntValue, setGlobalIntValue);
 
             // The above just tests that the debug service returns the correct new value string.
@@ -665,7 +665,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Test set of global scope int variable (not strongly typed)
             globalScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.GlobalScopeName);
             variables = debugService.GetVariables(globalScope.Id);
-            var intGlobalVar = variables.FirstOrDefault(v => v.Name == "$MaximumAliasCount");
+            var intGlobalVar = variables.FirstOrDefault(v => v.Name == "$MaximumHistoryCount");
             Assert.Equal(newGlobalIntValue, intGlobalVar.ValueString);
 
             // Abort execution of the script
@@ -790,17 +790,26 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] variables =
                 debugService.GetVariables(stackFrames[0].LocalVariables.Id);
 
-            var var = variables.FirstOrDefault(v => v.Name == "$assocArrVar");
+            VariableDetailsBase var = variables.FirstOrDefault(v => v.Name == "$assocArrVar");
             Assert.NotNull(var);
             Assert.Equal("[Hashtable: 2]", var.ValueString);
             Assert.True(var.IsExpandable);
 
-            var childVars = debugService.GetVariables(var.Id);
+            VariableDetailsBase[] childVars = debugService.GetVariables(var.Id);
             Assert.Equal(9, childVars.Length);
             Assert.Equal("[0]", childVars[0].Name);
-            Assert.Equal("[secondChild, 42]", childVars[0].ValueString);
             Assert.Equal("[1]", childVars[1].Name);
-            Assert.Equal("[firstChild, \"Child\"]", childVars[1].ValueString);
+
+            var childVarStrs = new HashSet<string>(childVars.Select(v => v.ValueString));
+            var expectedVars = new [] {
+                "[firstChild, \"Child\"]",
+                "[secondChild, 42]"
+            };
+
+            foreach (string expectedVar in expectedVars)
+            {
+                Assert.Contains(expectedVar, childVarStrs);
+            }
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
@@ -827,15 +836,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             var var = variables.FirstOrDefault(v => v.Name == "$psObjVar");
             Assert.NotNull(var);
-            Assert.Equal("@{Age=75; Name=John}", var.ValueString);
+            Assert.True("@{Age=75; Name=John}".Equals(var.ValueString) || "@{Name=John; Age=75}".Equals(var.ValueString));
             Assert.True(var.IsExpandable);
 
-            var childVars = debugService.GetVariables(var.Id);
-            Assert.Equal(2, childVars.Length);
-            Assert.Equal("Age", childVars[0].Name);
-            Assert.Equal("75", childVars[0].ValueString);
-            Assert.Equal("Name", childVars[1].Name);
-            Assert.Equal("\"John\"", childVars[1].ValueString);
+            IDictionary<string, string> childVars = debugService.GetVariables(var.Id).ToDictionary(v => v.Name, v => v.ValueString);
+            Assert.Equal(2, childVars.Count);
+            Assert.Contains("Age", childVars.Keys);
+            Assert.Contains("Name", childVars.Keys);
+            Assert.Equal(childVars["Age"], "75");
+            Assert.Equal(childVars["Name"], "\"John\"");
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();

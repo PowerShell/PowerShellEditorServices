@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 completionResults.Completions[0]);
         }
 
-        [Fact(Skip = "This test does not run correctly on AppVeyor, need to investigate.")]
+        [Fact]
         public async Task LanguageServiceCompletesCommandFromModule()
         {
             CompletionResults completionResults =
@@ -96,8 +96,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [Fact]
         public async Task LanguageServiceCompletesFilePath()
         {
-            TestUtilities.AWAIT_DEBUGGER_HERE();
-
             CompletionResults completionResults =
                 await this.GetCompletionResults(
                     CompleteFilePath.SourceDetails);
@@ -221,9 +219,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetReferences(
                     FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
 
-            Assert.Equal(6, refsResult.FoundReferences.Count());
-            Assert.Equal("Get-ChildItem", refsResult.FoundReferences.Last().SymbolName);
-            Assert.Equal("ls", refsResult.FoundReferences.ToArray()[1].SymbolName);
+            SymbolReference[] foundRefs = refsResult.FoundReferences.ToArray();
+#if CoreCLR
+            // `ls` is not an alias on Linux...
+            Assert.Equal(4, foundRefs.Length);
+            Assert.Equal("gci", foundRefs[1].SymbolName);
+#else
+            Assert.Equal(6, foundRefs.Length);
+            Assert.Equal("ls", foundRefs[1].SymbolName);
+#endif
+            Assert.Equal("Get-ChildItem", foundRefs[foundRefs.Length - 1].SymbolName);
         }
 
         [Fact]
@@ -233,10 +238,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetReferences(
                     FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
 
+#if CoreCLR
+            Assert.Equal(4, refsResult.FoundReferences.Count());
+#else
             Assert.Equal(6, refsResult.FoundReferences.Count());
+            // `ls` is not an alias on Linux...
+            Assert.Equal("LS", refsResult.FoundReferences.ToArray()[4].SymbolName);
+#endif
             Assert.Equal("Get-ChildItem", refsResult.FoundReferences.Last().SymbolName);
             Assert.Equal("gci", refsResult.FoundReferences.ToArray()[2].SymbolName);
-            Assert.Equal("LS", refsResult.FoundReferences.ToArray()[4].SymbolName);
         }
 
         [Fact]
