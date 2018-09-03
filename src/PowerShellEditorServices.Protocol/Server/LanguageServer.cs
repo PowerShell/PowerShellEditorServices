@@ -236,43 +236,33 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<object> requestContext)
         {
             if (helpParams == null) { helpParams = "get-help"; }
-
-            PSCommand psCommand = new PSCommand();
-            // Check if it's an actual command first. This returns near instant. Get-Help takes a good 5 seconds to return when not a command.
-            psCommand.AddCommand("Get-Command").AddArgument(helpParams);
-            IEnumerable<object> isCommand = await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
-            if (isCommand != null && isCommand.Count() > 0){
-                psCommand = new PSCommand();
-                psCommand.AddCommand("Get-Help");
-                psCommand.AddArgument(helpParams);
-                psCommand.AddCommand("Select-Object").AddArgument("RelatedLinks");
-                IEnumerable<object> relatedLinks = await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
-                psCommand = new PSCommand();
-                psCommand.AddCommand("Get-Help");
-                psCommand.AddArgument(helpParams);
-                bool sendOutput = false;
-                // Check if the first returned item converted to string is an empty object.
-                // From experience this is the return when there are no RelatedLinks.
-                if (relatedLinks != null && relatedLinks.First().ToString() != "@{RelatedLinks=}")
-                {
-                    psCommand.AddParameter("Online");
-                }
-                else
-                {
-                    psCommand.AddParameter("Full");
-                    sendOutput = true;
-                }
-                await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand, sendOutput);
-
-                await requestContext.SendResult(null);
+            string script = @"
+function __Check-Help {
+    param (
+        $Command
+    )
+        $CommandExists = $false
+        Try {
+            Get-Command $Command -ErrorAction Stop
+            $CommandExists = $true
+        } catch [System.Management.Automation.CommandNotFoundException] {
+            Write-Warning ""$Command does not exist.""
+        }
+        if ($CommandExists) {
+            try {
+                Get-Help $Command -Online
+            } catch [System.Management.Automation.PSInvalidOperationException] {
+                Get-Help $Command -Full
             }
-            else
-            {
-                psCommand = new PSCommand().AddScript($"write-host -ForegroundColor red 'Command not found: {helpParams}'");
-                await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand, true);
-                await requestContext.SendResult(null);
-                // TODO: write better error output or something...
-            }
+        }
+}";
+            PSCommand checkHelpScript = new PSCommand();
+            checkHelpScript.AddScript(script);
+            await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpScript);
+            PSCommand getHelpCommand = new PSCommand();
+            getHelpCommand.AddCommand("__Check-Help").AddArgument(helpParams);
+            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(getHelpCommand, true);
+            await requestContext.SendResult(null);
         }
 
         private async Task HandleSetPSSARulesRequest(
