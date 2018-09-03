@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 namespace Microsoft.PowerShell.EditorServices
 {
     using System.Diagnostics;
+    using System.Linq.Expressions;
     using System.Management.Automation;
     using System.Management.Automation.Language;
     using System.Management.Automation.Runspaces;
@@ -23,7 +24,28 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     internal static class AstOperations
     {
-        private static MethodInfo s_extentCloneWithNewOffset;
+        private static readonly MethodInfo s_extentCloneWithNewOffset;
+
+        static AstOperations()
+        {
+            // TODO: When netstandard is upgraded to 2.0, see if
+            //       Delegate.CreateDelegate can be used here instead
+            s_extentCloneWithNewOffset =
+#if CoreCLR
+                typeof(PSObject).GetTypeInfo().Assembly
+                    .GetType("System.Management.Automation.Language.InternalScriptPosition")
+                    .GetMethod("CloneWithNewOffset", BindingFlags.Instance | BindingFlags.NonPublic);
+#else
+                typeof(PSObject).GetType().Assembly
+                    .GetType("System.Management.Automation.Language.InternalScriptPosition")
+                    .GetMethod(
+                        "CloneWithNewOffset",
+                        BindingFlags.Instance | BindingFlags.NonPublic,
+                        binder: null,
+                        types: new [] { typeof(int) },
+                        modifiers: null);
+#endif
+        }
 
         /// <summary>
         /// Gets completions for the symbol found in the Ast at
@@ -58,10 +80,9 @@ namespace Microsoft.PowerShell.EditorServices
             CancellationToken cancellationToken)
         {
 
-            IScriptPosition cursorPosition =
-                (IScriptPosition)GetExtentCloneMethod(scriptAst).Invoke(
-                    scriptAst.Extent.StartScriptPosition,
-                    new object[] { fileOffset });
+            IScriptPosition cursorPosition = (IScriptPosition)s_extentCloneWithNewOffset.Invoke(
+                scriptAst.Extent.StartScriptPosition,
+                new object[] { fileOffset });
 
             logger.Write(
                 LogLevel.Verbose,
@@ -326,28 +347,5 @@ namespace Microsoft.PowerShell.EditorServices
 
             return dotSourcedVisitor.DotSourcedFiles.ToArray();
         }
-
-        private static MethodInfo GetExtentCloneMethod(Ast scriptAst)
-        {
-            if (s_extentCloneWithNewOffset == null)
-            {
-                Type type = scriptAst.Extent.StartScriptPosition.GetType();
-                s_extentCloneWithNewOffset =
-#if CoreCLR
-                    type.GetMethod(
-                        "CloneWithNewOffset",
-                        BindingFlags.Instance | BindingFlags.NonPublic);
-#else
-                    type.GetMethod(
-                        "CloneWithNewOffset",
-                        BindingFlags.Instance | BindingFlags.NonPublic,
-                        null,
-                        new[] { typeof(int) }, null);
-#endif
-            }
-
-            return s_extentCloneWithNewOffset;
-        }
-
     }
 }
