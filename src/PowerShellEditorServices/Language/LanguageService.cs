@@ -113,35 +113,36 @@ namespace Microsoft.PowerShell.EditorServices
                     this.logger,
                     new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
 
-            if (commandCompletion != null)
+            if (commandCompletion == null)
             {
-                try
-                {
-                    CompletionResults completionResults =
-                        CompletionResults.Create(
-                            scriptFile,
-                            commandCompletion);
-
-                    // save state of most recent completion
-                    mostRecentCompletions = completionResults;
-                    mostRecentRequestFile = scriptFile.Id;
-                    mostRecentRequestLine = lineNumber;
-                    mostRecentRequestOffest = columnNumber;
-
-                    return completionResults;
-                }
-                catch (ArgumentException e)
-                {
-                    // Bad completion results could return an invalid
-                    // replacement range, catch that here
-                    this.logger.Write(
-                        LogLevel.Error,
-                        $"Caught exception while trying to create CompletionResults:\n\n{e.ToString()}");
-                }
+                return new CompletionResults();
             }
 
-            // If all else fails, return empty results
-            return new CompletionResults();
+            try
+            {
+                CompletionResults completionResults =
+                    CompletionResults.Create(
+                        scriptFile,
+                        commandCompletion);
+
+                // save state of most recent completion
+                mostRecentCompletions = completionResults;
+                mostRecentRequestFile = scriptFile.Id;
+                mostRecentRequestLine = lineNumber;
+                mostRecentRequestOffest = columnNumber;
+
+                return completionResults;
+            }
+            catch (ArgumentException e)
+            {
+                // Bad completion results could return an invalid
+                // replacement range, catch that here
+                this.logger.Write(
+                    LogLevel.Error,
+                    $"Caught exception while trying to create CompletionResults:\n\n{e.ToString()}");
+
+                return new CompletionResults();
+            }
         }
 
         /// <summary>
@@ -493,26 +494,24 @@ namespace Microsoft.PowerShell.EditorServices
                     lineNumber,
                     columnNumber);
 
-            if (foundSymbol != null)
-            {
-                // find all references, and indicate that looking for aliases is not needed
-                IEnumerable<SymbolReference> symbolOccurrences =
-                    AstOperations
-                        .FindReferencesOfSymbol(
-                            file.ScriptAst,
-                            foundSymbol,
-                            false);
-
-                return
-                    new FindOccurrencesResult
-                    {
-                        FoundOccurrences = symbolOccurrences
-                    };
-            }
-            else
+            if (foundSymbol == null)
             {
                 return null;
             }
+
+            // find all references, and indicate that looking for aliases is not needed
+            IEnumerable<SymbolReference> symbolOccurrences =
+                AstOperations
+                    .FindReferencesOfSymbol(
+                        file.ScriptAst,
+                        foundSymbol,
+                        false);
+
+            return
+                new FindOccurrencesResult
+                {
+                    FoundOccurrences = symbolOccurrences
+                };
         }
 
         /// <summary>
@@ -533,44 +532,40 @@ namespace Microsoft.PowerShell.EditorServices
                     lineNumber,
                     columnNumber);
 
-            if (foundSymbol != null)
+            if (foundSymbol == null)
             {
-                CommandInfo commandInfo =
-                    await CommandHelpers.GetCommandInfo(
-                        foundSymbol.SymbolName,
-                        this.powerShellContext);
-
-                if (commandInfo != null)
-                {
-                    try
-                    {
-                        IEnumerable<CommandParameterSetInfo> commandParamSets = commandInfo.ParameterSets;
-                        return new ParameterSetSignatures(commandParamSets, foundSymbol);
-                    }
-                    catch (RuntimeException e)
-                    {
-                        // A RuntimeException will be thrown when an invalid attribute is
-                        // on a parameter binding block and then that command/script has
-                        // its signatures resolved by typing it into a script.
-                        this.logger.WriteException("RuntimeException encountered while accessing command parameter sets", e);
-
-                        return null;
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        // For some commands there are no paramsets (like applications).  Until
-                        // the valid command types are better understood, catch this exception
-                        // which gets raised when there are no ParameterSets for the command type.
-                        return null;
-                    }
-                }
-                else
-                {
-                    return null;
-                }
+                return null;
             }
-            else
+
+            CommandInfo commandInfo =
+                await CommandHelpers.GetCommandInfo(
+                    foundSymbol.SymbolName,
+                    this.powerShellContext);
+
+            if (commandInfo == null)
             {
+                return null;
+            }
+
+            try
+            {
+                IEnumerable<CommandParameterSetInfo> commandParamSets = commandInfo.ParameterSets;
+                return new ParameterSetSignatures(commandParamSets, foundSymbol);
+            }
+            catch (RuntimeException e)
+            {
+                // A RuntimeException will be thrown when an invalid attribute is
+                // on a parameter binding block and then that command/script has
+                // its signatures resolved by typing it into a script.
+                this.logger.WriteException("RuntimeException encountered while accessing command parameter sets", e);
+
+                return null;
+            }
+            catch (InvalidOperationException)
+            {
+                // For some commands there are no paramsets (like applications).  Until
+                // the valid command types are better understood, catch this exception
+                // which gets raised when there are no ParameterSets for the command type.
                 return null;
             }
         }
@@ -649,34 +644,38 @@ namespace Microsoft.PowerShell.EditorServices
                 },
                 true);
 
-            if (foundAsts != null && foundAsts.Any())
+            if (foundAsts == null || !foundAsts.Any())
             {
-                // of all the function definitions found, return the innermost function
-                // definition that contains `lineNumber`
-                funcDefnAst = foundAsts.Cast<FunctionDefinitionAst>().Aggregate((x, y) =>
-                {
-                    if (x.Extent.StartOffset >= y.Extent.StartOffset && x.Extent.EndOffset <= x.Extent.EndOffset)
-                    {
-                        return x;
-                    }
-
-                    return y;
-                });
-
-                // TODO use tokens to check for non empty character instead of just checking for line offset
-                if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
-                {
-                    helpLocation = "begin";
-                    return funcDefnAst;
-                }
-
-                if (funcDefnAst.Body.Extent.EndLineNumber == lineNumber + 1)
-                {
-                    helpLocation = "end";
-                    return funcDefnAst;
-                }
+                helpLocation = null;
+                return null;
             }
 
+            // of all the function definitions found, return the innermost function
+            // definition that contains `lineNumber`
+            funcDefnAst = foundAsts.Cast<FunctionDefinitionAst>().Aggregate((x, y) =>
+            {
+                if (x.Extent.StartOffset >= y.Extent.StartOffset && x.Extent.EndOffset <= x.Extent.EndOffset)
+                {
+                    return x;
+                }
+
+                return y;
+            });
+
+            // TODO use tokens to check for non empty character instead of just checking for line offset
+            if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
+            {
+                helpLocation = "begin";
+                return funcDefnAst;
+            }
+
+            if (funcDefnAst.Body.Extent.EndLineNumber == lineNumber + 1)
+            {
+                helpLocation = "end";
+                return funcDefnAst;
+            }
+
+            // If we didn't find a function definition, then return null
             helpLocation = null;
             return null;
         }
@@ -690,48 +689,50 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         private async Task GetAliases()
         {
-            if (!this.areAliasesLoaded)
+            if (this.areAliasesLoaded)
             {
-                try
+                return;
+            }
+
+            try
+            {
+                RunspaceHandle runspaceHandle =
+                    await this.powerShellContext.GetRunspaceHandle(
+                        new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
+
+                CommandInvocationIntrinsics invokeCommand = runspaceHandle.Runspace.SessionStateProxy.InvokeCommand;
+                IEnumerable<CommandInfo> aliases = invokeCommand.GetCommands("*", CommandTypes.Alias, true);
+
+                runspaceHandle.Dispose();
+
+                foreach (AliasInfo aliasInfo in aliases)
                 {
-                    RunspaceHandle runspaceHandle =
-                        await this.powerShellContext.GetRunspaceHandle(
-                            new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
-
-                    CommandInvocationIntrinsics invokeCommand = runspaceHandle.Runspace.SessionStateProxy.InvokeCommand;
-                    IEnumerable<CommandInfo> aliases = invokeCommand.GetCommands("*", CommandTypes.Alias, true);
-
-                    runspaceHandle.Dispose();
-
-                    foreach (AliasInfo aliasInfo in aliases)
+                    if (!CmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
                     {
-                        if (!CmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
-                        {
-                            CmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
-                        }
-                        else
-                        {
-                            CmdletToAliasDictionary[aliasInfo.Definition].Add(aliasInfo.Name);
-                        }
-
-                        AliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
+                        CmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
+                    }
+                    else
+                    {
+                        CmdletToAliasDictionary[aliasInfo.Definition].Add(aliasInfo.Name);
                     }
 
-                    this.areAliasesLoaded = true;
+                    AliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
                 }
-                catch (PSNotSupportedException e)
-                {
-                    this.logger.Write(
-                        LogLevel.Warning,
-                        $"Caught PSNotSupportedException while attempting to get aliases from remote session:\n\n{e.ToString()}");
 
-                    // Prevent the aliases from being fetched again - no point if the remote doesn't support InvokeCommand.
-                    this.areAliasesLoaded = true;
-                }
-                catch (TaskCanceledException)
-                {
-                    // The wait for a RunspaceHandle has timed out, skip aliases for now
-                }
+                this.areAliasesLoaded = true;
+            }
+            catch (PSNotSupportedException e)
+            {
+                this.logger.Write(
+                    LogLevel.Warning,
+                    $"Caught PSNotSupportedException while attempting to get aliases from remote session:\n\n{e.ToString()}");
+
+                // Prevent the aliases from being fetched again - no point if the remote doesn't support InvokeCommand.
+                this.areAliasesLoaded = true;
+            }
+            catch (TaskCanceledException)
+            {
+                // The wait for a RunspaceHandle has timed out, skip aliases for now
             }
         }
 
@@ -739,39 +740,38 @@ namespace Microsoft.PowerShell.EditorServices
             PSModuleInfo moduleInfo,
             Workspace workspace)
         {
-            // if there is module info for this command
-            if (moduleInfo != null)
+            if (moduleInfo == null)
             {
-                string modPath = moduleInfo.Path;
-                List<ScriptFile> scriptFiles = new List<ScriptFile>();
-                ScriptFile newFile;
-
-                // find any files where the moduleInfo's path ends with ps1 or psm1
-                // and add it to allowed script files
-                if (modPath.EndsWith(@".ps1") || modPath.EndsWith(@".psm1"))
-                {
-                    newFile = workspace.GetFile(modPath);
-                    newFile.IsAnalysisEnabled = false;
-                    scriptFiles.Add(newFile);
-                }
-                if (moduleInfo.NestedModules.Count > 0)
-                {
-                    foreach (PSModuleInfo nestedInfo in moduleInfo.NestedModules)
-                    {
-                        string nestedModPath = nestedInfo.Path;
-                        if (nestedModPath.EndsWith(@".ps1") || nestedModPath.EndsWith(@".psm1"))
-                        {
-                            newFile = workspace.GetFile(nestedModPath);
-                            newFile.IsAnalysisEnabled = false;
-                            scriptFiles.Add(newFile);
-                        }
-                    }
-                }
-
-                return scriptFiles.ToArray();
+                return new ScriptFile[0];
             }
 
-            return new ScriptFile[0];
+            string modPath = moduleInfo.Path;
+            List<ScriptFile> scriptFiles = new List<ScriptFile>();
+            ScriptFile newFile;
+
+            // find any files where the moduleInfo's path ends with ps1 or psm1
+            // and add it to allowed script files
+            if (modPath.EndsWith(@".ps1") || modPath.EndsWith(@".psm1"))
+            {
+                newFile = workspace.GetFile(modPath);
+                newFile.IsAnalysisEnabled = false;
+                scriptFiles.Add(newFile);
+            }
+            if (moduleInfo.NestedModules.Count > 0)
+            {
+                foreach (PSModuleInfo nestedInfo in moduleInfo.NestedModules)
+                {
+                    string nestedModPath = nestedInfo.Path;
+                    if (nestedModPath.EndsWith(@".ps1") || nestedModPath.EndsWith(@".psm1"))
+                    {
+                        newFile = workspace.GetFile(nestedModPath);
+                        newFile.IsAnalysisEnabled = false;
+                        scriptFiles.Add(newFile);
+                    }
+                }
+            }
+
+            return scriptFiles.ToArray();
         }
 
         private SymbolReference FindDeclarationForBuiltinCommand(
