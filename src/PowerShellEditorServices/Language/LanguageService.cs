@@ -64,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices
             PowerShellContext powerShellContext,
             ILogger logger)
         {
-            Validate.IsNotNull("powerShellContext", powerShellContext);
+            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
             _powerShellContext = powerShellContext;
             _logger = logger;
@@ -104,7 +104,7 @@ namespace Microsoft.PowerShell.EditorServices
             int lineNumber,
             int columnNumber)
         {
-            Validate.IsNotNull("scriptFile", scriptFile);
+            Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
             // Get the offset at the specified position.  This method
             // will also validate the given position.
@@ -279,7 +279,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns></returns>
         public FindOccurrencesResult FindSymbolsInFile(ScriptFile scriptFile)
         {
-            Validate.IsNotNull("scriptFile", scriptFile);
+            Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
             var foundOccurrences = new List<SymbolReference>();
             foreach (IDocumentSymbolProvider symbolProvider in _documentSymbolProviders)
@@ -406,9 +406,9 @@ namespace Microsoft.PowerShell.EditorServices
             SymbolReference foundSymbol,
             Workspace workspace)
         {
-            Validate.IsNotNull("sourceFile", sourceFile);
-            Validate.IsNotNull("foundSymbol", foundSymbol);
-            Validate.IsNotNull("workspace", workspace);
+            Validate.IsNotNull(nameof(sourceFile), sourceFile);
+            Validate.IsNotNull(nameof(foundSymbol), foundSymbol);
+            Validate.IsNotNull(nameof(workspace), workspace);
 
             ScriptFile[] referencedFiles =
                 workspace.ExpandScriptReferences(
