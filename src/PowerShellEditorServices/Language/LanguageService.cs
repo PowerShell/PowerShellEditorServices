@@ -652,15 +652,20 @@ namespace Microsoft.PowerShell.EditorServices
 
             // of all the function definitions found, return the innermost function
             // definition that contains `lineNumber`
-            funcDefnAst = foundAsts.Cast<FunctionDefinitionAst>().Aggregate((x, y) =>
+            foreach (FunctionDefinitionAst foundAst in foundAsts.Cast<FunctionDefinitionAst>())
             {
-                if (x.Extent.StartOffset >= y.Extent.StartOffset && x.Extent.EndOffset <= x.Extent.EndOffset)
+                if (funcDefnAst == null)
                 {
-                    return x;
+                    funcDefnAst = foundAst;
+                    continue;
                 }
 
-                return y;
-            });
+                if (funcDefnAst.Extent.StartOffset >= foundAst.Extent.StartOffset
+                    && funcDefnAst.Extent.EndOffset <= foundAst.Extent.EndOffset)
+                {
+                    funcDefnAst = foundAst;
+                }
+            }
 
             // TODO use tokens to check for non empty character instead of just checking for line offset
             if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
@@ -779,30 +784,28 @@ namespace Microsoft.PowerShell.EditorServices
             SymbolReference foundSymbol,
             Workspace workspace)
         {
-            SymbolReference foundDefinition = null;
-            if (commandInfo != null)
+            if (commandInfo == null)
             {
-                int index = 0;
-                ScriptFile[] nestedModuleFiles;
+                return null;
+            }
 
-                nestedModuleFiles =
-                    GetBuiltinCommandScriptFiles(
-                        commandInfo.Module,
-                        workspace);
+            ScriptFile[] nestedModuleFiles =
+                GetBuiltinCommandScriptFiles(
+                    commandInfo.Module,
+                    workspace);
 
-                while (foundDefinition == null && index < nestedModuleFiles.Length)
+            SymbolReference foundDefinition = null;
+            for (int i = 0; i < nestedModuleFiles.Length; i++)
+            {
+                foundDefinition =
+                    AstOperations.FindDefinitionOfSymbol(
+                        nestedModuleFiles[i].ScriptAst,
+                        foundSymbol);
+
+                if (foundDefinition != null)
                 {
-                    foundDefinition =
-                        AstOperations.FindDefinitionOfSymbol(
-                            nestedModuleFiles[index].ScriptAst,
-                            foundSymbol);
-
-                    if (foundDefinition != null)
-                    {
-                        foundDefinition.FilePath = nestedModuleFiles[index].FilePath;
-                    }
-
-                    index++;
+                    foundDefinition.FilePath = nestedModuleFiles[i].FilePath;
+                    break;
                 }
             }
 
