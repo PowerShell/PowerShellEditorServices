@@ -239,4 +239,30 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             throw new ArgumentException($"Unknown LogLevel: '{logLevel}')", nameof(logLevel));
         }
     }
+
+    /// <summary>
+    /// Extension method class for the ILogger class.
+    /// </summary>
+    public static class ILoggerExtensions
+    {
+        /// <summary>
+        /// Log the amount of time an execution takes. The intended usage is to call this method in the
+        /// header of a `using` block to time the interior of the block.
+        /// </summary>
+        /// <param name="logger">The ILogger to log the execution time with.</param>
+        /// <param name="message">The message to log about what has been executed.</param>
+        /// <param name="callerMemberName">The name of the member calling this method.</param>
+        /// <param name="callerFilePath">The file where this method has been called.</param>
+        /// <param name="callerLineNumber">The line number where this method has been called.</param>
+        /// <returns></returns>
+        public static ExecutionTimer LogExecutionTime(
+            this ILogger logger,
+            string message,
+            [CallerMemberName] string callerMemberName = null,
+            [CallerFilePath] string callerFilePath = null,
+            [CallerLineNumber] int callerLineNumber = -1)
+        {
+            return ExecutionTimer.Start(logger, message, callerMemberName, callerFilePath, callerLineNumber);
+        }
+    }
 }
