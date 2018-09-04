@@ -28,7 +28,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
 
 task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, PackageNuGet {
 
-    $requiredSdkVersion = "2.0.0"
+    $requiredSdkVersion = "2.1.300"
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -167,8 +167,8 @@ task TestServer {
         exec { & $script:dotnetExe xunit -configuration $Configuration -framework net461 -verbose -nobuild }
     }
 
-    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.0 }
-    exec { & $script:dotnetExe test -f netcoreapp2.0 }
+    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.1 }
+    exec { & $script:dotnetExe test -f netcoreapp2.1 }
 }
 
 task TestProtocol {
@@ -179,8 +179,8 @@ task TestProtocol {
         exec { & $script:dotnetExe xunit -configuration $Configuration -framework net461 -verbose -nobuild }
     }
 
-    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.0 }
-    exec { & $script:dotnetExe test -f netcoreapp2.0 }
+    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.1 }
+    exec { & $script:dotnetExe test -f netcoreapp2.1 }
 }
 
 task TestHost -If {
@@ -191,8 +191,8 @@ task TestHost -If {
         exec { & $script:dotnetExe xunit -configuration $Configuration -framework net461 -verbose -nobuild }
     }
 
-    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.0 }
-    exec { & $script:dotnetExe test -f netcoreapp2.0 }
+    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.1 }
+    exec { & $script:dotnetExe test -f netcoreapp2.1 }
 }
 
 task CITest ?Test, {

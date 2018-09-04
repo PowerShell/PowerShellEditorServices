@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             {
                 File = TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
                 StartLineNumber = 19,
-                StartColumnNumber = 25
+                StartColumnNumber = 15
             };
 
         public static readonly BufferRange ExpectedRange =
