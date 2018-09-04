@@ -13,6 +13,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
@@ -1126,7 +1127,7 @@ function __Expand-Alias {
 
                 var help = analysisResults?.FirstOrDefault()?.Correction?.Edits[0].Text;
                 result.Content = help != null
-                    ? (lines ?? ScriptFile.GetLines(help)).ToArray()
+                    ? ScriptFile.GetLines(help).ToArray()
                     : null;
 
                 if (helpLocation != null &&
