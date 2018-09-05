@@ -36,6 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private static readonly DocumentHighlight[] s_emptyHighlightResult = new DocumentHighlight[0];
 
+        private static readonly SymbolInformation[] s_emptySymbolResult = new SymbolInformation[0];
+
         private ILogger Logger;
         private bool profilesLoaded;
         private bool consoleReplStarted;
@@ -918,34 +920,29 @@ function __Expand-Alias {
                 editorSession.LanguageService.FindSymbolsInFile(
                     scriptFile);
 
-            SymbolInformation[] symbols = null;
-
             string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
 
+            SymbolInformation[] symbols = s_emptySymbolResult;
             if (foundSymbols != null)
             {
-                symbols =
-                    foundSymbols
-                        .FoundOccurrences
-                        .Select(r =>
-                            {
-                                return new SymbolInformation
-                                {
-                                    ContainerName = containerName,
-                                    Kind = GetSymbolKind(r.SymbolType),
-                                    Location = new Location
-                                    {
-                                        Uri = GetFileUri(r.FilePath),
-                                        Range = GetRangeFromScriptRegion(r.ScriptRegion)
-                                    },
-                                    Name = GetDecoratedSymbolName(r)
-                                };
-                            })
-                        .ToArray();
-            }
-            else
-            {
-                symbols = new SymbolInformation[0];
+                var symbolAcc = new List<SymbolInformation>();
+                foreach (SymbolReference foundOccurrence in foundSymbols.FoundOccurrences)
+                {
+                    var location = new Location
+                    {
+                        Uri = GetFileUri(foundOccurrence.FilePath),
+                        Range = GetRangeFromScriptRegion(foundOccurrence.ScriptRegion)
+                    };
+
+                    symbolAcc.Add(new SymbolInformation
+                    {
+                        ContainerName = containerName,
+                        Kind = GetSymbolKind(foundOccurrence.SymbolType),
+                        Location = location,
+                        Name = GetDecoratedSymbolName(foundOccurrence)
+                    });
+                }
+                symbols = symbolAcc.ToArray();
             }
 
             await requestContext.SendResult(symbols);
