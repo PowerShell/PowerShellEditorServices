@@ -812,7 +812,7 @@ function __Expand-Alias {
                         Label = parameterSets.CommandName + " " + sig.SignatureText,
                         Documentation = null,
                         Parameters = parameters.ToArray(),
-                    }
+                    };
                 }
                 signatures = sigs.ToArray();
             }
@@ -995,7 +995,7 @@ function __Expand-Alias {
                 {
                     foreach (SymbolReference foundOccurrence in foundSymbols.FoundOccurrences)
                     {
-                        if (!IsQueryMatch(workspaceSymbolParams.Query, foundOccurrence.SymbolType))
+                        if (!IsQueryMatch(workspaceSymbolParams.Query, foundOccurrence.SymbolName))
                         {
                             continue;
                         }
