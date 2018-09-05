@@ -28,9 +28,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private static CancellationTokenSource existingRequestCancellation;
 
-        private static Location[] s_emptyLocationResult = new Location[0];
+        private static readonly Location[] s_emptyLocationResult = new Location[0];
 
-        private static CompletionItem[] s_emptyCompletionResult = new CompletionItem[0];
+        private static readonly CompletionItem[] s_emptyCompletionResult = new CompletionItem[0];
+
+        private static readonly SignatureInformation[] s_emptySignatureResult = new SignatureInformation[0];
 
         private ILogger Logger;
         private bool profilesLoaded;
@@ -788,40 +790,35 @@ function __Expand-Alias {
                     textDocumentPositionParams.Position.Line + 1,
                     textDocumentPositionParams.Position.Character + 1);
 
-            SignatureInformation[] signatures = null;
-            int? activeParameter = null;
-            int? activeSignature = 0;
+            SignatureInformation[] signatures = s_emptySignatureResult;
 
             if (parameterSets != null)
             {
-                signatures =
-                    parameterSets
-                        .Signatures
-                        .Select(s =>
-                            {
-                                return new SignatureInformation
-                                {
-                                    Label = parameterSets.CommandName + " " + s.SignatureText,
-                                    Documentation = null,
-                                    Parameters =
-                                        s.Parameters
-                                            .Select(CreateParameterInfo)
-                                            .ToArray()
-                                };
-                            })
-                        .ToArray();
-            }
-            else
-            {
-                signatures = new SignatureInformation[0];
+                var sigs = new List<SignatureInformation>();
+                foreach (ParameterSetSignature sig in parameterSets.Signatures)
+                {
+                    var parameters = new List<ParameterInformation>();
+                    foreach (ParameterInfo paramInfo in sig.Parameters)
+                    {
+                        parameters.Add(CreateParameterInfo(paramInfo));
+                    }
+
+                    var signature = new SignatureInformation
+                    {
+                        Label = parameterSets.CommandName + " " + sig.SignatureText,
+                        Documentation = null,
+                        Parameters = parameters.ToArray(),
+                    }
+                }
+                signatures = sigs.ToArray();
             }
 
             await requestContext.SendResult(
                 new SignatureHelp
                 {
                     Signatures = signatures,
-                    ActiveParameter = activeParameter,
-                    ActiveSignature = activeSignature
+                    ActiveParameter = null,
+                    ActiveSignature = 0
                 });
         }
 
