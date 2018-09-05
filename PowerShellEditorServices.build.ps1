@@ -157,7 +157,7 @@ function UploadTestLogs {
     }
 }
 
-task Test TestServer,TestProtocol,TestHost
+task Test TestServer,TestProtocol
 
 task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
