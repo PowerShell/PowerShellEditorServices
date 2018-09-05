@@ -42,6 +42,21 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private TaskCompletionSource<bool> serverCompletedTask;
 
+        private static string checkHelpScript = @"
+[CmdletBinding()]
+param (
+    [String]$CommandName
+)
+Try {
+    Microsoft.PowerShell.Core\Get-Command $CommandName -ErrorAction Stop | Out-Null
+} catch [System.Management.Automation.CommandNotFoundException] {
+    $PSCmdlet.ThrowTerminatingError($PSItem)
+}
+try {
+    Microsoft.PowerShell.Core\Get-Help $CommandName -Online | Out-Null
+} catch [System.Management.Automation.PSInvalidOperationException] {
+    Microsoft.PowerShell.Core\Get-Help $CommandName -Full
+}";
         public IEditorOperations EditorOperations
         {
             get { return this.editorOperations; }
@@ -230,30 +245,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     }
                 });
         }
-
         protected async Task HandleShowOnlineHelpRequest(
             string helpParams,
             RequestContext<object> requestContext)
         {
             if (helpParams == null) { helpParams = "Get-Help"; }
-            string script = @"
-[CmdletBinding()]
-param (
-    [String]$CommandName
-)
-Try {
-    Microsoft.PowerShell.Core\Get-Command $CommandName -ErrorAction Stop | Out-Null
-} catch [System.Management.Automation.CommandNotFoundException] {
-    $PSCmdlet.ThrowTerminatingError($PSItem)
-}
-try {
-    Microsoft.PowerShell.Core\Get-Help $CommandName -Online | Out-Null
-} catch [System.Management.Automation.PSInvalidOperationException] {
-    Microsoft.PowerShell.Core\Get-Help $CommandName -Full
-}";
-            PSCommand checkHelpScript = new PSCommand();
-            checkHelpScript.AddScript(script,true).AddArgument(helpParams);
-            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpScript, true);
+
+            PSCommand checkHelpPSCommand = new PSCommand();
+            checkHelpPSCommand.AddScript(checkHelpScript,true).AddArgument(helpParams);
+            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpPSCommand, true);
             await requestContext.SendResult(null);
         }
 
