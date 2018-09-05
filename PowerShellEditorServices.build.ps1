@@ -163,7 +163,7 @@ task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe build -c $Configuration -f net461 }
+        exec { & $script:dotnetExe build -f net461 }
         exec { & $script:dotnetExe test -f net461 }
     }
 
@@ -175,7 +175,7 @@ task TestProtocol {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe build -c $Configuration -f net461 }
+        exec { & $script:dotnetExe build -f net461 }
         exec { & $script:dotnetExe test -f net461 }
     }
 
@@ -187,7 +187,7 @@ task TestHost -If {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe build -c $Configuration -f net461 }
+        exec { & $script:dotnetExe build -f net461 }
         exec { & $script:dotnetExe test -f net461 }
     }
 
