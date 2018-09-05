@@ -235,33 +235,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             string helpParams,
             RequestContext<object> requestContext)
         {
-            if (helpParams == null) { helpParams = "get-help"; }
+            if (helpParams == null) { helpParams = "Get-Help"; }
             string script = @"
-function __Check-Help {
-    param (
-        $Command
-    )
-        $CommandExists = $false
-        Try {
-            Get-Command $Command -ErrorAction Stop
-            $CommandExists = $true
-        } catch [System.Management.Automation.CommandNotFoundException] {
-            Write-Warning ""$Command does not exist.""
-        }
-        if ($CommandExists) {
-            try {
-                Get-Help $Command -Online
-            } catch [System.Management.Automation.PSInvalidOperationException] {
-                Get-Help $Command -Full
-            }
-        }
+[CmdletBinding()]
+param (
+    [String]$CommandName
+)
+Try {
+    Microsoft.PowerShell.Core\Get-Command $CommandName -ErrorAction Stop | Out-Null
+} catch [System.Management.Automation.CommandNotFoundException] {
+    $PSCmdlet.ThrowTerminatingError($PSItem)
+}
+try {
+    Microsoft.PowerShell.Core\Get-Help $CommandName -Online | Out-Null
+} catch [System.Management.Automation.PSInvalidOperationException] {
+    Microsoft.PowerShell.Core\Get-Help $CommandName -Full
 }";
             PSCommand checkHelpScript = new PSCommand();
-            checkHelpScript.AddScript(script);
-            await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpScript);
-            PSCommand getHelpCommand = new PSCommand();
-            getHelpCommand.AddCommand("__Check-Help").AddArgument(helpParams);
-            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(getHelpCommand, true);
+            checkHelpScript.AddScript(script,true).AddArgument(helpParams);
+            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpScript, true);
             await requestContext.SendResult(null);
         }
 
