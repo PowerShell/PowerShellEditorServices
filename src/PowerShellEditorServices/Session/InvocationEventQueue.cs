@@ -220,6 +220,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
             return subscriber;
         }
 
+        private void OnInvokerUnsubscribed(object sender, PSEventUnsubscribedEventArgs e)
+        {
+            CreateInvocationSubscriber();
+        }
+
         private void OnInvokerUnsubscribed(object sender, PSEventArgs e)
         {
             CreateInvocationSubscriber();
