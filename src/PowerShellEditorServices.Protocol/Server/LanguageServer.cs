@@ -30,6 +30,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private static Location[] s_emptyLocationResult = new Location[0];
 
+        private static CompletionItem[] s_emptyCompletionResult = new CompletionItem[0];
+
         private ILogger Logger;
         private bool profilesLoaded;
         private bool consoleReplStarted;
@@ -730,24 +732,18 @@ function __Expand-Alias {
                     cursorLine,
                     cursorColumn);
 
-            CompletionItem[] completionItems = null;
+            CompletionItem[] completionItems = s_emptyCompletionResult;
 
             if (completionResults != null)
             {
                 int sortIndex = 1;
-                completionItems =
-                    completionResults
-                        .Completions
-                        .Select(
-                            c => CreateCompletionItem(
-                                c,
-                                completionResults.ReplacedRange,
-                                sortIndex++))
-                        .ToArray();
-            }
-            else
-            {
-                completionItems = new CompletionItem[0];
+                var completions = new List<CompletionItem>();
+                foreach (CompletionDetails completion in completionResults.Completions)
+                {
+                    CompletionItem completionItem = CreateCompletionItem(completion, completionResults.ReplacedRange, sortIndex);
+                    sortIndex++;
+                }
+                completionItems = completions.ToArray();
             }
 
             await requestContext.SendResult(completionItems);
