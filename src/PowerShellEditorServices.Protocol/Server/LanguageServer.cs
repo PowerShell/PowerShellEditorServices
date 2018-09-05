@@ -993,26 +993,27 @@ function __Expand-Alias {
 
                 if (foundSymbols != null)
                 {
-                    var matchedSymbols =
-                        foundSymbols
-                            .FoundOccurrences
-                            .Where(r => IsQueryMatch(workspaceSymbolParams.Query, r.SymbolName))
-                            .Select(r =>
-                                {
-                                    return new SymbolInformation
-                                    {
-                                        ContainerName = containerName,
-                                        Kind = r.SymbolType == SymbolType.Variable ? SymbolKind.Variable : SymbolKind.Function,
-                                        Location = new Location
-                                        {
-                                            Uri = GetFileUri(r.FilePath),
-                                            Range = GetRangeFromScriptRegion(r.ScriptRegion)
-                                        },
-                                        Name = GetDecoratedSymbolName(r)
-                                    };
-                                });
+                    foreach (SymbolReference foundOccurrence in foundSymbols.FoundOccurrences)
+                    {
+                        if (!IsQueryMatch(workspaceSymbolParams.Query, foundOccurrence.SymbolType))
+                        {
+                            continue;
+                        }
 
-                    symbols.AddRange(matchedSymbols);
+                        var location = new Location
+                        {
+                            Uri = GetFileUri(foundOccurrence.FilePath),
+                            Range = GetRangeFromScriptRegion(foundOccurrence.ScriptRegion)
+                        };
+
+                        symbols.Add(new SymbolInformation
+                        {
+                            ContainerName = containerName,
+                            Kind = foundOccurrence.SymbolType == SymbolType.Variable ? SymbolKind.Variable : SymbolKind.Function,
+                            Location = location,
+                            Name = GetDecoratedSymbolName(foundOccurrence)
+                        });
+                    }
                 }
             }
 
