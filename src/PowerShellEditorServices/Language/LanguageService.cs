@@ -516,11 +516,10 @@ namespace Microsoft.PowerShell.EditorServices
                         foundSymbol,
                         false);
 
-            return
-                new FindOccurrencesResult
-                {
-                    FoundOccurrences = symbolOccurrences
-                };
+            return new FindOccurrencesResult
+            {
+                FoundOccurrences = symbolOccurrences
+            };
         }
 
         /// <summary>
@@ -723,7 +722,7 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     if (!_cmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
                     {
-                        _cmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
+                        _cmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>{ aliasInfo.Name });
                     }
                     else
                     {
@@ -804,16 +803,15 @@ namespace Microsoft.PowerShell.EditorServices
                     workspace);
 
             SymbolReference foundDefinition = null;
-            for (int i = 0; i < nestedModuleFiles.Length; i++)
+            foreach (ScriptFile nestedModuleFile in nestedModuleFiles)
             {
-                foundDefinition =
-                    AstOperations.FindDefinitionOfSymbol(
-                        nestedModuleFiles[i].ScriptAst,
-                        foundSymbol);
+                foundDefinition = AstOperations.FindDefinitionOfSymbol(
+                    nestedModuleFile.ScriptAst,
+                    foundSymbol);
 
                 if (foundDefinition != null)
                 {
-                    foundDefinition.FilePath = nestedModuleFiles[i].FilePath;
+                    foundDefinition.FilePath = nestedModuleFile.FilePath;
                     break;
                 }
             }
