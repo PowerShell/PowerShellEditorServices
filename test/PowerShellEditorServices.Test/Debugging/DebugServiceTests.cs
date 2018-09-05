@@ -887,10 +887,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
 // TODO: Make this test cross platform by using the PowerShell process
 //       (the only process we can guarantee cross-platform)
-#if !CoreCLR
+#if CoreCLR
+        [Fact(Skip = "Need to use the PowerShell process in a cross-platform way for this test to work")]
+#else
         // Verifies fix for issue #86, $proc = Get-Process foo displays just the
         // ETS property set and not all process properties.
         [Fact]
+#endif
         public async Task DebuggerVariableProcessObjDisplaysCorrectly()
         {
             await this.debugService.SetLineBreakpoints(
@@ -909,7 +912,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] variables =
                 debugService.GetVariables(stackFrames[0].LocalVariables.Id);
 
-            var var = variables.FirstOrDefault(v => v.Name == "$psObjVar");
+            var var = variables.FirstOrDefault(v => v.Name == "$procVar");
             Assert.NotNull(var);
             Assert.Equal("System.Diagnostics.Process (System)", var.ValueString);
             Assert.True(var.IsExpandable);
@@ -920,7 +923,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
     }
-#endif
 
         public async Task AssertDebuggerPaused()
         {
