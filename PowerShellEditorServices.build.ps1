@@ -164,7 +164,7 @@ task TestServer {
 
     if (-not $script:IsUnix) {
         exec { & $script:dotnetExe build -c $Configuration -f net461 }
-        exec { & $script:dotnetExe test -configuration $Configuration -framework net461 -verbose -nobuild }
+        exec { & $script:dotnetExe test -f net461 }
     }
 
     exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.1 }
@@ -176,7 +176,7 @@ task TestProtocol {
 
     if (-not $script:IsUnix) {
         exec { & $script:dotnetExe build -c $Configuration -f net461 }
-        exec { & $script:dotnetExe test -configuration $Configuration -framework net461 -verbose -nobuild }
+        exec { & $script:dotnetExe test -f net461 }
     }
 
     exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.1 }
@@ -188,7 +188,7 @@ task TestHost -If {
 
     if (-not $script:IsUnix) {
         exec { & $script:dotnetExe build -c $Configuration -f net461 }
-        exec { & $script:dotnetExe test -configuration $Configuration -framework net461 -verbose -nobuild }
+        exec { & $script:dotnetExe test -f net461 }
     }
 
     exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.1 }
