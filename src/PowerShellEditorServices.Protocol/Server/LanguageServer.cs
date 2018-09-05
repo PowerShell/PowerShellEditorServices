@@ -34,6 +34,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private static readonly SignatureInformation[] s_emptySignatureResult = new SignatureInformation[0];
 
+        private static readonly DocumentHighlight[] s_emptyHighlightResult = new DocumentHighlight[0];
+
         private ILogger Logger;
         private bool profilesLoaded;
         private bool consoleReplStarted;
@@ -836,26 +838,20 @@ function __Expand-Alias {
                     textDocumentPositionParams.Position.Line + 1,
                     textDocumentPositionParams.Position.Character + 1);
 
-            DocumentHighlight[] documentHighlights = null;
+            DocumentHighlight[] documentHighlights = s_emptyHighlightResult;
 
             if (occurrencesResult != null)
             {
-                documentHighlights =
-                    occurrencesResult
-                        .FoundOccurrences
-                        .Select(o =>
-                            {
-                                return new DocumentHighlight
-                                {
-                                    Kind = DocumentHighlightKind.Write, // TODO: Which symbol types are writable?
-                                    Range = GetRangeFromScriptRegion(o.ScriptRegion)
-                                };
-                            })
-                        .ToArray();
-            }
-            else
-            {
-                documentHighlights = new DocumentHighlight[0];
+                var highlights = new List<DocumentHighlight>();
+                foreach (SymbolReference foundOccurrence in occurrencesResult.FoundOccurrences)
+                {
+                    highlights.Add(new DocumentHighlight
+                    {
+                        Kind = DocumentHighlightKind.Write, // TODO: Which symbol types are writable?
+                        Range = GetRangeFromScriptRegion(foundOccurrence.ScriptRegion)
+                    });
+                }
+                documentHighlights = highlights.ToArray();
             }
 
             await requestContext.SendResult(documentHighlights);
