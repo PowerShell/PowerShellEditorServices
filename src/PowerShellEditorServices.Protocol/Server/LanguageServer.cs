@@ -28,6 +28,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private static CancellationTokenSource existingRequestCancellation;
 
+        private static Location[] s_emptyLocationResult = new Location[0];
+
         private ILogger Logger;
         private bool profilesLoaded;
         private bool consoleReplStarted;
@@ -692,26 +694,20 @@ function __Expand-Alias {
                     editorSession.Workspace.ExpandScriptReferences(scriptFile),
                     editorSession.Workspace);
 
-            Location[] referenceLocations = null;
+            Location[] referenceLocations = s_emptyLocationResult;
 
             if (referencesResult != null)
             {
-                referenceLocations =
-                    referencesResult
-                        .FoundReferences
-                        .Select(r =>
-                            {
-                                return new Location
-                                {
-                                    Uri = GetFileUri(r.FilePath),
-                                    Range = GetRangeFromScriptRegion(r.ScriptRegion)
-                                };
-                            })
-                        .ToArray();
-            }
-            else
-            {
-                referenceLocations = new Location[0];
+                var locations = new List<Location>();
+                foreach (SymbolReference foundReference in referencesResult.FoundReferences)
+                {
+                    locations.Add(new Location
+                        {
+                            Uri = GetFileUri(foundReference.FilePath),
+                            Range = GetRangeFromScriptRegion(foundReference.ScriptRegion)
+                        });
+                }
+                referenceLocations = locations.ToArray();
             }
 
             await requestContext.SendResult(referenceLocations);
