@@ -30,7 +30,11 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             [System.Diagnostics.DebuggerStepThrough()]
             param()
             end {
-                $module = Get-Module -ListAvailable PSReadLine | Where-Object Version -ge '2.0.0' | Sort-Object -Descending Version | Select-Object -First 1
+                $module = Get-Module -ListAvailable PSReadLine `
+                    | Where-Object Version -ge '2.0.0' `
+                    | Where-Object { $psd = Import-PowerShellDataFile $_.Path; $release = $psd.PrivateData.PSData.Prerelease; -not (@('beta1', 'beta2') -contains $release) } `
+                    | Sort-Object -Descending Version `
+                    | Select-Object -First 1
                 if (-not $module) {
                     return
                 }
