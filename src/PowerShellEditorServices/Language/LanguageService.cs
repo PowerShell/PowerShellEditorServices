@@ -381,8 +381,6 @@ namespace Microsoft.PowerShell.EditorServices
                     reference.FilePath = file.FilePath;
                     symbolReferences.Add(reference);
                 }
-
-                symbolReferences.AddRange(symbolReferences);
             }
 
             return new FindReferencesResult
