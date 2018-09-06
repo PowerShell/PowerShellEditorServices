@@ -251,8 +251,9 @@ try {
         {
             if (helpParams == null) { helpParams = "Get-Help"; }
 
-            PSCommand checkHelpPSCommand = new PSCommand();
-            checkHelpPSCommand.AddScript(CheckHelpScript, useLocalScope: true).AddArgument(helpParams);
+            PSCommand checkHelpPSCommand = new PSCommand()
+                .AddScript(CheckHelpScript, useLocalScope: true)
+                .AddArgument(helpParams);
             await editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpPSCommand, sendOutputToHost: true);
             await requestContext.SendResult(null);
         }
