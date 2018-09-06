@@ -249,7 +249,7 @@ try {
             string helpParams,
             RequestContext<object> requestContext)
         {
-            if (helpParams == null) { helpParams = "Get-Help"; }
+            if (string.IsNullOrEmpty(helpParams)) { helpParams = "Get-Help"; }
 
             PSCommand checkHelpPSCommand = new PSCommand()
                 .AddScript(CheckHelpScript, useLocalScope: true)
