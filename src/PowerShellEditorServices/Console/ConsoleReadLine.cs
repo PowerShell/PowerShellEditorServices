@@ -323,10 +323,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             command.AddCommand("Get-History");
 
                             currentHistory =
-                                await this.powerShellContext.ExecuteCommand<PSObject>(
-                                    command,
-                                    false,
-                                    false) as Collection<PSObject>;
+                                new Collection<PSObject>(
+                                    (await this.powerShellContext.ExecuteCommand<PSObject>(
+                                        command,
+                                        false,
+                                        false)).ToList());
 
                             if (currentHistory != null)
                             {

@@ -1536,10 +1536,12 @@ namespace Microsoft.PowerShell.EditorServices
                         {
                             powerShell.Runspace = runspace;
                             powerShell.Commands = command;
+                            var invocationSettings = new PSInvocationSettings();
+                            invocationSettings.AddToHistory = false;
 
                             return
                                 powerShell
-                                    .Invoke()
+                                    .Invoke(null, invocationSettings)
                                     .FirstOrDefault();
                         }
                     });

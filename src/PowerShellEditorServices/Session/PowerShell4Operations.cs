@@ -13,6 +13,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
 {
     internal class PowerShell4Operations : IVersionSpecificOperations
     {
+        private static SortedSet<string> s_noHistoryCommandNames = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "prompt",
+            "Set-PSDebuggerAction",
+            "Get-PSDebuggerStopArgs",
+            "Set-PSDebugMode",
+            "TabExpansion2"
+        };
+
         public void ConfigureDebugger(Runspace runspace)
         {
 #if !PowerShellv3
@@ -52,6 +61,24 @@ namespace Microsoft.PowerShell.EditorServices.Session
                                 true);
                         }
                     };
+            }
+
+            // There's no way to tell the debugger not to add the command to history. It does however,
+            // check if the first command is in a static list of commands that shouldn't be added
+            // to history. We use that here to get around that limitation.
+            if (!sendOutputToHost && !s_noHistoryCommandNames.Contains(psCommand.Commands[0].CommandText))
+            {
+                var newCommand = new PSCommand()
+                    .AddCommand("prompt")
+                    .AddCommand("Microsoft.PowerShell.Core\\Out-Null")
+                    .AddStatement();
+
+                foreach (Command command in psCommand.Commands)
+                {
+                    newCommand.AddCommand(command);
+                }
+
+                psCommand = newCommand;
             }
 
             DebuggerCommandResults commandResults =
