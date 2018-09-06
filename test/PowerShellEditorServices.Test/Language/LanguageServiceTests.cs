@@ -260,17 +260,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 Assert.Equal(6, refsResult.FoundReferences.Count());
                 // `ls` is not an alias on Linux...
                 Assert.Equal("LS", refsResult.FoundReferences.ToArray()[4].SymbolName);
+                Assert.Equal("gci", refsResult.FoundReferences.ToArray()[2].SymbolName);
             }
             else
             {
                 Assert.Equal(4, refsResult.FoundReferences.Count());
+                Assert.Equal("dir", refsResult.FoundReferences.ToArray()[2].SymbolName);
             }
 #else
             Assert.Equal(6, refsResult.FoundReferences.Count());
             Assert.Equal("LS", refsResult.FoundReferences.ToArray()[4].SymbolName);
+            Assert.Equal("gci", refsResult.FoundReferences.ToArray()[2].SymbolName);
 #endif
             Assert.Equal("Get-ChildItem", refsResult.FoundReferences.Last().SymbolName);
-            Assert.Equal("dir", refsResult.FoundReferences.ToArray()[2].SymbolName);
         }
 
         [Fact]

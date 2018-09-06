@@ -77,8 +77,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
 
             // Ensure that the two events start with the correct lines
             Assert.Equal(2, messageSender.OutputEvents.Count);
-            Assert.Equal("Output 1", messageSender.OutputEvents[0].Output.Split('\n')[0]);
-            Assert.Equal("Output 26", messageSender.OutputEvents[1].Output.Split('\n')[0]);
+            Assert.Equal("Output 1", messageSender.OutputEvents[0].Output.Split('\n')[0].Trim('\r'));
+            Assert.Equal("Output 26", messageSender.OutputEvents[1].Output.Split('\n')[0].Trim('\r'));
         }
 
         private static Task SendOutput(
