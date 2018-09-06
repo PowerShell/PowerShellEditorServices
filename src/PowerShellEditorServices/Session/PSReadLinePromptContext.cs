@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             end {
                 $module = Get-Module -ListAvailable PSReadLine `
                     | Where-Object Version -ge '2.0.0' `
-                    | Where-Object { $psd = Import-PowerShellDataFile $_.Path; $release = $psd.PrivateData.PSData.Prerelease; -not (@('beta1', 'beta2') -contains $release) } `
+                    | Where-Object { $psd = Import-PowerShellDataFile $_.Path; $release = $psd.PrivateData.PSData.Prerelease; $release -notin (@('beta1', 'beta2')) } `
                     | Sort-Object -Descending Version `
                     | Select-Object -First 1
                 if (-not $module) {
