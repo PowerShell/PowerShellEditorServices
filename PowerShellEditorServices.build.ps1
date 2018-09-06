@@ -172,7 +172,7 @@ function UploadTestLogs {
     }
 }
 
-task Test TestServer,TestProtocol,TestHost
+task Test TestServer,TestProtocol
 
 task TestServer -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test\
