@@ -1,4 +1,6 @@
 Install-PackageProvider NuGet -Force
+Install-Module -Name PowerShellGet -Force
+Import-Module PowerShellGet -Force
 
 # Install InvokeBuild
 Install-Module InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser -Force
