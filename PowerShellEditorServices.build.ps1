@@ -302,7 +302,7 @@ task RestorePsesModules -After Build {
 
         if ($script:SaveModuleSupportsAllowPrerelease)
         {
-            $splatParameters += @{ AllowPrerelease = $moduleInstallDetails.AllowPrerelease }
+            $splatParameters += @{ AllowPrereleaseVersions = $moduleInstallDetails.AllowPrerelease }
         }
 
         Write-Host "`tInstalling module: ${moduleName}"
