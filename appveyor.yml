@@ -14,10 +14,10 @@ environment:
 
 install:
   - ps: |
-      Install-Module -Name PowershellGet,PackageManagement -force -confirm:$false -verbose
+      powershell -Command { Install-Module -Name PowershellGet,PackageManagement -force -confirm:$false -verbose }
       Get-Module PowerShellGet,PackageManagement | Remove-Module -Force -Verbose
-      Install-Module -Name PowerShellGet -MinimumVersion 1.6 -PassThru -Force
-      Install-Module -Name PackageManagement -MinimumVersion 1.1.7.0 -PassThru -Force
+      Install-Module -Name PowerShellGet -MinimumVersion 1.6 -Force
+      Install-Module -Name PackageManagement -MinimumVersion 1.1.7.0 -Force
       Install-PackageProvider -Name NuGet -Force | Out-Null
       Import-PackageProvider NuGet -Force | Out-Null
       Set-PSRepository -Name PSGallery -InstallationPolicy Trusted | Out-Null
