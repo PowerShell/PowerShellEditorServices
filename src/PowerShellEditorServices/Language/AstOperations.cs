@@ -23,28 +23,11 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     internal static class AstOperations
     {
-        private static readonly MethodInfo s_extentCloneWithNewOffset;
-
-        static AstOperations()
-        {
-            // TODO: When netstandard is upgraded to 2.0, see if
-            //       Delegate.CreateDelegate can be used here instead
-            s_extentCloneWithNewOffset =
-#if CoreCLR
-                typeof(PSObject).GetTypeInfo().Assembly
-                    .GetType("System.Management.Automation.Language.InternalScriptPosition")
-                    .GetMethod("CloneWithNewOffset", BindingFlags.Instance | BindingFlags.NonPublic);
-#else
-                typeof(PSObject).GetType().Assembly
-                    .GetType("System.Management.Automation.Language.InternalScriptPosition")
-                    .GetMethod(
-                        "CloneWithNewOffset",
-                        BindingFlags.Instance | BindingFlags.NonPublic,
-                        binder: null,
-                        types: new [] { typeof(int) },
-                        modifiers: null);
-#endif
-        }
+        // TODO: When netstandard is upgraded to 2.0, see if
+        //       Delegate.CreateDelegate can be used here instead
+        private static readonly MethodInfo s_extentCloneWithNewOffset = typeof(PSObject).GetTypeInfo().Assembly
+            .GetType("System.Management.Automation.Language.InternalScriptPosition")
+            .GetMethod("CloneWithNewOffset", BindingFlags.Instance | BindingFlags.NonPublic);
 
         /// <summary>
         /// Gets completions for the symbol found in the Ast at
