@@ -76,13 +76,31 @@ $script:RequiredBuildAssets = @{
 
 <#
 Declares the binary shims we need to make the netstandard DLLs hook into .NET Framework.
-Used as splat params for Get-NugetAsmForRuntime, with sane defaults for the omitted parameters
+Schema is:
+{
+    <Destination Bin Directory>: {
+        'TargetRuntime': <Target .NET Runtime>,
+        'Packages': [{
+            'PackageName': <Package Name>,
+            'PackageVersion': <Package Version>,
+            'DllName'?: <Name of DLL to extract>
+        }]
+    }
+}
 #>
-$script:RequiredNugetBinaries = @(
-    @{ PackageName = 'System.Security.Principal.Windows'; PackageVersion = '4.5.0' },
-    @{ PackageName = 'System.Security.AccessControl';     PackageVersion = '4.5.0' },
-    @{ PackageName = 'System.IO.Pipes.AccessControl';     PackageVersion = '4.5.1' }
-)
+$script:RequiredNugetBinaries = @{
+    'Desktop' = @(
+        @{ PackageName = 'System.Security.Principal.Windows'; PackageVersion = '4.5.0'; TargetRuntime = 'net461' },
+        @{ PackageName = 'System.Security.AccessControl';     PackageVersion = '4.5.0'; TargetRuntime = 'net461' },
+        @{ PackageName = 'System.IO.Pipes.AccessControl';     PackageVersion = '4.5.1'; TargetRuntime = 'net461' }
+    )
+
+    '6.0' = @(
+        @{ PackageName = 'System.Security.Principal.Windows'; PackageVersion = '4.5.0'; TargetRuntime = 'netcoreapp2.0' },
+        @{ PackageName = 'System.Security.AccessControl';     PackageVersion = '4.5.0'; TargetRuntime = 'netcoreapp2.0' },
+        @{ PackageName = 'System.IO.Pipes.AccessControl';     PackageVersion = '4.5.1'; TargetRuntime = 'netstandard2.0' }
+    )
+}
 
 if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
@@ -100,12 +118,14 @@ function Get-NugetAsmForRuntime {
 
     $tmpDir = [System.IO.Path]::GetTempPath()
 
-    if ($DestinationPath -eq $null) {
-        $DestinationPath = Join-Path $tmpDir $DllName
+    if (-not $DllName) {
+        $DllName = "$PackageName.dll"
     }
 
-    if ($DllName -eq $null) {
-        $DllName = "$PackageName.dll"
+    if ($DestinationPath -eq $null) {
+        $DestinationPath = Join-Path $tmpDir $DllName
+    } elseif (Test-Path $DestinationPath -PathType Container) {
+        $DestinationPath = Join-Path $DestinationPath $DllName
     }
 
     $packageDirPath = Join-Path $tmpDir "$PackageName.$PackageVersion"
@@ -327,8 +347,15 @@ task LayoutModule -After Build {
     }
 
     # Get and place the shim bins for net461
-    foreach ($nugetBin in $script:RequiredNugetBinaries) {
-        Get-NugetAsmForRuntime -DestinationPath $script:ModuleBinPath @nugetBin
+    foreach ($binDestinationDir in $script:RequiredNugetBinaries.Keys) {
+        $binDestPath = Join-Path $script:ModuleBinPath $binDestinationDir
+        if (-not (Test-Path $binDestPath)) {
+            New-Item -Path $binDestPath -ItemType Directory
+        }
+
+        foreach ($packageDetails in $script:RequiredNugetBinaries[$binDestinationDir]) {
+            Get-NugetAsmForRuntime -DestinationPath $binDestPath @packageDetails
+        }
     }
 }
 
