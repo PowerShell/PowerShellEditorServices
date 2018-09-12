@@ -275,52 +275,31 @@ task CITest ?Test, {
 task LayoutModule -After Build {
     # Lay out the PowerShellEditorServices module's binaries
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\ -Type Directory | Out-Null
-    New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop -Type Directory | Out-Null
-    New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Core -Type Directory | Out-Null
 
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
 
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\libdisablekeyecho.* -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\* -Filter System.IO.Pipes*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\libdisablekeyecho.* -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
+    Copy-Item -Force -Path "C:\Program Files\dotnet\sdk\$script:RequiredSdkVersion\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll" -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
 
-    if (-not $script:IsUnix) {
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        Copy-Item -Force -Path "C:\Program Files\dotnet\sdk\$script:RequiredSdkVersion\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll" -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        #Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\* -Filter System.IO.Pipes*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        #Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\System.Security.AccessControl.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        #Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\System.Security.Principal.Windows.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        #Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\System.Security.Principal.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-
-        # Need to copy the assemblies in directly for net461
-        Get-NugetAsmForRuntime -PackageName System.Security.Principal.Windows -PackageVersion '4.5.0' -DllName System.Security.Principal.Windows.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\ -Force
-        Get-NugetAsmForRuntime -PackageName System.Security.AccessControl -PackageVersion '4.5.0' -DllName System.Security.AccessControl.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\ -Force
-        #Get-NugetAsmForRuntime -PackageName System.IO.Pipes -PackageVersion '4.3.0' -TargetRuntime 'net46' -DllName System.IO.Pipes.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\ -Force
-        Get-NugetAsmForRuntime -PackageName System.IO.Pipes.AccessControl -PackageVersion '4.5.1' -DllName System.IO.Pipes.AccessControl.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\ -Force
-    }
+    Get-NugetAsmForRuntime -PackageName System.Security.Principal.Windows -PackageVersion '4.5.0' -DllName System.Security.Principal.Windows.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\ -Force
+    Get-NugetAsmForRuntime -PackageName System.Security.AccessControl -PackageVersion '4.5.0' -DllName System.Security.AccessControl.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\ -Force
+    Get-NugetAsmForRuntime -PackageName System.IO.Pipes.AccessControl -PackageVersion '4.5.1' -DllName System.IO.Pipes.AccessControl.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\ -Force
 
     # Copy Third Party Notices.txt to module folder
     Copy-Item -Force -Path "$PSScriptRoot\Third Party Notices.txt" -Destination $PSScriptRoot\module\PowerShellEditorServices
 
     # Lay out the PowerShellEditorServices.VSCode module's binaries
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\ -Type Directory | Out-Null
-    New-Item -Force $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop -Type Directory | Out-Null
-    New-Item -Force $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core -Type Directory | Out-Null
 
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
 
-    if (-not $script:IsUnix) {
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
-    }
-
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
 }
 
 task RestorePsesModules -After Build {
