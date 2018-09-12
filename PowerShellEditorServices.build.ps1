@@ -23,6 +23,66 @@ $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
 $script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
 $script:RequiredSdkVersion = "2.1.301"
 $script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
+$script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
+$script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSCode/bin/"
+$script:WindowsPowerShellFrameworkTarget = 'net461'
+$script:NetFrameworkPlatformId = 'win'
+
+<#
+Declarative specification of binary assets produced
+in the build that need to be binplaced in the module.
+Schema is:
+{
+    <Output Path>: {
+        <Project Name>: [
+            <FilePath From Project Build Folder>
+        ]
+    }
+}
+#>
+$script:RequiredBuildAssets = @{
+    $script:ModuleBinPath = @{
+        'PowerShellEditorServices' = @(
+            'publish/Serilog.dll',
+            'publish/Serilog.Sinks.Async.dll',
+            'publish/Serilog.Sinks.Console.dll',
+            'publish/Serilog.Sinks.File.dll',
+            'Microsoft.PowerShell.EditorServices.dll',
+            'Microsoft.PowerShell.EditorServices.pdb'
+        )
+
+        'PowerShellEditorServices.Host' = @(
+            'publish/UnixConsoleEcho.dll',
+            'publish/runtimes/osx-64/native/libdisablekeyecho.dylib',
+            'publish/runtimes/linux-64/native/libdisablekeyecho.so',
+            'publish/Newtonsoft.Json.dll',
+            'Microsoft.Powershell.EditorServices.Host.dll',
+            'Microsoft.PowerShell.EditorServices.Host.pdb'
+        )
+
+        'PowerShellEditorServices.Protocol' = @(
+            'Microsoft.PowerShell.EditorServices.Protocol.dll',
+            'Microsoft.PowerShell.EditorServices.Protocol.pdb'
+        )
+    }
+
+    $script:VSCodeModuleBinPath = @{
+        'PowerShellEditorServices.VSCode' = @(
+            'Microsoft.Powershell.EditorServices.VSCode.dll',
+            'Microsoft.Powershell.EditorServices.VSCode.pdb'
+        )
+    }
+}
+
+<#
+Declares the binary shims we need to make the netstandard DLLs hook into .NET Framework.
+Used as splat params for Get-NugetAsmForRuntime, with sane defaults for the omitted parameters
+#>
+$script:RequiredNugetBinaries = @(
+    @{ PackageName = 'System.Security.Principal.Windows'; PackageVersion = '4.5.0' },
+    @{ PackageName = 'System.Security.AccessControl';     PackageVersion = '4.5.0' },
+    @{ PackageName = 'System.IO.Pipes.AccessControl';     PackageVersion = '4.5.1' }
+)
 
 if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
@@ -32,23 +92,25 @@ function Get-NugetAsmForRuntime {
     param(
         [ValidateNotNull()][string]$PackageName,
         [ValidateNotNull()][string]$PackageVersion,
-        [ValidateNotNull()][string]$DllName,
+        [string]$DllName,
         [string]$DestinationPath,
-        [string]$TargetPlatform = 'win',
-        [string]$TargetRuntime = 'net461',
-        [switch]$Force
+        [string]$TargetPlatform = $script:NetFrameworkPlatformId,
+        [string]$TargetRuntime = $script:WindowsPowerShellFrameworkTarget
     )
 
     $tmpDir = [System.IO.Path]::GetTempPath()
 
-    if ($DestinationPath -eq $null)
-    {
+    if ($DestinationPath -eq $null) {
         $DestinationPath = Join-Path $tmpDir $DllName
+    }
+
+    if ($DllName -eq $null) {
+        $DllName = "$PackageName.dll"
     }
 
     $packageDirPath = Join-Path $tmpDir "$PackageName.$PackageVersion"
     if (-not (Test-Path $packageDirPath)) {
-        $tmpNupkgPath = Join-Path $tmpDir 'tmp.nupkg'
+        $tmpNupkgPath = Join-Path $tmpDir 'tmp.zip'
         if (Test-Path $tmpNupkgPath) {
             Remove-Item -Force $tmpNupkgPath
         }
@@ -60,38 +122,7 @@ function Get-NugetAsmForRuntime {
 
     $internalPath = [System.IO.Path]::Combine($packageDirPath, 'runtimes', $TargetPlatform, 'lib', $TargetRuntime, $DllName)
 
-    Copy-Item -Force:$Force -Path $internalPath -Destination $DestinationPath
-
-    return $DestinationPath
-}
-
-function Get-NetFxPipesDll {
-    param(
-        [string]$RuntimeFramework = 'net461',
-        [string]$DestinationPath,
-        [switch]$Force
-    )
-
-    $tmpDir = [System.IO.Path]::GetTempPath()
-
-    if ($DestinationPath -eq $null)
-    {
-        $DestinationPath = Join-Path $tmpDir 'System.IO.Pipes.AccessControl.dll'
-    }
-
-    $nupkgPath = Join-Path $tmpDir 'pipes.nupkg'
-    Invoke-WebRequest -Uri $script:NetFxPipesDllNupkgUri -OutFile $nupkgPath
-
-    $dirPath = Join-Path $tmpDir 'pipes'
-    if (Test-Path $dirPath) {
-        Remove-Item -Recurse -Force -Path $dirPath
-    }
-
-    Expand-Archive -Path $nupkgPath -DestinationPath $dirPath
-
-    $dllPath = Join-Path $dirPath 'runtimes' 'win' 'lib' $RuntimeFramework 'System.IO.Pipes.AccessControl.dll'
-
-    Move-Item -Path $dllPath -Destination $DestinationPath -Force:$Force
+    Copy-Item -Path $internalPath -Destination $DestinationPath -Force
 
     return $DestinationPath
 }
@@ -202,9 +233,6 @@ task Build {
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f $script:TargetPlatform }
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:TargetPlatform }
-    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\UnixConsoleEcho.dll -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform
-    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\runtimes\osx-64\native\libdisablekeyecho.dylib -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform
-    Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\runtimes\linux-64\native\libdisablekeyecho.so -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform
 }
 
 function UploadTestLogs {
@@ -273,33 +301,35 @@ task CITest ?Test, {
 }
 
 task LayoutModule -After Build {
-    # Lay out the PowerShellEditorServices module's binaries
-    New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\ -Type Directory | Out-Null
-
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
-
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\libdisablekeyecho.* -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
-    Copy-Item -Force -Path "C:\Program Files\dotnet\sdk\$script:RequiredSdkVersion\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll" -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
-
-    Get-NugetAsmForRuntime -PackageName System.Security.Principal.Windows -PackageVersion '4.5.0' -DllName System.Security.Principal.Windows.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\ -Force
-    Get-NugetAsmForRuntime -PackageName System.Security.AccessControl -PackageVersion '4.5.0' -DllName System.Security.AccessControl.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\ -Force
-    Get-NugetAsmForRuntime -PackageName System.IO.Pipes.AccessControl -PackageVersion '4.5.1' -DllName System.IO.Pipes.AccessControl.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\ -Force
-
     # Copy Third Party Notices.txt to module folder
     Copy-Item -Force -Path "$PSScriptRoot\Third Party Notices.txt" -Destination $PSScriptRoot\module\PowerShellEditorServices
 
-    # Lay out the PowerShellEditorServices.VSCode module's binaries
-    New-Item -Force $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\ -Type Directory | Out-Null
+    # Lay out the PowerShellEditorServices module's binaries
+    # For each binplace destination
+    foreach ($destDir in $script:RequiredBuildAssets.Keys) {
+        # Create the destination dir
+        $null = New-Item -Force $destDir -Type Directory
 
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
+        # For each PSES subproject
+        foreach ($projectName in $script:RequiredBuildAssets[$destDir].Keys) {
+            # Get the project build dir path
+            $basePath = [System.IO.Path]::Combine($PSScriptRoot, 'src', $projectName, 'bin', $Configuration, $script:TargetPlatform)
 
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\
+            # For each asset in the subproject
+            foreach ($bin in $script:RequiredBuildAssets[$destDir][$projectName]) {
+                # Get the asset path
+                $binPath = Join-Path $basePath $bin
+
+                # Binplace the asset
+                Copy-Item -Force -Verbose $binPath $destDir
+            }
+        }
+    }
+
+    # Get and place the shim bins for net461
+    foreach ($nugetBin in $script:RequiredNugetBinaries) {
+        Get-NugetAsmForRuntime -DestinationPath $script:ModuleBinPath @nugetBin
+    }
 }
 
 task RestorePsesModules -After Build {
