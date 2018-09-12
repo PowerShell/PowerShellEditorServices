@@ -21,14 +21,82 @@ $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "C
 $script:TargetPlatform = "netstandard2.0"
 $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
 $script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
+$script:RequiredSdkVersion = "2.1.301"
+$script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
 
 if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
 }
 
-task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, PackageNuGet {
+function Get-NugetAsmForRuntime {
+    param(
+        [ValidateNotNull()][string]$PackageName,
+        [ValidateNotNull()][string]$PackageVersion,
+        [ValidateNotNull()][string]$DllName,
+        [string]$DestinationPath,
+        [string]$TargetPlatform = 'win',
+        [string]$TargetRuntime = 'net461',
+        [switch]$Force
+    )
 
-    $requiredSdkVersion = "2.1.300"
+    $tmpDir = [System.IO.Path]::GetTempPath()
+
+    if ($DestinationPath -eq $null)
+    {
+        $DestinationPath = Join-Path $tmpDir $DllName
+    }
+
+    $packageDirPath = Join-Path $tmpDir "$PackageName.$PackageVersion"
+    if (-not (Test-Path $packageDirPath)) {
+        $tmpNupkgPath = Join-Path $tmpDir 'tmp.nupkg'
+        if (Test-Path $tmpNupkgPath) {
+            Remove-Item -Force $tmpNupkgPath
+        }
+
+        $packageUri = "$script:NugetApiUriBase/$PackageName/$PackageVersion"
+        Invoke-WebRequest -Uri $packageUri -OutFile $tmpNupkgPath
+        Expand-Archive -Path $tmpNupkgPath -DestinationPath $packageDirPath
+    }
+
+    $internalPath = [System.IO.Path]::Combine($packageDirPath, 'runtimes', $TargetPlatform, 'lib', $TargetRuntime, $DllName)
+
+    Copy-Item -Force:$Force -Path $internalPath -Destination $DestinationPath
+
+    return $DestinationPath
+}
+
+function Get-NetFxPipesDll {
+    param(
+        [string]$RuntimeFramework = 'net461',
+        [string]$DestinationPath,
+        [switch]$Force
+    )
+
+    $tmpDir = [System.IO.Path]::GetTempPath()
+
+    if ($DestinationPath -eq $null)
+    {
+        $DestinationPath = Join-Path $tmpDir 'System.IO.Pipes.AccessControl.dll'
+    }
+
+    $nupkgPath = Join-Path $tmpDir 'pipes.nupkg'
+    Invoke-WebRequest -Uri $script:NetFxPipesDllNupkgUri -OutFile $nupkgPath
+
+    $dirPath = Join-Path $tmpDir 'pipes'
+    if (Test-Path $dirPath) {
+        Remove-Item -Recurse -Force -Path $dirPath
+    }
+
+    Expand-Archive -Path $nupkgPath -DestinationPath $dirPath
+
+    $dllPath = Join-Path $dirPath 'runtimes' 'win' 'lib' $RuntimeFramework 'System.IO.Pipes.AccessControl.dll'
+
+    Move-Item -Path $dllPath -Destination $DestinationPath -Force:$Force
+
+    return $DestinationPath
+}
+
+task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, PackageNuGet {
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -49,7 +117,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, Packa
         # dotnet --version can return a semver that System.Version can't handle
         # e.g.: 2.1.300-preview-01. The replace operator is used to remove any build suffix.
         $version = (& $dotnetExePath --version) -replace '[+-].*$',''
-        if ([version]$version -ge [version]$requiredSdkVersion) {
+        if ([version]$version -ge [version]$script:RequiredSdkVersion) {
             $script:dotnetExe = $dotnetExePath
         }
         else {
@@ -64,7 +132,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, Packa
 
     if ($script:dotnetExe -eq $null) {
 
-        Write-Host "`n### Installing .NET CLI $requiredSdkVersion...`n" -ForegroundColor Green
+        Write-Host "`n### Installing .NET CLI $script:RequiredSdkVersion...`n" -ForegroundColor Green
 
         # The install script is platform-specific
         $installScriptExt = if ($script:IsUnix) { "sh" } else { "ps1" }
@@ -75,10 +143,10 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, Packa
         $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
         if (!$script:IsUnix) {
-            & $installScriptPath -Version $requiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
+            & $installScriptPath -Version $script:RequiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
         }
         else {
-            & /bin/bash $installScriptPath -Version $requiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
+            & /bin/bash $installScriptPath -Version $script:RequiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
             $env:PATH = $dotnetExeDir + [System.IO.Path]::PathSeparator + $env:PATH
         }
 
@@ -215,7 +283,25 @@ task LayoutModule -After Build {
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\libdisablekeyecho.* -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\runtimes\win\lib\netstandard1.3\* -Filter System.IO.Pipes*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\* -Filter System.IO.Pipes*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+
+    if (-not $script:IsUnix) {
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\publish\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        Copy-Item -Force -Path "C:\Program Files\dotnet\sdk\$script:RequiredSdkVersion\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll" -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        #Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\* -Filter System.IO.Pipes*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        #Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\System.Security.AccessControl.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        #Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\System.Security.Principal.Windows.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        #Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\publish\System.Security.Principal.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+
+        # Need to copy the assemblies in directly for net461
+        Get-NugetAsmForRuntime -PackageName System.Security.Principal.Windows -PackageVersion '4.5.0' -DllName System.Security.Principal.Windows.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\ -Force
+        Get-NugetAsmForRuntime -PackageName System.Security.AccessControl -PackageVersion '4.5.0' -DllName System.Security.AccessControl.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\ -Force
+        #Get-NugetAsmForRuntime -PackageName System.IO.Pipes -PackageVersion '4.3.0' -TargetRuntime 'net46' -DllName System.IO.Pipes.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\ -Force
+        Get-NugetAsmForRuntime -PackageName System.IO.Pipes.AccessControl -PackageVersion '4.5.1' -DllName System.IO.Pipes.AccessControl.dll -DestinationPath $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\ -Force
+    }
 
     # Copy Third Party Notices.txt to module folder
     Copy-Item -Force -Path "$PSScriptRoot\Third Party Notices.txt" -Destination $PSScriptRoot\module\PowerShellEditorServices
@@ -227,12 +313,14 @@ task LayoutModule -After Build {
 
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
 
-    if ($Configuration -eq "Debug") {
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    if (-not $script:IsUnix) {
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
     }
+
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\$script:TargetPlatform\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
 }
 
 task RestorePsesModules -After Build {
@@ -292,24 +380,6 @@ task RestorePsesModules -After Build {
         Write-Host "`tInstalling module: ${moduleName}"
 
         Save-Module @splatParameters
-    }
-
-    # TODO: Replace this with adding a new module to Save when a new PSReadLine release comes out to the Gallery
-    if (-not (Test-Path $PSScriptRoot/module/PSReadLine))
-    {
-        Write-Host "`tInstalling module: PSReadLine"
-
-        # Download AppVeyor zip
-        $jobId = (Invoke-RestMethod https://ci.appveyor.com/api/projects/lzybkr/PSReadLine).build.jobs[0].jobId
-        Invoke-RestMethod https://ci.appveyor.com/api/buildjobs/$jobId/artifacts/bin%2FRelease%2FPSReadLine.zip -OutFile $PSScriptRoot/module/PSRL.zip
-
-        # Position PSReadLine
-        Expand-Archive $PSScriptRoot/module/PSRL.zip $PSScriptRoot/module/PSRL
-        Move-Item $PSScriptRoot/module/PSRL/PSReadLine $PSScriptRoot/module
-
-        # Clean up
-        Remove-Item -Force -Recurse $PSScriptRoot/module/PSRL.zip
-        Remove-Item -Force -Recurse $PSScriptRoot/module/PSRL
     }
 
     Write-Host "`n"
