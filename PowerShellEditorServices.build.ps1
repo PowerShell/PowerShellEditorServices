@@ -413,7 +413,7 @@ task RestorePsesModules -After Build {
             $splatParameters += @{ AllowPrerelease = $moduleInstallDetails.AllowPrerelease }
         }
 
-        Write-Host "`tInstalling module: ${moduleName}"
+        Write-Host "`tInstalling module: ${moduleName} with arguments $(ConvertTo-Json $splatParameters)"
 
         Save-Module @splatParameters
     }
