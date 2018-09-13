@@ -26,5 +26,5 @@ install:
 
 script:
   - ulimit -n 4096
-  - powershell -File scripts/travisInstallPSGet.ps1
   - powershell -File scripts/travis.ps1
+  #- powershell -File scripts/travisInstallPSGet.ps1
