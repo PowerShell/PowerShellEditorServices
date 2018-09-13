@@ -26,6 +26,4 @@ install:
 
 script:
   - ulimit -n 4096
-  - powershell -Command { Install-Module -Name PowerShellGet -Force -Confirm:$false -Verbose -MinimumVersion 1.6 }
-  - powershell -Command { Install-Module -Name PackageManagement -Force -Confirm:$false -Verbose -MinimumVersion 1.1.7.0 }
   - powershell -File scripts/travis.ps1

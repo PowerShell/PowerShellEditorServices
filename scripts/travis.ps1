@@ -1,8 +1,5 @@
 $ErrorActionPreference = 'Stop'
 
-Import-PackageProvider NuGet -Force -Verbose
-Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -Verbose
-
 # Install InvokeBuild
 Install-Module InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser -Force
 Install-Module PlatyPS -RequiredVersion 0.9.0 -Scope CurrentUser -Force

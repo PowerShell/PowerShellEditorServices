@@ -20,7 +20,7 @@ $script:IsCIBuild = $env:APPVEYOR -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:TargetPlatform = "netstandard2.0"
 $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
-$script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
+#$script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
 $script:RequiredSdkVersion = "2.1.301"
 $script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
 $script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
@@ -381,7 +381,7 @@ task RestorePsesModules -After Build {
             throw "EditorServices module listed without name in '$ModulesJsonPath'"
         }
 
-        if ($script:SaveModuleSupportsAllowPrerelease)
+        if ($true)
         {
             $body += @{ AllowPrerelease = $_.Value.AllowPrerelease }
         }
