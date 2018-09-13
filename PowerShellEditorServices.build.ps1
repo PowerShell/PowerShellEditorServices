@@ -77,14 +77,12 @@ $script:RequiredBuildAssets = @{
 Declares the binary shims we need to make the netstandard DLLs hook into .NET Framework.
 Schema is:
 {
-    <Destination Bin Directory>: {
+    <Destination Bin Directory>: [{
+        'PackageName': <Package Name>,
+        'PackageVersion': <Package Version>,
         'TargetRuntime': <Target .NET Runtime>,
-        'Packages': [{
-            'PackageName': <Package Name>,
-            'PackageVersion': <Package Version>,
-            'DllName'?: <Name of DLL to extract>
-        }]
-    }
+        'DllName'?: <Name of DLL to extract>
+    }]
 }
 #>
 $script:RequiredNugetBinaries = @{
