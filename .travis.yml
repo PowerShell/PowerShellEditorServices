@@ -26,7 +26,7 @@ install:
 
 script:
   - ulimit -n 4096
-  - powershell -Command {
+  - pwsh -Command {
       Get-Module PowerShellGet,PackageManagement | Remove-Module -Force -Verbose
       powershell -Command { Install-Module -Name PowershellGet -MinimumVersion 1.6 -force -confirm:$false -verbose }
       powershell -Command { Install-Module -Name PackageManagement -MinimumVersion 1.1.7.0 -Force -Confirm:$false -Verbose }
@@ -35,4 +35,4 @@ script:
       Install-PackageProvider -Name NuGet -Force | Out-Null
       Import-PackageProvider NuGet -Force | Out-Null
       Set-PSRepository -Name PSGallery -InstallationPolicy Trusted | Out-Null }
-  - powershell -File scripts/travis.ps1
+  - pwsh -File scripts/travis.ps1
