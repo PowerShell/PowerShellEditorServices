@@ -217,7 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             await this.editorSession.PowerShellContext.ImportCommandsModule(
                 Path.Combine(
                     Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
-                    @"..\..\Commands"));
+                    @"..\Commands"));
 
             this.languageServer.Start();
 
