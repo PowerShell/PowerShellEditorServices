@@ -834,12 +834,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] variables =
                 debugService.GetVariables(stackFrames[0].LocalVariables.Id);
 
-            var var = variables.FirstOrDefault(v => v.Name == "$psObjVar");
-            Assert.NotNull(var);
-            Assert.True("@{Age=75; Name=John}".Equals(var.ValueString) || "@{Name=John; Age=75}".Equals(var.ValueString));
-            Assert.True(var.IsExpandable);
+            var psObjVar = variables.FirstOrDefault(v => v.Name == "$psObjVar");
+            Assert.NotNull(psObjVar);
+            Assert.True("@{Age=75; Name=John}".Equals(psObjVar.ValueString) || "@{Name=John; Age=75}".Equals(psObjVar.ValueString));
+            Assert.True(psObjVar.IsExpandable);
 
-            IDictionary<string, string> childVars = debugService.GetVariables(var.Id).ToDictionary(v => v.Name, v => v.ValueString);
+            IDictionary<string, string> childVars = debugService.GetVariables(psObjVar.Id).ToDictionary(v => v.Name, v => v.ValueString);
             Assert.Equal(2, childVars.Count);
             Assert.Contains("Age", childVars.Keys);
             Assert.Contains("Name", childVars.Keys);

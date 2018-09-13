@@ -63,11 +63,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     CompleteCommandFromModule.SourceDetails);
 
             Assert.NotEqual(0, completionResults.Completions.Length);
-            // TODO: Use a cmdlet that is reliably the same across PowerShell versions
-            //       Import-Module is too different in each PowerShell version
-            // Assert.Equal(
-            //     CompleteCommandFromModule.ExpectedCompletion,
-            //     completionResults.Completions[0]);
+            Assert.Equal(
+                CompleteCommandFromModule.ExpectedCompletion,
+                completionResults.Completions[0]);
         }
 
         [Fact]
@@ -228,22 +226,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
 
             SymbolReference[] foundRefs = refsResult.FoundReferences.ToArray();
-#if CoreCLR
-            // `ls` is not an alias on *nix...
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Assert.Equal(6, foundRefs.Length);
-                Assert.Equal("ls", foundRefs[1].SymbolName);
-            }
-            else
-            {
-                Assert.Equal(4, foundRefs.Length);
-                Assert.Equal("gci", foundRefs[1].SymbolName);
-            }
-#else
-            Assert.Equal(6, foundRefs.Length);
-            Assert.Equal("ls", foundRefs[1].SymbolName);
-#endif
+            Assert.Equal(4, foundRefs.Length);
+            Assert.Equal("gci", foundRefs[1].SymbolName);
             Assert.Equal("Get-ChildItem", foundRefs[foundRefs.Length - 1].SymbolName);
         }
 
@@ -254,24 +238,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetReferences(
                     FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
 
-#if CoreCLR
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Assert.Equal(6, refsResult.FoundReferences.Count());
-                // `ls` is not an alias on Linux...
-                Assert.Equal("LS", refsResult.FoundReferences.ToArray()[4].SymbolName);
-                Assert.Equal("gci", refsResult.FoundReferences.ToArray()[2].SymbolName);
-            }
-            else
-            {
-                Assert.Equal(4, refsResult.FoundReferences.Count());
-                Assert.Equal("dir", refsResult.FoundReferences.ToArray()[2].SymbolName);
-            }
-#else
-            Assert.Equal(6, refsResult.FoundReferences.Count());
-            Assert.Equal("LS", refsResult.FoundReferences.ToArray()[4].SymbolName);
-            Assert.Equal("gci", refsResult.FoundReferences.ToArray()[2].SymbolName);
-#endif
+            Assert.Equal(4, refsResult.FoundReferences.Count());
+            Assert.Equal("dir", refsResult.FoundReferences.ToArray()[2].SymbolName);
             Assert.Equal("Get-ChildItem", refsResult.FoundReferences.Last().SymbolName);
         }
 

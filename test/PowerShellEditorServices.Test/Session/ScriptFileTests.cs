@@ -14,7 +14,12 @@ namespace PSLanguageService.Test
 {
     public class ScriptFileChangeTests
     {
-        private static readonly Version PowerShellVersion = new Version("5.0");
+
+#if CoreCLR
+        private static readonly Version PowerShellVersion = new Version(6, 1);
+#else
+        private static readonly Version PowerShellVersion = new Version(5, 1);
+#endif
 
         [Fact]
         public void CanApplySingleLineInsert()

@@ -20,7 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         static ConsoleProxy()
         {
-            // Maybe we should just include the RuntimeInformation package for FullCLR?
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 s_consoleProxy = new WindowsConsoleOperations();

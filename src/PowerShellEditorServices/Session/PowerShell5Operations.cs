@@ -33,6 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         {
             return runspace.Debugger.InBreakpoint || (promptNest.IsRemote && promptNest.IsInDebugger);
         }
+
         public IEnumerable<TResult> ExecuteCommandInDebugger<TResult>(
             PowerShellContext powerShellContext,
             Runspace currentRunspace,

@@ -27,12 +27,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
                 return unixPath;
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return unixPath;
+                return unixPath.Replace('/', Path.DirectorySeparatorChar);
             }
 
-            return unixPath.Replace('/', Path.DirectorySeparatorChar);
+            return unixPath;
         }
 
         /// <summary>
@@ -47,12 +47,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
                 return unixString;
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return unixString;
+                return String.Join(Environment.NewLine, unixString.Split(s_unixNewlines));
             }
 
-            return String.Join(Environment.NewLine, unixString.Split(s_unixNewlines));
+            return unixString;
         }
 
         /// <summary>

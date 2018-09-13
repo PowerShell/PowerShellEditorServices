@@ -10,7 +10,7 @@ Get-So
 $testVar
 
 Import-Module PowerShellGet
-Import-Mod
+Get-Rand
 
 function Test-Completion {
     param([Parameter(Mandatory, Value)])

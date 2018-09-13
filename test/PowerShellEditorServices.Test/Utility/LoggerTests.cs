@@ -129,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         {
             return
                 string.Join(
-                    TestUtilities.NormalizeNewlines("\n"),
+                    Environment.NewLine,
                     File.ReadAllLines(
                         logFilePath,
                         Encoding.UTF8));
