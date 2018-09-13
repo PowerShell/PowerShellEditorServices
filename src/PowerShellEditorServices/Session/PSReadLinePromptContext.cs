@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             [System.Diagnostics.DebuggerHidden()]
             [System.Diagnostics.DebuggerStepThrough()]
             param()
-            return [Microsoft.PowerShell.PSConsoleReadLine]::ReadLine(
+            return [Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null]::ReadLine(
                 $Host.Runspace,
                 $ExecutionContext,
                 $args[0])";
@@ -30,13 +30,17 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             [System.Diagnostics.DebuggerStepThrough()]
             param()
             end {
-                $module = Get-Module -ListAvailable PSReadLine | Where-Object Version -ge '2.0.0' | Sort-Object -Descending Version | Select-Object -First 1
+                $module = Get-Module -ListAvailable PSReadLine |
+                    Where-Object Version -eq '2.0.0' |
+                    Where-Object { $_.PrivateData.PSData.Prerelease -notin 'beta1','beta2' } |
+                    Sort-Object -Descending Version |
+                    Select-Object -First 1
                 if (-not $module) {
                     return
                 }
 
                 Import-Module -ModuleInfo $module
-                return 'Microsoft.PowerShell.PSConsoleReadLine' -as [type]
+                return [Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null]
             }";
 
         private readonly PowerShellContext _powerShellContext;
