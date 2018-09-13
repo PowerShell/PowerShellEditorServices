@@ -215,6 +215,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, Packa
 }
 
 task Clean {
+    exec { & $script:dotnetExe restore }
     exec { & $script:dotnetExe clean }
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
@@ -246,7 +247,6 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
 }
 
 task Build {
-    exec { & $script:dotnetExe restore }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f $script:TargetPlatform }
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:TargetPlatform }
