@@ -56,7 +56,7 @@ $script:RequiredBuildAssets = @{
             'publish/runtimes/osx-64/native/libdisablekeyecho.dylib',
             'publish/runtimes/linux-64/native/libdisablekeyecho.so',
             'publish/Newtonsoft.Json.dll',
-            'Microsoft.Powershell.EditorServices.Host.dll',
+            'Microsoft.PowerShell.EditorServices.Host.dll',
             'Microsoft.PowerShell.EditorServices.Host.pdb'
         )
 
@@ -68,8 +68,8 @@ $script:RequiredBuildAssets = @{
 
     $script:VSCodeModuleBinPath = @{
         'PowerShellEditorServices.VSCode' = @(
-            'Microsoft.Powershell.EditorServices.VSCode.dll',
-            'Microsoft.Powershell.EditorServices.VSCode.pdb'
+            'Microsoft.PowerShell.EditorServices.VSCode.dll',
+            'Microsoft.PowerShell.EditorServices.VSCode.pdb'
         )
     }
 }
