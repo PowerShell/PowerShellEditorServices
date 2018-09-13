@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
-#Import-PackageProvider NuGet -Force -Verbose
-#Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -Verbose
+Import-PackageProvider NuGet -Force -Verbose
+Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -Verbose
 
 # Install InvokeBuild
 Install-Module InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser -Force
