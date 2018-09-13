@@ -1,4 +1,4 @@
-
+$ErrorActionPreference = 'Stop'
 
 # Install InvokeBuild
 Install-Module InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser -Force
