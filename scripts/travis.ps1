@@ -5,8 +5,8 @@ powershell -Command { Install-Module -Name PowershellGet -MinimumVersion 1.6 -Sc
 powershell -Command { Install-Module -Name PackageManagement -MinimumVersion 1.1.7.0 -Scope CurrentUser -Force -Confirm:$false -Verbose }
 Import-Module -Name PowerShellGet -MinimumVersion 1.6 -Force
 Import-Module -Name PackageManagement -MinimumVersion 1.1.7.0 -Force
-Install-PackageProvider -Name NuGet -Force | Out-Null
-Import-PackageProvider NuGet -Force | Out-Null
+Install-PackageProvider -Name NuGet,PowerShellGet -Force | Out-Null
+Import-PackageProvider NuGet,PowerShellGet -Force | Out-Null
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted | Out-Null
 
 # Install InvokeBuild
