@@ -8,5 +8,10 @@
         "MinimumVersion":"1.0",
         "MaximumVersion":"1.99",
         "AllowPrerelease":false
+    },
+    "PSReadLine":{
+        "MinimumVersion":"2.0.0-beta3",
+        "MaximumVersion":"2.1",
+        "AllowPrerelease":true
     }
 }
