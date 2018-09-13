@@ -20,7 +20,7 @@ $script:IsCIBuild = $env:APPVEYOR -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:TargetPlatform = "netstandard2.0"
 $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
-#$script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
+$script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
 $script:RequiredSdkVersion = "2.1.301"
 $script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
 $script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
@@ -372,6 +372,7 @@ task RestorePsesModules -After Build {
             Name = $name
             MinimumVersion = $_.Value.MinimumVersion
             MaximumVersion = $_.Value.MaximumVersion
+            AllowPrerelease = $_.Value.AllowPrerelease
             Repository = if ($_.Value.Repository) { $_.Value.Repository } else { $DefaultModuleRepository }
             Path = $submodulePath
         }
@@ -379,11 +380,6 @@ task RestorePsesModules -After Build {
         if (-not $name)
         {
             throw "EditorServices module listed without name in '$ModulesJsonPath'"
-        }
-
-        if ($true)
-        {
-            $body += @{ AllowPrerelease = $_.Value.AllowPrerelease }
         }
 
         $moduleInfos.Add($name, $body)
@@ -404,13 +400,9 @@ task RestorePsesModules -After Build {
            Name = $moduleName
            MinimumVersion = $moduleInstallDetails.MinimumVersion
            MaximumVersion = $moduleInstallDetails.MaximumVersion
+           AllowPrerelease = $moduleInstallDetails.AllowPrerelease
            Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
            Path = $submodulePath
-        }
-
-        if ($script:SaveModuleSupportsAllowPrerelease)
-        {
-            $splatParameters += @{ AllowPrerelease = $moduleInstallDetails.AllowPrerelease }
         }
 
         Write-Host "`tInstalling module: ${moduleName} with arguments $(ConvertTo-Json $splatParameters)"
