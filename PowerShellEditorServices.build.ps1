@@ -29,7 +29,7 @@ $script:NetFrameworkPlatformId = 'win'
 
 $script:TestRuntime = @{
     'Core'    = 'netcoreapp2.1'
-    'Desktop' = 'net471'
+    'Desktop' = 'net461'
 }
 
 <#
