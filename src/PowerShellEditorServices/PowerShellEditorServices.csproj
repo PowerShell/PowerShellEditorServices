@@ -14,8 +14,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.0-preview-06" PrivateAssets="All"/>
-    <!--<PackageReference Include="Microsoft.PowerShell.SDK" Version="6.1.0-rc.1" />-->
-    <!--<PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0" />-->
     <PackageReference Include="UnixConsoleEcho" Version="0.1.0" />
     <PackageReference Include="Serilog" Version="2.7.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />

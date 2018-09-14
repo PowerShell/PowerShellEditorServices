@@ -82,6 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             return results;
         }
+
         public void StopCommandInDebugger(PowerShellContext powerShellContext)
         {
             powerShellContext.CurrentRunspace.Runspace.Debugger.StopProcessCommand();
