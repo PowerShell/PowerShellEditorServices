@@ -27,6 +27,11 @@ $script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSC
 $script:WindowsPowerShellFrameworkTarget = 'net461'
 $script:NetFrameworkPlatformId = 'win'
 
+$script:TestRuntime = @{
+    'Core'    = 'netcoreapp2.1'
+    'Desktop' = 'net471'
+}
+
 <#
 Declarative specification of binary assets produced
 in the build that need to be binplaced in the module.
@@ -276,36 +281,36 @@ task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe build -f net461 }
-        exec { & $script:dotnetExe test -f net461 }
+        exec { & $script:dotnetExe build -f $script:TestRuntime.Desktop }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
     }
 
-    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.1 }
-    exec { & $script:dotnetExe test -f netcoreapp2.1 }
+    exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
+    exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
 }
 
 task TestProtocol {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe build -f net461 }
-        exec { & $script:dotnetExe test -f net461 }
+        exec { & $script:dotnetExe build -f $script:TestRuntime.Desktop }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
     }
 
-    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.1 }
-    exec { & $script:dotnetExe test -f netcoreapp2.1 }
+    exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
+    exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
 }
 
 task TestHost -If {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe build -f net461 }
-        exec { & $script:dotnetExe test -f net461 }
+        exec { & $script:dotnetExe build -f $script:TestRuntime.Desktop }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
     }
 
-    exec { & $script:dotnetExe build -c $Configuration -f netcoreapp2.1 }
-    exec { & $script:dotnetExe test -f netcoreapp2.1 }
+    exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
+    exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
 }
 
 task CITest ?Test, {
