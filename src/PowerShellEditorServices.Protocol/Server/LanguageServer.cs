@@ -240,7 +240,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 param (
                     [String]$CommandName
                 )
-                Try {
+                try {
                     $null = Microsoft.PowerShell.Core\Get-Command $CommandName -ErrorAction Stop
                 } catch [System.Management.Automation.CommandNotFoundException] {
                     $PSCmdlet.ThrowTerminatingError($PSItem)
