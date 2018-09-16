@@ -26,21 +26,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class LanguageServer
     {
-        private const string CheckHelpScript = @"
-[CmdletBinding()]
-param (
-    [String]$CommandName
-)
-Try {
-    $null = Microsoft.PowerShell.Core\Get-Command $CommandName -ErrorAction Stop
-} catch [System.Management.Automation.CommandNotFoundException] {
-    $PSCmdlet.ThrowTerminatingError($PSItem)
-}
-try {
-    $null = Microsoft.PowerShell.Core\Get-Help $CommandName -Online
-} catch [System.Management.Automation.PSInvalidOperationException] {
-    Microsoft.PowerShell.Core\Get-Help $CommandName -Full
-}";
         private static CancellationTokenSource existingRequestCancellation;
 
         private ILogger Logger;
@@ -137,6 +122,7 @@ try {
                 this.HandleDocumentRangeFormattingRequest);
 
             this.messageHandlers.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
+            this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
             this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
 
             this.messageHandlers.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
@@ -245,10 +231,25 @@ try {
                     }
                 });
         }
-        protected async Task HandleShowOnlineHelpRequest(
+        protected async Task HandleShowHelpRequest(
             string helpParams,
             RequestContext<object> requestContext)
         {
+            const string CheckHelpScript = @"
+                [CmdletBinding()]
+                param (
+                    [String]$CommandName
+                )
+                Try {
+                    $null = Microsoft.PowerShell.Core\Get-Command $CommandName -ErrorAction Stop
+                } catch [System.Management.Automation.CommandNotFoundException] {
+                    $PSCmdlet.ThrowTerminatingError($PSItem)
+                }
+                try {
+                    $null = Microsoft.PowerShell.Core\Get-Help $CommandName -Online
+                } catch [System.Management.Automation.PSInvalidOperationException] {
+                    Microsoft.PowerShell.Core\Get-Help $CommandName -Full
+                }";
             if (string.IsNullOrEmpty(helpParams)) { helpParams = "Get-Help"; }
 
             PSCommand checkHelpPSCommand = new PSCommand()
@@ -256,6 +257,18 @@ try {
                 .AddArgument(helpParams);
             await editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpPSCommand, sendOutputToHost: true);
             await requestContext.SendResult(null);
+        }
+        protected async Task HandleShowOnlineHelpRequest(
+            string helpParams,
+            RequestContext<object> requestContext
+        )
+        {
+            const string deprecatedWarning = @"
+            Write-Warning ""'powerShell/showOnlineHelp' has been deprecated. Use 'powerShell/showHelp' instead.""";
+            PSCommand commandDeprecated = new PSCommand()
+                .AddScript(deprecatedWarning);
+            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(commandDeprecated, sendOutputToHost: true);
+            await this.HandleShowHelpRequest(helpParams, requestContext);
         }
 
         private async Task HandleSetPSSARulesRequest(
