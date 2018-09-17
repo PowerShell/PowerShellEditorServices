@@ -824,6 +824,7 @@ namespace Microsoft.PowerShell.EditorServices
                 return ast is StatementAst && ast.Extent.Contains(lineNumber, columnNumber);
             }, true);
 
+            // Find the Ast with the smallest extent
             Ast minAst = scriptFile.ScriptAst;
             foreach (Ast ast in asts)
             {
