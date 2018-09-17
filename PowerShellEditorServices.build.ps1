@@ -27,6 +27,8 @@ $script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSC
 $script:WindowsPowerShellFrameworkTarget = 'net461'
 $script:NetFrameworkPlatformId = 'win'
 
+$script:PSCoreModulePath = $null
+
 $script:TestRuntime = @{
     'Core'    = 'netcoreapp2.1'
     'Desktop' = 'net461'
@@ -147,6 +149,86 @@ function Get-NugetAsmForRuntime {
     Copy-Item -Path $internalPath -Destination $DestinationPath -Force
 
     return $DestinationPath
+}
+
+function Invoke-WithPSCoreModulePath {
+    param(
+        [string]$NewModulePath,
+        [scriptblock]$ScriptBlock
+    )
+
+    $configBase = if ($IsLinux -or $IsMacOS) {
+        "$HOME/.config/powershell"
+    } else {
+        "$HOME\Documents\PowerShell"
+    }
+
+    $configPath = Join-Path $configBase 'powershell.config.json'
+
+    if (-not (Test-Path $configBase)) {
+        New-Item -ItemType Directory -Path $configPath
+    } elseif (Test-Path $configPath) {
+        $configBackupPath = Join-Path ([System.IO.Path]::GetTempPath()) 'powershell.config.backup.json'
+        Copy-Item -Path $configPath -Destination $configBackupPath -Force
+    }
+
+    try {
+        New-Item -Path $configPath -Value "{ `"PSModulePath`": `"$NewModulePath`" }" -Force
+        & $ScriptBlock
+    } finally {
+        Remove-Item -Path $configPath
+
+        if ($configBackupPath) {
+            Move-Item -Path $configBackupPath -Destination $configPath -Force
+        }
+    }
+}
+
+function Get-PSCoreModules {
+    param(
+        [ValidateNotNullOrEmpty()][string]$PSVersion = '6.1.0',
+        [string]$DestinationPath
+    )
+
+    $tmpPath = [System.IO.Path]::GetTempPath()
+
+    $relativeModulePath = 'Modules/'
+
+    if (-not $DestinationPath) {
+        $DestinationPath = Join-Path $tmpPath 'PSCoreModules'
+    }
+
+    if (Test-Path $DestinationPath) {
+        return Join-Path $DestinationPath $relativeModulePath
+    }
+
+    if ($IsMacOS) {
+        $os = 'osx'
+        $ext = 'tar.gz'
+    } elseif ($IsLinux) {
+        $os = 'linux'
+        $ext = 'tar.gz'
+    } else {
+        $os = 'win'
+        $ext = 'zip'
+    }
+
+    $uri = "https://github.com/PowerShell/PowerShell/releases/download/v$PSVersion/powershell-$PSVersion-$os-x64.$ext"
+
+    $downloadPath = Join-Path $tmpPath "pscoremodules.$ext"
+
+    if (-not (Test-Path $downloadPath)) {
+        Invoke-WebRequest -Uri $uri -OutFile $downloadPath
+    }
+
+    if ($IsMacOS -or $IsLinux) {
+        New-Item -ItemType Directory -Path $DestinationPath
+        tar xvf $downloadPath -C $DestinationPath
+    } else {
+        Expand-Archive -Path $downloadPath -DestinationPath $DestinationPath
+    }
+
+    return Join-Path $DestinationPath $relativeModulePath
 }
 
 task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, PackageNuGet {
@@ -275,7 +357,9 @@ function UploadTestLogs {
     }
 }
 
-task Test TestServer,TestProtocol
+task Test {
+    $script:PSCoreModulePath = Get-PSCoreModules
+},TestServer,TestProtocol
 
 task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
@@ -285,8 +369,10 @@ task TestServer {
         exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
     }
 
-    exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
-    exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
+    Invoke-WithPSCoreModulePath -NewModulePath $script:PSCoreModulePath {
+        exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
+    }
 }
 
 task TestProtocol {
@@ -297,8 +383,10 @@ task TestProtocol {
         exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
     }
 
-    exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
-    exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
+    Invoke-WithPSCoreModulePath -NewModulePath $script:PSCoreModulePath {
+        exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
+    }
 }
 
 task TestHost -If {
