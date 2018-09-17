@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerLineNumber] int callerLineNumber = -1)
         {
             var timer = new ExecutionTimer(logger, message, callerMemberName, callerFilePath, callerLineNumber);
-            t_stopwatch.Start();
+            Stopwatch.Start();
             return timer;
         }
 
