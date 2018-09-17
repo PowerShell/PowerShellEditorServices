@@ -151,6 +151,25 @@ function Get-NugetAsmForRuntime {
     return $DestinationPath
 }
 
+function Enable-WritingToPath {
+    param([string]$Path)
+
+    # This is not a problem on Windows
+    if (-not ($IsMacOS -or $IsLinux)) {
+        return
+    }
+
+    $currentPermissions = if ($IsLinux) {
+        stat -c "%a" $Path
+    } else {
+        stat -f "%A" $Path
+    }
+
+    chmod o+w $Path
+
+    return $currentPermissions
+}
+
 function Invoke-WithPSCoreModulePath {
     param(
         [string]$NewModulePath,
@@ -174,6 +193,9 @@ function Invoke-WithPSCoreModulePath {
 
     try {
         $escapedPath = $NewModulePath -replace '\\', '\\'
+        if ($IsLinux -or $IsMacOS) {
+            Enable-WritingToPath $configPath
+        }
         New-Item -Path $configPath -Value "{ `"PSModulePath`": `"$escapedPath`" }" -Force
         & $ScriptBlock
     } finally {
