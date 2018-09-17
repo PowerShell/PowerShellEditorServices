@@ -26,18 +26,27 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private ILogger logger;
-        private bool areAliasesLoaded;
-        private PowerShellContext powerShellContext;
-        private CompletionResults mostRecentCompletions;
-        private int mostRecentRequestLine;
-        private int mostRecentRequestOffest;
-        private string mostRecentRequestFile;
-        private Dictionary<String, List<String>> CmdletToAliasDictionary;
-        private Dictionary<String, String> AliasToCmdletDictionary;
-        private IDocumentSymbolProvider[] documentSymbolProviders;
-
         const int DefaultWaitTimeoutMilliseconds = 5000;
+
+        private readonly ILogger _logger;
+
+        private readonly PowerShellContext _powerShellContext;
+
+        private readonly Dictionary<String, List<String>> _cmdletToAliasDictionary;
+
+        private readonly Dictionary<String, String> _aliasToCmdletDictionary;
+
+        private readonly IDocumentSymbolProvider[] _documentSymbolProviders;
+
+        private bool _areAliasesLoaded;
+
+        private CompletionResults _mostRecentCompletions;
+
+        private int _mostRecentRequestLine;
+
+        private int _mostRecentRequestOffest;
+
+        private string _mostRecentRequestFile;
 
         #endregion
 
@@ -55,14 +64,14 @@ namespace Microsoft.PowerShell.EditorServices
             PowerShellContext powerShellContext,
             ILogger logger)
         {
-            Validate.IsNotNull("powerShellContext", powerShellContext);
+            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
-            this.powerShellContext = powerShellContext;
-            this.logger = logger;
+            _powerShellContext = powerShellContext;
+            _logger = logger;
 
-            this.CmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
-            this.AliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
-            this.documentSymbolProviders = new IDocumentSymbolProvider[]
+            _cmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
+            _aliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
+            _documentSymbolProviders = new IDocumentSymbolProvider[]
             {
                 new ScriptDocumentSymbolProvider(powerShellContext.LocalPowerShellVersion.Version),
                 new PsdDocumentSymbolProvider(),
@@ -95,7 +104,7 @@ namespace Microsoft.PowerShell.EditorServices
             int lineNumber,
             int columnNumber)
         {
-            Validate.IsNotNull("scriptFile", scriptFile);
+            Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
             // Get the offset at the specified position.  This method
             // will also validate the given position.
@@ -109,39 +118,40 @@ namespace Microsoft.PowerShell.EditorServices
                     scriptFile.ScriptAst,
                     scriptFile.ScriptTokens,
                     fileOffset,
-                    this.powerShellContext,
-                    this.logger,
+                    _powerShellContext,
+                    _logger,
                     new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
 
-            if (commandCompletion != null)
+            if (commandCompletion == null)
             {
-                try
-                {
-                    CompletionResults completionResults =
-                        CompletionResults.Create(
-                            scriptFile,
-                            commandCompletion);
-
-                    // save state of most recent completion
-                    mostRecentCompletions = completionResults;
-                    mostRecentRequestFile = scriptFile.Id;
-                    mostRecentRequestLine = lineNumber;
-                    mostRecentRequestOffest = columnNumber;
-
-                    return completionResults;
-                }
-                catch (ArgumentException e)
-                {
-                    // Bad completion results could return an invalid
-                    // replacement range, catch that here
-                    this.logger.Write(
-                        LogLevel.Error,
-                        $"Caught exception while trying to create CompletionResults:\n\n{e.ToString()}");
-                }
+                return new CompletionResults();
             }
 
-            // If all else fails, return empty results
-            return new CompletionResults();
+            try
+            {
+                CompletionResults completionResults =
+                    CompletionResults.Create(
+                        scriptFile,
+                        commandCompletion);
+
+                // save state of most recent completion
+                _mostRecentCompletions = completionResults;
+                _mostRecentRequestFile = scriptFile.Id;
+                _mostRecentRequestLine = lineNumber;
+                _mostRecentRequestOffest = columnNumber;
+
+                return completionResults;
+            }
+            catch (ArgumentException e)
+            {
+                // Bad completion results could return an invalid
+                // replacement range, catch that here
+                _logger.Write(
+                    LogLevel.Error,
+                    $"Caught exception while trying to create CompletionResults:\n\n{e.ToString()}");
+
+                return new CompletionResults();
+            }
         }
 
         /// <summary>
@@ -154,19 +164,21 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile file,
             string entryName)
         {
-            // Makes sure the most recent completions request was the same line and column as this request
-            if (file.Id.Equals(mostRecentRequestFile))
-            {
-                CompletionDetails completionResult =
-                    mostRecentCompletions.Completions.FirstOrDefault(
-                        result => result.CompletionText.Equals(entryName));
-
-                return completionResult;
-            }
-            else
+            if (!file.Id.Equals(_mostRecentRequestFile))
             {
                 return null;
             }
+
+            foreach (CompletionDetails completion in _mostRecentCompletions.Completions)
+            {
+                if (completion.CompletionText.Equals(entryName))
+                {
+                    return completion;
+                }
+            }
+
+            // If we found no completions, return null
+            return null;
         }
 
         /// <summary>
@@ -245,19 +257,17 @@ namespace Microsoft.PowerShell.EditorServices
                     lineNumber,
                     columnNumber);
 
-            if (symbolReference != null)
-            {
-                symbolReference.FilePath = scriptFile.FilePath;
-                symbolDetails =
-                    await SymbolDetails.Create(
-                        symbolReference,
-                        this.powerShellContext);
-            }
-            else
+            if (symbolReference == null)
             {
                 // TODO #21: Return Result<T>
                 return null;
             }
+
+            symbolReference.FilePath = scriptFile.FilePath;
+            symbolDetails =
+                await SymbolDetails.Create(
+                    symbolReference,
+                    _powerShellContext);
 
             return symbolDetails;
         }
@@ -269,18 +279,22 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns></returns>
         public FindOccurrencesResult FindSymbolsInFile(ScriptFile scriptFile)
         {
-            Validate.IsNotNull("scriptFile", scriptFile);
+            Validate.IsNotNull(nameof(scriptFile), scriptFile);
+
+            var foundOccurrences = new List<SymbolReference>();
+            foreach (IDocumentSymbolProvider symbolProvider in _documentSymbolProviders)
+            {
+                foreach (SymbolReference reference in symbolProvider.ProvideDocumentSymbols(scriptFile))
+                {
+                    reference.SourceLine = scriptFile.GetLine(reference.ScriptRegion.StartLineNumber);
+                    reference.FilePath = scriptFile.FilePath;
+                    foundOccurrences.Add(reference);
+                }
+            }
+
             return new FindOccurrencesResult
             {
-                FoundOccurrences = documentSymbolProviders
-                    .SelectMany(p => p.ProvideDocumentSymbols(scriptFile))
-                    .Select(reference =>
-                        {
-                            reference.SourceLine =
-                                scriptFile.GetLine(reference.ScriptRegion.StartLineNumber);
-                            reference.FilePath = scriptFile.FilePath;
-                            return reference;
-                        })
+                FoundOccurrences = foundOccurrences
             };
         }
 
@@ -346,30 +360,27 @@ namespace Microsoft.PowerShell.EditorServices
             foreach (object fileName in fileMap.Keys)
             {
                 var file = (ScriptFile)fileMap[fileName];
-                IEnumerable<SymbolReference> symbolReferencesinFile =
-                AstOperations
-                    .FindReferencesOfSymbol(
-                        file.ScriptAst,
-                        foundSymbol,
-                        CmdletToAliasDictionary,
-                        AliasToCmdletDictionary)
-                    .Select(reference =>
-                        {
-                            try
-                            {
-                                reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
-                            }
-                            catch (ArgumentOutOfRangeException e)
-                            {
-                                reference.SourceLine = string.Empty;
-                                this.logger.WriteException("Found reference is out of range in script file", e);
-                            }
 
-                            reference.FilePath = file.FilePath;
-                            return reference;
-                        });
+                IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(
+                    file.ScriptAst,
+                    foundSymbol,
+                    _cmdletToAliasDictionary,
+                    _aliasToCmdletDictionary);
 
-                symbolReferences.AddRange(symbolReferencesinFile);
+                foreach (SymbolReference reference in references)
+                {
+                    try
+                    {
+                        reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
+                    }
+                    catch (ArgumentOutOfRangeException e)
+                    {
+                        reference.SourceLine = string.Empty;
+                        _logger.WriteException("Found reference is out of range in script file", e);
+                    }
+                    reference.FilePath = file.FilePath;
+                    symbolReferences.Add(reference);
+                }
             }
 
             return new FindReferencesResult
@@ -393,9 +404,9 @@ namespace Microsoft.PowerShell.EditorServices
             SymbolReference foundSymbol,
             Workspace workspace)
         {
-            Validate.IsNotNull("sourceFile", sourceFile);
-            Validate.IsNotNull("foundSymbol", foundSymbol);
-            Validate.IsNotNull("workspace", workspace);
+            Validate.IsNotNull(nameof(sourceFile), sourceFile);
+            Validate.IsNotNull(nameof(foundSymbol), foundSymbol);
+            Validate.IsNotNull(nameof(workspace), workspace);
 
             ScriptFile[] referencedFiles =
                 workspace.ExpandScriptReferences(
@@ -426,8 +437,8 @@ namespace Microsoft.PowerShell.EditorServices
             if (foundDefinition == null)
             {
                 // Get a list of all powershell files in the workspace path
-                var allFiles = workspace.EnumeratePSFiles();
-                foreach (var file in allFiles)
+                IEnumerable<string> allFiles = workspace.EnumeratePSFiles();
+                foreach (string file in allFiles)
                 {
                     if (filesSearched.Contains(file))
                     {
@@ -458,7 +469,7 @@ namespace Microsoft.PowerShell.EditorServices
                 CommandInfo cmdInfo =
                     await CommandHelpers.GetCommandInfo(
                         foundSymbol.SymbolName,
-                        this.powerShellContext);
+                        _powerShellContext);
 
                 foundDefinition =
                     FindDeclarationForBuiltinCommand(
@@ -490,26 +501,23 @@ namespace Microsoft.PowerShell.EditorServices
                     lineNumber,
                     columnNumber);
 
-            if (foundSymbol != null)
-            {
-                // find all references, and indicate that looking for aliases is not needed
-                IEnumerable<SymbolReference> symbolOccurrences =
-                    AstOperations
-                        .FindReferencesOfSymbol(
-                            file.ScriptAst,
-                            foundSymbol,
-                            false);
-
-                return
-                    new FindOccurrencesResult
-                    {
-                        FoundOccurrences = symbolOccurrences
-                    };
-            }
-            else
+            if (foundSymbol == null)
             {
                 return null;
             }
+
+            // find all references, and indicate that looking for aliases is not needed
+            IEnumerable<SymbolReference> symbolOccurrences =
+                AstOperations
+                    .FindReferencesOfSymbol(
+                        file.ScriptAst,
+                        foundSymbol,
+                        false);
+
+            return new FindOccurrencesResult
+            {
+                FoundOccurrences = symbolOccurrences
+            };
         }
 
         /// <summary>
@@ -530,44 +538,40 @@ namespace Microsoft.PowerShell.EditorServices
                     lineNumber,
                     columnNumber);
 
-            if (foundSymbol != null)
+            if (foundSymbol == null)
             {
-                CommandInfo commandInfo =
-                    await CommandHelpers.GetCommandInfo(
-                        foundSymbol.SymbolName,
-                        this.powerShellContext);
-
-                if (commandInfo != null)
-                {
-                    try
-                    {
-                        IEnumerable<CommandParameterSetInfo> commandParamSets = commandInfo.ParameterSets;
-                        return new ParameterSetSignatures(commandParamSets, foundSymbol);
-                    }
-                    catch (RuntimeException e)
-                    {
-                        // A RuntimeException will be thrown when an invalid attribute is
-                        // on a parameter binding block and then that command/script has
-                        // its signatures resolved by typing it into a script.
-                        this.logger.WriteException("RuntimeException encountered while accessing command parameter sets", e);
-
-                        return null;
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        // For some commands there are no paramsets (like applications).  Until
-                        // the valid command types are better understood, catch this exception
-                        // which gets raised when there are no ParameterSets for the command type.
-                        return null;
-                    }
-                }
-                else
-                {
-                    return null;
-                }
+                return null;
             }
-            else
+
+            CommandInfo commandInfo =
+                await CommandHelpers.GetCommandInfo(
+                    foundSymbol.SymbolName,
+                    _powerShellContext);
+
+            if (commandInfo == null)
             {
+                return null;
+            }
+
+            try
+            {
+                IEnumerable<CommandParameterSetInfo> commandParamSets = commandInfo.ParameterSets;
+                return new ParameterSetSignatures(commandParamSets, foundSymbol);
+            }
+            catch (RuntimeException e)
+            {
+                // A RuntimeException will be thrown when an invalid attribute is
+                // on a parameter binding block and then that command/script has
+                // its signatures resolved by typing it into a script.
+                _logger.WriteException("RuntimeException encountered while accessing command parameter sets", e);
+
+                return null;
+            }
+            catch (InvalidOperationException)
+            {
+                // For some commands there are no paramsets (like applications).  Until
+                // the valid command types are better understood, catch this exception
+                // which gets raised when there are no ParameterSets for the command type.
                 return null;
             }
         }
@@ -585,7 +589,7 @@ namespace Microsoft.PowerShell.EditorServices
             int lineNumber,
             int columnNumber)
         {
-            var ast = FindSmallestStatementAst(scriptFile, lineNumber, columnNumber);
+            Ast ast = FindSmallestStatementAst(scriptFile, lineNumber, columnNumber);
             if (ast == null)
             {
                 return null;
@@ -604,7 +608,7 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile scriptFile,
             int lineNumber)
         {
-            var functionDefinitionAst = scriptFile.ScriptAst.Find(
+            Ast functionDefinitionAst = scriptFile.ScriptAst.Find(
                 ast => ast is FunctionDefinitionAst && ast.Extent.StartLineNumber == lineNumber,
                 true);
 
@@ -624,7 +628,7 @@ namespace Microsoft.PowerShell.EditorServices
             out string helpLocation)
         {
             // check if the next line contains a function definition
-            var funcDefnAst = GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
+            FunctionDefinitionAst funcDefnAst = GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
             if (funcDefnAst != null)
             {
                 helpLocation = "before";
@@ -632,7 +636,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             // find all the script definitions that contain the line `lineNumber`
-            var foundAsts = scriptFile.ScriptAst.FindAll(
+            IEnumerable<Ast> foundAsts = scriptFile.ScriptAst.FindAll(
                 ast =>
                 {
                     var fdAst = ast as FunctionDefinitionAst;
@@ -646,34 +650,43 @@ namespace Microsoft.PowerShell.EditorServices
                 },
                 true);
 
-            if (foundAsts != null && foundAsts.Any())
+            if (foundAsts == null || !foundAsts.Any())
             {
-                // of all the function definitions found, return the innermost function
-                // definition that contains `lineNumber`
-                funcDefnAst = foundAsts.Cast<FunctionDefinitionAst>().Aggregate((x, y) =>
-                {
-                    if (x.Extent.StartOffset >= y.Extent.StartOffset && x.Extent.EndOffset <= x.Extent.EndOffset)
-                    {
-                        return x;
-                    }
+                helpLocation = null;
+                return null;
+            }
 
-                    return y;
-                });
-
-                // TODO use tokens to check for non empty character instead of just checking for line offset
-                if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
+            // of all the function definitions found, return the innermost function
+            // definition that contains `lineNumber`
+            foreach (FunctionDefinitionAst foundAst in foundAsts.Cast<FunctionDefinitionAst>())
+            {
+                if (funcDefnAst == null)
                 {
-                    helpLocation = "begin";
-                    return funcDefnAst;
+                    funcDefnAst = foundAst;
+                    continue;
                 }
 
-                if (funcDefnAst.Body.Extent.EndLineNumber == lineNumber + 1)
+                if (funcDefnAst.Extent.StartOffset >= foundAst.Extent.StartOffset
+                    && funcDefnAst.Extent.EndOffset <= foundAst.Extent.EndOffset)
                 {
-                    helpLocation = "end";
-                    return funcDefnAst;
+                    funcDefnAst = foundAst;
                 }
             }
 
+            // TODO use tokens to check for non empty character instead of just checking for line offset
+            if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
+            {
+                helpLocation = "begin";
+                return funcDefnAst;
+            }
+
+            if (funcDefnAst.Body.Extent.EndLineNumber == lineNumber + 1)
+            {
+                helpLocation = "end";
+                return funcDefnAst;
+            }
+
+            // If we didn't find a function definition, then return null
             helpLocation = null;
             return null;
         }
@@ -687,48 +700,50 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         private async Task GetAliases()
         {
-            if (!this.areAliasesLoaded)
+            if (_areAliasesLoaded)
             {
-                try
+                return;
+            }
+
+            try
+            {
+                RunspaceHandle runspaceHandle =
+                    await _powerShellContext.GetRunspaceHandle(
+                        new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
+
+                CommandInvocationIntrinsics invokeCommand = runspaceHandle.Runspace.SessionStateProxy.InvokeCommand;
+                IEnumerable<CommandInfo> aliases = invokeCommand.GetCommands("*", CommandTypes.Alias, true);
+
+                runspaceHandle.Dispose();
+
+                foreach (AliasInfo aliasInfo in aliases)
                 {
-                    RunspaceHandle runspaceHandle =
-                        await this.powerShellContext.GetRunspaceHandle(
-                            new CancellationTokenSource(DefaultWaitTimeoutMilliseconds).Token);
-
-                    CommandInvocationIntrinsics invokeCommand = runspaceHandle.Runspace.SessionStateProxy.InvokeCommand;
-                    IEnumerable<CommandInfo> aliases = invokeCommand.GetCommands("*", CommandTypes.Alias, true);
-
-                    runspaceHandle.Dispose();
-
-                    foreach (AliasInfo aliasInfo in aliases)
+                    if (!_cmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
                     {
-                        if (!CmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
-                        {
-                            CmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
-                        }
-                        else
-                        {
-                            CmdletToAliasDictionary[aliasInfo.Definition].Add(aliasInfo.Name);
-                        }
-
-                        AliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
+                        _cmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>{ aliasInfo.Name });
+                    }
+                    else
+                    {
+                        _cmdletToAliasDictionary[aliasInfo.Definition].Add(aliasInfo.Name);
                     }
 
-                    this.areAliasesLoaded = true;
+                    _aliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
                 }
-                catch (PSNotSupportedException e)
-                {
-                    this.logger.Write(
-                        LogLevel.Warning,
-                        $"Caught PSNotSupportedException while attempting to get aliases from remote session:\n\n{e.ToString()}");
 
-                    // Prevent the aliases from being fetched again - no point if the remote doesn't support InvokeCommand.
-                    this.areAliasesLoaded = true;
-                }
-                catch (TaskCanceledException)
-                {
-                    // The wait for a RunspaceHandle has timed out, skip aliases for now
-                }
+                _areAliasesLoaded = true;
+            }
+            catch (PSNotSupportedException e)
+            {
+                _logger.Write(
+                    LogLevel.Warning,
+                    $"Caught PSNotSupportedException while attempting to get aliases from remote session:\n\n{e.ToString()}");
+
+                // Prevent the aliases from being fetched again - no point if the remote doesn't support InvokeCommand.
+                _areAliasesLoaded = true;
+            }
+            catch (TaskCanceledException)
+            {
+                // The wait for a RunspaceHandle has timed out, skip aliases for now
             }
         }
 
@@ -736,39 +751,38 @@ namespace Microsoft.PowerShell.EditorServices
             PSModuleInfo moduleInfo,
             Workspace workspace)
         {
-            // if there is module info for this command
-            if (moduleInfo != null)
+            if (moduleInfo == null)
             {
-                string modPath = moduleInfo.Path;
-                List<ScriptFile> scriptFiles = new List<ScriptFile>();
-                ScriptFile newFile;
-
-                // find any files where the moduleInfo's path ends with ps1 or psm1
-                // and add it to allowed script files
-                if (modPath.EndsWith(@".ps1") || modPath.EndsWith(@".psm1"))
-                {
-                    newFile = workspace.GetFile(modPath);
-                    newFile.IsAnalysisEnabled = false;
-                    scriptFiles.Add(newFile);
-                }
-                if (moduleInfo.NestedModules.Count > 0)
-                {
-                    foreach (PSModuleInfo nestedInfo in moduleInfo.NestedModules)
-                    {
-                        string nestedModPath = nestedInfo.Path;
-                        if (nestedModPath.EndsWith(@".ps1") || nestedModPath.EndsWith(@".psm1"))
-                        {
-                            newFile = workspace.GetFile(nestedModPath);
-                            newFile.IsAnalysisEnabled = false;
-                            scriptFiles.Add(newFile);
-                        }
-                    }
-                }
-
-                return scriptFiles.ToArray();
+                return new ScriptFile[0];
             }
 
-            return new List<ScriptFile>().ToArray();
+            string modPath = moduleInfo.Path;
+            List<ScriptFile> scriptFiles = new List<ScriptFile>();
+            ScriptFile newFile;
+
+            // find any files where the moduleInfo's path ends with ps1 or psm1
+            // and add it to allowed script files
+            if (modPath.EndsWith(@".ps1") || modPath.EndsWith(@".psm1"))
+            {
+                newFile = workspace.GetFile(modPath);
+                newFile.IsAnalysisEnabled = false;
+                scriptFiles.Add(newFile);
+            }
+            if (moduleInfo.NestedModules.Count > 0)
+            {
+                foreach (PSModuleInfo nestedInfo in moduleInfo.NestedModules)
+                {
+                    string nestedModPath = nestedInfo.Path;
+                    if (nestedModPath.EndsWith(@".ps1") || nestedModPath.EndsWith(@".psm1"))
+                    {
+                        newFile = workspace.GetFile(nestedModPath);
+                        newFile.IsAnalysisEnabled = false;
+                        scriptFiles.Add(newFile);
+                    }
+                }
+            }
+
+            return scriptFiles.ToArray();
         }
 
         private SymbolReference FindDeclarationForBuiltinCommand(
@@ -776,30 +790,27 @@ namespace Microsoft.PowerShell.EditorServices
             SymbolReference foundSymbol,
             Workspace workspace)
         {
-            SymbolReference foundDefinition = null;
-            if (commandInfo != null)
+            if (commandInfo == null)
             {
-                int index = 0;
-                ScriptFile[] nestedModuleFiles;
+                return null;
+            }
 
-                nestedModuleFiles =
-                    GetBuiltinCommandScriptFiles(
-                        commandInfo.Module,
-                        workspace);
+            ScriptFile[] nestedModuleFiles =
+                GetBuiltinCommandScriptFiles(
+                    commandInfo.Module,
+                    workspace);
 
-                while (foundDefinition == null && index < nestedModuleFiles.Length)
+            SymbolReference foundDefinition = null;
+            foreach (ScriptFile nestedModuleFile in nestedModuleFiles)
+            {
+                foundDefinition = AstOperations.FindDefinitionOfSymbol(
+                    nestedModuleFile.ScriptAst,
+                    foundSymbol);
+
+                if (foundDefinition != null)
                 {
-                    foundDefinition =
-                        AstOperations.FindDefinitionOfSymbol(
-                            nestedModuleFiles[index].ScriptAst,
-                            foundSymbol);
-
-                    if (foundDefinition != null)
-                    {
-                        foundDefinition.FilePath = nestedModuleFiles[index].FilePath;
-                    }
-
-                    index++;
+                    foundDefinition.FilePath = nestedModuleFile.FilePath;
+                    break;
                 }
             }
 
@@ -808,13 +819,22 @@ namespace Microsoft.PowerShell.EditorServices
 
         private Ast FindSmallestStatementAst(ScriptFile scriptFile, int lineNumber, int columnNumber)
         {
-            var asts = scriptFile.ScriptAst.FindAll(ast =>
+            IEnumerable<Ast> asts = scriptFile.ScriptAst.FindAll(ast =>
             {
                 return ast is StatementAst && ast.Extent.Contains(lineNumber, columnNumber);
             }, true);
 
-            // Find ast with the smallest extent
-            return asts.MinElement((astX, astY) => astX.Extent.ExtentWidthComparer(astY.Extent));
+            // Find the Ast with the smallest extent
+            Ast minAst = scriptFile.ScriptAst;
+            foreach (Ast ast in asts)
+            {
+                if (ast.Extent.ExtentWidthComparer(minAst.Extent) == -1)
+                {
+                    minAst = ast;
+                }
+            }
+
+            return minAst;
         }
 
         #endregion
