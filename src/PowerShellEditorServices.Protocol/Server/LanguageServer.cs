@@ -28,6 +28,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
     {
         private static CancellationTokenSource existingRequestCancellation;
 
+        private static readonly Location[] s_emptyLocationResult = new Location[0];
+
+        private static readonly CompletionItem[] s_emptyCompletionResult = new CompletionItem[0];
+
+        private static readonly SignatureInformation[] s_emptySignatureResult = new SignatureInformation[0];
+
+        private static readonly DocumentHighlight[] s_emptyHighlightResult = new DocumentHighlight[0];
+
+        private static readonly SymbolInformation[] s_emptySymbolResult = new SymbolInformation[0];
+
         private ILogger Logger;
         private bool profilesLoaded;
         private bool consoleReplStarted;
@@ -692,26 +702,20 @@ function __Expand-Alias {
                     editorSession.Workspace.ExpandScriptReferences(scriptFile),
                     editorSession.Workspace);
 
-            Location[] referenceLocations = null;
+            Location[] referenceLocations = s_emptyLocationResult;
 
             if (referencesResult != null)
             {
-                referenceLocations =
-                    referencesResult
-                        .FoundReferences
-                        .Select(r =>
-                            {
-                                return new Location
-                                {
-                                    Uri = GetFileUri(r.FilePath),
-                                    Range = GetRangeFromScriptRegion(r.ScriptRegion)
-                                };
-                            })
-                        .ToArray();
-            }
-            else
-            {
-                referenceLocations = new Location[0];
+                var locations = new List<Location>();
+                foreach (SymbolReference foundReference in referencesResult.FoundReferences)
+                {
+                    locations.Add(new Location
+                        {
+                            Uri = GetFileUri(foundReference.FilePath),
+                            Range = GetRangeFromScriptRegion(foundReference.ScriptRegion)
+                        });
+                }
+                referenceLocations = locations.ToArray();
             }
 
             await requestContext.SendResult(referenceLocations);
@@ -734,24 +738,18 @@ function __Expand-Alias {
                     cursorLine,
                     cursorColumn);
 
-            CompletionItem[] completionItems = null;
+            CompletionItem[] completionItems = s_emptyCompletionResult;
 
             if (completionResults != null)
             {
                 int sortIndex = 1;
-                completionItems =
-                    completionResults
-                        .Completions
-                        .Select(
-                            c => CreateCompletionItem(
-                                c,
-                                completionResults.ReplacedRange,
-                                sortIndex++))
-                        .ToArray();
-            }
-            else
-            {
-                completionItems = new CompletionItem[0];
+                var completions = new List<CompletionItem>();
+                foreach (CompletionDetails completion in completionResults.Completions)
+                {
+                    CompletionItem completionItem = CreateCompletionItem(completion, completionResults.ReplacedRange, sortIndex);
+                    sortIndex++;
+                }
+                completionItems = completions.ToArray();
             }
 
             await requestContext.SendResult(completionItems);
@@ -796,40 +794,35 @@ function __Expand-Alias {
                     textDocumentPositionParams.Position.Line + 1,
                     textDocumentPositionParams.Position.Character + 1);
 
-            SignatureInformation[] signatures = null;
-            int? activeParameter = null;
-            int? activeSignature = 0;
+            SignatureInformation[] signatures = s_emptySignatureResult;
 
             if (parameterSets != null)
             {
-                signatures =
-                    parameterSets
-                        .Signatures
-                        .Select(s =>
-                            {
-                                return new SignatureInformation
-                                {
-                                    Label = parameterSets.CommandName + " " + s.SignatureText,
-                                    Documentation = null,
-                                    Parameters =
-                                        s.Parameters
-                                            .Select(CreateParameterInfo)
-                                            .ToArray()
-                                };
-                            })
-                        .ToArray();
-            }
-            else
-            {
-                signatures = new SignatureInformation[0];
+                var sigs = new List<SignatureInformation>();
+                foreach (ParameterSetSignature sig in parameterSets.Signatures)
+                {
+                    var parameters = new List<ParameterInformation>();
+                    foreach (ParameterInfo paramInfo in sig.Parameters)
+                    {
+                        parameters.Add(CreateParameterInfo(paramInfo));
+                    }
+
+                    var signature = new SignatureInformation
+                    {
+                        Label = parameterSets.CommandName + " " + sig.SignatureText,
+                        Documentation = null,
+                        Parameters = parameters.ToArray(),
+                    };
+                }
+                signatures = sigs.ToArray();
             }
 
             await requestContext.SendResult(
                 new SignatureHelp
                 {
                     Signatures = signatures,
-                    ActiveParameter = activeParameter,
-                    ActiveSignature = activeSignature
+                    ActiveParameter = null,
+                    ActiveSignature = 0
                 });
         }
 
@@ -847,26 +840,20 @@ function __Expand-Alias {
                     textDocumentPositionParams.Position.Line + 1,
                     textDocumentPositionParams.Position.Character + 1);
 
-            DocumentHighlight[] documentHighlights = null;
+            DocumentHighlight[] documentHighlights = s_emptyHighlightResult;
 
             if (occurrencesResult != null)
             {
-                documentHighlights =
-                    occurrencesResult
-                        .FoundOccurrences
-                        .Select(o =>
-                            {
-                                return new DocumentHighlight
-                                {
-                                    Kind = DocumentHighlightKind.Write, // TODO: Which symbol types are writable?
-                                    Range = GetRangeFromScriptRegion(o.ScriptRegion)
-                                };
-                            })
-                        .ToArray();
-            }
-            else
-            {
-                documentHighlights = new DocumentHighlight[0];
+                var highlights = new List<DocumentHighlight>();
+                foreach (SymbolReference foundOccurrence in occurrencesResult.FoundOccurrences)
+                {
+                    highlights.Add(new DocumentHighlight
+                    {
+                        Kind = DocumentHighlightKind.Write, // TODO: Which symbol types are writable?
+                        Range = GetRangeFromScriptRegion(foundOccurrence.ScriptRegion)
+                    });
+                }
+                documentHighlights = highlights.ToArray();
             }
 
             await requestContext.SendResult(documentHighlights);
@@ -933,34 +920,29 @@ function __Expand-Alias {
                 editorSession.LanguageService.FindSymbolsInFile(
                     scriptFile);
 
-            SymbolInformation[] symbols = null;
-
             string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
 
+            SymbolInformation[] symbols = s_emptySymbolResult;
             if (foundSymbols != null)
             {
-                symbols =
-                    foundSymbols
-                        .FoundOccurrences
-                        .Select(r =>
-                            {
-                                return new SymbolInformation
-                                {
-                                    ContainerName = containerName,
-                                    Kind = GetSymbolKind(r.SymbolType),
-                                    Location = new Location
-                                    {
-                                        Uri = GetFileUri(r.FilePath),
-                                        Range = GetRangeFromScriptRegion(r.ScriptRegion)
-                                    },
-                                    Name = GetDecoratedSymbolName(r)
-                                };
-                            })
-                        .ToArray();
-            }
-            else
-            {
-                symbols = new SymbolInformation[0];
+                var symbolAcc = new List<SymbolInformation>();
+                foreach (SymbolReference foundOccurrence in foundSymbols.FoundOccurrences)
+                {
+                    var location = new Location
+                    {
+                        Uri = GetFileUri(foundOccurrence.FilePath),
+                        Range = GetRangeFromScriptRegion(foundOccurrence.ScriptRegion)
+                    };
+
+                    symbolAcc.Add(new SymbolInformation
+                    {
+                        ContainerName = containerName,
+                        Kind = GetSymbolKind(foundOccurrence.SymbolType),
+                        Location = location,
+                        Name = GetDecoratedSymbolName(foundOccurrence)
+                    });
+                }
+                symbols = symbolAcc.ToArray();
             }
 
             await requestContext.SendResult(symbols);
@@ -1011,26 +993,27 @@ function __Expand-Alias {
 
                 if (foundSymbols != null)
                 {
-                    var matchedSymbols =
-                        foundSymbols
-                            .FoundOccurrences
-                            .Where(r => IsQueryMatch(workspaceSymbolParams.Query, r.SymbolName))
-                            .Select(r =>
-                                {
-                                    return new SymbolInformation
-                                    {
-                                        ContainerName = containerName,
-                                        Kind = r.SymbolType == SymbolType.Variable ? SymbolKind.Variable : SymbolKind.Function,
-                                        Location = new Location
-                                        {
-                                            Uri = GetFileUri(r.FilePath),
-                                            Range = GetRangeFromScriptRegion(r.ScriptRegion)
-                                        },
-                                        Name = GetDecoratedSymbolName(r)
-                                    };
-                                });
+                    foreach (SymbolReference foundOccurrence in foundSymbols.FoundOccurrences)
+                    {
+                        if (!IsQueryMatch(workspaceSymbolParams.Query, foundOccurrence.SymbolName))
+                        {
+                            continue;
+                        }
 
-                    symbols.AddRange(matchedSymbols);
+                        var location = new Location
+                        {
+                            Uri = GetFileUri(foundOccurrence.FilePath),
+                            Range = GetRangeFromScriptRegion(foundOccurrence.ScriptRegion)
+                        };
+
+                        symbols.Add(new SymbolInformation
+                        {
+                            ContainerName = containerName,
+                            Kind = foundOccurrence.SymbolType == SymbolType.Variable ? SymbolKind.Variable : SymbolKind.Function,
+                            Location = location,
+                            Name = GetDecoratedSymbolName(foundOccurrence)
+                        });
+                    }
                 }
             }
 
