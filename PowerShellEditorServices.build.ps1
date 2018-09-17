@@ -159,15 +159,14 @@ function Enable-WritingToPath {
         return
     }
 
-    $currentPermissions = if ($IsLinux) {
+    Write-Verbose "Setting permissions on path: $Path"
+    sudo chmod o+w $Path
+    $permissions = if ($IsLinux) {
         stat -c "%a" $Path
     } else {
         stat -f "%A" $Path
     }
-
-    sudo chmod o+w $Path
-
-    return $currentPermissions
+    Write-Verbose "Permissions set to $permissions"
 }
 
 function Invoke-WithPSCoreModulePath {
@@ -192,10 +191,8 @@ function Invoke-WithPSCoreModulePath {
     }
 
     try {
+        Enable-WritingToPath $configPath
         $escapedPath = $NewModulePath -replace '\\', '\\'
-        if ($IsLinux -or $IsMacOS) {
-            Enable-WritingToPath $configPath
-        }
         New-Item -Path $configPath -Value "{ `"PSModulePath`": `"$escapedPath`" }" -Force
         & $ScriptBlock
     } finally {
