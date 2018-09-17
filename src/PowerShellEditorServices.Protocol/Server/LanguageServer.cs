@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Language;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1069,56 +1070,64 @@ function __Expand-Alias {
            CommentHelpRequestParams requestParams,
            RequestContext<CommentHelpRequestResult> requestContext)
         {
-            var scriptFile = this.editorSession.Workspace.GetFile(requestParams.DocumentUri);
-            var triggerLine0b = requestParams.TriggerPosition.Line;
-            var triggerLine1b = triggerLine0b + 1;
+            ScriptFile scriptFile = this.editorSession.Workspace.GetFile(requestParams.DocumentUri);
+            int triggerLine = requestParams.TriggerPosition.Line + 1;
 
             string helpLocation;
-            var functionDefinitionAst = editorSession.LanguageService.GetFunctionDefinitionForHelpComment(
+            FunctionDefinitionAst functionDefinitionAst = editorSession.LanguageService.GetFunctionDefinitionForHelpComment(
                 scriptFile,
-                triggerLine1b,
+                triggerLine,
                 out helpLocation);
+
             var result = new CommentHelpRequestResult();
-            IList<string> lines = null;
-            if (functionDefinitionAst != null)
+
+            if (functionDefinitionAst == null)
             {
-                var funcExtent = functionDefinitionAst.Extent;
-                var funcText = funcExtent.Text;
-                if (helpLocation.Equals("begin"))
-                {
-                    // check if the previous character is `<` because it invalidates
-                    // the param block the follows it.
-                    lines = ScriptFile.GetLines(funcText);
-                    var relativeTriggerLine0b = triggerLine1b - funcExtent.StartLineNumber;
-                    if (relativeTriggerLine0b > 0 && lines[relativeTriggerLine0b].IndexOf("<") > -1)
-                    {
-                        lines[relativeTriggerLine0b] = string.Empty;
-                    }
+                await requestContext.SendResult(result);
+                return;
+            }
 
-                    funcText = string.Join("\n", lines);
+            IScriptExtent funcExtent = functionDefinitionAst.Extent;
+            string funcText = funcExtent.Text;
+            if (helpLocation.Equals("begin"))
+            {
+                // check if the previous character is `<` because it invalidates
+                // the param block the follows it.
+                IList<string> lines = ScriptFile.GetLines(funcText);
+                int relativeTriggerLine0b = triggerLine - funcExtent.StartLineNumber;
+                if (relativeTriggerLine0b > 0 && lines[relativeTriggerLine0b].IndexOf("<") > -1)
+                {
+                    lines[relativeTriggerLine0b] = string.Empty;
                 }
 
-                var analysisResults = await this.editorSession.AnalysisService.GetSemanticMarkersAsync(
-                    funcText,
-                    AnalysisService.GetCommentHelpRuleSettings(
-                        true,
-                        false,
-                        requestParams.BlockComment,
-                        true,
-                        helpLocation));
+                funcText = string.Join("\n", lines);
+            }
 
-                var help = analysisResults?.FirstOrDefault()?.Correction?.Edits[0].Text;
-                result.Content = help != null
-                    ? (lines ?? ScriptFile.GetLines(help)).ToArray()
-                    : null;
+            ScriptFileMarker[] analysisResults = await this.editorSession.AnalysisService.GetSemanticMarkersAsync(
+                funcText,
+                AnalysisService.GetCommentHelpRuleSettings(
+                    enable: true,
+                    exportedOnly: false,
+                    blockComment: requestParams.BlockComment,
+                    vscodeSnippetCorrection: true,
+                    placement: helpLocation));
 
-                if (helpLocation != null &&
-                    !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
-                {
-                    // we need to trim the leading `{` and newline when helpLocation=="begin"
-                    // we also need to trim the leading newline when helpLocation=="end"
-                    result.Content = result.Content?.Skip(1).ToArray();
-                }
+            string helpText = analysisResults?.FirstOrDefault()?.Correction?.Edits[0].Text;
+
+            if (helpText == null)
+            {
+                await requestContext.SendResult(result);
+                return;
+            }
+
+            result.Content = ScriptFile.GetLines(helpText).ToArray();
+
+            if (helpLocation != null &&
+                !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
+            {
+                // we need to trim the leading `{` and newline when helpLocation=="begin"
+                // we also need to trim the leading newline when helpLocation=="end"
+                result.Content = result.Content.Skip(1).ToArray();
             }
 
             await requestContext.SendResult(result);
