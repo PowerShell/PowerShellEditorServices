@@ -173,7 +173,8 @@ function Invoke-WithPSCoreModulePath {
     }
 
     try {
-        New-Item -Path $configPath -Value "{ `"PSModulePath`": `"$NewModulePath`" }" -Force
+        $escapedPath = $NewModulePath -replace '\\', '\\'
+        New-Item -Path $configPath -Value "{ `"PSModulePath`": `"$escapedPath`" }" -Force
         & $ScriptBlock
     } finally {
         Remove-Item -Path $configPath
