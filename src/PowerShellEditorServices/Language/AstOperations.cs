@@ -5,24 +5,30 @@
 
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Management.Automation.Language;
+using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    using System.Diagnostics;
     using System.Management.Automation;
-    using System.Management.Automation.Language;
-    using System.Management.Automation.Runspaces;
 
     /// <summary>
     /// Provides common operations for the syntax tree of a parsed script.
     /// </summary>
     internal static class AstOperations
     {
+        // TODO: When netstandard is upgraded to 2.0, see if
+        //       Delegate.CreateDelegate can be used here instead
+        private static readonly MethodInfo s_extentCloneWithNewOffset = typeof(PSObject).GetTypeInfo().Assembly
+            .GetType("System.Management.Automation.Language.InternalScriptPosition")
+            .GetMethod("CloneWithNewOffset", BindingFlags.Instance | BindingFlags.NonPublic);
+
         /// <summary>
         /// Gets completions for the symbol found in the Ast at
         /// the given file offset.
@@ -55,24 +61,10 @@ namespace Microsoft.PowerShell.EditorServices
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            var type = scriptAst.Extent.StartScriptPosition.GetType();
-            var method =
-#if CoreCLR
-                type.GetMethod(
-                    "CloneWithNewOffset",
-                    BindingFlags.Instance | BindingFlags.NonPublic);
-#else
-                type.GetMethod(
-                    "CloneWithNewOffset",
-                    BindingFlags.Instance | BindingFlags.NonPublic,
-                    null,
-                    new[] { typeof(int) }, null);
-#endif
 
-            IScriptPosition cursorPosition =
-                (IScriptPosition)method.Invoke(
-                    scriptAst.Extent.StartScriptPosition,
-                    new object[] { fileOffset });
+            IScriptPosition cursorPosition = (IScriptPosition)s_extentCloneWithNewOffset.Invoke(
+                scriptAst.Extent.StartScriptPosition,
+                new object[] { fileOffset });
 
             logger.Write(
                 LogLevel.Verbose,
