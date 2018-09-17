@@ -166,7 +166,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns></returns>
         public static Runspace CreateRunspace(PSHost psHost)
         {
-            var initialSessionState = InitialSessionState.CreateDefault2();
+            InitialSessionState initialSessionState;
+            if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1") {
+                initialSessionState = InitialSessionState.CreateDefault();
+            } else {
+                initialSessionState = InitialSessionState.CreateDefault2();
+            }
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
             runspace.ThreadOptions = PSThreadOptions.ReuseThread;

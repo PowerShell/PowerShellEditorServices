@@ -151,104 +151,16 @@ function Get-NugetAsmForRuntime {
     return $DestinationPath
 }
 
-function Enable-WritingToPath {
-    param([string]$Path)
+function Invoke-WithCreateDefaultHook {
+    param([scriptblock]$ScriptBlock)
 
-    # This is not a problem on Windows
-    if (-not ($IsMacOS -or $IsLinux)) {
-        return
-    }
-
-    Write-Verbose "Setting permissions on path: $Path"
-    sudo chmod o+w $Path
-    $permissions = if ($IsLinux) {
-        stat -c "%a" $Path
-    } else {
-        stat -f "%A" $Path
-    }
-    Write-Verbose "Permissions set to $permissions"
-}
-
-function Invoke-WithPSCoreModulePath {
-    param(
-        [string]$NewModulePath,
-        [scriptblock]$ScriptBlock
-    )
-
-    $configBase = if ($IsLinux -or $IsMacOS) {
-        "$HOME/.config/powershell"
-    } else {
-        "$HOME\Documents\PowerShell"
-    }
-
-    $configPath = Join-Path $configBase 'powershell.config.json'
-
-    if (-not (Test-Path $configBase)) {
-        New-Item -ItemType Directory -Path $configPath
-    } elseif (Test-Path $configPath) {
-        $configBackupPath = Join-Path ([System.IO.Path]::GetTempPath()) 'powershell.config.backup.json'
-        Copy-Item -Path $configPath -Destination $configBackupPath -Force
-    }
-
-    try {
-        Enable-WritingToPath $configPath
-        $escapedPath = $NewModulePath -replace '\\', '\\'
-        New-Item -Path $configPath -Value "{ `"PSModulePath`": `"$escapedPath`" }" -Force
+    try
+    {
+        $env:PSES_TEST_USE_CREATE_DEFAULT = 1
         & $ScriptBlock
     } finally {
-        Remove-Item -Path $configPath
-
-        if ($configBackupPath) {
-            Move-Item -Path $configBackupPath -Destination $configPath -Force
-        }
+        Remove-Item env:PSES_TEST_USE_CREATE_DEFAULT
     }
-}
-
-function Get-PSCoreModules {
-    param(
-        [ValidateNotNullOrEmpty()][string]$PSVersion = '6.1.0',
-        [string]$DestinationPath
-    )
-
-    $tmpPath = [System.IO.Path]::GetTempPath()
-
-    $relativeModulePath = 'Modules/'
-
-    if (-not $DestinationPath) {
-        $DestinationPath = Join-Path $tmpPath 'PSCoreModules'
-    }
-
-    if (Test-Path $DestinationPath) {
-        return Join-Path $DestinationPath $relativeModulePath
-    }
-
-    if ($IsMacOS) {
-        $os = 'osx'
-        $ext = 'tar.gz'
-    } elseif ($IsLinux) {
-        $os = 'linux'
-        $ext = 'tar.gz'
-    } else {
-        $os = 'win'
-        $ext = 'zip'
-    }
-
-    $uri = "https://github.com/PowerShell/PowerShell/releases/download/v$PSVersion/powershell-$PSVersion-$os-x64.$ext"
-
-    $downloadPath = Join-Path $tmpPath "pscoremodules.$ext"
-
-    if (-not (Test-Path $downloadPath)) {
-        Invoke-WebRequest -Uri $uri -OutFile $downloadPath
-    }
-
-    if ($IsMacOS -or $IsLinux) {
-        New-Item -ItemType Directory -Path $DestinationPath
-        tar xvf $downloadPath -C $DestinationPath
-    } else {
-        Expand-Archive -Path $downloadPath -DestinationPath $DestinationPath
-    }
-
-    return Join-Path $DestinationPath $relativeModulePath
 }
 
 task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, PackageNuGet {
@@ -377,9 +289,7 @@ function UploadTestLogs {
     }
 }
 
-task Test {
-    $script:PSCoreModulePath = Get-PSCoreModules
-},TestServer,TestProtocol
+task Test TestServer,TestProtocol
 
 task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
@@ -389,7 +299,7 @@ task TestServer {
         exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
     }
 
-    Invoke-WithPSCoreModulePath -NewModulePath $script:PSCoreModulePath {
+    Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
         exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
         exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
     }
@@ -403,7 +313,7 @@ task TestProtocol {
         exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
     }
 
-    Invoke-WithPSCoreModulePath -NewModulePath $script:PSCoreModulePath {
+    Invoke-WithCreateDefaultHook {
         exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
         exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
     }
