@@ -165,7 +165,7 @@ function Enable-WritingToPath {
         stat -f "%A" $Path
     }
 
-    chmod o+w $Path
+    sudo chmod o+w $Path
 
     return $currentPermissions
 }
