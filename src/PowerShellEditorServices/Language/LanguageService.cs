@@ -13,6 +13,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -346,9 +347,13 @@ namespace Microsoft.PowerShell.EditorServices
                     {
                         scriptFile = workspace.GetFile(file);
                     }
-                    catch (IOException)
+                    catch (Exception e) when (e is IOException
+                                           || e is SecurityException
+                                           || e is FileNotFoundException
+                                           || e is DirectoryNotFoundException
+                                           || e is PathTooLongException)
                     {
-                        // If the file has ceased to exist for some reason, we just skip it
+                        // If we can't access the file for some reason, just ignore it
                         continue;
                     }
 
