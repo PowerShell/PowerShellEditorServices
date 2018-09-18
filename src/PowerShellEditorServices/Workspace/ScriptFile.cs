@@ -197,7 +197,18 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="text">Input string to be split up into lines.</param>
         /// <returns>The lines in the string.</returns>
-        public static List<string> GetLines(string text)
+        [Obsolete("This method is not designed for public exposure and will be retired in later versions of EditorServices")]
+        public static IList<string> GetLines(string text)
+        {
+            return GetLinesInternal(text);
+        }
+
+        /// <summary>
+        /// Get the lines in a string.
+        /// </summary>
+        /// <param name="text">Input string to be split up into lines.</param>
+        /// <returns>The lines in the string.</returns>
+        internal static List<string> GetLinesInternal(string text)
         {
             if (text == null)
             {
@@ -326,6 +337,19 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 throw new ArgumentOutOfRangeException($"Position {line}:{column} is outside of the column range of 1 to {maxColumn}.");
             }
+        }
+
+
+        /// <summary>
+        /// Defunct ValidatePosition method call. The isInsertion parameter is ignored.
+        /// </summary>
+        /// <param name="line"></param>
+        /// <param name="column"></param>
+        /// <param name="isInsertion"></param>
+        [Obsolete("Use ValidatePosition(int, int) instead")]
+        public void ValidatePosition(int line, int column, bool isInsertion)
+        {
+            ValidatePosition(line, column);
         }
 
         /// <summary>
@@ -557,7 +581,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             // Split the file contents into lines and trim
             // any carriage returns from the strings.
-            this.FileLines = GetLines(fileContents);
+            this.FileLines = GetLinesInternal(fileContents);
 
             // Parse the contents to get syntax tree and errors
             this.ParseFileContents();
