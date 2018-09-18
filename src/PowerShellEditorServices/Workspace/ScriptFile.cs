@@ -309,7 +309,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="line">The 1-based line to be validated.</param>
         /// <param name="column">The 1-based column to be validated.</param>
-        /// <param name="isInsertion">If true, the position to validate is for an applied change.</param>
         public void ValidatePosition(int line, int column)
         {
             int maxLine = this.FileLines.Count;
