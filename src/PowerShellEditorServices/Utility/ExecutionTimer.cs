@@ -93,7 +93,6 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 callerLineNumber: _callerLineNumber);
         }
 
-        [ThreadStatic]
         private static Stopwatch Stopwatch => t_stopwatch ?? (t_stopwatch = new Stopwatch());
     }
 }
