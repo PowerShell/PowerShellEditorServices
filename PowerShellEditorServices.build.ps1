@@ -26,6 +26,7 @@ $script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
 $script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSCode/bin/"
 $script:WindowsPowerShellFrameworkTarget = 'net461'
 $script:NetFrameworkPlatformId = 'win'
+$script:NetCoreTestingFrameworkVersion = '2.1.4'
 
 $script:PSCoreModulePath = $null
 
@@ -296,12 +297,12 @@ task TestServer {
 
     if (-not $script:IsUnix) {
         exec { & $script:dotnetExe build -f $script:TestRuntime.Desktop }
-        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
+        exec { & $script:dotnetExe xunit -f $script:TestRuntime.Desktop }
     }
 
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
         exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
-        exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
+        exec { & $script:dotnetExe xunit -f $script:TestRuntime.Core --fx-version $script:NetCoreTestingFrameworkVersion }
     }
 }
 
@@ -310,12 +311,12 @@ task TestProtocol {
 
     if (-not $script:IsUnix) {
         exec { & $script:dotnetExe build -f $script:TestRuntime.Desktop }
-        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
+        exec { & $script:dotnetExe xunit -f $script:TestRuntime.Desktop }
     }
 
     Invoke-WithCreateDefaultHook {
         exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
-        exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
+        exec { & $script:dotnetExe xunit -f $script:TestRuntime.Core --fx-version $script:NetCoreTestingFrameworkVersion }
     }
 }
 
