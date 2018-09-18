@@ -351,7 +351,8 @@ namespace Microsoft.PowerShell.EditorServices
                                            || e is SecurityException
                                            || e is FileNotFoundException
                                            || e is DirectoryNotFoundException
-                                           || e is PathTooLongException)
+                                           || e is PathTooLongException
+                                           || e is UnauthorizedAccessException)
                     {
                         // If we can't access the file for some reason, just ignore it
                         continue;
