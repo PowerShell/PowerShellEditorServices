@@ -505,12 +505,12 @@ namespace Microsoft.PowerShell.EditorServices
             }
 #endif
             // Check here that we have something like "file:///C%3A/" as a prefix (caller must check the file:// part)
-            if (!(fileUri[7] == '/'
-                  && char.IsLetter(fileUri[8])
-                  && fileUri[9] == '%'
-                  && fileUri[10] == '3'
-                  && fileUri[11] == 'A'
-                  && fileUri[12] == '/'))
+            if (!(fileUri[7] == '/' &&
+                  char.IsLetter(fileUri[8]) &&
+                  fileUri[9] == '%' &&
+                  fileUri[10] == '3' &&
+                  fileUri[11] == 'A' &&
+                  fileUri[12] == '/'))
             {
                 return fileUri;
             }
