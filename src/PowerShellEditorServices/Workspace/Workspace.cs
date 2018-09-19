@@ -11,6 +11,10 @@ using System.IO;
 using System.Security;
 using System.Text;
 
+#if CoreCLR
+using System.Runtime.InteropServices;
+#endif
+
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
