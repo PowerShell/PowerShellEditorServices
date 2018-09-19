@@ -355,15 +355,14 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private string ResolveFilePath(string filePath)
+        internal string ResolveFilePath(string filePath)
         {
             if (!IsPathInMemory(filePath))
             {
                 if (filePath.StartsWith(@"file://"))
                 {
                     // Client sent the path in URI format, extract the local path
-                    Uri fileUri = new Uri(Uri.UnescapeDataString(filePath));
-                    filePath = fileUri.LocalPath;
+                    filePath = new Uri(filePath).LocalPath;
                 }
 
                 // Clients could specify paths with escaped space, [ and ] characters which .NET APIs

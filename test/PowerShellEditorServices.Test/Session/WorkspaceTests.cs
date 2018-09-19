@@ -70,5 +70,23 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
                     $"Testing path {testCase.Path}");
             }
         }
+
+        [Theory()]
+        [InlineData("file:///C:/banana/", @"C:\banana\")]
+        [InlineData("file:///C:/banana/ex.ps1", @"C:\banana\ex.ps1")]
+        [InlineData("file:///E:/Path/to/awful%23path", @"E:\Path\to\awful#path")]
+        [InlineData("file:///path/with/no/drive", @"C:\path\with\no\drive")]
+        [InlineData("file:///path/wi[th]/squ[are/brackets/", @"C:\path\wi[th]\squ[are\brackets\")]
+        [InlineData("file:///Carrots/A%5Ere/Good/", @"C:\Carrots\A^re\Good\")]
+        [InlineData("file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", @"C:\Users\barnaby\脚本\Reduce-Directory")]
+        [InlineData("file:///C:/Program%20Files%20(x86)/PowerShell/6/pwsh.exe", @"C:\Program Files (x86)\PowerShell\6\pwsh.exe")]
+        public void CorrectlyResolvesPaths(string givenPath, string expectedPath)
+        {
+            Workspace workspace = new Workspace(PowerShellVersion, Logging.NullLogger);
+
+            string resolvedPath = workspace.ResolveFilePath(givenPath);
+
+            Assert.Equal(expectedPath, resolvedPath);
+        }
     }
 }
