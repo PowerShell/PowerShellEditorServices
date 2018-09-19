@@ -4,18 +4,18 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
+using System;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
-    // We don't expect ShowOnlineHelpRequest to come from vscode anymore, but it could come from another editor.
-    // TODO: Note that it's deprecated if it's called???
+    [Obsolete("This class is deprecated. Use ShowHelpRequest instead.")]
     public class ShowOnlineHelpRequest
     {
         public static readonly
             RequestType<string, object, object, object> Type =
             RequestType<string, object, object, object>.Create("powerShell/showOnlineHelp");
     }
-        public class ShowHelpRequest
+    public class ShowHelpRequest
     {
         public static readonly
             RequestType<string, object, object, object> Type =

@@ -231,6 +231,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     }
                 });
         }
+
         protected async Task HandleShowHelpRequest(
             string helpParams,
             RequestContext<object> requestContext)
@@ -263,10 +264,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             RequestContext<object> requestContext
         )
         {
-            const string deprecatedWarning = @"
-            Write-Warning ""'powerShell/showOnlineHelp' has been deprecated. Use 'powerShell/showHelp' instead.""";
             PSCommand commandDeprecated = new PSCommand()
-                .AddScript(deprecatedWarning);
+                .AddCommand("Microsoft.PowerShell.Utility\\Write-Verbose")
+                .AddParameter("Message", ";powerShell/showOnlineHelp' has been deprecated. Use 'powerShell/showHelp' instead.");
             await editorSession.PowerShellContext.ExecuteCommand<PSObject>(commandDeprecated, sendOutputToHost: true);
             await this.HandleShowHelpRequest(helpParams, requestContext);
         }
