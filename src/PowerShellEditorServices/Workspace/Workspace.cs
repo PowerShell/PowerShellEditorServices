@@ -361,6 +361,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (filePath.StartsWith(@"file://"))
                 {
+                    filePath = Workspace.UnescapeDriveColon(filePath);
                     // Client sent the path in URI format, extract the local path
                     filePath = new Uri(filePath).LocalPath;
                 }
@@ -483,6 +484,40 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return combinedPath;
+        }
+
+        /// <summary>
+        /// Takes a file-scheme URI with an escaped colon after the drive letter and unescapes only the colon.
+        /// VSCode sends escaped colons after drive letters, but System.Uri expects unescaped.
+        /// </summary>
+        /// <param name="fileUri">The fully-escaped file-scheme URI string.</param>
+        /// <returns>A file-scheme URI string with the drive colon unescaped.</returns>
+        private static string UnescapeDriveColon(string fileUri)
+        {
+#if CoreCLR
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return fileUri;
+            }
+#endif
+            // Check here that we have something like "file:///C%3A/" as a prefix (caller must check the file:// part)
+            if (!(fileUri[7] == '/'
+                  && char.IsLetter(fileUri[8])
+                  && fileUri[9] == '%'
+                  && fileUri[10] == '3'
+                  && fileUri[11] == 'A'
+                  && fileUri[12] == '/'))
+            {
+                return fileUri;
+            }
+
+            var sb = new StringBuilder(fileUri.Length - 2); // We lost "%3A" and gained ":", so length - 2
+            sb.Append("file:///");
+            sb.Append(fileUri[8]); // The drive letter
+            sb.Append(':');
+            sb.Append(fileUri.Substring(12)); // The rest of the URI after the colon
+
+            return sb.ToString();
         }
 
         #endregion

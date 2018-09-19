@@ -72,14 +72,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         }
 
         [Theory()]
-        [InlineData("file:///C:/banana/", @"C:\banana\")]
-        [InlineData("file:///C:/banana/ex.ps1", @"C:\banana\ex.ps1")]
-        [InlineData("file:///E:/Path/to/awful%23path", @"E:\Path\to\awful#path")]
+        [InlineData("file:///C%3A/banana/", @"C:\banana\")]
+        [InlineData("file:///C%3A/banana/ex.ps1", @"C:\banana\ex.ps1")]
+        [InlineData("file:///E%3A/Path/to/awful%23path", @"E:\Path\to\awful#path")]
         [InlineData("file:///path/with/no/drive", @"C:\path\with\no\drive")]
         [InlineData("file:///path/wi[th]/squ[are/brackets/", @"C:\path\wi[th]\squ[are\brackets\")]
         [InlineData("file:///Carrots/A%5Ere/Good/", @"C:\Carrots\A^re\Good\")]
         [InlineData("file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", @"C:\Users\barnaby\脚本\Reduce-Directory")]
-        [InlineData("file:///C:/Program%20Files%20(x86)/PowerShell/6/pwsh.exe", @"C:\Program Files (x86)\PowerShell\6\pwsh.exe")]
+        [InlineData("file:///C%3A/Program%20Files%20%28x86%29/PowerShell/6/pwsh.exe", @"C:\Program Files (x86)\PowerShell\6\pwsh.exe")]
+        [InlineData("file:///home/maxim/test%20folder/%D0%9F%D0%B0%D0%BF%D0%BA%D0%B0/helloworld.ps1", @"C:\home\maxim\test folder\Папка\helloworld.ps1")]
         public void CorrectlyResolvesPaths(string givenPath, string expectedPath)
         {
             Workspace workspace = new Workspace(PowerShellVersion, Logging.NullLogger);
