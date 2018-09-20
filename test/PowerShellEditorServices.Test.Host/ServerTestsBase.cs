@@ -309,11 +309,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 #if !CoreCLR
             return "powershell.exe";
 #else
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return "pwsh.exe";
-            }
-
             return "pwsh";
 #endif
         }
