@@ -144,6 +144,23 @@ namespace PSLanguageService.Test
         }
 
         [Fact]
+        public void CanAppendToEndOfFile()
+        {
+            this.AssertFileChange(
+                "line1\r\nline2\r\nline3",
+                "line1\r\nline2\r\nline3\r\nline4\r\nline5",
+                new FileChange
+                {
+                    Line = 4,
+                    EndLine = 5,
+                    Offset = 1,
+                    EndOffset = 1,
+                    InsertString = "line4\r\nline5"
+                }
+            );
+        }
+
+        [Fact]
         public void FindsDotSourcedFiles()
         {
             string exampleScriptContents =
@@ -181,12 +198,29 @@ namespace PSLanguageService.Test
                         new FileChange
                         {
                             Line = 3,
-                            EndLine = 7,
+                            EndLine = 8,
                             Offset = 1,
                             EndOffset = 1,
                             InsertString = ""
                         });
                 });
+        }
+
+        [Fact]
+        public void CanDeleteFromEndOfFile()
+        {
+            this.AssertFileChange(
+                "line1\r\nline2\r\nline3\r\nline4",
+                "line1\r\nline2",
+                new FileChange
+                {
+                    Line = 3,
+                    EndLine = 5,
+                    Offset = 1,
+                    EndOffset = 1,
+                    InsertString = ""
+                }
+            );
         }
 
         internal static ScriptFile CreateScriptFile(string initialString)
