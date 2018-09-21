@@ -123,6 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.messageHandlers.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
             this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
+
             this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
 
             this.messageHandlers.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
@@ -251,14 +252,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 } catch [System.Management.Automation.PSInvalidOperationException] {
                     Microsoft.PowerShell.Core\Get-Help $CommandName -Full
                 }";
+
             if (string.IsNullOrEmpty(helpParams)) { helpParams = "Get-Help"; }
 
             PSCommand checkHelpPSCommand = new PSCommand()
                 .AddScript(CheckHelpScript, useLocalScope: true)
                 .AddArgument(helpParams);
+
             await editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpPSCommand, sendOutputToHost: true);
             await requestContext.SendResult(null);
         }
+
         protected async Task HandleShowOnlineHelpRequest(
             string helpParams,
             RequestContext<object> requestContext
@@ -266,7 +270,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             PSCommand commandDeprecated = new PSCommand()
                 .AddCommand("Microsoft.PowerShell.Utility\\Write-Verbose")
-                .AddParameter("Message", ";powerShell/showOnlineHelp' has been deprecated. Use 'powerShell/showHelp' instead.");
+                .AddParameter("Message", "'powerShell/showOnlineHelp' has been deprecated. Use 'powerShell/showHelp' instead.");
+
             await editorSession.PowerShellContext.ExecuteCommand<PSObject>(commandDeprecated, sendOutputToHost: true);
             await this.HandleShowHelpRequest(helpParams, requestContext);
         }

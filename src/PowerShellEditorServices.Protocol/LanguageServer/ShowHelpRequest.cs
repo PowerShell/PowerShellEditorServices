@@ -8,6 +8,7 @@ using System;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
+
     [Obsolete("This class is deprecated. Use ShowHelpRequest instead.")]
     public class ShowOnlineHelpRequest
     {
