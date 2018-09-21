@@ -133,6 +133,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 this.HandleDocumentRangeFormattingRequest);
 
             this.messageHandlers.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
+            this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
+
             this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
 
             this.messageHandlers.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
@@ -242,20 +244,47 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 });
         }
 
-        protected async Task HandleShowOnlineHelpRequest(
+        protected async Task HandleShowHelpRequest(
             string helpParams,
             RequestContext<object> requestContext)
         {
-            if (helpParams == null) { helpParams = "get-help"; }
+            const string CheckHelpScript = @"
+                [CmdletBinding()]
+                param (
+                    [String]$CommandName
+                )
+                try {
+                    $null = Microsoft.PowerShell.Core\Get-Command $CommandName -ErrorAction Stop
+                } catch [System.Management.Automation.CommandNotFoundException] {
+                    $PSCmdlet.ThrowTerminatingError($PSItem)
+                }
+                try {
+                    $null = Microsoft.PowerShell.Core\Get-Help $CommandName -Online
+                } catch [System.Management.Automation.PSInvalidOperationException] {
+                    Microsoft.PowerShell.Core\Get-Help $CommandName -Full
+                }";
 
-            var psCommand = new PSCommand();
-            psCommand.AddCommand("Get-Help");
-            psCommand.AddArgument(helpParams);
-            psCommand.AddParameter("Online");
+            if (string.IsNullOrEmpty(helpParams)) { helpParams = "Get-Help"; }
 
-            await editorSession.PowerShellContext.ExecuteCommand<object>(psCommand);
+            PSCommand checkHelpPSCommand = new PSCommand()
+                .AddScript(CheckHelpScript, useLocalScope: true)
+                .AddArgument(helpParams);
 
+            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpPSCommand, sendOutputToHost: true);
             await requestContext.SendResult(null);
+        }
+
+        protected async Task HandleShowOnlineHelpRequest(
+            string helpParams,
+            RequestContext<object> requestContext
+        )
+        {
+            PSCommand commandDeprecated = new PSCommand()
+                .AddCommand("Microsoft.PowerShell.Utility\\Write-Verbose")
+                .AddParameter("Message", "'powerShell/showOnlineHelp' has been deprecated. Use 'powerShell/showHelp' instead.");
+
+            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(commandDeprecated, sendOutputToHost: true);
+            await this.HandleShowHelpRequest(helpParams, requestContext);
         }
 
         private async Task HandleSetPSSARulesRequest(
