@@ -1930,7 +1930,18 @@ namespace Microsoft.PowerShell.EditorServices
 
         private SessionDetails GetSessionDetailsInNestedPipeline()
         {
-            return GetSessionDetailsInRunspace(this.CurrentRunspace.Runspace);
+            // We don't need to check what thread we're on here. If it's a local
+            // nested pipeline then we will already be on the correct thread, and
+            // non-debugger nested pipelines aren't supported in remote runspaces.
+            return this.GetSessionDetails(
+                command =>
+                {
+                    using (var localPwsh = PowerShell.Create(RunspaceMode.CurrentRunspace))
+                    {
+                        localPwsh.Commands = command;
+                        return localPwsh.Invoke().FirstOrDefault();
+                    }
+                });
         }
 
         private void SetProfileVariableInCurrentRunspace(ProfilePaths profilePaths)
