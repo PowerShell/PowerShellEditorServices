@@ -261,8 +261,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 try {
                     $null = Microsoft.PowerShell.Core\Get-Help $CommandName -Online
                 } catch [System.Management.Automation.PSInvalidOperationException] {
-                    Microsoft.PowerShell.Core\Get-Help $CommandName -Full
-                }";
+                    return Microsoft.PowerShell.Core\Get-Help $CommandName -Full | Out-String
+                }
+                ";
 
             if (string.IsNullOrEmpty(helpParams)) { helpParams = "Get-Help"; }
 
@@ -270,6 +271,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 .AddScript(CheckHelpScript, useLocalScope: true)
                 .AddArgument(helpParams);
 
+            // TODO: Rather than print the help in the console, we should send the string back
+            //       to VSCode to display in a help pop-up (or similar)
             await editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpPSCommand, sendOutputToHost: true);
             await requestContext.SendResult(null);
         }
