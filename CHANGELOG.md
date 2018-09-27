@@ -1,5 +1,25 @@
 # PowerShell Editor Services Release History
 
+## v1.9.0
+### Thursday, September 27, 2018
+
+- [PowerShellEditorServices #750](https://github.com/PowerShell/PowerShellEditorServices/pull/750) -
+  Fix issue where # in path causes the path to resolve incorrectly
+- [PowerShellEditorServices #721](https://github.com/PowerShell/PowerShellEditorServices/pull/721) -
+  Change Get-Help behavior to return local help when online help can't be displayed  (Thanks @corbob!)
+- [PowerShellEditorServices #748](https://github.com/PowerShell/PowerShellEditorServices/pull/748) -
+  Fix index out-of-range exception when deleting script files
+- [PowerShellEditorServices #749](https://github.com/PowerShell/PowerShellEditorServices/pull/749) -
+  Fix crash for finding symbols on bad paths
+- [PowerShellEditorServices #740](https://github.com/PowerShell/PowerShellEditorServices/pull/740) -
+  Fix inner help completion
+- [PowerShellEditorServices #736](https://github.com/PowerShell/PowerShellEditorServices/pull/736) -
+  Cache the reflection call done for completions
+- [PowerShellEditorServices #737](https://github.com/PowerShell/PowerShellEditorServices/pull/737) -
+  Remove LINQ usage in language service methods
+- [PowerShellEditorServices #743](https://github.com/PowerShell/PowerShellEditorServices/pull/743) -
+  Remove unnecessary LINQ calls from LanguageServer
+
 ## v1.8.4
 ### Friday, August 31, 2018
 
