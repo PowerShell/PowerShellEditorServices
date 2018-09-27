@@ -254,15 +254,23 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     [String]$CommandName
                 )
                 try {
-                    $null = Microsoft.PowerShell.Core\Get-Command $CommandName -ErrorAction Stop
+                    $command = Microsoft.PowerShell.Core\Get-Command $CommandName -ErrorAction Stop
                 } catch [System.Management.Automation.CommandNotFoundException] {
                     $PSCmdlet.ThrowTerminatingError($PSItem)
                 }
                 try {
-                    $null = Microsoft.PowerShell.Core\Get-Help $CommandName -Online
-                } catch [System.Management.Automation.PSInvalidOperationException] {
-                    return Microsoft.PowerShell.Core\Get-Help $CommandName -Full | Out-String
+                    $helpUri = [Microsoft.PowerShell.Commands.GetHelpCodeMethods]::GetHelpUri($command)
+                    # HEAD means we don't need the content itself back :)
+                    $status = (Invoke-WebRequest -Method Head -Uri $helpUri -ErrorAction Stop).StatusCode
+                    if ($status -lt 400)
+                    {
+                        $null = Microsoft.PowerShell.Core\Get-Help $CommandName -Online
+                        return
+                    }
+                } catch {
+                    # Ignore - we want to drop out to Get-Help -Full
                 }
+                return Microsoft.PowerShell.Core\Get-Help $CommandName -Full
                 ";
 
             if (string.IsNullOrEmpty(helpParams)) { helpParams = "Get-Help"; }
