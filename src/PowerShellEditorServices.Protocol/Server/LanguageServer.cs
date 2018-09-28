@@ -264,8 +264,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     $oldSslVersion = [System.Net.ServicePointManager]::SecurityProtocol
                     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
-                    # HEAD means we don't need the content itself back :)
-                    $status = (Invoke-WebRequest -Method Head -Uri $helpUri -ErrorAction Stop).StatusCode
+                    # HEAD means we don't need the content itself back, just the response header
+                    $status = (Invoke-WebRequest -Method Head -Uri $helpUri -TimeoutSec 5 -ErrorAction Stop).StatusCode
                     if ($status -lt 400) {
                         $null = Microsoft.PowerShell.Core\Get-Help $CommandName -Online
                         return
