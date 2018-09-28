@@ -3,8 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System;
+using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
@@ -16,6 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
             RequestType<string, object, object, object> Type =
             RequestType<string, object, object, object>.Create("powerShell/showOnlineHelp");
     }
+
     public class ShowHelpRequest
     {
         public static readonly

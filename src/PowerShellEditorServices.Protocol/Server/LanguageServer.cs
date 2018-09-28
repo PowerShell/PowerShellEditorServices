@@ -254,15 +254,30 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     [String]$CommandName
                 )
                 try {
-                    $null = Microsoft.PowerShell.Core\Get-Command $CommandName -ErrorAction Stop
+                    $command = Microsoft.PowerShell.Core\Get-Command $CommandName -ErrorAction Stop
                 } catch [System.Management.Automation.CommandNotFoundException] {
                     $PSCmdlet.ThrowTerminatingError($PSItem)
                 }
                 try {
-                    $null = Microsoft.PowerShell.Core\Get-Help $CommandName -Online
-                } catch [System.Management.Automation.PSInvalidOperationException] {
-                    Microsoft.PowerShell.Core\Get-Help $CommandName -Full
-                }";
+                    $helpUri = [Microsoft.PowerShell.Commands.GetHelpCodeMethods]::GetHelpUri($command)
+
+                    $oldSslVersion = [System.Net.ServicePointManager]::SecurityProtocol
+                    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+
+                    # HEAD means we don't need the content itself back, just the response header
+                    $status = (Microsoft.PowerShell.Utility\Invoke-WebRequest -Method Head -Uri $helpUri -TimeoutSec 5 -ErrorAction Stop).StatusCode
+                    if ($status -lt 400) {
+                        $null = Microsoft.PowerShell.Core\Get-Help $CommandName -Online
+                        return
+                    }
+                } catch {
+                    # Ignore - we want to drop out to Get-Help -Full
+                } finally {
+                    [System.Net.ServicePointManager]::SecurityProtocol = $oldSslVersion
+                }
+
+                return Microsoft.PowerShell.Core\Get-Help $CommandName -Full
+                ";
 
             if (string.IsNullOrEmpty(helpParams)) { helpParams = "Get-Help"; }
 
@@ -270,6 +285,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 .AddScript(CheckHelpScript, useLocalScope: true)
                 .AddArgument(helpParams);
 
+            // TODO: Rather than print the help in the console, we should send the string back
+            //       to VSCode to display in a help pop-up (or similar)
             await editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpPSCommand, sendOutputToHost: true);
             await requestContext.SendResult(null);
         }
