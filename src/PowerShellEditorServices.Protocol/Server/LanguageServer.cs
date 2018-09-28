@@ -265,7 +265,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
                     # HEAD means we don't need the content itself back, just the response header
-                    $status = (Invoke-WebRequest -Method Head -Uri $helpUri -TimeoutSec 5 -ErrorAction Stop).StatusCode
+                    $status = (Microsoft.PowerShell.Utility\Invoke-WebRequest -Method Head -Uri $helpUri -TimeoutSec 5 -ErrorAction Stop).StatusCode
                     if ($status -lt 400) {
                         $null = Microsoft.PowerShell.Core\Get-Help $CommandName -Online
                         return
