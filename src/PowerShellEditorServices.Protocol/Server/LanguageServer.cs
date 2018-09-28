@@ -845,7 +845,7 @@ function __Expand-Alias {
                 signatures = new SignatureInformation[parameterSets.Signatures.Length];
                 for (int i = 0; i < signatures.Length; i++)
                 {
-                    var parameters = new ParameterInformation[signatures[i].Parameters.Count()];
+                    var parameters = new ParameterInformation[parameterSets.Signatures[i].Parameters.Count()];
                     int j = 0;
                     foreach (ParameterInfo param in parameterSets.Signatures[i].Parameters)
                     {
@@ -853,7 +853,7 @@ function __Expand-Alias {
                         j++;
                     }
 
-                    var signature = new SignatureInformation
+                    signatures[i] = new SignatureInformation
                     {
                         Label = parameterSets.CommandName + " " + parameterSets.Signatures[i].SignatureText,
                         Documentation = null,
