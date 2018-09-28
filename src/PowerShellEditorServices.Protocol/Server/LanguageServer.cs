@@ -260,22 +260,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
                 try {
                     $helpUri = [Microsoft.PowerShell.Commands.GetHelpCodeMethods]::GetHelpUri($command)
-                    try {
-                        $oldSslVersion = [System.Net.ServicePointManager]::SecurityProtocol
-                        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-                        # HEAD means we don't need the content itself back :)
-                        $status = (Invoke-WebRequest -Method Head -Uri $helpUri -ErrorAction Stop).StatusCode
-                    } finally {
-                        [System.Net.ServicePointManager]::SecurityProtocol = $oldSslVersion
-                    }
-                    if ($status -lt 400)
-                    {
+
+                    $oldSslVersion = [System.Net.ServicePointManager]::SecurityProtocol
+                    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+
+                    # HEAD means we don't need the content itself back :)
+                    $status = (Invoke-WebRequest -Method Head -Uri $helpUri -ErrorAction Stop).StatusCode
+                    if ($status -lt 400) {
                         $null = Microsoft.PowerShell.Core\Get-Help $CommandName -Online
                         return
                     }
                 } catch {
                     # Ignore - we want to drop out to Get-Help -Full
+                } finally {
+                    [System.Net.ServicePointManager]::SecurityProtocol = $oldSslVersion
                 }
+
                 return Microsoft.PowerShell.Core\Get-Help $CommandName -Full
                 ";
 
