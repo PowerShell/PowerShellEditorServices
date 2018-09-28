@@ -789,14 +789,11 @@ function __Expand-Alias {
 
             if (completionResults != null)
             {
-                int sortIndex = 1;
-                var completions = new List<CompletionItem>();
-                foreach (CompletionDetails completion in completionResults.Completions)
+                completionItems = new CompletionItem[completionResults.Completions.Length];
+                for (int i = 0; i < completionItems.Length; i++)
                 {
-                    CompletionItem completionItem = CreateCompletionItem(completion, completionResults.ReplacedRange, sortIndex);
-                    sortIndex++;
+                    completionItems[i] = CreateCompletionItem(completionResults.Completions[i], completionResults.ReplacedRange, i + 1);
                 }
-                completionItems = completions.ToArray();
             }
 
             await requestContext.SendResult(completionItems);
