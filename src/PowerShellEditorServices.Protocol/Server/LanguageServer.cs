@@ -842,23 +842,24 @@ function __Expand-Alias {
 
             if (parameterSets != null)
             {
-                var sigs = new List<SignatureInformation>();
-                foreach (ParameterSetSignature sig in parameterSets.Signatures)
+                signatures = new SignatureInformation[parameterSets.Signatures.Length];
+                for (int i = 0; i < signatures.Length; i++)
                 {
-                    var parameters = new List<ParameterInformation>();
-                    foreach (ParameterInfo paramInfo in sig.Parameters)
+                    var parameters = new ParameterInformation[signatures[i].Parameters.Count()];
+                    int j = 0;
+                    foreach (ParameterInfo param in parameterSets.Signatures[i].Parameters)
                     {
-                        parameters.Add(CreateParameterInfo(paramInfo));
+                        parameters[j] = CreateParameterInfo(param);
+                        j++;
                     }
 
                     var signature = new SignatureInformation
                     {
-                        Label = parameterSets.CommandName + " " + sig.SignatureText,
+                        Label = parameterSets.CommandName + " " + parameterSets.Signatures[i].SignatureText,
                         Documentation = null,
-                        Parameters = parameters.ToArray(),
+                        Parameters = parameters,
                     };
                 }
-                signatures = sigs.ToArray();
             }
 
             await requestContext.SendResult(
