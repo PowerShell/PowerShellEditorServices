@@ -530,9 +530,9 @@ function __Expand-Alias {
         {
             PSCommand psCommand = new PSCommand();
             if(param != "") {
-                psCommand.AddCommand("Get-Command").AddArgument(param);
+                psCommand.AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddArgument(param);
             } else {
-                psCommand.AddScript("Get-Command -CommandType Function, Cmdlet, ExternalScript | Select-Object Name,ModuleName | Sort-Object Name");
+                psCommand.AddScript("Microsoft.PowerShell.Core\\Get-Command -CommandType Function, Cmdlet, ExternalScript | Select-Object Name,ModuleName | Sort-Object Name");
             }
             IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
             List<PSCommandMessage> commandList = new List<PSCommandMessage>();
