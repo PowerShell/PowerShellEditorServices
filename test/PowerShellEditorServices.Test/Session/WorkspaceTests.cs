@@ -41,11 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [Fact]
         public void CanDetermineIsPathInMemory()
         {
-#if !CoreCLR
-            string tempDir = Environment.GetEnvironmentVariable("TEMP");
-#else
             string tempDir = Path.GetTempPath();
-#endif
             string shortDirPath = Path.Combine(tempDir, "GitHub", "PowerShellEditorServices");
             string shortFilePath = Path.Combine(shortDirPath, "foo.ps1");
             string shortUriForm = "git:/c%3A/Users/Keith/GitHub/dahlbyk/posh-git/src/PoshGitTypes.ps1?%7B%22path%22%3A%22c%3A%5C%5CUsers%5C%5CKeith%5C%5CGitHub%5C%5Cdahlbyk%5C%5Cposh-git%5C%5Csrc%5C%5CPoshGitTypes.ps1%22%2C%22ref%22%3A%22~%22%7D";

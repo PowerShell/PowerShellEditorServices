@@ -111,7 +111,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
 }
 
-function Get-NugetAsmForRuntime {
+function Restore-NugetAsmForRuntime {
     param(
         [ValidateNotNull()][string]$PackageName,
         [ValidateNotNull()][string]$PackageVersion,
@@ -135,7 +135,8 @@ function Get-NugetAsmForRuntime {
 
     $packageDirPath = Join-Path $tmpDir "$PackageName.$PackageVersion"
     if (-not (Test-Path $packageDirPath)) {
-        $tmpNupkgPath = Join-Path $tmpDir 'tmp.zip'
+        $guid = New-Guid
+        $tmpNupkgPath = Join-Path $tmpDir "$guid.zip"
         if (Test-Path $tmpNupkgPath) {
             Remove-Item -Force $tmpNupkgPath
         }
@@ -267,9 +268,9 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
 }
 
 task Build {
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:TargetPlatform }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f $script:TargetPlatform }
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:TargetPlatform }
 }
 
 function UploadTestLogs {
@@ -296,12 +297,10 @@ task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe build -f $script:TestRuntime.Desktop }
         exec { & $script:dotnetExe xunit -f $script:TestRuntime.Desktop }
     }
 
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
         exec { & $script:dotnetExe xunit -f $script:TestRuntime.Core --fx-version $script:NetCoreTestingFrameworkVersion }
     }
 }
@@ -310,17 +309,15 @@ task TestProtocol {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe build -f $script:TestRuntime.Desktop }
         exec { & $script:dotnetExe xunit -f $script:TestRuntime.Desktop }
     }
 
     Invoke-WithCreateDefaultHook {
-        exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
         exec { & $script:dotnetExe xunit -f $script:TestRuntime.Core --fx-version $script:NetCoreTestingFrameworkVersion }
     }
 }
 
-task TestHost -If {
+task TestHost {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
 
     if (-not $script:IsUnix) {
@@ -375,7 +372,7 @@ task LayoutModule -After Build {
         }
 
         foreach ($packageDetails in $script:RequiredNugetBinaries[$binDestinationDir]) {
-            Get-NugetAsmForRuntime -DestinationPath $binDestPath @packageDetails
+            Restore-NugetAsmForRuntime -DestinationPath $binDestPath @packageDetails
         }
     }
 }
