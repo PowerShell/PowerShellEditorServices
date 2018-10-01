@@ -141,9 +141,13 @@ function Restore-NugetAsmForRuntime {
             Remove-Item -Force $tmpNupkgPath
         }
 
-        $packageUri = "$script:NugetApiUriBase/$PackageName/$PackageVersion"
-        Invoke-WebRequest -Uri $packageUri -OutFile $tmpNupkgPath
-        Expand-Archive -Path $tmpNupkgPath -DestinationPath $packageDirPath
+        try {
+            $packageUri = "$script:NugetApiUriBase/$PackageName/$PackageVersion"
+            Invoke-WebRequest -Uri $packageUri -OutFile $tmpNupkgPath
+            Expand-Archive -Path $tmpNupkgPath -DestinationPath $packageDirPath
+        } finally {
+            Remove-Item -Force $tmpNupkgPath -ErrorAction SilentlyContinue
+        }
     }
 
     $internalPath = [System.IO.Path]::Combine($packageDirPath, 'runtimes', $TargetPlatform, 'lib', $TargetRuntime, $DllName)
