@@ -355,7 +355,6 @@ namespace Microsoft.PowerShell.EditorServices
             foreach (object fileName in fileMap.Keys)
             {
                 var file = (ScriptFile)fileMap[fileName];
-                IEnumerable<SymbolReference> symbolReferencesinFile;
                 await _aliasHandle.WaitAsync();
                 try
                 {

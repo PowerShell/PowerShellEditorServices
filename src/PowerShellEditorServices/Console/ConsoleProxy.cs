@@ -20,8 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         static ConsoleProxy()
         {
-            // Maybe we should just include the RuntimeInformation package for FullCLR?
-#if CoreCLR
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 s_consoleProxy = new WindowsConsoleOperations();
@@ -29,9 +27,6 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
 
             s_consoleProxy = new UnixConsoleOperations();
-#else
-            s_consoleProxy = new WindowsConsoleOperations();
-#endif
         }
 
         public static Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken) =>

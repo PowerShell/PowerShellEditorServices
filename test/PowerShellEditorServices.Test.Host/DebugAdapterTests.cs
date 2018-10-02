@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.Client;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.IO;
@@ -20,17 +21,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         private ILogger logger;
         private DebugAdapterClient debugAdapterClient;
         private string DebugScriptPath =
-            Path.GetFullPath(@"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
+            Path.GetFullPath(TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/DebugTest.ps1"));
 
         public async Task InitializeAsync()
         {
             string testLogPath =
                 Path.Combine(
-#if CoreCLR
                     AppContext.BaseDirectory,
-#else
-                    AppDomain.CurrentDomain.BaseDirectory,
-#endif
                     "logs",
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8));

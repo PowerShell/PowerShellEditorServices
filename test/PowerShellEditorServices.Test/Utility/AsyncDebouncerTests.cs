@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
 {
     public class AsyncDebouncerTests
     {
-        [Fact(Skip = "TODO: This test fails in the new build system, need to investigate!")]
+        [Fact(Skip = "AsyncDebouncer not flushing within the interval")]
         public async Task AsyncDebouncerFlushesAfterInterval()
         {
             TestAsyncDebouncer debouncer = new TestAsyncDebouncer();
@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
 
             Assert.Equal(new List<int> { 1, 2, 3 }, debouncer.FlushedBuffer);
             Assert.True(
-                debouncer.TimeToFlush > 
+                debouncer.TimeToFlush >
                 TimeSpan.FromMilliseconds(TestAsyncDebouncer.Interval),
                 "Debouncer flushed before interval lapsed.");
 
@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             Assert.Equal(new List<int> { 4, 5, 6 }, debouncer.FlushedBuffer);
         }
 
-        [Fact(Skip = "TODO: This test fails in the new build system, need to investigate!")]
+        [Fact]
         public async Task AsyncDebouncerRestartsAfterInvoke()
         {
             TestAsyncRestartDebouncer debouncer = new TestAsyncRestartDebouncer();

@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -20,8 +21,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         private PowerShellContext powerShellContext;
         private AsyncQueue<SessionStateChangedEventArgs> stateChangeQueue;
 
-        private const string DebugTestFilePath =
-            @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1";
+        private static readonly string s_debugTestFilePath =
+            TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/DebugTest.ps1");
 
         public static readonly HostDetails TestHostDetails =
             new HostDetails(
@@ -36,9 +37,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             new ProfilePaths(
                 TestHostDetails.ProfileId,
                     Path.GetFullPath(
-                        @"..\..\..\..\PowerShellEditorServices.Test.Shared\Profile"),
+                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile")),
                     Path.GetFullPath(
-                        @"..\..\..\..\PowerShellEditorServices.Test.Shared"));
+                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared")));
 
         public PowerShellContextTests()
         {
@@ -104,7 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 Task.Run(
                     async () =>
                     {
-                        var unusedTask = this.powerShellContext.ExecuteScriptWithArgs(DebugTestFilePath);
+                        var unusedTask = this.powerShellContext.ExecuteScriptWithArgs(s_debugTestFilePath);
                         await Task.Delay(50);
                         this.powerShellContext.AbortExecution();
                     });

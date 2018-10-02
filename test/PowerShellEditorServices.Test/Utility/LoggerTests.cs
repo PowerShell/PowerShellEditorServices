@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.IO;
@@ -128,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         {
             return
                 string.Join(
-                    "\r\n",
+                    Environment.NewLine,
                     File.ReadAllLines(
                         logFilePath,
                         Encoding.UTF8));

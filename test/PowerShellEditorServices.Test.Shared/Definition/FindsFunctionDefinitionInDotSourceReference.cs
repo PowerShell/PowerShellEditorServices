@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Definition
         public static readonly ScriptRegion SourceDetails =
             new ScriptRegion
             {
-                File = @"References\FileWithReferences.ps1",
+                File = TestUtilities.NormalizePath("References/FileWithReferences.ps1"),
                 StartLineNumber = 3,
                 StartColumnNumber = 6
             };

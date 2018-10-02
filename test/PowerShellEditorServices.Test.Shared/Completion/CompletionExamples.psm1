@@ -10,10 +10,10 @@ Get-So
 $testVar
 
 Import-Module PowerShellGet
-Install-Mo
+Get-Rand
 
 function Test-Completion {
     param([Parameter(Mandatory, Value)])
 }
 
-Get-ChildItem c:\Program
+Get-ChildItem /

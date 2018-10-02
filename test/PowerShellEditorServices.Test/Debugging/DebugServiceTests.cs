@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,11 +42,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Load the test debug file
             this.debugScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/VariableTest.ps1"));
 
             this.variableScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/VariableTest.ps1"));
 
             this.debugService = new DebugService(this.powerShellContext, logger);
             this.debugService.DebuggerStopped += debugService_DebuggerStopped;
@@ -55,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Load the test debug file
             this.debugScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/DebugTest.ps1"));
         }
 
         async void powerShellContext_SessionStateChanged(object sender, SessionStateChangedEventArgs e)
@@ -108,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // it should not escape already escaped chars.
             ScriptFile debugWithParamsFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\Debug` W&ith Params `[Test].ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/Debug` W&ith Params `[Test].ps1"));
 
             await this.debugService.SetLineBreakpoints(
                 debugWithParamsFile,
@@ -638,7 +639,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Test set of global scope int variable (not strongly typed)
             VariableScope globalScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.GlobalScopeName);
             string newGlobalIntValue = "4242";
-            string setGlobalIntValue = await debugService.SetVariable(globalScope.Id, "$MaximumAliasCount", newGlobalIntValue);
+            string setGlobalIntValue = await debugService.SetVariable(globalScope.Id, "$MaximumHistoryCount", newGlobalIntValue);
             Assert.Equal(newGlobalIntValue, setGlobalIntValue);
 
             // The above just tests that the debug service returns the correct new value string.
@@ -664,7 +665,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Test set of global scope int variable (not strongly typed)
             globalScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.GlobalScopeName);
             variables = debugService.GetVariables(globalScope.Id);
-            var intGlobalVar = variables.FirstOrDefault(v => v.Name == "$MaximumAliasCount");
+            var intGlobalVar = variables.FirstOrDefault(v => v.Name == "$MaximumHistoryCount");
             Assert.Equal(newGlobalIntValue, intGlobalVar.ValueString);
 
             // Abort execution of the script
@@ -789,17 +790,26 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] variables =
                 debugService.GetVariables(stackFrames[0].LocalVariables.Id);
 
-            var var = variables.FirstOrDefault(v => v.Name == "$assocArrVar");
+            VariableDetailsBase var = variables.FirstOrDefault(v => v.Name == "$assocArrVar");
             Assert.NotNull(var);
             Assert.Equal("[Hashtable: 2]", var.ValueString);
             Assert.True(var.IsExpandable);
 
-            var childVars = debugService.GetVariables(var.Id);
+            VariableDetailsBase[] childVars = debugService.GetVariables(var.Id);
             Assert.Equal(9, childVars.Length);
             Assert.Equal("[0]", childVars[0].Name);
-            Assert.Equal("[secondChild, 42]", childVars[0].ValueString);
             Assert.Equal("[1]", childVars[1].Name);
-            Assert.Equal("[firstChild, \"Child\"]", childVars[1].ValueString);
+
+            var childVarStrs = new HashSet<string>(childVars.Select(v => v.ValueString));
+            var expectedVars = new [] {
+                "[firstChild, \"Child\"]",
+                "[secondChild, 42]"
+            };
+
+            foreach (string expectedVar in expectedVars)
+            {
+                Assert.Contains(expectedVar, childVarStrs);
+            }
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
@@ -824,17 +834,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] variables =
                 debugService.GetVariables(stackFrames[0].LocalVariables.Id);
 
-            var var = variables.FirstOrDefault(v => v.Name == "$psObjVar");
-            Assert.NotNull(var);
-            Assert.Equal("@{Age=75; Name=John}", var.ValueString);
-            Assert.True(var.IsExpandable);
+            var psObjVar = variables.FirstOrDefault(v => v.Name == "$psObjVar");
+            Assert.NotNull(psObjVar);
+            Assert.True("@{Age=75; Name=John}".Equals(psObjVar.ValueString) || "@{Name=John; Age=75}".Equals(psObjVar.ValueString));
+            Assert.True(psObjVar.IsExpandable);
 
-            var childVars = debugService.GetVariables(var.Id);
-            Assert.Equal(2, childVars.Length);
-            Assert.Equal("Age", childVars[0].Name);
-            Assert.Equal("75", childVars[0].ValueString);
-            Assert.Equal("Name", childVars[1].Name);
-            Assert.Equal("\"John\"", childVars[1].ValueString);
+            IDictionary<string, string> childVars = debugService.GetVariables(psObjVar.Id).ToDictionary(v => v.Name, v => v.ValueString);
+            Assert.Equal(2, childVars.Count);
+            Assert.Contains("Age", childVars.Keys);
+            Assert.Contains("Name", childVars.Keys);
+            Assert.Equal(childVars["Age"], "75");
+            Assert.Equal(childVars["Name"], "\"John\"");
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
@@ -875,9 +885,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.powerShellContext.AbortExecution();
         }
 
+// TODO: Make this test cross platform by using the PowerShell process
+//       (the only process we can guarantee cross-platform)
+#if CoreCLR
+        [Fact(Skip = "Need to use the PowerShell process in a cross-platform way for this test to work")]
+#else
         // Verifies fix for issue #86, $proc = Get-Process foo displays just the
         // ETS property set and not all process properties.
         [Fact]
+#endif
         public async Task DebuggerVariableProcessObjDisplaysCorrectly()
         {
             await this.debugService.SetLineBreakpoints(
@@ -906,7 +922,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
-        }
+    }
 
         public async Task AssertDebuggerPaused()
         {

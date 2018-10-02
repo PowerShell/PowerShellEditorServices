@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.IO;
 using System.Linq;
@@ -13,7 +14,12 @@ namespace PSLanguageService.Test
 {
     public class ScriptFileChangeTests
     {
-        private static readonly Version PowerShellVersion = new Version("5.0");
+
+#if CoreCLR
+        private static readonly Version PowerShellVersion = new Version(6, 1);
+#else
+        private static readonly Version PowerShellVersion = new Version(5, 1);
+#endif
 
         [Fact]
         public void CanApplySingleLineInsert()
@@ -67,15 +73,15 @@ namespace PSLanguageService.Test
         public void CanApplyMultiLineInsert()
         {
             this.AssertFileChange(
-                "first\r\nsecond\r\nfifth",
-                "first\r\nsecond\r\nthird\r\nfourth\r\nfifth",
+                TestUtilities.NormalizeNewlines("first\nsecond\nfifth"),
+                TestUtilities.NormalizeNewlines("first\nsecond\nthird\nfourth\nfifth"),
                 new FileChange
                 {
                     Line = 3,
                     EndLine = 3,
                     Offset = 1,
                     EndOffset = 1,
-                    InsertString = "third\r\nfourth\r\n"
+                    InsertString = TestUtilities.NormalizeNewlines("third\nfourth\n")
                 });
         }
 
@@ -83,15 +89,15 @@ namespace PSLanguageService.Test
         public void CanApplyMultiLineReplace()
         {
             this.AssertFileChange(
-                "first\r\nsecoXX\r\nXXfth",
-                "first\r\nsecond\r\nthird\r\nfourth\r\nfifth",
+                TestUtilities.NormalizeNewlines("first\nsecoXX\nXXfth"),
+                TestUtilities.NormalizeNewlines("first\nsecond\nthird\nfourth\nfifth"),
                 new FileChange
                 {
                     Line = 2,
                     EndLine = 3,
                     Offset = 5,
                     EndOffset = 3,
-                    InsertString = "nd\r\nthird\r\nfourth\r\nfi"
+                    InsertString = TestUtilities.NormalizeNewlines("nd\nthird\nfourth\nfi")
                 });
         }
 
@@ -99,15 +105,15 @@ namespace PSLanguageService.Test
         public void CanApplyMultiLineReplaceWithRemovedLines()
         {
             this.AssertFileChange(
-                "first\r\nsecoXX\r\nREMOVE\r\nTHESE\r\nLINES\r\nXXfth",
-                "first\r\nsecond\r\nthird\r\nfourth\r\nfifth",
+                TestUtilities.NormalizeNewlines("first\nsecoXX\nREMOVE\nTHESE\nLINES\nXXfth"),
+                TestUtilities.NormalizeNewlines("first\nsecond\nthird\nfourth\nfifth"),
                 new FileChange
                 {
                     Line = 2,
                     EndLine = 6,
                     Offset = 5,
                     EndOffset = 3,
-                    InsertString = "nd\r\nthird\r\nfourth\r\nfi"
+                    InsertString = TestUtilities.NormalizeNewlines("nd\nthird\nfourth\nfi")
                 });
         }
 
@@ -115,8 +121,8 @@ namespace PSLanguageService.Test
         public void CanApplyMultiLineDelete()
         {
             this.AssertFileChange(
-                "first\r\nsecond\r\nREMOVE\r\nTHESE\r\nLINES\r\nthird",
-                "first\r\nsecond\r\nthird",
+                TestUtilities.NormalizeNewlines("first\nsecond\nREMOVE\nTHESE\nLINES\nthird"),
+                TestUtilities.NormalizeNewlines("first\nsecond\nthird"),
                 new FileChange
                 {
                     Line = 3,
@@ -131,15 +137,15 @@ namespace PSLanguageService.Test
         public void CanApplyEditsToEndOfFile()
         {
             this.AssertFileChange(
-                "line1\r\nline2\r\nline3\r\n\r\n",
-                "line1\r\nline2\r\nline3\r\n\r\n\r\n\r\n",
+                TestUtilities.NormalizeNewlines("line1\nline2\nline3\n\n"),
+                TestUtilities.NormalizeNewlines("line1\nline2\nline3\n\n\n\n"),
                 new FileChange
                 {
                     Line = 5,
                     EndLine = 5,
                     Offset = 1,
                     EndOffset = 1,
-                    InsertString = "\r\n\r\n"
+                    InsertString = Environment.NewLine + Environment.NewLine
                 });
         }
 
@@ -147,15 +153,15 @@ namespace PSLanguageService.Test
         public void CanAppendToEndOfFile()
         {
             this.AssertFileChange(
-                "line1\r\nline2\r\nline3",
-                "line1\r\nline2\r\nline3\r\nline4\r\nline5",
+                TestUtilities.NormalizeNewlines("line1\nline2\nline3"),
+                TestUtilities.NormalizeNewlines("line1\nline2\nline3\nline4\nline5"),
                 new FileChange
                 {
                     Line = 4,
                     EndLine = 5,
                     Offset = 1,
                     EndOffset = 1,
-                    InsertString = "line4\r\nline5"
+                    InsertString = $"line4{Environment.NewLine}line5"
                 }
             );
         }
@@ -163,12 +169,12 @@ namespace PSLanguageService.Test
         [Fact]
         public void FindsDotSourcedFiles()
         {
-            string exampleScriptContents =
-                @". .\athing.ps1" + "\r\n" +
-                @". .\somefile.ps1" + "\r\n" +
-                @". .\somefile.ps1" + "\r\n" +
-                @"Do-Stuff $uri" + "\r\n" +
-                @". simpleps.ps1";
+            string exampleScriptContents = TestUtilities.PlatformNormalize(
+                ". ./athing.ps1\n"+
+                ". ./somefile.ps1\n"+
+                ". ./somefile.ps1\n"+
+                "Do-Stuff $uri\n"+
+                ". simpleps.ps1");
 
             using (StringReader stringReader = new StringReader(exampleScriptContents))
             {
@@ -181,7 +187,7 @@ namespace PSLanguageService.Test
 
                 Assert.Equal(3, scriptFile.ReferencedFiles.Length);
                 System.Console.Write("a" + scriptFile.ReferencedFiles[0]);
-                Assert.Equal(@".\athing.ps1", scriptFile.ReferencedFiles[0]);
+                Assert.Equal(TestUtilities.NormalizePath("./athing.ps1"), scriptFile.ReferencedFiles[0]);
             }
         }
 
@@ -193,8 +199,8 @@ namespace PSLanguageService.Test
                 () =>
                 {
                     this.AssertFileChange(
-                        "first\r\nsecond\r\nREMOVE\r\nTHESE\r\nLINES\r\nthird",
-                        "first\r\nsecond\r\nthird",
+                        TestUtilities.NormalizeNewlines("first\nsecond\nREMOVE\nTHESE\nLINES\nthird"),
+                        TestUtilities.NormalizeNewlines("first\nsecond\nthird"),
                         new FileChange
                         {
                             Line = 3,
@@ -210,8 +216,8 @@ namespace PSLanguageService.Test
         public void CanDeleteFromEndOfFile()
         {
             this.AssertFileChange(
-                "line1\r\nline2\r\nline3\r\nline4",
-                "line1\r\nline2",
+                TestUtilities.NormalizeNewlines("line1\nline2\nline3\nline4"),
+                TestUtilities.NormalizeNewlines("line1\nline2"),
                 new FileChange
                 {
                     Line = 3,
@@ -255,11 +261,13 @@ namespace PSLanguageService.Test
 
     public class ScriptFileGetLinesTests
     {
-        private const string TestString_NoTrailingNewline = "Line One\r\nLine Two\r\nLine Three\r\nLine Four\r\nLine Five";
+        private static readonly string TestString_NoTrailingNewline = TestUtilities.NormalizeNewlines(
+            "Line One\nLine Two\nLine Three\nLine Four\nLine Five");
 
-        private const string TestString_TrailingNewline = TestString_NoTrailingNewline + "\r\n";
+        private static readonly string TestString_TrailingNewline = TestUtilities.NormalizeNewlines(
+            TestString_NoTrailingNewline + "\n");
 
-        private static readonly string[] s_newLines = new string[] { "\r\n" };
+        private static readonly string[] s_newLines = new string[] { Environment.NewLine };
 
         private static readonly string[] s_testStringLines_noTrailingNewline = TestString_NoTrailingNewline.Split(s_newLines, StringSplitOptions.None);
 
@@ -268,7 +276,6 @@ namespace PSLanguageService.Test
         private ScriptFile _scriptFile_trailingNewline;
 
         private ScriptFile _scriptFile_noTrailingNewline;
-
 
         public ScriptFileGetLinesTests()
         {
