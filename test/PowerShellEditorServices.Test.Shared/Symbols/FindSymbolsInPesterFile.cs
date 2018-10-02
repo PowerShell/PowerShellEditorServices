@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Symbols
         public static readonly ScriptRegion SourceDetails =
             new ScriptRegion
             {
-                File = @"Symbols\PesterFile.tests.ps1"
+                File = TestUtilities.NormalizePath("Symbols/PesterFile.tests.ps1")
             };
     }
 }

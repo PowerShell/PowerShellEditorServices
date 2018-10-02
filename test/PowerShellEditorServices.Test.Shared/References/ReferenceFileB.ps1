@@ -1,4 +1,4 @@
-﻿. .\ReferenceFileC.ps1
+﻿. ./ReferenceFileC.ps1
 
 Get-ChildItem
 

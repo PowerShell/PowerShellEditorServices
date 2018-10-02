@@ -1,6 +1,10 @@
 <Project>
   <PropertyGroup>
+<<<<<<< HEAD
     <VersionPrefix>1.9.1</VersionPrefix>
+=======
+    <VersionPrefix>2.0.0</VersionPrefix>
+>>>>>>> Migrate to netstandard2.0 and PSStandard (#741)
     <Company>Microsoft</Company>
     <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <PackageTags>PowerShell;editor;development;language;debugging</PackageTags>
@@ -9,6 +13,5 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PowerShell/PowerShellEditorServices</RepositoryUrl>
     <DebugType>portable</DebugType>
-    <RuntimeFrameworkVersion>1.0.3</RuntimeFrameworkVersion>
   </PropertyGroup>
 </Project>

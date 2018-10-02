@@ -613,10 +613,9 @@ namespace Microsoft.PowerShell.EditorServices
 
             try
             {
-#if PowerShellv5r2
                 // This overload appeared with Windows 10 Update 1
-                if (this.powerShellVersion.Major >= 5 &&
-                    this.powerShellVersion.Build >= 10586)
+                if (this.powerShellVersion.Major > 5 ||
+                    (this.powerShellVersion.Major == 5 && this.powerShellVersion.Build >= 10586))
                 {
                     // Include the file path so that module relative
                     // paths are evaluated correctly
@@ -635,13 +634,6 @@ namespace Microsoft.PowerShell.EditorServices
                             out this.scriptTokens,
                             out parseErrors);
                 }
-#else
-                this.ScriptAst =
-                    Parser.ParseInput(
-                        this.Contents,
-                        out this.scriptTokens,
-                        out parseErrors);
-#endif
             }
             catch (RuntimeException ex)
             {

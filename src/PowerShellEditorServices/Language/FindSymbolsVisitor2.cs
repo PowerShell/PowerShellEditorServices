@@ -8,18 +8,16 @@ using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-#if PowerShellv5
-
     // TODO: Restore this when we figure out how to support multiple
     //       PS versions in the new PSES-as-a-module world (issue #276)
 
     ///// <summary>
-    ///// The visitor used to find all the symbols (function and class defs) in the AST. 
+    ///// The visitor used to find all the symbols (function and class defs) in the AST.
     ///// </summary>
     ///// <remarks>
     ///// Requires PowerShell v5 or higher
     ///// </remarks>
-    ///// 
+    /////
     //internal class FindSymbolsVisitor2 : AstVisitor2
     //{
     //    private FindSymbolsVisitor findSymbolsVisitor;
@@ -38,10 +36,10 @@ namespace Microsoft.PowerShell.EditorServices
     //    }
 
     //    /// <summary>
-    //    /// Adds each function defintion as a 
+    //    /// Adds each function defintion as a
     //    /// </summary>
     //    /// <param name="functionDefinitionAst">A functionDefinitionAst object in the script's AST</param>
-    //    /// <returns>A decision to stop searching if the right symbol was found, 
+    //    /// <returns>A decision to stop searching if the right symbol was found,
     //    /// or a decision to continue if it wasn't found</returns>
     //    public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
     //    {
@@ -52,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices
     //    ///  Checks to see if this variable expression is the symbol we are looking for.
     //    /// </summary>
     //    /// <param name="variableExpressionAst">A VariableExpressionAst object in the script's AST</param>
-    //    /// <returns>A descion to stop searching if the right symbol was found, 
+    //    /// <returns>A descion to stop searching if the right symbol was found,
     //    /// or a decision to continue if it wasn't found</returns>
     //    public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
     //    {
@@ -78,6 +76,5 @@ namespace Microsoft.PowerShell.EditorServices
     //        return AstVisitAction.Continue;
     //    }
     //}
-#endif
 }
 

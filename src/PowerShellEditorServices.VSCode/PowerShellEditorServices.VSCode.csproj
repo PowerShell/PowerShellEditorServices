@@ -4,12 +4,12 @@
   <PropertyGroup>
     <AssemblyTitle>PowerShell Editor Services, Visual Studio Code Extensions</AssemblyTitle>
     <Description>Provides added functionality to PowerShell Editor Services for the Visual Studio Code editor.</Description>
-    <TargetFrameworks>netstandard1.6;net451</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.VSCode</AssemblyName>
   </PropertyGroup>
 
   <!-- Fail the release build if there are missing public API documentation comments -->
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+  <PropertyGroup>
     <WarningsAsErrors>1591,1573,1572</WarningsAsErrors>
     <DocumentationFile>bin\$(TargetFramework)\$(Configuration)\Microsoft.PowerShell.EditorServices.VSCode.xml</DocumentationFile>
   </PropertyGroup>
@@ -20,12 +20,4 @@
     <ProjectReference Include="..\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj" />
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
-  </PropertyGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
 </Project>

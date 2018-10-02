@@ -13,12 +13,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 {
     public class CompleteFilePath
     {
-        public static readonly ScriptRegion SourceDetails = 
+        public static readonly ScriptRegion SourceDetails =
             new ScriptRegion
             {
-                File = @"Completion\CompletionExamples.psm1",
+                File = TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
                 StartLineNumber = 19,
-                StartColumnNumber = 25
+                StartColumnNumber = 15
             };
 
         public static readonly BufferRange ExpectedRange =
