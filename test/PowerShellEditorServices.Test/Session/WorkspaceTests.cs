@@ -126,8 +126,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
                 return new [] {
                     new [] { "file:///banana/", "/banana/" },
                     new [] { "file:///banana/ex.ps1", "/banana/ex.ps1" },
-                    new [] { "file://Path/to/awful%23path", "/Path/to/awful#path" },
-                    new [] { "file:///path/wi[th]/squ[are/brackets/", "/path/wi[th]/sq[are/brackets/" },
+                    new [] { "file:///Path/to/awful%23path", "/Path/to/awful#path" },
+                    new [] { "file:///path/wi[th]/squ[are/brackets/", "/path/wi[th]/squ[are/brackets/" },
                     new [] { "file:///path%5Cto/file", "/path\\to/file" },
                     new [] { "file:///Carrots/A%5Ere/Good/", "/Carrots/A^re/Good/" },
                     new [] { "file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", "/Users/barnaby/脚本/Reduce-Directory" },
