@@ -137,15 +137,15 @@ namespace PSLanguageService.Test
         public void CanApplyEditsToEndOfFile()
         {
             this.AssertFileChange(
-                "line1\r\nline2\r\nline3\r\n\r\n",
-                "line1\r\nline2\r\nline3\r\n\r\n\r\n\r\n",
+                TestUtilities.NormalizeNewlines("line1\nline2\nline3\n\n"),
+                TestUtilities.NormalizeNewlines("line1\nline2\nline3\n\n\n\n"),
                 new FileChange
                 {
                     Line = 5,
                     EndLine = 5,
                     Offset = 1,
                     EndOffset = 1,
-                    InsertString = "\r\n\r\n"
+                    InsertString = TestUtilities.NormalizeNewlines("\n\n")
                 });
         }
 
@@ -153,15 +153,15 @@ namespace PSLanguageService.Test
         public void CanAppendToEndOfFile()
         {
             this.AssertFileChange(
-                "line1\r\nline2\r\nline3",
-                "line1\r\nline2\r\nline3\r\nline4\r\nline5",
+                TestUtilities.NormalizeNewlines("line1\nline2\nline3"),
+                TestUtilities.NormalizeNewlines("line1\nline2\nline3\nline4\nline5"),
                 new FileChange
                 {
                     Line = 4,
                     EndLine = 5,
                     Offset = 1,
                     EndOffset = 1,
-                    InsertString = "line4\r\nline5"
+                    InsertString = TestUtilities.NormalizeNewlines("line4\nline5")
                 }
             );
         }
@@ -216,8 +216,8 @@ namespace PSLanguageService.Test
         public void CanDeleteFromEndOfFile()
         {
             this.AssertFileChange(
-                "line1\r\nline2\r\nline3\r\nline4",
-                "line1\r\nline2",
+                TestUtilities.NormalizeNewlines("line1\nline2\nline3\nline4"),
+                TestUtilities.NormalizeNewlines("line1\nline2"),
                 new FileChange
                 {
                     Line = 3,

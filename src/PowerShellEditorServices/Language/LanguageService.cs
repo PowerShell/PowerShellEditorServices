@@ -744,13 +744,12 @@ namespace Microsoft.PowerShell.EditorServices
                     return;
                 }
 
-                CommandInvocationIntrinsics invokeCommand = runspaceHandle.Runspace.SessionStateProxy.InvokeCommand;
-                    var aliases = await _powerShellContext.ExecuteCommand<AliasInfo>(
-                        new PSCommand()
-                            .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
-                            .AddParameter("CommandType", CommandTypes.Alias),
-                        sendOutputToHost: false,
-                        sendErrorToHost: false);
+                var aliases = await _powerShellContext.ExecuteCommand<AliasInfo>(
+                    new PSCommand()
+                        .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
+                        .AddParameter("CommandType", CommandTypes.Alias),
+                    sendOutputToHost: false,
+                    sendErrorToHost: false);
 
                 foreach (AliasInfo aliasInfo in aliases)
                 {
