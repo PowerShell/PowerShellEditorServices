@@ -163,11 +163,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         private static async Task WaitForConnectionAsync(NamedPipeServerStream pipeServerStream)
         {
-#if CoreCLR
             await pipeServerStream.WaitForConnectionAsync();
-#else
-            await Task.Factory.FromAsync(pipeServerStream.BeginWaitForConnection, pipeServerStream.EndWaitForConnection, null);
-#endif
             await pipeServerStream.FlushAsync();
         }
     }

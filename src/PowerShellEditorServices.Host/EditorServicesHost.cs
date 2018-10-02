@@ -125,9 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 #endif
 
             // Catch unhandled exceptions for logging purposes
-#if !CoreCLR
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-#endif
         }
 
         #endregion
@@ -146,11 +144,12 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             .AddLogFile(logFilePath)
                             .Build();
 
-#if CoreCLR
-            FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
-#else
-            FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
-#endif
+            FileVersionInfo fileVersionInfo =
+                FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
+
+            string osVersionString = RuntimeInformation.OSDescription;
+            string processArchitecture = RuntimeInformation.ProcessArchitecture == Architecture.X64 ? "64-bit" : "32-bit";
+            string osArchitecture = RuntimeInformation.OSArchitecture == Architecture.X64 ? "64-bit" : "32-bit";
 
             string osVersion = RuntimeInformation.OSDescription;
 
@@ -239,7 +238,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             await this.editorSession.PowerShellContext.ImportCommandsModule(
                 Path.Combine(
                     Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
-                    @"..\..\Commands"));
+                    @"..\Commands"));
 
             this.languageServer.Start();
 
@@ -454,19 +453,13 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             this.serverCompletedTask.SetException(e);
         }
 
-#if !CoreCLR
         private void CurrentDomain_UnhandledException(
             object sender,
             UnhandledExceptionEventArgs e)
         {
             // Log the exception
-            this.logger.Write(
-                LogLevel.Error,
-                string.Format(
-                    "FATAL UNHANDLED EXCEPTION:\r\n\r\n{0}",
-                    e.ExceptionObject.ToString()));
+            this.logger.Write(LogLevel.Error, $"FATAL UNHANDLED EXCEPTION: {e.ExceptionObject}");
         }
-#endif
 
         private IServerListener CreateServiceListener(MessageProtocolType protocol, EditorServiceTransportConfig config)
         {

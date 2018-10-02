@@ -3,24 +3,31 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using Microsoft.PowerShell.EditorServices;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 {
     public class CompleteCommandFromModule
     {
-        public static readonly ScriptRegion SourceDetails = 
+        private static readonly string[] s_getRandomParamSets = {
+            "Get-Random [[-Maximum] <Object>] [-SetSeed <int>] [-Minimum <Object>] [<CommonParameters>]",
+            "Get-Random [-InputObject] <Object[]> [-SetSeed <int>] [-Count <int>] [<CommonParameters>]"
+        };
+
+        public static readonly ScriptRegion SourceDetails =
             new ScriptRegion
             {
-                File = @"Completion\CompletionExamples.psm1",
+                File = TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
                 StartLineNumber = 13,
-                StartColumnNumber = 11
+                StartColumnNumber = 8
             };
 
         public static readonly CompletionDetails ExpectedCompletion =
             CompletionDetails.Create(
-                "Install-Module",
+                "Get-Random",
                 CompletionType.Command,
-                "Install-Module");
+                string.Join(Environment.NewLine + Environment.NewLine, s_getRandomParamSets)
+            );
     }
 }

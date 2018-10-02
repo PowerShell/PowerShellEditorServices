@@ -8,8 +8,6 @@ using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-#if PowerShellv5
-
     // TODO: Restore this when we figure out how to support multiple
     //       PS versions in the new PSES-as-a-module world (issue #276)
 
@@ -78,6 +76,5 @@ namespace Microsoft.PowerShell.EditorServices
     //        return AstVisitAction.Continue;
     //    }
     //}
-#endif
 }
 

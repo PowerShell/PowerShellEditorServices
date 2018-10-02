@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using System;
@@ -11,6 +12,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,19 +36,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             string logPath,
             bool waitForDebugger = false)
         {
-            string modulePath = Path.GetFullPath(@"..\..\..\..\..\module");
-            string scriptPath = Path.GetFullPath(Path.Combine(modulePath, @"PowerShellEditorServices\Start-EditorServices.ps1"));
+            string modulePath = Path.GetFullPath(TestUtilities.NormalizePath("../../../../../module"));
+            string scriptPath = Path.GetFullPath(Path.Combine(modulePath, "PowerShellEditorServices", "Start-EditorServices.ps1"));
 
             if (!File.Exists(scriptPath))
             {
                 throw new IOException(String.Format("Bad start script path: '{0}'", scriptPath));
             }
 
-#if CoreCLR
             Assembly assembly = this.GetType().GetTypeInfo().Assembly;
-#else
-            Assembly assembly = this.GetType().Assembly;
-#endif
 
             string assemblyPath = new Uri(assembly.CodeBase).LocalPath;
             FileVersionInfo fileVersionInfo =
@@ -98,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "powershell.exe",
+                    FileName = GetPwshExeName(),
                     Arguments = string.Join(" ", args),
                     CreateNoWindow = true,
                     UseShellExecute = false,
@@ -304,6 +302,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             }
 
             return await requestTask;
+        }
+
+        private static string GetPwshExeName()
+        {
+#if !CoreCLR
+            return "powershell.exe";
+#else
+            return "pwsh";
+#endif
         }
     }
 }

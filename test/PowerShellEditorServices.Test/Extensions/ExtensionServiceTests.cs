@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Components;
 using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -38,7 +39,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
         {
             var logger = Logging.NullLogger;
             this.powerShellContext = PowerShellContextFactory.Create(logger);
-            await this.powerShellContext.ImportCommandsModule(@"..\..\..\..\..\module\PowerShellEditorServices\Commands");
+            await this.powerShellContext.ImportCommandsModule(
+                TestUtilities.NormalizePath("../../../../../module/PowerShellEditorServices/Commands"));
 
             this.extensionService = new ExtensionService(this.powerShellContext);
             this.editorOperations = new TestEditorOperations();
@@ -51,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
                 this.editorOperations,
                 new ComponentRegistry());
 
-            var filePath = @"c:\Test\Test.ps1";
+            var filePath = TestUtilities.NormalizePath("c:/Test/Test.ps1");
             this.currentFile = new ScriptFile(filePath, filePath, "This is a test file", new Version("5.0"));
             this.commandContext =
                 new EditorContext(
@@ -71,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
         public async Task CanRegisterAndInvokeCommandWithCmdletName()
         {
             await extensionService.PowerShellContext.ExecuteScriptString(
-                "function Invoke-Extension { $global:extensionValue = 5 }\r\n" +
+                TestUtilities.NormalizeNewlines("function Invoke-Extension { $global:extensionValue = 5 }\n") +
                 "Register-EditorCommand -Name \"test.function\" -DisplayName \"Function extension\" -Function \"Invoke-Extension\"");
 
             // Wait for the add event
@@ -110,10 +112,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
         public async Task CanUpdateRegisteredCommand()
         {
             // Register a command and then update it
-            await extensionService.PowerShellContext.ExecuteScriptString(
-                "function Invoke-Extension { Write-Output \"Extension output!\" }\r\n" +
-                "Register-EditorCommand -Name \"test.function\" -DisplayName \"Function extension\" -Function \"Invoke-Extension\"\r\n" +
-                "Register-EditorCommand -Name \"test.function\" -DisplayName \"Updated Function extension\" -Function \"Invoke-Extension\"");
+            await extensionService.PowerShellContext.ExecuteScriptString(TestUtilities.NormalizeNewlines(
+                "function Invoke-Extension { Write-Output \"Extension output!\" }\n" +
+                "Register-EditorCommand -Name \"test.function\" -DisplayName \"Function extension\" -Function \"Invoke-Extension\"\n" +
+                "Register-EditorCommand -Name \"test.function\" -DisplayName \"Updated Function extension\" -Function \"Invoke-Extension\""));
 
             // Wait for the add and update events
             await this.AssertExtensionEvent(EventType.Add, "test.function");
