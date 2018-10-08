@@ -104,7 +104,7 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
                     {
                         moduleInfo = powerShell.Invoke().FirstOrDefault();
                     }
-                    catch (CmdletInvocationException e)
+                    catch (RuntimeException e)
                     {
                         logger.WriteException("Could not load the DSC module!", e);
                     }
