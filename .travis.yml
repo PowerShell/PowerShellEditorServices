@@ -21,9 +21,9 @@ before_install:
 
 install:
   - pushd scripts
-  - ./download.sh
+  - bash <(curl -s https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.sh)
   - popd
 
 script:
   - ulimit -n 4096
-  - powershell -File scripts/travis.ps1
+  - pwsh -File scripts/travis.ps1
