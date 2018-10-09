@@ -636,7 +636,6 @@ namespace Microsoft.PowerShell.EditorServices
                 this.FileLines.Insert(currentLineNumber - 1, finalLine);
                 currentLineNumber++;
             }
-
         }
 
         /// <summary>
