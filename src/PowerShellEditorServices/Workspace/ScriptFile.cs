@@ -358,89 +358,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="fileChange">The FileChange to apply to the file's contents.</param>
         public void ApplyChange(FileChange fileChange)
         {
-            // Break up the change lines
-            string[] changeLines = fileChange.InsertString.Split('\n');
-
-            if (fileChange.IsReload)
-            {
-                this.FileLines.Clear();
-                foreach (var changeLine in changeLines)
-                {
-                    this.FileLines.Add(changeLine);
-                }
-            }
-            else
-            {
-                // VSCode sometimes likes to give the change start line as (FileLines.Count + 1).
-                // This used to crash EditorServices, but we now treat it as an append.
-                // See https://github.com/PowerShell/vscode-powershell/issues/1283
-                if (fileChange.Line == this.FileLines.Count + 1)
-                {
-                    foreach (string addedLine in changeLines)
-                    {
-                        string finalLine = addedLine.TrimEnd('\r');
-                        this.FileLines.Add(finalLine);
-                    }
-                }
-                // Similarly, when lines are deleted from the end of the file,
-                // VSCode likes to give the end line as (FileLines.Count + 1).
-                else if (fileChange.EndLine == this.FileLines.Count + 1 && String.Empty.Equals(fileChange.InsertString))
-                {
-                    int lineIndex = fileChange.Line - 1;
-                    this.FileLines.RemoveRange(lineIndex, this.FileLines.Count - lineIndex);
-                }
-                // Otherwise, the change needs to go between existing content
-                else
-                {
-                    this.ValidatePosition(fileChange.Line, fileChange.Offset);
-                    this.ValidatePosition(fileChange.EndLine, fileChange.EndOffset);
-
-                    // Get the first fragment of the first line
-                    string firstLineFragment =
-                    this.FileLines[fileChange.Line - 1]
-                        .Substring(0, fileChange.Offset - 1);
-
-                    // Get the last fragment of the last line
-                    string endLine = this.FileLines[fileChange.EndLine - 1];
-                    string lastLineFragment =
-                    endLine.Substring(
-                        fileChange.EndOffset - 1,
-                        (this.FileLines[fileChange.EndLine - 1].Length - fileChange.EndOffset) + 1);
-
-                    // Remove the old lines
-                    for (int i = 0; i <= fileChange.EndLine - fileChange.Line; i++)
-                    {
-                        this.FileLines.RemoveAt(fileChange.Line - 1);
-                    }
-
-                    // Build and insert the new lines
-                    int currentLineNumber = fileChange.Line;
-                    for (int changeIndex = 0; changeIndex < changeLines.Length; changeIndex++)
-                    {
-                        // Since we split the lines above using \n, make sure to
-                        // trim the ending \r's off as well.
-                        string finalLine = changeLines[changeIndex].TrimEnd('\r');
-
-                        // Should we add first or last line fragments?
-                        if (changeIndex == 0)
-                        {
-                            // Append the first line fragment
-                            finalLine = firstLineFragment + finalLine;
-                        }
-                        if (changeIndex == changeLines.Length - 1)
-                        {
-                            // Append the last line fragment
-                            finalLine = finalLine + lastLineFragment;
-                        }
-
-                        this.FileLines.Insert(currentLineNumber - 1, finalLine);
-                        currentLineNumber++;
-                    }
-                }
-            }
+            // Apply the file change to the underlying file line data structure we use
+            ApplyChangeToFileLines(fileChange);
 
             // Parse the script again to be up-to-date
-            this.ParseFileContents();
+            ParseFileContents();
         }
 
         /// <summary>
@@ -585,6 +507,136 @@ namespace Microsoft.PowerShell.EditorServices
 
             // Parse the contents to get syntax tree and errors
             this.ParseFileContents();
+        }
+
+        private void ApplyChangeToFileLines(FileChange fileChange)
+        {
+            // Break up the change lines
+            string[] changeLines = fileChange.InsertString.Split('\n');
+            for (int i = 0; i < changeLines.Length; i++)
+            {
+                changeLines[i] = changeLines[i].TrimEnd('\r');
+            }
+
+            if (fileChange.IsReload)
+            {
+                this.FileLines.Clear();
+                foreach (var changeLine in changeLines)
+                {
+                    this.FileLines.Add(changeLine);
+                }
+                return;
+            }
+
+            // VSCode sometimes likes to give the change start line as (FileLines.Count + 1).
+            // This used to crash EditorServices, but we now treat it as an append.
+            // See https://github.com/PowerShell/vscode-powershell/issues/1283
+            if (fileChange.Line == this.FileLines.Count + 1)
+            {
+                foreach (string addedLine in changeLines)
+                {
+                    this.FileLines.Add(addedLine);
+                }
+                return;
+            }
+
+            // Similarly, when lines are deleted or edited from the end of the file,
+            // VSCode likes to give the end line as (FileLines.Count + 1).
+            if (fileChange.EndLine == this.FileLines.Count + 1)
+            {
+                int lineIndex = fileChange.Line - 1;
+
+                // If the "edit" is just a deletion, make a small optimization
+                if (String.Empty.Equals(fileChange.InsertString))
+                {
+                    this.FileLines.RemoveRange(lineIndex, this.FileLines.Count - lineIndex);
+                    return;
+                }
+
+                // If we have a true edit, we need to:
+                // 1. Play the new lines over the old ones starting from the insertion point
+                // 2. Remove any lines beyond that
+
+                int i = lineIndex;
+                for (int j = 0; j < changeLines.Length; j++, i++)
+                {
+                    string addedLine;
+                    if (i == lineIndex && fileChange.Offset != 1)
+                    {
+                        // For the first line, we want to tack on the edit after the offset point
+                        addedLine = this.FileLines[i].Substring(0, fileChange.Offset - 1) + changeLines[j];
+                    }
+                    else
+                    {
+                        addedLine = changeLines[j];
+                    }
+
+                    if (i < this.FileLines.Count)
+                    {
+                        // If the line is within the range of current lines, we overwrite
+                        this.FileLines[i] = addedLine;
+                    }
+                    else
+                    {
+                        // Otherwise we append to the end
+                        this.FileLines.Add(addedLine);
+                    }
+                }
+
+                // We may end up with less lines than originally
+                // In this case, remove the dangling lines
+                if (i < this.FileLines.Count)
+                {
+                    this.FileLines.RemoveRange(i, this.FileLines.Count - i);
+                }
+
+                return;
+            }
+
+            // Otherwise, the change needs to go between existing content
+            this.ValidatePosition(fileChange.Line, fileChange.Offset);
+            this.ValidatePosition(fileChange.EndLine, fileChange.EndOffset);
+
+            // Get the first fragment of the first line
+            string firstLineFragment =
+                this.FileLines[fileChange.Line - 1]
+                    .Substring(0, fileChange.Offset - 1);
+
+            // Get the last fragment of the last line
+            string endLine = this.FileLines[fileChange.EndLine - 1];
+            string lastLineFragment =
+            endLine.Substring(
+                fileChange.EndOffset - 1,
+                (this.FileLines[fileChange.EndLine - 1].Length - fileChange.EndOffset) + 1);
+
+            // Remove the old lines
+            for (int i = 0; i <= fileChange.EndLine - fileChange.Line; i++)
+            {
+                this.FileLines.RemoveAt(fileChange.Line - 1);
+            }
+
+            // Build and insert the new lines
+            int currentLineNumber = fileChange.Line;
+            for (int changeIndex = 0; changeIndex < changeLines.Length; changeIndex++)
+            {
+                string finalLine = changeLines[changeIndex];
+
+                // Should we add first or last line fragments?
+                if (changeIndex == 0)
+                {
+                    // Append the first line fragment
+                    finalLine = firstLineFragment + finalLine;
+                }
+                if (changeIndex == changeLines.Length - 1)
+                {
+                    // Append the last line fragment
+                    finalLine = finalLine + lastLineFragment;
+                }
+
+                this.FileLines.Insert(currentLineNumber - 1, finalLine);
+                currentLineNumber++;
+            }
+
         }
 
         /// <summary>

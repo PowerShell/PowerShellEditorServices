@@ -223,6 +223,55 @@ namespace PSLanguageService.Test
             );
         }
 
+        [Fact]
+        public void CanEditUpToEndOfFile()
+        {
+            this.AssertFileChange(
+                "line1\r\nline2\r\nline3\r\nline4",
+                "line1\r\nline2\r\nnewline3\r\nnewline4",
+                new FileChange
+                {
+                    Line = 3,
+                    EndLine = 5,
+                    Offset = 1,
+                    EndOffset = 1,
+                    InsertString = "newline3\r\nnewline4"
+                }
+            );
+        }
+
+        [Fact]
+        public void CanEditOffPartOfLineUpToEndOfFile()
+        {
+            this.AssertFileChange(
+                "line1\r\nline2\r\nline3\r\nline4",
+                "line1\r\nline2\r\nline-new-3\r\nline-new-4\r\nline-new-5",
+                new FileChange
+                {
+                    Line = 3,
+                    EndLine = 5,
+                    Offset = 5,
+                    InsertString = "-new-3\r\nline-new-4\r\nline-new-5"
+                }
+            );
+        }
+
+        [Fact]
+        public void CanEditSingleLineAtEndOfFile()
+        {
+            this.AssertFileChange(
+                "line1\r\nline2\r\nline3",
+                "line1\r\nline2\r\nline-new-3",
+                new FileChange
+                {
+                    Line = 3,
+                    EndLine = 4,
+                    Offset = 5,
+                    InsertString = "-new-3"
+                }
+            );
+        }
+
         internal static ScriptFile CreateScriptFile(string initialString)
         {
             using (StringReader stringReader = new StringReader(initialString))
