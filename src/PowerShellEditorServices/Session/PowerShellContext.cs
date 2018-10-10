@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (RuntimeInformation.FrameworkDescription == DotNetFrameworkDescription)
             {
                 MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
-                var setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
+                Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
                 s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>)setter;
             }
         }
