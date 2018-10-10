@@ -584,7 +584,7 @@ namespace Microsoft.PowerShell.EditorServices
                 catch (RuntimeException e)
                 {
                     this.logger.Write(
-                        LogLevel.Error,
+                        LogLevel.Warning,
                         "Runtime exception occurred while executing command:\r\n\r\n" + e.ToString());
 
                     hadErrors = true;
