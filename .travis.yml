@@ -17,13 +17,15 @@ before_install:
       mkdir -p /usr/local/lib;
       ln -s /usr/local/opt/openssl/lib/libcrypto.1.0.0.dylib /usr/local/lib/;
       ln -s /usr/local/opt/openssl/lib/libssl.1.0.0.dylib /usr/local/lib/;
+    elif [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      sudo apt-get install libunwind8;
     fi
 
 install:
   - pushd scripts
-  - ./download.sh
+  - bash <(curl -s https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.sh)
   - popd
 
 script:
   - ulimit -n 4096
-  - powershell -File scripts/travis.ps1
+  - pwsh -File scripts/travis.ps1
