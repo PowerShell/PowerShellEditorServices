@@ -796,7 +796,7 @@ namespace Microsoft.PowerShell.EditorServices
                 if (File.Exists(script) || File.Exists(scriptAbsPath))
                 {
                     // Dot-source the launched script path
-                    script = ". " + FullyPowerShellEscapePath(script);
+                    script = ". " + QuoteEscapeString(script);
                 }
 
                 launchedScript = script + " " + arguments;
@@ -1129,15 +1129,15 @@ namespace Microsoft.PowerShell.EditorServices
         internal static string FullyPowerShellEscapePath(string path)
         {
             string globEscapedPath = GlobEscapePath(path);
-            return QuoteEscapePath(globEscapedPath);
+            return QuoteEscapeString(globEscapedPath);
         }
 
         /// <summary>
-        /// Wrap an already escaped path in quotes to make it safe to use in scripts.
+        /// Wrap a string in quotes to make it safe to use in scripts.
         /// </summary>
         /// <param name="escapedPath">The glob-escaped path to wrap in quotes.</param>
         /// <returns>The given path wrapped in quotes appropriately.</returns>
-        internal static string QuoteEscapePath(string escapedPath)
+        internal static string QuoteEscapeString(string escapedPath)
         {
             var sb = new StringBuilder(escapedPath.Length + 2); // Length of string plus two quotes
             sb.Append('\'');
