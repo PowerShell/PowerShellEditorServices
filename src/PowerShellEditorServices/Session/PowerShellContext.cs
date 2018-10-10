@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices
     using System.Management.Automation.Runspaces;
     using Microsoft.PowerShell.EditorServices.Session.Capabilities;
     using System.IO;
+    using System.ComponentModel;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -1206,6 +1207,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="path">The path to process.</param>
         /// <param name="escapeSpaces">Specify True to escape spaces in the path, otherwise False.</param>
         /// <returns>The path with [ and ] escaped.</returns>
+        [Hidden, EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string EscapePath(string path, bool escapeSpaces)
         {
@@ -1258,6 +1260,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="path">The path to unescape.</param>
         /// <returns>The path with the ` character before [, ] and spaces removed.</returns>
+        [Hidden, EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string UnescapePath(string path)
         {
