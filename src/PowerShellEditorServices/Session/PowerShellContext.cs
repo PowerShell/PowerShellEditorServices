@@ -12,6 +12,7 @@ using System.Linq;
 using System.Management.Automation.Host;
 using System.Management.Automation.Remoting;
 using System.Management.Automation.Runspaces;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -23,6 +24,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 namespace Microsoft.PowerShell.EditorServices
 {
     using System.Management.Automation;
+    using System.Runtime.InteropServices;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -31,6 +33,21 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public class PowerShellContext : IDisposable, IHostSupportsInteractiveSession
     {
+        private const string DotNetFrameworkDescription = ".NET Framework";
+
+        private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
+
+        static PowerShellContext()
+        {
+            // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection
+            if (RuntimeInformation.FrameworkDescription == DotNetFrameworkDescription)
+            {
+                MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
+                var setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), target: null, method: setterInfo);
+                s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>)setter;
+            }
+        }
+
         #region Fields
 
         private readonly SemaphoreSlim resumeRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
@@ -174,6 +191,13 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
+
+            // Windows PowerShell must be hosted in STA mode
+            if (RuntimeInformation.FrameworkDescription == DotNetFrameworkDescription)
+            {
+                s_runspaceApartmentStateSetter(runspace, ApartmentState.STA);
+            }
+
             runspace.ThreadOptions = PSThreadOptions.ReuseThread;
             runspace.Open();
 
