@@ -1,11 +1,14 @@
 using System;
 using Xunit;
 using Microsoft.PowerShell.EditorServices;
+using System.IO;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Session
 {
     public class PathEscapingTests
     {
+        private const string ScriptAssetPath = @"..\..\..\..\PowerShellEditorServices.Test.Shared\scriptassets";
+
         [Theory]
         [InlineData("DebugTest.ps1", "DebugTest.ps1")]
         [InlineData("../../DebugTest.ps1", "../../DebugTest.ps1")]
@@ -106,6 +109,24 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         {
             string extensionUnescapedPath = PowerShellContext.UnescapeGlobEscapedPath(escapedPath);
             Assert.Equal(expectedUnescapedPath, extensionUnescapedPath);
+        }
+
+        [Theory]
+        [InlineData("NormalScript.ps1")]
+        [InlineData("Bad&name4script.ps1")]
+        [InlineData("[Truly] b&d Name_4_script.ps1")]
+        public void CanDotSourcePath(string rawFileName)
+        {
+            string fullPath = Path.Combine(ScriptAssetPath, rawFileName);
+            string quotedPath = PowerShellContext.QuoteEscapeString(fullPath);
+
+            var psCommand = new System.Management.Automation.PSCommand().AddScript($". {quotedPath}");
+
+            using (var pwsh = System.Management.Automation.PowerShell.Create())
+            {
+                pwsh.Commands = psCommand;
+                pwsh.Invoke();
+            }
         }
     }
 }
