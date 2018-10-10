@@ -796,7 +796,7 @@ namespace Microsoft.PowerShell.EditorServices
                 if (File.Exists(script) || File.Exists(scriptAbsPath))
                 {
                     // Dot-source the launched script path
-                    script = ". " + EscapePath(script, escapeSpaces: true);
+                    script = ". " + FullyPowerShellEscapePath(script);
                 }
 
                 launchedScript = script + " " + arguments;
@@ -1113,11 +1113,91 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (!isPathAlreadyEscaped)
                 {
-                    path = EscapePath(path, false);
+                    path = GlobEscapePath(path);
                 }
 
                 runspaceHandle.Runspace.SessionStateProxy.Path.SetLocation(path);
             }
+        }
+
+        /// <summary>
+        /// Fully escape a given path for use in PowerShell script.
+        /// Note: this will not work with PowerShell.AddParameter()
+        /// </summary>
+        /// <param name="path">The path to escape.</param>
+        /// <returns>An escaped version of the path that can be embedded in PowerShell script.</returns>
+        internal static string FullyPowerShellEscapePath(string path)
+        {
+            string globEscapedPath = GlobEscapePath(path);
+            return QuoteEscapePath(globEscapedPath);
+        }
+
+        /// <summary>
+        /// Wrap an already escaped path in quotes to make it safe to use in scripts.
+        /// </summary>
+        /// <param name="escapedPath">The glob-escaped path to wrap in quotes.</param>
+        /// <returns>The given path wrapped in quotes appropriately.</returns>
+        internal static string QuoteEscapePath(string escapedPath)
+        {
+            var sb = new StringBuilder(escapedPath.Length + 2); // Length of string plus two quotes
+            sb.Append('\'');
+            if (!escapedPath.Contains('\''))
+            {
+                sb.Append(escapedPath);
+            }
+            else
+            {
+                foreach (char c in escapedPath)
+                {
+                    if (c == '\'')
+                    {
+                        sb.Append("''");
+                        continue;
+                    }
+
+                    sb.Append(c);
+                }
+            }
+            sb.Append('\'');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Return the given path with all PowerShell globbing characters escaped,
+        /// plus optionally the whitespace.
+        /// </summary>
+        /// <param name="path">The path to process.</param>
+        /// <param name="escapeSpaces">Specify True to escape spaces in the path, otherwise False.</param>
+        /// <returns>The path with [ and ] escaped.</returns>
+        internal static string GlobEscapePath(string path, bool escapeSpaces = false)
+        {
+            var sb = new StringBuilder();
+            for (int i = 0; i < path.Length; i++)
+            {
+                char curr = path[i];
+                switch (curr)
+                {
+                    // Escape '[', ']', '?' and '*' with '`'
+                    case '[':
+                    case ']':
+                    case '*':
+                    case '?':
+                        sb.Append('`').Append(curr);
+                        break;
+
+                    default:
+                        // Escape whitespace if required
+                        if (escapeSpaces && char.IsWhiteSpace(curr))
+                        {
+                            sb.Append('`').Append(curr);
+                            break;
+                        }
+                        sb.Append(curr);
+                        break;
+                }
+            }
+
+            return sb.ToString();
         }
 
         /// <summary>
@@ -1126,17 +1206,50 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="path">The path to process.</param>
         /// <param name="escapeSpaces">Specify True to escape spaces in the path, otherwise False.</param>
         /// <returns>The path with [ and ] escaped.</returns>
+        [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string EscapePath(string path, bool escapeSpaces)
         {
-            string escapedPath = Regex.Replace(path, @"(?<!`)\[", "`[");
-            escapedPath = Regex.Replace(escapedPath, @"(?<!`)\]", "`]");
+            return GlobEscapePath(path, escapeSpaces);
+        }
 
-            if (escapeSpaces)
+        internal static string UnescapeGlobEscapedPath(string globEscapedPath)
+        {
+            // Prevent relying on my implementation if we can help it
+            if (!globEscapedPath.Contains('`'))
             {
-                escapedPath = Regex.Replace(escapedPath, @"(?<!`) ", "` ");
+                return globEscapedPath;
             }
 
-            return escapedPath;
+            var sb = new StringBuilder(globEscapedPath.Length);
+            for (int i = 0; i < globEscapedPath.Length; i++)
+            {
+                // If we see a backtick perform a lookahead
+                char curr = globEscapedPath[i];
+                if (curr == '`' && i + 1 < globEscapedPath.Length)
+                {
+                    // If the next char is an escapable one, don't add this backtick to the new string
+                    char next = globEscapedPath[i + 1];
+                    switch (next)
+                    {
+                        case '[':
+                        case ']':
+                        case '?':
+                        case '*':
+                            continue;
+
+                        default:
+                            if (char.IsWhiteSpace(next))
+                            {
+                                continue;
+                            }
+                            break;
+                    }
+                }
+
+                sb.Append(curr);
+            }
+
+            return sb.ToString();
         }
 
         /// <summary>
@@ -1145,14 +1258,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="path">The path to unescape.</param>
         /// <returns>The path with the ` character before [, ] and spaces removed.</returns>
+        [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string UnescapePath(string path)
         {
-            if (!path.Contains("`"))
-            {
-                return path;
-            }
-
-            return Regex.Replace(path, @"`(?=[ \[\]])", "");
+            return UnescapeGlobEscapedPath(path);
         }
 
         #endregion

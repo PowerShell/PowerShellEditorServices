@@ -259,7 +259,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // the path exists and is a directory.
                 if (!string.IsNullOrEmpty(workingDir))
                 {
-                    workingDir = PowerShellContext.UnescapePath(workingDir);
+                    workingDir = PowerShellContext.UnescapeGlobEscapedPath(workingDir);
                     try
                     {
                         if ((File.GetAttributes(workingDir) & FileAttributes.Directory) != FileAttributes.Directory)
