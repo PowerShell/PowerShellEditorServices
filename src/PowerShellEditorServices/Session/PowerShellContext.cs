@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Linq;
 using System.Management.Automation.Host;
 using System.Management.Automation.Remoting;
@@ -24,7 +25,6 @@ using Microsoft.PowerShell.EditorServices.Utility;
 namespace Microsoft.PowerShell.EditorServices
 {
     using System.Management.Automation;
-    using System.Runtime.InteropServices;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (RuntimeInformation.FrameworkDescription == DotNetFrameworkDescription)
             {
                 MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
-                var setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), target: null, method: setterInfo);
+                var setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
                 s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>)setter;
             }
         }
