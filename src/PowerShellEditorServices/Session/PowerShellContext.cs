@@ -1114,7 +1114,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (!isPathAlreadyEscaped)
                 {
-                    path = GlobEscapePath(path);
+                    path = WildcardEscapePath(path);
                 }
 
                 runspaceHandle.Runspace.SessionStateProxy.Path.SetLocation(path);
@@ -1129,7 +1129,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>An escaped version of the path that can be embedded in PowerShell script.</returns>
         internal static string FullyPowerShellEscapePath(string path)
         {
-            string globEscapedPath = GlobEscapePath(path);
+            string globEscapedPath = WildcardEscapePath(path);
             return QuoteEscapeString(globEscapedPath);
         }
 
@@ -1170,7 +1170,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="path">The path to process.</param>
         /// <param name="escapeSpaces">Specify True to escape spaces in the path, otherwise False.</param>
         /// <returns>The path with [ and ] escaped.</returns>
-        internal static string GlobEscapePath(string path, bool escapeSpaces = false)
+        internal static string WildcardEscapePath(string path, bool escapeSpaces = false)
         {
             var sb = new StringBuilder();
             for (int i = 0; i < path.Length; i++)
@@ -1211,10 +1211,10 @@ namespace Microsoft.PowerShell.EditorServices
         [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string EscapePath(string path, bool escapeSpaces)
         {
-            return GlobEscapePath(path, escapeSpaces);
+            return WildcardEscapePath(path, escapeSpaces);
         }
 
-        internal static string UnescapeGlobEscapedPath(string globEscapedPath)
+        internal static string UnescapeWildcardEscapedPath(string globEscapedPath)
         {
             // Prevent relying on my implementation if we can help it
             if (!globEscapedPath.Contains('`'))
@@ -1264,7 +1264,7 @@ namespace Microsoft.PowerShell.EditorServices
         [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string UnescapePath(string path)
         {
-            return UnescapeGlobEscapedPath(path);
+            return UnescapeWildcardEscapedPath(path);
         }
 
         #endregion
