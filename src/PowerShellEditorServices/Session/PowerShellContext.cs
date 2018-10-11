@@ -1129,8 +1129,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>An escaped version of the path that can be embedded in PowerShell script.</returns>
         internal static string FullyPowerShellEscapePath(string path)
         {
-            string globEscapedPath = WildcardEscapePath(path);
-            return QuoteEscapeString(globEscapedPath);
+            string wildcardEscapedPath = WildcardEscapePath(path);
+            return QuoteEscapeString(wildcardEscapedPath);
         }
 
         /// <summary>
@@ -1214,23 +1214,23 @@ namespace Microsoft.PowerShell.EditorServices
             return WildcardEscapePath(path, escapeSpaces);
         }
 
-        internal static string UnescapeWildcardEscapedPath(string globEscapedPath)
+        internal static string UnescapeWildcardEscapedPath(string wildcardEscapedPath)
         {
             // Prevent relying on my implementation if we can help it
-            if (!globEscapedPath.Contains('`'))
+            if (!wildcardEscapedPath.Contains('`'))
             {
-                return globEscapedPath;
+                return wildcardEscapedPath;
             }
 
-            var sb = new StringBuilder(globEscapedPath.Length);
-            for (int i = 0; i < globEscapedPath.Length; i++)
+            var sb = new StringBuilder(wildcardEscapedPath.Length);
+            for (int i = 0; i < wildcardEscapedPath.Length; i++)
             {
                 // If we see a backtick perform a lookahead
-                char curr = globEscapedPath[i];
-                if (curr == '`' && i + 1 < globEscapedPath.Length)
+                char curr = wildcardEscapedPath[i];
+                if (curr == '`' && i + 1 < wildcardEscapedPath.Length)
                 {
                     // If the next char is an escapable one, don't add this backtick to the new string
-                    char next = globEscapedPath[i + 1];
+                    char next = wildcardEscapedPath[i + 1];
                     switch (next)
                     {
                         case '[':

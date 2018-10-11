@@ -23,9 +23,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData("/CJK.chars/脚本/[hello].ps1", "/CJK.chars/脚本/`[hello`].ps1")]
         [InlineData("C:\\Animals\\утка\\quack.ps1", "C:\\Animals\\утка\\quack.ps1")]
         [InlineData("C:\\&nimals\\утка\\qu*ck?.ps1", "C:\\&nimals\\утка\\qu`*ck`?.ps1")]
-        public void CorrectlyGlobEscapesPaths_NoSpaces(string unescapedPath, string escapedPath)
+        public void CorrectlyWildcardEscapesPaths_NoSpaces(string unescapedPath, string escapedPath)
         {
-            string extensionEscapedPath = PowerShellContext.GlobEscapePath(unescapedPath);
+            string extensionEscapedPath = PowerShellContext.WildcardEscapePath(unescapedPath);
             Assert.Equal(escapedPath, extensionEscapedPath);
         }
 
@@ -43,9 +43,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData("/CJK chars/脚本/[hello].ps1", "/CJK` chars/脚本/`[hello`].ps1")]
         [InlineData("C:\\Animal s\\утка\\quack.ps1", "C:\\Animal` s\\утка\\quack.ps1")]
         [InlineData("C:\\&nimals\\утка\\qu*ck?.ps1", "C:\\&nimals\\утка\\qu`*ck`?.ps1")]
-        public void CorrectlyGlobEscapesPaths_Spaces(string unescapedPath, string escapedPath)
+        public void CorrectlyWildcardEscapesPaths_Spaces(string unescapedPath, string escapedPath)
         {
-            string extensionEscapedPath = PowerShellContext.GlobEscapePath(unescapedPath, escapeSpaces: true);
+            string extensionEscapedPath = PowerShellContext.WildcardEscapePath(unescapedPath, escapeSpaces: true);
             Assert.Equal(escapedPath, extensionEscapedPath);
         }
 
@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData("C:\\&nimals\\утка\\qu`*ck`?.ps1", "C:\\&nimals\\утка\\qu*ck?.ps1")]
         public void CorrectlyUnescapesPaths(string escapedPath, string expectedUnescapedPath)
         {
-            string extensionUnescapedPath = PowerShellContext.UnescapeGlobEscapedPath(escapedPath);
+            string extensionUnescapedPath = PowerShellContext.UnescapeWildcardEscapedPath(escapedPath);
             Assert.Equal(expectedUnescapedPath, extensionUnescapedPath);
         }
 
