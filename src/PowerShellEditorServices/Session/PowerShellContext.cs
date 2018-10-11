@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices
         static PowerShellContext()
         {
             // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection
-            if (RuntimeInformation.FrameworkDescription == DotNetFrameworkDescription)
+            if (RuntimeInformation.FrameworkDescription.Equals(DotNetFrameworkDescription))
             {
                 MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
                 Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
@@ -193,7 +193,7 @@ namespace Microsoft.PowerShell.EditorServices
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode
-            if (RuntimeInformation.FrameworkDescription == DotNetFrameworkDescription)
+            if (RuntimeInformation.FrameworkDescription.Equals(DotNetFrameworkDescription))
             {
                 s_runspaceApartmentStateSetter(runspace, ApartmentState.STA);
             }
