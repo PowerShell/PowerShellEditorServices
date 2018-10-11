@@ -193,6 +193,7 @@ namespace Microsoft.PowerShell.EditorServices
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode
+            // This must be set on the runspace *before* it is opened
             if (RuntimeInformation.FrameworkDescription.Equals(DotNetFrameworkDescription))
             {
                 s_runspaceApartmentStateSetter(runspace, ApartmentState.STA);
