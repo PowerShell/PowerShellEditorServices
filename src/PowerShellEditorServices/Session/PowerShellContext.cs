@@ -769,7 +769,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task ExecuteScriptWithArgs(string script, string arguments = null, bool writeInputToHost = false)
         {
-            string launchedScript = script;
+            string reportedScript = script;
+            string escapedScriptPath = PowerShellContext.WildcardEscapePath(script);
             PSCommand command = new PSCommand();
 
             if (arguments != null)
@@ -797,21 +798,22 @@ namespace Microsoft.PowerShell.EditorServices
                 if (File.Exists(script) || File.Exists(scriptAbsPath))
                 {
                     // Dot-source the launched script path
-                    script = ". " + QuoteEscapeString(script);
+                    escapedScriptPath = ". " + QuoteEscapeString(escapedScriptPath);
                 }
 
-                launchedScript = script + " " + arguments;
-                command.AddScript(launchedScript, false);
+                reportedScript += " " + arguments;
+                escapedScriptPath = escapedScriptPath + " " + arguments;
+                command.AddScript(escapedScriptPath, false);
             }
             else
             {
-                command.AddCommand(script, false);
+                command.AddCommand(escapedScriptPath, false);
             }
 
             if (writeInputToHost)
             {
                 this.WriteOutput(
-                    launchedScript + Environment.NewLine,
+                    script + Environment.NewLine,
                     true);
             }
 
@@ -1183,6 +1185,7 @@ namespace Microsoft.PowerShell.EditorServices
                     case ']':
                     case '*':
                     case '?':
+                    case '`':
                         sb.Append('`').Append(curr);
                         break;
 
