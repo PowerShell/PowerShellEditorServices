@@ -4,6 +4,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
     {
         public const string BuildVersion = "<unset>";
         public const string BuildOrigin = "<unset>";
-        public static readonly DateTime? BuildTime = null;
+        public static readonly System.DateTime? BuildTime = null;
     }
 }
