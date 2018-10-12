@@ -9,10 +9,12 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Linq;
 using System.Management.Automation.Host;
 using System.Management.Automation.Remoting;
 using System.Management.Automation.Runspaces;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -32,6 +34,21 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public class PowerShellContext : IDisposable, IHostSupportsInteractiveSession
     {
+        private const string DotNetFrameworkDescription = ".NET Framework";
+
+        private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
+
+        static PowerShellContext()
+        {
+            // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection
+            if (RuntimeInformation.FrameworkDescription.Equals(DotNetFrameworkDescription))
+            {
+                MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
+                Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
+                s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>)setter;
+            }
+        }
+
         #region Fields
 
         private readonly SemaphoreSlim resumeRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
@@ -175,6 +192,14 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
+
+            // Windows PowerShell must be hosted in STA mode
+            // This must be set on the runspace *before* it is opened
+            if (RuntimeInformation.FrameworkDescription.Equals(DotNetFrameworkDescription))
+            {
+                s_runspaceApartmentStateSetter(runspace, ApartmentState.STA);
+            }
+
             runspace.ThreadOptions = PSThreadOptions.ReuseThread;
             runspace.Open();
 
