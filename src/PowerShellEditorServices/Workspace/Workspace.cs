@@ -102,6 +102,25 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Tries to get an open file in the workspace. Returns true or false if it succeeds.
+        /// </summary>
+        /// <param name="filePath">The file path at which the script resides.</param>
+        /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
+        public bool TryGetFile(string filePath, out ScriptFile scriptFile)
+        {
+            try
+            {
+                scriptFile = GetFile(filePath);
+                return true;
+            }
+            catch (FileNotFoundException)
+            {
+                scriptFile = null;
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Gets a new ScriptFile instance which is identified by the given file path.
         /// </summary>
         /// <param name="filePath">The file path for which a buffer will be retrieved.</param>
