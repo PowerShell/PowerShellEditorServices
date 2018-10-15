@@ -146,11 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
 #endif
 
-#if CoreCLR
             string osVersion = RuntimeInformation.OSDescription;
-#else
-            string osVersion = Environment.OSVersion.VersionString;
-#endif
 
             string buildTime = BuildInfo.BuildTime?.ToString("s", System.Globalization.CultureInfo.InvariantCulture) ?? "<unspecified>";
 
