@@ -178,7 +178,7 @@ namespace Microsoft.PowerShell.EditorServices
             // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
             // quoted and have those wildcard chars escaped.
             string escapedScriptPath =
-                PowerShellContext.EscapePath(scriptPath, escapeSpaces: false);
+                PowerShellContext.WildcardEscapePath(scriptPath);
 
             if (dscBreakpoints == null || !dscBreakpoints.IsDscResourcePath(escapedScriptPath))
             {

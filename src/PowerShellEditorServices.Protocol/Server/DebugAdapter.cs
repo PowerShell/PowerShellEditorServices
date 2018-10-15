@@ -259,7 +259,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // the path exists and is a directory.
                 if (!string.IsNullOrEmpty(workingDir))
                 {
-                    workingDir = PowerShellContext.UnescapePath(workingDir);
                     try
                     {
                         if ((File.GetAttributes(workingDir) & FileAttributes.Directory) != FileAttributes.Directory)
@@ -303,7 +302,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             string arguments = null;
             if ((launchParams.Args != null) && (launchParams.Args.Length > 0))
             {
-                arguments = string.Join(" ", launchParams.Args);
+                var sb = new StringBuilder();
+                for (int i = 0; i < launchParams.Args.Length; i++)
+                {
+                    sb.Append(PowerShellContext.QuoteEscapeString(launchParams.Args[i]));
+                    if (i < launchParams.Args.Length - 1)
+                    {
+                        sb.Append(' ');
+                    }
+                }
+                arguments = sb.ToString();
                 Logger.Write(LogLevel.Verbose, "Script arguments are: " + arguments);
             }
 
