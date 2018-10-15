@@ -225,11 +225,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
             CreateInvocationSubscriber();
         }
 
-        private void OnInvokerUnsubscribed(object sender, PSEventArgs e)
-        {
-            CreateInvocationSubscriber();
-        }
-
         private void SetSubscriberExecutionThreadWithReflection(PSEventSubscriber subscriber)
         {
             // We need to create the PowerShell object in the same thread so we can get a nested
