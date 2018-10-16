@@ -342,17 +342,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (!fileMap.Contains(file))
                 {
-                    ScriptFile scriptFile;
-                    try
-                    {
-                        scriptFile = workspace.GetFile(file);
-                    }
-                    catch (Exception e) when (e is IOException
-                                           || e is SecurityException
-                                           || e is FileNotFoundException
-                                           || e is DirectoryNotFoundException
-                                           || e is PathTooLongException
-                                           || e is UnauthorizedAccessException)
+                    if (!workspace.TryGetFile(file, out ScriptFile scriptFile))
                     {
                         // If we can't access the file for some reason, just ignore it
                         continue;
