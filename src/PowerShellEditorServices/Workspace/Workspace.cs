@@ -108,21 +108,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
         public bool TryGetFile(string filePath, out ScriptFile scriptFile)
         {
-            return TryGetFile(filePath, out scriptFile, out Exception e);
-        }
-
-        /// <summary>
-        /// Tries to get an open file in the workspace. Returns true or false if it succeeds.
-        /// </summary>
-        /// <param name="filePath">The file path at which the script resides.</param>
-        /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
-        /// <param name="exception">The out parameter that will contain the underlying exception.</param>
-        public bool TryGetFile(string filePath, out ScriptFile scriptFile, out Exception exception)
-        {
             try
             {
                 scriptFile = GetFile(filePath);
-                exception = null;
                 return true;
             }
             catch (Exception e) when (
@@ -133,8 +121,10 @@ namespace Microsoft.PowerShell.EditorServices
                 e is PathTooLongException ||
                 e is UnauthorizedAccessException)
             {
+                this.logger.WriteException(
+                    $"Failed to set breakpoint on file: {filePath}",
+                    e);
                 scriptFile = null;
-                exception = e;
                 return false;
             }
         }

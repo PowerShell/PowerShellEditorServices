@@ -499,14 +499,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             if (!ScriptFile.IsUntitledPath(setBreakpointsParams.Source.Path) &&
                 !_editorSession.Workspace.TryGetFile(
                     setBreakpointsParams.Source.Path,
-                    out scriptFile,
-                    out Exception exception))
+                    out scriptFile))
             {
-                Logger.WriteException(
-                    $"Failed to set breakpoint on file: {setBreakpointsParams.Source.Path}",
-                    exception);
-
-                string message = _noDebug ? string.Empty : "Source file could not be accessed, breakpoint not set - " + exception.Message;
+                string message = _noDebug ? string.Empty : "Source file could not be accessed, breakpoint not set.";
                 var srcBreakpoints = setBreakpointsParams.Breakpoints
                     .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
                         srcBkpt, setBreakpointsParams.Source.Path, message, verified: _noDebug));
