@@ -94,7 +94,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             ScriptFile scriptFile = null;
             if (!this.editorSession.Workspace.TryGetFile(clientContext.CurrentFilePath, out scriptFile))
             {
-                scriptFile = this.editorSession.Workspace.GetFileBuffer(clientContext.CurrentFilePath, clientContext.CurrentFileContent);
+                scriptFile = this.editorSession.Workspace.GetFileBuffer(
+                    clientContext.CurrentFilePath,
+                    clientContext.CurrentFileContent);
             }
 
             return
