@@ -86,6 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="scriptFile">The ScriptFile to which this file refers.</param>
         /// <param name="editorContext">The EditorContext to which this file relates.</param>
         /// <param name="editorOperations">An IEditorOperations implementation which performs operations in the editor.</param>
+        /// <param name="language">Determines the language of the file.false If it is not specified, then it defaults to "Unknown"</param>
         public FileContext(
             ScriptFile scriptFile,
             EditorContext editorContext,

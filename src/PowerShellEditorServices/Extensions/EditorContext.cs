@@ -48,6 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="currentFile">The ScriptFile that is in the active editor buffer.</param>
         /// <param name="cursorPosition">The position of the user's cursor in the active editor buffer.</param>
         /// <param name="selectedRange">The range of the user's selection in the active editor buffer.</param>
+        /// <param name="language">Determines the language of the file.false If it is not specified, then it defaults to "Unknown"</param>
         public EditorContext(
             IEditorOperations editorOperations,
             ScriptFile currentFile,
