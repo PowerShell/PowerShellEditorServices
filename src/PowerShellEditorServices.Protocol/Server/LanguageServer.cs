@@ -239,7 +239,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         },
                         DocumentFormattingProvider = false,
                         DocumentRangeFormattingProvider = false,
-                        RenameProvider = false
+                        RenameProvider = false,
+                        FoldingRangeProvider = true
                     }
                 });
         }
