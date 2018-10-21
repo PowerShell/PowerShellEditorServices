@@ -6,8 +6,8 @@
 namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
-    /// A class to contain the found defintion of a symbol.
-    /// It contains the symbol reference of the defintion
+    /// A class to contain the found definition of a symbol.
+    /// It contains the symbol reference of the definition
     /// </summary>
     public class GetDefinitionResult
     {

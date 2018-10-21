@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices
         private Dictionary<String, String> AliasToCmdletDictionary;
         private string symbolRefCommandName;
         private bool needsAliases;
-        
+
         public List<SymbolReference> FoundReferences { get; set; }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.CmdletToAliasDictionary = CmdletToAliasDictionary;
             this.AliasToCmdletDictionary = AliasToCmdletDictionary;
 
-            // Try to get the symbolReference's command name of an alias, 
+            // Try to get the symbolReference's command name of an alias,
             // if a command name does not exists (if the symbol isn't an alias to a command)
             // set symbolRefCommandName to and empty string value
             AliasToCmdletDictionary.TryGetValue(symbolReference.ScriptRegion.Text, out symbolRefCommandName);
@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         /// <summary>
         /// Decides if the current command is a reference of the symbol being searched for.
-        /// A reference of the symbol will be a of type SymbolType.Function 
+        /// A reference of the symbol will be a of type SymbolType.Function
         /// and have the same name as the symbol
         /// </summary>
         /// <param name="commandAst">A CommandAst in the script's AST</param>
@@ -74,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (needsAliases)
                 {
-                    // Try to get the commandAst's name and aliases, 
+                    // Try to get the commandAst's name and aliases,
                     // if a command does not exists (if the symbol isn't an alias to a command)
                     // set command to and empty string value string command
                     // if the aliases do not exist (if the symvol isn't a command that has aliases)
@@ -85,11 +85,11 @@ namespace Microsoft.PowerShell.EditorServices
                     AliasToCmdletDictionary.TryGetValue(commandName, out command);
                     if (alaises == null) { alaises = new List<string>(); }
                     if (command == null) { command = string.Empty; }
-                    
+
                     if (symbolRef.SymbolType.Equals(SymbolType.Function))
                     {
                         // Check if the found symbol's name is the same as the commandAst's name OR
-                        // if the symbol's name is an alias for this commandAst's name (commandAst is a cmdlet) OR 
+                        // if the symbol's name is an alias for this commandAst's name (commandAst is a cmdlet) OR
                         // if the symbol's name is the same as the commandAst's cmdlet name (commandAst is a alias)
                         if (commandName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase) ||
                         alaises.Contains(symbolRef.ScriptRegion.Text.ToLower()) ||
@@ -112,20 +112,20 @@ namespace Microsoft.PowerShell.EditorServices
                             commandNameAst.Extent));
                     }
                 }
-                
+
             }
             return base.VisitCommand(commandAst);
         }
 
         /// <summary>
-        /// Decides if the current function defintion is a reference of the symbol being searched for.
+        /// Decides if the current function definition is a reference of the symbol being searched for.
         /// A reference of the symbol will be a of type SymbolType.Function and have the same name as the symbol
         /// </summary>
         /// <param name="functionDefinitionAst">A functionDefinitionAst in the script's AST</param>
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
-            // Get the start column number of the function name, 
+            // Get the start column number of the function name,
             // instead of the the start column of 'function' and create new extent for the functionName
             int startColumnNumber =
                 functionDefinitionAst.Extent.Text.IndexOf(
@@ -151,8 +151,8 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Decides if the current function defintion is a reference of the symbol being searched for.
-        /// A reference of the symbol will be a of type SymbolType.Parameter and have the same name as the symbol 
+        /// Decides if the current function definition is a reference of the symbol being searched for.
+        /// A reference of the symbol will be a of type SymbolType.Parameter and have the same name as the symbol
         /// </summary>
         /// <param name="commandParameterAst">A commandParameterAst in the script's AST</param>
         /// <returns>A visit action that continues the search for references</returns>
@@ -169,8 +169,8 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Decides if the current function defintion is a reference of the symbol being searched for.
-        /// A reference of the symbol will be a of type SymbolType.Variable and have the same name as the symbol  
+        /// Decides if the current function definition is a reference of the symbol being searched for.
+        /// A reference of the symbol will be a of type SymbolType.Variable and have the same name as the symbol
         /// </summary>
         /// <param name="variableExpressionAst">A variableExpressionAst in the script's AST</param>
         /// <returns>A visit action that continues the search for references</returns>

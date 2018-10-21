@@ -434,7 +434,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         }
 
         [Fact]
-        public async Task FindsDefintionOfVariable()
+        public async Task FindsDefinitionOfVariable()
         {
             await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
 
