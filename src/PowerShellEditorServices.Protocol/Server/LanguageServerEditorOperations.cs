@@ -90,14 +90,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public EditorContext ConvertClientEditorContext(
             ClientEditorContext clientContext)
         {
-
-            ScriptFile scriptFile = null;
-            if (!this.editorSession.Workspace.TryGetFile(clientContext.CurrentFilePath, out scriptFile))
-            {
-                scriptFile = this.editorSession.Workspace.GetFileBuffer(
-                    clientContext.CurrentFilePath,
-                    clientContext.CurrentFileContent);
-            }
+            ScriptFile scriptFile = this.editorSession.Workspace.CreateScriptFileFromFileBuffer(
+                clientContext.CurrentFilePath,
+                clientContext.CurrentFileContent);
 
             return
                 new EditorContext(
@@ -110,7 +105,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         clientContext.SelectionRange.Start.Line + 1,
                         clientContext.SelectionRange.Start.Character + 1,
                         clientContext.SelectionRange.End.Line + 1,
-                        clientContext.SelectionRange.End.Character + 1));
+                        clientContext.SelectionRange.End.Character + 1),
+                    clientContext.CurrentFileLanguage);
         }
 
         public Task NewFile()

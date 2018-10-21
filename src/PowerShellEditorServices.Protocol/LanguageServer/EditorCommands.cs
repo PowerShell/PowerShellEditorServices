@@ -40,6 +40,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     {
         public string CurrentFileContent { get; set; }
 
+        public string CurrentFileLanguage { get; set; }
+
         public string CurrentFilePath { get; set; }
 
         public Position CursorPosition { get; set; }

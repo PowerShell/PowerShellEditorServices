@@ -58,6 +58,35 @@ namespace Microsoft.PowerShell.EditorServices
         #region Public Methods
 
         /// <summary>
+        /// Creates a new ScriptFile instance which is identified by the given file
+        /// path and initially contains the given buffer contents.
+        /// </summary>
+        /// <param name="filePath">The file path for which a buffer will be retrieved.</param>
+        /// <param name="initialBuffer">The initial buffer contents if there is not an existing ScriptFile for this path.</param>
+        /// <returns>A ScriptFile instance for the specified path.</returns>
+        public ScriptFile CreateScriptFileFromFileBuffer(string filePath, string initialBuffer)
+        {
+            Validate.IsNotNullOrEmptyString("filePath", filePath);
+
+            // Resolve the full file path
+            string resolvedFilePath = this.ResolveFilePath(filePath);
+            string keyName = resolvedFilePath.ToLower();
+
+            ScriptFile scriptFile =
+                new ScriptFile(
+                    resolvedFilePath,
+                    filePath,
+                    initialBuffer,
+                    this.powerShellVersion);
+
+            this.workspaceFiles[keyName] = scriptFile;
+
+            this.logger.Write(LogLevel.Verbose, "Opened file as in-memory buffer: " + resolvedFilePath);
+
+            return scriptFile;
+        }
+
+        /// <summary>
         /// Gets an open file in the workspace.  If the file isn't open but
         /// exists on the filesystem, load and return it.
         /// </summary>

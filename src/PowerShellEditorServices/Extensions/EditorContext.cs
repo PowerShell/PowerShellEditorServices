@@ -52,10 +52,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             IEditorOperations editorOperations,
             ScriptFile currentFile,
             BufferPosition cursorPosition,
-            BufferRange selectedRange)
+            BufferRange selectedRange,
+            string language = "Unknown")
         {
             this.editorOperations = editorOperations;
-            this.CurrentFile = new FileContext(currentFile, this, editorOperations);
+            this.CurrentFile = new FileContext(currentFile, this, editorOperations, language);
             this.SelectedRange = selectedRange;
             this.CursorPosition = new FilePosition(currentFile, cursorPosition);
         }
