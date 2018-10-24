@@ -173,8 +173,8 @@ namespace Microsoft.PowerShell.EditorServices
                   new StringReader(initialBuffer),
                   powerShellVersion)
         {
-
         }
+
         /// <summary>
         /// Creates a new ScriptFile instance with the specified filepath.
         /// </summary>
@@ -191,7 +191,6 @@ namespace Microsoft.PowerShell.EditorServices
                   File.ReadAllText(filePath),
                   powerShellVersion)
         {
-
         }
 
         #endregion
