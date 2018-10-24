@@ -463,7 +463,19 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
                 case EditorServiceTransportType.NamedPipe:
                 {
-                    return new NamedPipeServerListener(protocol, config.Endpoint, this.logger);
+                    string endpoint = config.Endpoint;
+                    int splitIndex = endpoint.IndexOf(';');
+                    if (splitIndex > 0)
+                    {
+                        string readPipeName = endpoint.Substring(0, splitIndex);
+                        string writePipeName = endpoint.Substring(splitIndex + 1);
+                        this.logger.Write(LogLevel.Verbose, $"Creating NamedPipeServerListener for ${protocol} protocol with two pipes: Read: '" + readPipeName + "'. Write: '" + writePipeName + "'");
+                        return new NamedPipeServerListener(protocol, readPipeName, writePipeName, this.logger);
+                    }
+                    else
+                    {
+                        return new NamedPipeServerListener(protocol, endpoint, this.logger);
+                    }
                 }
 
                 default:

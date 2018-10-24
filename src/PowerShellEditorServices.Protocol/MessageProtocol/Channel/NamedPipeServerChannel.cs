@@ -12,12 +12,23 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     {
         private ILogger logger;
         private NamedPipeServerStream pipeServer;
+        private NamedPipeServerStream writePipeServer;
 
         public NamedPipeServerChannel(
             NamedPipeServerStream pipeServer,
             ILogger logger)
         {
             this.pipeServer = pipeServer;
+            this.writePipeServer = null;
+            this.logger = logger;
+        }
+        public NamedPipeServerChannel(
+            NamedPipeServerStream readPipeServer,
+            NamedPipeServerStream writePipeServer,
+            ILogger logger)
+        {
+            this.pipeServer = readPipeServer;
+            this.writePipeServer = writePipeServer;
             this.logger = logger;
         }
 
@@ -31,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
             this.MessageWriter =
                 new MessageWriter(
-                    this.pipeServer,
+                    this.writePipeServer ?? this.pipeServer,
                     messageSerializer,
                     this.logger);
         }
@@ -40,6 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         {
             // The server listener will take care of the pipe server
             this.pipeServer = null;
+            this.writePipeServer = null;
         }
     }
 }

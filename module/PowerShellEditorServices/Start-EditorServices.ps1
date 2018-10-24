@@ -68,6 +68,9 @@ param(
     [switch]
     $Stdio,
 
+    [switch]
+    $SplitInOutPipes,
+
     [string]
     $LanguageServicePipeName = $null,
 
@@ -173,8 +176,7 @@ function New-NamedPipeName {
 
     # We try 10 times to find a valid pipe name
     for ($i = 0; $i -lt 10; $i++) {
-        # add a guid to make the pipe unique
-        $PipeName = "PSES_$([guid]::NewGuid())"
+        $PipeName = "PSES_$([System.IO.Path]::GetRandomFileName())"
 
         if ((Test-NamedPipeName -PipeName $PipeName)) {
             return $PipeName
@@ -269,6 +271,9 @@ try {
     $languageServiceTransport = $null
     $debugServiceTransport = $null
 
+    $LanguageServiceWritePipeName = $null
+    $DebugServiceWritePipeName = $null
+
     if ($Stdio.IsPresent) {
         $languageServiceTransport = "Stdio"
         $debugServiceTransport = "Stdio"
@@ -292,6 +297,11 @@ try {
                 ExitWithError "Pipe name supplied is already taken: $DebugServicePipeName"
             }
         }
+        # If present create second pipe for writing
+        if ($SplitInOutPipes.IsPresent) {
+            $LanguageServiceWritePipeName = New-NamedPipeName
+            $DebugServiceWritePipeName = New-NamedPipeName
+        }
     }
 
     if ($EnableConsoleRepl) {
@@ -309,7 +319,9 @@ try {
             -LogLevel $LogLevel `
             -AdditionalModules $AdditionalModules `
             -LanguageServiceNamedPipe $LanguageServicePipeName `
+            -LanguageServiceWriteNamedPipe $LanguageServiceWritePipeName `
             -DebugServiceNamedPipe $DebugServicePipeName `
+            -DebugServiceWriteNamedPipe $DebugServiceWritePipeName `
             -Stdio:$Stdio.IsPresent`
             -BundledModulesPath $BundledModulesPath `
             -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
@@ -326,15 +338,35 @@ try {
     };
 
     if ($LanguageServicePipeName) {
-        $resultDetails["languageServicePipeName"] = Get-NamedPipePath -PipeName $LanguageServicePipeName
-        if ($IsLinux -or $IsMacOS) {
-            Set-NamedPipeMode -PipeFile $resultDetails["languageServicePipeName"]
+        if ($LanguageServiceWritePipeName) {
+            $resultDetails["languageServiceReadPipeName"] = Get-NamedPipePath -PipeName $LanguageServicePipeName
+            $resultDetails["languageServiceWritePipeName"] = Get-NamedPipePath -PipeName $LanguageServiceWritePipeName
+            if ($IsLinux -or $IsMacOS) {
+                Set-NamedPipeMode -PipeFile $resultDetails["languageServiceReadPipeName"]
+                Set-NamedPipeMode -PipeFile $resultDetails["languageServiceWritePipeName"]
+            }
+        }
+        else {
+            $resultDetails["languageServicePipeName"] = Get-NamedPipePath -PipeName $LanguageServicePipeName
+            if ($IsLinux -or $IsMacOS) {
+                Set-NamedPipeMode -PipeFile $resultDetails["languageServicePipeName"]
+            }
         }
     }
     if ($DebugServicePipeName) {
-        $resultDetails["debugServicePipeName"] = Get-NamedPipePath -PipeName $DebugServicePipeName
-        if ($IsLinux -or $IsMacOS) {
-            Set-NamedPipeMode -PipeFile $resultDetails["debugServicePipeName"]
+        if ($DebugServiceWritePipeName) {
+            $resultDetails["debugServiceReadPipeName"] = Get-NamedPipePath -PipeName $DebugServicePipeName
+            $resultDetails["debugServiceWritePipeName"] = Get-NamedPipePath -PipeName $DebugServiceWritePipeName
+            if ($IsLinux -or $IsMacOS) {
+                Set-NamedPipeMode -PipeFile $resultDetails["debugServiceReadPipeName"]
+                Set-NamedPipeMode -PipeFile $resultDetails["debugServiceWritePipeName"]
+            }
+        }
+        else {
+            $resultDetails["debugServicePipeName"] = Get-NamedPipePath -PipeName $DebugServicePipeName
+            if ($IsLinux -or $IsMacOS) {
+                Set-NamedPipeMode -PipeFile $resultDetails["debugServicePipeName"]
+            }
         }
     }
 

@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using Microsoft.Win32.SafeHandles;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
@@ -19,7 +20,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     {
         private ILogger logger;
         private string pipeName;
+        private readonly string writePipeName;
         private NamedPipeServerStream pipeServer;
+        private NamedPipeServerStream writePipeServer;
 
         public NamedPipeServerListener(
             MessageProtocolType messageProtocolType,
@@ -29,6 +32,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         {
             this.logger = logger;
             this.pipeName = pipeName;
+            this.writePipeName = null;
+        }
+
+        public NamedPipeServerListener(
+            MessageProtocolType messageProtocolType,
+            string readPipeName,
+            string writePipeName,
+            ILogger logger)
+            : base(messageProtocolType)
+        {
+            this.logger = logger;
+            this.pipeName = readPipeName;
+            this.writePipeName = writePipeName;
         }
 
         public override void Start()
@@ -63,6 +79,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                     // 99% of this code was borrowed from PowerShell here:
                     // https://github.com/PowerShell/PowerShell/blob/master/src/System.Management.Automation/engine/remoting/common/RemoteSessionNamedPipe.cs#L124-L256
                     this.pipeServer = NamedPipeNative.CreateNamedPipe(pipeName, pipeSecurity);
+                    if (this.writePipeName != null)
+                    {
+                        this.writePipeServer = NamedPipeNative.CreateNamedPipe(writePipeName, pipeSecurity);
+                    }
                 }
                 else
                 {
@@ -74,6 +94,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                         maxNumberOfServerInstances: 1,
                         transmissionMode: PipeTransmissionMode.Byte,
                         options: PipeOptions.Asynchronous);
+                    if (this.writePipeName != null)
+                    {
+                        this.writePipeServer = new NamedPipeServerStream(
+                            pipeName: writePipeName,
+                            direction: PipeDirection.InOut,
+                            maxNumberOfServerInstances: 1,
+                            transmissionMode: PipeTransmissionMode.Byte,
+                            options: PipeOptions.None);
+                    }
                 }
                 ListenForConnection();
             }
@@ -97,39 +126,50 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
                 this.logger.Write(LogLevel.Verbose, "Named pipe server has been disposed.");
             }
+            if (this.writePipeServer != null)
+            {
+                this.logger.Write(LogLevel.Verbose, $"Named write pipe server {writePipeServer} shutting down...");
+
+                this.writePipeServer.Dispose();
+
+                this.logger.Write(LogLevel.Verbose, $"Named write pipe server {writePipeServer} has been disposed.");
+            }
         }
 
         private void ListenForConnection()
         {
-            Task.Factory.StartNew(
-                async () =>
+            List<Task> connectionTasks = new List<Task> {WaitForConnectionAsync(this.pipeServer)};
+            if (this.writePipeServer != null)
+            {
+                connectionTasks.Add(WaitForConnectionAsync(this.writePipeServer));
+            }
+
+            Task.Run(async () =>
+            {
+                try
                 {
-                    try
-                    {
+                    await Task.WhenAll(connectionTasks);
+                    this.OnClientConnect(new NamedPipeServerChannel(this.pipeServer, this.writePipeServer, this.logger));
+                }
+                catch (Exception e)
+                {
+                    this.logger.WriteException(
+                        "An unhandled exception occurred while listening for a named pipe client connection",
+                        e);
+
+                    throw e;
+                }
+            });
+        }
+
+        private static async Task WaitForConnectionAsync(NamedPipeServerStream pipeServerStream)
+        {
 #if CoreCLR
-                        await this.pipeServer.WaitForConnectionAsync();
+            await pipeServerStream.WaitForConnectionAsync();
 #else
-                        await Task.Factory.FromAsync(
-                            this.pipeServer.BeginWaitForConnection,
-                            this.pipeServer.EndWaitForConnection, null);
+            await Task.Factory.FromAsync(pipeServerStream.BeginWaitForConnection, pipeServerStream.EndWaitForConnection, null);
 #endif
-
-                        await this.pipeServer.FlushAsync();
-
-                        this.OnClientConnect(
-                            new NamedPipeServerChannel(
-                                this.pipeServer,
-                                this.logger));
-                    }
-                    catch (Exception e)
-                    {
-                        this.logger.WriteException(
-                            "An unhandled exception occurred while listening for a named pipe client connection",
-                            e);
-
-                        throw e;
-                    }
-                });
+            await pipeServerStream.FlushAsync();
         }
     }
 
