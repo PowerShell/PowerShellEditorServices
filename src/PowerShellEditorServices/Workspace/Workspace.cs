@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Tries to get an open file in the workspace. Returns true or false if it succeeds.
+        /// Tries to get an open file in the workspace. Returns true if it succeeds, false otherwise.
         /// </summary>
         /// <param name="filePath">The file path at which the script resides.</param>
         /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
