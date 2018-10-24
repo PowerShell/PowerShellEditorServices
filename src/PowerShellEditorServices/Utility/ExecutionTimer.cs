@@ -20,8 +20,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     /// </example>
     public struct ExecutionTimer : IDisposable
     {
-        [ThreadStatic]
-        private static Stopwatch t_stopwatch;
+        private static readonly ObjectPool<Stopwatch> s_stopwatchPool = new ObjectPool<Stopwatch>();
+
+        private Stopwatch _stopwatch;
 
         private readonly ILogger _logger;
 
@@ -50,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerLineNumber] int callerLineNumber = -1)
         {
             var timer = new ExecutionTimer(logger, message, callerMemberName, callerFilePath, callerLineNumber);
-            Stopwatch.Start();
+            timer._stopwatch.Start();
             return timer;
         }
 
@@ -66,6 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             _callerMemberName = callerMemberName;
             _callerFilePath = callerFilePath;
             _callerLineNumber = callerLineNumber;
+            _stopwatch = s_stopwatchPool.Rent();
         }
 
         /// <summary>
@@ -74,16 +76,18 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </summary>
         public void Dispose()
         {
-            t_stopwatch.Stop();
+            _stopwatch.Stop();
 
             string logMessage = new StringBuilder()
                 .Append(_message)
                 .Append(" [")
-                .Append(t_stopwatch.ElapsedMilliseconds)
+                .Append(_stopwatch.ElapsedMilliseconds)
                 .Append("ms]")
                 .ToString();
 
-            t_stopwatch.Reset();
+            _stopwatch.Reset();
+
+            s_stopwatchPool.Return(_stopwatch);
 
             _logger.Write(
                 LogLevel.Verbose,
@@ -92,7 +96,5 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 callerSourceFile: _callerFilePath,
                 callerLineNumber: _callerLineNumber);
         }
-
-        private static Stopwatch Stopwatch => t_stopwatch ?? (t_stopwatch = new Stopwatch());
     }
 }
