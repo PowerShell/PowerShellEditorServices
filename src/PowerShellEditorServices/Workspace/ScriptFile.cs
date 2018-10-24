@@ -22,8 +22,8 @@ namespace Microsoft.PowerShell.EditorServices
 
         private static readonly string[] s_newlines = new []
         {
-            "\n",
-            "\r\n"
+            "\r\n",
+            "\n"
         };
 
         private Token[] scriptTokens;
