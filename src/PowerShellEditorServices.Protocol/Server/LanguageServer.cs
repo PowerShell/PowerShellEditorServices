@@ -136,7 +136,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 this.HandleDocumentRangeFormattingRequest);
             this.messageHandlers.SetRequestHandler(FoldingRangeRequest.Type, this.HandleFoldingRangeRequestAsync);
 
-            this.messageHandlers.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
             this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
 
             this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
@@ -295,19 +294,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             //       to VSCode to display in a help pop-up (or similar)
             await editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpPSCommand, sendOutputToHost: true);
             await requestContext.SendResult(null);
-        }
-
-        protected async Task HandleShowOnlineHelpRequest(
-            string helpParams,
-            RequestContext<object> requestContext
-        )
-        {
-            PSCommand commandDeprecated = new PSCommand()
-                .AddCommand("Microsoft.PowerShell.Utility\\Write-Verbose")
-                .AddParameter("Message", "'powerShell/showOnlineHelp' has been deprecated. Use 'powerShell/showHelp' instead.");
-
-            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(commandDeprecated, sendOutputToHost: true);
-            await this.HandleShowHelpRequest(helpParams, requestContext);
         }
 
         private async Task HandleSetPSSARulesRequest(
