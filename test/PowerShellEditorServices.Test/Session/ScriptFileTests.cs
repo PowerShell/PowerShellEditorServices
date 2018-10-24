@@ -257,7 +257,7 @@ namespace PSLanguageService.Test
     {
         private ScriptFile scriptFile;
 
-        private const string TestString = "Line One\r\nLine Two\r\nLine Three\r\nLine Four\r\nLine Five";
+        private const string TestString = "Line One\r\nLine Two\r\nLine Three\r\nLine Four\r\nLine Five\r\n";
         private readonly string[] TestStringLines =
             TestString.Split(
                 new string[] { "\r\n" },
