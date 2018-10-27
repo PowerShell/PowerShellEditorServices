@@ -113,7 +113,7 @@ function Start-EditorServicesHost {
     if ($LanguageServiceNamedPipe) {
         $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
         if ($LanguageServiceWriteNamedPipe) {
-            $languageServiceConfig.Endpoint = "$LanguageServiceNamedPipe;$LanguageServiceWriteNamedPipe"
+            $languageServiceConfig.Endpoint = "$LanguageServiceNamedPipe$([System.IO.Path]::DirectorySeparatorChar)$LanguageServiceWriteNamedPipe"
         }
         else
         {
@@ -124,7 +124,7 @@ function Start-EditorServicesHost {
     if ($DebugServiceNamedPipe) {
         $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
         if ($DebugServiceWriteNamedPipe) {
-            $debugServiceConfig.Endpoint = "$DebugServiceNamedPipe;$DebugServiceWriteNamedPipe"
+            $debugServiceConfig.Endpoint = "$DebugServiceNamedPipe$([System.IO.Path]::DirectorySeparatorChar)$DebugServiceWriteNamedPipe"
         }
         else
         {

@@ -464,7 +464,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 case EditorServiceTransportType.NamedPipe:
                 {
                     string endpoint = config.Endpoint;
-                    int splitIndex = endpoint.IndexOf(';');
+                    int splitIndex = endpoint.IndexOf(Path.DirectorySeparatorChar);
                     if (splitIndex > 0)
                     {
                         string readPipeName = endpoint.Substring(0, splitIndex);
