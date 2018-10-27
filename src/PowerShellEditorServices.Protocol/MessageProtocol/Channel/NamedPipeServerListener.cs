@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                     {
                         this.writePipeServer = new NamedPipeServerStream(
                             pipeName: writePipeName,
-                            direction: PipeDirection.InOut,
+                            direction: PipeDirection.Out,
                             maxNumberOfServerInstances: 1,
                             transmissionMode: PipeTransmissionMode.Byte,
                             options: PipeOptions.None);
