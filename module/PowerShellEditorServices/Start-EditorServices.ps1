@@ -15,7 +15,7 @@
 #       Services GitHub repository:
 #
 #       https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/PowerShellEditorServices/Start-EditorServices.ps1
-
+[Cmdletbinding(DefaultParameterSetName="NamedPipe")]
 param(
     [Parameter(Mandatory=$true)]
     [ValidateNotNullOrEmpty()]
@@ -65,17 +65,39 @@ param(
     [switch]
     $ConfirmInstall,
 
+    [Parameter(ParameterSetName="Stdio",Mandatory=$true)]
     [switch]
     $Stdio,
 
-    [switch]
-    $SplitInOutPipes,
-
+    [Parameter(ParameterSetName="NamedPipe")]
     [string]
     $LanguageServicePipeName = $null,
 
+    [Parameter(ParameterSetName="NamedPipe")]
     [string]
-    $DebugServicePipeName = $null
+    $DebugServicePipeName = $null,
+
+    [Parameter(ParameterSetName="NamedPipeHalfDuplex",Mandatory=$true)]
+    [switch]
+    $SplitInOutPipes,
+
+    [Parameter(ParameterSetName="NamedPipeHalfDuplexParam",Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
+    [string]
+    $LanguageServiceInPipeName,
+
+    [Parameter(ParameterSetName="NamedPipeHalfDuplexParam",Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
+    [string]
+    $LanguageServiceOutPipeName,
+
+    [Parameter(ParameterSetName="NamedPipeHalfDuplexParam")]
+    [string]
+    $DebugServiceInPipeName = $null,
+
+    [Parameter(ParameterSetName="NamedPipeHalfDuplexParam")]
+    [string]
+    $DebugServiceOutPipeName = $null
 )
 
 $DEFAULT_USER_MODE = "600"
@@ -245,6 +267,29 @@ function Set-NamedPipeMode {
     }
 }
 
+function Test-NamedPipeName-OrCreate-IfNull {
+    param(
+        [string]
+        $PipeName
+    )
+    if (-not $PipeName) {
+        $PipeName = New-NamedPipeName
+    }
+    else {
+        if (-not (Test-NamedPipeName -PipeName $PipeName)) {
+            ExitWithError "Pipe name supplied is already taken: $PipeName"
+        }
+    }
+    return $PipeName
+}
+
+function SetPipeFileResult($ResultTable, [string]$PipeNameKey, [string]$PipeNameValue) {
+    $ResultTable[$PipeNameKey] = Get-NamedPipePath -PipeName $PipeNameValue
+    if ($IsLinux -or $IsMacOS) {
+        Set-NamedPipeMode -PipeFile $ResultTable[$PipeNameKey]
+    }
+}
+
 # Add BundledModulesPath to $env:PSModulePath
 if ($BundledModulesPath) {
     $env:PSModulePath = $env:PSModulePath.TrimEnd([System.IO.Path]::PathSeparator) + [System.IO.Path]::PathSeparator + $BundledModulesPath
@@ -265,110 +310,89 @@ try {
 
     Microsoft.PowerShell.Core\Import-Module PowerShellEditorServices -ErrorAction Stop
 
-    # Locate available port numbers for services
-    # There could be only one service on Stdio channel
-
-    $languageServiceTransport = $null
-    $debugServiceTransport = $null
-
-    $LanguageServiceWritePipeName = $null
-    $DebugServiceWritePipeName = $null
-
-    if ($Stdio.IsPresent) {
-        $languageServiceTransport = "Stdio"
-        $debugServiceTransport = "Stdio"
-    }
-    else {
-        $languageServiceTransport = "NamedPipe"
-        $debugServiceTransport = "NamedPipe"
-        if (-not $LanguageServicePipeName) {
-            $LanguageServicePipeName = New-NamedPipeName
-        }
-        else {
-            if (-not (Test-NamedPipeName -PipeName $LanguageServicePipeName)) {
-                ExitWithError "Pipe name supplied is already taken: $LanguageServicePipeName"
-            }
-        }
-        if (-not $DebugServicePipeName) {
-            $DebugServicePipeName = New-NamedPipeName
-        }
-        else {
-            if (-not (Test-NamedPipeName -PipeName $DebugServicePipeName)) {
-                ExitWithError "Pipe name supplied is already taken: $DebugServicePipeName"
-            }
-        }
-        # If present create second pipe for writing
-        if ($SplitInOutPipes.IsPresent) {
-            $LanguageServiceWritePipeName = New-NamedPipeName
-            $DebugServiceWritePipeName = New-NamedPipeName
-        }
-    }
-
     if ($EnableConsoleRepl) {
         Write-Host "PowerShell Integrated Console`n"
     }
 
+    $resultDetails = @{
+        "status" = "not started";
+        "languageServiceTransport" = $PSCmdlet.ParameterSetName.Replace("Param","");
+        "debugServiceTransport" = $PSCmdlet.ParameterSetName.Replace("Param","");
+    };
+
     # Create the Editor Services host
     Log "Invoking Start-EditorServicesHost"
-    $editorServicesHost =
-        Start-EditorServicesHost `
-            -HostName $HostName `
-            -HostProfileId $HostProfileId `
-            -HostVersion $HostVersion `
-            -LogPath $LogPath `
-            -LogLevel $LogLevel `
-            -AdditionalModules $AdditionalModules `
-            -LanguageServiceNamedPipe $LanguageServicePipeName `
-            -LanguageServiceWriteNamedPipe $LanguageServiceWritePipeName `
-            -DebugServiceNamedPipe $DebugServicePipeName `
-            -DebugServiceWriteNamedPipe $DebugServiceWritePipeName `
-            -Stdio:$Stdio.IsPresent`
-            -BundledModulesPath $BundledModulesPath `
-            -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
-            -DebugServiceOnly:$DebugServiceOnly.IsPresent `
-            -WaitForDebugger:$WaitForDebugger.IsPresent
+    # There could be only one service on Stdio channel
+    # Locate available port numbers for services
+    switch -Wildcard ($PSCmdlet.ParameterSetName) {
+        "Stdio" {
+            $editorServicesHost = Start-EditorServicesHost `
+                                        -HostName $HostName `
+                                        -HostProfileId $HostProfileId `
+                                        -HostVersion $HostVersion `
+                                        -LogPath $LogPath `
+                                        -LogLevel $LogLevel `
+                                        -AdditionalModules $AdditionalModules `
+                                        -Stdio `
+                                        -BundledModulesPath $BundledModulesPath `
+                                        -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
+                                        -DebugServiceOnly:$DebugServiceOnly.IsPresent `
+                                        -WaitForDebugger:$WaitForDebugger.IsPresent
+        }
+        "NamedPipeHalfDuplex*" {
+            $LanguageServiceInPipeName = Test-NamedPipeName-OrCreate-IfNull $LanguageServiceInPipeName
+            $LanguageServiceOutPipeName = Test-NamedPipeName-OrCreate-IfNull $LanguageServiceOutPipeName
+            $DebugServiceInPipeName = Test-NamedPipeName-OrCreate-IfNull $DebugServiceInPipeName
+            $DebugServiceOutPipeName = Test-NamedPipeName-OrCreate-IfNull $DebugServiceOutPipeName
+
+            $editorServicesHost = Start-EditorServicesHost `
+                                        -HostName $HostName `
+                                        -HostProfileId $HostProfileId `
+                                        -HostVersion $HostVersion `
+                                        -LogPath $LogPath `
+                                        -LogLevel $LogLevel `
+                                        -AdditionalModules $AdditionalModules `
+                                        -LanguageServiceInNamedPipe $LanguageServiceInPipeName `
+                                        -LanguageServiceOutNamedPipe $LanguageServiceOutPipeName `
+                                        -DebugServiceInNamedPipe $DebugServiceInPipeName `
+                                        -DebugServiceOutNamedPipe $DebugServiceOutPipeName `
+                                        -BundledModulesPath $BundledModulesPath `
+                                        -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
+                                        -DebugServiceOnly:$DebugServiceOnly.IsPresent `
+                                        -WaitForDebugger:$WaitForDebugger.IsPresent
+
+            SetPipeFileResult $resultDetails "languageServiceReadPipeName" $LanguageServiceInPipeName
+            SetPipeFileResult $resultDetails "languageServiceWritePipeName" $LanguageServiceOutPipeName
+            SetPipeFileResult $resultDetails "debugServiceReadPipeName" $DebugServiceInPipeName
+            SetPipeFileResult $resultDetails "debugServiceWritePipeName" $DebugServiceOutPipeName
+        }
+        Default {
+            $LanguageServicePipeName = Test-NamedPipeName-OrCreate-IfNull $LanguageServicePipeName
+            $DebugServicePipeName = Test-NamedPipeName-OrCreate-IfNull $DebugServicePipeName
+
+            $editorServicesHost = Start-EditorServicesHost `
+                                        -HostName $HostName `
+                                        -HostProfileId $HostProfileId `
+                                        -HostVersion $HostVersion `
+                                        -LogPath $LogPath `
+                                        -LogLevel $LogLevel `
+                                        -AdditionalModules $AdditionalModules `
+                                        -LanguageServiceNamedPipe $LanguageServicePipeName `
+                                        -DebugServiceNamedPipe $DebugServicePipeName `
+                                        -BundledModulesPath $BundledModulesPath `
+                                        -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
+                                        -DebugServiceOnly:$DebugServiceOnly.IsPresent `
+                                        -WaitForDebugger:$WaitForDebugger.IsPresent
+
+            SetPipeFileResult $resultDetails "languageServicePipeName" $LanguageServicePipeName
+            SetPipeFileResult $resultDetails "debugServicePipeName" $DebugServicePipeName
+        }
+    }
 
     # TODO: Verify that the service is started
     Log "Start-EditorServicesHost returned $editorServicesHost"
 
-    $resultDetails = @{
-        "status" = "started";
-        "languageServiceTransport" = $languageServiceTransport;
-        "debugServiceTransport" = $debugServiceTransport;
-    };
-
-    if ($LanguageServicePipeName) {
-        if ($LanguageServiceWritePipeName) {
-            $resultDetails["languageServiceReadPipeName"] = Get-NamedPipePath -PipeName $LanguageServicePipeName
-            $resultDetails["languageServiceWritePipeName"] = Get-NamedPipePath -PipeName $LanguageServiceWritePipeName
-            if ($IsLinux -or $IsMacOS) {
-                Set-NamedPipeMode -PipeFile $resultDetails["languageServiceReadPipeName"]
-                Set-NamedPipeMode -PipeFile $resultDetails["languageServiceWritePipeName"]
-            }
-        }
-        else {
-            $resultDetails["languageServicePipeName"] = Get-NamedPipePath -PipeName $LanguageServicePipeName
-            if ($IsLinux -or $IsMacOS) {
-                Set-NamedPipeMode -PipeFile $resultDetails["languageServicePipeName"]
-            }
-        }
-    }
-    if ($DebugServicePipeName) {
-        if ($DebugServiceWritePipeName) {
-            $resultDetails["debugServiceReadPipeName"] = Get-NamedPipePath -PipeName $DebugServicePipeName
-            $resultDetails["debugServiceWritePipeName"] = Get-NamedPipePath -PipeName $DebugServiceWritePipeName
-            if ($IsLinux -or $IsMacOS) {
-                Set-NamedPipeMode -PipeFile $resultDetails["debugServiceReadPipeName"]
-                Set-NamedPipeMode -PipeFile $resultDetails["debugServiceWritePipeName"]
-            }
-        }
-        else {
-            $resultDetails["debugServicePipeName"] = Get-NamedPipePath -PipeName $DebugServicePipeName
-            if ($IsLinux -or $IsMacOS) {
-                Set-NamedPipeMode -PipeFile $resultDetails["debugServicePipeName"]
-            }
-        }
-    }
+    $resultDetails["status"] = "started"
 
     # Notify the client that the services have started
     WriteSessionFile $resultDetails
