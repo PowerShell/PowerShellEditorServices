@@ -423,18 +423,29 @@ namespace Microsoft.PowerShell.EditorServices
             // look through the referenced files until definition is found
             // or there are no more file to look through
             SymbolReference foundDefinition = null;
-            for (int i = 0; i < referencedFiles.Length; i++)
+            foreach (var scriptFile in referencedFiles)
             {
                 foundDefinition =
                     AstOperations.FindDefinitionOfSymbol(
-                        referencedFiles[i].ScriptAst,
+                        scriptFile.ScriptAst,
                         foundSymbol);
 
-                filesSearched.Add(referencedFiles[i].FilePath);
+                filesSearched.Add(scriptFile.FilePath);
                 if (foundDefinition != null)
                 {
-                    foundDefinition.FilePath = referencedFiles[i].FilePath;
+                    foundDefinition.FilePath = scriptFile.FilePath;
                     break;
+                }
+                else if (foundSymbol.SymbolType == SymbolType.Function)
+                {
+                    // Dot-sourcing is parsed as a "Function" Symbol.
+                    var trimmedName = PathUtils.NormalizePathSeparators(foundSymbol.SymbolName.Trim('\'', '"'));
+                    var dotSourcedPath = workspace.ResolveRelativeScriptPath(Path.GetDirectoryName(scriptFile.FilePath), trimmedName);
+                    if (scriptFile.FilePath == dotSourcedPath)
+                    {
+                        foundDefinition = new SymbolReference(SymbolType.Function, trimmedName, scriptFile.ScriptAst.Extent, scriptFile.FilePath);
+                        break;
+                    }
                 }
             }
 
@@ -726,7 +737,7 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     if (!_cmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
                     {
-                        _cmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>{ aliasInfo.Name });
+                        _cmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String> { aliasInfo.Name });
                     }
                     else
                     {

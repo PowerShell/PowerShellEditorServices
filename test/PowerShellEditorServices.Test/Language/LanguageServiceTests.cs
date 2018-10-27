@@ -159,6 +159,23 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
+        public async Task LanguageServiceFindsDotSourcedFile()
+        {
+            GetDefinitionResult definitionResult =
+                await this.GetDefinition(
+                    FindsDotSourcedFile.SourceDetails);
+
+            SymbolReference definition = definitionResult.FoundDefinition;
+            Assert.True(
+                definitionResult.FoundDefinition.FilePath.EndsWith(
+                    Path.Combine("References", "ReferenceFileE.ps1")),
+                "Unexpected reference file: " + definitionResult.FoundDefinition.FilePath);
+            Assert.Equal(1, definition.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, definition.ScriptRegion.StartColumnNumber);
+            Assert.Equal(PathUtils.NormalizePathSeparators("./ReferenceFileE.ps1"), definition.SymbolName);
+        }
+
+        [Fact]
         public async Task LanguageServiceFindsFunctionDefinitionInWorkspace()
         {
             var definitionResult =
