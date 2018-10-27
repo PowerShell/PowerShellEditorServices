@@ -128,19 +128,20 @@ function Start-EditorServicesHost {
         }
         "NamedPipe" {
             $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
-            $languageServiceConfig.Endpoint = "$LanguageServiceNamedPipe"
+            $languageServiceConfig.InOutPipeName = "$LanguageServiceNamedPipe"
             if ($DebugServiceNamedPipe) {
                 $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
-                $debugServiceConfig.Endpoint = "$DebugServiceNamedPipe"
+                $debugServiceConfig.InOutPipeName = "$DebugServiceNamedPipe"
             }
         }
         "NamedPipeHalfDuplex" {
-            $sep = [System.IO.Path]::DirectorySeparatorChar
             $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
-            $languageServiceConfig.Endpoint = "$LanguageServiceInNamedPipe$sep$LanguageServiceOutNamedPipe"
+            $languageServiceConfig.InPipeName = $LanguageServiceInNamedPipe
+            $languageServiceConfig.OutPipeName = $LanguageServiceOutNamedPipe
             if ($DebugServiceInNamedPipe -and $DebugServiceOutNamedPipe) {
                 $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
-                $debugServiceConfig.Endpoint = "$DebugServiceInNamedPipe$sep$DebugServiceOutNamedPipe"
+                $debugServiceConfig.InPipeName = $DebugServiceInNamedPipe
+                $debugServiceConfig.OutPipeName = $DebugServiceOutNamedPipe
             }
         }
     }

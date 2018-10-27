@@ -19,32 +19,32 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     public class NamedPipeServerListener : ServerListenerBase<NamedPipeServerChannel>
     {
         private ILogger logger;
-        private string pipeName;
-        private readonly string writePipeName;
-        private NamedPipeServerStream pipeServer;
-        private NamedPipeServerStream writePipeServer;
+        private string inOutPipeName;
+        private readonly string outPipeName;
+        private NamedPipeServerStream inOutPipeServer;
+        private NamedPipeServerStream outPipeServer;
 
         public NamedPipeServerListener(
             MessageProtocolType messageProtocolType,
-            string pipeName,
+            string inOutPipeName,
             ILogger logger)
             : base(messageProtocolType)
         {
             this.logger = logger;
-            this.pipeName = pipeName;
-            this.writePipeName = null;
+            this.inOutPipeName = inOutPipeName;
+            this.outPipeName = null;
         }
 
         public NamedPipeServerListener(
             MessageProtocolType messageProtocolType,
-            string readPipeName,
-            string writePipeName,
+            string inPipeName,
+            string outPipeName,
             ILogger logger)
             : base(messageProtocolType)
         {
             this.logger = logger;
-            this.pipeName = readPipeName;
-            this.writePipeName = writePipeName;
+            this.inOutPipeName = inPipeName;
+            this.outPipeName = outPipeName;
         }
 
         public override void Start()
@@ -78,26 +78,26 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                     // issue on .NET Core regarding Named Pipe security is here: https://github.com/dotnet/corefx/issues/30170
                     // 99% of this code was borrowed from PowerShell here:
                     // https://github.com/PowerShell/PowerShell/blob/master/src/System.Management.Automation/engine/remoting/common/RemoteSessionNamedPipe.cs#L124-L256
-                    this.pipeServer = NamedPipeNative.CreateNamedPipe(pipeName, pipeSecurity);
-                    if (this.writePipeName != null)
+                    this.inOutPipeServer = NamedPipeNative.CreateNamedPipe(inOutPipeName, pipeSecurity);
+                    if (this.outPipeName != null)
                     {
-                        this.writePipeServer = NamedPipeNative.CreateNamedPipe(writePipeName, pipeSecurity);
+                        this.outPipeServer = NamedPipeNative.CreateNamedPipe(outPipeName, pipeSecurity);
                     }
                 }
                 else
                 {
                     // This handles the Unix case since PipeSecurity is not supported on Unix.
                     // Instead, we use chmod in Start-EditorServices.ps1
-                    this.pipeServer = new NamedPipeServerStream(
-                        pipeName: pipeName,
+                    this.inOutPipeServer = new NamedPipeServerStream(
+                        pipeName: inOutPipeName,
                         direction: PipeDirection.InOut,
                         maxNumberOfServerInstances: 1,
                         transmissionMode: PipeTransmissionMode.Byte,
                         options: PipeOptions.Asynchronous);
-                    if (this.writePipeName != null)
+                    if (this.outPipeName != null)
                     {
-                        this.writePipeServer = new NamedPipeServerStream(
-                            pipeName: writePipeName,
+                        this.outPipeServer = new NamedPipeServerStream(
+                            pipeName: outPipeName,
                             direction: PipeDirection.Out,
                             maxNumberOfServerInstances: 1,
                             transmissionMode: PipeTransmissionMode.Byte,
@@ -118,30 +118,30 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         public override void Stop()
         {
-            if (this.pipeServer != null)
+            if (this.inOutPipeServer != null)
             {
                 this.logger.Write(LogLevel.Verbose, "Named pipe server shutting down...");
 
-                this.pipeServer.Dispose();
+                this.inOutPipeServer.Dispose();
 
                 this.logger.Write(LogLevel.Verbose, "Named pipe server has been disposed.");
             }
-            if (this.writePipeServer != null)
+            if (this.outPipeServer != null)
             {
-                this.logger.Write(LogLevel.Verbose, $"Named write pipe server {writePipeServer} shutting down...");
+                this.logger.Write(LogLevel.Verbose, $"Named out pipe server {outPipeServer} shutting down...");
 
-                this.writePipeServer.Dispose();
+                this.outPipeServer.Dispose();
 
-                this.logger.Write(LogLevel.Verbose, $"Named write pipe server {writePipeServer} has been disposed.");
+                this.logger.Write(LogLevel.Verbose, $"Named out pipe server {outPipeServer} has been disposed.");
             }
         }
 
         private void ListenForConnection()
         {
-            List<Task> connectionTasks = new List<Task> {WaitForConnectionAsync(this.pipeServer)};
-            if (this.writePipeServer != null)
+            List<Task> connectionTasks = new List<Task> {WaitForConnectionAsync(this.inOutPipeServer)};
+            if (this.outPipeServer != null)
             {
-                connectionTasks.Add(WaitForConnectionAsync(this.writePipeServer));
+                connectionTasks.Add(WaitForConnectionAsync(this.outPipeServer));
             }
 
             Task.Run(async () =>
@@ -149,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                 try
                 {
                     await Task.WhenAll(connectionTasks);
-                    this.OnClientConnect(new NamedPipeServerChannel(this.pipeServer, this.writePipeServer, this.logger));
+                    this.OnClientConnect(new NamedPipeServerChannel(this.inOutPipeServer, this.outPipeServer, this.logger));
                 }
                 catch (Exception e)
                 {
