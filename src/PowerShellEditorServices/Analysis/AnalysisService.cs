@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices
             "PSUseDeclaredVarsMoreThanAssignments",
             "PSPossibleIncorrectComparisonWithNull",
             "PSAvoidDefaultValueForMandatoryParameter",
-            "PSPossibleIncorrectUsageOfAssignmentOperator".
+            "PSPossibleIncorrectUsageOfAssignmentOperator",
             "PSPossibleIncorrectUsageOfRedirectionOperator"
         };
 
