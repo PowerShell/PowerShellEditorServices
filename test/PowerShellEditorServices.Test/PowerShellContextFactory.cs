@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
             throw new NotImplementedException();
         }
 
-        protected override Task<string> ReadCommandLine(CancellationToken cancellationToken)
+        protected override Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
         {
             return Task.FromResult("USER COMMAND");
         }

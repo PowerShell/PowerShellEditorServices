@@ -170,7 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             TParams requestParams)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     requestType,
                     requestParams,
                     true);
@@ -179,7 +179,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         protected Task SendEvent<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType, TParams eventParams)
         {
             return
-                this.messageSender.SendEvent(
+                this.messageSender.SendEventAsync(
                     eventType,
                     eventParams);
         }

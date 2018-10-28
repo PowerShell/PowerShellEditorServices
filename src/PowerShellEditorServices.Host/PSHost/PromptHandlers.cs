@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             base.ShowPrompt(promptStyle);
 
             messageSender
-                .SendRequest(
+                .SendRequestAsync(
                     ShowChoicePromptRequest.Type,
                     new ShowChoicePromptRequest
                     {
@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 .ConfigureAwait(false);
         }
 
-        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
+        protected override Task<string> ReadInputStringAsync(CancellationToken cancellationToken)
         {
             this.readLineTask = new TaskCompletionSource<string>();
             return this.readLineTask.Task;
@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             base.ShowFieldPrompt(fieldDetails);
 
             messageSender
-                .SendRequest(
+                .SendRequestAsync(
                     ShowInputPromptRequest.Type,
                     new ShowInputPromptRequest
                     {
@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                 .ConfigureAwait(false);
         }
 
-        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
+        protected override Task<string> ReadInputStringAsync(CancellationToken cancellationToken)
         {
             this.readLineTask = new TaskCompletionSource<string>();
             return this.readLineTask.Task;
@@ -176,7 +176,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.readLineTask = null;
         }
 
-        protected override Task<SecureString> ReadSecureString(CancellationToken cancellationToken)
+        protected override Task<SecureString> ReadSecureStringAsync(CancellationToken cancellationToken)
         {
             // TODO: Write a message to the console
             throw new NotImplementedException();

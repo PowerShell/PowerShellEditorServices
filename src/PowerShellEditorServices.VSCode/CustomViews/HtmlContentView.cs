@@ -26,10 +26,10 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         {
         }
 
-        public Task SetContent(string htmlBodyContent)
+        public Task SetContentAsync(string htmlBodyContent)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     SetHtmlContentViewRequest.Type,
                     new SetHtmlContentViewRequest
                     {
@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                     }, true);
         }
 
-        public Task SetContent(HtmlContent htmlContent)
+        public Task SetContentAsync(HtmlContent htmlContent)
         {
             HtmlContent validatedContent =
                 new HtmlContent()
@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                 };
 
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     SetHtmlContentViewRequest.Type,
                     new SetHtmlContentViewRequest
                     {
@@ -58,10 +58,10 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                     }, true);
         }
 
-        public Task AppendContent(string appendedHtmlBodyContent)
+        public Task AppendContentAsync(string appendedHtmlBodyContent)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     AppendHtmlContentViewRequest.Type,
                     new AppendHtmlContentViewRequest
                     {

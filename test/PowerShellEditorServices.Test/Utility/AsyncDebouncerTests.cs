@@ -19,15 +19,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         {
             TestAsyncDebouncer debouncer = new TestAsyncDebouncer();
 
-            await debouncer.Invoke(1);
-            await debouncer.Invoke(2);
-            await debouncer.Invoke(3);
+            await debouncer.InvokeAsync(1);
+            await debouncer.InvokeAsync(2);
+            await debouncer.InvokeAsync(3);
             await Task.Delay(TestAsyncDebouncer.Interval + 100);
 
             // Add a few more items to ensure they are added after the initial interval
-            await debouncer.Invoke(4);
-            await debouncer.Invoke(5);
-            await debouncer.Invoke(6);
+            await debouncer.InvokeAsync(4);
+            await debouncer.InvokeAsync(5);
+            await debouncer.InvokeAsync(6);
 
             Assert.Equal(new List<int> { 1, 2, 3 }, debouncer.FlushedBuffer);
             Assert.True(
@@ -41,18 +41,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         }
 
         [Fact]
-        public async Task AsyncDebouncerRestartsAfterInvoke()
+        public async Task AsyncDebouncerRestartsAfterInvokeAsync()
         {
             TestAsyncRestartDebouncer debouncer = new TestAsyncRestartDebouncer();
 
             // Invoke the debouncer and wait a bit between each
             // invoke to make sure the debouncer isn't flushed
             // until after the last invoke.
-            await debouncer.Invoke(1);
+            await debouncer.InvokeAsync(1);
             await Task.Delay(TestAsyncRestartDebouncer.Interval - 100);
-            await debouncer.Invoke(2);
+            await debouncer.InvokeAsync(2);
             await Task.Delay(TestAsyncRestartDebouncer.Interval - 100);
-            await debouncer.Invoke(3);
+            await debouncer.InvokeAsync(3);
             await Task.Delay(TestAsyncRestartDebouncer.Interval + 100);
 
             // The only item flushed should be 3 since its interval has lapsed
@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         {
         }
 
-        protected override Task OnInvoke(int args)
+        protected override Task OnInvokeAsync(int args)
         {
             if (!this.firstInvoke.HasValue)
             {
@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             return Task.FromResult(true);
         }
 
-        protected override Task OnFlush()
+        protected override Task OnFlushAsync()
         {
             // Mark the flush time
             this.TimeToFlush = DateTime.Now - this.firstInvoke.Value;
@@ -118,13 +118,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         {
         }
 
-        protected override Task OnInvoke(int args)
+        protected override Task OnInvokeAsync(int args)
         {
             this.lastInvokeInt = args;
             return Task.FromResult(true);
         }
 
-        protected override Task OnFlush()
+        protected override Task OnFlushAsync()
         {
             this.FlushedBuffer.Add(this.lastInvokeInt);
 

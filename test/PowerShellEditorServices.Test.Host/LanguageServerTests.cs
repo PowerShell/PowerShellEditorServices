@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             this.languageServiceClient =
                 new LanguageServiceClient(
-                    await NamedPipeClientChannel.Connect(
+                    await NamedPipeClientChannel.ConnectAsync(
                         pipeNames.Item1,
                         MessageProtocolType.LanguageServer,
                         this.logger),
@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
         public async Task DisposeAsync()
         {
-            await this.languageServiceClient.Stop();
+            await this.languageServiceClient.StopAsync();
 
             this.KillService();
         }
@@ -644,7 +644,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal(1, showChoicePromptRequest.DefaultChoices[0]);
 
             // Respond to the prompt request
-            await requestContext.SendResult(
+            await requestContext.SendResultAsync(
                 new ShowChoicePromptResponse
                 {
                     ResponseText = "a"
@@ -695,7 +695,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("Name", showInputPromptRequest.Name);
 
             // Respond to the prompt request
-            await requestContext.SendResult(
+            await requestContext.SendResultAsync(
                 new ShowInputPromptResponse
                 {
                     ResponseText = "John"
@@ -865,7 +865,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             bool enableProfileLoading = false)
         {
             // Send the configuration change to cause profiles to be loaded
-            await this.languageServiceClient.SendEvent(
+            await this.languageServiceClient.SendEventAsync(
                 DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type,
                 new DidChangeConfigurationParams<LanguageServerSettingsWrapper>
                 {

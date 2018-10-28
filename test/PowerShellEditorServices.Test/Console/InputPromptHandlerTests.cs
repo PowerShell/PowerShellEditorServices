@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         {
             TestInputPromptHandler inputPromptHandler = new TestInputPromptHandler();
             Task<Dictionary<string, object>> promptTask =
-                inputPromptHandler.PromptForInput(
+                inputPromptHandler.PromptForInputAsync(
                     "Test Prompt",
                     "Message is irrelevant",
                     Fields,
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         {
             TestInputPromptHandler inputPromptHandler = new TestInputPromptHandler();
             Task<Dictionary<string, object>> promptTask =
-                inputPromptHandler.PromptForInput(
+                inputPromptHandler.PromptForInputAsync(
                     "Test Prompt",
                     "Message is irrelevant",
                     new FieldDetails[]
@@ -95,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         {
             TestInputPromptHandler inputPromptHandler = new TestInputPromptHandler();
             Task<Dictionary<string, object>> promptTask =
-                inputPromptHandler.PromptForInput(
+                inputPromptHandler.PromptForInputAsync(
                     "Test Prompt",
                     "Message is irrelevant",
                     Fields,
@@ -146,13 +146,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             this.securePromptTask.SetResult(secureString);
         }
 
-        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
+        protected override Task<string> ReadInputStringAsync(CancellationToken cancellationToken)
         {
             this.linePromptTask = new TaskCompletionSource<string>();
             return this.linePromptTask.Task;
         }
 
-        protected override Task<SecureString> ReadSecureString(CancellationToken cancellationToken)
+        protected override Task<SecureString> ReadSecureStringAsync(CancellationToken cancellationToken)
         {
             this.securePromptTask = new TaskCompletionSource<SecureString>();
             return this.securePromptTask.Task;

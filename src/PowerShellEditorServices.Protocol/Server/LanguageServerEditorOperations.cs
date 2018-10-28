@@ -25,10 +25,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageSender = messageSender;
         }
 
-        public async Task<EditorContext> GetEditorContext()
+        public async Task<EditorContext> GetEditorContextAsync()
         {
             ClientEditorContext clientContext =
-                await this.messageSender.SendRequest(
+                await this.messageSender.SendRequestAsync(
                     GetEditorContextRequest.Type,
                     new GetEditorContextRequest(),
                     true);
@@ -36,9 +36,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             return this.ConvertClientEditorContext(clientContext);
         }
 
-        public async Task InsertText(string filePath, string text, BufferRange insertRange)
+        public async Task InsertTextAsync(string filePath, string text, BufferRange insertRange)
         {
-            await this.messageSender.SendRequest(
+            await this.messageSender.SendRequestAsync(
                 InsertTextRequest.Type,
                 new InsertTextRequest
                 {
@@ -63,9 +63,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // TODO: Set the last param back to true!
         }
 
-        public Task SetSelection(BufferRange selectionRange)
+        public Task SetSelectionAsync(BufferRange selectionRange)
         {
-            return this.messageSender.SendRequest(
+            return this.messageSender.SendRequestAsync(
                 SetSelectionRequest.Type,
                 new SetSelectionRequest
                 {
@@ -103,19 +103,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         clientContext.SelectionRange.End.Character + 1));
         }
 
-        public Task NewFile()
+        public Task NewFileAsync()
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     NewFileRequest.Type,
                     null,
                     true);
         }
 
-        public Task OpenFile(string filePath)
+        public Task OpenFileAsync(string filePath)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     OpenFileRequest.Type,
                     new OpenFileDetails
                     {
@@ -125,10 +125,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     true);
         }
 
-        public Task OpenFile(string filePath, bool preview)
+        public Task OpenFileAsync(string filePath, bool preview)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     OpenFileRequest.Type,
                     new OpenFileDetails
                     {
@@ -138,24 +138,24 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     true);
         }
 
-        public Task CloseFile(string filePath)
+        public Task CloseFileAsync(string filePath)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     CloseFileRequest.Type,
                     filePath,
                     true);
         }
 
-        public Task SaveFile(string filePath)
+        public Task SaveFileAsync(string filePath)
         {
-            return SaveFile(filePath, null);
+            return SaveFileAsync(filePath, null);
         }
 
-        public Task SaveFile(string currentPath, string newSavePath)
+        public Task SaveFileAsync(string currentPath, string newSavePath)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     SaveFileRequest.Type,
                     new SaveFileDetails
                     {
@@ -175,37 +175,37 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             return this.editorSession.Workspace.GetRelativePath(filePath);
         }
 
-        public Task ShowInformationMessage(string message)
+        public Task ShowInformationMessageAsync(string message)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     ShowInformationMessageRequest.Type,
                     message,
                     true);
         }
 
-        public Task ShowErrorMessage(string message)
+        public Task ShowErrorMessageAsync(string message)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     ShowErrorMessageRequest.Type,
                     message,
                     true);
         }
 
-        public Task ShowWarningMessage(string message)
+        public Task ShowWarningMessageAsync(string message)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     ShowWarningMessageRequest.Type,
                     message,
                     true);
         }
 
-        public Task SetStatusBarMessage(string message, int? timeout)
+        public Task SetStatusBarMessageAsync(string message, int? timeout)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     SetStatusBarMessageRequest.Type,
                     new StatusBarMessageDetails
                     {

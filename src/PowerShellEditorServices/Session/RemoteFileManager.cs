@@ -253,7 +253,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             this.logger = logger;
             this.powerShellContext = powerShellContext;
-            this.powerShellContext.RunspaceChanged += HandleRunspaceChanged;
+            this.powerShellContext.RunspaceChanged += HandleRunspaceChangedAsync;
 
             this.editorOperations = editorOperations;
 
@@ -287,7 +287,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <returns>
         /// The local file path where the remote file's contents have been stored.
         /// </returns>
-        public async Task<string> FetchRemoteFile(
+        public async Task<string> FetchRemoteFileAsync(
             string remoteFilePath,
             RunspaceDetails runspaceDetails)
         {
@@ -313,7 +313,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                             command.AddParameter("Encoding", "Byte");
 
                             byte[] fileContent =
-                                (await this.powerShellContext.ExecuteCommand<byte[]>(command, false, false))
+                                (await this.powerShellContext.ExecuteCommandAsync<byte[]>(command, false, false))
                                     .FirstOrDefault();
 
                             if (fileContent != null)
@@ -350,7 +350,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// file to disk before this method is called.
         /// </param>
         /// <returns>A Task to be awaited for completion.</returns>
-        public async Task SaveRemoteFile(string localFilePath)
+        public async Task SaveRemoteFileAsync(string localFilePath)
         {
             string remoteFilePath =
                 this.GetMappedPath(
@@ -383,7 +383,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             StringBuilder errorMessages = new StringBuilder();
 
-            await this.powerShellContext.ExecuteCommand<object>(
+            await this.powerShellContext.ExecuteCommandAsync<object>(
                 saveCommand,
                 errorMessages,
                 false,
@@ -509,7 +509,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             return remotePathMappings;
         }
 
-        private async void HandleRunspaceChanged(object sender, RunspaceChangedEventArgs e)
+        private async void HandleRunspaceChangedAsync(object sender, RunspaceChangedEventArgs e)
         {
             if (e.ChangeAction == RunspaceChangeAction.Enter)
             {
@@ -530,7 +530,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     {
                         foreach (string remotePath in remotePathMappings.OpenedPaths)
                         {
-                            await this.editorOperations?.CloseFile(remotePath);
+                            await this.editorOperations?.CloseFileAsync(remotePath);
                         }
                     }
                 }
@@ -542,7 +542,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             }
         }
 
-        private async void HandlePSEventReceived(object sender, PSEventArgs args)
+        private async void HandlePSEventReceivedAsync(object sender, PSEventArgs args)
         {
             if (string.Equals(RemoteSessionOpenFile, args.SourceIdentifier, StringComparison.CurrentCultureIgnoreCase))
             {
@@ -591,8 +591,8 @@ namespace Microsoft.PowerShell.EditorServices.Session
                             }
                             else
                             {
-                                await this.editorOperations?.NewFile();
-                                EditorContext context = await this.editorOperations?.GetEditorContext();
+                                await this.editorOperations?.NewFileAsync();
+                                EditorContext context = await this.editorOperations?.GetEditorContextAsync();
                                 context?.CurrentFile.InsertText(Encoding.UTF8.GetString(fileContent, 0, fileContent.Length));
                             }
                         }
@@ -605,7 +605,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                         }
 
                         // Open the file in the editor
-                        this.editorOperations?.OpenFile(localFilePath, preview);
+                        this.editorOperations?.OpenFileAsync(localFilePath, preview);
                     }
                 }
                 catch (NullReferenceException e)
@@ -622,7 +622,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
             {
                 try
                 {
-                    runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived += HandlePSEventReceived;
+                    runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived += HandlePSEventReceivedAsync;
 
                     PSCommand createCommand = new PSCommand();
                     createCommand
@@ -631,7 +631,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
                     if (runspaceDetails.Context == RunspaceContext.DebuggedRunspace)
                     {
-                        this.powerShellContext.ExecuteCommand(createCommand).Wait();
+                        this.powerShellContext.ExecuteCommandAsync(createCommand).Wait();
                     }
                     else
                     {
@@ -659,7 +659,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 {
                     if (runspaceDetails.Runspace.Events != null)
                     {
-                        runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived -= HandlePSEventReceived;
+                        runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived -= HandlePSEventReceivedAsync;
                     }
 
                     if (runspaceDetails.Runspace.RunspaceStateInfo.State == RunspaceState.Opened)

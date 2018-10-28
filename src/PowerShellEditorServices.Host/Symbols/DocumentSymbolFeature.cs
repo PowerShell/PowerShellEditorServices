@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
 
             messageHandlers.SetRequestHandler(
                 DocumentSymbolRequest.Type,
-                this.HandleDocumentSymbolRequest);
+                this.HandleDocumentSymbolRequestAsync);
         }
 
         public static DocumentSymbolFeature Create(
@@ -69,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
                     .SelectMany(r => r);
         }
 
-        protected async Task HandleDocumentSymbolRequest(
+        protected async Task HandleDocumentSymbolRequestAsync(
             DocumentSymbolParams documentSymbolParams,
             RequestContext<SymbolInformation[]> requestContext)
         {
@@ -109,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
                 symbols = new SymbolInformation[0];
             }
 
-            await requestContext.SendResult(symbols);
+            await requestContext.SendResultAsync(symbols);
         }
     }
 }

@@ -57,11 +57,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// Executes a command on the main pipeline thread through
         /// eventing. A <see cref="PSEngineEvent.OnIdle" /> event subscriber will
         /// be created that creates a nested PowerShell instance for
-        /// <see cref="PowerShellContext.ExecuteCommand" /> to utilize.
+        /// <see cref="PowerShellContext.ExecuteCommandAsync" /> to utilize.
         /// </summary>
         /// <remarks>
         /// Avoid using this method directly if possible.
-        /// <see cref="PowerShellContext.ExecuteCommand" /> will route commands
+        /// <see cref="PowerShellContext.ExecuteCommandAsync" /> will route commands
         /// through this method if required.
         /// </remarks>
         /// <typeparam name="TResult">The expected result type.</typeparam>
@@ -74,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// An awaitable <see cref="Task" /> which will provide results once the command
         /// execution completes.
         /// </returns>
-        internal async Task<IEnumerable<TResult>> ExecuteCommandOnIdle<TResult>(
+        internal async Task<IEnumerable<TResult>> ExecuteCommandOnIdleAsync<TResult>(
             PSCommand psCommand,
             StringBuilder errorMessages,
             ExecutionOptions executionOptions)
@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
             await SetInvocationRequestAsync(
                 new InvocationRequest(
-                    pwsh => request.Execute().GetAwaiter().GetResult()));
+                    pwsh => request.ExecuteAsync().GetAwaiter().GetResult()));
 
             try
             {
@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// <returns>
         /// An awaitable <see cref="Task" /> that the caller can use to know when execution completes.
         /// </returns>
-        internal async Task InvokeOnPipelineThread(Action<PowerShell> invocationAction)
+        internal async Task InvokeOnPipelineThreadAsync(Action<PowerShell> invocationAction)
         {
             var request = new InvocationRequest(pwsh =>
             {

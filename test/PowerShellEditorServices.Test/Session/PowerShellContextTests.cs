@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             psCommand.AddScript("$a = \"foo\"; $a");
 
             var executeTask =
-                this.powerShellContext.ExecuteCommand<string>(psCommand);
+                this.powerShellContext.ExecuteCommandAsync<string>(psCommand);
 
             await this.AssertStateChange(PowerShellContextState.Running);
             await this.AssertStateChange(PowerShellContextState.Ready);
@@ -74,14 +74,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public async Task CanQueueParallelRunspaceRequests()
         {
             // Concurrently initiate 4 requests in the session
-            Task taskOne = this.powerShellContext.ExecuteScriptString("$x = 100");
-            Task<RunspaceHandle> handleTask = this.powerShellContext.GetRunspaceHandle();
-            Task taskTwo = this.powerShellContext.ExecuteScriptString("$x += 200");
-            Task taskThree = this.powerShellContext.ExecuteScriptString("$x = $x / 100");
+            Task taskOne = this.powerShellContext.ExecuteScriptStringAsync("$x = 100");
+            Task<RunspaceHandle> handleTask = this.powerShellContext.GetRunspaceHandleAsync();
+            Task taskTwo = this.powerShellContext.ExecuteScriptStringAsync("$x += 200");
+            Task taskThree = this.powerShellContext.ExecuteScriptStringAsync("$x = $x / 100");
 
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript("$x");
-            Task<IEnumerable<int>> resultTask = this.powerShellContext.ExecuteCommand<int>(psCommand);
+            Task<IEnumerable<int>> resultTask = this.powerShellContext.ExecuteCommandAsync<int>(psCommand);
 
             // Wait for the requested runspace handle and then dispose it
             RunspaceHandle handle = await handleTask;
@@ -105,7 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 Task.Run(
                     async () =>
                     {
-                        var unusedTask = this.powerShellContext.ExecuteScriptWithArgs(s_debugTestFilePath);
+                        var unusedTask = this.powerShellContext.ExecuteScriptWithArgsAsync(s_debugTestFilePath);
                         await Task.Delay(50);
                         this.powerShellContext.AbortExecution();
                     });
@@ -130,7 +130,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 };
 
             // Load the profiles for the test host name
-            await this.powerShellContext.LoadHostProfiles();
+            await this.powerShellContext.LoadHostProfilesAsync();
 
             // Ensure that all the paths are set in the correct variables
             // and that the current user's host profile got loaded
@@ -143,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 "$(Assert-ProfileLoaded)\"");
 
             var result =
-                await this.powerShellContext.ExecuteCommand<string>(
+                await this.powerShellContext.ExecuteCommandAsync<string>(
                     psCommand);
 
             string expectedString =

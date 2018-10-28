@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             }
         }
 
-        public static async Task<NamedPipeClientChannel> Connect(
+        public static async Task<NamedPipeClientChannel> ConnectAsync(
             string pipeFile,
             MessageProtocolType messageProtocolType,
             ILogger logger)

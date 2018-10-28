@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 {
     internal interface IPipelineExecutionRequest
     {
-        Task Execute();
+        Task ExecuteAsync();
 
         Task WaitTask { get; }
     }
@@ -66,10 +66,10 @@ namespace Microsoft.PowerShell.EditorServices.Session
             _resultsTask = new TaskCompletionSource<IEnumerable<TResult>>();
         }
 
-        public async Task Execute()
+        public async Task ExecuteAsync()
         {
             var results =
-                await _powerShellContext.ExecuteCommand<TResult>(
+                await _powerShellContext.ExecuteCommandAsync<TResult>(
                     _psCommand,
                     _errorMessages,
                     _executionOptions);
