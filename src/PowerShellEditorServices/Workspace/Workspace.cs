@@ -10,10 +10,7 @@ using System.Linq;
 using System.IO;
 using System.Security;
 using System.Text;
-
-#if CoreCLR
 using System.Runtime.InteropServices;
-#endif
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -498,12 +495,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A file-scheme URI string with the drive colon unescaped.</returns>
         private static string UnescapeDriveColon(string fileUri)
         {
-#if CoreCLR
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return fileUri;
             }
-#endif
+
             // Check here that we have something like "file:///C%3A/" as a prefix (caller must check the file:// part)
             if (!(fileUri[7] == '/' &&
                   char.IsLetter(fileUri[8]) &&

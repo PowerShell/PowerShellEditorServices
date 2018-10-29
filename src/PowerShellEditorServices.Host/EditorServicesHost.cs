@@ -19,6 +19,7 @@ using System.IO;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -140,39 +141,38 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             .Build();
 
 #if CoreCLR
-            FileVersionInfo fileVersionInfo =
-                FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
-
-            // TODO #278: Need the correct dependency package for this to work correctly
-            //string osVersionString = RuntimeInformation.OSDescription;
-            //string processArchitecture = RuntimeInformation.ProcessArchitecture == Architecture.X64 ? "64-bit" : "32-bit";
-            //string osArchitecture = RuntimeInformation.OSArchitecture == Architecture.X64 ? "64-bit" : "32-bit";
+            FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
 #else
-            FileVersionInfo fileVersionInfo =
-                FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
-            string osVersionString = Environment.OSVersion.VersionString;
-            string processArchitecture = Environment.Is64BitProcess ? "64-bit" : "32-bit";
-            string osArchitecture = Environment.Is64BitOperatingSystem ? "64-bit" : "32-bit";
+            FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
 #endif
 
-            string newLine = Environment.NewLine;
+            string osVersion = RuntimeInformation.OSDescription;
 
-            this.logger.Write(
-                LogLevel.Normal,
-                string.Format(
-                    $"PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (pid {Process.GetCurrentProcess().Id})..." + newLine + newLine +
-                     "  Host application details:" + newLine + newLine +
-                    $"    Name:      {this.hostDetails.Name}" + newLine +
-                    $"    ProfileId: {this.hostDetails.ProfileId}" + newLine +
-                    $"    Version:   {this.hostDetails.Version}" + newLine +
-#if !CoreCLR
-                    $"    Arch:      {processArchitecture}" + newLine + newLine +
-                     "  Operating system details:" + newLine + newLine +
-                    $"    Version: {osVersionString}" + newLine +
-                    $"    Arch:    {osArchitecture}"));
-#else
-                    ""));
-#endif
+            string buildTime = BuildInfo.BuildTime?.ToString("s", System.Globalization.CultureInfo.InvariantCulture) ?? "<unspecified>";
+
+            string logHeader = $@"
+PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Process.GetCurrentProcess().Id}
+
+  Host application details:
+
+    Name:      {this.hostDetails.Name}
+    Version:   {this.hostDetails.Version}
+    ProfileId: {this.hostDetails.ProfileId}
+    Arch:      {RuntimeInformation.OSArchitecture}
+
+  Operating system details:
+
+    Version: {osVersion}
+    Arch:    {RuntimeInformation.OSArchitecture}
+
+  Build information:
+
+    Version: {BuildInfo.BuildVersion}
+    Origin:  {BuildInfo.BuildOrigin}
+    Date:    {buildTime}
+";
+
+            this.logger.Write(LogLevel.Normal, logHeader);
         }
 
         /// <summary>

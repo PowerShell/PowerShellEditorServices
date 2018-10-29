@@ -325,14 +325,10 @@ namespace Microsoft.PowerShell.EditorServices
 
             // We want to look for references first in referenced files, hence we use ordered dictionary
             // TODO: File system case-sensitivity is based on filesystem not OS, but OS is a much cheaper heuristic
-#if CoreCLR
-            // The RuntimeInformation.IsOSPlatform is not supported in .NET Framework
             var fileMap = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
                 ? new OrderedDictionary()
                 : new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
-#else
-            var fileMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
-#endif
+
             foreach (ScriptFile file in referencedFiles)
             {
                 fileMap.Add(file.FilePath, file);
