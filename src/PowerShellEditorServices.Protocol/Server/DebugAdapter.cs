@@ -494,31 +494,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             ScriptFile scriptFile = null;
 
-            // Fix for issue #195 - user can change name of file outside of VSCode in which case
-            // VSCode sends breakpoint requests with the original filename that doesn't exist anymore.
-            try
+            // When you set a breakpoint in the right pane of a Git diff window on a PS1 file,
+            // the Source.Path comes through as Untitled-X. That's why we check for IsUntitledPath.
+            if (!ScriptFile.IsUntitledPath(setBreakpointsParams.Source.Path) &&
+                !_editorSession.Workspace.TryGetFile(
+                    setBreakpointsParams.Source.Path,
+                    out scriptFile))
             {
-                // When you set a breakpoint in the right pane of a Git diff window on a PS1 file,
-                // the Source.Path comes through as Untitled-X.
-                if (!ScriptFile.IsUntitledPath(setBreakpointsParams.Source.Path))
-                {
-                    scriptFile = _editorSession.Workspace.GetFile(setBreakpointsParams.Source.Path);
-                }
-            }
-            catch (Exception e) when (
-                e is FileNotFoundException ||
-                e is DirectoryNotFoundException ||
-                e is IOException ||
-                e is NotSupportedException ||
-                e is PathTooLongException ||
-                e is SecurityException ||
-                e is UnauthorizedAccessException)
-            {
-                Logger.WriteException(
-                    $"Failed to set breakpoint on file: {setBreakpointsParams.Source.Path}",
-                    e);
-
-                string message = _noDebug ? string.Empty : "Source file could not be accessed, breakpoint not set - " + e.Message;
+                string message = _noDebug ? string.Empty : "Source file could not be accessed, breakpoint not set.";
                 var srcBreakpoints = setBreakpointsParams.Breakpoints
                     .Select(srcBkpt => Protocol.DebugAdapter.Breakpoint.Create(
                         srcBkpt, setBreakpointsParams.Source.Path, message, verified: _noDebug));

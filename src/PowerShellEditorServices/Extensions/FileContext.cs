@@ -26,11 +26,41 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         #region Properties
 
         /// <summary>
+        /// Gets the parsed abstract syntax tree for the file.
+        /// </summary>
+        public Ast Ast
+        {
+            get { return this.scriptFile.ScriptAst; }
+        }
+
+        /// <summary>
+        /// Gets a BufferRange which represents the entire content
+        /// range of the file.
+        /// </summary>
+        public BufferRange FileRange
+        {
+            get { return this.scriptFile.FileRange; }
+        }
+
+        /// <summary>
+        /// Gets the language of the file.
+        /// </summary>
+        public string Language { get; private set; }
+
+        /// <summary>
         /// Gets the filesystem path of the file.
         /// </summary>
         public string Path
         {
             get { return this.scriptFile.FilePath; }
+        }
+
+        /// <summary>
+        /// Gets the parsed token list for the file.
+        /// </summary>
+        public Token[] Tokens
+        {
+            get { return this.scriptFile.ScriptTokens; }
         }
 
         /// <summary>
@@ -46,31 +76,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             }
         }
 
-        /// <summary>
-        /// Gets the parsed abstract syntax tree for the file.
-        /// </summary>
-        public Ast Ast
-        {
-            get { return this.scriptFile.ScriptAst; }
-        }
-
-        /// <summary>
-        /// Gets the parsed token list for the file.
-        /// </summary>
-        public Token[] Tokens
-        {
-            get { return this.scriptFile.ScriptTokens; }
-        }
-
-        /// <summary>
-        /// Gets a BufferRange which represents the entire content
-        /// range of the file.
-        /// </summary>
-        public BufferRange FileRange
-        {
-            get { return this.scriptFile.FileRange; }
-        }
-
         #endregion
 
         #region Constructors
@@ -81,14 +86,22 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="scriptFile">The ScriptFile to which this file refers.</param>
         /// <param name="editorContext">The EditorContext to which this file relates.</param>
         /// <param name="editorOperations">An IEditorOperations implementation which performs operations in the editor.</param>
+        /// <param name="language">Determines the language of the file.false If it is not specified, then it defaults to "Unknown"</param>
         public FileContext(
             ScriptFile scriptFile,
             EditorContext editorContext,
-            IEditorOperations editorOperations)
+            IEditorOperations editorOperations,
+            string language = "Unknown")
         {
+            if (string.IsNullOrWhiteSpace(language))
+            {
+                language = "Unknown";
+            }
+
             this.scriptFile = scriptFile;
             this.editorContext = editorContext;
             this.editorOperations = editorOperations;
+            this.Language = language;
         }
 
         #endregion

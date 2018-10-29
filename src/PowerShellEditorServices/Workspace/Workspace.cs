@@ -55,6 +55,35 @@ namespace Microsoft.PowerShell.EditorServices
         #region Public Methods
 
         /// <summary>
+        /// Creates a new ScriptFile instance which is identified by the given file
+        /// path and initially contains the given buffer contents.
+        /// </summary>
+        /// <param name="filePath">The file path for which a buffer will be retrieved.</param>
+        /// <param name="initialBuffer">The initial buffer contents if there is not an existing ScriptFile for this path.</param>
+        /// <returns>A ScriptFile instance for the specified path.</returns>
+        public ScriptFile CreateScriptFileFromFileBuffer(string filePath, string initialBuffer)
+        {
+            Validate.IsNotNullOrEmptyString("filePath", filePath);
+
+            // Resolve the full file path
+            string resolvedFilePath = this.ResolveFilePath(filePath);
+            string keyName = resolvedFilePath.ToLower();
+
+            ScriptFile scriptFile =
+                new ScriptFile(
+                    resolvedFilePath,
+                    filePath,
+                    initialBuffer,
+                    this.powerShellVersion);
+
+            this.workspaceFiles[keyName] = scriptFile;
+
+            this.logger.Write(LogLevel.Verbose, "Opened file as in-memory buffer: " + resolvedFilePath);
+
+            return scriptFile;
+        }
+
+        /// <summary>
         /// Gets an open file in the workspace.  If the file isn't open but
         /// exists on the filesystem, load and return it.
         /// </summary>
@@ -96,6 +125,34 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return scriptFile;
+        }
+
+        /// <summary>
+        /// Tries to get an open file in the workspace. Returns true if it succeeds, false otherwise.
+        /// </summary>
+        /// <param name="filePath">The file path at which the script resides.</param>
+        /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
+        public bool TryGetFile(string filePath, out ScriptFile scriptFile)
+        {
+            try
+            {
+                scriptFile = GetFile(filePath);
+                return true;
+            }
+            catch (Exception e) when (
+                e is IOException ||
+                e is SecurityException ||
+                e is FileNotFoundException ||
+                e is DirectoryNotFoundException ||
+                e is PathTooLongException ||
+                e is UnauthorizedAccessException)
+            {
+                this.logger.WriteException(
+                    $"Failed to set breakpoint on file: {filePath}",
+                    e);
+                scriptFile = null;
+                return false;
+            }
         }
 
         /// <summary>
