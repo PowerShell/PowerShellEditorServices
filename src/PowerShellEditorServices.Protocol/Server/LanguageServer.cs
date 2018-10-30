@@ -524,14 +524,17 @@ function __Expand-Alias {
 
             await requestContext.SendResult(result.First().ToString());
         }
+
         private async Task HandleGetCommandRequest(
             string param,
             RequestContext<object> requestContext)
         {
             PSCommand psCommand = new PSCommand();
-            if(param != "") {
+            if (param != "") {
                 psCommand.AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddArgument(param);
-            } else {
+            }
+            else
+            {
                 psCommand.AddScript("Microsoft.PowerShell.Core\\Get-Command -CommandType Function, Cmdlet, ExternalScript | Select-Object Name,ModuleName | Sort-Object Name");
             }
             IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
