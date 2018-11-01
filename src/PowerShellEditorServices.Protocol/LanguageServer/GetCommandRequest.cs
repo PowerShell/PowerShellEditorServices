@@ -11,8 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
 
     /// <summary>
-    /// Defines a class that describes the request to get the details for a single PowerShell Command
-    /// from the current session.
+    /// Describes the request to get the details for PowerShell Commands from the current session.
     /// </summary>
         public class GetCommandRequest
     {
@@ -22,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     }
 
     /// <summary>
-    /// Defines a class that describes the message to get the details for a single PowerShell Command
+    /// Describes the message to get the details for a single PowerShell Command
     /// from the current session
     /// </summary>
     public class PSCommandMessage

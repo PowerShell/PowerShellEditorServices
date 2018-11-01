@@ -542,15 +542,15 @@ function __Expand-Alias {
 
             if (result != null)
             {
-                foreach (dynamic c in result)
+                foreach (dynamic command in result)
                 {
                     commandList.Add(new PSCommandMessage
                     {
-                        Name = c.Name,
-                        ModuleName = c.ModuleName,
-                        Parameters = c.Parameters,
-                        ParameterSets = c.ParameterSets,
-                        DefaultParameterSet = c.DefaultParameterSet
+                        Name = command.Name,
+                        ModuleName = command.ModuleName,
+                        Parameters = command.Parameters,
+                        ParameterSets = command.ParameterSets,
+                        DefaultParameterSet = command.DefaultParameterSet
                     });
                 }
             }
