@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class LanguageServer
     {
-        private static CancellationTokenSource existingRequestCancellation;
+        private static CancellationTokenSource s_existingRequestCancellation;
 
         private static readonly Location[] s_emptyLocationResult = new Location[0];
 
@@ -48,6 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private LanguageServerEditorOperations editorOperations;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
 
+        // The outer key is the file's uri, the inner key is a unique id for the diagnostic
         private Dictionary<string, Dictionary<string, MarkerCorrection>> codeActionsPerFile =
             new Dictionary<string, Dictionary<string, MarkerCorrection>>();
 
@@ -1182,6 +1183,7 @@ function __Expand-Alias {
             return symbolName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
+        // https://microsoft.github.io/language-server-protocol/specification#textDocument_codeAction
         protected async Task HandleCodeActionRequest(
             CodeActionParams codeActionParams,
             RequestContext<CodeActionCommand[]> requestContext)
@@ -1194,8 +1196,17 @@ function __Expand-Alias {
             {
                 foreach (var diagnostic in codeActionParams.Context.Diagnostics)
                 {
-                    if (!string.IsNullOrEmpty(diagnostic.Code) &&
-                        markerIndex.TryGetValue(diagnostic.Code, out correction))
+                    if (string.IsNullOrEmpty(diagnostic.Code))
+                    {
+                        this.Logger.Write(
+                            LogLevel.Warning,
+                            $"textDocument/codeAction skipping diagnostic with empty Code field: {diagnostic.Source} {diagnostic.Message}");
+
+                        continue;
+                    }
+
+                    string diagnosticId = GetUniqueIdFromDiagnostic(diagnostic);
+                    if (markerIndex.TryGetValue(diagnosticId, out correction))
                     {
                         codeActionCommands.Add(
                             new CodeActionCommand
@@ -1203,6 +1214,17 @@ function __Expand-Alias {
                                 Title = correction.Name,
                                 Command = "PowerShell.ApplyCodeActionEdits",
                                 Arguments = JArray.FromObject(correction.Edits)
+                            });
+                    }
+
+                    if (string.Equals(diagnostic.Source, "PSScriptAnalyzer", StringComparison.OrdinalIgnoreCase))
+                    {
+                        codeActionCommands.Add(
+                            new CodeActionCommand
+                            {
+                                Title = $"Show documentation for \"{diagnostic.Code}\"",
+                                Command = "PowerShell.ShowCodeActionDocumentation",
+                                Arguments = JArray.FromObject(new[] { diagnostic.Code })
                             });
                     }
                 }
@@ -1454,15 +1476,15 @@ function __Expand-Alias {
             // If there's an existing task, attempt to cancel it
             try
             {
-                if (existingRequestCancellation != null)
+                if (s_existingRequestCancellation != null)
                 {
                     // Try to cancel the request
-                    existingRequestCancellation.Cancel();
+                    s_existingRequestCancellation.Cancel();
 
                     // If cancellation didn't throw an exception,
                     // clean up the existing token
-                    existingRequestCancellation.Dispose();
-                    existingRequestCancellation = null;
+                    s_existingRequestCancellation.Dispose();
+                    s_existingRequestCancellation = null;
                 }
             }
             catch (Exception e)
@@ -1479,11 +1501,17 @@ function __Expand-Alias {
                 return cancelTask.Task;
             }
 
+            // If filesToAnalzye is empty, nothing to do so return early.
+            if (filesToAnalyze.Length == 0)
+            {
+                return Task.FromResult(true);
+            }
+
             // Create a fresh cancellation token and then start the task.
             // We create this on a different TaskScheduler so that we
             // don't block the main message loop thread.
             // TODO: Is there a better way to do this?
-            existingRequestCancellation = new CancellationTokenSource();
+            s_existingRequestCancellation = new CancellationTokenSource();
             Task.Factory.StartNew(
                 () =>
                     DelayThenInvokeDiagnostics(
@@ -1494,7 +1522,7 @@ function __Expand-Alias {
                         editorSession,
                         eventSender,
                         this.Logger,
-                        existingRequestCancellation.Token),
+                        s_existingRequestCancellation.Token),
                 CancellationToken.None,
                 TaskCreationOptions.None,
                 TaskScheduler.Default);
@@ -1508,32 +1536,16 @@ function __Expand-Alias {
             bool isScriptAnalysisEnabled,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EditorSession editorSession,
-            EventContext eventContext,
-            ILogger Logger,
-            CancellationToken cancellationToken)
-        {
-            await DelayThenInvokeDiagnostics(
-                delayMilliseconds,
-                filesToAnalyze,
-                isScriptAnalysisEnabled,
-                correctionIndex,
-                editorSession,
-                eventContext.SendEvent,
-                Logger,
-                cancellationToken);
-        }
-
-
-        private static async Task DelayThenInvokeDiagnostics(
-            int delayMilliseconds,
-            ScriptFile[] filesToAnalyze,
-            bool isScriptAnalysisEnabled,
-            Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
-            EditorSession editorSession,
             Func<NotificationType<PublishDiagnosticsNotification, object>, PublishDiagnosticsNotification, Task> eventSender,
             ILogger Logger,
             CancellationToken cancellationToken)
         {
+            // If filesToAnalzye is empty, nothing to do so return early.
+            if (filesToAnalyze.Length == 0)
+            {
+                return;
+            }
+
             // First of all, wait for the desired delay period before
             // analyzing the provided list of files
             try
@@ -1620,7 +1632,8 @@ function __Expand-Alias {
                 Diagnostic markerDiagnostic = GetDiagnosticFromMarker(marker);
                 if (marker.Correction != null)
                 {
-                    fileCorrections.Add(markerDiagnostic.Code, marker.Correction);
+                    string diagnosticId = GetUniqueIdFromDiagnostic(markerDiagnostic);
+                    fileCorrections.Add(diagnosticId, marker.Correction);
                 }
 
                 diagnostics.Add(markerDiagnostic);
@@ -1639,13 +1652,23 @@ function __Expand-Alias {
                 });
         }
 
+        private static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
+        {
+            string source = diagnostic.Source ?? "?";
+            string code = diagnostic.Code ?? "?";
+            string severity = diagnostic.Severity != null ? diagnostic.Severity.ToString() : "?";
+            Position start = diagnostic.Range.Start;
+            Position end = diagnostic.Range.End;
+            return $"{source}_{code}_{severity}_{start.Line}:{start.Character}-{end.Line}:{end.Character}";
+        }
+
         private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
         {
             return new Diagnostic
             {
                 Severity = MapDiagnosticSeverity(scriptFileMarker.Level),
                 Message = scriptFileMarker.Message,
-                Code = scriptFileMarker.Source + Guid.NewGuid().ToString(),
+                Code = scriptFileMarker.RuleName,
                 Source = scriptFileMarker.Source,
                 Range = new Range
                 {
