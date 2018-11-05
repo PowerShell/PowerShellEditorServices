@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using Serilog.Core;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
@@ -54,27 +55,27 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             string indentedLogMsg = IndentMsg(logMessage);
             string logLevelName = logLevel.ToString().ToUpper();
 
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+
+            string messageTemplate = 
+                "[{LogLevelName:l}] [tid:{threadId}] In method '{CallerName:l}' {CallerSourceFile:l}:{CallerLineNumber}:{IndentedLogMsg:l}";
+
             switch (logLevel)
             {
                 case LogLevel.Diagnostic:
-                    _logger.Verbose("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:{IndentedLogMsg:l}",
-                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Verbose(messageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Verbose:
-                    _logger.Debug("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:{IndentedLogMsg:l}",
-                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Debug(messageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Normal:
-                    _logger.Information("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:{IndentedLogMsg:l}",
-                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Information(messageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Warning:
-                    _logger.Warning("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:{IndentedLogMsg:l}",
-                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Warning(messageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Error:
-                    _logger.Error("[{LogLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}:{IndentedLogMsg:l}",
-                        logLevelName, callerSourceFile, callerName, callerLineNumber, indentedLogMsg);
+                    _logger.Error(messageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
                     return;
             }
         }
