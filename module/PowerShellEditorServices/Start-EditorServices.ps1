@@ -243,6 +243,9 @@ function Set-NamedPipeMode {
     }
 }
 
+LogSection "Console Encoding"
+Log $OutputEncoding
+
 # Add BundledModulesPath to $env:PSModulePath
 if ($BundledModulesPath) {
     $env:PSModulePath = $env:PSModulePath.TrimEnd([System.IO.Path]::PathSeparator) + [System.IO.Path]::PathSeparator + $BundledModulesPath

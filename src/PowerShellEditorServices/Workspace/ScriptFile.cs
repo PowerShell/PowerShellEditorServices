@@ -20,6 +20,12 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
+        private static readonly string[] s_newlines = new []
+        {
+            "\r\n",
+            "\n"
+        };
+
         private Token[] scriptTokens;
         private Version powerShellVersion;
 
@@ -167,8 +173,8 @@ namespace Microsoft.PowerShell.EditorServices
                   new StringReader(initialBuffer),
                   powerShellVersion)
         {
-
         }
+
         /// <summary>
         /// Creates a new ScriptFile instance with the specified filepath.
         /// </summary>
@@ -185,7 +191,6 @@ namespace Microsoft.PowerShell.EditorServices
                   File.ReadAllText(filePath),
                   powerShellVersion)
         {
-
         }
 
         #endregion
@@ -215,26 +220,7 @@ namespace Microsoft.PowerShell.EditorServices
                 throw new ArgumentNullException(nameof(text));
             }
 
-            // ReadLine returns null immediately for empty string, so special case it.
-            if (text.Length == 0)
-            {
-                return new List<string> {string.Empty};
-            }
-
-            using (var reader = new StringReader(text))
-            {
-                // 50 is a rough guess for typical average line length, this saves some list
-                // resizes in the common case and does not hurt meaningfully if we're wrong.
-                var list = new List<string>(text.Length / 50);
-                string line;
-
-                while ((line = reader.ReadLine()) != null)
-                {
-                    list.Add(line);
-                }
-
-                return list;
-            }
+            return new List<string>(text.Split(s_newlines, StringSplitOptions.None));
         }
 
         /// <summary>

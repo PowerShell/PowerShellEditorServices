@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// in order to find a dot sourced file
         /// </summary>
         /// <param name="commandAst">A CommandAst object in the script's AST</param>
-        /// <returns>A descion to stop searching if the right commandAst was found,
+        /// <returns>A decision to stop searching if the right commandAst was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitCommand(CommandAst commandAst)
         {

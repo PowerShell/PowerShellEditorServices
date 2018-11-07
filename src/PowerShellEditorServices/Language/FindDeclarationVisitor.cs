@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// SymbolType.Function and have the same name as the symbol
         /// </summary>
         /// <param name="functionDefinitionAst">A FunctionDefinitionAst in the script's AST</param>
-        /// <returns>A descion to stop searching if the right FunctionDefinitionAst was found,
+        /// <returns>A decision to stop searching if the right FunctionDefinitionAst was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
