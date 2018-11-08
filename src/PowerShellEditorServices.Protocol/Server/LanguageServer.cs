@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1192,6 +1193,7 @@ function __Expand-Alias {
             Dictionary<string, MarkerCorrection> markerIndex = null;
             List<CodeActionCommand> codeActionCommands = new List<CodeActionCommand>();
 
+            // If there are any code fixes, send these commands first so they appear at top of "Code Fix" menu in the client UI.
             if (this.codeActionsPerFile.TryGetValue(codeActionParams.TextDocument.Uri, out markerIndex))
             {
                 foreach (var diagnostic in codeActionParams.Context.Diagnostics)
@@ -1216,22 +1218,34 @@ function __Expand-Alias {
                                 Arguments = JArray.FromObject(correction.Edits)
                             });
                     }
+                }
+            }
 
-                    if (string.Equals(diagnostic.Source, "PSScriptAnalyzer", StringComparison.OrdinalIgnoreCase))
-                    {
-                        codeActionCommands.Add(
-                            new CodeActionCommand
-                            {
-                                Title = $"Show documentation for \"{diagnostic.Code}\"",
-                                Command = "PowerShell.ShowCodeActionDocumentation",
-                                Arguments = JArray.FromObject(new[] { diagnostic.Code })
-                            });
-                    }
+            // Add "show documentation" commands last so they appear at the bottom of the client UI. 
+            // These commands do not require code fixes. Sometimes we get a batch of diagnostics
+            // to create commands for. No need to create multiple show doc commands for the same rule.
+            var ruleNamesProcessed = new HashSet<string>();
+            foreach (var diagnostic in codeActionParams.Context.Diagnostics)
+            {
+                if (string.IsNullOrEmpty(diagnostic.Code)) { continue; }
+
+                if (string.Equals(diagnostic.Source, "PSScriptAnalyzer", StringComparison.OrdinalIgnoreCase) &&
+                    !ruleNamesProcessed.Contains(diagnostic.Code))
+                {
+                    ruleNamesProcessed.Add(diagnostic.Code);
+
+                    codeActionCommands.Add(
+                        new CodeActionCommand
+                        {
+                            Title = $"Show documentation for \"{diagnostic.Code}\"",
+                            Command = "PowerShell.ShowCodeActionDocumentation",
+                            Arguments = JArray.FromObject(new[] { diagnostic.Code })
+                        });
                 }
             }
 
             await requestContext.SendResult(
-                codeActionCommands.ToArray());
+            codeActionCommands.ToArray());
         }
 
         protected async Task HandleDocumentFormattingRequest(
@@ -1585,6 +1599,7 @@ function __Expand-Alias {
 
                 await PublishScriptDiagnostics(
                     scriptFile,
+                    // Concat script analysis errors to any existing parse errors
                     scriptFile.SyntaxMarkers.Concat(semanticMarkers).ToArray(),
                     correctionIndex,
                     eventSender);
@@ -1652,14 +1667,29 @@ function __Expand-Alias {
                 });
         }
 
+        // Generate a unique id that is used as a key to look up the associated code action (code fix) when 
+        // we receive and process the textDocument/codeAction message.
         private static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
         {
-            string source = diagnostic.Source ?? "?";
-            string code = diagnostic.Code ?? "?";
-            string severity = diagnostic.Severity != null ? diagnostic.Severity.ToString() : "?";
             Position start = diagnostic.Range.Start;
             Position end = diagnostic.Range.End;
-            return $"{source}_{code}_{severity}_{start.Line}:{start.Character}-{end.Line}:{end.Character}";
+
+            var sb = new StringBuilder(256);
+            sb.Append(diagnostic.Source ?? "?");
+            sb.Append("_");
+            sb.Append(diagnostic.Code ?? "?");
+            sb.Append("_");
+            sb.Append((diagnostic.Severity != null) ? diagnostic.Severity.ToString() : "?");
+            sb.Append("_");
+            sb.Append(start.Line);
+            sb.Append(":");
+            sb.Append(start.Character);
+            sb.Append("-");
+            sb.Append(end.Line);
+            sb.Append(":");
+            sb.Append(end.Character);
+
+            return sb.ToString();
         }
 
         private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
