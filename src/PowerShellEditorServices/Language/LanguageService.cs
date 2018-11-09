@@ -409,7 +409,7 @@ namespace Microsoft.PowerShell.EditorServices
             // look through the referenced files until definition is found
             // or there are no more file to look through
             SymbolReference foundDefinition = null;
-            foreach (var scriptFile in referencedFiles)
+            foreach (ScriptFile scriptFile in referencedFiles)
             {
                 foundDefinition =
                     AstOperations.FindDefinitionOfSymbol(
@@ -422,11 +422,12 @@ namespace Microsoft.PowerShell.EditorServices
                     foundDefinition.FilePath = scriptFile.FilePath;
                     break;
                 }
-                else if (foundSymbol.SymbolType == SymbolType.Function)
+
+                if (foundSymbol.SymbolType == SymbolType.Function)
                 {
                     // Dot-sourcing is parsed as a "Function" Symbol.
-                    var trimmedName = PathUtils.NormalizePathSeparators(foundSymbol.SymbolName.Trim('\'', '"'));
-                    var dotSourcedPath = workspace.ResolveRelativeScriptPath(Path.GetDirectoryName(scriptFile.FilePath), trimmedName);
+                    string trimmedName = PathUtils.NormalizePathSeparators(foundSymbol.SymbolName.Trim('\'', '"'));
+                    string dotSourcedPath = workspace.ResolveRelativeScriptPath(Path.GetDirectoryName(scriptFile.FilePath), trimmedName);
                     if (scriptFile.FilePath == dotSourcedPath)
                     {
                         foundDefinition = new SymbolReference(SymbolType.Function, trimmedName, scriptFile.ScriptAst.Extent, scriptFile.FilePath);
