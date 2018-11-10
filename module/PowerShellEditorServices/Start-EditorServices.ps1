@@ -15,7 +15,7 @@
 #       Services GitHub repository:
 #
 #       https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/PowerShellEditorServices/Start-EditorServices.ps1
-[Cmdletbinding(DefaultParameterSetName="NamedPipe")]
+[CmdletBinding(DefaultParameterSetName="NamedPipe")]
 param(
     [Parameter(Mandatory=$true)]
     [ValidateNotNullOrEmpty()]
@@ -77,25 +77,23 @@ param(
     [string]
     $DebugServicePipeName = $null,
 
-    [Parameter(ParameterSetName="NamedPipeHalfDuplex",Mandatory=$true)]
+    [Parameter(ParameterSetName="NamedPipeSimplex")]
     [switch]
     $SplitInOutPipes,
 
-    [Parameter(ParameterSetName="NamedPipeHalfDuplexParam",Mandatory=$true)]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(ParameterSetName="NamedPipeSimplex")]
     [string]
     $LanguageServiceInPipeName,
 
-    [Parameter(ParameterSetName="NamedPipeHalfDuplexParam",Mandatory=$true)]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(ParameterSetName="NamedPipeSimplex")]
     [string]
     $LanguageServiceOutPipeName,
 
-    [Parameter(ParameterSetName="NamedPipeHalfDuplexParam")]
+    [Parameter(ParameterSetName="NamedPipeSimplex")]
     [string]
     $DebugServiceInPipeName = $null,
 
-    [Parameter(ParameterSetName="NamedPipeHalfDuplexParam")]
+    [Parameter(ParameterSetName="NamedPipeSimplex")]
     [string]
     $DebugServiceOutPipeName = $null
 )
@@ -286,7 +284,15 @@ function Test-NamedPipeName-OrCreate-IfNull {
     return $PipeName
 }
 
-function SetPipeFileResult($ResultTable, [string]$PipeNameKey, [string]$PipeNameValue) {
+function Set-PipeFileResult {
+    param (
+        [Hashtable]
+        $ResultTable,
+        [string]
+        $PipeNameKey,
+        [string]
+        $PipeNameValue
+    )
     $ResultTable[$PipeNameKey] = Get-NamedPipePath -PipeName $PipeNameValue
     if ($IsLinux -or $IsMacOS) {
         Set-NamedPipeMode -PipeFile $ResultTable[$PipeNameKey]
@@ -319,15 +325,15 @@ try {
 
     $resultDetails = @{
         "status" = "not started";
-        "languageServiceTransport" = $PSCmdlet.ParameterSetName.Replace("Param","");
-        "debugServiceTransport" = $PSCmdlet.ParameterSetName.Replace("Param","");
+        "languageServiceTransport" = $PSCmdlet.ParameterSetName;
+        "debugServiceTransport" = $PSCmdlet.ParameterSetName;
     };
 
     # Create the Editor Services host
     Log "Invoking Start-EditorServicesHost"
     # There could be only one service on Stdio channel
     # Locate available port numbers for services
-    switch -Wildcard ($PSCmdlet.ParameterSetName) {
+    switch ($PSCmdlet.ParameterSetName) {
         "Stdio" {
             $editorServicesHost = Start-EditorServicesHost `
                                         -HostName $HostName `
@@ -341,8 +347,9 @@ try {
                                         -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
                                         -DebugServiceOnly:$DebugServiceOnly.IsPresent `
                                         -WaitForDebugger:$WaitForDebugger.IsPresent
+            break
         }
-        "NamedPipeHalfDuplex*" {
+        "NamedPipeSimplex" {
             $LanguageServiceInPipeName = Test-NamedPipeName-OrCreate-IfNull $LanguageServiceInPipeName
             $LanguageServiceOutPipeName = Test-NamedPipeName-OrCreate-IfNull $LanguageServiceOutPipeName
             $DebugServiceInPipeName = Test-NamedPipeName-OrCreate-IfNull $DebugServiceInPipeName
@@ -364,10 +371,11 @@ try {
                                         -DebugServiceOnly:$DebugServiceOnly.IsPresent `
                                         -WaitForDebugger:$WaitForDebugger.IsPresent
 
-            SetPipeFileResult $resultDetails "languageServiceReadPipeName" $LanguageServiceInPipeName
-            SetPipeFileResult $resultDetails "languageServiceWritePipeName" $LanguageServiceOutPipeName
-            SetPipeFileResult $resultDetails "debugServiceReadPipeName" $DebugServiceInPipeName
-            SetPipeFileResult $resultDetails "debugServiceWritePipeName" $DebugServiceOutPipeName
+            Set-PipeFileResult $resultDetails "languageServiceReadPipeName" $LanguageServiceInPipeName
+            Set-PipeFileResult $resultDetails "languageServiceWritePipeName" $LanguageServiceOutPipeName
+            Set-PipeFileResult $resultDetails "debugServiceReadPipeName" $DebugServiceInPipeName
+            Set-PipeFileResult $resultDetails "debugServiceWritePipeName" $DebugServiceOutPipeName
+            break
         }
         Default {
             $LanguageServicePipeName = Test-NamedPipeName-OrCreate-IfNull $LanguageServicePipeName
@@ -387,8 +395,9 @@ try {
                                         -DebugServiceOnly:$DebugServiceOnly.IsPresent `
                                         -WaitForDebugger:$WaitForDebugger.IsPresent
 
-            SetPipeFileResult $resultDetails "languageServicePipeName" $LanguageServicePipeName
-            SetPipeFileResult $resultDetails "debugServicePipeName" $DebugServicePipeName
+            Set-PipeFileResult $resultDetails "languageServicePipeName" $LanguageServicePipeName
+            Set-PipeFileResult $resultDetails "debugServicePipeName" $DebugServicePipeName
+            break
         }
     }
 

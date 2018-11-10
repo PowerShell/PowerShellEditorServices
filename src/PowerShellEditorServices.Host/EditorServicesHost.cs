@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         public string InOutPipeName { get; set; }
         public string OutPipeName { get; set; }
         public string InPipeName { get; set; }
-        internal string Endpoint => OutPipeName != null && InPipeName!=null ? $"In pipe: {InPipeName} Out pipe: {OutPipeName}" : $" InOut pipe: {InOutPipeName}";
+        internal string Endpoint => OutPipeName != null && InPipeName != null ? $"In pipe: {InPipeName} Out pipe: {OutPipeName}" : $" InOut pipe: {InOutPipeName}";
     }
 
     /// <summary>
@@ -468,7 +468,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                 {
                     if (config.OutPipeName !=null && config.InPipeName !=null)
                     {
-                        this.logger.Write(LogLevel.Verbose, $"Creating NamedPipeServerListener for ${protocol} protocol with two pipes: In: '" + config.InPipeName + "'. Out: '" + config.OutPipeName + "'");
+                        this.logger.Write(LogLevel.Verbose, $"Creating NamedPipeServerListener for ${protocol} protocol with two pipes: In: '{config.InPipeName}'. Out: '{config.OutPipeName}'");
                         return new NamedPipeServerListener(protocol, config.InPipeName, config.OutPipeName, this.logger);
                     }
                     else

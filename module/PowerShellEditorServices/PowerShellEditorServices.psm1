@@ -44,21 +44,21 @@ function Start-EditorServicesHost {
         [string]
         $DebugServiceNamedPipe,
 
-        [Parameter(ParameterSetName="NamedPipeHalfDuplex",Mandatory=$true)]
+        [Parameter(ParameterSetName="NamedPipeSimplex",Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $LanguageServiceInNamedPipe,
 
-        [Parameter(ParameterSetName="NamedPipeHalfDuplex",Mandatory=$true)]
+        [Parameter(ParameterSetName="NamedPipeSimplex",Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $LanguageServiceOutNamedPipe,
 
-        [Parameter(ParameterSetName="NamedPipeHalfDuplex")]
+        [Parameter(ParameterSetName="NamedPipeSimplex")]
         [string]
         $DebugServiceInNamedPipe,
 
-        [Parameter(ParameterSetName="NamedPipeHalfDuplex")]
+        [Parameter(ParameterSetName="NamedPipeSimplex")]
         [string]
         $DebugServiceOutNamedPipe,
 
@@ -125,6 +125,7 @@ function Start-EditorServicesHost {
         "Stdio" {
             $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
             $debugServiceConfig.TransportType    = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
+            break
         }
         "NamedPipe" {
             $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
@@ -133,8 +134,9 @@ function Start-EditorServicesHost {
                 $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
                 $debugServiceConfig.InOutPipeName = "$DebugServiceNamedPipe"
             }
+            break
         }
-        "NamedPipeHalfDuplex" {
+        "NamedPipeSimplex" {
             $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
             $languageServiceConfig.InPipeName = $LanguageServiceInNamedPipe
             $languageServiceConfig.OutPipeName = $LanguageServiceOutNamedPipe
@@ -143,6 +145,7 @@ function Start-EditorServicesHost {
                 $debugServiceConfig.InPipeName = $DebugServiceInNamedPipe
                 $debugServiceConfig.OutPipeName = $DebugServiceOutNamedPipe
             }
+            break
         }
     }
 

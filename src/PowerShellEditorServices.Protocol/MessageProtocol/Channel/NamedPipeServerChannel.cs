@@ -19,7 +19,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
             ILogger logger)
         {
             this.inOutPipeServer = inOutPipeServer;
-            this.outPipeServer = null;
             this.logger = logger;
         }
         public NamedPipeServerChannel(

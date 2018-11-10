@@ -32,7 +32,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         {
             this.logger = logger;
             this.inOutPipeName = inOutPipeName;
-            this.outPipeName = null;
         }
 
         public NamedPipeServerListener(
@@ -138,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         private void ListenForConnection()
         {
-            List<Task> connectionTasks = new List<Task> {WaitForConnectionAsync(this.inOutPipeServer)};
+            var connectionTasks = new List<Task> {WaitForConnectionAsync(this.inOutPipeServer)};
             if (this.outPipeServer != null)
             {
                 connectionTasks.Add(WaitForConnectionAsync(this.outPipeServer));
