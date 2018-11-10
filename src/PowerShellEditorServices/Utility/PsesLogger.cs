@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             int threadId = Thread.CurrentThread.ManagedThreadId;
 
             string messageTemplate = 
-                "[{LogLevelName:l}] [tid:{threadId}] In method '{CallerName:l}' {CallerSourceFile:l}:{CallerLineNumber}:{IndentedLogMsg:l}";
+                "[{LogLevelName:l}] tid:{threadId} in '{CallerName:l}' {CallerSourceFile:l}:{CallerLineNumber}:{IndentedLogMsg:l}";
 
             switch (logLevel)
             {
