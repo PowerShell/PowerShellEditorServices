@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices
     //    ///  Checks to see if this variable expression is the symbol we are looking for.
     //    /// </summary>
     //    /// <param name="variableExpressionAst">A VariableExpressionAst object in the script's AST</param>
-    //    /// <returns>A descion to stop searching if the right symbol was found,
+    //    /// <returns>A decision to stop searching if the right symbol was found,
     //    /// or a decision to continue if it wasn't found</returns>
     //    public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
     //    {

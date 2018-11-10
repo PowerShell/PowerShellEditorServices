@@ -20,6 +20,7 @@ $script:IsCIBuild = $env:APPVEYOR -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:TargetFrameworksParam = "/p:TargetFrameworks=\`"$(if (!$script:IsUnix) { "net451;" })netstandard1.6\`""
 $script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
+$script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Host", "BuildInfo", "BuildInfo.cs")
 
 if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
@@ -142,6 +143,51 @@ task TestPowerShellApi -If { !$script:IsUnix } {
     exec { & $script:dotnetExe restore .\src\PowerShellEditorServices\PowerShellEditorServices.csproj }
 }
 
+task CreateBuildInfo -Before Build {
+    $buildVersion = "<development-build>"
+    $buildOrigin = "<development>"
+
+    # Set build info fields on build platforms
+    if ($env:APPVEYOR)
+    {
+        $buildVersion = $env:APPVEYOR_BUILD_VERSION
+        $buildOrigin = if ($env:CI) { "AppVeyor CI" } else { "AppVeyor" }
+    }
+    elseif ($env:TF_BUILD)
+    {
+        $psd1Path = [System.IO.Path]::Combine($PSScriptRoot, "module", "PowerShellEditorServices", "PowerShellEditorServices.psd1")
+        $buildVersion = (Import-PowerShellDataFile -LiteralPath $psd1Path).Version
+        $buildOrigin = "VSTS"
+    }
+
+    # Allow override of build info fields (except date)
+    if ($env:PSES_BUILD_VERSION)
+    {
+        $buildVersion = $env:PSES_BUILD_VERSION
+    }
+
+    if ($env:PSES_BUILD_ORIGIN)
+    {
+        $buildOrigin = $env:PSES_BUILD_ORIGIN
+    }
+
+    [string]$buildTime = [datetime]::Now.ToString("s", [System.Globalization.CultureInfo]::InvariantCulture)
+
+    $buildInfoContents = @"
+namespace Microsoft.PowerShell.EditorServices.Host
+{
+    public static class BuildInfo
+    {
+        public const string BuildVersion = "$buildVersion";
+        public const string BuildOrigin = "$buildOrigin";
+        public static readonly System.DateTime? BuildTime = System.DateTime.Parse("$buildTime");
+    }
+}
+"@
+
+    Set-Content -LiteralPath $script:BuildInfoPath -Value $buildInfoContents -Force
+}
+
 task Build {
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f netstandard1.6 }
     if (!$script:IsUnix) {
@@ -208,6 +254,7 @@ task LayoutModule -After Build {
     New-Item -Force $PSScriptRoot\module\PowerShellEditorServices\bin\Core -Type Directory | Out-Null
 
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
+    Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\System.Runtime.InteropServices.RuntimeInformation.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
 
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
@@ -216,11 +263,11 @@ task LayoutModule -After Build {
 
     if (!$script:IsUnix) {
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net451\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net451\System.Runtime.InteropServices.RuntimeInformation.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
 
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\publish\System.Runtime.InteropServices.RuntimeInformation.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
     }
 
     # Copy Third Party Notices.txt to module folder

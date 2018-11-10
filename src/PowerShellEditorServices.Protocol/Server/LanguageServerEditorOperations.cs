@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
@@ -89,10 +90,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public EditorContext ConvertClientEditorContext(
             ClientEditorContext clientContext)
         {
+            ScriptFile scriptFile = this.editorSession.Workspace.CreateScriptFileFromFileBuffer(
+                clientContext.CurrentFilePath,
+                clientContext.CurrentFileContent);
+
             return
                 new EditorContext(
                     this,
-                    this.editorSession.Workspace.GetFile(clientContext.CurrentFilePath),
+                    scriptFile,
                     new BufferPosition(
                         clientContext.CursorPosition.Line + 1,
                         clientContext.CursorPosition.Character + 1),
@@ -100,7 +105,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         clientContext.SelectionRange.Start.Line + 1,
                         clientContext.SelectionRange.Start.Character + 1,
                         clientContext.SelectionRange.End.Line + 1,
-                        clientContext.SelectionRange.End.Character + 1));
+                        clientContext.SelectionRange.End.Character + 1),
+                    clientContext.CurrentFileLanguage);
         }
 
         public Task NewFile()

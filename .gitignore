@@ -34,6 +34,9 @@ docs/_repo/
 docs/metadata/
 *.zip
 
+# Generated build info file
+src/PowerShellEditorServices.Host/BuildInfo/BuildInfo.cs
+
 # quickbuild.exe
 /VersionGeneratingLogs/
 QLogs

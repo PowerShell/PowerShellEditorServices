@@ -325,14 +325,10 @@ namespace Microsoft.PowerShell.EditorServices
 
             // We want to look for references first in referenced files, hence we use ordered dictionary
             // TODO: File system case-sensitivity is based on filesystem not OS, but OS is a much cheaper heuristic
-#if CoreCLR
-            // The RuntimeInformation.IsOSPlatform is not supported in .NET Framework
             var fileMap = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
                 ? new OrderedDictionary()
                 : new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
-#else
-            var fileMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
-#endif
+
             foreach (ScriptFile file in referencedFiles)
             {
                 fileMap.Add(file.FilePath, file);
@@ -342,17 +338,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (!fileMap.Contains(file))
                 {
-                    ScriptFile scriptFile;
-                    try
-                    {
-                        scriptFile = workspace.GetFile(file);
-                    }
-                    catch (Exception e) when (e is IOException
-                                           || e is SecurityException
-                                           || e is FileNotFoundException
-                                           || e is DirectoryNotFoundException
-                                           || e is PathTooLongException
-                                           || e is UnauthorizedAccessException)
+                    if (!workspace.TryGetFile(file, out ScriptFile scriptFile))
                     {
                         // If we can't access the file for some reason, just ignore it
                         continue;

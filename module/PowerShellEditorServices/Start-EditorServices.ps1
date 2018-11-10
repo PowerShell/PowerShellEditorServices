@@ -267,6 +267,9 @@ function Set-NamedPipeMode {
     }
 }
 
+LogSection "Console Encoding"
+Log $OutputEncoding
+
 function Test-NamedPipeName-OrCreate-IfNull {
     param(
         [string]

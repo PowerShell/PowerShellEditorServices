@@ -255,26 +255,35 @@ namespace PSLanguageService.Test
 
     public class ScriptFileGetLinesTests
     {
-        private ScriptFile scriptFile;
+        private const string TestString_NoTrailingNewline = "Line One\r\nLine Two\r\nLine Three\r\nLine Four\r\nLine Five";
 
-        private const string TestString = "Line One\r\nLine Two\r\nLine Three\r\nLine Four\r\nLine Five";
-        private readonly string[] TestStringLines =
-            TestString.Split(
-                new string[] { "\r\n" },
-                StringSplitOptions.None);
+        private const string TestString_TrailingNewline = TestString_NoTrailingNewline + "\r\n";
+
+        private static readonly string[] s_newLines = new string[] { "\r\n" };
+
+        private static readonly string[] s_testStringLines_noTrailingNewline = TestString_NoTrailingNewline.Split(s_newLines, StringSplitOptions.None);
+
+        private static readonly string[] s_testStringLines_trailingNewline = TestString_TrailingNewline.Split(s_newLines, StringSplitOptions.None);
+
+        private ScriptFile _scriptFile_trailingNewline;
+
+        private ScriptFile _scriptFile_noTrailingNewline;
+
 
         public ScriptFileGetLinesTests()
         {
-            this.scriptFile =
-                ScriptFileChangeTests.CreateScriptFile(
-                    "Line One\r\nLine Two\r\nLine Three\r\nLine Four\r\nLine Five\r\n");
+            _scriptFile_noTrailingNewline = ScriptFileChangeTests.CreateScriptFile(
+                TestString_NoTrailingNewline);
+
+            _scriptFile_trailingNewline = ScriptFileChangeTests.CreateScriptFile(
+                TestString_TrailingNewline);
         }
 
         [Fact]
         public void CanGetWholeLine()
         {
             string[] lines =
-                this.scriptFile.GetLinesInRange(
+                _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(5, 1, 5, 10));
 
             Assert.Equal(1, lines.Length);
@@ -285,17 +294,17 @@ namespace PSLanguageService.Test
         public void CanGetMultipleWholeLines()
         {
             string[] lines =
-                this.scriptFile.GetLinesInRange(
+                _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(2, 1, 4, 10));
 
-            Assert.Equal(TestStringLines.Skip(1).Take(3), lines);
+            Assert.Equal(s_testStringLines_noTrailingNewline.Skip(1).Take(3), lines);
         }
 
         [Fact]
         public void CanGetSubstringInSingleLine()
         {
             string[] lines =
-                this.scriptFile.GetLinesInRange(
+                _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(4, 3, 4, 8));
 
             Assert.Equal(1, lines.Length);
@@ -306,7 +315,7 @@ namespace PSLanguageService.Test
         public void CanGetEmptySubstringRange()
         {
             string[] lines =
-                this.scriptFile.GetLinesInRange(
+                _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(4, 3, 4, 3));
 
             Assert.Equal(1, lines.Length);
@@ -324,7 +333,7 @@ namespace PSLanguageService.Test
             };
 
             string[] lines =
-                this.scriptFile.GetLinesInRange(
+                _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(2, 6, 4, 9));
 
             Assert.Equal(expectedLines, lines);
@@ -341,23 +350,29 @@ namespace PSLanguageService.Test
             };
 
             string[] lines =
-                this.scriptFile.GetLinesInRange(
+                _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(2, 9, 4, 1));
 
             Assert.Equal(expectedLines, lines);
         }
 
         [Fact]
-        public void CanSplitLines()
+        public void CanSplitLines_NoTrailingNewline()
         {
-            Assert.Equal(TestStringLines, scriptFile.FileLines);
+            Assert.Equal(s_testStringLines_noTrailingNewline, _scriptFile_noTrailingNewline.FileLines);
+        }
+
+        [Fact]
+        public void CanSplitLines_TrailingNewline()
+        {
+            Assert.Equal(s_testStringLines_trailingNewline, _scriptFile_trailingNewline.FileLines);
         }
 
         [Fact]
         public void CanGetSameLinesWithUnixLineBreaks()
         {
-            var unixFile = ScriptFileChangeTests.CreateScriptFile(TestString.Replace("\r\n", "\n"));
-            Assert.Equal(scriptFile.FileLines, unixFile.FileLines);
+            var unixFile = ScriptFileChangeTests.CreateScriptFile(TestString_NoTrailingNewline.Replace("\r\n", "\n"));
+            Assert.Equal(_scriptFile_noTrailingNewline.FileLines, unixFile.FileLines);
         }
 
         [Fact]
