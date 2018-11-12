@@ -1554,12 +1554,6 @@ function __Expand-Alias {
             ILogger Logger,
             CancellationToken cancellationToken)
         {
-            // If filesToAnalzye is empty, nothing to do so return early.
-            if (filesToAnalyze.Length == 0)
-            {
-                return;
-            }
-
             // First of all, wait for the desired delay period before
             // analyzing the provided list of files
             try
