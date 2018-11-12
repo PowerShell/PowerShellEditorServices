@@ -13,13 +13,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         /// <summary>
         /// Helper method to create a stub script file and then call FoldableRegions
         /// </summary>
-        private FoldingReference[] GetRegions(string text) {
+        private FoldingReference[] GetRegions(string text, bool showLastLine = true) {
             ScriptFile scriptFile = new ScriptFile(
                 "testfile",
                 "clienttestfile",
                 text,
                 Version.Parse("5.0"));
-            return Microsoft.PowerShell.EditorServices.TokenOperations.FoldableRegions(scriptFile.ScriptTokens);
+            return Microsoft.PowerShell.EditorServices.TokenOperations.FoldableRegions(scriptFile.ScriptTokens, showLastLine);
         }
 
         /// <summary>
@@ -113,21 +113,21 @@ double quoted herestrings should also fold
 $something = $true
 #endregion Comment Block 3";
         private FoldingReference[] expectedAllInOneScriptFolds = {
-            CreateFoldingReference(0,   0,  4, 10, "region"),
-            CreateFoldingReference(1,   0,  3,  2, "comment"),
-            CreateFoldingReference(10,  0, 15,  2, "comment"),
-            CreateFoldingReference(16, 30, 60,  1, null),
-            CreateFoldingReference(17,  0, 22,  2, "comment"),
-            CreateFoldingReference(23,  7, 26,  2, null),
-            CreateFoldingReference(28,  5, 31,  2, null),
-            CreateFoldingReference(35,  2, 37,  0, "comment"),
-            CreateFoldingReference(39,  2, 49, 14, "region"),
-            CreateFoldingReference(41,  4, 45, 14, "region"),
-            CreateFoldingReference(51,  7, 53,  3, null),
-            CreateFoldingReference(56,  7, 59,  3, null),
-            CreateFoldingReference(64,  0, 66,  0, "comment"),
-            CreateFoldingReference(67,  0, 72, 26, "region"),
-            CreateFoldingReference(68,  0, 70,  0, "comment")
+            CreateFoldingReference(0,   0,  3, 10, "region"),
+            CreateFoldingReference(1,   0,  2,  2, "comment"),
+            CreateFoldingReference(10,  0, 14,  2, "comment"),
+            CreateFoldingReference(16, 30, 59,  1, null),
+            CreateFoldingReference(17,  0, 21,  2, "comment"),
+            CreateFoldingReference(23,  7, 25,  2, null),
+            CreateFoldingReference(28,  5, 30,  2, null),
+            CreateFoldingReference(35,  2, 36,  0, "comment"),
+            CreateFoldingReference(39,  2, 48, 14, "region"),
+            CreateFoldingReference(41,  4, 44, 14, "region"),
+            CreateFoldingReference(51,  7, 52,  3, null),
+            CreateFoldingReference(56,  7, 58,  3, null),
+            CreateFoldingReference(64,  0, 65,  0, "comment"),
+            CreateFoldingReference(67,  0, 71, 26, "region"),
+            CreateFoldingReference(68,  0, 69,  0, "comment")
         };
 
         /// <summary>
@@ -169,6 +169,19 @@ $something = $true
         }
 
         [Fact]
+        public void LaguageServiceFindsFoldablRegionsWithoutLastLine() {
+            FoldingReference[] result = GetRegions(allInOneScript, false);
+            // Incrememnt the end line of the expected regions by one as we will
+            // be hiding the last line
+            FoldingReference[] expectedFolds = expectedAllInOneScriptFolds.Clone() as FoldingReference[];
+            for (int index = 0; index < expectedFolds.Length; index++)
+            {
+                expectedFolds[index].EndLine++;
+            }
+            AssertFoldingReferenceArrays(expectedFolds, result);
+        }
+
+        [Fact]
         public void LaguageServiceFindsFoldablRegionsWithMismatchedRegions() {
             string testString =
 @"#endregion should not fold - mismatched
@@ -180,7 +193,7 @@ $something = 'foldable'
 #region should not fold - mismatched
 ";
             FoldingReference[] expectedFolds = {
-                CreateFoldingReference(2, 0, 4, 10, "region")
+                CreateFoldingReference(2, 0, 3, 10, "region")
             };
 
             FoldingReference[] result = GetRegions(testString);
@@ -197,8 +210,8 @@ $AnArray = @(Get-ChildItem -Path C:\ -Include *.ps1 -File).Where({
 })
 ";
             FoldingReference[] expectedFolds = {
-                CreateFoldingReference(1, 64, 2, 27, null),
-                CreateFoldingReference(2, 35, 4,  2, null)
+                CreateFoldingReference(1, 64, 1, 27, null),
+                CreateFoldingReference(2, 35, 3,  2, null)
             };
 
             FoldingReference[] result = GetRegions(testString);

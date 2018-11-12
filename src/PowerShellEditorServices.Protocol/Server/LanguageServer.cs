@@ -1300,9 +1300,12 @@ function __Expand-Alias {
         private FoldingRange[] Fold(
             string documentUri)
         {
+            // TODO Should be using dynamic registrations
+            if (!this.currentSettings.CodeFolding.Enable) { return null; }
             var result = new List<FoldingRange>();
             foreach (FoldingReference fold in TokenOperations.FoldableRegions(
-                editorSession.Workspace.GetFile(documentUri).ScriptTokens))
+                editorSession.Workspace.GetFile(documentUri).ScriptTokens,
+                this.currentSettings.CodeFolding.ShowLastLine))
             {
                 result.Add(new FoldingRange {
                     EndCharacter   = fold.EndCharacter,

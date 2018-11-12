@@ -22,7 +22,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Extracts all of the unique foldable regions in a script given the list tokens
         /// </summary>
-        internal static FoldingReference[] FoldableRegions(Token[] tokens) {
+        internal static FoldingReference[] FoldableRegions(
+            Token[] tokens,
+            bool ShowLastLine)
+        {
             List<FoldingReference> foldableRegions = new List<FoldingReference>();
 
             // Find matching braces { -> }
@@ -92,6 +95,12 @@ namespace Microsoft.PowerShell.EditorServices
                 if (index == 0) { return false; }
                 return (item.StartLine == foldableRegions[index - 1].StartLine);
             });
+
+            // Some editors have different folding UI, sometimes the lastline should be displayed
+            // If we do want to show the last line, just change the region to be one line less
+            if (ShowLastLine) {
+                foldableRegions.ForEach( item => { item.EndLine--; });
+            }
 
             return foldableRegions.ToArray();
         }
