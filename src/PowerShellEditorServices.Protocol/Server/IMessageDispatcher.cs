@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol
 {
     public interface IMessageDispatcher
     {
-        Task DispatchMessage(
+        Task DispatchMessageAsync(
             Message messageToDispatch,
             MessageWriter messageWriter);
     }

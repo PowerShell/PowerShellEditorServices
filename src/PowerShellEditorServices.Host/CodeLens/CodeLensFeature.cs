@@ -49,11 +49,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
             messageHandlers.SetRequestHandler(
                 CodeLensRequest.Type,
-                codeLenses.HandleCodeLensRequest);
+                codeLenses.HandleCodeLensRequestAsync);
 
             messageHandlers.SetRequestHandler(
                 CodeLensResolveRequest.Type,
-                codeLenses.HandleCodeLensResolveRequest);
+                codeLenses.HandleCodeLensResolveRequestAsync);
 
             codeLenses.Providers.Add(
                 new ReferencesCodeLensProvider(
@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="codeLensParams">Parameters on the CodeLens request that was received.</param>
         /// <param name="requestContext"></param>
-        private async Task HandleCodeLensRequest(
+        private async Task HandleCodeLensRequestAsync(
             CodeLensRequest codeLensParams,
             RequestContext<LanguageServer.CodeLens[]> requestContext)
         {
@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     _jsonSerializer);
             }
 
-            await requestContext.SendResult(codeLensResponse);
+            await requestContext.SendResultAsync(codeLensResponse);
         }
 
         /// <summary>
@@ -140,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="codeLens">The CodeLens to be resolved/updated.</param>
         /// <param name="requestContext"></param>
-        private async Task HandleCodeLensResolveRequest(
+        private async Task HandleCodeLensResolveRequestAsync(
             LanguageServer.CodeLens codeLens,
             RequestContext<LanguageServer.CodeLens> requestContext)
         {
@@ -178,13 +178,13 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                             originalCodeLens,
                             CancellationToken.None);
 
-                    await requestContext.SendResult(
+                    await requestContext.SendResultAsync(
                         resolvedCodeLens.ToProtocolCodeLens(
                             _jsonSerializer));
                 }
                 else
                 {
-                    await requestContext.SendError(
+                    await requestContext.SendErrorAsync(
                         $"Could not find provider for the original CodeLens: {codeLensData.ProviderId}");
                 }
             }

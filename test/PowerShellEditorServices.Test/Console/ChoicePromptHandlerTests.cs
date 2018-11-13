@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         {
             TestChoicePromptHandler choicePromptHandler = new TestChoicePromptHandler();
             Task<int> promptTask =
-                choicePromptHandler.PromptForChoice(
+                choicePromptHandler.PromptForChoiceAsync(
                     "Test prompt",
                     "Message is irrelevant",
                     Choices,
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         {
             TestChoicePromptHandler choicePromptHandler = new TestChoicePromptHandler();
             Task<int> promptTask =
-                choicePromptHandler.PromptForChoice(
+                choicePromptHandler.PromptForChoiceAsync(
                     "Test prompt",
                     "Message is irrelevant",
                     Choices,
@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 new TestChoicePromptHandler();
 
             Task<int> promptTask =
-                choicePromptHandler.PromptForChoice(
+                choicePromptHandler.PromptForChoiceAsync(
                     "Test prompt",
                     "Message is irrelevant",
                     Choices,
@@ -105,7 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             this.linePromptTask.SetResult(inputString);
         }
 
-        protected override Task<string> ReadInputString(CancellationToken cancellationToken)
+        protected override Task<string> ReadInputStringAsync(CancellationToken cancellationToken)
         {
             this.linePromptTask = new TaskCompletionSource<string>();
             return this.linePromptTask.Task;

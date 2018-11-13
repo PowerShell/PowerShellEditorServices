@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>
         /// A CommandCompletion instance completions for the identified statement.
         /// </returns>
-        public async Task<CompletionResults> GetCompletionsInFile(
+        public async Task<CompletionResults> GetCompletionsInFileAsync(
             ScriptFile scriptFile,
             int lineNumber,
             int columnNumber)
@@ -117,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices
                     columnNumber);
 
             CommandCompletion commandCompletion =
-                await AstOperations.GetCompletions(
+                await AstOperations.GetCompletionsAsync(
                     scriptFile.ScriptAst,
                     scriptFile.ScriptTokens,
                     fileOffset,
@@ -248,7 +248,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="lineNumber">The line number at which the symbol can be located.</param>
         /// <param name="columnNumber">The column number at which the symbol can be located.</param>
         /// <returns></returns>
-        public async Task<SymbolDetails> FindSymbolDetailsAtLocation(
+        public async Task<SymbolDetails> FindSymbolDetailsAtLocationAsync(
             ScriptFile scriptFile,
             int lineNumber,
             int columnNumber)
@@ -268,7 +268,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             symbolReference.FilePath = scriptFile.FilePath;
             symbolDetails =
-                await SymbolDetails.Create(
+                await SymbolDetails.CreateAsync(
                     symbolReference,
                     _powerShellContext);
 
@@ -308,7 +308,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="referencedFiles">An array of scriptFiles too search for references in</param>
         /// <param name="workspace">The workspace that will be searched for symbols</param>
         /// <returns>FindReferencesResult</returns>
-        public async Task<FindReferencesResult> FindReferencesOfSymbol(
+        public async Task<FindReferencesResult> FindReferencesOfSymbolAsync(
             SymbolReference foundSymbol,
             ScriptFile[] referencedFiles,
             Workspace workspace)
@@ -323,7 +323,7 @@ namespace Microsoft.PowerShell.EditorServices
                 foundSymbol.ScriptRegion.StartColumnNumber);
 
             // Make sure aliases have been loaded
-            await GetAliases();
+            await GetAliasesAsync();
 
             // We want to look for references first in referenced files, hence we use ordered dictionary
             // TODO: File system case-sensitivity is based on filesystem not OS, but OS is a much cheaper heuristic
@@ -415,7 +415,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="foundSymbol">The symbol for which a definition will be found.</param>
         /// <param name="workspace">The Workspace to which the ScriptFile belongs.</param>
         /// <returns>The resulting GetDefinitionResult for the symbol's definition.</returns>
-        public async Task<GetDefinitionResult> GetDefinitionOfSymbol(
+        public async Task<GetDefinitionResult> GetDefinitionOfSymbolAsync(
             ScriptFile sourceFile,
             SymbolReference foundSymbol,
             Workspace workspace)
@@ -483,7 +483,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (foundDefinition == null)
             {
                 CommandInfo cmdInfo =
-                    await CommandHelpers.GetCommandInfo(
+                    await CommandHelpers.GetCommandInfoAsync(
                         foundSymbol.SymbolName,
                         _powerShellContext);
 
@@ -543,7 +543,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="lineNumber">The line number of the cursor for the given script</param>
         /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
         /// <returns>ParameterSetSignatures</returns>
-        public async Task<ParameterSetSignatures> FindParameterSetsInFile(
+        public async Task<ParameterSetSignatures> FindParameterSetsInFileAsync(
             ScriptFile file,
             int lineNumber,
             int columnNumber)
@@ -560,7 +560,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             CommandInfo commandInfo =
-                await CommandHelpers.GetCommandInfo(
+                await CommandHelpers.GetCommandInfoAsync(
                     foundSymbol.SymbolName,
                     _powerShellContext);
 
@@ -714,7 +714,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Gets all aliases found in the runspace
         /// </summary>
-        private async Task GetAliases()
+        private async Task GetAliasesAsync()
         {
             if (_areAliasesLoaded)
             {
@@ -730,7 +730,7 @@ namespace Microsoft.PowerShell.EditorServices
                     return;
                 }
 
-                var aliases = await _powerShellContext.ExecuteCommand<AliasInfo>(
+                var aliases = await _powerShellContext.ExecuteCommandAsync<AliasInfo>(
                     new PSCommand()
                         .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
                         .AddParameter("CommandType", CommandTypes.Alias),

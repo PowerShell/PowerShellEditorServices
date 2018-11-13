@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="commandName">The name of the command.</param>
         /// <param name="powerShellContext">The PowerShellContext to use for running Get-Command.</param>
         /// <returns>A CommandInfo object with details about the specified command.</returns>
-        public static async Task<CommandInfo> GetCommandInfo(
+        public static async Task<CommandInfo> GetCommandInfoAsync(
             string commandName,
             PowerShellContext powerShellContext)
         {
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             return
                 (await powerShellContext
-                    .ExecuteCommand<PSObject>(command, false, false))
+                    .ExecuteCommandAsync<PSObject>(command, false, false))
                     .Select(o => o.BaseObject)
                     .OfType<CommandInfo>()
                     .FirstOrDefault();
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="commandInfo">The CommandInfo instance for the command.</param>
         /// <param name="powerShellContext">The PowerShellContext to use for getting command documentation.</param>
         /// <returns></returns>
-        public static async Task<string> GetCommandSynopsis(
+        public static async Task<string> GetCommandSynopsisAsync(
             CommandInfo commandInfo,
             PowerShellContext powerShellContext)
         {
@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices
                 command.AddArgument(commandInfo);
                 command.AddParameter("ErrorAction", "Ignore");
 
-                var results = await powerShellContext.ExecuteCommand<PSObject>(command, false, false);
+                var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, false, false);
                 helpObject = results.FirstOrDefault();
 
                 if (helpObject != null)

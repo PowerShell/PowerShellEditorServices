@@ -110,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's choice.
         /// </returns>
-        public async Task<int> PromptForChoice(
+        public async Task<int> PromptForChoiceAsync(
             string promptCaption,
             string promptMessage,
             ChoiceDetails[] choices,
@@ -132,8 +132,8 @@ namespace Microsoft.PowerShell.EditorServices.Console
             cancellationToken.Register(this.CancelPrompt, true);
 
             // Convert the int[] result to int
-            return await this.WaitForTask(
-                this.StartPromptLoop(this.promptCancellationTokenSource.Token)
+            return await this.WaitForTaskAsync(
+                this.StartPromptLoopAsync(this.promptCancellationTokenSource.Token)
                     .ContinueWith(
                         task =>
                         {
@@ -173,7 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's choices.
         /// </returns>
-        public async Task<int[]> PromptForChoice(
+        public async Task<int[]> PromptForChoiceAsync(
             string promptCaption,
             string promptMessage,
             ChoiceDetails[] choices,
@@ -191,12 +191,12 @@ namespace Microsoft.PowerShell.EditorServices.Console
             // Cancel the TaskCompletionSource if the caller cancels the task
             cancellationToken.Register(this.CancelPrompt, true);
 
-            return await this.WaitForTask(
-                this.StartPromptLoop(
+            return await this.WaitForTaskAsync(
+                this.StartPromptLoopAsync(
                     this.promptCancellationTokenSource.Token));
         }
 
-        private async Task<T> WaitForTask<T>(Task<T> taskToWait)
+        private async Task<T> WaitForTaskAsync<T>(Task<T> taskToWait)
         {
             Task finishedTask =
                 await Task.WhenAny(
@@ -211,7 +211,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             return taskToWait.Result;
         }
 
-        private async Task<int[]> StartPromptLoop(
+        private async Task<int[]> StartPromptLoopAsync(
             CancellationToken cancellationToken)
         {
             int[] choiceIndexes = null;
@@ -221,7 +221,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                string responseString = await this.ReadInputString(cancellationToken);
+                string responseString = await this.ReadInputStringAsync(cancellationToken);
                 if (responseString == null)
                 {
                     // If the response string is null, the prompt has been cancelled
@@ -334,7 +334,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's input.
         /// </returns>
-        protected abstract Task<string> ReadInputString(CancellationToken cancellationToken);
+        protected abstract Task<string> ReadInputStringAsync(CancellationToken cancellationToken);
 
         #endregion
 

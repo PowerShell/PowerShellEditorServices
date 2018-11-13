@@ -174,7 +174,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
             this.languageServiceListener = CreateServiceListener(MessageProtocolType.LanguageServer, config);
 
-            this.languageServiceListener.ClientConnect += this.OnLanguageServiceClientConnect;
+            this.languageServiceListener.ClientConnect += this.OnLanguageServiceClientConnectAsync;
             this.languageServiceListener.Start();
 
             this.logger.Write(
@@ -184,7 +184,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     config.TransportType, config.Endpoint));
         }
 
-        private async void OnLanguageServiceClientConnect(
+        private async void OnLanguageServiceClientConnectAsync(
             object sender,
             ChannelBase serverChannel)
         {
@@ -214,7 +214,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
                     this.serverCompletedTask,
                     this.logger);
 
-            await this.editorSession.PowerShellContext.ImportCommandsModule(
+            await this.editorSession.PowerShellContext.ImportCommandsModuleAsync(
                 Path.Combine(
                     Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
                     @"..\Commands"));
@@ -225,7 +225,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // gets initialized when that is done earlier than LanguageServer.Initialize
             foreach (string module in this.additionalModules)
             {
-                await this.editorSession.PowerShellContext.ExecuteCommand<System.Management.Automation.PSObject>(
+                await this.editorSession.PowerShellContext.ExecuteCommandAsync<System.Management.Automation.PSObject>(
                     new System.Management.Automation.PSCommand().AddCommand("Import-Module").AddArgument(module),
                     false,
                     true);

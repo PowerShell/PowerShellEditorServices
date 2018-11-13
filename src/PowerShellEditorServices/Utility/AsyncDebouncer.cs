@@ -59,12 +59,12 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// The argument for this implementation's Invoke method.
         /// </param>
         /// <returns>A Task to be awaited until the Invoke is queued.</returns>
-        public async Task Invoke(TInvokeArgs invokeArgument)
+        public async Task InvokeAsync(TInvokeArgs invokeArgument)
         {
             using (await this.asyncLock.LockAsync())
             {
                 // Invoke the implementor
-                await this.OnInvoke(invokeArgument);
+                await this.OnInvokeAsync(invokeArgument);
 
                 // If there's no timer, start one
                 if (this.currentTimerTask == null)
@@ -88,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// deadlocks could occur.
         /// </summary>
         /// <returns>A Task to be awaited until Flush completes.</returns>
-        public async Task Flush()
+        public async Task FlushAsync()
         {
             using (await this.asyncLock.LockAsync())
             {
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 this.CancelTimer();
 
                 // Flush the current output
-                await this.OnFlush();
+                await this.OnFlushAsync();
             }
         }
 
@@ -112,13 +112,13 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// The argument for this implementation's OnInvoke method.
         /// </param>
         /// <returns>A Task to be awaited for the invoke to complete.</returns>
-        protected abstract Task OnInvoke(TInvokeArgs invokeArgument);
+        protected abstract Task OnInvokeAsync(TInvokeArgs invokeArgument);
 
         /// <summary>
         /// Implemented by the subclass to complete the current operation.
         /// </summary>
         /// <returns>A Task to be awaited for the operation to complete.</returns>
-        protected abstract Task OnFlush();
+        protected abstract Task OnFlushAsync();
 
         #endregion
 
@@ -135,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                         {
                             if (!t.IsCanceled)
                             {
-                                return this.Flush();
+                                return this.FlushAsync();
                             }
                             else
                             {
@@ -153,8 +153,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             // Was the task cancelled?
-            bool wasCancelled = 
-                this.currentTimerTask == null || 
+            bool wasCancelled =
+                this.currentTimerTask == null ||
                 this.currentTimerTask.IsCanceled;
 
             // Clear the current task so that another may be created

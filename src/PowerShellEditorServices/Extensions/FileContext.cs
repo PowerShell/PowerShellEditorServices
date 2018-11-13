@@ -224,7 +224,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public void InsertText(string textToInsert, BufferRange insertRange)
         {
             this.editorOperations
-                .InsertText(this.scriptFile.ClientFilePath, textToInsert, insertRange)
+                .InsertTextAsync(this.scriptFile.ClientFilePath, textToInsert, insertRange)
                 .Wait();
         }
 
@@ -237,7 +237,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         public void Save()
         {
-            this.editorOperations.SaveFile(this.scriptFile.FilePath);
+            this.editorOperations.SaveFileAsync(this.scriptFile.FilePath);
         }
 
         /// <summary>
@@ -259,7 +259,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
                 throw new IOException(String.Format("The file '{0}' already exists", absolutePath));
             }
 
-            this.editorOperations.SaveFile(this.scriptFile.FilePath, newFilePath);
+            this.editorOperations.SaveFileAsync(this.scriptFile.FilePath, newFilePath);
         }
 
         #endregion

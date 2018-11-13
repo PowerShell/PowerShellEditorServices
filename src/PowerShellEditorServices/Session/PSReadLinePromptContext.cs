@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Session {
                         _readLineCancellationSource.Token);
                 }
 
-                var result = (await _powerShellContext.ExecuteCommand<string>(
+                var result = (await _powerShellContext.ExecuteCommandAsync<string>(
                     new PSCommand()
                         .AddScript(ReadLineScript)
                         .AddArgument(_readLineCancellationSource.Token),
@@ -185,7 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             { }
         }
 
-        public async Task WaitForReadLineExitAsync () {
+        public async Task WaitForReadLineExitAsync() {
             using (await _promptNest.GetRunspaceHandleAsync(CancellationToken.None, isReadLine: true))
             { }
         }
