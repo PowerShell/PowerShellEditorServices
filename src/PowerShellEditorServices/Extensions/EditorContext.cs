@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public void SetSelection(BufferRange selectionRange)
         {
             this.editorOperations
-                .SetSelection(selectionRange)
+                .SetSelectionAsync(selectionRange)
                 .Wait();
         }
 

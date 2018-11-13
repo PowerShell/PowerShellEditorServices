@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
         {
             var logger = Logging.NullLogger;
             this.powerShellContext = PowerShellContextFactory.Create(logger);
-            await this.powerShellContext.ImportCommandsModule(
+            await this.powerShellContext.ImportCommandsModuleAsync(
                 TestUtilities.NormalizePath("../../../../../module/PowerShellEditorServices/Commands"));
 
             this.extensionService = new ExtensionService(this.powerShellContext);
@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
             this.extensionService.CommandUpdated += ExtensionService_ExtensionUpdated;
             this.extensionService.CommandRemoved += ExtensionService_ExtensionRemoved;
 
-            await this.extensionService.Initialize(
+            await this.extensionService.InitializeAsync(
                 this.editorOperations,
                 new ComponentRegistry());
 
@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
         [Fact]
         public async Task CanRegisterAndInvokeCommandWithCmdletName()
         {
-            await extensionService.PowerShellContext.ExecuteScriptString(
+            await extensionService.PowerShellContext.ExecuteScriptStringAsync(
                 TestUtilities.NormalizeNewlines("function Invoke-Extension { $global:extensionValue = 5 }\n") +
                 "Register-EditorCommand -Name \"test.function\" -DisplayName \"Function extension\" -Function \"Invoke-Extension\"");
 
@@ -80,31 +80,31 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
             EditorCommand command = await this.AssertExtensionEvent(EventType.Add, "test.function");
 
             // Invoke the command
-            await extensionService.InvokeCommand("test.function", this.commandContext);
+            await extensionService.InvokeCommandAsync("test.function", this.commandContext);
 
             // Assert the expected value
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript("$global:extensionValue");
-            var results = await powerShellContext.ExecuteCommand<int>(psCommand);
+            var results = await powerShellContext.ExecuteCommandAsync<int>(psCommand);
             Assert.Equal(5, results.FirstOrDefault());
         }
 
         [Fact]
         public async Task CanRegisterAndInvokeCommandWithScriptBlock()
         {
-            await extensionService.PowerShellContext.ExecuteScriptString(
+            await extensionService.PowerShellContext.ExecuteScriptStringAsync(
                 "Register-EditorCommand -Name \"test.scriptblock\" -DisplayName \"ScriptBlock extension\" -ScriptBlock { $global:extensionValue = 10 }");
 
             // Wait for the add event
             EditorCommand command = await this.AssertExtensionEvent(EventType.Add, "test.scriptblock");
 
             // Invoke the command
-            await extensionService.InvokeCommand("test.scriptblock", this.commandContext);
+            await extensionService.InvokeCommandAsync("test.scriptblock", this.commandContext);
 
             // Assert the expected value
             PSCommand psCommand = new PSCommand();
             psCommand.AddScript("$global:extensionValue");
-            var results = await powerShellContext.ExecuteCommand<int>(psCommand);
+            var results = await powerShellContext.ExecuteCommandAsync<int>(psCommand);
             Assert.Equal(10, results.FirstOrDefault());
         }
 
@@ -112,7 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
         public async Task CanUpdateRegisteredCommand()
         {
             // Register a command and then update it
-            await extensionService.PowerShellContext.ExecuteScriptString(TestUtilities.NormalizeNewlines(
+            await extensionService.PowerShellContext.ExecuteScriptStringAsync(TestUtilities.NormalizeNewlines(
                 "function Invoke-Extension { Write-Output \"Extension output!\" }\n" +
                 "Register-EditorCommand -Name \"test.function\" -DisplayName \"Function extension\" -Function \"Invoke-Extension\"\n" +
                 "Register-EditorCommand -Name \"test.function\" -DisplayName \"Updated Function extension\" -Function \"Invoke-Extension\""));
@@ -128,19 +128,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
         public async Task CanUnregisterCommand()
         {
             // Add the command and wait for the add event
-            await extensionService.PowerShellContext.ExecuteScriptString(
+            await extensionService.PowerShellContext.ExecuteScriptStringAsync(
                 "Register-EditorCommand -Name \"test.scriptblock\" -DisplayName \"ScriptBlock extension\" -ScriptBlock { Write-Output \"Extension output!\" }");
             await this.AssertExtensionEvent(EventType.Add, "test.scriptblock");
 
             // Remove the command and wait for the remove event
-            await extensionService.PowerShellContext.ExecuteScriptString(
+            await extensionService.PowerShellContext.ExecuteScriptStringAsync(
                 "Unregister-EditorCommand -Name \"test.scriptblock\"");
             await this.AssertExtensionEvent(EventType.Remove, "test.scriptblock");
 
             // Ensure that the command has been unregistered
             await Assert.ThrowsAsync(
                 typeof(KeyNotFoundException),
-                () => extensionService.InvokeCommand("test.scriptblock", this.commandContext));
+                () => extensionService.InvokeCommandAsync("test.scriptblock", this.commandContext));
         }
 
         private async Task<EditorCommand> AssertExtensionEvent(EventType expectedEventType, string expectedExtensionName)
@@ -187,67 +187,67 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
             throw new NotImplementedException();
         }
 
-        public Task NewFile()
+        public Task NewFileAsync()
         {
             throw new NotImplementedException();
         }
 
-        public Task OpenFile(string filePath)
+        public Task OpenFileAsync(string filePath)
         {
             throw new NotImplementedException();
         }
 
-        public Task OpenFile(string filePath, bool preview)
+        public Task OpenFileAsync(string filePath, bool preview)
         {
             throw new NotImplementedException();
         }
 
-        public Task CloseFile(string filePath)
+        public Task CloseFileAsync(string filePath)
         {
             throw new NotImplementedException();
         }
 
-        public Task SaveFile(string filePath)
+        public Task SaveFileAsync(string filePath)
         {
-            return SaveFile(filePath, null);
+            return SaveFileAsync(filePath, null);
         }
 
-        public Task SaveFile(string filePath, string newSavePath)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task InsertText(string filePath, string text, BufferRange insertRange)
+        public Task SaveFileAsync(string filePath, string newSavePath)
         {
             throw new NotImplementedException();
         }
 
-        public Task SetSelection(BufferRange selectionRange)
+        public Task InsertTextAsync(string filePath, string text, BufferRange insertRange)
         {
             throw new NotImplementedException();
         }
 
-        public Task<EditorContext> GetEditorContext()
+        public Task SetSelectionAsync(BufferRange selectionRange)
         {
             throw new NotImplementedException();
         }
 
-        public Task ShowInformationMessage(string message)
+        public Task<EditorContext> GetEditorContextAsync()
         {
             throw new NotImplementedException();
         }
 
-        public Task ShowErrorMessage(string message)
+        public Task ShowInformationMessageAsync(string message)
         {
             throw new NotImplementedException();
         }
 
-        public Task ShowWarningMessage(string message)
+        public Task ShowErrorMessageAsync(string message)
         {
             throw new NotImplementedException();
         }
 
-        public Task SetStatusBarMessage(string message, int? timeout)
+        public Task ShowWarningMessageAsync(string message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SetStatusBarMessageAsync(string message, int? timeout)
         {
             throw new NotImplementedException();
         }

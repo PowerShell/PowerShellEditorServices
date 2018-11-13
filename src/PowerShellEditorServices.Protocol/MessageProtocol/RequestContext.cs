@@ -19,24 +19,24 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             this.messageWriter = messageWriter;
         }
 
-        public async Task SendResult(TResult resultDetails)
+        public async Task SendResultAsync(TResult resultDetails)
         {
-            await this.messageWriter.WriteResponse<TResult>(
+            await this.messageWriter.WriteResponseAsync<TResult>(
                 resultDetails,
                 requestMessage.Method,
                 requestMessage.Id);
         }
 
-        public async Task SendEvent<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType, TParams eventParams)
+        public async Task SendEventAsync<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType, TParams eventParams)
         {
-            await this.messageWriter.WriteEvent(
+            await this.messageWriter.WriteEventAsync(
                 eventType,
                 eventParams);
         }
 
-        public async Task SendError(object errorDetails)
+        public async Task SendErrorAsync(object errorDetails)
         {
-            await this.messageWriter.WriteMessage(
+            await this.messageWriter.WriteMessageAsync(
                 Message.ResponseError(
                     requestMessage.Id,
                     requestMessage.Method,

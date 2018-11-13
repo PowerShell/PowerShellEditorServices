@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             // Make sure remaining output is flushed before exiting
             if (this.outputDebouncer != null)
             {
-                this.outputDebouncer.Flush().Wait();
+                this.outputDebouncer.FlushAsync().Wait();
                 this.outputDebouncer = null;
             }
         }
@@ -82,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             ConsoleColor backgroundColor)
         {
             // TODO: This should use a synchronous method!
-            this.outputDebouncer.Invoke(
+            this.outputDebouncer.InvokeAsync(
                 new OutputWrittenEventArgs(
                     outputString,
                     includeNewLine,
@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
         {
         }
 
-        protected override Task<string> ReadCommandLine(CancellationToken cancellationToken)
+        protected override Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
         {
             // This currently does nothing because the "evaluate" request
             // will cancel the current prompt and execute the user's

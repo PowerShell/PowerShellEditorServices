@@ -21,6 +21,6 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         /// <returns>
         /// A Task to await for completion, returns the IHtmlContentView instance.
         /// </returns>
-        Task<IHtmlContentView> CreateHtmlContentView(string viewTitle);
+        Task<IHtmlContentView> CreateHtmlContentViewAsync(string viewTitle);
     }
 }

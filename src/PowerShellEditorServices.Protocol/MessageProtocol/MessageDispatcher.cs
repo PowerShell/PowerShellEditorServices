@@ -115,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Private Methods
 
-        public async Task DispatchMessage(
+        public async Task DispatchMessageAsync(
             Message messageToDispatch,
             MessageWriter messageWriter)
         {

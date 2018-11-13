@@ -58,11 +58,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's input.
         /// </returns>
-        public Task<string> PromptForInput(
+        public Task<string> PromptForInputAsync(
             CancellationToken cancellationToken)
         {
             Task<Dictionary<string, object>> innerTask =
-                this.PromptForInput(
+                this.PromptForInputAsync(
                     null,
                     null,
                     new FieldDetails[] { new FieldDetails("", "", typeof(string), false, "") },
@@ -106,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's input.
         /// </returns>
-        public async Task<Dictionary<string, object>> PromptForInput(
+        public async Task<Dictionary<string, object>> PromptForInputAsync(
             string promptCaption,
             string promptMessage,
             FieldDetails[] fields,
@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             this.ShowPromptMessage(promptCaption, promptMessage);
 
             Task<Dictionary<string, object>> promptTask =
-                this.StartPromptLoop(this.promptCancellationTokenSource.Token);
+                this.StartPromptLoopAsync(this.promptCancellationTokenSource.Token);
 
             Task finishedTask =
                 await Task.WhenAny(
@@ -142,11 +142,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's input.
         /// </returns>
-        public Task<SecureString> PromptForSecureInput(
+        public Task<SecureString> PromptForSecureInputAsync(
             CancellationToken cancellationToken)
         {
             Task<Dictionary<string, object>> innerTask =
-                this.PromptForInput(
+                this.PromptForInputAsync(
                     null,
                     null,
                     new FieldDetails[] { new FieldDetails("", "", typeof(SecureString), false, "") },
@@ -209,7 +209,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's input.
         /// </returns>
-        protected abstract Task<string> ReadInputString(CancellationToken cancellationToken);
+        protected abstract Task<string> ReadInputStringAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Reads a SecureString asynchronously from the console.
@@ -221,7 +221,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// A Task instance that can be monitored for completion to get
         /// the user's input.
         /// </returns>
-        protected abstract Task<SecureString> ReadSecureString(CancellationToken cancellationToken);
+        protected abstract Task<SecureString> ReadSecureStringAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Called when an error should be displayed, such as when the
@@ -237,7 +237,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Private Methods
 
-        private async Task<Dictionary<string, object>> StartPromptLoop(
+        private async Task<Dictionary<string, object>> StartPromptLoopAsync(
             CancellationToken cancellationToken)
         {
             this.GetNextField();
@@ -255,13 +255,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
                 // Read input depending on field type
                 if (this.currentField.FieldType == typeof(SecureString))
                 {
-                    SecureString secureString = await this.ReadSecureString(cancellationToken);
+                    SecureString secureString = await this.ReadSecureStringAsync(cancellationToken);
                     responseValue = secureString;
                     enteredValue = secureString != null;
                 }
                 else
                 {
-                    responseString = await this.ReadInputString(cancellationToken);
+                    responseString = await this.ReadInputStringAsync(cancellationToken);
                     responseValue = responseString;
                     enteredValue = responseString != null && responseString.Length > 0;
 

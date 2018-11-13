@@ -21,11 +21,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             this.messageWriter = messageWriter;
         }
 
-        public async Task SendEvent<TParams, TRegistrationOptions>(
+        public async Task SendEventAsync<TParams, TRegistrationOptions>(
             NotificationType<TParams, TRegistrationOptions> eventType,
             TParams eventParams)
         {
-            await this.messageWriter.WriteEvent(
+            await this.messageWriter.WriteEventAsync(
                 eventType,
                 eventParams);
         }

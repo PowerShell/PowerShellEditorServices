@@ -9,16 +9,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 {
     public interface IMessageSender
     {
-        Task SendEvent<TParams, TRegistrationOptions>(
+        Task SendEventAsync<TParams, TRegistrationOptions>(
             NotificationType<TParams, TRegistrationOptions> eventType,
             TParams eventParams);
 
-        Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOptions>(
+        Task<TResult> SendRequestAsync<TParams, TResult, TError, TRegistrationOptions>(
             RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             TParams requestParams,
             bool waitForResponse);
 
-        Task<TResult> SendRequest<TResult, TError, TRegistrationOptions>(
+        Task<TResult> SendRequestAsync<TResult, TError, TRegistrationOptions>(
             RequestType0<TResult, TError, TRegistrationOptions> requestType0);
     }
 }

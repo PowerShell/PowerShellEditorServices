@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         #region Private Methods
 
-        protected override async Task OnInvoke(OutputWrittenEventArgs output)
+        protected override async Task OnInvokeAsync(OutputWrittenEventArgs output)
         {
             bool outputIsError = output.OutputType == OutputType.Error;
 
@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 if (this.currentOutputString != null)
                 {
                     // Flush the output
-                    await this.OnFlush();
+                    await this.OnFlushAsync();
                 }
 
                 this.currentOutputString = string.Empty;
@@ -77,13 +77,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     string.Empty);
         }
 
-        protected override async Task OnFlush()
+        protected override async Task OnFlushAsync()
         {
             // Only flush output if there is some to flush
             if (this.currentOutputString != null)
             {
                 // Send an event for the current output
-                await this.messageSender.SendEvent(
+                await this.messageSender.SendEventAsync(
                     OutputEvent.Type,
                     new OutputEventBody
                     {

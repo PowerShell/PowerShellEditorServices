@@ -351,7 +351,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="moduleBasePath"></param>
         /// <returns></returns>
-        public Task ImportCommandsModule(string moduleBasePath)
+        public Task ImportCommandsModuleAsync(string moduleBasePath)
         {
             PSCommand importCommand = new PSCommand();
             importCommand
@@ -361,7 +361,7 @@ namespace Microsoft.PowerShell.EditorServices
                         moduleBasePath,
                         "PowerShellEditorServices.Commands.psd1"));
 
-            return this.ExecuteCommand<PSObject>(importCommand, false, false);
+            return this.ExecuteCommandAsync<PSObject>(importCommand, false, false);
         }
 
         private static bool CheckIfRunspaceNeedsEventHandlers(RunspaceDetails runspaceDetails)
@@ -409,9 +409,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// so that commands can be executed against it directly.
         /// </summary>
         /// <returns>A RunspaceHandle instance that gives access to the session's runspace.</returns>
-        public Task<RunspaceHandle> GetRunspaceHandle()
+        public Task<RunspaceHandle> GetRunspaceHandleAsync()
         {
-            return this.GetRunspaceHandleImpl(CancellationToken.None, isReadLine: false);
+            return this.GetRunspaceHandleImplAsync(CancellationToken.None, isReadLine: false);
         }
 
         /// <summary>
@@ -421,9 +421,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="cancellationToken">A CancellationToken that can be used to cancel the request.</param>
         /// <returns>A RunspaceHandle instance that gives access to the session's runspace.</returns>
-        public Task<RunspaceHandle> GetRunspaceHandle(CancellationToken cancellationToken)
+        public Task<RunspaceHandle> GetRunspaceHandleAsync(CancellationToken cancellationToken)
         {
-            return this.GetRunspaceHandleImpl(cancellationToken, isReadLine: false);
+            return this.GetRunspaceHandleImplAsync(cancellationToken, isReadLine: false);
         }
 
         /// <summary>
@@ -442,12 +442,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// An awaitable Task which will provide results once the command
         /// execution completes.
         /// </returns>
-        public async Task<IEnumerable<TResult>> ExecuteCommand<TResult>(
+        public async Task<IEnumerable<TResult>> ExecuteCommandAsync<TResult>(
             PSCommand psCommand,
             bool sendOutputToHost = false,
             bool sendErrorToHost = true)
         {
-            return await ExecuteCommand<TResult>(psCommand, null, sendOutputToHost, sendErrorToHost);
+            return await ExecuteCommandAsync<TResult>(psCommand, null, sendOutputToHost, sendErrorToHost);
         }
 
         /// <summary>
@@ -470,7 +470,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// An awaitable Task which will provide results once the command
         /// execution completes.
         /// </returns>
-        public Task<IEnumerable<TResult>> ExecuteCommand<TResult>(
+        public Task<IEnumerable<TResult>> ExecuteCommandAsync<TResult>(
             PSCommand psCommand,
             StringBuilder errorMessages,
             bool sendOutputToHost = false,
@@ -478,7 +478,7 @@ namespace Microsoft.PowerShell.EditorServices
             bool addToHistory = false)
         {
             return
-                this.ExecuteCommand<TResult>(
+                this.ExecuteCommandAsync<TResult>(
                     psCommand,
                     errorMessages,
                     new ExecutionOptions
@@ -501,7 +501,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// An awaitable Task which will provide results once the command
         /// execution completes.
         /// </returns>
-        public async Task<IEnumerable<TResult>> ExecuteCommand<TResult>(
+        public async Task<IEnumerable<TResult>> ExecuteCommandAsync<TResult>(
             PSCommand psCommand,
             StringBuilder errorMessages,
             ExecutionOptions executionOptions)
@@ -550,7 +550,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
 
                 // Send the pipeline execution request to the pipeline thread
-                return await threadController.RequestPipelineExecution(
+                return await threadController.RequestPipelineExecutionAsync(
                     new PipelineExecutionRequest<TResult>(
                         this,
                         psCommand,
@@ -579,7 +579,7 @@ namespace Microsoft.PowerShell.EditorServices
                     // don't write output (e.g. command completion)
                     if (executionTarget == ExecutionTarget.InvocationEvent)
                     {
-                        return (await this.InvocationEventQueue.ExecuteCommandOnIdle<TResult>(
+                        return (await this.InvocationEventQueue.ExecuteCommandOnIdleAsync<TResult>(
                             psCommand,
                             errorMessages,
                             executionOptions));
@@ -595,7 +595,7 @@ namespace Microsoft.PowerShell.EditorServices
                             false);
                     }
 
-                    runspaceHandle = await this.GetRunspaceHandle(executionOptions.IsReadLine);
+                    runspaceHandle = await this.GetRunspaceHandleAsync(executionOptions.IsReadLine);
                     if (executionOptions.WriteInputToHost)
                     {
                         this.WriteOutput(psCommand.Commands[0].CommandText, true);
@@ -786,7 +786,7 @@ namespace Microsoft.PowerShell.EditorServices
                             // will exist already so we need to create one and then use it
                             if (runspaceHandle == null)
                             {
-                                runspaceHandle = await this.GetRunspaceHandle();
+                                runspaceHandle = await this.GetRunspaceHandleAsync();
                             }
 
                             sessionDetails = this.GetSessionDetailsInRunspace(runspaceHandle.Runspace);
@@ -825,9 +825,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// An awaitable Task that the caller can use to know when
         /// execution completes.
         /// </returns>
-        public Task ExecuteCommand(PSCommand psCommand)
+        public Task ExecuteCommandAsync(PSCommand psCommand)
         {
-            return this.ExecuteCommand<object>(psCommand);
+            return this.ExecuteCommandAsync<object>(psCommand);
         }
 
         /// <summary>
@@ -835,10 +835,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="scriptString">The script string to execute.</param>
         /// <returns>A Task that can be awaited for the script completion.</returns>
-        public Task<IEnumerable<object>> ExecuteScriptString(
+        public Task<IEnumerable<object>> ExecuteScriptStringAsync(
             string scriptString)
         {
-            return this.ExecuteScriptString(scriptString, false, true);
+            return this.ExecuteScriptStringAsync(scriptString, false, true);
         }
 
         /// <summary>
@@ -847,11 +847,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="scriptString">The script string to execute.</param>
         /// <param name="errorMessages">Error messages from PowerShell will be written to the StringBuilder.</param>
         /// <returns>A Task that can be awaited for the script completion.</returns>
-        public Task<IEnumerable<object>> ExecuteScriptString(
+        public Task<IEnumerable<object>> ExecuteScriptStringAsync(
             string scriptString,
             StringBuilder errorMessages)
         {
-            return this.ExecuteScriptString(scriptString, errorMessages, false, true, false);
+            return this.ExecuteScriptStringAsync(scriptString, errorMessages, false, true, false);
         }
 
         /// <summary>
@@ -861,12 +861,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="writeInputToHost">If true, causes the script string to be written to the host.</param>
         /// <param name="writeOutputToHost">If true, causes the script output to be written to the host.</param>
         /// <returns>A Task that can be awaited for the script completion.</returns>
-        public Task<IEnumerable<object>> ExecuteScriptString(
+        public Task<IEnumerable<object>> ExecuteScriptStringAsync(
             string scriptString,
             bool writeInputToHost,
             bool writeOutputToHost)
         {
-            return this.ExecuteScriptString(scriptString, null, writeInputToHost, writeOutputToHost, false);
+            return this.ExecuteScriptStringAsync(scriptString, null, writeInputToHost, writeOutputToHost, false);
         }
 
         /// <summary>
@@ -877,13 +877,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="writeOutputToHost">If true, causes the script output to be written to the host.</param>
         /// <param name="addToHistory">If true, adds the command to the user's command history.</param>
         /// <returns>A Task that can be awaited for the script completion.</returns>
-        public Task<IEnumerable<object>> ExecuteScriptString(
+        public Task<IEnumerable<object>> ExecuteScriptStringAsync(
             string scriptString,
             bool writeInputToHost,
             bool writeOutputToHost,
             bool addToHistory)
         {
-            return this.ExecuteScriptString(scriptString, null, writeInputToHost, writeOutputToHost, addToHistory);
+            return this.ExecuteScriptStringAsync(scriptString, null, writeInputToHost, writeOutputToHost, addToHistory);
         }
 
         /// <summary>
@@ -895,14 +895,14 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="writeOutputToHost">If true, causes the script output to be written to the host.</param>
         /// <param name="addToHistory">If true, adds the command to the user's command history.</param>
         /// <returns>A Task that can be awaited for the script completion.</returns>
-        public async Task<IEnumerable<object>> ExecuteScriptString(
+        public async Task<IEnumerable<object>> ExecuteScriptStringAsync(
             string scriptString,
             StringBuilder errorMessages,
             bool writeInputToHost,
             bool writeOutputToHost,
             bool addToHistory)
         {
-            return await this.ExecuteCommand<object>(
+            return await this.ExecuteCommandAsync<object>(
                 new PSCommand().AddScript(scriptString.Trim()),
                 errorMessages,
                 new ExecutionOptions()
@@ -920,7 +920,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="arguments">Arguments to pass to the script.</param>
         /// <param name="writeInputToHost">Writes the executed script path and arguments to the host.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
-        public async Task ExecuteScriptWithArgs(string script, string arguments = null, bool writeInputToHost = false)
+        public async Task ExecuteScriptWithArgsAsync(string script, string arguments = null, bool writeInputToHost = false)
         {
             PSCommand command = new PSCommand();
 
@@ -931,7 +931,7 @@ namespace Microsoft.PowerShell.EditorServices
                 try
                 {
                     // Assume we can only debug scripts from the FileSystem provider
-                    string workingDir = (await ExecuteCommand<PathInfo>(
+                    string workingDir = (await ExecuteCommandAsync<PathInfo>(
                         new PSCommand()
                             .AddCommand("Microsoft.PowerShell.Management\\Get-Location")
                             .AddParameter("PSProvider", "FileSystem"),
@@ -991,7 +991,7 @@ namespace Microsoft.PowerShell.EditorServices
                     true);
             }
 
-            await this.ExecuteCommand<object>(
+            await this.ExecuteCommandAsync<object>(
                 command,
                 null,
                 sendOutputToHost: true,
@@ -1003,8 +1003,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// reliquishing control of the pipeline thread during event processing.
         /// </summary>
         /// <remarks>
-        /// This method is called automatically by <see cref="InvokeOnPipelineThread" /> and
-        /// <see cref="ExecuteCommand" />. Consider using them instead of this method directly when
+        /// This method is called automatically by <see cref="InvokeOnPipelineThreadAsync" /> and
+        /// <see cref="ExecuteCommandAsync" />. Consider using them instead of this method directly when
         /// possible.
         /// </remarks>
         internal void ForcePSEventHandling()
@@ -1025,14 +1025,14 @@ namespace Microsoft.PowerShell.EditorServices
         /// An awaitable <see cref="Task" /> that the caller can use to know when execution completes.
         /// </returns>
         /// <remarks>
-        /// This method is called automatically by <see cref="ExecuteCommand" />. Consider using
+        /// This method is called automatically by <see cref="ExecuteCommandAsync" />. Consider using
         /// that method instead of calling this directly when possible.
         /// </remarks>
-        internal async Task InvokeOnPipelineThread(Action<PowerShell> invocationAction)
+        internal async Task InvokeOnPipelineThreadAsync(Action<PowerShell> invocationAction)
         {
             if (this.PromptNest.IsReadLineBusy())
             {
-                await this.InvocationEventQueue.InvokeOnPipelineThread(invocationAction);
+                await this.InvocationEventQueue.InvokeOnPipelineThreadAsync(invocationAction);
                 return;
             }
 
@@ -1065,7 +1065,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// loaded.
         /// </summary>
         /// <returns>A Task that can be awaited for completion.</returns>
-        public async Task LoadHostProfiles()
+        public async Task LoadHostProfilesAsync()
         {
             if (this.profilePaths != null)
             {
@@ -1075,12 +1075,12 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     command = new PSCommand();
                     command.AddCommand(profilePath, false);
-                    await this.ExecuteCommand<object>(command, true, true);
+                    await this.ExecuteCommandAsync<object>(command, true, true);
                 }
 
                 // Gather the session details (particularly the prompt) after
                 // loading the user's profiles.
-                await this.GetSessionDetailsInRunspace();
+                await this.GetSessionDetailsInRunspaceAsync();
             }
         }
 
@@ -1279,12 +1279,12 @@ namespace Microsoft.PowerShell.EditorServices
             this.initialRunspace = null;
         }
 
-        private async Task<RunspaceHandle> GetRunspaceHandle(bool isReadLine)
+        private async Task<RunspaceHandle> GetRunspaceHandleAsync(bool isReadLine)
         {
-            return await this.GetRunspaceHandleImpl(CancellationToken.None, isReadLine);
+            return await this.GetRunspaceHandleImplAsync(CancellationToken.None, isReadLine);
         }
 
-        private async Task<RunspaceHandle> GetRunspaceHandleImpl(CancellationToken cancellationToken, bool isReadLine)
+        private async Task<RunspaceHandle> GetRunspaceHandleImplAsync(CancellationToken cancellationToken, bool isReadLine)
         {
             return await this.PromptNest.GetRunspaceHandleAsync(cancellationToken, isReadLine);
         }
@@ -1446,7 +1446,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.ConsoleReader?.StopCommandLoop();
             this.ConsoleReader?.StartCommandLoop();
 
-            var localPipelineExecutionTask = localThreadController.TakeExecutionRequest();
+            var localPipelineExecutionTask = localThreadController.TakeExecutionRequestAsync();
             var localDebuggerStoppedTask = localThreadController.Exit();
 
             // Wait for off-thread pipeline requests and/or ExitNestedPrompt
@@ -1459,8 +1459,8 @@ namespace Microsoft.PowerShell.EditorServices
                 if (taskIndex == 0)
                 {
                     var localExecutionTask = localPipelineExecutionTask.GetAwaiter().GetResult();
-                    localPipelineExecutionTask = localThreadController.TakeExecutionRequest();
-                    localExecutionTask.Execute().GetAwaiter().GetResult();
+                    localPipelineExecutionTask = localThreadController.TakeExecutionRequestAsync();
+                    localExecutionTask.ExecuteAsync().GetAwaiter().GetResult();
                     continue;
                 }
 
@@ -1494,9 +1494,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// unescaped before calling this method.
         /// </summary>
         /// <param name="path"></param>
-        public async Task SetWorkingDirectory(string path)
+        public async Task SetWorkingDirectoryAsync(string path)
         {
-            await this.SetWorkingDirectory(path, true);
+            await this.SetWorkingDirectoryAsync(path, true);
         }
 
         /// <summary>
@@ -1504,7 +1504,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="path"></param>
         /// <param name="isPathAlreadyEscaped">Specify false to have the path escaped, otherwise specify true if the path has already been escaped.</param>
-        public async Task SetWorkingDirectory(string path, bool isPathAlreadyEscaped)
+        public async Task SetWorkingDirectoryAsync(string path, bool isPathAlreadyEscaped)
         {
             this.InitialWorkingDirectory = path;
 
@@ -1514,7 +1514,7 @@ namespace Microsoft.PowerShell.EditorServices
                 runspaceHandle.Runspace.SessionStateProxy.Path.SetLocation(path);
             }
 
-            await ExecuteCommand<PSObject>(
+            await ExecuteCommandAsync<PSObject>(
                 new PSCommand().AddCommand("Set-Location").AddParameter("Path", path),
                 null,
                 sendOutputToHost: false,
@@ -2040,9 +2040,9 @@ namespace Microsoft.PowerShell.EditorServices
             return this.mostRecentSessionDetails;
         }
 
-        private async Task<SessionDetails> GetSessionDetailsInRunspace()
+        private async Task<SessionDetails> GetSessionDetailsInRunspaceAsync()
         {
-            using (RunspaceHandle runspaceHandle = await this.GetRunspaceHandle())
+            using (RunspaceHandle runspaceHandle = await this.GetRunspaceHandleAsync())
             {
                 return this.GetSessionDetailsInRunspace(runspaceHandle.Runspace);
             }
@@ -2247,7 +2247,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.logger.Write(LogLevel.Verbose, "Starting pipeline thread message loop...");
 
             Task<IPipelineExecutionRequest> localPipelineExecutionTask =
-                localThreadController.TakeExecutionRequest();
+                localThreadController.TakeExecutionRequestAsync();
             Task<DebuggerResumeAction> localDebuggerStoppedTask =
                 localThreadController.Exit();
             while (true)
@@ -2293,8 +2293,8 @@ namespace Microsoft.PowerShell.EditorServices
                     this.logger.Write(LogLevel.Verbose, "Received pipeline thread execution request.");
 
                     IPipelineExecutionRequest executionRequest = localPipelineExecutionTask.Result;
-                    localPipelineExecutionTask = localThreadController.TakeExecutionRequest();
-                    executionRequest.Execute().GetAwaiter().GetResult();
+                    localPipelineExecutionTask = localThreadController.TakeExecutionRequestAsync();
+                    executionRequest.ExecuteAsync().GetAwaiter().GetResult();
 
                     this.logger.Write(LogLevel.Verbose, "Pipeline thread execution completed.");
 

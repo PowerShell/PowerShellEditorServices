@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             string outputText,
             bool includeNewLine = false)
         {
-            return debouncer.Invoke(
+            return debouncer.InvokeAsync(
                 new OutputWrittenEventArgs(
                     outputText,
                     includeNewLine,
@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
     {
         public List<OutputEventBody> OutputEvents { get; } = new List<OutputEventBody>();
 
-        public Task SendEvent<TParams, TRegistrationOptions>(
+        public Task SendEventAsync<TParams, TRegistrationOptions>(
             NotificationType<TParams, TRegistrationOptions> eventType,
             TParams eventParams)
         {
@@ -114,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             return Task.FromResult(true);
         }
 
-        public Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOptions>(
+        public Task<TResult> SendRequestAsync<TParams, TResult, TError, TRegistrationOptions>(
             RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             TParams requestParams, bool waitForResponse)
         {
@@ -122,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             throw new NotImplementedException();
         }
 
-        public Task<TResult> SendRequest<TResult, TError, TRegistrationOptions>(RequestType0<TResult, TError, TRegistrationOptions> requestType0)
+        public Task<TResult> SendRequestAsync<TResult, TError, TRegistrationOptions>(RequestType0<TResult, TError, TRegistrationOptions> requestType0)
         {
             // Legitimately not implemented for these tests.
             throw new NotImplementedException();

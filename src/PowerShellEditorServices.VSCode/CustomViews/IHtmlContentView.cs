@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         /// The HTML content that is placed inside of the page's body tag.
         /// </param>
         /// <returns>A Task which can be awaited for completion.</returns>
-        Task SetContent(string htmlBodyContent);
+        Task SetContentAsync(string htmlBodyContent);
 
         /// <summary>
         /// Sets the HTML content of the view.
@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         /// The HTML content that is placed inside of the page's body tag.
         /// </param>
         /// <returns>A Task which can be awaited for completion.</returns>
-        Task SetContent(HtmlContent htmlContent);
+        Task SetContentAsync(HtmlContent htmlContent);
 
         /// <summary>
         /// Appends HTML body content to the view.
@@ -39,6 +39,6 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         /// The HTML fragment to be appended to the output stream.
         /// </param>
         /// <returns>A Task which can be awaited for completion.</returns>
-        Task AppendContent(string appendedHtmlBodyContent);
+        Task AppendContentAsync(string appendedHtmlBodyContent);
     }
 }

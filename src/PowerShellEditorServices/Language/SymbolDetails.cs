@@ -38,8 +38,8 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Constructors
 
-        static internal async Task<SymbolDetails> Create(
-            SymbolReference symbolReference, 
+        static internal async Task<SymbolDetails> CreateAsync(
+            SymbolReference symbolReference,
             PowerShellContext powerShellContext)
         {
             SymbolDetails symbolDetails = new SymbolDetails();
@@ -49,14 +49,14 @@ namespace Microsoft.PowerShell.EditorServices
             if (symbolReference.SymbolType == SymbolType.Function)
             {
                 CommandInfo commandInfo =
-                    await CommandHelpers.GetCommandInfo(
+                    await CommandHelpers.GetCommandInfoAsync(
                         symbolReference.SymbolName,
                         powerShellContext);
 
                 if (commandInfo != null)
                 {
                     symbolDetails.Documentation =
-                        await CommandHelpers.GetCommandSynopsis(
+                        await CommandHelpers.GetCommandSynopsisAsync(
                             commandInfo,
                             powerShellContext);
 

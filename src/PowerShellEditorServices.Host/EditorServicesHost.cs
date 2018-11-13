@@ -195,7 +195,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             this.languageServiceListener = CreateServiceListener(MessageProtocolType.LanguageServer, config);
 
-            this.languageServiceListener.ClientConnect += this.OnLanguageServiceClientConnect;
+            this.languageServiceListener.ClientConnect += this.OnLanguageServiceClientConnectAsync;
             this.languageServiceListener.Start();
 
             this.logger.Write(
@@ -205,7 +205,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     config.TransportType, config.Endpoint));
         }
 
-        private async void OnLanguageServiceClientConnect(
+        private async void OnLanguageServiceClientConnectAsync(
             object sender,
             ChannelBase serverChannel)
         {
@@ -235,7 +235,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     this.serverCompletedTask,
                     this.logger);
 
-            await this.editorSession.PowerShellContext.ImportCommandsModule(
+            await this.editorSession.PowerShellContext.ImportCommandsModuleAsync(
                 Path.Combine(
                     Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
                     @"..\Commands"));

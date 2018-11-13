@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             this.editorOperations = editorOperations;
         }
 
-        #endregion 
+        #endregion
 
         #region Public Methods
 
@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="message">The message to be shown.</param>
         public void ShowInformationMessage(string message)
         {
-            this.editorOperations.ShowInformationMessage(message).Wait();
+            this.editorOperations.ShowInformationMessageAsync(message).Wait();
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="message">The message to be shown.</param>
         public void ShowErrorMessage(string message)
         {
-            this.editorOperations.ShowErrorMessage(message).Wait();
+            this.editorOperations.ShowErrorMessageAsync(message).Wait();
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="message">The message to be shown.</param>
         public void ShowWarningMessage(string message)
         {
-            this.editorOperations.ShowWarningMessage(message).Wait();
+            this.editorOperations.ShowWarningMessageAsync(message).Wait();
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="message">The message to be shown.</param>
         public void SetStatusBarMessage(string message)
         {
-            this.editorOperations.SetStatusBarMessage(message, null).Wait();
+            this.editorOperations.SetStatusBarMessageAsync(message, null).Wait();
         }
 
         /// <summary>
@@ -75,9 +75,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="timeout">A timeout in milliseconds for how long the message should remain visible.</param>
         public void SetStatusBarMessage(string message, int timeout)
         {
-            this.editorOperations.SetStatusBarMessage(message, timeout).Wait();
+            this.editorOperations.SetStatusBarMessageAsync(message, timeout).Wait();
         }
 
-        #endregion 
+        #endregion
     }
 }
