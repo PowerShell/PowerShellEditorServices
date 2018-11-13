@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
         private Dictionary<string, int[]> breakpointsPerFile =
             new Dictionary<string, int[]>();
 
-        public async Task<List<BreakpointDetails>> SetLineBreakpoints(
+        public async Task<List<BreakpointDetails>> SetLineBreakpointsAsync(
             PowerShellContext powerShellContext,
             string scriptPath,
             BreakpointDetails[] breakpoints)
@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
             // Run Enable-DscDebug as a script because running it as a PSCommand
             // causes an error which states that the Breakpoint parameter has not
             // been passed.
-            await powerShellContext.ExecuteScriptString(
+            await powerShellContext.ExecuteScriptStringAsync(
                 hashtableString.Length > 0
                     ? $"Enable-DscDebug -Breakpoint {hashtableString}"
                     : "Disable-DscDebug",

@@ -17,8 +17,8 @@ using Owin.WebSocket;
 namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
 {
     /// <summary>
-    /// Implementation of <see cref="ChannelBase"/> that implements the streams necessary for 
-    /// communicating via OWIN WebSockets. 
+    /// Implementation of <see cref="ChannelBase"/> that implements the streams necessary for
+    /// communicating via OWIN WebSockets.
     /// </summary>
     public class WebSocketServerChannel : ChannelBase
     {
@@ -42,22 +42,22 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
 
             this.MessageWriter =
                 new MessageWriter(
-                    new WebSocketStream(socketConnection), 
+                    new WebSocketStream(socketConnection),
                     messageSerializer);
         }
 
         /// <summary>
-        /// Dispatches data received during calls to OnMessageReceived in the <see cref="WebSocketConnection"/> class.
+        /// Dispatches data received during calls to OnMessageReceivedAsync in the <see cref="WebSocketConnection"/> class.
         /// </summary>
         /// <remarks>
-        /// This method calls an overriden version of the <see cref="MessageDispatcher"/> that dispatches messages on 
-        /// demand rather than running on a background thread. 
+        /// This method calls an overriden version of the <see cref="MessageDispatcher"/> that dispatches messages on
+        /// demand rather than running on a background thread.
         /// </remarks>
         /// <param name="message"></param>
         /// <returns></returns>
-        public async Task Dispatch(ArraySegment<byte> message)
+        public async Task DispatchAsync(ArraySegment<byte> message)
         {
-            //Clear our stream 
+            //Clear our stream
             inStream.SetLength(0);
 
             //Write data and dispatch to handlers
@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
             this.socketConnection.Close(WebSocketCloseStatus.NormalClosure, "Server shutting down");
         }
 
-        public override Task WaitForConnection()
+        public override Task WaitForConnectionAsync()
         {
             // TODO: Need to update behavior here
             return Task.FromResult(true);
@@ -78,11 +78,11 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
     }
 
     /// <summary>
-    /// Overriden <see cref="MemoryStream"/> that sends data through a <see cref="WebSocketConnection"/> during the FlushAsync call. 
+    /// Overriden <see cref="MemoryStream"/> that sends data through a <see cref="WebSocketConnection"/> during the FlushAsync call.
     /// </summary>
     /// <remarks>
     /// FlushAsync will send data via the SendBinary method of the <see cref="WebSocketConnection"/> class. The memory streams length will
-    /// then be set to 0 to reset the stream for additional data to be written. 
+    /// then be set to 0 to reset the stream for additional data to be written.
     /// </remarks>
     internal class WebSocketStream : MemoryStream
     {
@@ -106,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
     /// </summary>
     public abstract class EditorServiceWebSocketConnection : WebSocketConnection
     {
-        protected EditorServiceWebSocketConnection() 
+        protected EditorServiceWebSocketConnection()
         {
             Channel = new WebSocketServerChannel(this);
         }
@@ -120,9 +120,9 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
             Server.Start();
         }
 
-        public override async Task OnMessageReceived(ArraySegment<byte> message, WebSocketMessageType type)
+        public override async Task OnMessageReceivedAsync(ArraySegment<byte> message, WebSocketMessageType type)
         {
-            await Channel.Dispatch(message);
+            await Channel.DispatchAsync(message);
         }
 
         public override Task OnCloseAsync(WebSocketCloseStatus? closeStatus, string closeStatusDescription)

@@ -82,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 codeLens.ScriptExtent.StartLineNumber,
                 codeLens.ScriptExtent.StartColumnNumber);
 
-            FindReferencesResult referencesResult = await _editorSession.LanguageService.FindReferencesOfSymbol(
+            FindReferencesResult referencesResult = await _editorSession.LanguageService.FindReferencesOfSymbolAsync(
                 foundSymbol,
                 references,
                 _editorSession.Workspace);

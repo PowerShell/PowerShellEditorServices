@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
         /// Checks if Plaster is installed on the user's machine.
         /// </summary>
         /// <returns>A Task that can be awaited until the check is complete.  The result will be true if Plaster is installed.</returns>
-        public async Task<bool> ImportPlasterIfInstalled()
+        public async Task<bool> ImportPlasterIfInstalledAsync()
         {
             if (!this.isPlasterInstalled.HasValue)
             {
@@ -73,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
                 this.logger.Write(LogLevel.Verbose, "Checking if Plaster is installed...");
 
                 var getResult =
-                    await this.powerShellContext.ExecuteCommand<PSObject>(
+                    await this.powerShellContext.ExecuteCommandAsync<PSObject>(
                         psCommand, false, false);
 
                 PSObject moduleObject = getResult.First();
@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
                         .AddParameter("PassThru");
 
                     var importResult =
-                        await this.powerShellContext.ExecuteCommand<object>(
+                        await this.powerShellContext.ExecuteCommandAsync<object>(
                             psCommand, false, false);
 
                     this.isPlasterLoaded = importResult.Any();
@@ -124,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
         /// included templates.
         /// </param>
         /// <returns>A Task which can be awaited for the TemplateDetails list to be returned.</returns>
-        public async Task<TemplateDetails[]> GetAvailableTemplates(
+        public async Task<TemplateDetails[]> GetAvailableTemplatesAsync(
             bool includeInstalledModules)
         {
             if (!this.isPlasterLoaded)
@@ -141,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
             }
 
             var templateObjects =
-                await this.powerShellContext.ExecuteCommand<PSObject>(
+                await this.powerShellContext.ExecuteCommandAsync<PSObject>(
                     psCommand, false, false);
 
             this.logger.Write(
@@ -162,7 +162,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
         /// <param name="templatePath">The folder path containing the template.</param>
         /// <param name="destinationPath">The folder path where the files will be created.</param>
         /// <returns>A boolean-returning Task which communicates success or failure.</returns>
-        public async Task<bool> CreateFromTemplate(
+        public async Task<bool> CreateFromTemplateAsync(
             string templatePath,
             string destinationPath)
         {
@@ -176,7 +176,7 @@ namespace Microsoft.PowerShell.EditorServices.Templates
             command.AddParameter("DestinationPath", destinationPath);
 
             var errorString = new System.Text.StringBuilder();
-            await this.powerShellContext.ExecuteCommand<PSObject>(
+            await this.powerShellContext.ExecuteCommandAsync<PSObject>(
                 command,
                 errorString,
                 new ExecutionOptions

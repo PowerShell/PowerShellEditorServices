@@ -198,7 +198,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, Packa
         # dotnet --version can return a semver that System.Version can't handle
         # e.g.: 2.1.300-preview-01. The replace operator is used to remove any build suffix.
         $version = (& $dotnetExePath --version) -replace '[+-].*$',''
-        if ([version]$version -ge [version]$script:RequiredSdkVersion) {
+        if ($version -and [version]$version -ge [version]$script:RequiredSdkVersion) {
             $script:dotnetExe = $dotnetExePath
         }
         else {

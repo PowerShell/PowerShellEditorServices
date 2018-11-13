@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
             this.serverUrl = url;
         }
 
-        public override async Task WaitForConnection()
+        public override async Task WaitForConnectionAsync()
         {
             try
             {
@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
                 {
                     Logger.Write(LogLevel.Warning,
                         string.Format("Failed to connect to WebSocket server. Error was '{0}'", wsException.Message));
-                   
+
                 }
 
                 throw;
@@ -99,7 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
     }
 
     /// <summary>
-    /// Extension of <see cref="MemoryStream"/> that sends data to a WebSocket during FlushAsync 
+    /// Extension of <see cref="MemoryStream"/> that sends data to a WebSocket during FlushAsync
     /// and reads during WriteAsync.
     /// </summary>
     internal class ClientWebSocketStream : MemoryStream
@@ -110,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
         /// Constructor
         /// </summary>
         /// <remarks>
-        /// It is expected that the socket is in an Open state. 
+        /// It is expected that the socket is in an Open state.
         /// </remarks>
         /// <param name="socket"></param>
         public ClientWebSocketStream(ClientWebSocket socket)
@@ -119,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
         }
 
         /// <summary>
-        /// Reads from the WebSocket. 
+        /// Reads from the WebSocket.
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="offset"></param>
@@ -138,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Channel.WebSocket
             {
                 result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer, offset, count), cancellationToken);
             } while (!result.EndOfMessage);
-          
+
             if (result.MessageType == WebSocketMessageType.Close)
             {
                 await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", cancellationToken);

@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// A task object representing the asynchronous operation. The Result property will return
         /// the output of the command invocation.
         /// </returns>
-        internal async Task<IEnumerable<TResult>> RequestPipelineExecution<TResult>(
+        internal async Task<IEnumerable<TResult>> RequestPipelineExecutionAsync<TResult>(
             PipelineExecutionRequest<TResult> executionRequest)
         {
             await PipelineRequestQueue.EnqueueAsync(executionRequest);
@@ -78,7 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
         /// A task object representing the asynchronous operation. The Result property will return
         /// the retrieved pipeline execution request.
         /// </returns>
-        internal async Task<IPipelineExecutionRequest> TakeExecutionRequest()
+        internal async Task<IPipelineExecutionRequest> TakeExecutionRequestAsync()
         {
             return await PipelineRequestQueue.DequeueAsync();
         }

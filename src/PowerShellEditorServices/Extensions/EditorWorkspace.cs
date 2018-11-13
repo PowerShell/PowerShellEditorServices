@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         public void NewFile()
         {
-            this.editorOperations.NewFile().Wait();
+            this.editorOperations.NewFileAsync().Wait();
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="filePath">The path to the file to be opened.</param>
         public void OpenFile(string filePath)
         {
-            this.editorOperations.OpenFile(filePath).Wait();
+            this.editorOperations.OpenFileAsync(filePath).Wait();
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="preview">Determines wether the file is opened as a preview or as a durable editor.</param>
         public void OpenFile(string filePath, bool preview)
         {
-            this.editorOperations.OpenFile(filePath, preview).Wait();
+            this.editorOperations.OpenFileAsync(filePath, preview).Wait();
         }
 
         #endregion

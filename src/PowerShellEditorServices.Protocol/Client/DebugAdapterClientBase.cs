@@ -28,12 +28,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
                 logger);
         }
 
-        public async Task Start()
+        public async Task StartAsync()
         {
             this.protocolEndpoint.Start();
 
             // Initialize the debug adapter
-            await this.SendRequest(
+            await this.SendRequestAsync(
                 InitializeRequest.Type,
                 new InitializeRequestArguments
                 {
@@ -48,34 +48,34 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Client
             this.protocolEndpoint.Stop();
         }
 
-        public async Task LaunchScript(string scriptFilePath)
+        public async Task LaunchScriptAsync(string scriptFilePath)
         {
-            await this.SendRequest(
+            await this.SendRequestAsync(
                 LaunchRequest.Type,
                 new LaunchRequestArguments {
                     Script = scriptFilePath
                 },
                 true);
 
-            await this.SendRequest(
+            await this.SendRequestAsync(
                 ConfigurationDoneRequest.Type,
                 null,
                 true);
         }
 
-        public Task SendEvent<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType, TParams eventParams)
+        public Task SendEventAsync<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType, TParams eventParams)
         {
-            return ((IMessageSender)protocolEndpoint).SendEvent(eventType, eventParams);
+            return ((IMessageSender)protocolEndpoint).SendEventAsync(eventType, eventParams);
         }
 
-        public Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOptions>(RequestType<TParams, TResult, TError, TRegistrationOptions> requestType, TParams requestParams, bool waitForResponse)
+        public Task<TResult> SendRequestAsync<TParams, TResult, TError, TRegistrationOptions>(RequestType<TParams, TResult, TError, TRegistrationOptions> requestType, TParams requestParams, bool waitForResponse)
         {
-            return ((IMessageSender)protocolEndpoint).SendRequest(requestType, requestParams, waitForResponse);
+            return ((IMessageSender)protocolEndpoint).SendRequestAsync(requestType, requestParams, waitForResponse);
         }
 
-        public Task<TResult> SendRequest<TResult, TError, TRegistrationOptions>(RequestType0<TResult, TError, TRegistrationOptions> requestType0)
+        public Task<TResult> SendRequestAsync<TResult, TError, TRegistrationOptions>(RequestType0<TResult, TError, TRegistrationOptions> requestType0)
         {
-            return ((IMessageSender)protocolEndpoint).SendRequest(requestType0);
+            return ((IMessageSender)protocolEndpoint).SendRequestAsync(requestType0);
         }
 
         public void SetRequestHandler<TParams, TResult, TError, TRegistrationOptions>(RequestType<TParams, TResult, TError, TRegistrationOptions> requestType, Func<TParams, RequestContext<TResult>, Task> requestHandler)

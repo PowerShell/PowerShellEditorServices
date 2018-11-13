@@ -34,10 +34,10 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
             this.logger = logger;
         }
 
-        internal Task Create()
+        internal Task CreateAsync()
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     NewCustomViewRequest.Type,
                     new NewCustomViewRequest
                     {
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public Task Show(ViewColumn viewColumn)
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     ShowCustomViewRequest.Type,
                     new ShowCustomViewRequest
                     {
@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public Task Close()
         {
             return
-                this.messageSender.SendRequest(
+                this.messageSender.SendRequestAsync(
                     CloseCustomViewRequest.Type,
                     new CloseCustomViewRequest
                     {

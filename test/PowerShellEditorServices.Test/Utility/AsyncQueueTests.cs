@@ -26,11 +26,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             {
                 // Start 5 consumers
                 await Task.WhenAll(
-                    Task.Run(() => ConsumeItems(inputQueue, outputItems, cancellationTokenSource.Token)),
-                    Task.Run(() => ConsumeItems(inputQueue, outputItems, cancellationTokenSource.Token)),
-                    Task.Run(() => ConsumeItems(inputQueue, outputItems, cancellationTokenSource.Token)),
-                    Task.Run(() => ConsumeItems(inputQueue, outputItems, cancellationTokenSource.Token)),
-                    Task.Run(() => ConsumeItems(inputQueue, outputItems, cancellationTokenSource.Token)),
+                    Task.Run(() => ConsumeItemsAsync(inputQueue, outputItems, cancellationTokenSource.Token)),
+                    Task.Run(() => ConsumeItemsAsync(inputQueue, outputItems, cancellationTokenSource.Token)),
+                    Task.Run(() => ConsumeItemsAsync(inputQueue, outputItems, cancellationTokenSource.Token)),
+                    Task.Run(() => ConsumeItemsAsync(inputQueue, outputItems, cancellationTokenSource.Token)),
+                    Task.Run(() => ConsumeItemsAsync(inputQueue, outputItems, cancellationTokenSource.Token)),
                     Task.Run(
                         async () =>
                         {
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             Assert.Equal(1, taskTwo.Result);
         }
 
-        private async Task ConsumeItems(
+        private async Task ConsumeItemsAsync(
             AsyncQueue<int> inputQueue,
             ConcurrentBag<int> outputItems,
             CancellationToken cancellationToken)

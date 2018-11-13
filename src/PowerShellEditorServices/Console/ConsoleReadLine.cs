@@ -34,17 +34,17 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         #region Public Methods
 
-        public Task<string> ReadCommandLine(CancellationToken cancellationToken)
+        public Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
         {
             return this.ReadLineAsync(true, cancellationToken);
         }
 
-        public Task<string> ReadSimpleLine(CancellationToken cancellationToken)
+        public Task<string> ReadSimpleLineAsync(CancellationToken cancellationToken)
         {
             return this.ReadLineAsync(false, cancellationToken);
         }
 
-        public async Task<SecureString> ReadSecureLine(CancellationToken cancellationToken)
+        public async Task<SecureString> ReadSecureLineAsync(CancellationToken cancellationToken)
         {
             SecureString secureString = new SecureString();
 
@@ -208,13 +208,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
                                 command.AddParameter("Options", null);
 
                                 var results =
-                                    await this.powerShellContext.ExecuteCommand<CommandCompletion>(command, false, false);
+                                    await this.powerShellContext.ExecuteCommandAsync<CommandCompletion>(command, false, false);
 
                                 currentCompletion = results.FirstOrDefault();
                             }
                             else
                             {
-                                using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandle())
+                                using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandleAsync())
                                 using (PowerShell powerShell = PowerShell.Create())
                                 {
                                     powerShell.Runspace = runspaceHandle.Runspace;
@@ -326,7 +326,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
                             command.AddCommand("Get-History");
 
                             currentHistory =
-                                await this.powerShellContext.ExecuteCommand<PSObject>(
+                                await this.powerShellContext.ExecuteCommandAsync<PSObject>(
                                     command,
                                     false,
                                     false) as Collection<PSObject>;

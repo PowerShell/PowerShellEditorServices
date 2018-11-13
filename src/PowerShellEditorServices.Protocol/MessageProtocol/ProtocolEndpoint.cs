@@ -121,10 +121,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Message Sending
 
-        public Task<TResult> SendRequest<TResult, TError, TRegistrationOptions>(
+        public Task<TResult> SendRequestAsync<TResult, TError, TRegistrationOptions>(
             RequestType0<TResult, TError, TRegistrationOptions> requestType0)
         {
-            return this.SendRequest(
+            return this.SendRequestAsync(
                 RequestType<Object, TResult, TError, TRegistrationOptions>.ConvertToRequestType(requestType0),
                  null);
         }
@@ -138,14 +138,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         /// <param name="requestType"></param>
         /// <param name="requestParams"></param>
         /// <returns></returns>
-        public Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOptions>(
+        public Task<TResult> SendRequestAsync<TParams, TResult, TError, TRegistrationOptions>(
             RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             TParams requestParams)
         {
-            return this.SendRequest(requestType, requestParams, true);
+            return this.SendRequestAsync(requestType, requestParams, true);
         }
 
-        public async Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOptions>(
+        public async Task<TResult> SendRequestAsync<TParams, TResult, TError, TRegistrationOptions>(
             RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             TParams requestParams,
             bool waitForResponse)
@@ -170,7 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     responseTask);
             }
 
-            await this.protocolChannel.MessageWriter.WriteRequest<TParams, TResult, TError, TRegistrationOptions>(
+            await this.protocolChannel.MessageWriter.WriteRequestAsync<TParams, TResult, TError, TRegistrationOptions>(
                 requestType,
                 requestParams,
                 this.currentMessageId);
@@ -198,7 +198,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         /// <param name="eventType">The type of event being sent.</param>
         /// <param name="eventParams">The event parameters being sent.</param>
         /// <returns>A Task that tracks completion of the send operation.</returns>
-        public Task SendEvent<TParams, TRegistrationOptions>(
+        public Task SendEventAsync<TParams, TRegistrationOptions>(
             NotificationType<TParams, TRegistrationOptions> eventType,
             TParams eventParams)
         {
@@ -221,7 +221,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 this.SynchronizationContext.Post(
                     async (obj) =>
                     {
-                        await this.protocolChannel.MessageWriter.WriteEvent(
+                        await this.protocolChannel.MessageWriter.WriteEventAsync(
                             eventType,
                             eventParams);
 
@@ -232,7 +232,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
             else
             {
-                return this.protocolChannel.MessageWriter.WriteEvent(
+                return this.protocolChannel.MessageWriter.WriteEventAsync(
                     eventType,
                     eventParams);
             }
@@ -261,7 +261,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             this.messageLoopThread = new AsyncContextThread("Message Dispatcher");
             this.messageLoopThread
                 .Run(
-                    () => this.ListenForMessages(this.messageLoopCancellationToken.Token),
+                    () => this.ListenForMessagesAsync(this.messageLoopCancellationToken.Token),
                     this.Logger)
                 .ContinueWith(this.OnListenTaskCompleted);
         }
@@ -311,7 +311,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Private Methods
 
-        private async Task ListenForMessages(CancellationToken cancellationToken)
+        private async Task ListenForMessagesAsync(CancellationToken cancellationToken)
         {
             this.SynchronizationContext = SynchronizationContext.Current;
 
@@ -324,7 +324,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 try
                 {
                     // Read a message from the channel
-                    newMessage = await this.protocolChannel.MessageReader.ReadMessage();
+                    newMessage = await this.protocolChannel.MessageReader.ReadMessageAsync();
                 }
                 catch (MessageParseException e)
                 {
@@ -376,7 +376,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     else
                     {
                         // Process the message
-                        await this.messageDispatcher.DispatchMessage(
+                        await this.messageDispatcher.DispatchMessageAsync(
                             newMessage,
                             this.protocolChannel.MessageWriter);
                     }

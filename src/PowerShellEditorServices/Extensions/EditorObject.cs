@@ -105,7 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <returns>A instance of the EditorContext class.</returns>
         public EditorContext GetEditorContext()
         {
-            return this.editorOperations.GetEditorContext().Result;
+            return this.editorOperations.GetEditorContextAsync().Result;
         }
     }
 }

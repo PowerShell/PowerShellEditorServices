@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
 
             // Write the message and then roll back the stream to be read
             // TODO: This will need to be redone!
-            await messageWriter.WriteMessage(Message.Event("testEvent", null));
+            await messageWriter.WriteMessageAsync(Message.Event("testEvent", null));
             outputStream.Seek(0, SeekOrigin.Begin);
 
             string expectedHeaderString =
@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
             inputStream.Flush();
             inputStream.Seek(0, SeekOrigin.Begin);
 
-            Message messageResult = messageReader.ReadMessage().Result;
+            Message messageResult = messageReader.ReadMessageAsync().Result;
             Assert.Equal("testEvent", messageResult.Method);
 
             inputStream.Dispose();
@@ -123,7 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
             // Read the written messages from the stream
             for (int i = 0; i < overflowMessageCount; i++)
             {
-                Message messageResult = messageReader.ReadMessage().Result;
+                Message messageResult = messageReader.ReadMessageAsync().Result;
                 Assert.Equal("testEvent", messageResult.Method);
             }
 
@@ -152,7 +152,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.MessageProtocol
             inputStream.Flush();
             inputStream.Seek(0, SeekOrigin.Begin);
 
-            Message messageResult = messageReader.ReadMessage().Result;
+            Message messageResult = messageReader.ReadMessageAsync().Result;
             Assert.Equal("testEvent", messageResult.Method);
 
             inputStream.Dispose();

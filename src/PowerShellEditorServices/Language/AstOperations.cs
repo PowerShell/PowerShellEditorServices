@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// A CommandCompletion instance that contains completions for the
         /// symbol at the given offset.
         /// </returns>
-        static public async Task<CommandCompletion> GetCompletions(
+        static public async Task<CommandCompletion> GetCompletionsAsync(
             Ast scriptAst,
             Token[] currentTokens,
             int fileOffset,
@@ -95,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices
                 // main runspace.
                 if (powerShellContext.IsCurrentRunspaceOutOfProcess())
                 {
-                    using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandle(cancellationToken))
+                    using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandleAsync(cancellationToken))
                     using (PowerShell powerShell = PowerShell.Create())
                     {
                         powerShell.Runspace = runspaceHandle.Runspace;
@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
 
                 CommandCompletion commandCompletion = null;
-                await powerShellContext.InvokeOnPipelineThread(
+                await powerShellContext.InvokeOnPipelineThreadAsync(
                     pwsh =>
                     {
                         stopwatch.Start();

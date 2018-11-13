@@ -283,7 +283,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         public async Task LanguageServiceFindsDetailsForBuiltInCommand()
         {
             SymbolDetails symbolDetails =
-                await this.languageService.FindSymbolDetailsAtLocation(
+                await this.languageService.FindSymbolDetailsAtLocationAsync(
                     this.GetScriptFile(FindsDetailsForBuiltInCommand.SourceDetails),
                     FindsDetailsForBuiltInCommand.SourceDetails.StartLineNumber,
                     FindsDetailsForBuiltInCommand.SourceDetails.StartColumnNumber);
@@ -366,7 +366,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             // Run the completions request
             return
-                await this.languageService.GetCompletionsInFile(
+                await this.languageService.GetCompletionsInFileAsync(
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);
@@ -375,7 +375,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private async Task<ParameterSetSignatures> GetParamSetSignatures(ScriptRegion scriptRegion)
         {
             return
-                await this.languageService.FindParameterSetsInFile(
+                await this.languageService.FindParameterSetsInFileAsync(
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);
@@ -394,7 +394,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.NotNull(symbolReference);
 
             return
-                await this.languageService.GetDefinitionOfSymbol(
+                await this.languageService.GetDefinitionOfSymbolAsync(
                     scriptFile,
                     symbolReference,
                     workspace);
@@ -418,7 +418,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.NotNull(symbolReference);
 
             return
-                await this.languageService.FindReferencesOfSymbol(
+                await this.languageService.FindReferencesOfSymbolAsync(
                     symbolReference,
                     this.workspace.ExpandScriptReferences(scriptFile),
                     this.workspace);

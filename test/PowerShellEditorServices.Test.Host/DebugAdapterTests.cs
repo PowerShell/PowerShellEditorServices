@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             this.debugAdapterClient =
                 new DebugAdapterClient(
-                    await NamedPipeClientChannel.Connect(
+                    await NamedPipeClientChannel.ConnectAsync(
                         pipeNames.Item2,
                         MessageProtocolType.DebugAdapter,
                         this.logger),
@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             this.messageSender = this.debugAdapterClient;
             this.messageHandlers = this.debugAdapterClient;
 
-            await this.debugAdapterClient.Start();
+            await this.debugAdapterClient.StartAsync();
         }
 
         public Task DisposeAsync()
@@ -136,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
         private async Task LaunchScript(string scriptPath)
         {
-            await this.debugAdapterClient.LaunchScript(scriptPath);
+            await this.debugAdapterClient.LaunchScriptAsync(scriptPath);
         }
     }
 }

@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices
                     Task.Factory.StartNew(
                         async () =>
                         {
-                            await this.StartReplLoop(this.commandLoopCancellationToken.Token);
+                            await this.StartReplLoopAsync(this.commandLoopCancellationToken.Token);
                         });
             }
             else
@@ -198,7 +198,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// A CancellationToken used to cancel the command line request.
         /// </param>
         /// <returns>A Task that can be awaited for the resulting input string.</returns>
-        protected abstract Task<string> ReadCommandLine(CancellationToken cancellationToken);
+        protected abstract Task<string> ReadCommandLineAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Creates an InputPrompt handle to use for displaying input
@@ -278,7 +278,7 @@ namespace Microsoft.PowerShell.EditorServices
             CancellationTokenSource cancellationToken = new CancellationTokenSource();
             Task<Dictionary<string, object>> promptTask =
                 this.CreateInputPromptHandler()
-                    .PromptForInput(
+                    .PromptForInputAsync(
                         promptCaption,
                         promptMessage,
                         fields,
@@ -333,7 +333,7 @@ namespace Microsoft.PowerShell.EditorServices
             CancellationTokenSource cancellationToken = new CancellationTokenSource();
             Task<int> promptTask =
                 this.CreateChoicePromptHandler()
-                    .PromptForChoice(
+                    .PromptForChoiceAsync(
                         promptCaption,
                         promptMessage,
                         choices,
@@ -372,7 +372,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             Task<Dictionary<string, object>> promptTask =
                 this.CreateInputPromptHandler()
-                    .PromptForInput(
+                    .PromptForInputAsync(
                         promptCaption,
                         promptMessage,
                         new FieldDetails[] { new CredentialFieldDetails("Credential", "Credential", userName) },
@@ -446,7 +446,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             Task<string> promptTask =
                 this.CreateInputPromptHandler()
-                    .PromptForInput(cancellationToken.Token);
+                    .PromptForInputAsync(cancellationToken.Token);
 
             // Run the prompt task and wait for it to return
             this.WaitForPromptCompletion(
@@ -467,7 +467,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             Task<SecureString> promptTask =
                 this.CreateInputPromptHandler()
-                    .PromptForSecureInput(cancellationToken.Token);
+                    .PromptForSecureInputAsync(cancellationToken.Token);
 
             // Run the prompt task and wait for it to return
             this.WaitForPromptCompletion(
@@ -621,7 +621,7 @@ namespace Microsoft.PowerShell.EditorServices
             CancellationTokenSource cancellationToken = new CancellationTokenSource();
             Task<int[]> promptTask =
                 this.CreateChoicePromptHandler()
-                    .PromptForChoice(
+                    .PromptForChoiceAsync(
                         promptCaption,
                         promptMessage,
                         choices,
@@ -644,7 +644,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private Coordinates lastPromptLocation;
 
-        private async Task WritePromptStringToHost(CancellationToken cancellationToken)
+        private async Task WritePromptStringToHostAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -665,7 +665,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             cancellationToken.ThrowIfCancellationRequested();
             string promptString =
-                (await this.powerShellContext.ExecuteCommand<PSObject>(promptCommand, false, false))
+                (await this.powerShellContext.ExecuteCommandAsync<PSObject>(promptCommand, false, false))
                     .Select(pso => pso.BaseObject)
                     .OfType<string>()
                     .FirstOrDefault() ?? "PS> ";
@@ -734,7 +734,7 @@ namespace Microsoft.PowerShell.EditorServices
         internal ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Yellow;
         internal ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.DarkCyan;
 
-        private async Task StartReplLoop(CancellationToken cancellationToken)
+        private async Task StartReplLoopAsync(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -743,7 +743,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                 try
                 {
-                    await this.WritePromptStringToHost(cancellationToken);
+                    await this.WritePromptStringToHostAsync(cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -753,7 +753,7 @@ namespace Microsoft.PowerShell.EditorServices
                 try
                 {
                     originalCursorTop = await ConsoleProxy.GetCursorTopAsync(cancellationToken);
-                    commandString = await this.ReadCommandLine(cancellationToken);
+                    commandString = await this.ReadCommandLineAsync(cancellationToken);
                 }
                 catch (PipelineStoppedException)
                 {
@@ -790,7 +790,7 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     var unusedTask =
                         this.powerShellContext
-                            .ExecuteScriptString(
+                            .ExecuteScriptStringAsync(
                                 commandString,
                                 writeInputToHost: false,
                                 writeOutputToHost: true,
@@ -949,7 +949,7 @@ namespace Microsoft.PowerShell.EditorServices
                     eventArgs.HadErrors))
             {
                 this.WriteOutput(string.Empty, true);
-                var unusedTask = this.WritePromptStringToHost(CancellationToken.None);
+                var unusedTask = this.WritePromptStringToHostAsync(CancellationToken.None);
             }
         }
 

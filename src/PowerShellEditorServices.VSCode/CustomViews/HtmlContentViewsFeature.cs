@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         {
         }
 
-        public async Task<IHtmlContentView> CreateHtmlContentView(string viewTitle)
+        public async Task<IHtmlContentView> CreateHtmlContentViewAsync(string viewTitle)
         {
             HtmlContentView htmlView =
                 new HtmlContentView(
@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                     this.messageSender,
                     this.logger);
 
-            await htmlView.Create();
+            await htmlView.CreateAsync();
             this.AddView(htmlView);
 
             return htmlView;

@@ -75,12 +75,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Public Methods
 
-        public async Task<Message> ReadMessage()
+        public async Task<Message> ReadMessageAsync()
         {
             string messageContent = null;
 
             // Do we need to read more data or can we process the existing buffer?
-            while (!this.needsMoreData || await this.ReadNextChunk())
+            while (!this.needsMoreData || await this.ReadNextChunkAsync())
             {
                 // Clear the flag since we should have what we need now
                 this.needsMoreData = false;
@@ -144,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         #region Private Methods
 
-        private async Task<bool> ReadNextChunk()
+        private async Task<bool> ReadNextChunkAsync()
         {
             // Do we need to resize the buffer?  See if less than 1/4 of the space is left.
             if (((double)(this.messageBuffer.Length - this.bufferEndOffset) / this.messageBuffer.Length) < 0.25)
