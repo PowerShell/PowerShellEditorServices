@@ -1668,22 +1668,23 @@ function __Expand-Alias {
             Position start = diagnostic.Range.Start;
             Position end = diagnostic.Range.End;
 
-            var sb = new StringBuilder(256);
-            sb.Append(diagnostic.Source ?? "?");
-            sb.Append("_");
-            sb.Append(diagnostic.Code ?? "?");
-            sb.Append("_");
-            sb.Append((diagnostic.Severity != null) ? diagnostic.Severity.ToString() : "?");
-            sb.Append("_");
-            sb.Append(start.Line);
-            sb.Append(":");
-            sb.Append(start.Character);
-            sb.Append("-");
-            sb.Append(end.Line);
-            sb.Append(":");
-            sb.Append(end.Character);
+            var sb = new StringBuilder(256)
+            .Append(diagnostic.Source ?? "?")
+            .Append("_")
+            .Append(diagnostic.Code ?? "?")
+            .Append("_")
+            .Append(diagnostic.Severity?.ToString() ?? "?")
+            .Append("_")
+            .Append(start.Line)
+            .Append(":")
+            .Append(start.Character)
+            .Append("-")
+            .Append(end.Line)
+            .Append(":")
+            .Append(end.Character);
 
-            return sb.ToString();
+            var id = sb.ToString();
+            return id;
         }
 
         private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
