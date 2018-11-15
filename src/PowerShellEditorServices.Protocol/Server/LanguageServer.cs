@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class LanguageServer
     {
-        private static CancellationTokenSource existingRequestCancellation;
+        private static CancellationTokenSource s_existingRequestCancellation;
 
         private static readonly Location[] s_emptyLocationResult = new Location[0];
 
@@ -48,6 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private LanguageServerEditorOperations editorOperations;
         private LanguageServerSettings currentSettings = new LanguageServerSettings();
 
+        // The outer key is the file's uri, the inner key is a unique id for the diagnostic
         private Dictionary<string, Dictionary<string, MarkerCorrection>> codeActionsPerFile =
             new Dictionary<string, Dictionary<string, MarkerCorrection>>();
 
@@ -1182,6 +1184,7 @@ function __Expand-Alias {
             return symbolName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
+        // https://microsoft.github.io/language-server-protocol/specification#textDocument_codeAction
         protected async Task HandleCodeActionRequest(
             CodeActionParams codeActionParams,
             RequestContext<CodeActionCommand[]> requestContext)
@@ -1190,12 +1193,22 @@ function __Expand-Alias {
             Dictionary<string, MarkerCorrection> markerIndex = null;
             List<CodeActionCommand> codeActionCommands = new List<CodeActionCommand>();
 
+            // If there are any code fixes, send these commands first so they appear at top of "Code Fix" menu in the client UI.
             if (this.codeActionsPerFile.TryGetValue(codeActionParams.TextDocument.Uri, out markerIndex))
             {
                 foreach (var diagnostic in codeActionParams.Context.Diagnostics)
                 {
-                    if (!string.IsNullOrEmpty(diagnostic.Code) &&
-                        markerIndex.TryGetValue(diagnostic.Code, out correction))
+                    if (string.IsNullOrEmpty(diagnostic.Code))
+                    {
+                        this.Logger.Write(
+                            LogLevel.Warning,
+                            $"textDocument/codeAction skipping diagnostic with empty Code field: {diagnostic.Source} {diagnostic.Message}");
+
+                        continue;
+                    }
+
+                    string diagnosticId = GetUniqueIdFromDiagnostic(diagnostic);
+                    if (markerIndex.TryGetValue(diagnosticId, out correction))
                     {
                         codeActionCommands.Add(
                             new CodeActionCommand
@@ -1208,8 +1221,30 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(
-                codeActionCommands.ToArray());
+            // Add "show documentation" commands last so they appear at the bottom of the client UI. 
+            // These commands do not require code fixes. Sometimes we get a batch of diagnostics
+            // to create commands for. No need to create multiple show doc commands for the same rule.
+            var ruleNamesProcessed = new HashSet<string>();
+            foreach (var diagnostic in codeActionParams.Context.Diagnostics)
+            {
+                if (string.IsNullOrEmpty(diagnostic.Code)) { continue; }
+
+                if (string.Equals(diagnostic.Source, "PSScriptAnalyzer", StringComparison.OrdinalIgnoreCase) &&
+                    !ruleNamesProcessed.Contains(diagnostic.Code))
+                {
+                    ruleNamesProcessed.Add(diagnostic.Code);
+
+                    codeActionCommands.Add(
+                        new CodeActionCommand
+                        {
+                            Title = $"Show documentation for \"{diagnostic.Code}\"",
+                            Command = "PowerShell.ShowCodeActionDocumentation",
+                            Arguments = JArray.FromObject(new[] { diagnostic.Code })
+                        });
+                }
+            }
+
+            await requestContext.SendResult(codeActionCommands.ToArray());
         }
 
         protected async Task HandleDocumentFormattingRequest(
@@ -1454,15 +1489,15 @@ function __Expand-Alias {
             // If there's an existing task, attempt to cancel it
             try
             {
-                if (existingRequestCancellation != null)
+                if (s_existingRequestCancellation != null)
                 {
                     // Try to cancel the request
-                    existingRequestCancellation.Cancel();
+                    s_existingRequestCancellation.Cancel();
 
                     // If cancellation didn't throw an exception,
                     // clean up the existing token
-                    existingRequestCancellation.Dispose();
-                    existingRequestCancellation = null;
+                    s_existingRequestCancellation.Dispose();
+                    s_existingRequestCancellation = null;
                 }
             }
             catch (Exception e)
@@ -1479,11 +1514,17 @@ function __Expand-Alias {
                 return cancelTask.Task;
             }
 
+            // If filesToAnalzye is empty, nothing to do so return early.
+            if (filesToAnalyze.Length == 0)
+            {
+                return Task.FromResult(true);
+            }
+
             // Create a fresh cancellation token and then start the task.
             // We create this on a different TaskScheduler so that we
             // don't block the main message loop thread.
             // TODO: Is there a better way to do this?
-            existingRequestCancellation = new CancellationTokenSource();
+            s_existingRequestCancellation = new CancellationTokenSource();
             Task.Factory.StartNew(
                 () =>
                     DelayThenInvokeDiagnostics(
@@ -1494,35 +1535,13 @@ function __Expand-Alias {
                         editorSession,
                         eventSender,
                         this.Logger,
-                        existingRequestCancellation.Token),
+                        s_existingRequestCancellation.Token),
                 CancellationToken.None,
                 TaskCreationOptions.None,
                 TaskScheduler.Default);
 
             return Task.FromResult(true);
         }
-
-        private static async Task DelayThenInvokeDiagnostics(
-            int delayMilliseconds,
-            ScriptFile[] filesToAnalyze,
-            bool isScriptAnalysisEnabled,
-            Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
-            EditorSession editorSession,
-            EventContext eventContext,
-            ILogger Logger,
-            CancellationToken cancellationToken)
-        {
-            await DelayThenInvokeDiagnostics(
-                delayMilliseconds,
-                filesToAnalyze,
-                isScriptAnalysisEnabled,
-                correctionIndex,
-                editorSession,
-                eventContext.SendEvent,
-                Logger,
-                cancellationToken);
-        }
-
 
         private static async Task DelayThenInvokeDiagnostics(
             int delayMilliseconds,
@@ -1573,6 +1592,7 @@ function __Expand-Alias {
 
                 await PublishScriptDiagnostics(
                     scriptFile,
+                    // Concat script analysis errors to any existing parse errors
                     scriptFile.SyntaxMarkers.Concat(semanticMarkers).ToArray(),
                     correctionIndex,
                     eventSender);
@@ -1620,7 +1640,8 @@ function __Expand-Alias {
                 Diagnostic markerDiagnostic = GetDiagnosticFromMarker(marker);
                 if (marker.Correction != null)
                 {
-                    fileCorrections.Add(markerDiagnostic.Code, marker.Correction);
+                    string diagnosticId = GetUniqueIdFromDiagnostic(markerDiagnostic);
+                    fileCorrections.Add(diagnosticId, marker.Correction);
                 }
 
                 diagnostics.Add(markerDiagnostic);
@@ -1639,13 +1660,39 @@ function __Expand-Alias {
                 });
         }
 
+        // Generate a unique id that is used as a key to look up the associated code action (code fix) when 
+        // we receive and process the textDocument/codeAction message.
+        private static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
+        {
+            Position start = diagnostic.Range.Start;
+            Position end = diagnostic.Range.End;
+
+            var sb = new StringBuilder(256)
+            .Append(diagnostic.Source ?? "?")
+            .Append("_")
+            .Append(diagnostic.Code ?? "?")
+            .Append("_")
+            .Append(diagnostic.Severity?.ToString() ?? "?")
+            .Append("_")
+            .Append(start.Line)
+            .Append(":")
+            .Append(start.Character)
+            .Append("-")
+            .Append(end.Line)
+            .Append(":")
+            .Append(end.Character);
+
+            var id = sb.ToString();
+            return id;
+        }
+
         private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
         {
             return new Diagnostic
             {
                 Severity = MapDiagnosticSeverity(scriptFileMarker.Level),
                 Message = scriptFileMarker.Message,
-                Code = scriptFileMarker.Source + Guid.NewGuid().ToString(),
+                Code = scriptFileMarker.RuleName,
                 Source = scriptFileMarker.Source,
                 Range = new Range
                 {

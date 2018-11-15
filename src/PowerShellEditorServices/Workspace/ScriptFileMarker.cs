@@ -62,6 +62,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets or sets the marker's message string.
         /// </summary>
         public string Message { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the ruleName associated with this marker.
+        /// </summary>
+        public string RuleName { get; set; }
 
         /// <summary>
         /// Gets or sets the marker's message level.
@@ -130,7 +135,6 @@ namespace Microsoft.PowerShell.EditorServices
             // the diagnostic record's properties directly i.e. <instance>.<propertyName>
             // without having to go through PSObject's Members property.
             var diagnosticRecord = psObject as dynamic;
-            string ruleName = diagnosticRecord.RuleName as string;
 
             if (diagnosticRecord.SuggestedCorrections != null)
             {
@@ -160,7 +164,8 @@ namespace Microsoft.PowerShell.EditorServices
 
             return new ScriptFileMarker
             {
-                Message = $"{diagnosticRecord.Message as string} ({ruleName})",
+                Message = $"{diagnosticRecord.Message as string}",
+                RuleName = $"{diagnosticRecord.RuleName as string}",
                 Level = GetMarkerLevelFromDiagnosticSeverity((diagnosticRecord.Severity as Enum).ToString()),
                 ScriptRegion = ScriptRegion.Create(diagnosticRecord.Extent as IScriptExtent),
                 Correction = correction,
