@@ -1244,8 +1244,7 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(
-            codeActionCommands.ToArray());
+            await requestContext.SendResult(codeActionCommands.ToArray());
         }
 
         protected async Task HandleDocumentFormattingRequest(
