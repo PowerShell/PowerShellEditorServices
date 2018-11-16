@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(
                 DocumentRangeFormattingRequest.Type,
                 this.HandleDocumentRangeFormattingRequest);
-            this.messageHandlers.SetRequestHandler(FoldingRangeRequest.Type, this.HandleFoldingRangeRequest);
+            this.messageHandlers.SetRequestHandler(FoldingRangeRequest.Type, this.HandleFoldingRangeRequestAsync);
 
             this.messageHandlers.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
             this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
@@ -1252,7 +1252,7 @@ function __Expand-Alias {
             });
         }
 
-        protected async Task HandleFoldingRangeRequest(
+        protected async Task HandleFoldingRangeRequestAsync(
             FoldingRangeParams foldingParams,
             RequestContext<FoldingRange[]> requestContext)
         {
