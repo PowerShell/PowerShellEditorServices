@@ -305,12 +305,22 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 var sb = new StringBuilder();
                 for (int i = 0; i < launchParams.Args.Length; i++)
                 {
-                    sb.Append(PowerShellContext.QuoteEscapeString(launchParams.Args[i]));
-                    if (i < launchParams.Args.Length - 1)
+                    string arg = launchParams.Args[i];
+                    if (arg.StartsWith("-") || arg.StartsWith("'") || arg.StartsWith("\""))
+                    {
+                        sb.Append(arg);
+                    }
+                    else
+                    {
+                        sb.Append(PowerShellContext.QuoteEscapeString(arg));
+                    }
+
+                    if (i < (launchParams.Args.Length - 1))
                     {
                         sb.Append(' ');
                     }
                 }
+
                 arguments = sb.ToString();
                 Logger.Write(LogLevel.Verbose, "Script arguments are: " + arguments);
             }
