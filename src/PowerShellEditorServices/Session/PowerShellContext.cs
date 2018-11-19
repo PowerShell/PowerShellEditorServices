@@ -769,7 +769,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task ExecuteScriptWithArgs(string script, string arguments = null, bool writeInputToHost = false)
         {
-            var escapedScriptPath = new StringBuilder(PowerShellContext.WildcardEscapePath(script));
             PSCommand command = new PSCommand();
 
             if (arguments != null)
@@ -791,24 +790,38 @@ namespace Microsoft.PowerShell.EditorServices
                         "Could not determine current filesystem location:\r\n\r\n" + e.ToString());
                 }
 
-                // If we don't escape wildcard characters in a path to a script file, the script can
-                // fail to execute if say the script filename was foo][.ps1.
+                var strBld = new StringBuilder();
+
+                // The script parameter can refer to either a "script path" or a "command name".  If it is a 
+                // script path, we can determine that by seeing if the path exists.  If so, we always single
+                // quote that path in case it includes special PowerShell characters like ', &, (, ), [, ] and
+                // <space>.  Any embedded single quotes are escaped.  
+                // If the provided path is already quoted, then File.Exists will not find it.
+                // This keeps us from quoting an already quoted path.
                 // Related to issue #123.
                 if (File.Exists(script) || File.Exists(scriptAbsPath))
                 {
-                    // Dot-source the launched script path
-                    string escapedFilePath = escapedScriptPath.ToString();
-                    escapedScriptPath = new StringBuilder(". ").Append(QuoteEscapeString(escapedFilePath));
+                    // Dot-source the launched script path and single quote the path in case it includes
+                    strBld.Append(". ").Append(QuoteEscapeString(script));
+                }
+                else
+                {
+                    strBld.Append(script);
                 }
 
                 // Add arguments
-                escapedScriptPath.Append(' ').Append(arguments);
+                strBld.Append(' ').Append(arguments);
 
-                command.AddScript(escapedScriptPath.ToString(), false);
+                var launchedScript = strBld.ToString();
+                this.logger.Write(LogLevel.Verbose, $"Launch script is: {launchedScript}");
+
+                command.AddScript(launchedScript, false);
             }
             else
             {
-                command.AddCommand(escapedScriptPath.ToString(), false);
+                // AddCommand can handle script paths including those with special chars e.g.:
+                // ".\foo & [bar]\foo.ps1" and it can handle arbitrary commands, like "Invoke-Pester"
+                command.AddCommand(script, false);
             }
 
             if (writeInputToHost)
