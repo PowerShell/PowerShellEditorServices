@@ -22,6 +22,13 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
+        private static readonly string[] s_psFilePatterns = new []
+        {
+            "*.ps1",
+            "*.psm1",
+            "*.psd1"
+        };
+
         private ILogger logger;
         private Version powerShellVersion;
         private Dictionary<string, ScriptFile> workspaceFiles = new Dictionary<string, ScriptFile>();
@@ -295,7 +302,6 @@ namespace Microsoft.PowerShell.EditorServices
         private IEnumerable<string> RecursivelyEnumerateFiles(string folderPath)
         {
             var foundFiles = Enumerable.Empty<string>();
-            var patterns = new string[] { @"*.ps1", @"*.psm1", @"*.psd1" };
 
             try
             {
@@ -326,7 +332,7 @@ namespace Microsoft.PowerShell.EditorServices
                     e);
             }
 
-            foreach (var pattern in patterns)
+            foreach (var pattern in s_psFilePatterns)
             {
                 try
                 {
