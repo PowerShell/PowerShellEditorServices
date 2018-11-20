@@ -369,7 +369,7 @@ namespace Microsoft.PowerShell.EditorServices
                 string[] subDirs;
                 try
                 {
-                    subDirs = Directory.GetFiles(currDir, pattern, SearchOption.TopDirectoryOnly);
+                    subDirs = Directory.GetDirectories(currDir);
                 }
                 catch (DirectoryNotFoundException e)
                 {
