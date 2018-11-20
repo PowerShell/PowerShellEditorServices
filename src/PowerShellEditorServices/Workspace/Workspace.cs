@@ -332,7 +332,7 @@ namespace Microsoft.PowerShell.EditorServices
                     }
                     catch (DirectoryNotFoundException e)
                     {
-                        this.logger.WriteException(
+                        this.logger.WriteHandledException(
                             $"Could not enumerate files in the path '{currDir}' due to it being an invalid path",
                             e);
 
@@ -340,7 +340,7 @@ namespace Microsoft.PowerShell.EditorServices
                     }
                     catch (PathTooLongException e)
                     {
-                        this.logger.WriteException(
+                        this.logger.WriteHandledException(
                             $"Could not enumerate files in the path '{currDir}' due to the path being too long",
                             e);
 
@@ -348,7 +348,7 @@ namespace Microsoft.PowerShell.EditorServices
                     }
                     catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
                     {
-                        this.logger.WriteException(
+                        this.logger.WriteHandledException(
                             $"Could not enumerate files in the path '{currDir}' due to the path not being accessible",
                             e);
 
@@ -373,7 +373,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 catch (DirectoryNotFoundException e)
                 {
-                    this.logger.WriteException(
+                    this.logger.WriteHandledException(
                         $"Could not enumerate directories in the path '{currDir}' due to it being an invalid path",
                         e);
 
@@ -381,7 +381,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 catch (PathTooLongException e)
                 {
-                    this.logger.WriteException(
+                    this.logger.WriteHandledException(
                         $"Could not enumerate directories in the path '{currDir}' due to the path being too long",
                         e);
 
@@ -389,7 +389,7 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
                 {
-                    this.logger.WriteException(
+                    this.logger.WriteHandledException(
                         $"Could not enumerate directories in the path '{currDir}' due to the path not being accessible",
                         e);
 

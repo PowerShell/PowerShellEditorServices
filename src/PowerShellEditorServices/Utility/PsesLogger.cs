@@ -17,6 +17,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         private static readonly string ErrorLevelName = LogLevel.Error.ToString().ToUpper();
 
         /// <summary>
+        /// The name of the WARNING log level.
+        /// </summary>
+        private static readonly string WarningLevelName = LogLevel.Warning.ToString().ToUpper();
+
+        /// <summary>
         /// The internal Serilog logger to log to.
         /// </summary>
         private readonly Logger _logger;
@@ -57,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
             int threadId = Thread.CurrentThread.ManagedThreadId;
 
-            string messageTemplate = 
+            string messageTemplate =
                 "[{LogLevelName:l}] tid:{threadId} in '{CallerName:l}' {CallerSourceFile:l}:{CallerLineNumber}:{IndentedLogMsg:l}";
 
             switch (logLevel)
@@ -100,6 +105,20 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             _logger.Error("[{ErrorLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}: {ErrorMessage:l}{IndentedException:l}",
                 ErrorLevelName, callerSourceFile, callerName, callerLineNumber, errorMessage, indentedException);
         }
+
+        public void WriteHandledException(
+            string errorMessage,
+            Exception exception,
+            [CallerMemberName] string callerName = null,
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = 0)
+        {
+            string indentedException = IndentMsg(exception.ToString());
+
+            _logger.Warning("[{WarningLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}: Handled exception {ErrorMessage:l}{IndentedException:l}",
+                WarningLevelName, callerSourceFile, callerName, callerLineNumber, errorMessage, indentedException);
+        }
+
 
         /// <summary>
         /// Utility function to indent a log message by one level.
