@@ -302,16 +302,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             string arguments = null;
             if ((launchParams.Args != null) && (launchParams.Args.Length > 0))
             {
-                var sb = new StringBuilder();
-                for (int i = 0; i < launchParams.Args.Length; i++)
-                {
-                    sb.Append(PowerShellContext.QuoteEscapeString(launchParams.Args[i]));
-                    if (i < launchParams.Args.Length - 1)
-                    {
-                        sb.Append(' ');
-                    }
-                }
-                arguments = sb.ToString();
+                arguments = string.Join(" ", launchParams.Args);
                 Logger.Write(LogLevel.Verbose, "Script arguments are: " + arguments);
             }
 
