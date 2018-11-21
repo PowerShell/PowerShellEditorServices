@@ -156,7 +156,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                         "An unhandled exception occurred while listening for a named pipe client connection",
                         e);
 
-                    throw e;
+                    throw;
                 }
             });
         }
