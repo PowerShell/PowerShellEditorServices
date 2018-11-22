@@ -9,7 +9,6 @@ using System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 {
-
     /// <summary>
     /// Describes the request to get the details for PowerShell Commands from the current session.
     /// </summary>
