@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using Microsoft.Win32.SafeHandles;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
@@ -18,17 +19,31 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
     public class NamedPipeServerListener : ServerListenerBase<NamedPipeServerChannel>
     {
         private ILogger logger;
-        private string pipeName;
-        private NamedPipeServerStream pipeServer;
+        private string inOutPipeName;
+        private readonly string outPipeName;
+        private NamedPipeServerStream inOutPipeServer;
+        private NamedPipeServerStream outPipeServer;
 
         public NamedPipeServerListener(
             MessageProtocolType messageProtocolType,
-            string pipeName,
+            string inOutPipeName,
             ILogger logger)
             : base(messageProtocolType)
         {
             this.logger = logger;
-            this.pipeName = pipeName;
+            this.inOutPipeName = inOutPipeName;
+        }
+
+        public NamedPipeServerListener(
+            MessageProtocolType messageProtocolType,
+            string inPipeName,
+            string outPipeName,
+            ILogger logger)
+            : base(messageProtocolType)
+        {
+            this.logger = logger;
+            this.inOutPipeName = inPipeName;
+            this.outPipeName = outPipeName;
         }
 
         public override void Start()
@@ -62,18 +77,31 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                     // issue on .NET Core regarding Named Pipe security is here: https://github.com/dotnet/corefx/issues/30170
                     // 99% of this code was borrowed from PowerShell here:
                     // https://github.com/PowerShell/PowerShell/blob/master/src/System.Management.Automation/engine/remoting/common/RemoteSessionNamedPipe.cs#L124-L256
-                    this.pipeServer = NamedPipeNative.CreateNamedPipe(pipeName, pipeSecurity);
+                    this.inOutPipeServer = NamedPipeNative.CreateNamedPipe(inOutPipeName, pipeSecurity);
+                    if (this.outPipeName != null)
+                    {
+                        this.outPipeServer = NamedPipeNative.CreateNamedPipe(outPipeName, pipeSecurity);
+                    }
                 }
                 else
                 {
                     // This handles the Unix case since PipeSecurity is not supported on Unix.
                     // Instead, we use chmod in Start-EditorServices.ps1
-                    this.pipeServer = new NamedPipeServerStream(
-                        pipeName: pipeName,
+                    this.inOutPipeServer = new NamedPipeServerStream(
+                        pipeName: inOutPipeName,
                         direction: PipeDirection.InOut,
                         maxNumberOfServerInstances: 1,
                         transmissionMode: PipeTransmissionMode.Byte,
                         options: PipeOptions.Asynchronous);
+                    if (this.outPipeName != null)
+                    {
+                        this.outPipeServer = new NamedPipeServerStream(
+                            pipeName: outPipeName,
+                            direction: PipeDirection.Out,
+                            maxNumberOfServerInstances: 1,
+                            transmissionMode: PipeTransmissionMode.Byte,
+                            options: PipeOptions.None);
+                    }
                 }
                 ListenForConnection();
             }
@@ -89,47 +117,58 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         public override void Stop()
         {
-            if (this.pipeServer != null)
+            if (this.inOutPipeServer != null)
             {
                 this.logger.Write(LogLevel.Verbose, "Named pipe server shutting down...");
 
-                this.pipeServer.Dispose();
+                this.inOutPipeServer.Dispose();
 
                 this.logger.Write(LogLevel.Verbose, "Named pipe server has been disposed.");
+            }
+            if (this.outPipeServer != null)
+            {
+                this.logger.Write(LogLevel.Verbose, $"Named out pipe server {outPipeServer} shutting down...");
+
+                this.outPipeServer.Dispose();
+
+                this.logger.Write(LogLevel.Verbose, $"Named out pipe server {outPipeServer} has been disposed.");
             }
         }
 
         private void ListenForConnection()
         {
-            Task.Factory.StartNew(
-                async () =>
+            var connectionTasks = new List<Task> {WaitForConnectionAsync(this.inOutPipeServer)};
+            if (this.outPipeServer != null)
+            {
+                connectionTasks.Add(WaitForConnectionAsync(this.outPipeServer));
+            }
+
+            Task.Run(async () =>
+            {
+                try
                 {
-                    try
-                    {
+                    await Task.WhenAll(connectionTasks);
+                    this.OnClientConnect(new NamedPipeServerChannel(this.inOutPipeServer, this.outPipeServer, this.logger));
+                }
+                catch (Exception e)
+                {
+                    this.logger.WriteException(
+                        "An unhandled exception occurred while listening for a named pipe client connection",
+                        e);
+
+                    throw;
+                }
+            });
+        }
+
+        private static async Task WaitForConnectionAsync(NamedPipeServerStream pipeServerStream)
+        {
 #if CoreCLR
-                        await this.pipeServer.WaitForConnectionAsync();
+            await pipeServerStream.WaitForConnectionAsync();
 #else
-                        await Task.Factory.FromAsync(
-                            this.pipeServer.BeginWaitForConnection,
-                            this.pipeServer.EndWaitForConnection, null);
+            await Task.Factory.FromAsync(pipeServerStream.BeginWaitForConnection, pipeServerStream.EndWaitForConnection, null);
 #endif
-
-                        await this.pipeServer.FlushAsync();
-
-                        this.OnClientConnect(
-                            new NamedPipeServerChannel(
-                                this.pipeServer,
-                                this.logger));
-                    }
-                    catch (Exception e)
-                    {
-                        this.logger.WriteException(
-                            "An unhandled exception occurred while listening for a named pipe client connection",
-                            e);
-
-                        throw e;
-                    }
-                });
+            await pipeServerStream.FlushAsync();
         }
     }
 

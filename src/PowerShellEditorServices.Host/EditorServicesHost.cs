@@ -44,7 +44,10 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// For Stdio it's ignored.
         /// For NamedPipe it's the pipe name.
         /// </summary>
-        public string Endpoint { get; set; }
+        public string InOutPipeName { get; set; }
+        public string OutPipeName { get; set; }
+        public string InPipeName { get; set; }
+        internal string Endpoint => OutPipeName != null && InPipeName != null ? $"In pipe: {InPipeName} Out pipe: {OutPipeName}" : $" InOut pipe: {InOutPipeName}";
     }
 
     /// <summary>
@@ -463,7 +466,15 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
                 case EditorServiceTransportType.NamedPipe:
                 {
-                    return new NamedPipeServerListener(protocol, config.Endpoint, this.logger);
+                    if (config.OutPipeName !=null && config.InPipeName !=null)
+                    {
+                        this.logger.Write(LogLevel.Verbose, $"Creating NamedPipeServerListener for ${protocol} protocol with two pipes: In: '{config.InPipeName}'. Out: '{config.OutPipeName}'");
+                        return new NamedPipeServerListener(protocol, config.InPipeName, config.OutPipeName, this.logger);
+                    }
+                    else
+                    {
+                        return new NamedPipeServerListener(protocol, config.InOutPipeName, this.logger);
+                    }
                 }
 
                 default:

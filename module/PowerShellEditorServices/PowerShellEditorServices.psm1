@@ -31,14 +31,36 @@ function Start-EditorServicesHost {
         [string]
         $HostVersion,
 
+        [Parameter(ParameterSetName="Stdio",Mandatory=$true)]
         [switch]
         $Stdio,
 
+        [Parameter(ParameterSetName="NamedPipe",Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
         [string]
         $LanguageServiceNamedPipe,
 
+        [Parameter(ParameterSetName="NamedPipe")]
         [string]
         $DebugServiceNamedPipe,
+
+        [Parameter(ParameterSetName="NamedPipeSimplex",Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $LanguageServiceInNamedPipe,
+
+        [Parameter(ParameterSetName="NamedPipeSimplex",Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $LanguageServiceOutNamedPipe,
+
+        [Parameter(ParameterSetName="NamedPipeSimplex")]
+        [string]
+        $DebugServiceInNamedPipe,
+
+        [Parameter(ParameterSetName="NamedPipeSimplex")]
+        [string]
+        $DebugServiceOutNamedPipe,
 
         [ValidateNotNullOrEmpty()]
         [string]
@@ -99,19 +121,32 @@ function Start-EditorServicesHost {
     $debugServiceConfig =
         Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportConfig
 
-    if ($Stdio.IsPresent) {
-        $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
-        $debugServiceConfig.TransportType    = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
-    }
-
-    if ($LanguageServiceNamedPipe) {
-        $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
-        $languageServiceConfig.Endpoint = "$LanguageServiceNamedPipe"
-    }
-
-    if ($DebugServiceNamedPipe) {
-        $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
-        $debugServiceConfig.Endpoint = "$DebugServiceNamedPipe"
+    switch ($PSCmdlet.ParameterSetName) {
+        "Stdio" {
+            $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
+            $debugServiceConfig.TransportType    = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::Stdio
+            break
+        }
+        "NamedPipe" {
+            $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
+            $languageServiceConfig.InOutPipeName = "$LanguageServiceNamedPipe"
+            if ($DebugServiceNamedPipe) {
+                $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
+                $debugServiceConfig.InOutPipeName = "$DebugServiceNamedPipe"
+            }
+            break
+        }
+        "NamedPipeSimplex" {
+            $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
+            $languageServiceConfig.InPipeName = $LanguageServiceInNamedPipe
+            $languageServiceConfig.OutPipeName = $LanguageServiceOutNamedPipe
+            if ($DebugServiceInNamedPipe -and $DebugServiceOutNamedPipe) {
+                $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Host.EditorServiceTransportType]::NamedPipe
+                $debugServiceConfig.InPipeName = $DebugServiceInNamedPipe
+                $debugServiceConfig.OutPipeName = $DebugServiceOutNamedPipe
+            }
+            break
+        }
     }
 
     if ($DebugServiceOnly.IsPresent) {
