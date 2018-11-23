@@ -137,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
 
             this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
-            this.messageHandlers.SetRequestHandler(GetCommandRequest.Type, this.HandleGetCommandRequest);
+            this.messageHandlers.SetRequestHandler(GetCommandRequest.Type, this.HandleGetCommandRequestAsync);
 
             this.messageHandlers.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
             this.messageHandlers.SetRequestHandler(InstallModuleRequest.Type, this.HandleInstallModuleRequest);
@@ -525,7 +525,7 @@ function __Expand-Alias {
             await requestContext.SendResult(result.First().ToString());
         }
 
-        private async Task HandleGetCommandRequest(
+        private async Task HandleGetCommandRequestAsync(
             string param,
             RequestContext<object> requestContext)
         {
@@ -537,11 +537,10 @@ function __Expand-Alias {
             {
                 psCommand.AddCommand("Microsoft.PowerShell.Core\\Get-Command")
                         .AddParameter("CommandType", new[]{"Function", "Cmdlet", "ExternalScript"})
-                    .AddCommand("Select-Object")
+                    .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
                         .AddParameter("Property", new[]{"Name", "ModuleName"})
-                    .AddCommand("Sort-Object")
+                    .AddCommand("Microsoft.PowerShell.Utility\\Sort-Object")
                         .AddParameter("Property", "Name");
-                // psCommand.AddScript("Microsoft.PowerShell.Core\\Get-Command -CommandType Function, Cmdlet, ExternalScript | Select-Object Name,ModuleName | Sort-Object Name");
             }
             IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
             var commandList = new List<PSCommandMessage>();
