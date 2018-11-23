@@ -217,5 +217,33 @@ $AnArray = @(Get-ChildItem -Path C:\ -Include *.ps1 -File).Where({
             FoldingReference[] result = GetRegions(testString);
             AssertFoldingReferenceArrays(expectedFolds, result);
         }
+
+        // This tests that token matching { -> }, @{ -> } and
+        // ( -> ), @( -> ) and $( -> ) does not confuse the folder
+        [Fact]
+        public void LaguageServiceFindsFoldablRegionsWithSameEndToken() {
+            string testString =
+@"foreach ($1 in $2) {
+
+    $x = @{
+        'abc' = 'def'
+    }
+}
+
+$y = $(
+    $arr = @('1', '2'); Write-Host ($arr)
+)
+";
+            FoldingReference[] expectedFolds = {
+                CreateFoldingReference(0, 19, 4, 1, null),
+                CreateFoldingReference(2,  9, 3, 5, null),
+                CreateFoldingReference(7,  5, 8, 1, null)
+            };
+
+            FoldingReference[] result = GetRegions(testString);
+
+            AssertFoldingReferenceArrays(expectedFolds, result);
+        }
+
     }
 }

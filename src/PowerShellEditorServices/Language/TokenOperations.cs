@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Collections.Generic;
 using System.Management.Automation.Language;
 using System.Text.RegularExpressions;
@@ -28,24 +29,17 @@ namespace Microsoft.PowerShell.EditorServices
         {
             List<FoldingReference> foldableRegions = new List<FoldingReference>();
 
-            // Find matching braces { -> }
-            foldableRegions.AddRange(
-                MatchTokenElements(tokens, TokenKind.LCurly, TokenKind.RCurly, RegionKindNone)
-            );
-
-            // Find matching braces ( -> )
-            foldableRegions.AddRange(
-                MatchTokenElements(tokens, TokenKind.LParen, TokenKind.RParen, RegionKindNone)
-            );
-
-            // Find matching arrays @( -> )
-            foldableRegions.AddRange(
-                MatchTokenElements(tokens, TokenKind.AtParen, TokenKind.RParen, RegionKindNone)
-            );
-
+            // Find matching braces  { -> }
             // Find matching hashes @{ -> }
             foldableRegions.AddRange(
-                MatchTokenElements(tokens, TokenKind.AtCurly, TokenKind.RParen, RegionKindNone)
+                MatchTokenElements(tokens, new TokenKind[] { TokenKind.LCurly, TokenKind.AtCurly }, TokenKind.RCurly, RegionKindNone)
+            );
+
+            // Find matching parentheses     ( -> )
+            // Find matching array literals @( -> )
+            // Find matching subexpressions $( -> )
+            foldableRegions.AddRange(
+                MatchTokenElements(tokens, new TokenKind[] { TokenKind.LParen, TokenKind.AtParen, TokenKind.DollarParen }, TokenKind.RParen, RegionKindNone)
             );
 
             // Find contiguous here strings @' -> '@
@@ -146,11 +140,11 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Given an array of tokens, find matching regions which start and end with a different TokenKind
+        /// Given an array of tokens, find matching regions which start (array of tokens) and end with a different TokenKind
         /// </summary>
         static private List<FoldingReference> MatchTokenElements(
             Token[] tokens,
-            TokenKind startTokenKind,
+            TokenKind[] startTokenKind,
             TokenKind endTokenKind,
             string matchKind)
         {
@@ -158,7 +152,7 @@ namespace Microsoft.PowerShell.EditorServices
             Stack<Token> tokenStack = new Stack<Token>();
             foreach (Token token in tokens)
             {
-                if (token.Kind == startTokenKind) {
+                if (Array.IndexOf(startTokenKind, token.Kind) != -1) {
                     tokenStack.Push(token);
                 }
                 if ((tokenStack.Count > 0) && (token.Kind == endTokenKind)) {
