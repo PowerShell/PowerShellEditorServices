@@ -256,10 +256,10 @@ function Set-NamedPipeMode {
 
     chmod $DEFAULT_USER_MODE $PipeFile
 
-    if (($PSVersionTable.PSVersion.Major -ge 6) -and $IsLinux) {
+    if ($IsLinux) {
         $mode = /usr/bin/stat -c "%a" $PipeFile
     }
-    elseif (($PSVersionTable.PSVersion.Major -ge 6) -and $IsMacOS) {
+    elseif ($IsMacOS) {
         $mode = /usr/bin/stat -f "%A" $PipeFile
     }
 
@@ -277,6 +277,7 @@ function Get-ValidatedNamedPipeName {
         $PipeName
     )
 
+    # If no PipeName is passed in, then we create one that's guaranteed to be valid
     if (!$PipeName) {
         $PipeName = New-NamedPipeName
     }
