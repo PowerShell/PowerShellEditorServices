@@ -245,10 +245,15 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             // gets initialized when that is done earlier than LanguageServer.Initialize
             foreach (string module in this.additionalModules)
             {
+                var command = 
+                    new System.Management.Automation.PSCommand()
+                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                        .AddParameter("Name", module);
+
                 await this.editorSession.PowerShellContext.ExecuteCommand<System.Management.Automation.PSObject>(
-                    new System.Management.Automation.PSCommand().AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddArgument(module),
-                    false,
-                    true);
+                    command,
+                    sendOutputToHost: false,
+                    sendErrorToHost: true);
             }
 
             protocolEndpoint.Start();
