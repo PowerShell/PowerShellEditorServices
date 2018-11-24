@@ -4,6 +4,7 @@
 //
 
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
@@ -32,11 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// be "slash agnostic", we need to use the assumption that a '\' is the alternate path
         /// separator on Linux.
         /// </summary>
-#if CoreCLR
-        internal static readonly char AlternatePathSeparator = System.Management.Automation.Platform.IsWindows ? '/' : '\\';
-#else
-        internal static readonly char AlternatePathSeparator = '/';
-#endif
+        internal static readonly char AlternatePathSeparator = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? '/' : '\\';
         internal static readonly string AlternatePathSeparatorString = AlternatePathSeparator.ToString();
 
         /// <summary>
