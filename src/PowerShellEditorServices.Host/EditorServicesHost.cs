@@ -45,8 +45,11 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// For NamedPipe it's the pipe name.
         /// </summary>
         public string InOutPipeName { get; set; }
+
         public string OutPipeName { get; set; }
+
         public string InPipeName { get; set; }
+
         internal string Endpoint => OutPipeName != null && InPipeName != null ? $"In pipe: {InPipeName} Out pipe: {OutPipeName}" : $" InOut pipe: {InOutPipeName}";
     }
 
@@ -242,10 +245,15 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             // gets initialized when that is done earlier than LanguageServer.Initialize
             foreach (string module in this.additionalModules)
             {
+                var command = 
+                    new System.Management.Automation.PSCommand()
+                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                        .AddParameter("Name", module);
+
                 await this.editorSession.PowerShellContext.ExecuteCommand<System.Management.Automation.PSObject>(
-                    new System.Management.Automation.PSCommand().AddCommand("Import-Module").AddArgument(module),
-                    false,
-                    true);
+                    command,
+                    sendOutputToHost: false,
+                    sendErrorToHost: true);
             }
 
             protocolEndpoint.Start();
@@ -455,6 +463,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     e.ExceptionObject.ToString()));
         }
 #endif
+
         private IServerListener CreateServiceListener(MessageProtocolType protocol, EditorServiceTransportConfig config)
         {
             switch (config.TransportType)
@@ -466,7 +475,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
                 case EditorServiceTransportType.NamedPipe:
                 {
-                    if (config.OutPipeName !=null && config.InPipeName !=null)
+                    if ((config.OutPipeName != null) && (config.InPipeName != null))
                     {
                         this.logger.Write(LogLevel.Verbose, $"Creating NamedPipeServerListener for ${protocol} protocol with two pipes: In: '{config.InPipeName}'. Out: '{config.OutPipeName}'");
                         return new NamedPipeServerListener(protocol, config.InPipeName, config.OutPipeName, this.logger);

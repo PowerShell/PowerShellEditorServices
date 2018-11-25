@@ -1,20 +1,27 @@
-# PowerShell Editor Services Bootstrapper Script
-# ----------------------------------------------
-# This script contains startup logic for the PowerShell Editor Services
-# module when launched by an editor.  It handles the following tasks:
-#
-# - Verifying the existence of dependencies like PowerShellGet
-# - Verifying that the expected version of the PowerShellEditorServices module is installed
-# - Installing the PowerShellEditorServices module if confirmed by the user
-# - Creating named pipes for the language and debug services to use (if using named pipes)
-# - Starting the language and debug services from the PowerShellEditorServices module
-#
-# NOTE: If editor integration authors make modifications to this
-#       script, please consider contributing changes back to the
-#       canonical version of this script at the PowerShell Editor
-#       Services GitHub repository:
-#
-#       https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/PowerShellEditorServices/Start-EditorServices.ps1
+<#
+.SYNOPSIS
+    Starts the language and debug services from the PowerShellEditorServices module.
+.DESCRIPTION
+    PowerShell Editor Services Bootstrapper Script
+    ----------------------------------------------
+    This script contains startup logic for the PowerShell Editor Services
+    module when launched by an editor.  It handles the following tasks:
+
+    - Verifying the existence of dependencies like PowerShellGet
+    - Verifying that the expected version of the PowerShellEditorServices module is installed
+    - Installing the PowerShellEditorServices module if confirmed by the user
+    - Creating named pipes for the language and debug services to use (if using named pipes)
+    - Starting the language and debug services from the PowerShellEditorServices module
+.INPUTS
+    None
+.OUTPUTS
+    None
+.NOTES
+    If editor integration authors make modifications to this script, please
+    consider contributing changes back to the canonical version of this script
+    at the PowerShell Editor Services GitHub repository:
+    https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/PowerShellEditorServices/Start-EditorServices.ps1'
+#>
 [CmdletBinding(DefaultParameterSetName="NamedPipe")]
 param(
     [Parameter(Mandatory=$true)]
@@ -65,7 +72,7 @@ param(
     [switch]
     $ConfirmInstall,
 
-    [Parameter(ParameterSetName="Stdio",Mandatory=$true)]
+    [Parameter(ParameterSetName="Stdio", Mandatory=$true)]
     [switch]
     $Stdio,
 
@@ -154,9 +161,6 @@ if ($host.Runspace.LanguageMode -eq 'ConstrainedLanguage') {
     ExitWithError "PowerShell is configured with an unsupported LanguageMode (ConstrainedLanguage), language features are disabled."
 }
 
-# Are we running in PowerShell 5 or later?
-$isPS5orLater = $PSVersionTable.PSVersion.Major -ge 5
-
 # If PSReadline is present in the session, remove it so that runspace
 # management is easier
 if ((Microsoft.PowerShell.Core\Get-Module PSReadline).Count -gt 0) {
@@ -173,8 +177,8 @@ function Test-ModuleAvailable($ModuleName, $ModuleVersion) {
     Log "Testing module availability $ModuleName $ModuleVersion"
 
     $modules = Microsoft.PowerShell.Core\Get-Module -ListAvailable $moduleName
-    if ($modules -ne $null) {
-        if ($ModuleVersion -ne $null) {
+    if ($null -ne $modules) {
+        if ($null -ne $ModuleVersion) {
             foreach ($module in $modules) {
                 if ($module.Version.Equals($moduleVersion)) {
                     Log "$ModuleName $ModuleVersion found"
@@ -193,7 +197,6 @@ function Test-ModuleAvailable($ModuleName, $ModuleVersion) {
 }
 
 function New-NamedPipeName {
-
     # We try 10 times to find a valid pipe name
     for ($i = 0; $i -lt 10; $i++) {
         $PipeName = "PSES_$([System.IO.Path]::GetRandomFileName())"
@@ -202,6 +205,7 @@ function New-NamedPipeName {
             return $PipeName
         }
     }
+
     ExitWithError "Could not find valid a pipe name."
 }
 
@@ -213,7 +217,7 @@ function Get-NamedPipePath {
         $PipeName
     )
 
-    if (-not $IsLinux -and -not $IsMacOS) {
+    if (($PSVersionTable.PSVersion.Major -le 5) -or $IsWindows) {
         return "\\.\pipe\$PipeName";
     }
     else {
@@ -221,7 +225,6 @@ function Get-NamedPipePath {
         # the Unix Domain Sockets live in the tmp directory and are prefixed with "CoreFxPipe_"
         return (Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "CoreFxPipe_$PipeName")
     }
-
 }
 
 # Returns True if it's a valid pipe name
@@ -236,7 +239,7 @@ function Test-NamedPipeName {
     )
 
     $path = Get-NamedPipePath -PipeName $PipeName
-    return -not (Test-Path $path)
+    return !(Test-Path $path)
 }
 
 function Set-NamedPipeMode {
@@ -247,7 +250,7 @@ function Set-NamedPipeMode {
         $PipeFile
     )
 
-    if ($IsWindows) {
+    if (($PSVersionTable.PSVersion.Major -le 5) -or $IsWindows) {
         return
     }
 
@@ -268,19 +271,20 @@ function Set-NamedPipeMode {
 LogSection "Console Encoding"
 Log $OutputEncoding
 
-function Test-NamedPipeName-OrCreate-IfNull {
+function Get-ValidatedNamedPipeName {
     param(
         [string]
         $PipeName
     )
-    if (-not $PipeName) {
+
+    # If no PipeName is passed in, then we create one that's guaranteed to be valid
+    if (!$PipeName) {
         $PipeName = New-NamedPipeName
     }
-    else {
-        if (-not (Test-NamedPipeName -PipeName $PipeName)) {
-            ExitWithError "Pipe name supplied is already taken: $PipeName"
-        }
+    elseif (!(Test-NamedPipeName -PipeName $PipeName)) {
+        ExitWithError "Pipe name supplied is already in use: $PipeName"
     }
+
     return $PipeName
 }
 
@@ -288,13 +292,16 @@ function Set-PipeFileResult {
     param (
         [Hashtable]
         $ResultTable,
+
         [string]
         $PipeNameKey,
+
         [string]
         $PipeNameValue
     )
+
     $ResultTable[$PipeNameKey] = Get-NamedPipePath -PipeName $PipeNameValue
-    if ($IsLinux -or $IsMacOS) {
+    if (($PSVersionTable.PSVersion.Major -ge 6) -and ($IsLinux -or $IsMacOS)) {
         Set-NamedPipeMode -PipeFile $ResultTable[$PipeNameKey]
     }
 }
@@ -349,11 +356,12 @@ try {
                                         -WaitForDebugger:$WaitForDebugger.IsPresent
             break
         }
+
         "NamedPipeSimplex" {
-            $LanguageServiceInPipeName = Test-NamedPipeName-OrCreate-IfNull $LanguageServiceInPipeName
-            $LanguageServiceOutPipeName = Test-NamedPipeName-OrCreate-IfNull $LanguageServiceOutPipeName
-            $DebugServiceInPipeName = Test-NamedPipeName-OrCreate-IfNull $DebugServiceInPipeName
-            $DebugServiceOutPipeName = Test-NamedPipeName-OrCreate-IfNull $DebugServiceOutPipeName
+            $LanguageServiceInPipeName = Get-ValidatedNamedPipeName $LanguageServiceInPipeName
+            $LanguageServiceOutPipeName = Get-ValidatedNamedPipeName $LanguageServiceOutPipeName
+            $DebugServiceInPipeName = Get-ValidatedNamedPipeName $DebugServiceInPipeName
+            $DebugServiceOutPipeName = Get-ValidatedNamedPipeName $DebugServiceOutPipeName
 
             $editorServicesHost = Start-EditorServicesHost `
                                         -HostName $HostName `
@@ -377,9 +385,10 @@ try {
             Set-PipeFileResult $resultDetails "debugServiceWritePipeName" $DebugServiceOutPipeName
             break
         }
+
         Default {
-            $LanguageServicePipeName = Test-NamedPipeName-OrCreate-IfNull $LanguageServicePipeName
-            $DebugServicePipeName = Test-NamedPipeName-OrCreate-IfNull $DebugServicePipeName
+            $LanguageServicePipeName = Get-ValidatedNamedPipeName $LanguageServicePipeName
+            $DebugServicePipeName = Get-ValidatedNamedPipeName $DebugServicePipeName
 
             $editorServicesHost = Start-EditorServicesHost `
                                         -HostName $HostName `
@@ -417,7 +426,7 @@ catch [System.Exception] {
 
     Log "ERRORS caught starting up EditorServicesHost"
 
-    while ($e -ne $null) {
+    while ($null -ne $e) {
         $errorString = $errorString + ($e.Message + "`r`n" + $e.StackTrace + "`r`n")
         $e = $e.InnerException;
         Log $errorString
@@ -438,7 +447,7 @@ catch [System.Exception] {
 
     Log "ERRORS caught while waiting for EditorServicesHost to complete execution"
 
-    while ($e -ne $null) {
+    while ($null -ne $e) {
         $errorString = $errorString + ($e.Message + "`r`n" + $e.StackTrace + "`r`n")
         $e = $e.InnerException;
         Log $errorString
