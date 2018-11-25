@@ -58,20 +58,35 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 this.messageSerializer.SerializeMessage(
                     messageToWrite);
 
-            this.logger.Write(
-                LogLevel.Verbose,
-                $"Writing {messageToWrite.MessageType} '{messageToWrite.Method}'" +
-                (!string.IsNullOrEmpty(messageToWrite.Id) ? $" with id {messageToWrite.Id}" : string.Empty));
+            // Log message info
+            var logStrBld = 
+                new StringBuilder(512)
+                   .Append("Writing ")
+                   .Append(messageToWrite.MessageType)
+                   .Append(" '").Append(messageToWrite.Method).Append("'");
 
-            // Log the JSON representation of the message
-            this.logger.Write(
-                LogLevel.Diagnostic,
-                string.Format(
-                    "WRITE MESSAGE:\r\n\r\n{0}",
+            if (!string.IsNullOrEmpty(messageToWrite.Id))
+            {
+                logStrBld.Append(" with id ").Append(messageToWrite.Id);
+            }
+
+            if (this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic)
+            {
+                string jsonPayload = 
                     JsonConvert.SerializeObject(
                         messageObject,
                         Formatting.Indented,
-                        Constants.JsonSerializerSettings)));
+                        Constants.JsonSerializerSettings);
+
+                logStrBld.Append("\r\n\r\n").Append(jsonPayload);
+
+                // Log the JSON representation of the message
+                this.logger.Write(LogLevel.Diagnostic, logStrBld.ToString());
+            }
+            else
+            {
+                this.logger.Write(LogLevel.Verbose, logStrBld.ToString());
+            }
 
             string serializedMessage =
                 JsonConvert.SerializeObject(

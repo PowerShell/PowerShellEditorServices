@@ -110,20 +110,33 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             // Get the JObject for the JSON content
             JObject messageObject = JObject.Parse(messageContent);
 
-            // Load the message
-            this.logger.Write(
-                LogLevel.Diagnostic,
-                string.Format(
-                    "READ MESSAGE:\r\n\r\n{0}",
-                    messageObject.ToString(Formatting.Indented)));
-
-            // Return the parsed message
+            // Deserialize the message from the parsed JSON message
             Message parsedMessage = this.messageSerializer.DeserializeMessage(messageObject);
 
-            this.logger.Write(
-                LogLevel.Verbose,
-                $"Received {parsedMessage.MessageType} '{parsedMessage.Method}'" +
-                (!string.IsNullOrEmpty(parsedMessage.Id) ? $" with id {parsedMessage.Id}" : string.Empty));
+            // Log message info
+            var logStrBld =
+                new StringBuilder(512)
+                   .Append("Received ")
+                   .Append(parsedMessage.MessageType)
+                   .Append(" '").Append(parsedMessage.Method).Append("'");
+
+            if (!string.IsNullOrEmpty(parsedMessage.Id))
+            {
+                logStrBld.Append(" with id ").Append(parsedMessage.Id);
+            }
+
+            if (this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic)
+            {
+                string jsonPayload = messageObject.ToString(Formatting.Indented);
+                logStrBld.Append("\r\n\r\n").Append(jsonPayload);
+
+                // Log the JSON representation of the message
+                this.logger.Write(LogLevel.Diagnostic, logStrBld.ToString());
+            }
+            else
+            {
+                this.logger.Write(LogLevel.Verbose, logStrBld.ToString());
+            }
 
             return parsedMessage;
         }
