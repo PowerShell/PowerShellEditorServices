@@ -1,11 +1,11 @@
 
 $peekBuf = $null
 $currentLineNum = 1
-$logEntryNum = 1
+$logEntryIndex = 0
 
 function Parse-PsesLog {
     param(
-        # Specifies a path to one or more PSES EditorServices log files.
+        # Specifies a path to a PSES EditorServices log file.
         [Parameter(Mandatory=$true, Position=0)]
         [Alias("PSPath")]
         [ValidateNotNullOrEmpty()]
@@ -32,6 +32,10 @@ function Parse-PsesLog {
     )
 
     begin {
+        $script:peekBuf = $null
+        $script:currentLineNum = 1
+        $script:logEntryIndex = 0
+
         # Example log entry start:
         # 2018-11-24 12:26:58.302 [DIAGNOSTIC] tid:28 in 'ReadMessage' C:\Users\Keith\GitHub\rkeithhill\PowerShellEditorServices\src\PowerShellEditorServices.Protocol\MessageProtocol\MessageReader.cs:114:
         $logEntryRegex =
@@ -84,8 +88,8 @@ function Parse-PsesLog {
                 $line = nextLine
             }
 
-            if (!$HideProgress -and ($script:logEntryNum % 50 -eq 0)) {
-                Write-Progress "Processing log entry ${script:logEntryNum} on line: ${script:currentLineNum}"
+            if (!$HideProgress -and ($script:logEntryIndex % 50 -eq 0)) {
+                Write-Progress "Processing log entry ${script:logEntryIndex} on line: ${script:currentLineNum}"
             }
 
             [string]$timestampStr = $matches["ts"]
@@ -98,17 +102,17 @@ function Parse-PsesLog {
 
             $message = parseMessage $method
 
-            [PsesLogEntry]::new($timestamp, $timestampStr, $logLevel, $threadId, $method, $file, $lineNumber,
-                $message.MessageType, $message.Message)
+            [PsesLogEntry]::new($script:logEntryIndex, $timestamp, $timestampStr, $logLevel, $threadId, $method, 
+                $file, $lineNumber, $message.MessageType, $message.Message)
 
             if ($DebugTimingInfo) {
                 $sw.Stop()
                 if ($sw.ElapsedMilliseconds -gt $DebugTimingThresholdMs) {
-                    Write-Warning "Time to parse log entry ${script:logEntryNum} - $($sw.ElapsedMilliseconds) ms"
+                    Write-Warning "Time to parse log entry ${script:logEntryIndex} - $($sw.ElapsedMilliseconds) ms"
                 }
             }
 
-            $script:logEntryNum++
+            $script:logEntryIndex++
         }
 
         function parseMessage([string]$Method) {
@@ -129,14 +133,14 @@ function Parse-PsesLog {
                 $msg = $matches["msg"]
                 $id = $matches["id"]
                 $json = parseJsonMessageBody
-                $result.Message = [PsesJsonRpcMessage]::new($msg, $id, $json)
+                $result.Message = [PsesJsonRpcMessage]::new($msg, $id, $json.Data, $json.DataSize)
             }
             elseif (($Method -eq 'ReadMessage') -and
                     ($line -match '\s+Received event ''(?<msg>[^'']+)''')) {
                 $result.MessageType = [PsesMessageType]::Notification
                 $msg = $matches["msg"]
                 $json = parseJsonMessageBody
-                $result.Message = [PsesNotificationMessage]::new($msg, [PsesNotificationSource]::Client, $json)
+                $result.Message = [PsesNotificationMessage]::new($msg, [PsesNotificationSource]::Client, $json.Data, $json.DataSize)
             }
             elseif (($Method -eq 'WriteMessage') -and
                     ($line -match '\s+Writing Response ''(?<msg>[^'']+)'' with id (?<id>\d+)')) {
@@ -144,14 +148,14 @@ function Parse-PsesLog {
                 $msg = $matches["msg"]
                 $id = $matches["id"]
                 $json = parseJsonMessageBody
-                $result.Message = [PsesJsonRpcMessage]::new($msg, $id, $json)
+                $result.Message = [PsesJsonRpcMessage]::new($msg, $id, $json.Data, $json.DataSize)
             }
             elseif (($Method -eq 'WriteMessage') -and
                     ($line -match '\s+Writing event ''(?<msg>[^'']+)''')) {
                 $result.MessageType = [PsesMessageType]::Notification
                 $msg = $matches["msg"]
                 $json = parseJsonMessageBody
-                $result.Message = [PsesNotificationMessage]::new($msg, [PsesNotificationSource]::Server, $json)
+                $result.Message = [PsesNotificationMessage]::new($msg, [PsesNotificationSource]::Server, $json.Data, $json.DataSize)
             }
             else {
                 $result.MessageType = [PsesMessageType]::Log
@@ -199,24 +203,30 @@ function Parse-PsesLog {
         }
 
         function parseJsonMessageBody() {
+            $result = [PSCustomObject]@{
+                Data = $null
+                DataSize = 0
+            }
+
             $obj = $null
 
             if ($SkipRpcMessageBody) {
                 parseMessageBody -Discard
-                return $null
+                return $result
             }
             else {
-                $result = parseMessageBody
+                $result.Data = parseMessageBody
+                $result.DataSize = $result.Data.Length
             }
 
             try {
-                $obj = $result.Trim() | ConvertFrom-Json
+                $result.Data = $result.Data.Trim() | ConvertFrom-Json
             }
             catch {
                 Write-Error "Failed parsing JSON message body with error: $_"
             }
 
-            $obj
+            $result
         }
     }
 
