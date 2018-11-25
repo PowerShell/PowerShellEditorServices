@@ -1,6 +1,7 @@
 
 $peekBuf = $null
 $currentLineNum = 1
+$logEntryNum = 1
 
 function Parse-PsesLog {
     param(
@@ -9,24 +10,41 @@ function Parse-PsesLog {
         [Alias("PSPath")]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Path
+        $Path,
+
+        # Hides the progress bar.
+        [Parameter()]
+        [switch]
+        $HideProgress,
+
+        # Skips conversion from JSON & storage of the JsonRpc message body which can be large.
+        [Parameter()]
+        [switch]
+        $SkipRpcMessageBody,
+
+        [Parameter()]
+        [switch]
+        $DebugTimingInfo,
+
+        [Parameter()]
+        [int]
+        $DebugTimingThresholdMs = 100
     )
 
     begin {
-
         # Example log entry start:
         # 2018-11-24 12:26:58.302 [DIAGNOSTIC] tid:28 in 'ReadMessage' C:\Users\Keith\GitHub\rkeithhill\PowerShellEditorServices\src\PowerShellEditorServices.Protocol\MessageProtocol\MessageReader.cs:114:
-        $logEntryRegex = 
+        $logEntryRegex =
             [regex]::new(
-                '(?<ts>[^\[]+)\[(?<lev>([^\]]+))\]\s+tid:(?<tid>\d+)\s+in\s+''(?<meth>\w+)''\s+(?<file>..[^:]+):(?<line>\d+)', 
+                '(?<ts>[^\[]+)\[(?<lev>([^\]]+))\]\s+tid:(?<tid>\d+)\s+in\s+''(?<meth>\w+)''\s+(?<file>..[^:]+):(?<line>\d+)',
                 [System.Text.RegularExpressions.RegexOptions]::Compiled -bor [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
 
-        $filestream = 
+        $filestream =
             [System.IO.FileStream]::new(
-                $Path, 
-                [System.IO.FileMode]:: Open, 
-                [System.IO.FileAccess]::Read, 
-                [System.IO.FileShare]::ReadWrite, 
+                $Path,
+                [System.IO.FileMode]:: Open,
+                [System.IO.FileAccess]::Read,
+                [System.IO.FileShare]::ReadWrite,
                 4096,
                 [System.IO.FileOptions]::SequentialScan)
 
@@ -41,7 +59,7 @@ function Parse-PsesLog {
                 $line = $streamReader.ReadLine()
             }
 
-            $script:currentLineNum += 1
+            $script:currentLineNum++
             $line
         }
 
@@ -55,13 +73,21 @@ function Parse-PsesLog {
 
             $line
         }
-            
+
         function parseLogEntryStart([string]$line) {
+            if ($DebugTimingInfo) {
+                $sw = [System.Diagnostics.Stopwatch]::StartNew()
+            }
+
             while ($line -notmatch $logEntryRegex) {
                 Write-Warning "Ignoring line: '$line'"
                 $line = nextLine
             }
-            
+
+            if (!$HideProgress -and ($script:logEntryNum % 50 -eq 0)) {
+                Write-Progress "Processing log entry ${script:logEntryNum} on line: ${script:currentLineNum}"
+            }
+
             [string]$timestampStr = $matches["ts"]
             [DateTime]$timestamp = $timestampStr
             [PsesLogLevel]$logLevel = $matches["lev"]
@@ -69,11 +95,20 @@ function Parse-PsesLog {
             [string]$method = $matches["meth"]
             [string]$file = $matches["file"]
             [int]$lineNumber = $matches["line"]
- 
+
             $message = parseMessage $method
 
-            [PsesLogEntry]::new($timestamp, $timestampStr, $logLevel, $threadId, $method, $file, $lineNumber, 
+            [PsesLogEntry]::new($timestamp, $timestampStr, $logLevel, $threadId, $method, $file, $lineNumber,
                 $message.MessageType, $message.Message)
+
+            if ($DebugTimingInfo) {
+                $sw.Stop()
+                if ($sw.ElapsedMilliseconds -gt $DebugTimingThresholdMs) {
+                    Write-Warning "Time to parse log entry ${script:logEntryNum} - $($sw.ElapsedMilliseconds) ms"
+                }
+            }
+
+            $script:logEntryNum++
         }
 
         function parseMessage([string]$Method) {
@@ -88,7 +123,7 @@ function Parse-PsesLog {
                 return $result
             }
 
-            if (($Method -eq 'ReadMessage') -and 
+            if (($Method -eq 'ReadMessage') -and
                 ($line -match '\s+Received Request ''(?<msg>[^'']+)'' with id (?<id>\d+)')) {
                 $result.MessageType = [PsesMessageType]::Request
                 $msg = $matches["msg"]
@@ -96,14 +131,14 @@ function Parse-PsesLog {
                 $json = parseJsonMessageBody
                 $result.Message = [PsesJsonRpcMessage]::new($msg, $id, $json)
             }
-            elseif (($Method -eq 'ReadMessage') -and 
+            elseif (($Method -eq 'ReadMessage') -and
                     ($line -match '\s+Received event ''(?<msg>[^'']+)''')) {
                 $result.MessageType = [PsesMessageType]::Notification
                 $msg = $matches["msg"]
                 $json = parseJsonMessageBody
                 $result.Message = [PsesNotificationMessage]::new($msg, [PsesNotificationSource]::Client, $json)
             }
-            elseif (($Method -eq 'WriteMessage') -and 
+            elseif (($Method -eq 'WriteMessage') -and
                     ($line -match '\s+Writing Response ''(?<msg>[^'']+)'' with id (?<id>\d+)')) {
                 $result.MessageType = [PsesMessageType]::Response
                 $msg = $matches["msg"]
@@ -111,7 +146,7 @@ function Parse-PsesLog {
                 $json = parseJsonMessageBody
                 $result.Message = [PsesJsonRpcMessage]::new($msg, $id, $json)
             }
-            elseif (($Method -eq 'WriteMessage') -and 
+            elseif (($Method -eq 'WriteMessage') -and
                     ($line -match '\s+Writing event ''(?<msg>[^'']+)''')) {
                 $result.MessageType = [PsesMessageType]::Notification
                 $msg = $matches["msg"]
@@ -127,8 +162,12 @@ function Parse-PsesLog {
             $result
         }
 
-        function parseMessageBody([string]$startLine = '') {
-            $result = $startLine
+        function parseMessageBody([string]$startLine = '', [switch]$Discard) {
+            if (!$Discard) {
+                $strBld = [System.Text.StringBuilder]::new($startLine, 4096)
+                $newLine = "`r`n"
+            }
+
             try {
                 while ($true) {
                     $peekLine = peekLine
@@ -136,26 +175,41 @@ function Parse-PsesLog {
                         break
                     }
 
-                    if ($peekLine -match $logEntryRegex) {
+                    if (($peekLine.Length -gt 0) -and ($peekLine[0] -ne ' ') -and ($peekLine -match $logEntryRegex)) {
                         break
                     }
 
-                    $result += (nextLine) + "`r`n"
+                    $nextLine = nextLine
+                    if (!$Discard) {
+                        [void]$strBld.Append($nextLine).Append($newLine)
+                    }
                 }
-
             }
             catch {
                 Write-Error "Failed parsing message body with error: $_"
             }
 
-            $result.Trim()
+            if (!$Discard) {
+                $msgBody = $strBld.ToString().Trim()
+                $msgBody
+            }
+            else {
+                $startLine
+            }
         }
 
         function parseJsonMessageBody() {
             $obj = $null
 
-            try {
+            if ($SkipRpcMessageBody) {
+                parseMessageBody -Discard
+                return $null
+            }
+            else {
                 $result = parseMessageBody
+            }
+
+            try {
                 $obj = $result.Trim() | ConvertFrom-Json
             }
             catch {
