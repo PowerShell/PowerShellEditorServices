@@ -11,7 +11,9 @@ param(
 
     [string]$ModulesJsonPath = "$PSScriptRoot/modules.json",
 
-    [string]$DefaultModuleRepository = "PSGallery"
+    [string]$DefaultModuleRepository = "PSGallery",
+
+    [switch]$ModifyMSBuildEnvVars
 )
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
@@ -26,7 +28,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
 }
 
-task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi, PackageNuGet {
+task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi, PackageNuGet, BuildDocs, ServeDocs {
 
     $requiredSdkVersion = "2.0.0"
 
@@ -93,6 +95,42 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
         $dotnetExeDir = [System.IO.Path]::GetDirectoryName($script:dotnetExe)
         $env:PATH = $dotnetExeDir + [System.IO.Path]::PathSeparator + $env:PATH
         $env:DOTNET_INSTALL_DIR = $dotnetExeDir
+    }
+    if ($ModifyMSBuildEnvVars.IsPresent -and !$script:IsUnix) {
+        # Some operations require the correct SDK to be set in the environment e.g. Docfx
+        # Only valid on Windows
+        $dotnetExeDir = [System.IO.Path]::GetDirectoryName($script:dotnetExe)
+        $SDKPath = [System.IO.Path]::Combine($dotnetExeDir, "sdk")
+
+        $SDKVersionPath = ''
+        Get-ChildItem -Path $SDKPath -Directory | ForEach-Object -Process {
+            if ($SDKVersionPath -eq '') {
+                $TestPath = Join-Path -Path $_.Fullname -ChildPath 'Sdks'
+                if (Test-Path -Path $TestPath) { $SDKVersionPath = $_.Fullname }
+            }
+        }
+        if (-not [string]::IsNullOrEmpty($SDKVersionPath)) {
+            $ENV:MSBuildSDKsPath = Join-Path -Path $SDKVersionPath -ChildPath 'Sdks'
+            $ENV:MSBuildExtensionsPath = $SDKVersionPath
+            $ENV:MSBUILD_EXE_PATH = Join-Path -Path $SDKVersionPath -ChildPath 'MSBuild.dll'
+
+            # # Get currently installed VS Verion
+            # DocFX may require - https://github.com/dotnet/docfx/issues/2491#issuecomment-371722477
+            # $VisualStudioVersion = (Get-ItemProperty "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7" |
+            #     Get-Member -MemberType NoteProperty |
+            #     Where-Object { $_.Name -notlike 'PS*'} |
+            #     Sort-Object |
+            #     Select -First 1).Name
+            # # Get Visual Studio install path
+            # $VSINSTALLDIR =  $(Get-ItemProperty "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7").$VisualStudioVersion;
+            # # Add Visual Studio environment variables
+            # $env:VisualStudioVersion = $VisualStudioVersion;
+            # $env:VSINSTALLDIR = $VSINSTALLDIR;
+
+            Write-Host "`n### Using dotnet SDK at path $SDKVersionPath" -ForegroundColor Green
+        } else {
+            throw "Unable to find any SDKs in path $SDKPath"
+        }
     }
 
     Write-Host "`n### Using dotnet v$(& $script:dotnetExe --version) at path $script:dotnetExe`n" -ForegroundColor Green
@@ -384,6 +422,14 @@ task UploadArtifacts -If ($script:IsCIBuild) {
         Push-AppveyorArtifact .\src\PowerShellEditorServices.Host\bin\$Configuration\Microsoft.PowerShell.EditorServices.Host.$($script:FullVersion).nupkg
         Push-AppveyorArtifact .\PowerShellEditorServices-$($script:FullVersion).zip
     }
+}
+
+task BuildDocs -If { !$script:IsUnix } {
+    exec { & scripts\BuildDocs.ps1 -Clean }
+}
+
+task ServeDocs -If { !$script:IsUnix } {
+    exec { & scripts\BuildDocs.ps1 -Clean -Serve }
 }
 
 # The default task is to run the entire CI build

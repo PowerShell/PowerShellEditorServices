@@ -11,18 +11,46 @@ $docsRepoPath = [System.IO.Path]::GetFullPath("$PSScriptRoot\..\docs\_repo")
 # Ensure the tools path exists
 mkdir $toolsPath -Force | Out-Null
 
-if (![System.IO.File]::Exists($docfxExePath)) {
-    # Download DocFX
-    Remove-Item -Path "$docfxBinPath" -Force -ErrorAction Stop | Out-Null
-    (new-object net.webclient).DownloadFile('https://github.com/dotnet/docfx/releases/download/v1.8/docfx.zip', "$docfxZipPath")
+if (!(Test-Path -Path $docfxBinPath)) {
+    mkdir $docfxBinPath -Force | Out-Null
+}
 
-    # Extract the archive
-    Expand-Archive $docfxZipPath -DestinationPath $docfxBinPath -Force -ErrorAction "Stop"
+if (!(Test-Path -Path $docfxExePath)) {
+    # Download DocFX
+    if (Test-Path -Path $docfxBinPath) { Remove-Item -Path "$docfxBinPath" -Force -ErrorAction Stop | Out-Null }
+    # Github uses TLS 1.2
+    $originalSecurityProtocol = [Net.ServicePointManager]::SecurityProtocol
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+        Write-Verbose "Downloading docfx..."
+        # The docFX 1.x release does generate documentation but is incomplete as it doesn't understand dotNet 2.1 (https://github.com/dotnet/docfx/releases/download/v1.9.4/docfx.zip)
+        # The docFX 2.x release errors during generation as it doesn't understand dotNet 2.1 (https://github.com/dotnet/docfx/releases/download/v2.40.3/docfx.zip)
+        # 2.1 support seems to be slated for docfx 3.x release - https://github.com/dotnet/docfx/projects/1
+        #
+        # For now use the 1.x series of docfx
+        Invoke-WebRequest -Uri 'https://github.com/dotnet/docfx/releases/download/v1.9.4/docfx.zip' -OutFile $docfxZipPath -ErrorAction Stop -UseBasicParsing
+
+        # Extract the archive
+        Expand-Archive $docfxZipPath -DestinationPath $docfxBinPath -Force -ErrorAction "Stop"
+    }
+    Finally {
+        [Net.ServicePointManager]::SecurityProtocol = $originalSecurityProtocol
+    }
 }
 
 # Clean the _site folder if necessary
 if ($Clean.IsPresent) {
-    Remove-Item -Path $sitePath -Force -Recurse | Out-Null
+    if (Test-Path -Path $sitePath) { Remove-Item -Path $sitePath -Force -Recurse | Out-Null }
+
+    # Clean docfx object caches
+    @("src\PowerShellEditorServices",
+      "src\PowerShellEditorServices.Channel.WebSocket",
+      "src\PowerShellEditorServices.Host",
+      "src\PowerShellEditorServices.Protocol",
+      "src\PowerShellEditorServices.VSCode") | ForEach-Object -Process {
+        $docCache = [System.IO.Path]::GetFullPath("$PSScriptRoot\..\" + $_ + "\obj\xdoc")
+        if ([System.IO.Directory]::Exists($docCache)) { Remove-Item -Force -Recurse -Path $docCache | Out-Null }
+    }
 }
 
 # Build the metadata for the C# API

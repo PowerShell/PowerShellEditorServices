@@ -4,7 +4,27 @@
       "src": [
         {
           "files": [ "*.csproj" ],
-          "cwd": "../src/PowerShellEditorServices",
+          "src": "../src/PowerShellEditorServices",
+          "exclude": [ "**/obj/**", "**/bin/**" ]
+        },
+        {
+          "files": [ "*.csproj" ],
+          "src": "../src/PowerShellEditorServices.Channel.WebSocket",
+          "exclude": [ "**/obj/**", "**/bin/**" ]
+        },
+        {
+          "files": [ "*.csproj" ],
+          "src": "../src/PowerShellEditorServices.Host",
+          "exclude": [ "**/obj/**", "**/bin/**" ]
+        },
+        {
+          "files": [ "*.csproj" ],
+          "src": "../src/PowerShellEditorServices.Protocol",
+          "exclude": [ "**/obj/**", "**/bin/**" ]
+        },
+        {
+          "files": [ "*.csproj" ],
+          "src": "../src/PowerShellEditorServices.VSCode",
           "exclude": [ "**/obj/**", "**/bin/**" ]
         }
       ],
@@ -14,21 +34,21 @@
   "build": {
     "content": [
       {
-        "cwd": "metadata/api",
+        "src": "metadata/api",
         "files": [
           "**/**.yml"
         ],
         "dest": "api"
       },
       {
-        "cwd": "../",
+        "src": "../",
         "files": [
           "CONTRIBUTING.md",
           "CHANGELOG.md"
         ]
       },
       {
-        "cwd":  ".",
+        "src":  ".",
         "files": [
           "toc.yml",
           "index.md",

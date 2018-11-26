@@ -29,9 +29,6 @@ registered_data.ini
 .dotnet/
 module/Plaster
 module/PSScriptAnalyzer
-docs/_site/
-docs/_repo/
-docs/metadata/
 *.zip
 
 # Generated build info file
@@ -74,3 +71,9 @@ module/PowerShellEditorServices/Third\ Party\ Notices.txt
 
 # JetBrains generated file (Rider, intelliJ)
 .idea/
+
+# Docfx generation
+docs/_site/
+docs/_repo/
+docs/metadata/
+tools/docfx
