@@ -362,6 +362,7 @@ namespace Microsoft.PowerShell.EditorServices
                 // If we get too deep, keep processing but go no deeper
                 if (dirStack.Count >= recursionDepthLimit)
                 {
+                    this.logger.Write(LogLevel.Warning, $"Recursion depth limit hit for path {folderPath}");
                     continue;
                 }
 
