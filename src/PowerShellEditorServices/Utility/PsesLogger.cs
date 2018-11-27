@@ -63,6 +63,24 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = 0)
         {
+            Write(logLevel, new StringBuilder(logMessage), callerName, callerSourceFile, callerLineNumber);
+        }
+
+        /// <summary>
+        /// Write a message with the given severity to the logs. Takes a StringBuilder to allow for minimal allocation.
+        /// </summary>
+        /// <param name="logLevel">The severity level of the log message.</param>
+        /// <param name="logMessage">The log message itself in StringBuilder form for manipulation.</param>
+        /// <param name="callerName">The name of the calling method.</param>
+        /// <param name="callerSourceFile">The name of the source file of the caller.</param>
+        /// <param name="callerLineNumber">The line number where the log is being called.</param>
+        private void Write(
+            LogLevel logLevel,
+            StringBuilder logMessage,
+            [CallerMemberName] string callerName = null,
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = 0)
+        {
             string indentedLogMsg = IndentMsg(logMessage);
             string logLevelName = logLevel.ToString().ToUpper();
 
@@ -103,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = 0)
         {
-            string body = IndentExceptionMessage("Exception", errorMessage, exception);
+            StringBuilder body = FormatExceptionMessage("Exception", errorMessage, exception);
             Write(LogLevel.Error, body, callerName, callerSourceFile, callerLineNumber);
         }
 
@@ -122,18 +140,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = 0)
         {
-            string body = IndentExceptionMessage("Handled exception", errorMessage, exception);
+            StringBuilder body = FormatExceptionMessage("Handled exception", errorMessage, exception);
             Write(LogLevel.Warning, body, callerName, callerSourceFile, callerLineNumber);
-        }
-
-        /// <summary>
-        /// Utility function to indent a log message by one level.
-        /// </summary>
-        /// <param name="logMessage">The log message to indent.</param>
-        /// <returns>The indented log message string.</returns>
-        private static string IndentMsg(string logMessage)
-        {
-            return IndentMsg(new StringBuilder(logMessage));
         }
 
         /// <summary>
@@ -157,7 +165,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <param name="errorMessage">The user-readable short description of the error.</param>
         /// <param name="exception">The exception object itself. Must not be null.</param>
         /// <returns>An indented, formatted string of the body.</returns>
-        private static string IndentExceptionMessage(
+        private static StringBuilder FormatExceptionMessage(
             string messagePrelude,
             string errorMessage,
             Exception exception)
@@ -167,7 +175,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 .Append(Environment.NewLine)
                 .Append(exception.ToString());
 
-            return IndentMsg(sb);
+            return sb;
         }
 
         /// <summary>
