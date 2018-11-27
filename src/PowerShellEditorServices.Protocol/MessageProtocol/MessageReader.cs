@@ -113,9 +113,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             // Deserialize the message from the parsed JSON message
             Message parsedMessage = this.messageSerializer.DeserializeMessage(messageObject);
 
-            // Log message info
+            // Log message info - initial capacity for StringBuilder varies depending on whether
+            // the log level is Diagnostic where JsonRpc message payloads are logged and 
+            // vary from 1K up edited file size chars.  When not logging message payloads the 
+            // typical request log message is under 250 chars.
             var logStrBld =
-                new StringBuilder(512)
+                new StringBuilder(this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic ? 4096 : 250)
                    .Append("Received ")
                    .Append(parsedMessage.MessageType)
                    .Append(" '").Append(parsedMessage.Method).Append("'");
@@ -127,16 +130,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
             if (this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic)
             {
+                // Log the JSON representation of the message payload at the Diagnostic log level
                 string jsonPayload = messageObject.ToString(Formatting.Indented);
-                logStrBld.Append("\r\n\r\n").Append(jsonPayload);
+                logStrBld.Append(Environment.NewLine).Append(Environment.NewLine).Append(jsonPayload);
+            }
 
-                // Log the JSON representation of the message
-                this.logger.Write(LogLevel.Diagnostic, logStrBld.ToString());
-            }
-            else
-            {
-                this.logger.Write(LogLevel.Verbose, logStrBld.ToString());
-            }
+            this.logger.Write(LogLevel.Verbose, logStrBld.ToString());
 
             return parsedMessage;
         }

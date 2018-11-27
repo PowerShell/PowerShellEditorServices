@@ -58,9 +58,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 this.messageSerializer.SerializeMessage(
                     messageToWrite);
 
-            // Log message info
+            // Log message info - initial capacity for StringBuilder varies depending on whether
+            // the log level is Diagnostic where JsonRpc message payloads are logged and 
+            // vary from 1K up 225K chars.  When not logging message payloads the typical response
+            // log message is under 250 chars.
             var logStrBld = 
-                new StringBuilder(512)
+                new StringBuilder(this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic ? 4096 : 250)
                    .Append("Writing ")
                    .Append(messageToWrite.MessageType)
                    .Append(" '").Append(messageToWrite.Method).Append("'");
@@ -72,21 +75,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
             if (this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic)
             {
+                // Log the JSON representation of the message payload at the Diagnostic log level
                 string jsonPayload = 
                     JsonConvert.SerializeObject(
                         messageObject,
                         Formatting.Indented,
                         Constants.JsonSerializerSettings);
 
-                logStrBld.Append("\r\n\r\n").Append(jsonPayload);
+                logStrBld.Append(Environment.NewLine).Append(Environment.NewLine).Append(jsonPayload);
+            }
 
-                // Log the JSON representation of the message
-                this.logger.Write(LogLevel.Diagnostic, logStrBld.ToString());
-            }
-            else
-            {
-                this.logger.Write(LogLevel.Verbose, logStrBld.ToString());
-            }
+            this.logger.Write(LogLevel.Verbose, logStrBld.ToString());
 
             string serializedMessage =
                 JsonConvert.SerializeObject(
