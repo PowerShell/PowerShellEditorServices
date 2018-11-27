@@ -150,6 +150,13 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 .ToString();
         }
 
+        /// <summary>
+        /// Creates a prettified log message from an exception.
+        /// </summary>
+        /// <param name="messagePrelude">The user-readable tag for this exception entry.</param>
+        /// <param name="errorMessage">The user-readable short description of the error.</param>
+        /// <param name="exception">The exception object itself. Must not be null.</param>
+        /// <returns>An indented, formatted string of the body.</returns>
         private static string IndentExceptionMessage(
             string messagePrelude,
             string errorMessage,
