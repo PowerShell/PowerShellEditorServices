@@ -134,6 +134,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(
                 DocumentRangeFormattingRequest.Type,
                 this.HandleDocumentRangeFormattingRequest);
+            this.messageHandlers.SetRequestHandler(FoldingRangeRequest.Type, this.HandleFoldingRangeRequestAsync);
 
             this.messageHandlers.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
             this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
@@ -243,7 +244,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         },
                         DocumentFormattingProvider = false,
                         DocumentRangeFormattingProvider = false,
-                        RenameProvider = false
+                        RenameProvider = false,
+                        FoldingRangeProvider = true
                     }
                 });
         }
@@ -1329,6 +1331,13 @@ function __Expand-Alias {
             });
         }
 
+        protected async Task HandleFoldingRangeRequestAsync(
+            FoldingRangeParams foldingParams,
+            RequestContext<FoldingRange[]> requestContext)
+        {
+            await requestContext.SendResult(Fold(foldingParams.TextDocument.Uri));
+        }
+
         protected Task HandleEvaluateRequest(
             DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
             RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
@@ -1366,6 +1375,27 @@ function __Expand-Alias {
         #endregion
 
         #region Event Handlers
+
+        private FoldingRange[] Fold(
+            string documentUri)
+        {
+            // TODO Should be using dynamic registrations
+            if (!this.currentSettings.CodeFolding.Enable) { return null; }
+            var result = new List<FoldingRange>();
+            foreach (FoldingReference fold in TokenOperations.FoldableRegions(
+                editorSession.Workspace.GetFile(documentUri).ScriptTokens,
+                this.currentSettings.CodeFolding.ShowLastLine))
+            {
+                result.Add(new FoldingRange {
+                    EndCharacter   = fold.EndCharacter,
+                    EndLine        = fold.EndLine,
+                    Kind           = fold.Kind,
+                    StartCharacter = fold.StartCharacter,
+                    StartLine      = fold.StartLine
+                });
+            }
+            return result.ToArray();
+        }
 
         private async Task<Tuple<string, Range>> Format(
             string documentUri,

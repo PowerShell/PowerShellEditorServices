@@ -20,10 +20,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         public CodeFormattingSettings CodeFormatting { get; set; }
 
+        public CodeFoldingSettings CodeFolding { get; set; }
+
         public LanguageServerSettings()
         {
             this.ScriptAnalysis = new ScriptAnalysisSettings();
             this.CodeFormatting = new CodeFormattingSettings();
+            this.CodeFolding = new CodeFoldingSettings();
         }
 
         public void Update(
@@ -39,6 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     workspaceRootPath,
                     logger);
                 this.CodeFormatting = new CodeFormattingSettings(settings.CodeFormatting);
+                this.CodeFolding.Update(settings.CodeFolding, logger);
             }
         }
     }
@@ -258,6 +262,41 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     }},
                 }}
             };
+        }
+    }
+
+    /// <summary>
+    /// Code folding settings
+    /// </summary>
+    public class CodeFoldingSettings
+    {
+        /// <summary>
+        /// Whether the folding is enabled. Default is true as per VSCode
+        /// </summary>
+        public bool Enable { get; set; } = true;
+
+        /// <summary>
+        /// Whether to show or hide the last line of a folding region. Default is true as per VSCode
+        /// </summary>
+        public bool ShowLastLine { get; set; } = true;
+
+        /// <summary>
+        /// Update these settings from another settings object
+        /// </summary>
+        public void Update(
+            CodeFoldingSettings settings,
+            ILogger logger)
+        {
+            if (settings != null) {
+                if (this.Enable != settings.Enable) {
+                    this.Enable = settings.Enable;
+                    logger.Write(LogLevel.Verbose, string.Format("Using Code Folding Enabled - {0}", this.Enable));
+                }
+                if (this.ShowLastLine != settings.ShowLastLine) {
+                    this.ShowLastLine = settings.ShowLastLine;
+                    logger.Write(LogLevel.Verbose, string.Format("Using Code Folding ShowLastLine - {0}", this.ShowLastLine));
+                }
+            }
         }
     }
 

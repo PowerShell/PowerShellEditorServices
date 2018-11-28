@@ -42,6 +42,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public ExecuteCommandOptions ExecuteCommandProvider { get; set; }
 
         public object Experimental { get; set; }
+
+        public bool FoldingRangeProvider { get; set; } = false;
     }
 
     /// <summary>
