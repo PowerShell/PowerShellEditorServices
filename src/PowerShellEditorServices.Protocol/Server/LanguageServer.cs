@@ -530,12 +530,16 @@ function __Expand-Alias {
             RequestContext<object> requestContext)
         {
             PSCommand psCommand = new PSCommand();
-            if (!string.IsNullOrEmpty(param)) {
+            if (!string.IsNullOrEmpty(param))
+            {    
                 psCommand.AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddArgument(param);
             }
             else
             {
-                psCommand.AddCommand("Microsoft.PowerShell.Core\\Get-Command")
+                // Executes the following:
+                // Get-Command -CommandType Function,Cmdlet,ExternalScript | Select-Object -Property Name,ModuleName | Sort-Object -Property Name
+                psCommand
+                    .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
                         .AddParameter("CommandType", new[]{"Function", "Cmdlet", "ExternalScript"})
                     .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
                         .AddParameter("Property", new[]{"Name", "ModuleName"})
