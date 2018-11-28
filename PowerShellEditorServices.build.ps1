@@ -114,19 +114,6 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
             $ENV:MSBuildExtensionsPath = $SDKVersionPath
             $ENV:MSBUILD_EXE_PATH = Join-Path -Path $SDKVersionPath -ChildPath 'MSBuild.dll'
 
-            # # Get currently installed VS Verion
-            # DocFX may require - https://github.com/dotnet/docfx/issues/2491#issuecomment-371722477
-            # $VisualStudioVersion = (Get-ItemProperty "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7" |
-            #     Get-Member -MemberType NoteProperty |
-            #     Where-Object { $_.Name -notlike 'PS*'} |
-            #     Sort-Object |
-            #     Select -First 1).Name
-            # # Get Visual Studio install path
-            # $VSINSTALLDIR =  $(Get-ItemProperty "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7").$VisualStudioVersion;
-            # # Add Visual Studio environment variables
-            # $env:VisualStudioVersion = $VisualStudioVersion;
-            # $env:VSINSTALLDIR = $VSINSTALLDIR;
-
             Write-Host "`n### Using dotnet SDK at path $SDKVersionPath" -ForegroundColor Green
         } else {
             throw "Unable to find any SDKs in path $SDKPath"
