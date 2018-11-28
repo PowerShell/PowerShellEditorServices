@@ -43,7 +43,7 @@ function Get-PsesRpcNotificationMessage {
 }
 
 function Get-PsesRpcMessageResponseTime {
-    [CmdletBinding(DefaultParameterSetName="Path")]
+    [CmdletBinding(DefaultParameterSetName = "PsesLogEntry")]
     param(
         # Specifies a path to one or more PSES EditorServices log files.
         [Parameter(Mandatory=$true, Position=0, ParameterSetName="Path")]
