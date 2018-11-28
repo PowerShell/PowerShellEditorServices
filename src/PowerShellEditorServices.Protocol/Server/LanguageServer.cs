@@ -13,6 +13,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
@@ -138,6 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
 
             this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
+            this.messageHandlers.SetRequestHandler(GetCommandRequest.Type, this.HandleGetCommandRequestAsync);
 
             this.messageHandlers.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
             this.messageHandlers.SetRequestHandler(InstallModuleRequest.Type, this.HandleInstallModuleRequest);
@@ -523,6 +525,48 @@ function __Expand-Alias {
             var result = await this.editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
 
             await requestContext.SendResult(result.First().ToString());
+        }
+
+        private async Task HandleGetCommandRequestAsync(
+            string param,
+            RequestContext<object> requestContext)
+        {
+            PSCommand psCommand = new PSCommand();
+            if (!string.IsNullOrEmpty(param))
+            {    
+                psCommand.AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddArgument(param);
+            }
+            else
+            {
+                // Executes the following:
+                // Get-Command -CommandType Function,Cmdlet,ExternalScript | Select-Object -Property Name,ModuleName | Sort-Object -Property Name
+                psCommand
+                    .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
+                        .AddParameter("CommandType", new[]{"Function", "Cmdlet", "ExternalScript"})
+                    .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
+                        .AddParameter("Property", new[]{"Name", "ModuleName"})
+                    .AddCommand("Microsoft.PowerShell.Utility\\Sort-Object")
+                        .AddParameter("Property", "Name");
+            }
+            IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+            var commandList = new List<PSCommandMessage>();
+
+            if (result != null)
+            {
+                foreach (dynamic command in result)
+                {
+                    commandList.Add(new PSCommandMessage
+                    {
+                        Name = command.Name,
+                        ModuleName = command.ModuleName,
+                        Parameters = command.Parameters,
+                        ParameterSets = command.ParameterSets,
+                        DefaultParameterSet = command.DefaultParameterSet
+                    });
+                }
+            }
+
+            await requestContext.SendResult(commandList);
         }
 
         private async Task HandleFindModuleRequest(
