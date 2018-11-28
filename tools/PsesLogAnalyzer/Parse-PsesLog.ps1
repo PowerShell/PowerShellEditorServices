@@ -1,6 +1,6 @@
 
 $peekBuf = $null
-$currentLineNum = 1
+$currentLineNum = 0
 $logEntryIndex = 0
 
 function Parse-PsesLog {
@@ -44,7 +44,7 @@ function Parse-PsesLog {
         $script:logEntryIndex = 0
 
         if ($OldLogFormat) {
-            # Example old log entry start
+            # Example old log entry start:
             # 2018-11-15 19:49:06.979 [NORMAL] C:\PowerShellEditorServices\src\PowerShellEditorServices.Host\EditorServicesHost.cs: In method 'StartLogging', line 160:
             $logEntryRegex =
                 [regex]::new(
@@ -53,10 +53,10 @@ function Parse-PsesLog {
         }
         else {
             # Example new log entry start:
-            # 2018-11-24 12:26:58.302 [DIAGNOSTIC] tid:28 in 'ReadMessage' C:\Users\Keith\GitHub\rkeithhill\PowerShellEditorServices\src\PowerShellEditorServices.Protocol\MessageProtocol\MessageReader.cs:114:
+            # 2018-11-24 12:26:58.302 [DIAGNOSTIC] tid:28 in 'ReadMessage' C:\Users\Keith\GitHub\rkeithhill\PowerShellEditorServices\src\PowerShellEditorServices.Protocol\MessageProtocol\MessageReader.cs: line 114
             $logEntryRegex =
                 [regex]::new(
-                    '^(?<ts>[^\[]+)\[(?<lev>([^\]]+))\]\s+tid:(?<tid>\d+)\s+in\s+''(?<meth>\w+)''\s+(?<file>..[^:]+):(?<line>\d+)',
+                    '^(?<ts>[^\[]+)\[(?<lev>([^\]]+))\]\s+tid:(?<tid>\d+)\s+in\s+''(?<meth>\w+)''\s+(?<file>..[^:]+):\s+line\s+(?<line>\d+)',
                     [System.Text.RegularExpressions.RegexOptions]::Compiled -bor [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
         }
 
@@ -101,7 +101,7 @@ function Parse-PsesLog {
             }
 
             while ($line -notmatch $logEntryRegex) {
-                Write-Warning "Ignoring line: '$line'"
+                Write-Warning "Ignoring line:${currentLineNum} '$line'"
                 $line = nextLine
             }
 
@@ -117,10 +117,10 @@ function Parse-PsesLog {
             [string]$file = $matches["file"]
             [int]$lineNumber = $matches["line"]
 
-            $message = parseMessage $method
+            $message = parseLogMessage $method
 
             [PsesLogEntry]::new($script:logEntryIndex, $timestamp, $timestampStr, $logLevel, $threadId, $method,
-                $file, $lineNumber, $message.MessageType, $message.Message)
+                $file, $lineNumber, $message.LogMessageType, $message.LogMessage)
 
             if ($DebugTimingInfo) {
                 $sw.Stop()
@@ -132,10 +132,10 @@ function Parse-PsesLog {
             $script:logEntryIndex++
         }
 
-        function parseMessage([string]$Method) {
+        function parseLogMessage([string]$Method) {
             $result = [PSCustomObject]@{
-                MessageType = [PsesMessageType]::Log
-                Message = $null
+                LogMessageType = [PsesLogMessageType]::Log
+                LogMessage = $null
             }
 
             $line = nextLine
@@ -145,45 +145,54 @@ function Parse-PsesLog {
             }
 
             if (($Method -eq 'ReadMessage') -and
-                ($line -match '\s+Received Request ''(?<msg>[^'']+)'' with id (?<id>\d+)')) {
-                $result.MessageType = [PsesMessageType]::Request
+                ($line -match '^\s+Received Request ''(?<msg>[^'']+)'' with id (?<id>\d+)')) {
+                $result.LogMessageType = [PsesLogMessageType]::Request
                 $msg = $matches["msg"]
                 $id = $matches["id"]
-                $json = parseJsonMessageBody
-                $result.Message = [PsesJsonRpcMessage]::new($msg, $id, $json.Data, $json.DataSize)
+                $json = parseLogMessageBodyAsJson
+                $result.LogMessage = [PsesJsonRpcMessage]::new($msg, $id, $json.Data, $json.DataSize)
             }
             elseif (($Method -eq 'ReadMessage') -and
-                    ($line -match '\s+Received event ''(?<msg>[^'']+)''')) {
-                $result.MessageType = [PsesMessageType]::Notification
+                    ($line -match '^\s+Received event ''(?<msg>[^'']+)''')) {
+                $result.LogMessageType = [PsesLogMessageType]::Notification
                 $msg = $matches["msg"]
-                $json = parseJsonMessageBody
-                $result.Message = [PsesNotificationMessage]::new($msg, [PsesNotificationSource]::Client, $json.Data, $json.DataSize)
+                $json = parseLogMessageBodyAsJson
+                $result.LogMessage = [PsesNotificationMessage]::new($msg, [PsesNotificationSource]::Client, $json.Data, $json.DataSize)
             }
             elseif (($Method -eq 'WriteMessage') -and
-                    ($line -match '\s+Writing Response ''(?<msg>[^'']+)'' with id (?<id>\d+)')) {
-                $result.MessageType = [PsesMessageType]::Response
+                    ($line -match '^\s+Writing Response ''(?<msg>[^'']+)'' with id (?<id>\d+)')) {
+                $result.LogMessageType = [PsesLogMessageType]::Response
                 $msg = $matches["msg"]
                 $id = $matches["id"]
-                $json = parseJsonMessageBody
-                $result.Message = [PsesJsonRpcMessage]::new($msg, $id, $json.Data, $json.DataSize)
+                $json = parseLogMessageBodyAsJson
+                $result.LogMessage = [PsesJsonRpcMessage]::new($msg, $id, $json.Data, $json.DataSize)
             }
             elseif (($Method -eq 'WriteMessage') -and
-                    ($line -match '\s+Writing event ''(?<msg>[^'']+)''')) {
-                $result.MessageType = [PsesMessageType]::Notification
+                    ($line -match '^\s+Writing event ''(?<msg>[^'']+)''')) {
+                $result.LogMessageType = [PsesLogMessageType]::Notification
                 $msg = $matches["msg"]
-                $json = parseJsonMessageBody
-                $result.Message = [PsesNotificationMessage]::new($msg, [PsesNotificationSource]::Server, $json.Data, $json.DataSize)
+                $json = parseLogMessageBodyAsJson
+                $result.LogMessage = [PsesNotificationMessage]::new($msg, [PsesNotificationSource]::Server, $json.Data, $json.DataSize)
             }
             else {
-                $result.MessageType = [PsesMessageType]::Log
-                $body = parseMessageBody $line
-                $result.Message = [PsesLogMessage]::new($body)
+                if  ($line -match '^\s+Exception: ') {
+                    $result.LogMessageType = [PsesLogMessageType]::Exception
+                }
+                elseif  ($line -match '^\s+Handled exception: ') {
+                    $result.LogMessageType = [PsesLogMessageType]::HandledException
+                }
+                else {
+                    $result.LogMessageType = [PsesLogMessageType]::Log
+                }
+
+                $body = parseLogMessageBody $line
+                $result.LogMessage = [PsesLogMessage]::new($body)
             }
 
             $result
         }
 
-        function parseMessageBody([string]$startLine = '', [switch]$Discard) {
+        function parseLogMessageBody([string]$startLine = '', [switch]$Discard) {
             if (!$Discard) {
                 $strBld = [System.Text.StringBuilder]::new($startLine, 4096)
                 $newLine = "`r`n"
@@ -219,7 +228,7 @@ function Parse-PsesLog {
             }
         }
 
-        function parseJsonMessageBody() {
+        function parseLogMessageBodyAsJson() {
             $result = [PSCustomObject]@{
                 Data = $null
                 DataSize = 0
@@ -228,11 +237,11 @@ function Parse-PsesLog {
             $obj = $null
 
             if ($SkipRpcMessageBody) {
-                parseMessageBody -Discard
+                parseLogMessageBody -Discard
                 return $result
             }
             else {
-                $result.Data = parseMessageBody
+                $result.Data = parseLogMessageBody
                 $result.DataSize = $result.Data.Length
             }
 

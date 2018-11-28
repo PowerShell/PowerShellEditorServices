@@ -6,8 +6,10 @@ enum PsesLogLevel {
     Error;
 }
 
-enum PsesMessageType {
+enum PsesLogMessageType {
     Log;
+    Exception;
+    HandledException;
     Request;
     Response;
     Notification;
@@ -65,6 +67,10 @@ class PsesNotificationMessage {
     }
 
     [string] ToString() {
+        if (($this.Name -eq '$/cancelRequest') -and ($this.Data -ne $null)) {
+            return "Name: $($this.Name) Source: $($this.Source), Id: $($this.Data.params.id)"
+        }
+    
         return "Name: $($this.Name) Source: $($this.Source), DataSize: $($this.DataSize)"
     }
 }
@@ -78,7 +84,7 @@ class PsesLogEntry {
     [string]$Method
     [string]$File
     [int]$LineNumber
-    [PsesMessageType]$MessageType
+    [PsesLogMessageType]$LogMessageType
     [psobject]$Message
 
     PsesLogEntry(
@@ -98,8 +104,8 @@ class PsesLogEntry {
         $File,
         [int]
         $LineNumber,
-        [PsesMessageType]
-        $MessageType,
+        [PsesLogMessageType]
+        $LogMessageType,
         [psobject]
         $Message) {
 
@@ -111,7 +117,7 @@ class PsesLogEntry {
         $this.Method = $Method
         $this.File = $File
         $this.LineNumber = $LineNumber
-        $this.MessageType = $MessageType
+        $this.LogMessageType = $LogMessageType
         $this.Message = $Message
     }
 }
@@ -126,7 +132,7 @@ class PsesLogEntryElapsed {
     [string]$Method
     [string]$File
     [int]$LineNumber
-    [PsesMessageType]$MessageType
+    [PsesLogMessageType]$LogMessageType
     [psobject]$Message
 
     PsesLogEntryElapsed([PsesLogEntry]$LogEntry, [int]$ElapsedMilliseconds) {
@@ -138,7 +144,7 @@ class PsesLogEntryElapsed {
         $this.Method = $LogEntry.Method
         $this.File = $LogEntry.File
         $this.LineNumber = $LogEntry.LineNumber
-        $this.MessageType = $LogEntry.MessageType
+        $this.LogMessageType = $LogEntry.LogMessageType
         $this.Message = $LogEntry.Message
 
         $this.ElapsedMilliseconds = $ElapsedMilliseconds

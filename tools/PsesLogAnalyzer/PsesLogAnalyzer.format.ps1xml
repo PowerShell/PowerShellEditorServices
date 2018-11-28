@@ -23,8 +23,8 @@
             <Alignment>right</Alignment>
           </TableColumnHeader>
           <TableColumnHeader>
-            <Label>MessageType</Label>
-            <Width>13</Width>
+            <Label>LogMessageType</Label>
+            <Width>15</Width>
             <Alignment>left</Alignment>
           </TableColumnHeader>
           <TableColumnHeader>
@@ -45,7 +45,7 @@
                 <PropertyName>ThreadId</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
-                <PropertyName>MessageType</PropertyName>
+                <PropertyName>LogMessageType</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
                 <ScriptBlock>($_.Message -split "`r`n")[0]</ScriptBlock>
