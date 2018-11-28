@@ -78,6 +78,21 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerMemberName] string callerName = null,
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = 0);
+
+        /// <summary>
+        /// Log an exception that has been handled cleanly or is otherwise not expected to cause problems in the logs.
+        /// </summary>
+        /// <param name="errorMessage">The error message of the exception to be logged.</param>
+        /// <param name="exception">The exception itself that has been thrown.</param>
+        /// <param name="callerName">The name of the method in which the ILogger is being called.</param>
+        /// <param name="callerSourceFile">The name of the source file in which the ILogger is being called.</param>
+        /// <param name="callerLineNumber">The line number in the file where the ILogger is being called.</param>
+        void WriteHandledException(
+            string errorMessage,
+            Exception exception,
+            [CallerMemberName] string callerName = null,
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = 0);
     }
 
 

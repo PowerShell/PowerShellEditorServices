@@ -12,9 +12,20 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     public class PsesLogger : ILogger
     {
         /// <summary>
+        /// The standard log template for all log entries.
+        /// </summary>
+        private static readonly string s_logMessageTemplate =
+            "[{LogLevelName:l}] tid:{ThreadId} in '{CallerName:l}' {CallerSourceFile:l} (line {CallerLineNumber}):{IndentedLogMsg:l}";
+
+        /// <summary>
         /// The name of the ERROR log level.
         /// </summary>
         private static readonly string ErrorLevelName = LogLevel.Error.ToString().ToUpper();
+
+        /// <summary>
+        /// The name of the WARNING log level.
+        /// </summary>
+        private static readonly string WarningLevelName = LogLevel.Warning.ToString().ToUpper();
 
         /// <summary>
         /// The internal Serilog logger to log to.
@@ -52,30 +63,45 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = 0)
         {
+            Write(logLevel, new StringBuilder(logMessage), callerName, callerSourceFile, callerLineNumber);
+        }
+
+        /// <summary>
+        /// Write a message with the given severity to the logs. Takes a StringBuilder to allow for minimal allocation.
+        /// </summary>
+        /// <param name="logLevel">The severity level of the log message.</param>
+        /// <param name="logMessage">The log message itself in StringBuilder form for manipulation.</param>
+        /// <param name="callerName">The name of the calling method.</param>
+        /// <param name="callerSourceFile">The name of the source file of the caller.</param>
+        /// <param name="callerLineNumber">The line number where the log is being called.</param>
+        private void Write(
+            LogLevel logLevel,
+            StringBuilder logMessage,
+            [CallerMemberName] string callerName = null,
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = 0)
+        {
             string indentedLogMsg = IndentMsg(logMessage);
             string logLevelName = logLevel.ToString().ToUpper();
 
             int threadId = Thread.CurrentThread.ManagedThreadId;
 
-            string messageTemplate = 
-                "[{LogLevelName:l}] tid:{threadId} in '{CallerName:l}' {CallerSourceFile:l}:{CallerLineNumber}:{IndentedLogMsg:l}";
-
             switch (logLevel)
             {
                 case LogLevel.Diagnostic:
-                    _logger.Verbose(messageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
+                    _logger.Verbose(s_logMessageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Verbose:
-                    _logger.Debug(messageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
+                    _logger.Debug(s_logMessageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Normal:
-                    _logger.Information(messageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
+                    _logger.Information(s_logMessageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Warning:
-                    _logger.Warning(messageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
+                    _logger.Warning(s_logMessageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
                     return;
                 case LogLevel.Error:
-                    _logger.Error(messageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
+                    _logger.Error(s_logMessageTemplate, logLevelName, threadId, callerName, callerSourceFile, callerLineNumber, indentedLogMsg);
                     return;
             }
         }
@@ -95,24 +121,61 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = 0)
         {
-            string indentedException = IndentMsg(exception.ToString());
+            StringBuilder body = FormatExceptionMessage("Exception", errorMessage, exception);
+            Write(LogLevel.Error, body, callerName, callerSourceFile, callerLineNumber);
+        }
 
-            _logger.Error("[{ErrorLevelName:l}] {CallerSourceFile:l}: In method '{CallerName:l}', line {CallerLineNumber}: {ErrorMessage:l}{IndentedException:l}",
-                ErrorLevelName, callerSourceFile, callerName, callerLineNumber, errorMessage, indentedException);
+        /// <summary>
+        /// Log an exception that has been handled cleanly or is otherwise not expected to cause problems in the logs.
+        /// </summary>
+        /// <param name="errorMessage">The error message of the exception to be logged.</param>
+        /// <param name="exception">The exception itself that has been thrown.</param>
+        /// <param name="callerName">The name of the method in which the ILogger is being called.</param>
+        /// <param name="callerSourceFile">The name of the source file in which the ILogger is being called.</param>
+        /// <param name="callerLineNumber">The line number in the file where the ILogger is being called.</param>
+        public void WriteHandledException(
+            string errorMessage,
+            Exception exception,
+            [CallerMemberName] string callerName = null,
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = 0)
+        {
+            StringBuilder body = FormatExceptionMessage("Handled exception", errorMessage, exception);
+            Write(LogLevel.Warning, body, callerName, callerSourceFile, callerLineNumber);
         }
 
         /// <summary>
         /// Utility function to indent a log message by one level.
         /// </summary>
-        /// <param name="logMessage">The log message to indent.</param>
+        /// <param name="logMessageBuilder">Log message string builder to transform.</param>
         /// <returns>The indented log message string.</returns>
-        private static string IndentMsg(string logMessage)
+        private static string IndentMsg(StringBuilder logMessageBuilder)
         {
-            return new StringBuilder(logMessage)
+            return logMessageBuilder
                 .Replace(Environment.NewLine, s_indentedPrefix)
                 .Insert(0, s_indentedPrefix)
                 .AppendLine()
                 .ToString();
+        }
+
+        /// <summary>
+        /// Creates a prettified log message from an exception.
+        /// </summary>
+        /// <param name="messagePrelude">The user-readable tag for this exception entry.</param>
+        /// <param name="errorMessage">The user-readable short description of the error.</param>
+        /// <param name="exception">The exception object itself. Must not be null.</param>
+        /// <returns>An indented, formatted string of the body.</returns>
+        private static StringBuilder FormatExceptionMessage(
+            string messagePrelude,
+            string errorMessage,
+            Exception exception)
+        {
+            var sb = new StringBuilder()
+                .Append(messagePrelude).Append(": ").Append(errorMessage).Append(Environment.NewLine)
+                .Append(Environment.NewLine)
+                .Append(exception.ToString());
+
+            return sb;
         }
 
         /// <summary>
