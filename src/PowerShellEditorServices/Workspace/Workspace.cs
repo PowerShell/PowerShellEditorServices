@@ -303,14 +303,13 @@ namespace Microsoft.PowerShell.EditorServices
 
         /// <summary>
         /// Find PowerShell files recursively down from a given directory path.
-        /// Currently returns files in depth-first order.
+        /// Currently collects files in depth-first order.
         /// Directory.GetFiles(folderPath, pattern, SearchOption.AllDirectories) would provide this,
         /// but a cycle in the filesystem will cause that to enter an infinite loop.
         /// </summary>
-        /// <param name="folderPath">The absolute path of the base folder to search.</param>
-        /// <returns>
-        /// All PowerShell files in the recursive directory hierarchy under the given base directory, up to 64 directories deep.
-        /// </returns>
+        /// <param name="folderPath">The path of the current directory to find files in</param>
+        /// <param name="foundFiles">The accumulator for files found so far.</param>
+        /// <param name="currDepth">The current depth of the recursion from the original base directory.</param>
         private void RecursivelyEnumerateFiles(string folderPath, ref List<string> foundFiles, int currDepth = 0)
         {
             const int recursionDepthLimit = 64;
