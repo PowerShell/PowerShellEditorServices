@@ -650,7 +650,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             //Get all dot sourced referenced files and store  them
             this.ReferencedFiles =
-                AstOperations.FindDotSourcedIncludes(this.ScriptAst);
+                AstOperations.FindDotSourcedIncludes(this);
         }
 
         #endregion

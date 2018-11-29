@@ -172,7 +172,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 "Unexpected reference file: " + definitionResult.FoundDefinition.FilePath);
             Assert.Equal(1, definition.ScriptRegion.StartLineNumber);
             Assert.Equal(1, definition.ScriptRegion.StartColumnNumber);
-            Assert.Equal(PathUtils.NormalizePathSeparators("./ReferenceFileE.ps1"), definition.SymbolName);
+            Assert.Equal("./ReferenceFileE.ps1", definition.SymbolName);
         }
 
         [Fact]

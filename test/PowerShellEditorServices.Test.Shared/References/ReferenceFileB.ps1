@@ -1,4 +1,4 @@
-﻿. .\ReferenceFileC.ps1
+﻿. "$PSScriptRoot\ReferenceFileC.ps1"
 
 Get-ChildItem
 

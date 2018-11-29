@@ -14,6 +14,7 @@ using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -426,11 +427,10 @@ namespace Microsoft.PowerShell.EditorServices
                 if (foundSymbol.SymbolType == SymbolType.Function)
                 {
                     // Dot-sourcing is parsed as a "Function" Symbol.
-                    string trimmedName = PathUtils.NormalizePathSeparators(foundSymbol.SymbolName.Trim('\'', '"'));
-                    string dotSourcedPath = workspace.ResolveRelativeScriptPath(Path.GetDirectoryName(scriptFile.FilePath), trimmedName);
+                    string dotSourcedPath = GetDotSourcedPath(foundSymbol, workspace, scriptFile);
                     if (scriptFile.FilePath == dotSourcedPath)
                     {
-                        foundDefinition = new SymbolReference(SymbolType.Function, trimmedName, scriptFile.ScriptAst.Extent, scriptFile.FilePath);
+                        foundDefinition = new SymbolReference(SymbolType.Function, foundSymbol.SymbolName, scriptFile.ScriptAst.Extent, scriptFile.FilePath);
                         break;
                     }
                 }
@@ -485,6 +485,20 @@ namespace Microsoft.PowerShell.EditorServices
             return foundDefinition != null ?
                 new GetDefinitionResult(foundDefinition) :
                 null;
+        }
+
+        /// <summary>
+        /// Gets a path from a dot-source symbol.
+        /// </summary>
+        /// <param name="symbol">The symbol representing the dot-source expression.</param>
+        /// <param name="workspace">The current workspace</param>
+        /// <param name="scriptFile">The script file containing the symbol</param>
+        /// <returns></returns>
+        private static string GetDotSourcedPath(SymbolReference symbol, Workspace workspace, ScriptFile scriptFile)
+        {
+            string cleanedUpSymbol = PathUtils.NormalizePathSeparators(symbol.SymbolName.Trim('\'', '"'));
+            return workspace.ResolveRelativeScriptPath(Path.GetDirectoryName(scriptFile.FilePath),
+                Regex.Replace(cleanedUpSymbol, @"\$PSScriptRoot", Path.GetDirectoryName(scriptFile.FilePath), RegexOptions.IgnoreCase));
         }
 
         /// <summary>

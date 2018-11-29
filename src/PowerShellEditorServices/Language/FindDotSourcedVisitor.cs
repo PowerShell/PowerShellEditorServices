@@ -3,8 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Management.Automation.Language;
+using System.Text.RegularExpressions;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -14,14 +17,17 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     internal class FindDotSourcedVisitor : AstVisitor
     {
+        private readonly string _scriptDirectory;
+
         /// <summary>
         /// A hash set of the dot sourced files (because we don't want duplicates)
         /// </summary>
         public HashSet<string> DotSourcedFiles { get; private set; }
 
-        public FindDotSourcedVisitor()
+        public FindDotSourcedVisitor(string scriptPath)
         {
-            this.DotSourcedFiles = new HashSet<string>();
+            DotSourcedFiles = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase);
+            _scriptDirectory = Path.GetDirectoryName(scriptPath);
         }
 
         /// <summary>
@@ -33,15 +39,44 @@ namespace Microsoft.PowerShell.EditorServices
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitCommand(CommandAst commandAst)
         {
-            if (commandAst.InvocationOperator.Equals(TokenKind.Dot) &&
-                commandAst.CommandElements[0] is StringConstantExpressionAst)
+            CommandElementAst commandElementAst = commandAst.CommandElements[0];
+            if (commandAst.InvocationOperator.Equals(TokenKind.Dot))
             {
-                // Strip any quote characters off of the string
-                string fileName = PathUtils.NormalizePathSeparators(commandAst.CommandElements[0].Extent.Text.Trim('\'', '"'));
-                DotSourcedFiles.Add(fileName);
+                if (commandElementAst is StringConstantExpressionAst stringConstantExpressionAst)
+                {
+                    // Strip any quote characters off of the string
+                    DotSourcedFiles.Add(PathUtils.NormalizePathSeparators(stringConstantExpressionAst.Value));
+                }
+                else if (commandElementAst is ExpandableStringExpressionAst expandableStringExpressionAst)
+                {
+                    var path = GetPathFromExpandableStringExpression(expandableStringExpressionAst);
+                    if (path != null)
+                    {
+                        DotSourcedFiles.Add(PathUtils.NormalizePathSeparators(path));
+                    }
+                }
             }
 
             return base.VisitCommand(commandAst);
+        }
+
+        private string GetPathFromExpandableStringExpression(ExpandableStringExpressionAst expandableStringExpressionAst)
+        {
+            var path = expandableStringExpressionAst.Value;
+            foreach (var nestedExpression in expandableStringExpressionAst.NestedExpressions)
+            {
+                if (nestedExpression is VariableExpressionAst variableExpressionAst
+                    && variableExpressionAst.VariablePath.UserPath.Equals("PSScriptRoot", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    path = path.Replace(variableExpressionAst.ToString(), _scriptDirectory);
+                }
+                else
+                {
+                    return null; // We're going to get an invalid path anyway.
+                }
+            }
+
+            return path;
         }
     }
 }
