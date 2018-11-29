@@ -292,7 +292,9 @@ namespace Microsoft.PowerShell.EditorServices
                 return Enumerable.Empty<string>();
             }
 
-            return this.RecursivelyEnumerateFiles(WorkspacePath);
+            var foundFiles = new List<string>();
+            this.RecursivelyEnumerateFiles(WorkspacePath, ref foundFiles);
+            return foundFiles;
         }
 
         #endregion
@@ -309,73 +311,22 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>
         /// All PowerShell files in the recursive directory hierarchy under the given base directory, up to 64 directories deep.
         /// </returns>
-        private IEnumerable<string> RecursivelyEnumerateFiles(string folderPath)
+        private void RecursivelyEnumerateFiles(string folderPath, ref List<string> foundFiles, int currDepth = 0)
         {
-            var foundFiles = new List<string>();
-            var dirStack = new Stack<string>();
-
-            // Kick the search off with the base directory
-            dirStack.Push(folderPath);
-
             const int recursionDepthLimit = 64;
-            while (dirStack.Any())
+
+            // Look for any PowerShell files in the current directory
+            foreach (string pattern in s_psFilePatterns)
             {
-                string currDir = dirStack.Pop();
-
-                // Look for any PowerShell files in the current directory
-                foreach (string pattern in s_psFilePatterns)
-                {
-                    string[] psFiles;
-                    try
-                    {
-                        psFiles = Directory.GetFiles(currDir, pattern, SearchOption.TopDirectoryOnly);
-                    }
-                    catch (DirectoryNotFoundException e)
-                    {
-                        this.logger.WriteHandledException(
-                            $"Could not enumerate files in the path '{currDir}' due to it being an invalid path",
-                            e);
-
-                        continue;
-                    }
-                    catch (PathTooLongException e)
-                    {
-                        this.logger.WriteHandledException(
-                            $"Could not enumerate files in the path '{currDir}' due to the path being too long",
-                            e);
-
-                        continue;
-                    }
-                    catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
-                    {
-                        this.logger.WriteHandledException(
-                            $"Could not enumerate files in the path '{currDir}' due to the path not being accessible",
-                            e);
-
-                        continue;
-                    }
-
-                    foundFiles.AddRange(psFiles);
-                }
-
-                // Prevent unbounded recursion here
-                // If we get too deep, keep processing but go no deeper
-                if (dirStack.Count >= recursionDepthLimit)
-                {
-                    this.logger.Write(LogLevel.Warning, $"Recursion depth limit hit for path {folderPath}");
-                    continue;
-                }
-
-                // Add the recursive directories to search next
-                string[] subDirs;
+                string[] psFiles;
                 try
                 {
-                    subDirs = Directory.GetDirectories(currDir);
+                    psFiles = Directory.GetFiles(folderPath, pattern, SearchOption.TopDirectoryOnly);
                 }
                 catch (DirectoryNotFoundException e)
                 {
                     this.logger.WriteHandledException(
-                        $"Could not enumerate directories in the path '{currDir}' due to it being an invalid path",
+                        $"Could not enumerate files in the path '{folderPath}' due to it being an invalid path",
                         e);
 
                     continue;
@@ -383,7 +334,7 @@ namespace Microsoft.PowerShell.EditorServices
                 catch (PathTooLongException e)
                 {
                     this.logger.WriteHandledException(
-                        $"Could not enumerate directories in the path '{currDir}' due to the path being too long",
+                        $"Could not enumerate files in the path '{folderPath}' due to the path being too long",
                         e);
 
                     continue;
@@ -391,19 +342,58 @@ namespace Microsoft.PowerShell.EditorServices
                 catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
                 {
                     this.logger.WriteHandledException(
-                        $"Could not enumerate directories in the path '{currDir}' due to the path not being accessible",
+                        $"Could not enumerate files in the path '{folderPath}' due to the path not being accessible",
                         e);
 
                     continue;
                 }
 
-                foreach (string subDir in subDirs)
-                {
-                    dirStack.Push(subDir);
-                }
+                foundFiles.AddRange(psFiles);
             }
 
-            return foundFiles;
+            // Prevent unbounded recursion here
+            // If we get too deep, keep processing but go no deeper
+            if (currDepth >= recursionDepthLimit)
+            {
+                this.logger.Write(LogLevel.Warning, $"Recursion depth limit hit for path {folderPath}");
+                return;
+            }
+
+            // Add the recursive directories to search next
+            string[] subDirs;
+            try
+            {
+                subDirs = Directory.GetDirectories(folderPath);
+            }
+            catch (DirectoryNotFoundException e)
+            {
+                this.logger.WriteHandledException(
+                    $"Could not enumerate directories in the path '{folderPath}' due to it being an invalid path",
+                    e);
+
+                return;
+            }
+            catch (PathTooLongException e)
+            {
+                this.logger.WriteHandledException(
+                    $"Could not enumerate directories in the path '{folderPath}' due to the path being too long",
+                    e);
+
+                return;
+            }
+            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+            {
+                this.logger.WriteHandledException(
+                    $"Could not enumerate directories in the path '{folderPath}' due to the path not being accessible",
+                    e);
+
+                return;
+            }
+
+            foreach (string subDir in subDirs)
+            {
+                RecursivelyEnumerateFiles(subDir, ref foundFiles, currDepth + 1);
+            }
         }
 
         /// <summary>
