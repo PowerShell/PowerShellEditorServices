@@ -351,7 +351,6 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             // Prevent unbounded recursion here
-            // If we get too deep, keep processing but go no deeper
             if (currDepth >= recursionDepthLimit)
             {
                 this.logger.Write(LogLevel.Warning, $"Recursion depth limit hit for path {folderPath}");
