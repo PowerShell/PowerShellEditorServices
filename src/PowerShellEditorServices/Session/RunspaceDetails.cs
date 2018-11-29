@@ -218,12 +218,15 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     // ProcessId property isn't on the object, move on.
                 }
 
+                // Grab the $host.name which will tell us if we're in a PSRP session or not
                 string hostname =
                         PowerShellContext.ExecuteScriptAndGetItem<string>(
                             "$host.name",
                             runspace,
                             defaultValue: "");
 
+                // hostname is 'ServerRemoteHost' when the user enters a session.
+                // ex. Enter-PSSession, Enter-PSHostProcess
                 if (hostname == "ServerRemoteHost")
                 {
                     runspaceId =
