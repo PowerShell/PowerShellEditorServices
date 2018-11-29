@@ -218,7 +218,13 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     // ProcessId property isn't on the object, move on.
                 }
 
-                if (runspace.ConnectionInfo.ComputerName != "localhost")
+                string hostname =
+                        PowerShellContext.ExecuteScriptAndGetItem<string>(
+                            "$host.name",
+                            runspace,
+                            defaultValue: "");
+
+                if (hostname == "ServerRemoteHost")
                 {
                     runspaceId =
                         PowerShellContext.ExecuteScriptAndGetItem<Guid>(
