@@ -390,7 +390,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             foreach (string subDir in subDirs)
             {
-                RecursivelyEnumerateFiles(subDir, ref foundFiles, currDepth + 1);
+                RecursivelyEnumerateFiles(subDir, ref foundFiles, currDepth: currDepth + 1);
             }
         }
 
