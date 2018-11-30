@@ -221,7 +221,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 // Grab the $host.name which will tell us if we're in a PSRP session or not
                 string hostname =
                         PowerShellContext.ExecuteScriptAndGetItem<string>(
-                            "$host.name",
+                            "$Host.Name",
                             runspace,
                             defaultValue: string.Empty);
 
