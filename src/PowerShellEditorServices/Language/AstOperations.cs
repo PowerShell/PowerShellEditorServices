@@ -320,12 +320,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Finds all files dot sourced in a script
         /// </summary>
-        /// <param name="scriptFile">The script file to use to find dot sourced files.</param>
+        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <param name="filePath">The path of the given script</param>
         /// <returns></returns>
-        static public string[] FindDotSourcedIncludes(ScriptFile scriptFile)
+        static public string[] FindDotSourcedIncludes(Ast scriptAst, string filePath)
         {
-            FindDotSourcedVisitor dotSourcedVisitor = new FindDotSourcedVisitor(scriptFile.FilePath);
-            scriptFile.ScriptAst.Visit(dotSourcedVisitor);
+            FindDotSourcedVisitor dotSourcedVisitor = new FindDotSourcedVisitor(filePath);
+            scriptAst.Visit(dotSourcedVisitor);
 
             return dotSourcedVisitor.DotSourcedFiles.ToArray();
         }

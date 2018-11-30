@@ -42,19 +42,23 @@ namespace Microsoft.PowerShell.EditorServices
             CommandElementAst commandElementAst = commandAst.CommandElements[0];
             if (commandAst.InvocationOperator.Equals(TokenKind.Dot))
             {
-                if (commandElementAst is StringConstantExpressionAst stringConstantExpressionAst)
+                string path;
+                switch (commandElementAst)
                 {
-                    // Strip any quote characters off of the string
-                    DotSourcedFiles.Add(PathUtils.NormalizePathSeparators(stringConstantExpressionAst.Value));
+                    case StringConstantExpressionAst stringConstantExpressionAst:
+                        path = stringConstantExpressionAst.Value;
+                        break;
+
+                    case ExpandableStringExpressionAst expandableStringExpressionAst:
+                        path = GetPathFromExpandableStringExpression(expandableStringExpressionAst);
+                        break;
+
+                    default:
+                        path = null;
+                        break;
                 }
-                else if (commandElementAst is ExpandableStringExpressionAst expandableStringExpressionAst)
-                {
-                    var path = GetPathFromExpandableStringExpression(expandableStringExpressionAst);
-                    if (path != null)
-                    {
-                        DotSourcedFiles.Add(PathUtils.NormalizePathSeparators(path));
-                    }
-                }
+
+                DotSourcedFiles.Add(PathUtils.NormalizePathSeparators(path));
             }
 
             return base.VisitCommand(commandAst);
@@ -65,6 +69,7 @@ namespace Microsoft.PowerShell.EditorServices
             var path = expandableStringExpressionAst.Value;
             foreach (var nestedExpression in expandableStringExpressionAst.NestedExpressions)
             {
+                // If the string contains the variable $PSScriptRoot, we replace it with the corresponding value.
                 if (nestedExpression is VariableExpressionAst variableExpressionAst
                     && variableExpressionAst.VariablePath.UserPath.Equals("PSScriptRoot", StringComparison.CurrentCultureIgnoreCase))
                 {

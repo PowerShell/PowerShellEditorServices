@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private static readonly string[] s_newlines = new []
+        private static readonly string[] s_newlines = new[]
         {
             "\r\n",
             "\n"
@@ -649,8 +649,7 @@ namespace Microsoft.PowerShell.EditorServices
                     .ToArray();
 
             //Get all dot sourced referenced files and store  them
-            this.ReferencedFiles =
-                AstOperations.FindDotSourcedIncludes(this);
+            this.ReferencedFiles = AstOperations.FindDotSourcedIncludes(this.ScriptAst, this.FilePath);
         }
 
         #endregion
