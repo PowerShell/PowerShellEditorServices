@@ -193,7 +193,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
             Validate.IsNotNull(nameof(runspace), runspace);
             Validate.IsNotNull(nameof(sessionDetails), sessionDetails);
 
-            var runspaceId = runspace.InstanceId;
             var runspaceLocation = RunspaceLocation.Local;
             var runspaceContext = RunspaceContext.Original;
             var versionDetails = PowerShellVersionDetails.GetVersionDetails(runspace, logger);
@@ -229,11 +228,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
                 // ex. Enter-PSSession, Enter-PSHostProcess
                 if (hostName.Equals("ServerRemoteHost", StringComparison.Ordinal))
                 {
-                    runspaceId =
-                        PowerShellContext.ExecuteScriptAndGetItem<Guid>(
-                            "$host.Runspace.InstanceId",
-                            runspace);
-
                     runspaceLocation = RunspaceLocation.Remote;
                     connectionString =
                         runspace.ConnectionInfo.ComputerName +
