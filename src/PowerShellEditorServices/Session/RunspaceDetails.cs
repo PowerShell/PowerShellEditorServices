@@ -227,7 +227,7 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
                 // hostname is 'ServerRemoteHost' when the user enters a session.
                 // ex. Enter-PSSession, Enter-PSHostProcess
-                if (hostname == "ServerRemoteHost")
+                if (hostName.Equals("ServerRemoteHost", StringComparison.Ordinal))
                 {
                     runspaceId =
                         PowerShellContext.ExecuteScriptAndGetItem<Guid>(
