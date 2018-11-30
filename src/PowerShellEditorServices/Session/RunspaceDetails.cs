@@ -193,7 +193,6 @@ namespace Microsoft.PowerShell.EditorServices.Session
             Validate.IsNotNull(nameof(runspace), runspace);
             Validate.IsNotNull(nameof(sessionDetails), sessionDetails);
 
-            var runspaceId = runspace.InstanceId;
             var runspaceLocation = RunspaceLocation.Local;
             var runspaceContext = RunspaceContext.Original;
             var versionDetails = PowerShellVersionDetails.GetVersionDetails(runspace, logger);
@@ -218,13 +217,17 @@ namespace Microsoft.PowerShell.EditorServices.Session
                     // ProcessId property isn't on the object, move on.
                 }
 
-                if (runspace.ConnectionInfo.ComputerName != "localhost")
-                {
-                    runspaceId =
-                        PowerShellContext.ExecuteScriptAndGetItem<Guid>(
-                            "$host.Runspace.InstanceId",
-                            runspace);
+                // Grab the $host.name which will tell us if we're in a PSRP session or not
+                string hostName =
+                        PowerShellContext.ExecuteScriptAndGetItem<string>(
+                            "$Host.Name",
+                            runspace,
+                            defaultValue: string.Empty);
 
+                // hostname is 'ServerRemoteHost' when the user enters a session.
+                // ex. Enter-PSSession, Enter-PSHostProcess
+                if (hostName.Equals("ServerRemoteHost", StringComparison.Ordinal))
+                {
                     runspaceLocation = RunspaceLocation.Remote;
                     connectionString =
                         runspace.ConnectionInfo.ComputerName +
