@@ -28,6 +28,11 @@
             <Alignment>left</Alignment>
           </TableColumnHeader>
           <TableColumnHeader>
+            <Label>LogLevel</Label>
+            <Width>11</Width>
+            <Alignment>left</Alignment>
+          </TableColumnHeader>
+          <TableColumnHeader>
             <Label>Message</Label>
             <Alignment>left</Alignment>
           </TableColumnHeader>
@@ -37,7 +42,7 @@
             <TableColumnItems>
               <TableColumnItem>
                 <PropertyName>Index</PropertyName>
-              </TableColumnItem>            
+              </TableColumnItem>
               <TableColumnItem>
                 <PropertyName>TimestampStr</PropertyName>
               </TableColumnItem>
@@ -46,6 +51,9 @@
               </TableColumnItem>
               <TableColumnItem>
                 <PropertyName>LogMessageType</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>LogLevel</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
                 <ScriptBlock>($_.Message -split "`r`n")[0]</ScriptBlock>

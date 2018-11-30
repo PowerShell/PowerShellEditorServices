@@ -114,11 +114,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             Message parsedMessage = this.messageSerializer.DeserializeMessage(messageObject);
 
             // Log message info - initial capacity for StringBuilder varies depending on whether
-            // the log level is Diagnostic where JsonRpc message payloads are logged and 
-            // vary from 1K up edited file size chars.  When not logging message payloads the 
-            // typical request log message is under 250 chars.
+            // the log level is Diagnostic where JsonRpc message payloads are logged and vary in size
+            // from 1K up to the edited file size.  When not logging message payloads, the typical
+            // request log message size is under 256 chars.
             var logStrBld =
-                new StringBuilder(this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic ? 4096 : 250)
+                new StringBuilder(this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic ? 4096 : 256)
                    .Append("Received ")
                    .Append(parsedMessage.MessageType)
                    .Append(" '").Append(parsedMessage.Method).Append("'");

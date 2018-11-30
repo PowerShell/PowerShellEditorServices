@@ -1,31 +1,33 @@
 enum PsesLogLevel {
-    Diagnostic;
-    Verbose;
-    Normal;
-    Warning;
-    Error;
+    Diagnostic
+    Verbose
+    Normal
+    Warning
+    Error
 }
 
 enum PsesLogMessageType {
-    Log;
-    Exception;
-    HandledException;
-    Request;
-    Response;
-    Notification;
+    Log
+    Exception
+    HandledException
+    Request
+    Response
+    Notification
 }
 
 enum PsesNotificationSource {
-    Unknown;
-    Client;
-    Server;
+    Unknown
+    Client
+    Server
 }
 
 class PsesLogMessage {
     [string]$Data
+    [int]$DataSize
 
     PsesLogMessage([string]$Data) {
         $this.Data = $Data
+        $this.DataSize = $Data.Length
     }
 
     [string] ToString() {

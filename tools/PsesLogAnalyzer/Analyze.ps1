@@ -155,10 +155,58 @@ function Get-PsesIntelliSenseCompletionTime {
         }
 
         foreach ($entry in $logEntries) {
-            # IntelliSense completed in 320ms. 
+            # IntelliSense completed in 320ms.
             if (($entry.LogMessageType -eq 'Log') -and ($entry.Message.Data -match '^\s*IntelliSense completed in\s+(?<ms>\d+)ms.\s*$')) {
                 $elapsedMilliseconds = [int]$matches["ms"]
                 [PsesLogEntryElapsed]::new($entry, $elapsedMilliseconds)
+            }
+        }
+    }
+}
+
+function Get-PsesMessage {
+    [CmdletBinding(DefaultParameterSetName = "PsesLogEntry")]
+    param(
+        # Specifies a path to one or more PSES EditorServices log files.
+        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Path")]
+        [Alias("PSPath")]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path,
+
+        # Specifies PsesLogEntry objects to analyze.
+        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "PsesLogEntry", ValueFromPipeline = $true)]
+        [ValidateNotNull()]
+        [psobject[]]
+        $LogEntry,
+
+        # Specifies the log level entries to return.  Default returns Normal and above.
+        # Use StrictMatch to return only the specified log level entries.
+        [Parameter()]
+        [PsesLogLevel]
+        $LogLevel = $([PsesLogLevel]::Normal),
+
+        # Use StrictMatch to return only the specified log level entries.
+        [Parameter()]
+        [switch]
+        $StrictMatch
+    )
+
+    begin {
+        if ($PSCmdlet.ParameterSetName -eq "Path") {
+            $logEntries = Parse-PsesLog $Path
+        }
+    }
+
+    process {
+        if ($PSCmdlet.ParameterSetName -eq "PsesLogEntry") {
+            $logEntries = $LogEntry
+        }
+
+        foreach ($entry in $logEntries) {
+            if (($StrictMatch -and ($entry.LogLevel -eq $LogLevel)) -or
+                (!$StrictMatch -and ($entry.LogLevel -ge $LogLevel))) {
+                $entry
             }
         }
     }

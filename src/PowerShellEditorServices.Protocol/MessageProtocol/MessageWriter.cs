@@ -59,11 +59,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     messageToWrite);
 
             // Log message info - initial capacity for StringBuilder varies depending on whether
-            // the log level is Diagnostic where JsonRpc message payloads are logged and 
-            // vary from 1K up 225K chars.  When not logging message payloads the typical response
-            // log message is under 250 chars.
+            // the log level is Diagnostic where JsonRpc message payloads are logged and vary
+            // in size from 1K up to 225K chars.  When not logging message payloads, the typical
+            // response log message size is under 256 chars.
             var logStrBld = 
-                new StringBuilder(this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic ? 4096 : 250)
+                new StringBuilder(this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic ? 4096 : 256)
                    .Append("Writing ")
                    .Append(messageToWrite.MessageType)
                    .Append(" '").Append(messageToWrite.Method).Append("'");
