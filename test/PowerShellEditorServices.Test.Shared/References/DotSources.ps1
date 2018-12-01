@@ -1,5 +1,6 @@
 . ./ReferenceFileE.ps1
 . "$PSScriptRoot/ReferenceFileE.ps1"
+. "${PSScriptRoot}/ReferenceFileE.ps1"
 . './ReferenceFileE.ps1'
 . "./ReferenceFileE.ps1"
 . .\ReferenceFileE.ps1

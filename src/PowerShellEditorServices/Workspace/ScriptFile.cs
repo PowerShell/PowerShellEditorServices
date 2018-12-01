@@ -649,7 +649,7 @@ namespace Microsoft.PowerShell.EditorServices
                     .ToArray();
 
             //Get all dot sourced referenced files and store  them
-            this.ReferencedFiles = AstOperations.FindDotSourcedIncludes(this.ScriptAst, this.FilePath);
+            this.ReferencedFiles = AstOperations.FindDotSourcedIncludes(this.ScriptAst, Path.GetDirectoryName(this.FilePath));
         }
 
         #endregion

@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Management.Automation.Language;
 using System.Text.RegularExpressions;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -17,17 +16,21 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     internal class FindDotSourcedVisitor : AstVisitor
     {
-        private readonly string _scriptDirectory;
+        private readonly string _psScriptRoot;
 
         /// <summary>
         /// A hash set of the dot sourced files (because we don't want duplicates)
         /// </summary>
         public HashSet<string> DotSourcedFiles { get; private set; }
 
-        public FindDotSourcedVisitor(string scriptPath)
+        /// <summary>
+        /// Creates a new instance of the FindDotSourcedVisitor class.
+        /// </summary>
+        /// <param name="psScriptRoot">Pre-calculated value of $PSScriptRoot</param>
+        public FindDotSourcedVisitor(string psScriptRoot)
         {
             DotSourcedFiles = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase);
-            _scriptDirectory = Path.GetDirectoryName(scriptPath);
+            _psScriptRoot = psScriptRoot;
         }
 
         /// <summary>
@@ -58,7 +61,10 @@ namespace Microsoft.PowerShell.EditorServices
                         break;
                 }
 
-                DotSourcedFiles.Add(PathUtils.NormalizePathSeparators(path));
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    DotSourcedFiles.Add(PathUtils.NormalizePathSeparators(path));
+                }
             }
 
             return base.VisitCommand(commandAst);
@@ -71,9 +77,9 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 // If the string contains the variable $PSScriptRoot, we replace it with the corresponding value.
                 if (nestedExpression is VariableExpressionAst variableExpressionAst
-                    && variableExpressionAst.VariablePath.UserPath.Equals("PSScriptRoot", StringComparison.CurrentCultureIgnoreCase))
+                    && variableExpressionAst.VariablePath.UserPath.Equals("PSScriptRoot", StringComparison.OrdinalIgnoreCase))
                 {
-                    path = path.Replace(variableExpressionAst.ToString(), _scriptDirectory);
+                    path = path.Replace(variableExpressionAst.ToString(), _psScriptRoot);
                 }
                 else
                 {

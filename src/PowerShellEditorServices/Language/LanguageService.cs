@@ -498,7 +498,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             string cleanedUpSymbol = PathUtils.NormalizePathSeparators(symbol.SymbolName.Trim('\'', '"'));
             return workspace.ResolveRelativeScriptPath(Path.GetDirectoryName(scriptFile.FilePath),
-                Regex.Replace(cleanedUpSymbol, @"\$PSScriptRoot", Path.GetDirectoryName(scriptFile.FilePath), RegexOptions.IgnoreCase));
+                Regex.Replace(cleanedUpSymbol, @"\$PSScriptRoot|\${PSScriptRoot}", Path.GetDirectoryName(scriptFile.FilePath), RegexOptions.IgnoreCase));
         }
 
         /// <summary>
