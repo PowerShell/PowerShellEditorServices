@@ -497,8 +497,9 @@ namespace Microsoft.PowerShell.EditorServices
         private static string GetDotSourcedPath(SymbolReference symbol, Workspace workspace, ScriptFile scriptFile)
         {
             string cleanedUpSymbol = PathUtils.NormalizePathSeparators(symbol.SymbolName.Trim('\'', '"'));
-            return workspace.ResolveRelativeScriptPath(Path.GetDirectoryName(scriptFile.FilePath),
-                Regex.Replace(cleanedUpSymbol, @"\$PSScriptRoot|\${PSScriptRoot}", Path.GetDirectoryName(scriptFile.FilePath), RegexOptions.IgnoreCase));
+            string psScriptRoot = Path.GetDirectoryName(scriptFile.FilePath);
+            return workspace.ResolveRelativeScriptPath(psScriptRoot,
+                Regex.Replace(cleanedUpSymbol, @"\$PSScriptRoot|\${PSScriptRoot}", psScriptRoot, RegexOptions.IgnoreCase));
         }
 
         /// <summary>

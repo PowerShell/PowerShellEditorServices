@@ -76,15 +76,13 @@ namespace Microsoft.PowerShell.EditorServices
             foreach (var nestedExpression in expandableStringExpressionAst.NestedExpressions)
             {
                 // If the string contains the variable $PSScriptRoot, we replace it with the corresponding value.
-                if (nestedExpression is VariableExpressionAst variableExpressionAst
-                    && variableExpressionAst.VariablePath.UserPath.Equals("PSScriptRoot", StringComparison.OrdinalIgnoreCase))
+                if (!(nestedExpression is VariableExpressionAst variableAst
+                    && variableAst.VariablePath.UserPath.Equals("PSScriptRoot", StringComparison.OrdinalIgnoreCase)))
                 {
-                    path = path.Replace(variableExpressionAst.ToString(), _psScriptRoot);
+                    return null; // We return null instead of a partially evaluated ExpandableStringExpression.
                 }
-                else
-                {
-                    return null; // We're going to get an invalid path anyway.
-                }
+
+                path = path.Replace(variableAst.ToString(), _psScriptRoot);
             }
 
             return path;
