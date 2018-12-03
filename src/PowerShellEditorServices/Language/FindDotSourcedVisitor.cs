@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Management.Automation.Language;
-using System.Text.RegularExpressions;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
