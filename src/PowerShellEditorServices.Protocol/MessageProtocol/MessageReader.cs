@@ -110,20 +110,32 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             // Get the JObject for the JSON content
             JObject messageObject = JObject.Parse(messageContent);
 
-            // Load the message
-            this.logger.Write(
-                LogLevel.Diagnostic,
-                string.Format(
-                    "READ MESSAGE:\r\n\r\n{0}",
-                    messageObject.ToString(Formatting.Indented)));
-
-            // Return the parsed message
+            // Deserialize the message from the parsed JSON message
             Message parsedMessage = this.messageSerializer.DeserializeMessage(messageObject);
 
-            this.logger.Write(
-                LogLevel.Verbose,
-                $"Received {parsedMessage.MessageType} '{parsedMessage.Method}'" +
-                (!string.IsNullOrEmpty(parsedMessage.Id) ? $" with id {parsedMessage.Id}" : string.Empty));
+            // Log message info - initial capacity for StringBuilder varies depending on whether
+            // the log level is Diagnostic where JsonRpc message payloads are logged and vary in size
+            // from 1K up to the edited file size.  When not logging message payloads, the typical
+            // request log message size is under 256 chars.
+            var logStrBld =
+                new StringBuilder(this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic ? 4096 : 256)
+                   .Append("Received ")
+                   .Append(parsedMessage.MessageType)
+                   .Append(" '").Append(parsedMessage.Method).Append("'");
+
+            if (!string.IsNullOrEmpty(parsedMessage.Id))
+            {
+                logStrBld.Append(" with id ").Append(parsedMessage.Id);
+            }
+
+            if (this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic)
+            {
+                // Log the JSON representation of the message payload at the Diagnostic log level
+                string jsonPayload = messageObject.ToString(Formatting.Indented);
+                logStrBld.Append(Environment.NewLine).Append(Environment.NewLine).Append(jsonPayload);
+            }
+
+            this.logger.Write(LogLevel.Verbose, logStrBld.ToString());
 
             return parsedMessage;
         }

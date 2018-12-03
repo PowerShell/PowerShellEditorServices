@@ -58,20 +58,34 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 this.messageSerializer.SerializeMessage(
                     messageToWrite);
 
-            this.logger.Write(
-                LogLevel.Verbose,
-                $"Writing {messageToWrite.MessageType} '{messageToWrite.Method}'" +
-                (!string.IsNullOrEmpty(messageToWrite.Id) ? $" with id {messageToWrite.Id}" : string.Empty));
+            // Log message info - initial capacity for StringBuilder varies depending on whether
+            // the log level is Diagnostic where JsonRpc message payloads are logged and vary
+            // in size from 1K up to 225K chars.  When not logging message payloads, the typical
+            // response log message size is under 256 chars.
+            var logStrBld = 
+                new StringBuilder(this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic ? 4096 : 256)
+                   .Append("Writing ")
+                   .Append(messageToWrite.MessageType)
+                   .Append(" '").Append(messageToWrite.Method).Append("'");
 
-            // Log the JSON representation of the message
-            this.logger.Write(
-                LogLevel.Diagnostic,
-                string.Format(
-                    "WRITE MESSAGE:\r\n\r\n{0}",
+            if (!string.IsNullOrEmpty(messageToWrite.Id))
+            {
+                logStrBld.Append(" with id ").Append(messageToWrite.Id);
+            }
+
+            if (this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic)
+            {
+                // Log the JSON representation of the message payload at the Diagnostic log level
+                string jsonPayload = 
                     JsonConvert.SerializeObject(
                         messageObject,
                         Formatting.Indented,
-                        Constants.JsonSerializerSettings)));
+                        Constants.JsonSerializerSettings);
+
+                logStrBld.Append(Environment.NewLine).Append(Environment.NewLine).Append(jsonPayload);
+            }
+
+            this.logger.Write(LogLevel.Verbose, logStrBld.ToString());
 
             string serializedMessage =
                 JsonConvert.SerializeObject(

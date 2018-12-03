@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// The standard log template for all log entries.
         /// </summary>
         private static readonly string s_logMessageTemplate =
-            "[{LogLevelName:l}] tid:{ThreadId} in '{CallerName:l}' {CallerSourceFile:l} (line {CallerLineNumber}):{IndentedLogMsg:l}";
+            "[{LogLevelName:l}] tid:{ThreadId} in '{CallerName:l}' {CallerSourceFile:l}: line {CallerLineNumber}{IndentedLogMsg:l}";
 
         /// <summary>
         /// The name of the ERROR log level.
