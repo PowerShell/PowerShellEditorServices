@@ -240,10 +240,9 @@ function Parse-PsesLog {
                 parseLogMessageBody -Discard
                 return $result
             }
-            else {
-                $result.Data = parseLogMessageBody
-                $result.DataSize = $result.Data.Length
-            }
+
+            $result.Data = parseLogMessageBody
+            $result.DataSize = $result.Data.Length
 
             try {
                 $result.Data = $result.Data.Trim() | ConvertFrom-Json
