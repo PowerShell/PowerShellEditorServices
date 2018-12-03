@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -38,6 +39,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         private Dictionary<string, TaskCompletionSource<Message>> pendingRequests =
             new Dictionary<string, TaskCompletionSource<Message>>();
+
+        private AsyncQueue<QueuedMessage> _messageQueue = new AsyncQueue<QueuedMessage>();
+        private AsyncQueue<QueuedMessage> _lowPriorityMessageQueue = new AsyncQueue<QueuedMessage>();
+        private HashSet<string> _pendingCancelMessage = new HashSet<string>();
 
         public SynchronizationContext SynchronizationContext { get; private set; }
 
@@ -86,8 +91,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 // Listen for unhandled exceptions from the message loop
                 this.UnhandledException += MessageDispatcher_UnhandledException;
 
-                // Start the message loop
-                this.StartMessageLoop();
+                // Start loop to listen for and queue received messages
+                this.StartMessageListenerLoop();
+
+                // Start loop to dequeue and dispatch messages
+                this.StartMessageDispatchLoop();
 
                 // Endpoint is now started
                 this.currentState = ProtocolEndpointState.Started;
@@ -253,7 +261,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
-        private void StartMessageLoop()
+        private void StartMessageListenerLoop()
+        {
+            // Start the main message loop thread.  The Task is
+            // not explicitly awaited because it is running on
+            // an independent background thread.
+            this.messageLoopThread = new AsyncContextThread("Message Listener");
+            this.messageLoopThread
+                .Run(
+                    () => this.ListenForMessagesAsync(this.messageLoopCancellationToken.Token),
+                    this.Logger)
+                .ContinueWith(this.OnListenTaskCompleted);
+        }
+
+        private void StartMessageDispatchLoop()
         {
             // Start the main message loop thread.  The Task is
             // not explicitly awaited because it is running on
@@ -261,9 +282,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             this.messageLoopThread = new AsyncContextThread("Message Dispatcher");
             this.messageLoopThread
                 .Run(
-                    () => this.ListenForMessagesAsync(this.messageLoopCancellationToken.Token),
-                    this.Logger)
-                .ContinueWith(this.OnListenTaskCompleted);
+                    () => this.DispatchMessages(this.messageLoopCancellationToken.Token),
+                    this.Logger);
         }
 
         private void StopMessageLoop()
@@ -361,7 +381,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 catch (Exception e)
                 {
                     Logger.WriteException(
-                        "Caught unhandled exception in ProtocolEndpoint message loop",
+                        "Caught unhandled exception in ProtocolEndpoint message listener loop",
                         e);
                 }
 
@@ -369,16 +389,52 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 // previous message.  In this case, do not try to dispatch it.
                 if (newMessage != null)
                 {
-                    if (newMessage.MessageType == MessageType.Response)
+                    // HACK: Probably should have a class to represent the CancelRequest/Response
+                    // If current method is a $/cancelRequest, record that in our _pendingCancelMessage
+                    // hashset and discard msg (processed notifications messages are not supposed to send a response).
+                    if (newMessage.Method == "$/cancelRequest")
                     {
-                        this.HandleResponse(newMessage);
+                        int? id = newMessage.Contents?.Value<int>("id");
+                        if (id.HasValue)
+                        {
+                            var targetMessageId = id.Value.ToString();
+                            _pendingCancelMessage.Add(targetMessageId);
+
+                            Logger.Write(
+                                LogLevel.Diagnostic,
+                                $"Cancel request received for message id {targetMessageId} {newMessage.Method} - #pending: {_pendingCancelMessage.Count}");
+                        }
+                        else
+                        {
+                            Logger.Write(
+                                LogLevel.Error,
+                                $"Cancel request failed to retrieve message id for {newMessage.Method}");
+                        }
                     }
                     else
                     {
-                        // Process the message
-                        await this.messageDispatcher.DispatchMessageAsync(
-                            newMessage,
-                            this.protocolChannel.MessageWriter);
+                        QueuedMessage queuedMessage = new QueuedMessage(newMessage);
+
+                        if (newMessage.Method == "textDocument/codeLens" ||
+                            newMessage.Method == "textDocument/codeAction" ||
+                            newMessage.Method == "textDocument/documentSymbol")
+                        {
+                            await _lowPriorityMessageQueue.EnqueueAsync(queuedMessage);
+
+                            Logger.Write(
+                                LogLevel.Diagnostic,
+                                $"Queued request (low priority) for message id {newMessage.Id} {newMessage.Method} at {queuedMessage.QueueEntryTimeStr} " +
+                                $"seq: {queuedMessage.SequenceNumber} - #queued: {_lowPriorityMessageQueue.Count}");
+                        }
+                        else
+                        {
+                            await _messageQueue.EnqueueAsync(queuedMessage);
+
+                            Logger.Write(
+                                LogLevel.Diagnostic,
+                                $"Queued request for message id {newMessage.Id} {newMessage.Method} at {queuedMessage.QueueEntryTimeStr} " +
+                                $"seq: {queuedMessage.SequenceNumber} - #queued: {_messageQueue.Count}");
+                        }
                     }
                 }
             }
@@ -402,6 +458,123 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
+        private async Task DispatchMessages(CancellationToken cancellationToken)
+        {
+            this.SynchronizationContext = SynchronizationContext.Current;
+
+            // Run the message loop
+            bool isRunning = true;
+            while (isRunning && !cancellationToken.IsCancellationRequested)
+            {
+                QueuedMessage dequeuedMessage = null;
+                string timeOnQueue = string.Empty;
+
+                try
+                {
+                    if (_messageQueue.IsEmpty && !_lowPriorityMessageQueue.IsEmpty)
+                    {
+                        dequeuedMessage = await _lowPriorityMessageQueue.DequeueAsync(cancellationToken);
+                    }
+                    else
+                    {
+                        dequeuedMessage = await _messageQueue.DequeueAsync(cancellationToken);
+                    }
+
+                    timeOnQueue = (DateTime.Now - dequeuedMessage.QueueEntryTime).TotalMilliseconds.ToString("N0");
+                }
+                catch (Exception e)
+                {
+                    Logger.WriteException(
+                        "Caught unhandled exception in ProtocolEndpoint message dispatcher loop",
+                        e);
+                }
+
+                // The message could be null if there was an error parsing the
+                // previous message.  In this case, do not try to dispatch it.
+                if ((dequeuedMessage != null) && (dequeuedMessage.Message != null))
+                {
+                    Message newMessage = dequeuedMessage.Message;
+
+                    // If a message has not been dispatched yet and it has a pending cancellation request,
+                    // do not dispatch the message.  Simply return an error response to the client.
+                    if (_pendingCancelMessage.Contains(newMessage.Id))
+                    {
+                        _pendingCancelMessage.Remove(newMessage.Id);
+
+                        var responseError =
+                            new ResponseError { Code = (int)MessageErrorCode.RequestCancelled, Message = "Request cancelled" };
+
+                        var responseMessage =
+                            Message.ResponseError(newMessage.Id, newMessage.Method, JToken.FromObject(responseError));
+
+                        await this.protocolChannel.MessageWriter.WriteMessageAsync(responseMessage);
+
+                        Logger.Write(
+                            LogLevel.Diagnostic,
+                            $"Cancel request processed for message id {newMessage.Id} {newMessage.Method} queue time: {timeOnQueue} ms " +
+                            $"seq: {dequeuedMessage.SequenceNumber} - #pending: {_pendingCancelMessage.Count}");
+                    }
+                    else
+                    {
+                        if (newMessage.MessageType == MessageType.Response)
+                        {
+                            this.HandleResponse(newMessage);
+                        }
+                        else
+                        {
+                            Logger.Write(
+                                LogLevel.Diagnostic,
+                                $"Dispatching request for message id {newMessage.Id} {newMessage.Method} queue time: {timeOnQueue} ms " +
+                                $"seq: {dequeuedMessage.SequenceNumber} - #queued: {_messageQueue.Count}");
+
+                            // Process the message
+                            await this.messageDispatcher.DispatchMessageAsync(newMessage, this.protocolChannel.MessageWriter);
+                        }
+
+                        // We may have gotten a cancellationRequest while the message was being processed.
+                        // Remove that cancel request from our pending hashset.
+                        if (_pendingCancelMessage.Contains(newMessage.Id))
+                        {
+                            _pendingCancelMessage.Remove(newMessage.Id);
+
+                            Logger.Write(
+                                LogLevel.Diagnostic,
+                                $"Cancel request abandoned for already handled message id {newMessage.Id} {newMessage.Method} " +
+                                $"queue time: {timeOnQueue} ms seq: {dequeuedMessage.SequenceNumber} - #pending: {_pendingCancelMessage.Count}");
+                        }
+                    }
+                }
+            }
+        }
+
         #endregion
+    }
+
+    internal class QueuedMessage
+    {
+        private static ulong s_counter = 1;
+
+        public QueuedMessage(Message message)
+        {
+            this.QueueEntryTime = DateTime.Now;
+            this.Message = message;
+            this.SequenceNumber = s_counter++;
+        }
+
+        public Message Message { get; private set; }
+
+        public DateTime QueueEntryTime { get; private set; }
+
+        public string QueueEntryTimeStr
+        {
+            get { return QueueEntryTime.ToString("hh:mm:ss.fff"); }
+        }
+
+        public ulong SequenceNumber { get; private set; }
+
+        public override string ToString()
+        {
+            return $"{Message.Id ?? "<null>"} {Message.Method ?? "<null>"} timestamp:{QueueEntryTimeStr} seq:{SequenceNumber}";
+        }
     }
 }

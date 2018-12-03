@@ -19,6 +19,23 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         Event
     }
 
+    public enum MessageErrorCode
+    {
+        // Defined by JSON RPC
+        ParseError = -32700,
+	    InvalidRequest = -32600,
+	    MethodNotFound = -32601,
+	    InvalidParams = -32602,
+	    InternalError = -32603,
+	    serverErrorStart = -32099,
+	    serverErrorEnd = -32000,
+	    ServerNotInitialized = -32002,
+	    UnknownErrorCode = -32001,
+
+	    // Defined by the protocol.
+	    RequestCancelled = -32800,
+    }
+
     /// <summary>
     /// Provides common details for protocol messages of any format.
     /// </summary>
@@ -131,6 +148,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 Contents = contents
             };
         }
+    }
+
+    public class ResponseError
+    {
+        public int Code { get; set; }
+
+        public string Message { get; set; }
     }
 }
 
