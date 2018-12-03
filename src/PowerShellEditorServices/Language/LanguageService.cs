@@ -14,6 +14,7 @@ using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -409,18 +410,29 @@ namespace Microsoft.PowerShell.EditorServices
             // look through the referenced files until definition is found
             // or there are no more file to look through
             SymbolReference foundDefinition = null;
-            for (int i = 0; i < referencedFiles.Length; i++)
+            foreach (ScriptFile scriptFile in referencedFiles)
             {
                 foundDefinition =
                     AstOperations.FindDefinitionOfSymbol(
-                        referencedFiles[i].ScriptAst,
+                        scriptFile.ScriptAst,
                         foundSymbol);
 
-                filesSearched.Add(referencedFiles[i].FilePath);
+                filesSearched.Add(scriptFile.FilePath);
                 if (foundDefinition != null)
                 {
-                    foundDefinition.FilePath = referencedFiles[i].FilePath;
+                    foundDefinition.FilePath = scriptFile.FilePath;
                     break;
+                }
+
+                if (foundSymbol.SymbolType == SymbolType.Function)
+                {
+                    // Dot-sourcing is parsed as a "Function" Symbol.
+                    string dotSourcedPath = GetDotSourcedPath(foundSymbol, workspace, scriptFile);
+                    if (scriptFile.FilePath == dotSourcedPath)
+                    {
+                        foundDefinition = new SymbolReference(SymbolType.Function, foundSymbol.SymbolName, scriptFile.ScriptAst.Extent, scriptFile.FilePath);
+                        break;
+                    }
                 }
             }
 
@@ -473,6 +485,21 @@ namespace Microsoft.PowerShell.EditorServices
             return foundDefinition != null ?
                 new GetDefinitionResult(foundDefinition) :
                 null;
+        }
+
+        /// <summary>
+        /// Gets a path from a dot-source symbol.
+        /// </summary>
+        /// <param name="symbol">The symbol representing the dot-source expression.</param>
+        /// <param name="workspace">The current workspace</param>
+        /// <param name="scriptFile">The script file containing the symbol</param>
+        /// <returns></returns>
+        private static string GetDotSourcedPath(SymbolReference symbol, Workspace workspace, ScriptFile scriptFile)
+        {
+            string cleanedUpSymbol = PathUtils.NormalizePathSeparators(symbol.SymbolName.Trim('\'', '"'));
+            string psScriptRoot = Path.GetDirectoryName(scriptFile.FilePath);
+            return workspace.ResolveRelativeScriptPath(psScriptRoot,
+                Regex.Replace(cleanedUpSymbol, @"\$PSScriptRoot|\${PSScriptRoot}", psScriptRoot, RegexOptions.IgnoreCase));
         }
 
         /// <summary>
@@ -712,7 +739,7 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     if (!_cmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
                     {
-                        _cmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>{ aliasInfo.Name });
+                        _cmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String> { aliasInfo.Name });
                     }
                     else
                     {

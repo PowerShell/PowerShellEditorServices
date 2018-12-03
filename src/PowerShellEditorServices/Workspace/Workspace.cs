@@ -530,7 +530,7 @@ namespace Microsoft.PowerShell.EditorServices
             return Path.GetDirectoryName(filePath);
         }
 
-        private string ResolveRelativeScriptPath(string baseFilePath, string relativePath)
+        internal string ResolveRelativeScriptPath(string baseFilePath, string relativePath)
         {
             string combinedPath = null;
             Exception resolveException = null;
