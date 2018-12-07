@@ -330,5 +330,19 @@ namespace Microsoft.PowerShell.EditorServices
 
             return dotSourcedVisitor.DotSourcedFiles.ToArray();
         }
+
+        /// <summary>
+        /// Finds all foldable regions in a script based on AST
+        /// </summary>
+        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <returns>A collection of FoldingReference objects</returns>
+        public static IEnumerable<FoldingReference> FindFoldsInDocument(Ast scriptAst)
+        {
+            FindFoldsVisitor findFoldsVisitor = new FindFoldsVisitor();
+            scriptAst.Visit(findFoldsVisitor);
+
+            return findFoldsVisitor.FoldableRegions;
+        }
+
     }
 }
