@@ -535,7 +535,7 @@ function __Expand-Alias {
         {
             PSCommand psCommand = new PSCommand();
             if (!string.IsNullOrEmpty(param))
-            {    
+            {
                 psCommand.AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddArgument(param);
             }
             else
@@ -1267,7 +1267,7 @@ function __Expand-Alias {
                 }
             }
 
-            // Add "show documentation" commands last so they appear at the bottom of the client UI. 
+            // Add "show documentation" commands last so they appear at the bottom of the client UI.
             // These commands do not require code fixes. Sometimes we get a batch of diagnostics
             // to create commands for. No need to create multiple show doc commands for the same rule.
             var ruleNamesProcessed = new HashSet<string>();
@@ -1382,13 +1382,16 @@ function __Expand-Alias {
             // TODO Should be using dynamic registrations
             if (!this.currentSettings.CodeFolding.Enable) { return null; }
             var result = new List<FoldingRange>();
-            foreach (FoldingReference fold in TokenOperations.FoldableRegions(
-                editorSession.Workspace.GetFile(documentUri).ScriptTokens,
-                this.currentSettings.CodeFolding.ShowLastLine))
+            ScriptFile script = editorSession.Workspace.GetFile(documentUri);
+            // If we're showing the last line, decrement the Endline of all regions by one.
+            int endLineOffset = this.currentSettings.CodeFolding.ShowLastLine ? -1 : 0;
+            foreach (FoldingReference fold in FoldingOperations.FoldableRegions(
+                script.ScriptTokens,
+                script.ScriptAst))
             {
                 result.Add(new FoldingRange {
                     EndCharacter   = fold.EndCharacter,
-                    EndLine        = fold.EndLine,
+                    EndLine        = fold.EndLine + endLineOffset,
                     Kind           = fold.Kind,
                     StartCharacter = fold.StartCharacter,
                     StartLine      = fold.StartLine
@@ -1734,7 +1737,7 @@ function __Expand-Alias {
                 });
         }
 
-        // Generate a unique id that is used as a key to look up the associated code action (code fix) when 
+        // Generate a unique id that is used as a key to look up the associated code action (code fix) when
         // we receive and process the textDocument/codeAction message.
         private static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
         {
