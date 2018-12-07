@@ -514,7 +514,6 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                 return "X86";
             }
 #endif
-
             return RuntimeInformation.OSArchitecture.ToString();
         }
 
