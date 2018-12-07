@@ -154,6 +154,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
             string osVersion = RuntimeInformation.OSDescription;
 
+            string osArch = GetOSArchitecture();
+
             string buildTime = BuildInfo.BuildTime?.ToString("s", System.Globalization.CultureInfo.InvariantCulture) ?? "<unspecified>";
 
             string logHeader = $@"
@@ -164,12 +166,12 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
     Name:      {this.hostDetails.Name}
     Version:   {this.hostDetails.Version}
     ProfileId: {this.hostDetails.ProfileId}
-    Arch:      {RuntimeInformation.OSArchitecture}
+    Arch:      {osArch}
 
   Operating system details:
 
     Version: {osVersion}
-    Arch:    {RuntimeInformation.OSArchitecture}
+    Arch:    {osArch}
 
   Build information:
 
@@ -245,7 +247,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             // gets initialized when that is done earlier than LanguageServer.Initialize
             foreach (string module in this.additionalModules)
             {
-                var command = 
+                var command =
                     new System.Management.Automation.PSCommand()
                         .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                         .AddParameter("Name", module);
@@ -491,6 +493,29 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     throw new NotSupportedException();
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the OSArchitecture for logging. Cannot use System.Runtime.InteropServices.RuntimeInformation.OSArchitecture
+        /// directly, since this tries to load API set DLLs in win7 and crashes.
+        ///
+        /// <returns></returns>
+        private string GetOSArchitecture()
+        {
+#if !CoreCLR
+            // If on win7 (version 6.1.x), avoid System.Runtime.InteropServices.RuntimeInformation
+            if (Environment.OSVersion.Platform.Equals("Win32NT") && Environment.OSVersion.Version < new Version(6, 2))
+            {
+                if (Environment.Is64BitProcess)
+                {
+                    return "X64";
+                }
+
+                return "X86";
+            }
+#endif
+
+            return RuntimeInformation.OSArchitecture.ToString();
         }
 
         #endregion
