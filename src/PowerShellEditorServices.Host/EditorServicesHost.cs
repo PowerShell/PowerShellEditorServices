@@ -504,7 +504,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         {
 #if !CoreCLR
             // If on win7 (version 6.1.x), avoid System.Runtime.InteropServices.RuntimeInformation
-            if (Environment.OSVersion.Platform.Equals("Win32NT") && Environment.OSVersion.Version < new Version(6, 2))
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT && Environment.OSVersion.Version < new Version(6, 2))
             {
                 if (Environment.Is64BitProcess)
                 {
