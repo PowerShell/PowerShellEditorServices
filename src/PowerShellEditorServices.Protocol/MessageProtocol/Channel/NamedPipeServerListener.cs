@@ -137,16 +137,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         private void ListenForConnection()
         {
-            var connectionTasks = new List<Task> {WaitForConnectionAsync(this.inOutPipeServer)};
-            if (this.outPipeServer != null)
-            {
-                connectionTasks.Add(WaitForConnectionAsync(this.outPipeServer));
-            }
-
-            Task.Run(async () =>
+            Task.Factory.StartNew(async () =>
             {
                 try
                 {
+                    var connectionTasks = new List<Task> {WaitForConnectionAsync(this.inOutPipeServer)};
+                    if (this.outPipeServer != null)
+                    {
+                        connectionTasks.Add(WaitForConnectionAsync(this.outPipeServer));
+                    }
+
                     await Task.WhenAll(connectionTasks);
                     this.OnClientConnect(new NamedPipeServerChannel(this.inOutPipeServer, this.outPipeServer, this.logger));
                 }
