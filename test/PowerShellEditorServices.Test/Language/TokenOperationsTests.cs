@@ -111,7 +111,13 @@ double quoted herestrings should also fold
 # Comment Block 2
 # Comment Block 2
 $something = $true
-#endregion Comment Block 3";
+#endregion Comment Block 3
+
+# What about anonymous variable assignment
+${this
+is
+valid} = 5
+";
         private FoldingReference[] expectedAllInOneScriptFolds = {
             CreateFoldingReference(0,   0,  3, 10, "region"),
             CreateFoldingReference(1,   0,  2,  2, "comment"),
@@ -127,7 +133,8 @@ $something = $true
             CreateFoldingReference(56,  7, 58,  3, null),
             CreateFoldingReference(64,  0, 65,  0, "comment"),
             CreateFoldingReference(67,  0, 71, 26, "region"),
-            CreateFoldingReference(68,  0, 69,  0, "comment")
+            CreateFoldingReference(68,  0, 69,  0, "comment"),
+            CreateFoldingReference(75,  0, 76,  6, null),
         };
 
         /// <summary>
@@ -244,6 +251,5 @@ $y = $(
 
             AssertFoldingReferenceArrays(expectedFolds, result);
         }
-
     }
 }

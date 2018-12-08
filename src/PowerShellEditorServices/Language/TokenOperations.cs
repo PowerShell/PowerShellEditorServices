@@ -47,6 +47,11 @@ namespace Microsoft.PowerShell.EditorServices
                 MatchTokenElement(tokens, TokenKind.HereStringLiteral, RegionKindNone)
             );
 
+            // Find unopinionated variable names ${ \n \n }
+            foldableRegions.AddRange(
+                MatchTokenElement(tokens, TokenKind.Variable, RegionKindNone)
+            );
+
             // Find contiguous here strings @" -> "@
             foldableRegions.AddRange(
                 MatchTokenElement(tokens, TokenKind.HereStringExpandable, RegionKindNone)
