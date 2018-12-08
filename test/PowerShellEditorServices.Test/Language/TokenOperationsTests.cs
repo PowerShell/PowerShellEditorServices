@@ -67,6 +67,9 @@ herestrings should fold
 
 '@
 
+# This won't confuse things
+Get-Command -Param @I
+
 $I = @""
 double quoted herestrings should also fold
 
@@ -122,19 +125,19 @@ valid} = 5
             CreateFoldingReference(0,   0,  3, 10, "region"),
             CreateFoldingReference(1,   0,  2,  2, "comment"),
             CreateFoldingReference(10,  0, 14,  2, "comment"),
-            CreateFoldingReference(16, 30, 59,  1, null),
+            CreateFoldingReference(16, 30, 62,  1, null),
             CreateFoldingReference(17,  0, 21,  2, "comment"),
             CreateFoldingReference(23,  7, 25,  2, null),
-            CreateFoldingReference(28,  5, 30,  2, null),
-            CreateFoldingReference(35,  2, 36,  0, "comment"),
-            CreateFoldingReference(39,  2, 48, 14, "region"),
-            CreateFoldingReference(41,  4, 44, 14, "region"),
-            CreateFoldingReference(51,  7, 52,  3, null),
-            CreateFoldingReference(56,  7, 58,  3, null),
-            CreateFoldingReference(64,  0, 65,  0, "comment"),
-            CreateFoldingReference(67,  0, 71, 26, "region"),
-            CreateFoldingReference(68,  0, 69,  0, "comment"),
-            CreateFoldingReference(75,  0, 76,  6, null),
+            CreateFoldingReference(31,  5, 33,  2, null),
+            CreateFoldingReference(38,  2, 39,  0, "comment"),
+            CreateFoldingReference(42,  2, 51, 14, "region"),
+            CreateFoldingReference(44,  4, 47, 14, "region"),
+            CreateFoldingReference(54,  7, 55,  3, null),
+            CreateFoldingReference(59,  7, 61,  3, null),
+            CreateFoldingReference(67,  0, 68,  0, "comment"),
+            CreateFoldingReference(70,  0, 74, 26, "region"),
+            CreateFoldingReference(71,  0, 72,  0, "comment"),
+            CreateFoldingReference(78,  0, 79,  6, null),
         };
 
         /// <summary>
