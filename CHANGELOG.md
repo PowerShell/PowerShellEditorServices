@@ -1,7 +1,7 @@
 # PowerShell Editor Services Release History
 
 ## v1.10.1
-### Friday, December 3, 2018
+### Friday, December 7, 2018
 
 - [PowerShellEditorServices #808](https://github.com/PowerShell/PowerShellEditorServices/pull/808) -
   Fix startup crash on Windows 7
