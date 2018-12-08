@@ -161,6 +161,21 @@ if ($host.Runspace.LanguageMode -eq 'ConstrainedLanguage') {
     ExitWithError "PowerShell is configured with an unsupported LanguageMode (ConstrainedLanguage), language features are disabled."
 }
 
+# net45 is not supported, only net451 and up
+if ($PSVersionTable.PSVersion.Major -le 5) {
+    $net451Version = 378675
+    $dotnetVersion = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\").Release
+    if ($dotnetVersion -lt $net451Version) {
+        Write-SessionFile @{
+            status = failed
+            reason = "netversion"
+            detail = "$netVersion"
+        }
+
+        ExitWithError "Your .NET version is too low. Upgrade to net451 or higher to run the PowerShell extension."
+    }
+}
+
 # If PSReadline is present in the session, remove it so that runspace
 # management is easier
 if ((Microsoft.PowerShell.Core\Get-Module PSReadline).Count -gt 0) {
