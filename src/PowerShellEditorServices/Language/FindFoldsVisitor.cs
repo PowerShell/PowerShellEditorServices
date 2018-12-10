@@ -69,6 +69,12 @@ namespace Microsoft.PowerShell.EditorServices
             return AstVisitAction.Continue;
         }
 
+        public override AstVisitAction VisitParamBlock(ParamBlockAst objAst)
+        {
+            if (IsValidFoldingExtent(objAst.Extent)) { this.FoldableRegions.Add(CreateFoldingReference(objAst.Extent, RegionKindNone)); }
+            return AstVisitAction.Continue;
+        }
+
         public override AstVisitAction VisitStatementBlock(StatementBlockAst objAst)
         {
             // These parent visitors will get this AST Object.  No need to process it
