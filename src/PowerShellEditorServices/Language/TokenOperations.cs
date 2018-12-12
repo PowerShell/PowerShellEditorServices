@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Collections.Generic;
 using System.Management.Automation.Language;
 using System.Text.RegularExpressions;
@@ -15,9 +16,25 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     internal static class TokenOperations
     {
+        // Region kinds to align with VSCode's region kinds
         private const string RegionKindComment = "comment";
         private const string RegionKindRegion = "region";
         private const string RegionKindNone = null;
+
+        // Opening tokens for { } and @{ }
+        private static readonly TokenKind[] s_openingBraces = new []
+        {
+            TokenKind.LCurly,
+            TokenKind.AtCurly
+        };
+
+        // Opening tokens for ( ), @( ), $( )
+        private static readonly TokenKind[] s_openingParens = new []
+        {
+            TokenKind.LParen,
+            TokenKind.AtParen,
+            TokenKind.DollarParen
+        };
 
         /// <summary>
         /// Extracts all of the unique foldable regions in a script given the list tokens
@@ -28,29 +45,27 @@ namespace Microsoft.PowerShell.EditorServices
         {
             List<FoldingReference> foldableRegions = new List<FoldingReference>();
 
-            // Find matching braces { -> }
-            foldableRegions.AddRange(
-                MatchTokenElements(tokens, TokenKind.LCurly, TokenKind.RCurly, RegionKindNone)
-            );
-
-            // Find matching braces ( -> )
-            foldableRegions.AddRange(
-                MatchTokenElements(tokens, TokenKind.LParen, TokenKind.RParen, RegionKindNone)
-            );
-
-            // Find matching arrays @( -> )
-            foldableRegions.AddRange(
-                MatchTokenElements(tokens, TokenKind.AtParen, TokenKind.RParen, RegionKindNone)
-            );
-
+            // Find matching braces  { -> }
             // Find matching hashes @{ -> }
             foldableRegions.AddRange(
-                MatchTokenElements(tokens, TokenKind.AtCurly, TokenKind.RParen, RegionKindNone)
+                MatchTokenElements(tokens, s_openingBraces, TokenKind.RCurly, RegionKindNone)
+            );
+
+            // Find matching parentheses     ( -> )
+            // Find matching array literals @( -> )
+            // Find matching subexpressions $( -> )
+            foldableRegions.AddRange(
+                MatchTokenElements(tokens, s_openingParens, TokenKind.RParen, RegionKindNone)
             );
 
             // Find contiguous here strings @' -> '@
             foldableRegions.AddRange(
                 MatchTokenElement(tokens, TokenKind.HereStringLiteral, RegionKindNone)
+            );
+
+            // Find unopinionated variable names ${ \n \n }
+            foldableRegions.AddRange(
+                MatchTokenElement(tokens, TokenKind.Variable, RegionKindNone)
             );
 
             // Find contiguous here strings @" -> "@
@@ -146,11 +161,11 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Given an array of tokens, find matching regions which start and end with a different TokenKind
+        /// Given an array of tokens, find matching regions which start (array of tokens) and end with a different TokenKind
         /// </summary>
         static private List<FoldingReference> MatchTokenElements(
             Token[] tokens,
-            TokenKind startTokenKind,
+            TokenKind[] startTokenKind,
             TokenKind endTokenKind,
             string matchKind)
         {
@@ -158,7 +173,7 @@ namespace Microsoft.PowerShell.EditorServices
             Stack<Token> tokenStack = new Stack<Token>();
             foreach (Token token in tokens)
             {
-                if (token.Kind == startTokenKind) {
+                if (Array.IndexOf(startTokenKind, token.Kind) != -1) {
                     tokenStack.Push(token);
                 }
                 if ((tokenStack.Count > 0) && (token.Kind == endTokenKind)) {
