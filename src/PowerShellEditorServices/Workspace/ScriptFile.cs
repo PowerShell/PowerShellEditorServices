@@ -648,7 +648,14 @@ namespace Microsoft.PowerShell.EditorServices
                     .Select(ScriptFileMarker.FromParseError)
                     .ToArray();
 
-            //Get all dot sourced referenced files and store  them
+            // Untitled files have no directory
+            // TODO: Make untitled files support dot-sourced references
+            if (IsUntitledPath(this.FilePath))
+            {
+                return;
+            }
+
+            // Get all dot sourced referenced files and store them
             this.ReferencedFiles = AstOperations.FindDotSourcedIncludes(this.ScriptAst, Path.GetDirectoryName(this.FilePath));
         }
 
