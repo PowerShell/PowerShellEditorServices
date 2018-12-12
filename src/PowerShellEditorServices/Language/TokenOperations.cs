@@ -16,9 +16,25 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     internal static class TokenOperations
     {
+        // Region kinds to align with VSCode's region kinds
         private const string RegionKindComment = "comment";
         private const string RegionKindRegion = "region";
         private const string RegionKindNone = null;
+
+        // Opening tokens for { } and @{ }
+        private static readonly TokenKind[] s_openingBraces = new []
+        {
+            TokenKind.LCurly,
+            TokenKind.AtCurly
+        };
+
+        // Opening tokens for ( ), @( ), $( )
+        private static readonly TokenKind[] s_openingParens = new []
+        {
+            TokenKind.LParen,
+            TokenKind.AtParen,
+            TokenKind.DollarParen
+        };
 
         /// <summary>
         /// Extracts all of the unique foldable regions in a script given the list tokens
@@ -32,14 +48,14 @@ namespace Microsoft.PowerShell.EditorServices
             // Find matching braces  { -> }
             // Find matching hashes @{ -> }
             foldableRegions.AddRange(
-                MatchTokenElements(tokens, new TokenKind[] { TokenKind.LCurly, TokenKind.AtCurly }, TokenKind.RCurly, RegionKindNone)
+                MatchTokenElements(tokens, s_openingBraces, TokenKind.RCurly, RegionKindNone)
             );
 
             // Find matching parentheses     ( -> )
             // Find matching array literals @( -> )
             // Find matching subexpressions $( -> )
             foldableRegions.AddRange(
-                MatchTokenElements(tokens, new TokenKind[] { TokenKind.LParen, TokenKind.AtParen, TokenKind.DollarParen }, TokenKind.RParen, RegionKindNone)
+                MatchTokenElements(tokens, s_openingParens, TokenKind.RParen, RegionKindNone)
             );
 
             // Find contiguous here strings @' -> '@
