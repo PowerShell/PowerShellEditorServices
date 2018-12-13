@@ -33,10 +33,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Extracts all of the unique foldable regions in a script given the list tokens
         /// </summary>
-        internal static FoldingReference[] FoldableRegions(
-            Token[] tokens)
+        internal static void FoldableRegions(
+            Token[] tokens,
+            ref FoldingReferenceList refList)
         {
-            var foldableRegions = new List<FoldingReference>();
             var tokenCommentRegionStack = new Stack<Token>();
             Token blockStartToken = null;
             int blockNextLine = -1;
@@ -48,8 +48,7 @@ namespace Microsoft.PowerShell.EditorServices
                 // Processing for comment regions <# -> #>
                 if (token.Extent.StartLineNumber != token.Extent.EndLineNumber)
                 {
-                    FoldingReference foldRef = CreateFoldingReference(token, token, RegionKindComment);
-                    if (foldRef != null) { foldableRegions.Add(foldRef); }
+                    refList.SafeAdd(CreateFoldingReference(token, token, RegionKindComment));
                     continue;
                 }
 
@@ -66,8 +65,7 @@ namespace Microsoft.PowerShell.EditorServices
                     // Mismatched regions in the script can cause bad stacks.
                     if (tokenCommentRegionStack.Count > 0)
                     {
-                        FoldingReference foldRef = CreateFoldingReference(tokenCommentRegionStack.Pop(), token, RegionKindRegion);
-                        if (foldRef != null) { foldableRegions.Add(foldRef); }
+                        refList.SafeAdd(CreateFoldingReference(tokenCommentRegionStack.Pop(), token, RegionKindRegion));
                     }
                     continue;
                 }
@@ -76,8 +74,7 @@ namespace Microsoft.PowerShell.EditorServices
                 int thisLine = token.Extent.StartLineNumber - 1;
                 if ((blockStartToken != null) && (thisLine != blockNextLine))
                 {
-                    FoldingReference foldRef = CreateFoldingReference(blockStartToken, blockNextLine - 1, RegionKindComment);
-                    if (foldRef != null) { foldableRegions.Add(foldRef); }
+                    refList.SafeAdd(CreateFoldingReference(blockStartToken, blockNextLine - 1, RegionKindComment));
                     blockStartToken = token;
                 }
                 if (blockStartToken == null) { blockStartToken = token; }
@@ -87,11 +84,8 @@ namespace Microsoft.PowerShell.EditorServices
             // comment block simply ends at the end of document
             if (blockStartToken != null)
             {
-                FoldingReference foldRef = CreateFoldingReference(blockStartToken, blockNextLine - 1, RegionKindComment);
-                if (foldRef != null) { foldableRegions.Add(foldRef); }
+                refList.SafeAdd(CreateFoldingReference(blockStartToken, blockNextLine - 1, RegionKindComment));
             }
-
-            return foldableRegions.ToArray();
         }
 
         /// <summary>

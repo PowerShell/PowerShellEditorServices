@@ -335,13 +335,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// Finds all foldable regions in a script based on AST
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
+        /// <param name="refList">The FoldingReferenceList object to add the folds to</param>
         /// <returns>A collection of FoldingReference objects</returns>
-        public static IEnumerable<FoldingReference> FindFoldsInDocument(Ast scriptAst)
+        public static void FindFoldsInDocument(Ast scriptAst, ref FoldingReferenceList refList)
         {
-            FindFoldsVisitor findFoldsVisitor = new FindFoldsVisitor();
+            FindFoldsVisitor findFoldsVisitor = new FindFoldsVisitor(ref refList);
             scriptAst.Visit(findFoldsVisitor);
-
-            return findFoldsVisitor.FoldableRegions;
         }
 
     }

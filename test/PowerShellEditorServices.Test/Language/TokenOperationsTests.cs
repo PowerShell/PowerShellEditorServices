@@ -20,9 +20,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 text,
                 Version.Parse("5.0"));
 
-            return Microsoft.PowerShell.EditorServices.FoldingOperations.FoldableRegions(
+            var result = Microsoft.PowerShell.EditorServices.FoldingOperations.FoldableRegions(
                 scriptFile.ScriptTokens,
-                scriptFile.ScriptAst);
+                scriptFile.ScriptAst).ToArray();
+            // The foldable regions need to be deterministic for testing so sort the array.
+            Array.Sort(result);
+            return result;
         }
 
         /// <summary>

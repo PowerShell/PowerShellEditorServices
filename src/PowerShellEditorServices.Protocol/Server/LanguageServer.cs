@@ -1387,7 +1387,7 @@ function __Expand-Alias {
             int endLineOffset = this.currentSettings.CodeFolding.ShowLastLine ? -1 : 0;
             foreach (FoldingReference fold in FoldingOperations.FoldableRegions(
                 script.ScriptTokens,
-                script.ScriptAst))
+                script.ScriptAst).ToArray())
             {
                 result.Add(new FoldingRange {
                     EndCharacter   = fold.EndCharacter,

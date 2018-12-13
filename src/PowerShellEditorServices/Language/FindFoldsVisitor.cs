@@ -16,11 +16,11 @@ namespace Microsoft.PowerShell.EditorServices
     {
         private const string RegionKindNone = null;
 
-        public List<FoldingReference> FoldableRegions { get; }
+        private FoldingReferenceList _refList;
 
-        public FindFoldsVisitor()
+        public FindFoldsVisitor(ref FoldingReferenceList refList)
         {
-            FoldableRegions = new List<FoldingReference>();
+            _refList = refList;
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (IsValidFoldingExtent(objAst.Extent))
             {
-                FoldableRegions.Add(CreateFoldingReference(objAst.Extent, RegionKindNone));
+                _refList.SafeAdd(CreateFoldingReference(objAst.Extent, RegionKindNone));
             }
             return AstVisitAction.Continue;
         }
@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (IsValidFoldingExtent(objAst.Extent))
             {
-                FoldableRegions.Add(CreateFoldingReference(objAst.Extent, RegionKindNone));
+                _refList.SafeAdd(CreateFoldingReference(objAst.Extent, RegionKindNone));
             }
             return AstVisitAction.Continue;
         }
@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (objAst.Parent is ArrayExpressionAst) { return AstVisitAction.Continue; }
             if (IsValidFoldingExtent(objAst.Extent))
             {
-                FoldableRegions.Add(CreateFoldingReference(objAst.Extent, RegionKindNone));
+                _refList.SafeAdd(CreateFoldingReference(objAst.Extent, RegionKindNone));
             }
             return AstVisitAction.Continue;
         }
@@ -90,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (objAst.Parent is ScriptBlockExpressionAst) { return AstVisitAction.Continue; }
             if (IsValidFoldingExtent(objAst.Extent))
             {
-                FoldableRegions.Add(CreateFoldingReference(objAst.Extent, RegionKindNone));
+                _refList.SafeAdd(CreateFoldingReference(objAst.Extent, RegionKindNone));
             }
             return AstVisitAction.Continue;
         }
@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices
                     foldRef.StartCharacter--;
                     foldRef.EndCharacter++;
                 }
-                FoldableRegions.Add(foldRef);
+                _refList.SafeAdd(foldRef);
             }
             return AstVisitAction.Continue;
         }
@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (IsValidFoldingExtent(objAst.Extent))
             {
-                FoldableRegions.Add(CreateFoldingReference(objAst.Extent, RegionKindNone));
+                _refList.SafeAdd(CreateFoldingReference(objAst.Extent, RegionKindNone));
             }
 
             return AstVisitAction.Continue;
@@ -126,7 +126,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (IsValidFoldingExtent(objAst.Extent))
             {
-                FoldableRegions.Add(CreateFoldingReference(objAst.Extent, RegionKindNone));
+                _refList.SafeAdd(CreateFoldingReference(objAst.Extent, RegionKindNone));
             }
             return AstVisitAction.Continue;
         }
@@ -135,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (IsValidFoldingExtent(objAst.Extent))
             {
-                FoldableRegions.Add(CreateFoldingReference(objAst.Extent, RegionKindNone));
+                _refList.SafeAdd(CreateFoldingReference(objAst.Extent, RegionKindNone));
             }
             return AstVisitAction.Continue;
         }
@@ -144,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             if (IsValidFoldingExtent(objAst.Extent))
             {
-                FoldableRegions.Add(CreateFoldingReference(objAst.Extent, RegionKindNone));
+                _refList.SafeAdd(CreateFoldingReference(objAst.Extent, RegionKindNone));
             }
             return AstVisitAction.Continue;
         }
