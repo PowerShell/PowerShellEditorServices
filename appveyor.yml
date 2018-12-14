@@ -7,6 +7,7 @@ branches:
   only:
   - master
   - 2.0.0
+  - rebase-attempt
 
 environment:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true  # Don't download unneeded packages
