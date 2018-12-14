@@ -109,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // it should not escape already escaped chars.
             ScriptFile debugWithParamsFile =
                 this.workspace.GetFile(
-                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/Debug` With Params `[Test].ps1"));
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/Debug` W&ith Params `[Test].ps1"));
 
             await this.debugService.SetLineBreakpointsAsync(
                 debugWithParamsFile,
