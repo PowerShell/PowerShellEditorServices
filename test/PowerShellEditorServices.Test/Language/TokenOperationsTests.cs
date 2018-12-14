@@ -276,5 +276,57 @@ $y = $(
 
             AssertFoldingReferenceArrays(expectedFolds, result);
         }
+
+        // This tests DSC style keywords and param blocks
+        [Fact]
+        public void LaguageServiceFindsFoldablRegionsWithDSC() {
+            string testString =
+@"Configuration Example
+{
+    param
+    (
+        [Parameter()]
+        [System.String[]]
+        $NodeName = 'localhost',
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullorEmpty()]
+        [System.Management.Automation.PSCredential]
+        $Credential
+    )
+
+    Import-DscResource -Module ActiveDirectoryCSDsc
+
+    Node $AllNodes.NodeName
+    {
+        WindowsFeature ADCS-Cert-Authority
+        {
+            Ensure = 'Present'
+            Name   = 'ADCS-Cert-Authority'
+        }
+
+        AdcsCertificationAuthority CertificateAuthority
+        {
+            IsSingleInstance = 'Yes'
+            Ensure           = 'Present'
+            Credential       = $Credential
+            CAType           = 'EnterpriseRootCA'
+            DependsOn        = '[WindowsFeature]ADCS-Cert-Authority'
+        }
+    }
+}
+";
+            FoldingReference[] expectedFolds = {
+                CreateFoldingReference(1,  0, 33, 1, null),
+                CreateFoldingReference(3,  4, 12, 5, null),
+                CreateFoldingReference(17, 4, 32, 5, null),
+                CreateFoldingReference(19, 8, 22, 9, null),
+                CreateFoldingReference(25, 8, 31, 9, null)
+            };
+
+            FoldingReference[] result = GetRegions(testString);
+
+            AssertFoldingReferenceArrays(expectedFolds, result);
+        }
     }
 }
