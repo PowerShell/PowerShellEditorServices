@@ -533,7 +533,7 @@ function __Expand-Alias {
                     .AddCommand("Microsoft.PowerShell.Utility\\Sort-Object")
                         .AddParameter("Property", "Name");
             }
-            IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+            IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(psCommand);
             var commandList = new List<PSCommandMessage>();
 
             if (result != null)
@@ -551,7 +551,7 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(commandList);
+            await requestContext.SendResultAsync(commandList);
         }
 
         private async Task HandleFindModuleRequestAsync(
@@ -1319,7 +1319,7 @@ function __Expand-Alias {
             FoldingRangeParams foldingParams,
             RequestContext<FoldingRange[]> requestContext)
         {
-            await requestContext.SendResult(Fold(foldingParams.TextDocument.Uri));
+            await requestContext.SendResultAsync(Fold(foldingParams.TextDocument.Uri));
         }
 
         protected Task HandleEvaluateRequestAsync(

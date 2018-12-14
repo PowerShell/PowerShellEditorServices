@@ -251,7 +251,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                         .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                         .AddParameter("Name", module);
 
-                await this.editorSession.PowerShellContext.ExecuteCommand<System.Management.Automation.PSObject>(
+                await this.editorSession.PowerShellContext.ExecuteCommandAsync<System.Management.Automation.PSObject>(
                     command,
                     sendOutputToHost: false,
                     sendErrorToHost: true);

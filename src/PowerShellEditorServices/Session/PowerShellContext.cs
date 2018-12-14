@@ -1511,7 +1511,6 @@ namespace Microsoft.PowerShell.EditorServices
             if (!isPathAlreadyEscaped)
             {
                 path = WildcardEscapePath(path);
-                runspaceHandle.Runspace.SessionStateProxy.Path.SetLocation(path);
             }
 
             await ExecuteCommandAsync<PSObject>(
