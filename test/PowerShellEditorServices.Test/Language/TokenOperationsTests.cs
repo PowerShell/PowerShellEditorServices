@@ -260,5 +260,31 @@ $y = $(
 
             AssertFoldingReferenceArrays(expectedFolds, result);
         }
+
+        // A simple PowerShell Classes test
+        [Fact]
+        public void LaguageServiceFindsFoldablRegionsWithClasses() {
+            string testString =
+@"class TestClass {
+    [string[]] $TestProperty = @(
+        'first',
+        'second',
+        'third')
+
+    [string] TestMethod() {
+        return $this.TestProperty[0]
+    }
+}
+";
+            FoldingReference[] expectedFolds = {
+                CreateFoldingReference(0, 16, 8,  1, null),
+                CreateFoldingReference(1, 31, 3, 16, null),
+                CreateFoldingReference(6, 26, 7,  5, null)
+            };
+
+            FoldingReference[] result = GetRegions(testString);
+
+            AssertFoldingReferenceArrays(expectedFolds, result);
+        }
     }
 }
