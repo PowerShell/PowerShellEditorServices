@@ -345,26 +345,6 @@ try {
         Write-Host "PowerShell Integrated Console`n"
     }
 
-# <<<<<<< HEAD
-# =======
-    $editorServicesHost =
-        Start-EditorServicesHost `
-            -HostName $HostName `
-            -HostProfileId $HostProfileId `
-            -HostVersion $HostVersion `
-            -LogPath $LogPath `
-            -LogLevel $LogLevel `
-            -AdditionalModules $AdditionalModules `
-            -LanguageServiceNamedPipe $LanguageServicePipeName `
-            -DebugServiceNamedPipe $DebugServicePipeName `
-            -Stdio:$Stdio.IsPresent`
-            -BundledModulesPath $BundledModulesPath `
-            -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
-            -DebugServiceOnly:$DebugServiceOnly.IsPresent `
-            -WaitForDebugger:$WaitForDebugger.IsPresent `
-            -FeatureFlags $FeatureFlags
-
-# >>>>>>> 0d0889e... PSReadLine integration (#672)
     $resultDetails = @{
         "status" = "not started";
         "languageServiceTransport" = $PSCmdlet.ParameterSetName;
@@ -405,10 +385,10 @@ try {
 
             $editorServicesHost = Start-EditorServicesHost @splat
 
-            Set-PipeFileResult $resultDetails "languageServiceReadPipeName" $LanguageServiceInPipeName
-            Set-PipeFileResult $resultDetails "languageServiceWritePipeName" $LanguageServiceOutPipeName
-            Set-PipeFileResult $resultDetails "debugServiceReadPipeName" $DebugServiceInPipeName
-            Set-PipeFileResult $resultDetails "debugServiceWritePipeName" $DebugServiceOutPipeName
+            Set-PipeFileResult $resultDetails "languageServiceReadPipeName" $splat.LanguageServiceInNamedPipe
+            Set-PipeFileResult $resultDetails "languageServiceWritePipeName" $splat.LanguageServiceOutNamedPipe
+            Set-PipeFileResult $resultDetails "debugServiceReadPipeName" $splat.DebugServiceInNamedPipe
+            Set-PipeFileResult $resultDetails "debugServiceWritePipeName" $splat.DebugServiceOutNamedPipe
             break
         }
 
@@ -417,9 +397,10 @@ try {
             $splat.DebugServiceNamedPipe = Get-ValidatedNamedPipeName $DebugServicePipeName
 
             $editorServicesHost = Start-EditorServicesHost @splat
-
-            Set-PipeFileResult $resultDetails "languageServicePipeName" $LanguageServicePipeName
-            Set-PipeFileResult $resultDetails "debugServicePipeName" $DebugServicePipeName
+            Log ($splat | Out-String)
+            Log $LanguageServicePipeName
+            Set-PipeFileResult $resultDetails "languageServicePipeName" $splat.LanguageServiceNamedPipe
+            Set-PipeFileResult $resultDetails "debugServicePipeName" $splat.DebugServiceNamedPipe
             break
         }
     }
