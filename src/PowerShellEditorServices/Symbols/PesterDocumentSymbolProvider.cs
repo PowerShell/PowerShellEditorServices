@@ -166,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         internal static readonly IReadOnlyDictionary<string, PesterCommandType> PesterKeywords =
             Enum.GetValues(typeof(PesterCommandType))
                 .Cast<PesterCommandType>()
-                .ToDictionary(pct => pct.ToString(), pct => pct);
+                .ToDictionary(pct => pct.ToString(), pct => pct, StringComparer.OrdinalIgnoreCase);
 
         private static char[] DefinitionTrimChars = new char[] { ' ', '{' };
 
