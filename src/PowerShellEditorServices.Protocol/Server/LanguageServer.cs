@@ -1394,14 +1394,14 @@ function __Expand-Alias {
             // If we're showing the last line, decrement the Endline of all regions by one.
             int endLineOffset = this.currentSettings.CodeFolding.ShowLastLine ? -1 : 0;
 
-            foreach (KeyValuePair<int, FoldingReference> entry in TokenOperations.FoldableRegions(scriptFile.ScriptTokens))
+            foreach (FoldingReference fold in TokenOperations.FoldableReferences(scriptFile.ScriptTokens).References)
             {
                 result.Add(new FoldingRange {
-                    EndCharacter   = entry.Value.EndCharacter,
-                    EndLine        = entry.Value.EndLine + endLineOffset,
-                    Kind           = entry.Value.Kind,
-                    StartCharacter = entry.Value.StartCharacter,
-                    StartLine      = entry.Value.StartLine
+                    EndCharacter   = fold.EndCharacter,
+                    EndLine        = fold.EndLine + endLineOffset,
+                    Kind           = fold.Kind,
+                    StartCharacter = fold.StartCharacter,
+                    StartLine      = fold.StartLine
                 });
             }
 

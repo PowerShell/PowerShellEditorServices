@@ -66,8 +66,21 @@ namespace Microsoft.PowerShell.EditorServices
     /// A class that holds a list of FoldingReferences and ensures that when adding a reference that the
     /// folding rules are obeyed, e.g. Only one fold per start line
     /// </summary>
-    public class FoldingReferenceList : Dictionary<int, FoldingReference>
+    public class FoldingReferenceList
     {
+        private readonly Dictionary<int, FoldingReference> references = new Dictionary<int, FoldingReference>();
+
+        /// <summary>
+        /// Return all references in the list
+        /// </summary>
+        public IEnumerable<FoldingReference> References
+        {
+            get
+            {
+                return references.Values;
+            }
+        }
+
         /// <summary>
         /// Adds a FoldingReference to the list and enforces ordering rules e.g. Only one fold per start line
         /// </summary>
@@ -76,13 +89,13 @@ namespace Microsoft.PowerShell.EditorServices
             if (item == null) { return; }
 
             // Only add the item if it hasn't been seen before or it's the largest range
-            if (TryGetValue(item.StartLine, out FoldingReference currentItem))
+            if (references.TryGetValue(item.StartLine, out FoldingReference currentItem))
             {
-                if (currentItem.CompareTo(item) == 1) { this[item.StartLine] = item; }
+                if (currentItem.CompareTo(item) == 1) { references[item.StartLine] = item; }
             }
             else
             {
-                this[item.StartLine] = item;
+                references[item.StartLine] = item;
             }
         }
 
@@ -91,8 +104,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public FoldingReference[] ToArray()
         {
-            var result = new FoldingReference[Count];
-            Values.CopyTo(result, 0);
+            var result = new FoldingReference[references.Count];
+            references.Values.CopyTo(result, 0);
             return result;
         }
     }

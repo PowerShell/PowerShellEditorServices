@@ -21,55 +21,139 @@ namespace Microsoft.PowerShell.EditorServices
         private const string RegionKindRegion = "region";
         private const string RegionKindNone = null;
 
-        // Opening tokens for { } and @{ }
-        private static readonly TokenKind[] s_openingBraces = new []
-        {
-            TokenKind.LCurly,
-            TokenKind.AtCurly
-        };
-
-        // Opening tokens for ( ), @( ), $( )
-        private static readonly TokenKind[] s_openingParens = new []
-        {
-            TokenKind.LParen,
-            TokenKind.AtParen,
-            TokenKind.DollarParen
-        };
+        // These regular expressions are used to match lines which mark the start and end of region comment in a PowerShell
+        // script. They are based on the defaults in the VS Code Language Configuration at;
+        // https://github.com/Microsoft/vscode/blob/64186b0a26/extensions/powershell/language-configuration.json#L26-L31
+        static private readonly Regex s_startRegionTextRegex = new Regex(
+           @"^\s*#region\b",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        static private readonly Regex s_endRegionTextRegex = new Regex(
+           @"^\s*#endregion\b",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>
         /// Extracts all of the unique foldable regions in a script given the list tokens
         /// </summary>
-        internal static FoldingReferenceList FoldableRegions(
+        internal static FoldingReferenceList FoldableReferences(
             Token[] tokens)
         {
             var refList = new FoldingReferenceList();
 
-            // Find matching braces  { -> }
-            // Find matching hashes @{ -> }
-            MatchTokenElements(tokens, s_openingBraces, TokenKind.RCurly, RegionKindNone, ref refList);
+            Stack<Token> tokenCurlyStack = new Stack<Token>();
+            Stack<Token> tokenParenStack = new Stack<Token>();
+            foreach (Token token in tokens)
+            {
+                switch (token.Kind)
+                {
+                    // Find matching braces  { -> }
+                    // Find matching hashes @{ -> }
+                    case TokenKind.LCurly:
+                    case TokenKind.AtCurly:
+                        tokenCurlyStack.Push(token);
+                        break;
 
-            // Find matching parentheses     ( -> )
-            // Find matching array literals @( -> )
-            // Find matching subexpressions $( -> )
-            MatchTokenElements(tokens, s_openingParens, TokenKind.RParen, RegionKindNone, ref refList);
+                    case TokenKind.RCurly:
+                        if (tokenCurlyStack.Count > 0)
+                        {
+                            refList.SafeAdd(CreateFoldingReference(tokenCurlyStack.Pop(), token, RegionKindNone));
+                        }
+                        break;
 
-            // Find contiguous here strings @' -> '@
-            MatchTokenElement(tokens, TokenKind.HereStringLiteral, RegionKindNone, ref refList);
+                    // Find matching parentheses     ( -> )
+                    // Find matching array literals @( -> )
+                    // Find matching subexpressions $( -> )
+                    case TokenKind.LParen:
+                    case TokenKind.AtParen:
+                    case TokenKind.DollarParen:
+                        tokenParenStack.Push(token);
+                        break;
 
-            // Find unopinionated variable names ${ \n \n }
-            MatchTokenElement(tokens, TokenKind.Variable, RegionKindNone, ref refList);
+                    case TokenKind.RParen:
+                        if (tokenParenStack.Count > 0)
+                        {
+                            refList.SafeAdd(CreateFoldingReference(tokenParenStack.Pop(), token, RegionKindNone));
+                        }
+                        break;
 
-            // Find contiguous here strings @" -> "@
-            MatchTokenElement(tokens, TokenKind.HereStringExpandable, RegionKindNone, ref refList);
+                    // Find contiguous here strings @' -> '@
+                    // Find unopinionated variable names ${ \n \n }
+                    // Find contiguous expandable here strings @" -> "@
+                    case TokenKind.HereStringLiteral:
+                    case TokenKind.Variable:
+                    case TokenKind.HereStringExpandable:
+                        if (token.Extent.StartLineNumber != token.Extent.EndLineNumber)
+                        {
+                            refList.SafeAdd(CreateFoldingReference(token, token, RegionKindNone));
+                        }
+                        break;
+                }
+            }
 
             // Find matching comment regions   #region -> #endregion
-            MatchCustomCommentRegionTokenElements(tokens, RegionKindRegion, ref refList);
-
+            // Given a list of tokens, find the tokens that are comments and
+            // the comment text is either `#region` or `#endregion`, and then use a stack to determine
+            // the ranges they span
+            //
             // Find blocks of line comments # comment1\n# comment2\n...
-            MatchBlockCommentTokenElement(tokens, RegionKindComment, ref refList);
-
+            // Finding blocks of comment tokens is more complicated as the newline characters are not
+            // classed as comments.  To workaround this we search for valid block comments (See IsBlockCmment)
+            // and then determine contiguous line numbers from there
+            //
             // Find comments regions <# -> #>
-            MatchTokenElement(tokens, TokenKind.Comment, RegionKindComment, ref refList);
+            // Match the token start and end of kind TokenKind.Comment
+            var tokenCommentRegionStack = new Stack<Token>();
+            Token blockStartToken = null;
+            int blockNextLine = -1;
+
+            for (int index = 0; index < tokens.Length; index++)
+            {
+                Token token = tokens[index];
+                if (token.Kind != TokenKind.Comment) { continue; }
+
+                // Processing for comment regions <# -> #>
+                if (token.Extent.StartLineNumber != token.Extent.EndLineNumber)
+                {
+                    refList.SafeAdd(CreateFoldingReference(token, token, RegionKindComment));
+                    continue;
+                }
+
+                if (!IsBlockComment(index, tokens)) { continue; }
+
+                // Regex's are very expensive.  Use them sparingly!
+                // Processing for #region -> #endregion
+                if (s_startRegionTextRegex.IsMatch(token.Text))
+                {
+                    tokenCommentRegionStack.Push(token);
+                    continue;
+                }
+                if (s_endRegionTextRegex.IsMatch(token.Text))
+                {
+                    // Mismatched regions in the script can cause bad stacks.
+                    if (tokenCommentRegionStack.Count > 0)
+                    {
+                        refList.SafeAdd(CreateFoldingReference(tokenCommentRegionStack.Pop(), token, RegionKindRegion));
+                    }
+                    continue;
+                }
+
+                // If it's neither a start or end region then it could be block line comment
+                // Processing for blocks of line comments # comment1\n# comment2\n...
+                int thisLine = token.Extent.StartLineNumber - 1;
+                if ((blockStartToken != null) && (thisLine != blockNextLine))
+                {
+                    refList.SafeAdd(CreateFoldingReference(blockStartToken, blockNextLine - 1, RegionKindComment));
+                    blockStartToken = token;
+                }
+                if (blockStartToken == null) { blockStartToken = token; }
+                blockNextLine = thisLine + 1;
+            }
+
+            // If we exit the token array and we're still processing comment lines, then the
+            // comment block simply ends at the end of document
+            if (blockStartToken != null)
+            {
+                refList.SafeAdd(CreateFoldingReference(blockStartToken, blockNextLine - 1, RegionKindComment));
+            }
 
             return refList;
         }
@@ -115,45 +199,6 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Given an array of tokens, find matching regions which start (array of tokens) and end with a different TokenKind
-        /// </summary>
-        static private void MatchTokenElements(
-            Token[] tokens,
-            TokenKind[] startTokenKind,
-            TokenKind endTokenKind,
-            string matchKind,
-            ref FoldingReferenceList refList)
-        {
-            Stack<Token> tokenStack = new Stack<Token>();
-            foreach (Token token in tokens)
-            {
-                if (Array.IndexOf(startTokenKind, token.Kind) != -1) {
-                    tokenStack.Push(token);
-                }
-                if ((tokenStack.Count > 0) && (token.Kind == endTokenKind)) {
-                    refList.SafeAdd(CreateFoldingReference(tokenStack.Pop(), token, matchKind));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Given an array of token, finds a specific token
-        /// </summary>
-        static private void MatchTokenElement(
-            Token[] tokens,
-            TokenKind tokenKind,
-            string matchKind,
-            ref FoldingReferenceList refList)
-        {
-            foreach (Token token in tokens)
-            {
-                if ((token.Kind == tokenKind) && (token.Extent.StartLineNumber != token.Extent.EndLineNumber)) {
-                    refList.SafeAdd(CreateFoldingReference(token, token, matchKind));
-                }
-            }
-        }
-
-        /// <summary>
         /// Returns true if a Token is a block comment;
         /// - Must be a TokenKind.comment
         /// - Must be preceeded by TokenKind.NewLine
@@ -166,78 +211,6 @@ namespace Microsoft.PowerShell.EditorServices
             if (index == 0) { return true; }
             if (tokens[index - 1].Kind != TokenKind.NewLine) { return false; }
             return thisToken.Text.StartsWith("#");
-        }
-
-        // This regular expressions is used to detect a line comment (as opposed to an inline comment), that is not a region
-        // block directive i.e.
-        // - No text between the beginning of the line and `#`
-        // - Comment does start with region
-        // - Comment does start with endregion
-        static private readonly Regex s_nonRegionLineCommentRegex = new Regex(
-            @"\s*#(?!region\b|endregion\b)",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-        /// <summary>
-        /// Finding blocks of comment tokens is more complicated as the newline characters are not
-        /// classed as comments.  To workaround this we search for valid block comments (See IsBlockCmment)
-        /// and then determine contiguous line numbers from there
-        /// </summary>
-        static private void MatchBlockCommentTokenElement(
-            Token[] tokens,
-            string matchKind,
-             ref FoldingReferenceList refList)
-        {
-            Token startToken = null;
-            int nextLine = -1;
-            for (int index = 0; index < tokens.Length; index++)
-            {
-                Token thisToken = tokens[index];
-                if (IsBlockComment(index, tokens) && s_nonRegionLineCommentRegex.IsMatch(thisToken.Text)) {
-                    int thisLine = thisToken.Extent.StartLineNumber - 1;
-                    if ((startToken != null) && (thisLine != nextLine)) {
-                        refList.SafeAdd(CreateFoldingReference(startToken, nextLine - 1, matchKind));
-                        startToken = thisToken;
-                    }
-                    if (startToken == null) { startToken = thisToken; }
-                    nextLine = thisLine + 1;
-                }
-            }
-            // If we exit the token array and we're still processing comment lines, then the
-            // comment block simply ends at the end of document
-            if (startToken != null) {
-                refList.SafeAdd(CreateFoldingReference(startToken, nextLine - 1, matchKind));
-            }
-        }
-
-        /// <summary>
-        /// Given a list of tokens, find the tokens that are comments and
-        /// the comment text is either `# region` or `# endregion`, and then use a stack to determine
-        /// the ranges they span
-        /// </summary>
-        static private void MatchCustomCommentRegionTokenElements(
-            Token[] tokens,
-            string matchKind,
-            ref FoldingReferenceList refList)
-        {
-            // These regular expressions are used to match lines which mark the start and end of region comment in a PowerShell
-            // script. They are based on the defaults in the VS Code Language Configuration at;
-            // https://github.com/Microsoft/vscode/blob/64186b0a26/extensions/powershell/language-configuration.json#L26-L31
-            string startRegionText = @"^\s*#region\b";
-            string endRegionText = @"^\s*#endregion\b";
-
-            Stack<Token> tokenStack = new Stack<Token>();
-            for (int index = 0; index < tokens.Length; index++)
-            {
-                if (IsBlockComment(index, tokens)) {
-                    Token token = tokens[index];
-                    if (Regex.IsMatch(token.Text, startRegionText, RegexOptions.IgnoreCase)) {
-                        tokenStack.Push(token);
-                    }
-                    if ((tokenStack.Count > 0) && (Regex.IsMatch(token.Text, endRegionText, RegexOptions.IgnoreCase))) {
-                        refList.SafeAdd(CreateFoldingReference(tokenStack.Pop(), token, matchKind));
-                    }
-                }
-            }
         }
     }
 }

@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 text,
                 Version.Parse("5.0"));
 
-            var result = Microsoft.PowerShell.EditorServices.TokenOperations.FoldableRegions(scriptFile.ScriptTokens).ToArray();
+            var result = Microsoft.PowerShell.EditorServices.TokenOperations.FoldableReferences(scriptFile.ScriptTokens).ToArray();
             // The foldable regions need to be deterministic for testing so sort the array.
             Array.Sort(result);
             return result;
