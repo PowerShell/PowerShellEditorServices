@@ -39,85 +39,39 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Extracts all of the unique foldable regions in a script given the list tokens
         /// </summary>
-        internal static FoldingReference[] FoldableRegions(
-            Token[] tokens,
-            bool ShowLastLine)
+        internal static FoldingReferenceList FoldableRegions(
+            Token[] tokens)
         {
-            List<FoldingReference> foldableRegions = new List<FoldingReference>();
+            var refList = new FoldingReferenceList();
 
             // Find matching braces  { -> }
             // Find matching hashes @{ -> }
-            foldableRegions.AddRange(
-                MatchTokenElements(tokens, s_openingBraces, TokenKind.RCurly, RegionKindNone)
-            );
+            MatchTokenElements(tokens, s_openingBraces, TokenKind.RCurly, RegionKindNone, ref refList);
 
             // Find matching parentheses     ( -> )
             // Find matching array literals @( -> )
             // Find matching subexpressions $( -> )
-            foldableRegions.AddRange(
-                MatchTokenElements(tokens, s_openingParens, TokenKind.RParen, RegionKindNone)
-            );
+            MatchTokenElements(tokens, s_openingParens, TokenKind.RParen, RegionKindNone, ref refList);
 
             // Find contiguous here strings @' -> '@
-            foldableRegions.AddRange(
-                MatchTokenElement(tokens, TokenKind.HereStringLiteral, RegionKindNone)
-            );
+            MatchTokenElement(tokens, TokenKind.HereStringLiteral, RegionKindNone, ref refList);
 
             // Find unopinionated variable names ${ \n \n }
-            foldableRegions.AddRange(
-                MatchTokenElement(tokens, TokenKind.Variable, RegionKindNone)
-            );
+            MatchTokenElement(tokens, TokenKind.Variable, RegionKindNone, ref refList);
 
             // Find contiguous here strings @" -> "@
-            foldableRegions.AddRange(
-                MatchTokenElement(tokens, TokenKind.HereStringExpandable, RegionKindNone)
-            );
+            MatchTokenElement(tokens, TokenKind.HereStringExpandable, RegionKindNone, ref refList);
 
             // Find matching comment regions   #region -> #endregion
-            foldableRegions.AddRange(
-                MatchCustomCommentRegionTokenElements(tokens, RegionKindRegion)
-            );
+            MatchCustomCommentRegionTokenElements(tokens, RegionKindRegion, ref refList);
 
             // Find blocks of line comments # comment1\n# comment2\n...
-            foldableRegions.AddRange(
-                MatchBlockCommentTokenElement(tokens, RegionKindComment)
-            );
+            MatchBlockCommentTokenElement(tokens, RegionKindComment, ref refList);
 
             // Find comments regions <# -> #>
-            foldableRegions.AddRange(
-                MatchTokenElement(tokens, TokenKind.Comment, RegionKindComment)
-            );
+            MatchTokenElement(tokens, TokenKind.Comment, RegionKindComment, ref refList);
 
-            // Remove any null entries. Nulls appear if the folding reference is invalid
-            // or missing
-            foldableRegions.RemoveAll(item => item == null);
-
-            // Sort the FoldingReferences, starting at the top of the document,
-            // and ensure that, in the case of multiple ranges starting the same line,
-            // that the largest range (i.e. most number of lines spanned) is sorted
-            // first. This is needed to detect duplicate regions. The first in the list
-            // will be used and subsequent duplicates ignored.
-            foldableRegions.Sort();
-
-            // It's possible to have duplicate or overlapping ranges, that is, regions which have the same starting
-            // line number as the previous region. Therefore only emit ranges which have a different starting line
-            // than the previous range.
-            foldableRegions.RemoveAll( (FoldingReference item) => {
-                // Note - I'm not happy with searching here, but as the RemoveAll
-                // doesn't expose the index in the List, we need to calculate it. Fortunately the
-                // list is sorted at this point, so we can use BinarySearch.
-                int index = foldableRegions.BinarySearch(item);
-                if (index == 0) { return false; }
-                return (item.StartLine == foldableRegions[index - 1].StartLine);
-            });
-
-            // Some editors have different folding UI, sometimes the lastline should be displayed
-            // If we do want to show the last line, just change the region to be one line less
-            if (ShowLastLine) {
-                foldableRegions.ForEach( item => { item.EndLine--; });
-            }
-
-            return foldableRegions.ToArray();
+            return refList;
         }
 
         /// <summary>
@@ -163,13 +117,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Given an array of tokens, find matching regions which start (array of tokens) and end with a different TokenKind
         /// </summary>
-        static private List<FoldingReference> MatchTokenElements(
+        static private void MatchTokenElements(
             Token[] tokens,
             TokenKind[] startTokenKind,
             TokenKind endTokenKind,
-            string matchKind)
+            string matchKind,
+            ref FoldingReferenceList refList)
         {
-            List<FoldingReference> result = new List<FoldingReference>();
             Stack<Token> tokenStack = new Stack<Token>();
             foreach (Token token in tokens)
             {
@@ -177,28 +131,26 @@ namespace Microsoft.PowerShell.EditorServices
                     tokenStack.Push(token);
                 }
                 if ((tokenStack.Count > 0) && (token.Kind == endTokenKind)) {
-                    result.Add(CreateFoldingReference(tokenStack.Pop(), token, matchKind));
+                    refList.SafeAdd(CreateFoldingReference(tokenStack.Pop(), token, matchKind));
                 }
             }
-            return result;
         }
 
         /// <summary>
         /// Given an array of token, finds a specific token
         /// </summary>
-        static private List<FoldingReference> MatchTokenElement(
+        static private void MatchTokenElement(
             Token[] tokens,
             TokenKind tokenKind,
-            string matchKind)
+            string matchKind,
+            ref FoldingReferenceList refList)
         {
-            List<FoldingReference> result = new List<FoldingReference>();
             foreach (Token token in tokens)
             {
                 if ((token.Kind == tokenKind) && (token.Extent.StartLineNumber != token.Extent.EndLineNumber)) {
-                    result.Add(CreateFoldingReference(token, token, matchKind));
+                    refList.SafeAdd(CreateFoldingReference(token, token, matchKind));
                 }
             }
-            return result;
         }
 
         /// <summary>
@@ -230,11 +182,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// classed as comments.  To workaround this we search for valid block comments (See IsBlockCmment)
         /// and then determine contiguous line numbers from there
         /// </summary>
-        static private List<FoldingReference> MatchBlockCommentTokenElement(
+        static private void MatchBlockCommentTokenElement(
             Token[] tokens,
-            string matchKind)
+            string matchKind,
+             ref FoldingReferenceList refList)
         {
-            List<FoldingReference> result = new List<FoldingReference>();
             Token startToken = null;
             int nextLine = -1;
             for (int index = 0; index < tokens.Length; index++)
@@ -243,7 +195,7 @@ namespace Microsoft.PowerShell.EditorServices
                 if (IsBlockComment(index, tokens) && s_nonRegionLineCommentRegex.IsMatch(thisToken.Text)) {
                     int thisLine = thisToken.Extent.StartLineNumber - 1;
                     if ((startToken != null) && (thisLine != nextLine)) {
-                        result.Add(CreateFoldingReference(startToken, nextLine - 1, matchKind));
+                        refList.SafeAdd(CreateFoldingReference(startToken, nextLine - 1, matchKind));
                         startToken = thisToken;
                     }
                     if (startToken == null) { startToken = thisToken; }
@@ -253,9 +205,8 @@ namespace Microsoft.PowerShell.EditorServices
             // If we exit the token array and we're still processing comment lines, then the
             // comment block simply ends at the end of document
             if (startToken != null) {
-                result.Add(CreateFoldingReference(startToken, nextLine - 1, matchKind));
+                refList.SafeAdd(CreateFoldingReference(startToken, nextLine - 1, matchKind));
             }
-            return result;
         }
 
         /// <summary>
@@ -263,9 +214,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// the comment text is either `# region` or `# endregion`, and then use a stack to determine
         /// the ranges they span
         /// </summary>
-        static private List<FoldingReference> MatchCustomCommentRegionTokenElements(
+        static private void MatchCustomCommentRegionTokenElements(
             Token[] tokens,
-            string matchKind)
+            string matchKind,
+            ref FoldingReferenceList refList)
         {
             // These regular expressions are used to match lines which mark the start and end of region comment in a PowerShell
             // script. They are based on the defaults in the VS Code Language Configuration at;
@@ -273,7 +225,6 @@ namespace Microsoft.PowerShell.EditorServices
             string startRegionText = @"^\s*#region\b";
             string endRegionText = @"^\s*#endregion\b";
 
-            List<FoldingReference> result = new List<FoldingReference>();
             Stack<Token> tokenStack = new Stack<Token>();
             for (int index = 0; index < tokens.Length; index++)
             {
@@ -283,11 +234,10 @@ namespace Microsoft.PowerShell.EditorServices
                         tokenStack.Push(token);
                     }
                     if ((tokenStack.Count > 0) && (Regex.IsMatch(token.Text, endRegionText, RegexOptions.IgnoreCase))) {
-                        result.Add(CreateFoldingReference(tokenStack.Pop(), token, matchKind));
+                        refList.SafeAdd(CreateFoldingReference(tokenStack.Pop(), token, matchKind));
                     }
                 }
             }
-            return result;
         }
     }
 }

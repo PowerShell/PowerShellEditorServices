@@ -535,7 +535,7 @@ function __Expand-Alias {
         {
             PSCommand psCommand = new PSCommand();
             if (!string.IsNullOrEmpty(param))
-            {    
+            {
                 psCommand.AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddArgument(param);
             }
             else
@@ -1267,7 +1267,7 @@ function __Expand-Alias {
                 }
             }
 
-            // Add "show documentation" commands last so they appear at the bottom of the client UI. 
+            // Add "show documentation" commands last so they appear at the bottom of the client UI.
             // These commands do not require code fixes. Sometimes we get a batch of diagnostics
             // to create commands for. No need to create multiple show doc commands for the same rule.
             var ruleNamesProcessed = new HashSet<string>();
@@ -1390,17 +1390,18 @@ function __Expand-Alias {
             if (!editorSession.Workspace.TryGetFile(documentUri, out scriptFile)) { return null; }
 
             var result = new List<FoldingRange>();
-            FoldingReference[] foldableRegions = 
-                TokenOperations.FoldableRegions(scriptFile.ScriptTokens, this.currentSettings.CodeFolding.ShowLastLine);
 
-            foreach (FoldingReference fold in foldableRegions)
+            // If we're showing the last line, decrement the Endline of all regions by one.
+            int endLineOffset = this.currentSettings.CodeFolding.ShowLastLine ? -1 : 0;
+
+            foreach (KeyValuePair<int, FoldingReference> entry in TokenOperations.FoldableRegions(scriptFile.ScriptTokens))
             {
                 result.Add(new FoldingRange {
-                    EndCharacter   = fold.EndCharacter,
-                    EndLine        = fold.EndLine,
-                    Kind           = fold.Kind,
-                    StartCharacter = fold.StartCharacter,
-                    StartLine      = fold.StartLine
+                    EndCharacter   = entry.Value.EndCharacter,
+                    EndLine        = entry.Value.EndLine + endLineOffset,
+                    Kind           = entry.Value.Kind,
+                    StartCharacter = entry.Value.StartCharacter,
+                    StartLine      = entry.Value.StartLine
                 });
             }
 
@@ -1744,7 +1745,7 @@ function __Expand-Alias {
                 });
         }
 
-        // Generate a unique id that is used as a key to look up the associated code action (code fix) when 
+        // Generate a unique id that is used as a key to look up the associated code action (code fix) when
         // we receive and process the textDocument/codeAction message.
         private static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
         {
