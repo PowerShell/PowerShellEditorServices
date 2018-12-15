@@ -20,13 +20,13 @@ $script:IsCIBuild = $env:APPVEYOR -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:TargetPlatform = "netstandard2.0"
 $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
-$script:RequiredSdkVersion = "2.1.402"
+$script:RequiredSdkVersion = "2.1.500"
 $script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
 $script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
 $script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSCode/bin/"
 $script:WindowsPowerShellFrameworkTarget = 'net461'
 $script:NetFrameworkPlatformId = 'win'
-$script:NetCoreTestingFrameworkVersion = '2.1.4'
+$script:NetCoreTestingFrameworkVersion = '2.1.6'
 
 $script:PSCoreModulePath = $null
 
