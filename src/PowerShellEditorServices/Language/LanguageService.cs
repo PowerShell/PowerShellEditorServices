@@ -330,22 +330,28 @@ namespace Microsoft.PowerShell.EditorServices
                 ? new OrderedDictionary()
                 : new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
 
-            foreach (ScriptFile file in referencedFiles)
+            foreach (ScriptFile scriptFile in referencedFiles)
             {
-                fileMap.Add(file.FilePath, file);
+                if (!fileMap.Contains(scriptFile.FilePath))
+                {
+                    fileMap.Add(scriptFile.FilePath, scriptFile);
+                }
             }
 
-            foreach (string file in workspace.EnumeratePSFiles())
+            foreach (string filePath in workspace.EnumeratePSFiles())
             {
-                if (!fileMap.Contains(file))
+                if (!fileMap.Contains(filePath))
                 {
-                    if (!workspace.TryGetFile(file, out ScriptFile scriptFile))
+                    if (!workspace.TryGetFile(filePath, out ScriptFile scriptFile))
                     {
                         // If we can't access the file for some reason, just ignore it
                         continue;
                     }
 
-                    fileMap.Add(file, scriptFile);
+                    if (!fileMap.Contains(filePath))
+                    {
+                        fileMap.Add(filePath, scriptFile);
+                    }
                 }
             }
 
