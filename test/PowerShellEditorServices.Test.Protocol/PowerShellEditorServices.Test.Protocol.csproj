@@ -9,14 +9,8 @@
     <ProjectReference Include="..\..\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj" />
     <ProjectReference Include="..\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="6.1.0" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-    <PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0" />
-    <PackageReference Include="Microsoft.PowerShell.5.1.ReferenceAssemblies" Version="1.0.0" />
-  </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="PowerShellStandard.Library" Version="5.1.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
     <PackageReference Include="xunit" Version="2.4.1-pre.build.4059" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
