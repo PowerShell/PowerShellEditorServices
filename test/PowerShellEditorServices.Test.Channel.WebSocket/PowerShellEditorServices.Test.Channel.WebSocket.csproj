@@ -4,7 +4,6 @@
   <PropertyGroup>
     <TargetFrameworks>net452</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Test.Channel.WebSocket</AssemblyName>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
 
   <ItemGroup>
