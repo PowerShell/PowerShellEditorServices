@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         #endregion
 
         /// <summary>
-        /// Gets the count of items in the AsyncQueue.
+        /// Gets the number of items in the AsyncQueue.
         /// </summary>
         public int Count
         {
