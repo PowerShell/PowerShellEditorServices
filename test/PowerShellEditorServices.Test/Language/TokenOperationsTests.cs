@@ -43,11 +43,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         // folding regions and regions which should not be
         // detected.  Due to file encoding this could be CLRF or LF line endings
         private const string allInOneScript =
-@"#RegIon This should fold
+@"#Region This should fold
 <#
 Nested different comment types.  This should fold
 #>
-#EnDReGion
+#EndRegion
 
 # region This should not fold due to whitespace
 $shouldFold = $false
@@ -124,6 +124,10 @@ $something = $true
 ${this
 is
 valid} = 5
+
+#RegIon This should fold due to casing
+$foo = 'bar'
+#EnDReGion
 ";
         private FoldingReference[] expectedAllInOneScriptFolds = {
             CreateFoldingReference(0,   0,  4, 10, "region"),

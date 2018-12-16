@@ -24,12 +24,11 @@ namespace Microsoft.PowerShell.EditorServices
         // These regular expressions are used to match lines which mark the start and end of region comment in a PowerShell
         // script. They are based on the defaults in the VS Code Language Configuration at;
         // https://github.com/Microsoft/vscode/blob/64186b0a26/extensions/powershell/language-configuration.json#L26-L31
+        // https://github.com/Microsoft/vscode/issues/49070
         static private readonly Regex s_startRegionTextRegex = new Regex(
-           @"^\s*#region\b",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+           @"^\s*#[rR]egion\b", RegexOptions.Compiled);
         static private readonly Regex s_endRegionTextRegex = new Regex(
-           @"^\s*#endregion\b",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+           @"^\s*#[eE]nd[rR]egion\b", RegexOptions.Compiled);
 
         /// <summary>
         /// Extracts all of the unique foldable regions in a script given the list tokens
