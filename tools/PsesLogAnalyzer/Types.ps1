@@ -21,6 +21,12 @@ enum PsesNotificationSource {
     Server
 }
 
+enum QueueOperation {
+    Queue
+    Dequeue
+    Abandon
+}
+
 class PsesLogMessage {
     [string]$Data
     [int]$DataSize
@@ -55,6 +61,43 @@ class PsesJsonRpcMessage {
     }
 }
 
+class PsesJsonRpcQueued {
+    [string]$Name
+    [int]$Id
+    [psobject]$Data
+    [DateTime]$Timestamp
+    [int]$CurrentQueueDepth
+
+    PsesJsonRpcMessage([string]$Name, [int]$Id, [psobject]$Data, [int]$DataSize) {
+        $this.Name = $Name
+        $this.Id = $Id
+        $this.Data = $Data
+        $this.DataSize = $DataSize
+    }
+
+    [string] ToString() {
+        return "Name: $($this.Name) Id: $($this.Id), DataSize: $($this.DataSize)"
+    }
+}
+
+class PsesJsonRpcDeueued {
+    [string]$Name
+    [int]$Id
+    [psobject]$Data
+    [int]$WaitTimeMilliseconds
+
+    PsesJsonRpcMessage([string]$Name, [int]$Id, [psobject]$Data, [int]$DataSize) {
+        $this.Name = $Name
+        $this.Id = $Id
+        $this.Data = $Data
+        $this.DataSize = $DataSize
+    }
+
+    [string] ToString() {
+        return "Name: $($this.Name) Id: $($this.Id), DataSize: $($this.DataSize)"
+    }
+}
+
 class PsesNotificationMessage {
     [string]$Name
     [PsesNotificationSource]$Source
@@ -72,7 +115,7 @@ class PsesNotificationMessage {
         if (($this.Name -eq '$/cancelRequest') -and ($this.Data -ne $null)) {
             return "Name: $($this.Name) Source: $($this.Source), Id: $($this.Data.params.id)"
         }
-    
+
         return "Name: $($this.Name) Source: $($this.Source), DataSize: $($this.DataSize)"
     }
 }

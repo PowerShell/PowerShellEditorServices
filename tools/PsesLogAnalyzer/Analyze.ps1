@@ -258,6 +258,43 @@ function Get-PsesIntelliSenseCompletionTime {
     }
 }
 
+function Get-PsesRpcQueueMessage {
+    [CmdletBinding(DefaultParameterSetName = "PsesLogEntry")]
+    param(
+        # Specifies a path to one or more PSES EditorServices log files.
+        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Path")]
+        [Alias("PSPath")]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path,
+
+        # Specifies PsesLogEntry objects to analyze.
+        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "PsesLogEntry", ValueFromPipeline = $true)]
+        [ValidateNotNull()]
+        [psobject[]]
+        $LogEntry
+    )
+
+    begin {
+        if ($PSCmdlet.ParameterSetName -eq "Path") {
+            $logEntries = Parse-PsesLog $Path
+        }
+    }
+
+    process {
+        if ($PSCmdlet.ParameterSetName -eq "PsesLogEntry") {
+            $logEntries = $LogEntry
+        }
+
+        foreach ($entry in $logEntries) {
+            if (($entry.LogMessageType -eq 'Diagnostic') -and ($entry.Message.Data -match '^\s*Script analysis of.*\[(?<ms>\d+)ms\]\s*$')) {
+                $elapsedMilliseconds = [int]$matches["ms"]
+                [PsesLogEntryElapsed]::new($entry, $elapsedMilliseconds)
+            }
+        }
+    }
+}
+
 function Get-PsesMessage {
     [CmdletBinding(DefaultParameterSetName = "PsesLogEntry")]
     param(
