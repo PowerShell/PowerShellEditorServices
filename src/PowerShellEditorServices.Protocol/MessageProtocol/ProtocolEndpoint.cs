@@ -478,6 +478,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
                 try
                 {
+                    Logger.Write(LogLevel.Diagnostic, $"{_logCategory} Waiting for message to dequeue");
+
                     // TODO: Do we need to worry about the low priority queue never getting any service?
                     if (_messageQueue.IsEmpty && !_lowPriorityMessageQueue.IsEmpty)
                     {
@@ -489,14 +491,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                         dequeuedMessage = await _messageQueue.DequeueAsync(cancellationToken);
                     }
 
-
-                    // The message could be null if there was an error parsing the 
-                    // previous message.  In this case, do not try to dispatch it. 
+                    // The message could be null if there was an error parsing the
+                    // previous message.  In this case, do not try to dispatch it.
                     if (dequeuedMessage?.Message == null)
                     {
                         Logger.Write(
                             LogLevel.Warning,
-                            $"{_logCategory} Dequeued empty message, seq:{dequeuedMessage.SequenceNumber} ");
+                            $"{_logCategory} Dequeued empty message, seq:{dequeuedMessage.SequenceNumber}");
                     }
                     else
                     {
@@ -527,13 +528,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                                 $"seq:{dequeuedMessage.SequenceNumber} cancel-seq:{queuedCancelMessage.SequenceNumber} " +
                                 $"#queued:{_messageQueue.Count} #pending:{_pendingCancelMessage.Count}");
 
-                            await this.protocolChannel.MessageWriter.WriteMessageAsync(responseMessage);
+                            using (Logger.LogExecutionTime($"{_logCategory} Time to write cancellation response for seq:{dequeuedMessage.SequenceNumber}"))
+                            {
+                                await this.protocolChannel.MessageWriter.WriteMessageAsync(responseMessage);
+                            }
                         }
                         else
                         {
                             if (newMessage.MessageType == MessageType.Response)
                             {
-                                this.HandleResponse(newMessage);
+                                Logger.Write(
+                                    LogLevel.Diagnostic,
+                                    $"{_logCategory} Dequeued and handling response for messsage {newMessage.Method} id:{newMessage.Id}, " +
+                                    $"{queueName}queue wait time:{timeOnQueue}ms " +
+                                    $"seq:{dequeuedMessage.SequenceNumber} #queued:{_messageQueue.Count}");
+
+                                using (Logger.LogExecutionTime($"{_logCategory} Time to handle response for {newMessage.Method} id:{newMessage.Id} seq:{dequeuedMessage.SequenceNumber}"))
+                                {
+                                    this.HandleResponse(newMessage);
+                                }
                             }
                             else
                             {
@@ -544,7 +557,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                                     $"seq:{dequeuedMessage.SequenceNumber} #queued:{_messageQueue.Count}");
 
                                 // Dispatch the message
-                                await this.messageDispatcher.DispatchMessageAsync(newMessage, this.protocolChannel.MessageWriter);
+                                using (Logger.LogExecutionTime($"{_logCategory} Time to dispatch {newMessage.Method} id:{newMessage.Id} seq:{dequeuedMessage.SequenceNumber}"))
+                                {
+                                    await this.messageDispatcher.DispatchMessageAsync(newMessage, this.protocolChannel.MessageWriter);
+                                }
                             }
                         }
                     }
