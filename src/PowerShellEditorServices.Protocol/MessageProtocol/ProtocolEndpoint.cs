@@ -347,8 +347,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         private async Task ListenAndQueueMessagesAsync(CancellationToken cancellationToken)
         {
-            this.SynchronizationContext = SynchronizationContext.Current;
-
             // Run the message loop
             bool isRunning = true;
             while (isRunning && !cancellationToken.IsCancellationRequested)
@@ -415,7 +413,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                                 LogLevel.Diagnostic,
                                 $"{_logCategory} Pended message {newMessage.Method} for id:{idStr} at " +
                                 $"{queuedMessage.QueueEntryTimeStr}, " +
-                                $"seq:{queuedMessage.SequenceNumber} #queued:{_messageQueue.Count}");
+                                $"seq:{queuedMessage.SequenceNumber} #pended:{_messageQueue.Count}");
                         }
                         else
                         {
@@ -467,6 +465,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         private async Task DequeueAndDispatchMessagesAsync(CancellationToken cancellationToken)
         {
+            // Post event messages to this message loop.
             this.SynchronizationContext = SynchronizationContext.Current;
 
             // Run the message loop
@@ -475,6 +474,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             {
                 QueuedMessage dequeuedMessage = null;
                 string timeOnQueue = string.Empty;
+                string queueName = string.Empty;
 
                 try
                 {
@@ -482,12 +482,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     if (_messageQueue.IsEmpty && !_lowPriorityMessageQueue.IsEmpty)
                     {
                         dequeuedMessage = await _lowPriorityMessageQueue.DequeueAsync(cancellationToken);
+                        queueName = "low priority ";
                     }
                     else
                     {
                         dequeuedMessage = await _messageQueue.DequeueAsync(cancellationToken);
                     }
 
+
+                    // The message could be null if there was an error parsing the 
+                    // previous message.  In this case, do not try to dispatch it. 
                     if (dequeuedMessage?.Message == null)
                     {
                         Logger.Write(
@@ -498,7 +502,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     {
                         Message newMessage = dequeuedMessage.Message;
 
-                        timeOnQueue = (DateTime.Now - dequeuedMessage.QueueEntryTime).TotalMilliseconds.ToString("N0");
+                        timeOnQueue = (DateTime.Now - dequeuedMessage.QueueEntryTime).TotalMilliseconds.ToString("F0");
 
                         // If a message has not been dispatched yet and it has a pending cancellation request,
                         // do not dispatch the message.  Simply return an error response to the client.
@@ -514,12 +518,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                             var responseMessage =
                                 Message.ResponseError(newMessage.Id, newMessage.Method, JToken.FromObject(responseError));
 
-                            var timeOnCancelQueue = (DateTime.Now - queuedCancelMessage.QueueEntryTime).TotalMilliseconds.ToString("N0");
+                            var timeOnCancelQueue = (DateTime.Now - queuedCancelMessage.QueueEntryTime).TotalMilliseconds.ToString("F0");
 
                             Logger.Write(
                                 LogLevel.Diagnostic,
                                 $"{_logCategory} Dequeued and cancelling messsage {newMessage.Method} id:{newMessage.Id}, " +
-                                $"queue wait time:{timeOnQueue}ms cancel queue wait time:{timeOnCancelQueue}ms " +
+                                $"{queueName}queue wait time:{timeOnQueue}ms cancel queue wait time:{timeOnCancelQueue}ms " +
                                 $"seq:{dequeuedMessage.SequenceNumber} cancel-seq:{queuedCancelMessage.SequenceNumber} " +
                                 $"#queued:{_messageQueue.Count} #pending:{_pendingCancelMessage.Count}");
 
@@ -536,7 +540,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                                 Logger.Write(
                                     LogLevel.Diagnostic,
                                     $"{_logCategory} Dequeued and dispatching messsage {newMessage.Method} id:{newMessage.Id}, " +
-                                    $"queue wait time:{timeOnQueue}ms " +
+                                    $"{queueName}queue wait time:{timeOnQueue}ms " +
                                     $"seq:{dequeuedMessage.SequenceNumber} #queued:{_messageQueue.Count}");
 
                                 // Dispatch the message
