@@ -649,7 +649,9 @@ namespace Microsoft.PowerShell.EditorServices
                     .ToArray();
 
             // Untitled files have no directory
-            // TODO: Make untitled files support dot-sourced references
+            // Discussed in https://github.com/PowerShell/PowerShellEditorServices/pull/815.
+            // Rather than working hard to enable things for untitled files like a phantom directory,
+            // users should save the file.
             if (IsUntitledPath(this.FilePath))
             {
                 return;
