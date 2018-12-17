@@ -332,10 +332,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             foreach (ScriptFile scriptFile in referencedFiles)
             {
-                if (!fileMap.Contains(scriptFile.FilePath))
-                {
-                    fileMap.Add(scriptFile.FilePath, scriptFile);
-                }
+                fileMap[scriptFile.FilePath] = scriptFile;
             }
 
             foreach (string filePath in workspace.EnumeratePSFiles())
@@ -348,10 +345,7 @@ namespace Microsoft.PowerShell.EditorServices
                         continue;
                     }
 
-                    if (!fileMap.Contains(filePath))
-                    {
-                        fileMap.Add(filePath, scriptFile);
-                    }
+                    fileMap[filePath] = scriptFile;
                 }
             }
 
