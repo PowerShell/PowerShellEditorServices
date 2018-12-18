@@ -11,7 +11,9 @@ param(
 
     [string]$ModulesJsonPath = "$PSScriptRoot/modules.json",
 
-    [string]$DefaultModuleRepository = "PSGallery"
+    [string]$DefaultModuleRepository = "PSGallery",
+
+    [string]$TestFilter = ''
 )
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
@@ -223,24 +225,29 @@ function UploadTestLogs {
     }
 }
 
+function XunitTraitFilter {
+    # Reference https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
+    if ($TestFilter) { "-trait $TestFilter" } else { "" }
+}
+
 task Test TestServer,TestProtocol
 
 task TestServer -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
 }
 
 task TestProtocol -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
 }
 
 task TestHost -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
 }
 
 task CITest ?Test, {
