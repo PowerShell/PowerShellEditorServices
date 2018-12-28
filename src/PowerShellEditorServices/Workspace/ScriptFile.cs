@@ -26,7 +26,6 @@ namespace Microsoft.PowerShell.EditorServices
             "\n"
         };
 
-        private Token[] scriptTokens;
         private Version powerShellVersion;
 
         #endregion
@@ -116,7 +115,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public Token[] ScriptTokens
         {
-            get { return this.scriptTokens; }
+            get;
+            private set;
         }
 
         /// <summary>
@@ -146,11 +146,16 @@ namespace Microsoft.PowerShell.EditorServices
             TextReader textReader,
             Version powerShellVersion)
         {
+            this.powerShellVersion = powerShellVersion;
+
             this.FilePath = filePath;
             this.ClientFilePath = clientFilePath;
             this.IsAnalysisEnabled = true;
             this.IsInMemory = Workspace.IsPathInMemory(filePath);
-            this.powerShellVersion = powerShellVersion;
+            this.ReferencedFiles = new string[0];
+            this.SyntaxMarkers = new ScriptFileMarker[0];
+            this.FileLines = new List<string>();
+            this.ScriptTokens = new Token[0];
 
             this.SetFileContents(textReader.ReadToEnd());
         }
@@ -599,6 +604,8 @@ namespace Microsoft.PowerShell.EditorServices
 
             try
             {
+                Token[] scriptTokens;
+
 #if PowerShellv5r2
                 // This overload appeared with Windows 10 Update 1
                 if (this.powerShellVersion.Major >= 5 &&
@@ -610,7 +617,7 @@ namespace Microsoft.PowerShell.EditorServices
                         Parser.ParseInput(
                             this.Contents,
                             this.FilePath,
-                            out this.scriptTokens,
+                            out scriptTokens,
                             out parseErrors);
                 }
                 else
@@ -618,14 +625,16 @@ namespace Microsoft.PowerShell.EditorServices
                     this.ScriptAst =
                         Parser.ParseInput(
                             this.Contents,
-                            out this.scriptTokens,
+                            out scriptTokens,
                             out parseErrors);
                 }
+
+                this.ScriptTokens = scriptTokens;
 #else
                 this.ScriptAst =
                     Parser.ParseInput(
                         this.Contents,
-                        out this.scriptTokens,
+                        out scriptTokens,
                         out parseErrors);
 #endif
             }
@@ -638,7 +647,7 @@ namespace Microsoft.PowerShell.EditorServices
                         ex.Message);
 
                 parseErrors = new[] { parseError };
-                this.scriptTokens = new Token[0];
+                this.ScriptTokens = new Token[0];
                 this.ScriptAst = null;
             }
 
