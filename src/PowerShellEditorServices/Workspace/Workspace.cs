@@ -109,9 +109,11 @@ namespace Microsoft.PowerShell.EditorServices
             string resolvedFilePath = this.ResolveFilePath(filePath);
             string keyName = resolvedFilePath.ToLower();
 
-            // Make sure the file isn't already loaded into the workspace
+            // Make sure the file isn't already loaded into the workspace and that the filePath isn't an "in-memory" path.
+            // There have been crashes caused by this method being called with an "untitled:" document uri. See:
+            // https://github.com/PowerShell/vscode-powershell/issues/1676
             ScriptFile scriptFile = null;
-            if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile))
+            if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile) && !IsPathInMemory(filePath))
             {
                 // This method allows FileNotFoundException to bubble up
                 // if the file isn't found.

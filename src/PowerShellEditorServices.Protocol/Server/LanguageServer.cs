@@ -1376,15 +1376,24 @@ function __Expand-Alias {
 
         #region Event Handlers
 
-        private FoldingRange[] Fold(
-            string documentUri)
+        private FoldingRange[] Fold(string documentUri)
         {
             // TODO Should be using dynamic registrations
             if (!this.currentSettings.CodeFolding.Enable) { return null; }
+
+            // Avoid crash when using untitled: scheme or any other scheme where the document doesn't
+            // have a backing file.  https://github.com/PowerShell/vscode-powershell/issues/1676
+            // Perhaps a better option would be to parse the contents of the document as a string
+            // as opposed to reading a file but the senario of "no backing file" probably doesn't
+            // warrant the extra effort.
+            ScriptFile scriptFile = editorSession.Workspace.GetFile(documentUri);
+            if (scriptFile == null) { return null; }
+
             var result = new List<FoldingRange>();
-            foreach (FoldingReference fold in TokenOperations.FoldableRegions(
-                editorSession.Workspace.GetFile(documentUri).ScriptTokens,
-                this.currentSettings.CodeFolding.ShowLastLine))
+            FoldingReference[] foldableRegions = 
+                TokenOperations.FoldableRegions(scriptFile.ScriptTokens, this.currentSettings.CodeFolding.ShowLastLine);
+
+            foreach (FoldingReference fold in foldableRegions)
             {
                 result.Add(new FoldingRange {
                     EndCharacter   = fold.EndCharacter,
@@ -1394,6 +1403,7 @@ function __Expand-Alias {
                     StartLine      = fold.StartLine
                 });
             }
+
             return result.ToArray();
         }
 
