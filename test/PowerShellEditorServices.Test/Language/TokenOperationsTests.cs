@@ -154,6 +154,7 @@ valid} = 5
             Assert.Equal(expected.Length, actual.Length);
         }
 
+        [Trait("Category", "Folding")]
         [Fact]
         public void LaguageServiceFindsFoldablRegionsWithLF() {
             // Remove and CR characters
@@ -164,6 +165,7 @@ valid} = 5
             AssertFoldingReferenceArrays(expectedAllInOneScriptFolds, result);
         }
 
+        [Trait("Category", "Folding")]
         [Fact]
         public void LaguageServiceFindsFoldablRegionsWithCRLF() {
             // The Foldable regions should be the same regardless of line ending type
@@ -178,6 +180,7 @@ valid} = 5
             AssertFoldingReferenceArrays(expectedAllInOneScriptFolds, result);
         }
 
+        [Trait("Category", "Folding")]
         [Fact]
         public void LaguageServiceFindsFoldablRegionsWithoutLastLine() {
             FoldingReference[] result = GetRegions(allInOneScript, false);
@@ -191,6 +194,7 @@ valid} = 5
             AssertFoldingReferenceArrays(expectedFolds, result);
         }
 
+        [Trait("Category", "Folding")]
         [Fact]
         public void LaguageServiceFindsFoldablRegionsWithMismatchedRegions() {
             string testString =
@@ -210,6 +214,7 @@ $something = 'foldable'
             AssertFoldingReferenceArrays(expectedFolds, result);
         }
 
+        [Trait("Category", "Folding")]
         [Fact]
         public void LaguageServiceFindsFoldablRegionsWithDuplicateRegions() {
             string testString =
@@ -230,6 +235,7 @@ $AnArray = @(Get-ChildItem -Path C:\ -Include *.ps1 -File).Where({
 
         // This tests that token matching { -> }, @{ -> } and
         // ( -> ), @( -> ) and $( -> ) does not confuse the folder
+        [Trait("Category", "Folding")]
         [Fact]
         public void LaguageServiceFindsFoldablRegionsWithSameEndToken() {
             string testString =
