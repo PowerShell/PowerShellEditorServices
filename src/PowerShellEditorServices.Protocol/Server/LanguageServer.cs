@@ -1386,8 +1386,8 @@ function __Expand-Alias {
             // Perhaps a better option would be to parse the contents of the document as a string
             // as opposed to reading a file but the senario of "no backing file" probably doesn't
             // warrant the extra effort.
-            ScriptFile scriptFile = editorSession.Workspace.GetFile(documentUri);
-            if (scriptFile == null) { return null; }
+            ScriptFile scriptFile;
+            if (!editorSession.Workspace.TryGetFile(documentUri, out scriptFile)) { return null; }
 
             var result = new List<FoldingRange>();
             FoldingReference[] foldableRegions = 

@@ -91,8 +91,9 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Gets an open file in the workspace.  If the file isn't open but
-        /// exists on the filesystem, load and return it.
+        /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
+        /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
+        /// <see cref="Workspace.TryGetFile(string, out ScriptFile)"/> instead.</para>
         /// </summary>
         /// <param name="filePath">The file path at which the script resides.</param>
         /// <exception cref="FileNotFoundException">
@@ -109,11 +110,9 @@ namespace Microsoft.PowerShell.EditorServices
             string resolvedFilePath = this.ResolveFilePath(filePath);
             string keyName = resolvedFilePath.ToLower();
 
-            // Make sure the file isn't already loaded into the workspace and that the filePath isn't an "in-memory" path.
-            // There have been crashes caused by this method being called with an "untitled:" document uri. See:
-            // https://github.com/PowerShell/vscode-powershell/issues/1676
+            // Make sure the file isn't already loaded into the workspace
             ScriptFile scriptFile = null;
-            if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile) && !IsPathInMemory(filePath))
+            if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile))
             {
                 // This method allows FileNotFoundException to bubble up
                 // if the file isn't found.
@@ -156,9 +155,7 @@ namespace Microsoft.PowerShell.EditorServices
                 e is PathTooLongException ||
                 e is UnauthorizedAccessException)
             {
-                this.logger.WriteException(
-                    $"Failed to set breakpoint on file: {filePath}",
-                    e);
+                this.logger.WriteHandledException($"Failed to get file for {nameof(filePath)}: '{filePath}'", e);
                 scriptFile = null;
                 return false;
             }
