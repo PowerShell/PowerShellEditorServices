@@ -146,17 +146,13 @@ namespace Microsoft.PowerShell.EditorServices
             TextReader textReader,
             Version powerShellVersion)
         {
-            this.powerShellVersion = powerShellVersion;
-
             this.FilePath = filePath;
             this.ClientFilePath = clientFilePath;
             this.IsAnalysisEnabled = true;
             this.IsInMemory = Workspace.IsPathInMemory(filePath);
-            this.ReferencedFiles = new string[0];
-            this.SyntaxMarkers = new ScriptFileMarker[0];
-            this.FileLines = new List<string>();
-            this.ScriptTokens = new Token[0];
+            this.powerShellVersion = powerShellVersion;
 
+            // SetFileContents() calls ParseFileContents() which initializes the rest of the properties.
             this.SetFileContents(textReader.ReadToEnd());
         }
 
@@ -628,8 +624,6 @@ namespace Microsoft.PowerShell.EditorServices
                             out scriptTokens,
                             out parseErrors);
                 }
-
-                this.ScriptTokens = scriptTokens;
 #else
                 this.ScriptAst =
                     Parser.ParseInput(
@@ -637,6 +631,8 @@ namespace Microsoft.PowerShell.EditorServices
                         out scriptTokens,
                         out parseErrors);
 #endif
+
+                this.ScriptTokens = scriptTokens;
             }
             catch (RuntimeException ex)
             {
@@ -663,6 +659,8 @@ namespace Microsoft.PowerShell.EditorServices
             // users should save the file.
             if (IsUntitledPath(this.FilePath))
             {
+                // Need to initialize the ReferencedFiles property to an empty array.
+                this.ReferencedFiles = new string[0];
                 return;
             }
 
