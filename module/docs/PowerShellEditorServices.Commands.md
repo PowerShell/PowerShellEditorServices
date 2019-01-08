@@ -20,15 +20,15 @@ The ConvertFrom-ScriptExtent function converts ScriptExtent objects to types use
 
 ### [ConvertTo-ScriptExtent](ConvertTo-ScriptExtent.md)
 
-The ConvertTo-ScriptExtent function can be used to convert any object with position related properties to a ScriptExtent object.  You can also specify the parameters directly to manually create ScriptExtent objects.
+The ConvertTo-ScriptExtent function can be used to convert any object with position-related properties to a ScriptExtent object.  You can also specify the parameters directly to manually create ScriptExtent objects.
 
 ### [Find-Ast](Find-Ast.md)
 
-The Find-Ast function can be used to easily find a specific AST within a script file. All ASTs following the inital starting ast will be searched, including those that are not part of the same tree.
+The Find-Ast function can be used to easily find a specific AST within a script file. All ASTs following the initial starting AST will be searched, including those that are not part of the same tree.
 
 ### [Get-Token](Get-Token.md)
 
-The Get-Token function can retrieve tokens from the current editor context, or from a ScriptExtent object. You can then use the ScriptExtent functions to manipulate the text at it's location.
+The Get-Token function can retrieve tokens from the current editor context, or from a ScriptExtent object. You can then use the ScriptExtent functions to manipulate the text at its location.
 
 ### [Import-EditorCommand](Import-EditorCommand.md)
 
@@ -38,7 +38,7 @@ Alternatively, you can specify command info objects (like those from the Get-Com
 
 ### [Join-ScriptExtent](Join-ScriptExtent.md)
 
-The Join-ScriptExtent function will combine all ScriptExtent objects piped to it into a single extent.  This can be used combine multiple ASTs, tokens, or other script elements into a single object that can then be manipulated or used for more targeted searches.
+The Join-ScriptExtent function will combine all ScriptExtent objects piped to it into a single extent.  This can be used to combine multiple ASTs, tokens, or other script elements into a single object that can then be manipulated or used for more targeted searches.
 
 ### [Set-ScriptExtent](Set-ScriptExtent.md)
 

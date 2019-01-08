@@ -27,11 +27,11 @@ Find-Ast [-AtCursor] [<CommonParameters>]
 
 ## DESCRIPTION
 
-The Find-Ast function can be used to easily find a specific AST within a script file. All ASTs following the inital starting ast will be searched, including those that are not part of the same tree.
+The Find-Ast function can be used to easily find a specific AST within a script file. All ASTs following the initial starting AST will be searched, including those that are not part of the same tree.
 
 The behavior of the search (such as direction and criteria) can be changed with parameters.
 
-Additionally, you can find the Ast closest to the cursor with the "AtCursor" switch parameter.
+Additionally, you can find the AST closest to the cursor with the "AtCursor" switch parameter.
 
 ## EXAMPLES
 
@@ -41,7 +41,7 @@ Additionally, you can find the Ast closest to the cursor with the "AtCursor" swi
 Find-Ast
 ```
 
-Returns all asts in the currently open file in the editor.
+Returns all ASTs in the currently open file in the editor.
 
 ### -------------------------- EXAMPLE 2 --------------------------
 
@@ -49,7 +49,7 @@ Returns all asts in the currently open file in the editor.
 Find-Ast -First -IncludeStartingAst
 ```
 
-Returns the top level ast in the currently open file in the editor.
+Returns the top level AST in the currently open file in the editor.
 
 ### -------------------------- EXAMPLE 3 --------------------------
 
@@ -57,7 +57,7 @@ Returns the top level ast in the currently open file in the editor.
 Find-Ast { $PSItem -is [FunctionDefinitionAst] }
 ```
 
-Returns all function definition asts in the ast of file currently open in the editor.
+Returns all function definition ASTs in the AST of file currently open in the editor.
 
 ### -------------------------- EXAMPLE 4 --------------------------
 
@@ -73,7 +73,7 @@ Returns all member expressions in the file currently open in the editor.
 Find-Ast { $_.InvocationOperator -eq 'Dot' } | Find-Ast -Family { $_.VariablePath }
 ```
 
-Returns all variable expressions used in a dot source expression.
+Returns all variable expressions used in a dot-source expression.
 
 ### -------------------------- EXAMPLE 6 --------------------------
 
@@ -85,7 +85,7 @@ Find-Ast { 'PowerShellVersion' -eq $_ } |
 
 This example sets the required PowerShell version in a module manifest to 4.0.
 
-First it finds the AST of the PowerShellVersion manifest field, then finds the first AST directly after it and changes the text to '4.0'. This will not work as is if the field is commented.
+First it finds the AST of the PowerShellVersion manifest field, then finds the first AST directly after it and changes the text to '4.0'. This will not work if the field is commented.
 
 ### -------------------------- EXAMPLE 7 --------------------------
 
@@ -95,7 +95,7 @@ Find-Ast { $_.ArgumentName -eq 'ParameterSetName' -and $_.Argument.Value -eq 'By
     ForEach-Object { $_.Name.VariablePath.UserPath }
 ```
 
-This example gets a list of all parameters that belong to the parameter set 'ByPosition'. First it uses the ArgumentName and Argument properties of NamedAttributeArgumentAst to find the ASTs of arguments to the Parameter attribute that declare the the parameter set 'ByPosition'.  It then finds the closest parent ParameterAst and retrieves the name from it.
+This example gets a list of all parameters that belong to the 'ByPosition' parameter set. First it uses the ArgumentName and Argument properties of NamedAttributeArgumentAst to find the ASTs of arguments to the Parameter attribute that declare the 'ByPosition' parameter set.  It then finds the closest parent ParameterAst and retrieves the name from it.
 
 ### -------------------------- EXAMPLE 8 --------------------------
 
@@ -121,7 +121,7 @@ This example shows off ways you can combine the position functions together to g
 
 ### -FilterScript
 
-Specifies a ScriptBlock that returns $true if an AST should be returned. Uses $PSItem and $_ like Where-Object. If not specified all ASTs will be returned.
+Specifies a script block that returns $true if an AST should be returned. Uses $PSItem and $_ like Where-Object. If not specified all ASTs will be returned.
 
 ```yaml
 Type: ScriptBlock
@@ -153,7 +153,7 @@ Accept wildcard characters: False
 
 ### -Before
 
-If specified the direction of the search will be reversed.
+Specifies the direction of the search will be reversed.
 
 ```yaml
 Type: SwitchParameter
@@ -169,7 +169,7 @@ Accept wildcard characters: False
 
 ### -Family
 
-If specified only children of the starting AST will be searched. If specified with the "Before" parameter then only ancestors will be searched.
+Searches only children of the starting AST. When used with the "Before" parameter then only ancestors will be searched.
 
 ```yaml
 Type: SwitchParameter
@@ -185,7 +185,7 @@ Accept wildcard characters: False
 
 ### -First
 
-If specified will return only the first result. This will be the closest AST that matches.
+Returns only the first result. This will be the closest AST that matches.
 
 ```yaml
 Type: SwitchParameter
@@ -201,7 +201,7 @@ Accept wildcard characters: False
 
 ### -Last
 
-If specified will return only the last result. This will be the furthest AST that matches.
+Returns only the last result. This will be the furthest AST that matches.
 
 ```yaml
 Type: SwitchParameter
@@ -217,7 +217,7 @@ Accept wildcard characters: False
 
 ### -Ancestor
 
-If specified will only search ancestors of the starting AST.  This is a convenience parameter that acts the same as the "Family" and "Before" parameters when used together.
+Searches only ancestors of the starting AST. This is a convenience parameter that acts the same as the "Family" and "Before" parameters when used together.
 
 ```yaml
 Type: SwitchParameter
@@ -233,7 +233,7 @@ Accept wildcard characters: False
 
 ### -IncludeStartingAst
 
-If specified the starting AST will be included if matched.
+Specifies the starting AST will be included if matched.
 
 ```yaml
 Type: SwitchParameter
@@ -249,7 +249,7 @@ Accept wildcard characters: False
 
 ### -AtCursor
 
-If specified, this function will return the smallest AST that the cursor is within.
+Returns the smallest AST that the cursor is within.
 
 ```yaml
 Type: SwitchParameter

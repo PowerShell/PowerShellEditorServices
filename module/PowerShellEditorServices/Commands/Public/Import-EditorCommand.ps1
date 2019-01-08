@@ -115,7 +115,7 @@ function Import-EditorCommand {
                     <# suppressOutput: #> $details.SuppressOutput,
                     <# scriptBlock:    #> $scriptBlock)
 
-                $PSCmdlet.WriteVerbose($Strings.EditorCommandRegistering -f $details.Name)
+                $PSCmdlet.WriteVerbose($Strings.EditorCommandImporting -f $details.Name)
                 $null = $psEditor.RegisterCommand($editorCommand)
 
                 if ($PassThru.IsPresent -and $editorCommand) {

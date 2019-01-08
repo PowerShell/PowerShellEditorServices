@@ -67,11 +67,11 @@ If you are using macOS you will need to download the latest version of OpenSSL. 
   ln -s /usr/local/opt/openssl/lib/libcrypto.1.0.0.dylib /usr/local/lib/
   ln -s /usr/local/opt/openssl/lib/libssl.1.0.0.dylib /usr/local/lib/
 ```
-### 2. On Windows, install the .NET 4.5.1 Targeting Pack
+### 2. On Windows, install the .NET 4.5.2 Targeting Pack
 
 **NOTE: This is only necessary if you don't have Visual Studio installed**
 
-If you try to build the code and receive an error about a missing .NET 4.5.1
+If you try to build the code and receive an error about a missing .NET 4.5.2
 Targeting Pack, you should download and install the [.NET Framework 4.5.2 Developer Pack](https://www.microsoft.com/en-us/download/details.aspx?id=42637).
 
 ### 3. Clone the GitHub repository:
