@@ -164,10 +164,10 @@ namespace PSLanguageService.Test
         public void FindsDotSourcedFiles()
         {
             string exampleScriptContents =
-                @". .\athing.ps1"+"\r\n"+
-                @". .\somefile.ps1"+"\r\n" +
-                @". .\somefile.ps1"+"\r\n" +
-                @"Do-Stuff $uri"+"\r\n" +
+                @". .\athing.ps1" + "\r\n" +
+                @". .\somefile.ps1" + "\r\n" +
+                @". .\somefile.ps1" + "\r\n" +
+                @"Do-Stuff $uri" + "\r\n" +
                 @". simpleps.ps1";
 
             using (StringReader stringReader = new StringReader(exampleScriptContents))
@@ -530,6 +530,53 @@ First line
 
             Assert.Equal(expectedLine, newPosition.Line);
             Assert.Equal(expectedColumn, newPosition.Column);
+        }
+    }
+
+    public class ScriptFileConstructorTests
+    {
+        private static readonly Version PowerShellVersion = new Version("5.0");
+
+        [Fact]
+        public void PropertiesInitializedCorrectlyForFile()
+        {
+            var path = "TestFile.ps1";
+            var scriptFile = ScriptFileChangeTests.CreateScriptFile("");
+
+            Assert.Equal(path, scriptFile.FilePath);
+            Assert.Equal(path, scriptFile.ClientFilePath);
+            Assert.True(scriptFile.IsAnalysisEnabled);
+            Assert.False(scriptFile.IsInMemory);
+            Assert.Empty(scriptFile.ReferencedFiles);
+            Assert.Empty(scriptFile.SyntaxMarkers);
+            Assert.Single(scriptFile.ScriptTokens);
+            Assert.Single(scriptFile.FileLines);
+        }
+
+        [Fact]
+        public void PropertiesInitializedCorrectlyForUntitled()
+        {
+            var path = "untitled:untitled-1";
+
+            // 3 lines and 10 tokens in this script.
+            var script = @"function foo() {
+    'foo'
+}";
+
+            using (StringReader stringReader = new StringReader(script))
+            {
+                // Create an in-memory file from the StringReader
+                var scriptFile = new ScriptFile(path, path, stringReader, PowerShellVersion);
+
+                Assert.Equal(path, scriptFile.FilePath);
+                Assert.Equal(path, scriptFile.ClientFilePath);
+                Assert.True(scriptFile.IsAnalysisEnabled);
+                Assert.True(scriptFile.IsInMemory);
+                Assert.Empty(scriptFile.ReferencedFiles);
+                Assert.Empty(scriptFile.SyntaxMarkers);
+                Assert.Equal(10, scriptFile.ScriptTokens.Length);
+                Assert.Equal(3, scriptFile.FileLines.Count);
+            }
         }
     }
 }
