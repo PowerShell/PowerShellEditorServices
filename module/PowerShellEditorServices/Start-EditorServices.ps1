@@ -161,18 +161,18 @@ if ($host.Runspace.LanguageMode -eq 'ConstrainedLanguage') {
     ExitWithError "PowerShell is configured with an unsupported LanguageMode (ConstrainedLanguage), language features are disabled."
 }
 
-# net45 is not supported, only net451 and up
+# net451 and lower are not supported, only net452 and up
 if ($PSVersionTable.PSVersion.Major -le 5) {
-    $net451Version = 378675
+    $net452Version = 379893
     $dotnetVersion = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\").Release
-    if ($dotnetVersion -lt $net451Version) {
+    if ($dotnetVersion -lt $net452Version) {
         Write-SessionFile @{
             status = failed
             reason = "netversion"
             detail = "$netVersion"
         }
 
-        ExitWithError "Your .NET version is too low. Upgrade to net451 or higher to run the PowerShell extension."
+        ExitWithError "Your .NET version is too low. Upgrade to net452 or higher to run the PowerShell extension."
     }
 }
 
