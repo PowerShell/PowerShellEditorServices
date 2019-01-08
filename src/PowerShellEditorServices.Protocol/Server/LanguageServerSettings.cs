@@ -178,6 +178,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public bool WhitespaceAfterSeparator { get; set; }
         public bool IgnoreOneLineBlock { get; set; }
         public bool AlignPropertyValuePairs { get; set; }
+        public bool UseCorrectCasing { get; set; }
 
 
         /// <summary>
@@ -259,6 +260,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     {"PSAlignAssignmentStatement", new Hashtable {
                         {"Enable", true},
                         {"CheckHashtable", AlignPropertyValuePairs}
+                    }},
+                    {"PSUseCorrectCasing", new Hashtable {
+                        {"Enable", true}
                     }},
                 }}
             };
