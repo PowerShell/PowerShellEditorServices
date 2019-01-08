@@ -1,5 +1,17 @@
 # PowerShell Editor Services Release History
 
+## v1.10.2
+### Tuesday, December 18, 2018
+
+- [PowerShellEditorServices #811](https://github.com/PowerShell/PowerShellEditorServices/pull/805) -
+  Fix token-based folding (thanks @glennsarti!)
+- [PowerShellEditorServices #823](https://github.com/PowerShell/PowerShellEditorServices/pull/823) -
+  Fix case-sensitivity of Pester CodeLens (thanks @bergmeister!)
+- [PowerShellEditorServices #815](https://github.com/PowerShell/PowerShellEditorServices/pull/815) -
+  Fix crash when untitled files opened as PowerShell
+- [PowerShellEditorServices #826](https://github.com/PowerShell/PowerShellEditorServices/pull/826) -
+  Fix crash when duplicate references are present in the same file
+
 ## v1.10.1
 ### Friday, December 7, 2018
 
