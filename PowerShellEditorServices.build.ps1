@@ -11,14 +11,16 @@ param(
 
     [string]$ModulesJsonPath = "$PSScriptRoot/modules.json",
 
-    [string]$DefaultModuleRepository = "PSGallery"
+    [string]$DefaultModuleRepository = "PSGallery",
+
+    [string]$TestFilter = ''
 )
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
 $script:IsCIBuild = $env:APPVEYOR -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
-$script:TargetFrameworksParam = "/p:TargetFrameworks=\`"$(if (!$script:IsUnix) { "net451;" })netstandard1.6\`""
+$script:TargetFrameworksParam = "/p:TargetFrameworks=\`"$(if (!$script:IsUnix) { "net452;" })netstandard1.6\`""
 $script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Host", "BuildInfo", "BuildInfo.cs")
 
@@ -136,7 +138,7 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
 
 function BuildForPowerShellVersion($version) {
     Write-Host -ForegroundColor Green "`n### Testing API usage for PowerShell $version...`n"
-    exec { & $script:dotnetExe build -f net451 .\src\PowerShellEditorServices\PowerShellEditorServices.csproj /p:PowerShellVersion=$version }
+    exec { & $script:dotnetExe build -f net452 .\src\PowerShellEditorServices\PowerShellEditorServices.csproj /p:PowerShellVersion=$version }
 }
 
 task TestPowerShellApi -If { !$script:IsUnix } {
@@ -196,7 +198,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 task Build {
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f netstandard1.6 }
     if (!$script:IsUnix) {
-        exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f net451 }
+        exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f net452 }
     }
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f netstandard1.6 }
@@ -223,24 +225,29 @@ function UploadTestLogs {
     }
 }
 
+function XunitTraitFilter {
+    # Reference https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
+    if ($TestFilter) { "-trait $TestFilter" } else { "" }
+}
+
 task Test TestServer,TestProtocol
 
 task TestServer -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
 }
 
 task TestProtocol -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
 }
 
 task TestHost -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
 }
 
 task CITest ?Test, {
@@ -267,12 +274,12 @@ task LayoutModule -After Build {
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6\publish\runtimes\win\lib\netstandard1.3\* -Filter System.IO.Pipes*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
 
     if (!$script:IsUnix) {
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net451\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net451\System.Runtime.InteropServices.RuntimeInformation.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net452\Serilog*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net452\System.Runtime.InteropServices.RuntimeInformation.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
 
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net452\* -Filter Microsoft.PowerShell.EditorServices*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net452\Newtonsoft.Json.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net452\UnixConsoleEcho.dll -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
     }
 
     # Copy Third Party Notices.txt to module folder
@@ -285,7 +292,7 @@ task LayoutModule -After Build {
 
     Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\netstandard1.6\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Core\
     if (!$script:IsUnix) {
-        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\net451\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
+        Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\net452\* -Filter Microsoft.PowerShell.EditorServices.VSCode*.dll -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
     }
 
     if ($Configuration -eq "Debug") {
@@ -295,10 +302,10 @@ task LayoutModule -After Build {
         Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\netstandard1.6\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Core\
 
         if (!$script:IsUnix) {
-            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
-            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
-            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\net451\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.VSCode\bin\$Configuration\net452\Microsoft.PowerShell.EditorServices.VSCode.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin\Desktop\
+            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\net452\Microsoft.PowerShell.EditorServices.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\net452\Microsoft.PowerShell.EditorServices.Host.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
+            Copy-Item -Force -Path $PSScriptRoot\src\PowerShellEditorServices.Protocol\bin\$Configuration\net452\Microsoft.PowerShell.EditorServices.Protocol.pdb -Destination $PSScriptRoot\module\PowerShellEditorServices\bin\Desktop\
         }
     }
 }

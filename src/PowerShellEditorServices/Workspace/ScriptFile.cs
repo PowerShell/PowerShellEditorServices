@@ -26,7 +26,6 @@ namespace Microsoft.PowerShell.EditorServices
             "\n"
         };
 
-        private Token[] scriptTokens;
         private Version powerShellVersion;
 
         #endregion
@@ -116,7 +115,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public Token[] ScriptTokens
         {
-            get { return this.scriptTokens; }
+            get;
+            private set;
         }
 
         /// <summary>
@@ -152,6 +152,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.IsInMemory = Workspace.IsPathInMemory(filePath);
             this.powerShellVersion = powerShellVersion;
 
+            // SetFileContents() calls ParseFileContents() which initializes the rest of the properties.
             this.SetFileContents(textReader.ReadToEnd());
         }
 
@@ -599,6 +600,8 @@ namespace Microsoft.PowerShell.EditorServices
 
             try
             {
+                Token[] scriptTokens;
+
 #if PowerShellv5r2
                 // This overload appeared with Windows 10 Update 1
                 if (this.powerShellVersion.Major >= 5 &&
@@ -610,7 +613,7 @@ namespace Microsoft.PowerShell.EditorServices
                         Parser.ParseInput(
                             this.Contents,
                             this.FilePath,
-                            out this.scriptTokens,
+                            out scriptTokens,
                             out parseErrors);
                 }
                 else
@@ -618,16 +621,18 @@ namespace Microsoft.PowerShell.EditorServices
                     this.ScriptAst =
                         Parser.ParseInput(
                             this.Contents,
-                            out this.scriptTokens,
+                            out scriptTokens,
                             out parseErrors);
                 }
 #else
                 this.ScriptAst =
                     Parser.ParseInput(
                         this.Contents,
-                        out this.scriptTokens,
+                        out scriptTokens,
                         out parseErrors);
 #endif
+
+                this.ScriptTokens = scriptTokens;
             }
             catch (RuntimeException ex)
             {
@@ -638,7 +643,7 @@ namespace Microsoft.PowerShell.EditorServices
                         ex.Message);
 
                 parseErrors = new[] { parseError };
-                this.scriptTokens = new Token[0];
+                this.ScriptTokens = new Token[0];
                 this.ScriptAst = null;
             }
 
@@ -648,7 +653,18 @@ namespace Microsoft.PowerShell.EditorServices
                     .Select(ScriptFileMarker.FromParseError)
                     .ToArray();
 
-            //Get all dot sourced referenced files and store  them
+            // Untitled files have no directory
+            // Discussed in https://github.com/PowerShell/PowerShellEditorServices/pull/815.
+            // Rather than working hard to enable things for untitled files like a phantom directory,
+            // users should save the file.
+            if (IsUntitledPath(this.FilePath))
+            {
+                // Need to initialize the ReferencedFiles property to an empty array.
+                this.ReferencedFiles = new string[0];
+                return;
+            }
+
+            // Get all dot sourced referenced files and store them
             this.ReferencedFiles = AstOperations.FindDotSourcedIncludes(this.ScriptAst, Path.GetDirectoryName(this.FilePath));
         }
 

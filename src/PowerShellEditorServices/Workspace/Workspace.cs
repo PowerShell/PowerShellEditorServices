@@ -91,8 +91,9 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Gets an open file in the workspace.  If the file isn't open but
-        /// exists on the filesystem, load and return it.
+        /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
+        /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
+        /// <see cref="Workspace.TryGetFile(string, out ScriptFile)"/> instead.</para>
         /// </summary>
         /// <param name="filePath">The file path at which the script resides.</param>
         /// <exception cref="FileNotFoundException">
@@ -154,9 +155,7 @@ namespace Microsoft.PowerShell.EditorServices
                 e is PathTooLongException ||
                 e is UnauthorizedAccessException)
             {
-                this.logger.WriteException(
-                    $"Failed to set breakpoint on file: {filePath}",
-                    e);
+                this.logger.WriteHandledException($"Failed to get file for {nameof(filePath)}: '{filePath}'", e);
                 scriptFile = null;
                 return false;
             }
