@@ -225,8 +225,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
                             defaultValue: string.Empty);
 
                 // hostname is 'ServerRemoteHost' when the user enters a session.
-                // ex. Enter-PSSession, Enter-PSHostProcess
-                if (hostName.Equals("ServerRemoteHost", StringComparison.Ordinal))
+                // ex. Enter-PSSession
+                // Attaching to process currently needs to be marked as a local session
+                // so we skip this if block if the runspace is from Enter-PSHostProcess
+                if (hostName.Equals("ServerRemoteHost", StringComparison.Ordinal)
+                    && runspace.OriginalConnectionInfo?.GetType().ToString() != "System.Management.Automation.Runspaces.NamedPipeConnectionInfo")
                 {
                     runspaceLocation = RunspaceLocation.Remote;
                     connectionString =
