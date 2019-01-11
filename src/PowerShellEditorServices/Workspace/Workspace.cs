@@ -408,7 +408,6 @@ namespace Microsoft.PowerShell.EditorServices
                 GetBaseFilePath(
                     scriptFile.FilePath);
 
-            ScriptFile referencedFile;
             foreach (string referencedFileName in scriptFile.ReferencedFiles)
             {
                 string resolvedScriptPath =
@@ -429,12 +428,9 @@ namespace Microsoft.PowerShell.EditorServices
                         referencedFileName,
                         resolvedScriptPath));
 
-                // Make sure file exists before trying to get the file
-                if (File.Exists(resolvedScriptPath))
+                // Get the referenced file if it's not already in referencedScriptFiles
+                if (this.TryGetFile(resolvedScriptPath, out ScriptFile referencedFile))
                 {
-                    // Get the referenced file if it's not already in referencedScriptFiles
-                    referencedFile = this.GetFile(resolvedScriptPath);
-
                     // Normalize the resolved script path and add it to the
                     // referenced files list if it isn't there already
                     resolvedScriptPath = resolvedScriptPath.ToLower();
