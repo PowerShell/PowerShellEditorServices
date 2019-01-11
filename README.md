@@ -1,5 +1,6 @@
 # PowerShell Editor Services
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/fb9129c327dc4f459ad2fd167d9a574f)](https://app.codacy.com/app/TylerLeonhardt/PowerShellEditorServices?utm_source=github.com&utm_medium=referral&utm_content=PowerShell/PowerShellEditorServices&utm_campaign=Badge_Grade_Dashboard)
 [![Join the chat at https://gitter.im/PowerShell/PowerShellEditorServices](https://badges.gitter.im/PowerShell/PowerShellEditorServices.svg)](https://gitter.im/PowerShell/PowerShellEditorServices?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 PowerShell Editor Services is a PowerShell module that provides common
