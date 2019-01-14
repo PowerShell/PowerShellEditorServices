@@ -279,18 +279,22 @@ task Build {
 
 function UploadTestLogs {
     if ($script:IsCIBuild) {
-        $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net452/logs"
         $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
 
-        if (Test-Path $testLogsPath) {
-            [System.IO.Compression.ZipFile]::CreateFromDirectory(
-                $testLogsPath,
-                $testLogsZipPath)
-
-            Push-AppveyorArtifact $testLogsZipPath
+        $testLogsPaths = if ($script:IsUnix) {
+            "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/netcoreapp2.0/logs"
+        } else {
+            "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net461/logs", "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/netcoreapp2.0/logs"
         }
-        else {
-            Write-Host "`n### WARNING: Test logs could not be found!`n" -ForegroundColor Yellow
+
+        $testLogsPaths | ForEach-Object {
+            if (Test-Path $_) {
+                Compress-Archive -Path $_ -DestinationPath $testLogsZipPath -Force
+                Push-AppveyorArtifact $testLogsZipPath
+            }
+            else {
+                Write-Host "`n### WARNING: Test logs could not be found for: $_`n" -ForegroundColor Yellow
+            }
         }
     }
 }
