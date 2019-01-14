@@ -301,11 +301,11 @@ task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe xunit -f $script:TestRuntime.Desktop }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
     }
 
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe xunit -f $script:TestRuntime.Core --fx-version $script:NetCoreTestingFrameworkVersion }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
     }
 }
 
@@ -313,11 +313,11 @@ task TestProtocol {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe xunit -f $script:TestRuntime.Desktop }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
     }
 
     Invoke-WithCreateDefaultHook {
-        exec { & $script:dotnetExe xunit -f $script:TestRuntime.Core --fx-version $script:NetCoreTestingFrameworkVersion }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
     }
 }
 
