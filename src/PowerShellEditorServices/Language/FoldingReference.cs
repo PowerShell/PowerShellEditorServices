@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -58,6 +59,54 @@ namespace Microsoft.PowerShell.EditorServices
 
             // They're the same range, but what about kind
             return string.Compare(this.Kind, that.Kind);
+        }
+    }
+
+    /// <summary>
+    /// A class that holds a list of FoldingReferences and ensures that when adding a reference that the
+    /// folding rules are obeyed, e.g. Only one fold per start line
+    /// </summary>
+    public class FoldingReferenceList
+    {
+        private readonly Dictionary<int, FoldingReference> references = new Dictionary<int, FoldingReference>();
+
+        /// <summary>
+        /// Return all references in the list
+        /// </summary>
+        public IEnumerable<FoldingReference> References
+        {
+            get
+            {
+                return references.Values;
+            }
+        }
+
+        /// <summary>
+        /// Adds a FoldingReference to the list and enforces ordering rules e.g. Only one fold per start line
+        /// </summary>
+        public void SafeAdd(FoldingReference item)
+        {
+            if (item == null) { return; }
+
+            // Only add the item if it hasn't been seen before or it's the largest range
+            if (references.TryGetValue(item.StartLine, out FoldingReference currentItem))
+            {
+                if (currentItem.CompareTo(item) == 1) { references[item.StartLine] = item; }
+            }
+            else
+            {
+                references[item.StartLine] = item;
+            }
+        }
+
+        /// <summary>
+        /// Helper method to easily convert the Dictionary Values into an array
+        /// </summary>
+        public FoldingReference[] ToArray()
+        {
+            var result = new FoldingReference[references.Count];
+            references.Values.CopyTo(result, 0);
+            return result;
         }
     }
 }
