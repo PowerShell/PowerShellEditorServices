@@ -19,8 +19,7 @@ RUN Import-Module PackageManagement; `
 
 # Install .NET Framework 4.5.1 & 4.5.2 Developer Packs
 RUN Import-Module ./containerFiles/dockerInstall.psm1; `
-    Install-ChocolateyPackage -PackageName netfx-4.5.1-devpack; `
-    Install-ChocolateyPackage -PackageName netfx-4.5.2-devpack;
+    Install-ChocolateyPackage -PackageName netfx-4.6.1-devpack;
 
 # Copy build script over
 COPY build.ps1 containerFiles/build.ps1
