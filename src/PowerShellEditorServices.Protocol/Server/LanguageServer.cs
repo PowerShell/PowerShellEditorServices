@@ -1162,7 +1162,15 @@ function __Expand-Alias {
            CommentHelpRequestParams requestParams,
            RequestContext<CommentHelpRequestResult> requestContext)
         {
-            ScriptFile scriptFile = this.editorSession.Workspace.GetFile(requestParams.DocumentUri);
+            var result = new CommentHelpRequestResult();
+
+            ScriptFile scriptFile;
+            if (!this.editorSession.Workspace.TryGetFile(requestParams.DocumentUri, out scriptFile))
+            {
+                await requestContext.SendResult(result);
+                return;
+            }
+
             int triggerLine = requestParams.TriggerPosition.Line + 1;
 
             string helpLocation;
@@ -1170,8 +1178,6 @@ function __Expand-Alias {
                 scriptFile,
                 triggerLine,
                 out helpLocation);
-
-            var result = new CommentHelpRequestResult();
 
             if (functionDefinitionAst == null)
             {
