@@ -141,12 +141,8 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
                 testName = testNameStrAst.Value;
                 return true;
             }
-            else if (commandElementAst is ExpandableStringExpressionAst)
-            {
-                return true;
-            }
 
-            return false;
+            return (commandElementAst is ExpandableStringExpressionAst);
         }
     }
 
