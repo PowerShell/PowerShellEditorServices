@@ -349,7 +349,7 @@ try {
         "status" = "not started";
         "languageServiceTransport" = $PSCmdlet.ParameterSetName;
         "debugServiceTransport" = $PSCmdlet.ParameterSetName;
-    };
+    }
 
     # Create the Editor Services host
     Log "Invoking Start-EditorServicesHost"
@@ -368,7 +368,8 @@ try {
                                         -BundledModulesPath $BundledModulesPath `
                                         -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
                                         -DebugServiceOnly:$DebugServiceOnly.IsPresent `
-                                        -WaitForDebugger:$WaitForDebugger.IsPresent
+                                        -WaitForDebugger:$WaitForDebugger.IsPresent `
+                                        -FeatureFlags $FeatureFlags
             break
         }
 
@@ -392,7 +393,8 @@ try {
                                         -BundledModulesPath $BundledModulesPath `
                                         -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
                                         -DebugServiceOnly:$DebugServiceOnly.IsPresent `
-                                        -WaitForDebugger:$WaitForDebugger.IsPresent
+                                        -WaitForDebugger:$WaitForDebugger.IsPresent `
+                                        -FeatureFlags $FeatureFlags
 
             Set-PipeFileResult $resultDetails "languageServiceReadPipeName" $LanguageServiceInPipeName
             Set-PipeFileResult $resultDetails "languageServiceWritePipeName" $LanguageServiceOutPipeName
@@ -417,7 +419,8 @@ try {
                                         -BundledModulesPath $BundledModulesPath `
                                         -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
                                         -DebugServiceOnly:$DebugServiceOnly.IsPresent `
-                                        -WaitForDebugger:$WaitForDebugger.IsPresent
+                                        -WaitForDebugger:$WaitForDebugger.IsPresent `
+                                        -FeatureFlags $FeatureFlags
 
             Set-PipeFileResult $resultDetails "languageServicePipeName" $LanguageServicePipeName
             Set-PipeFileResult $resultDetails "debugServicePipeName" $DebugServicePipeName

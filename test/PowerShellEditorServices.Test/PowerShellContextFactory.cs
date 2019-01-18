@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
     {
         public static PowerShellContext Create(ILogger logger)
         {
-            PowerShellContext powerShellContext = new PowerShellContext(logger);
+            PowerShellContext powerShellContext = new PowerShellContext(logger, isPSReadLineEnabled: false);
             powerShellContext.Initialize(
                 PowerShellContextTests.TestProfilePaths,
                 PowerShellContext.CreateRunspace(
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
             throw new NotImplementedException();
         }
 
-        protected override Task<string> ReadCommandLine(CancellationToken cancellationToken)
+        protected override Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
         {
             return Task.FromResult("USER COMMAND");
         }

@@ -323,7 +323,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="settings">ScriptAnalyzer settings</param>
         /// <param name="rangeList">The range within which formatting should be applied.</param>
         /// <returns>The formatted script text.</returns>
-        public async Task<string> Format(
+        public async Task<string> FormatAsync(
             string scriptDefinition,
             Hashtable settings,
             int[] rangeList)
@@ -611,7 +611,12 @@ namespace Microsoft.PowerShell.EditorServices
                 }
 
                 // Create a base session state with PSScriptAnalyzer loaded
-                InitialSessionState sessionState = InitialSessionState.CreateDefault2();
+                InitialSessionState sessionState;
+                if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1") {
+                    sessionState = InitialSessionState.CreateDefault();
+                } else {
+                    sessionState = InitialSessionState.CreateDefault2();
+                }
                 sessionState.ImportPSModule(new [] { pssaModuleInfo.ModuleBase });
 
                 // RunspacePool takes care of queuing commands for us so we do not

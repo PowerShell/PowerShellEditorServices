@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.Client;
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.IO;
@@ -20,17 +21,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         private ILogger logger;
         private DebugAdapterClient debugAdapterClient;
         private string DebugScriptPath =
-            Path.GetFullPath(@"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
+            Path.GetFullPath(TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/DebugTest.ps1"));
 
         public async Task InitializeAsync()
         {
             string testLogPath =
                 Path.Combine(
-#if CoreCLR
                     AppContext.BaseDirectory,
-#else
-                    AppDomain.CurrentDomain.BaseDirectory,
-#endif
                     "logs",
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8));
@@ -51,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             this.debugAdapterClient =
                 new DebugAdapterClient(
-                    await NamedPipeClientChannel.Connect(
+                    await NamedPipeClientChannel.ConnectAsync(
                         pipeNames.Item2,
                         MessageProtocolType.DebugAdapter,
                         this.logger),
@@ -60,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             this.messageSender = this.debugAdapterClient;
             this.messageHandlers = this.debugAdapterClient;
 
-            await this.debugAdapterClient.Start();
+            await this.debugAdapterClient.StartAsync();
         }
 
         public Task DisposeAsync()
@@ -139,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
         private async Task LaunchScript(string scriptPath)
         {
-            await this.debugAdapterClient.LaunchScript(scriptPath);
+            await this.debugAdapterClient.LaunchScriptAsync(scriptPath);
         }
     }
 }

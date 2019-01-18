@@ -125,9 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 #endif
 
             // Catch unhandled exceptions for logging purposes
-#if !CoreCLR
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-#endif
         }
 
         #endregion
@@ -146,11 +144,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
                             .AddLogFile(logFilePath)
                             .Build();
 
-#if CoreCLR
-            FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
-#else
-            FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(this.GetType().Assembly.Location);
-#endif
+            FileVersionInfo fileVersionInfo =
+                FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
 
             string osVersion = RuntimeInformation.OSDescription;
 
@@ -196,7 +191,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             this.languageServiceListener = CreateServiceListener(MessageProtocolType.LanguageServer, config);
 
-            this.languageServiceListener.ClientConnect += this.OnLanguageServiceClientConnect;
+            this.languageServiceListener.ClientConnect += this.OnLanguageServiceClientConnectAsync;
             this.languageServiceListener.Start();
 
             this.logger.Write(
@@ -206,7 +201,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     config.TransportType, config.Endpoint));
         }
 
-        private async void OnLanguageServiceClientConnect(
+        private async void OnLanguageServiceClientConnectAsync(
             object sender,
             ChannelBase serverChannel)
         {
@@ -236,10 +231,10 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     this.serverCompletedTask,
                     this.logger);
 
-            await this.editorSession.PowerShellContext.ImportCommandsModule(
+            await this.editorSession.PowerShellContext.ImportCommandsModuleAsync(
                 Path.Combine(
                     Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
-                    @"..\..\Commands"));
+                    @"..\Commands"));
 
             this.languageServer.Start();
 
@@ -252,7 +247,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                         .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                         .AddParameter("Name", module);
 
-                await this.editorSession.PowerShellContext.ExecuteCommand<System.Management.Automation.PSObject>(
+                await this.editorSession.PowerShellContext.ExecuteCommandAsync<System.Management.Automation.PSObject>(
                     command,
                     sendOutputToHost: false,
                     sendErrorToHost: true);
@@ -378,7 +373,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             bool enableConsoleRepl)
         {
             EditorSession editorSession = new EditorSession(this.logger);
-            PowerShellContext powerShellContext = new PowerShellContext(this.logger);
+            PowerShellContext powerShellContext = new PowerShellContext(this.logger, this.featureFlags.Contains("PSReadLine"));
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl
@@ -418,7 +413,9 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             bool enableConsoleRepl)
         {
             EditorSession editorSession = new EditorSession(this.logger);
-            PowerShellContext powerShellContext = new PowerShellContext(this.logger);
+            PowerShellContext powerShellContext = new PowerShellContext(
+                this.logger,
+                this.featureFlags.Contains("PSReadLine"));
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl
@@ -452,19 +449,13 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             this.serverCompletedTask.SetException(e);
         }
 
-#if !CoreCLR
         private void CurrentDomain_UnhandledException(
             object sender,
             UnhandledExceptionEventArgs e)
         {
             // Log the exception
-            this.logger.Write(
-                LogLevel.Error,
-                string.Format(
-                    "FATAL UNHANDLED EXCEPTION:\r\n\r\n{0}",
-                    e.ExceptionObject.ToString()));
+            this.logger.Write(LogLevel.Error, $"FATAL UNHANDLED EXCEPTION: {e.ExceptionObject}");
         }
-#endif
 
         private IServerListener CreateServiceListener(MessageProtocolType protocol, EditorServiceTransportConfig config)
         {
@@ -502,7 +493,6 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         /// <returns></returns>
         private string GetOSArchitecture()
         {
-#if !CoreCLR
             // If on win7 (version 6.1.x), avoid System.Runtime.InteropServices.RuntimeInformation
             if (Environment.OSVersion.Platform == PlatformID.Win32NT && Environment.OSVersion.Version < new Version(6, 2))
             {
@@ -513,7 +503,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
                 return "X86";
             }
-#endif
+
             return RuntimeInformation.OSArchitecture.ToString();
         }
 

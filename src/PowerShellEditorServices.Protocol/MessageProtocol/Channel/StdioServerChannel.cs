@@ -27,11 +27,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         protected override void Initialize(IMessageSerializer messageSerializer)
         {
-#if !CoreCLR
-            // Ensure that the console is using UTF-8 encoding
-            System.Console.InputEncoding = Encoding.UTF8;
-            System.Console.OutputEncoding = Encoding.UTF8;
-#endif
+            if (System.Console.InputEncoding != Encoding.UTF8)
+            {
+                System.Console.InputEncoding = Encoding.UTF8;
+            }
+
+            if (System.Console.OutputEncoding != Encoding.UTF8)
+            {
+                System.Console.OutputEncoding = Encoding.UTF8;
+            }
 
             // Open the standard input/output streams
             this.inputStream = System.Console.OpenStandardInput();

@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
         // TODO: This method should be made protected or private
 
-        public async Task WriteMessage(Message messageToWrite)
+        public async Task WriteMessageAsync(Message messageToWrite)
         {
             Validate.IsNotNull("messageToWrite", messageToWrite);
 
@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             }
         }
 
-        public async Task WriteRequest<TParams, TResult, TError, TRegistrationOptions>(
+        public async Task WriteRequestAsync<TParams, TResult, TError, TRegistrationOptions>(
             RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             TParams requestParams,
             int requestId)
@@ -122,14 +122,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     JToken.FromObject(requestParams, contentSerializer) :
                     null;
 
-            await this.WriteMessage(
+            await this.WriteMessageAsync(
                 Message.Request(
                     requestId.ToString(),
                     requestType.Method,
                     contentObject));
         }
 
-        public async Task WriteResponse<TResult>(TResult resultContent, string method, string requestId)
+        public async Task WriteResponseAsync<TResult>(TResult resultContent, string method, string requestId)
         {
             // Allow null content
             JToken contentObject =
@@ -137,14 +137,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     JToken.FromObject(resultContent, contentSerializer) :
                     null;
 
-            await this.WriteMessage(
+            await this.WriteMessageAsync(
                 Message.Response(
                     requestId,
                     method,
                     contentObject));
         }
 
-        public async Task WriteEvent<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType, TParams eventParams)
+        public async Task WriteEventAsync<TParams, TRegistrationOptions>(NotificationType<TParams, TRegistrationOptions> eventType, TParams eventParams)
         {
             // Allow null content
             JToken contentObject =
@@ -152,7 +152,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     JToken.FromObject(eventParams, contentSerializer) :
                     null;
 
-            await this.WriteMessage(
+            await this.WriteMessageAsync(
                 Message.Event(
                     eventType.Method,
                     contentObject));

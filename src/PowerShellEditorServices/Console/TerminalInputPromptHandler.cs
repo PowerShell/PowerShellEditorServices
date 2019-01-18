@@ -54,9 +54,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
         /// <returns>A Task that can be awaited to get the user's response.</returns>
-        protected override async Task<string> ReadInputString(CancellationToken cancellationToken)
+        protected override async Task<string> ReadInputStringAsync(CancellationToken cancellationToken)
         {
-            string inputString = await this.consoleReadLine.ReadSimpleLine(cancellationToken);
+            string inputString = await this.consoleReadLine.ReadSimpleLineAsync(cancellationToken);
             this.hostOutput.WriteOutput(string.Empty);
 
             return inputString;
@@ -67,9 +67,9 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// </summary>
         /// <param name="cancellationToken">A CancellationToken that can be used to cancel the prompt.</param>
         /// <returns>A Task that can be awaited to get the user's response.</returns>
-        protected override async Task<SecureString> ReadSecureString(CancellationToken cancellationToken)
+        protected override async Task<SecureString> ReadSecureStringAsync(CancellationToken cancellationToken)
         {
-            SecureString secureString = await this.consoleReadLine.ReadSecureLine(cancellationToken);
+            SecureString secureString = await this.consoleReadLine.ReadSecureLineAsync(cancellationToken);
             this.hostOutput.WriteOutput(string.Empty);
 
             return secureString;

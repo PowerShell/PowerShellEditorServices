@@ -11,6 +11,7 @@ using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel;
 using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.IO;
@@ -29,11 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         {
             string testLogPath =
                 Path.Combine(
-#if CoreCLR
                     AppContext.BaseDirectory,
-#else
-                    AppDomain.CurrentDomain.BaseDirectory,
-#endif
                     "logs",
                     this.GetType().Name,
                     Guid.NewGuid().ToString().Substring(0, 8));
@@ -54,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             this.languageServiceClient =
                 new LanguageServiceClient(
-                    await NamedPipeClientChannel.Connect(
+                    await NamedPipeClientChannel.ConnectAsync(
                         pipeNames.Item1,
                         MessageProtocolType.LanguageServer,
                         this.logger),
@@ -68,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
         public async Task DisposeAsync()
         {
-            await this.languageServiceClient.Stop();
+            await this.languageServiceClient.StopAsync();
 
             this.KillService();
         }
@@ -77,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         public async Task ServiceReturnsSyntaxErrors()
         {
             // Send the 'didOpen' event
-            await this.SendOpenFileEvent("TestFiles\\SimpleSyntaxError.ps1", false);
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/SimpleSyntaxError.ps1"), false);
 
             // Wait for the diagnostic event
             PublishDiagnosticsNotification diagnostics =
@@ -90,11 +87,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 string.IsNullOrEmpty(diagnostics.Diagnostics[0].Message));
         }
 
-        [Fact(Skip = "Skipping until Script Analyzer integration is added back")]
+        [Fact]
         public async Task ServiceReturnsSemanticMarkers()
         {
             // Send the 'didOpen' event
-            await this.SendOpenFileEvent("TestFiles\\SimpleSemanticError.ps1", false);
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/SimpleSemanticError.ps1"), false);
 
             // Wait for the diagnostic event
             PublishDiagnosticsNotification diagnostics =
@@ -110,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         public async Task ServiceReturnsNoErrorsForUsingRelativeModulePaths()
         {
             // Send the 'didOpen' event
-            await this.SendOpenFileEvent("TestFiles\\Module.psm1", false);
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/Module.psm1"), false);
 
             // Wait for the diagnostic event
             PublishDiagnosticsNotification diagnostics =
@@ -124,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task ServiceCompletesFunctionName()
         {
-            await this.SendOpenFileEvent("TestFiles\\CompleteFunctionName.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1"));
 
             CompletionItem[] completions =
                 await this.SendRequest(
@@ -133,7 +130,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\CompleteFunctionName.ps1",
+                            Uri = TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1"),
                         },
                         Position = new Position
                         {
@@ -151,7 +148,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task CompletesDetailOnVariableSuggestion()
         {
-            await this.SendOpenFileEvent("TestFiles\\CompleteFunctionName.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1"));
 
             CompletionItem[] completions =
                 await this.SendRequest(
@@ -160,7 +157,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\CompleteFunctionName.ps1"
+                            Uri = TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1")
                         },
                         Position = new Position
                         {
@@ -181,7 +178,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact(Skip = "Skipped until variable documentation gathering is added back.")]
         public async Task CompletesDetailOnVariableDocSuggestion()
         {
-            await this.SendOpenFileEvent("TestFiles\\CompleteFunctionName.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1"));
 
             await this.SendRequest(
                 CompletionRequest.Type,
@@ -189,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 {
                     TextDocument = new TextDocumentIdentifier
                     {
-                        Uri = "TestFiles\\CompleteFunctionName.ps1"
+                        Uri = TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1")
                     },
                     Position = new Position
                     {
@@ -223,7 +220,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task CompletesDetailOnCommandSuggestion()
         {
-            await this.SendOpenFileEvent("TestFiles\\CompleteFunctionName.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1"));
 
             CompletionItem[] completions =
                 await this.SendRequest(
@@ -232,7 +229,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\CompleteFunctionName.ps1"
+                            Uri = TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1")
                         },
                         Position = new Position
                         {
@@ -263,7 +260,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task FindsReferencesOfVariable()
         {
-            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"));
 
             Location[] locations =
             await this.SendRequest(
@@ -272,7 +269,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 {
                     TextDocument = new TextDocumentIdentifier
                     {
-                        Uri = "TestFiles\\FindReferences.ps1"
+                        Uri = TestUtilities.NormalizePath("TestFiles/FindReferences.ps1")
                     },
                     Position = new Position
                     {
@@ -295,7 +292,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task FindsNoReferencesOfEmptyLine()
         {
-            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"));
 
             Location[] locations =
                 await this.SendRequest(
@@ -304,7 +301,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\FindReferences.ps1"
+                            Uri = TestUtilities.NormalizePath("TestFiles/FindReferences.ps1")
                         },
                         Position = new Position
                         {
@@ -320,7 +317,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task FindsReferencesOnFunctionDefinition()
         {
-            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"));
 
             Location[] locations =
                 await this.SendRequest(
@@ -329,7 +326,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\FindReferences.ps1"
+                            Uri = TestUtilities.NormalizePath("TestFiles/FindReferences.ps1")
                         },
                         Position = new Position
                         {
@@ -352,7 +349,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task FindsReferencesOnCommand()
         {
-            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"));
 
             Location[] locations =
                 await this.SendRequest(
@@ -361,7 +358,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\FindReferences.ps1"
+                            Uri = TestUtilities.NormalizePath("TestFiles/FindReferences.ps1")
                         },
                         Position = new Position
                         {
@@ -384,7 +381,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task FindsDefinitionOfCommand()
         {
-            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"));
 
             Location[] locations =
                 await this.SendRequest(
@@ -393,7 +390,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\FindReferences.ps1",
+                            Uri = TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"),
                         },
                         Position = new Position
                         {
@@ -411,7 +408,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task FindsNoDefinitionOfBuiltinCommand()
         {
-            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"));
 
             Location[] locations =
                 await this.SendRequest(
@@ -420,7 +417,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\FindReferences.ps1"
+                            Uri = TestUtilities.NormalizePath("TestFiles/FindReferences.ps1")
                         },
                         Position = new Position
                         {
@@ -436,7 +433,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task FindsDefinitionOfVariable()
         {
-            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"));
 
             Location[] locations =
                 await this.SendRequest(
@@ -445,7 +442,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\FindReferences.ps1"
+                            Uri = TestUtilities.NormalizePath("TestFiles/FindReferences.ps1")
                         },
                         Position = new Position
                         {
@@ -465,7 +462,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task FindsDefinitionOfVariableInOtherFile()
         {
-            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"));
 
             Location[] locations =
                 await this.SendRequest(
@@ -474,7 +471,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\FindReferences.ps1"
+                            Uri = TestUtilities.NormalizePath("TestFiles/FindReferences.ps1")
                         },
                         Position = new Position
                         {
@@ -495,7 +492,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task FindDefinitionOfVariableWithSpecialChars()
         {
-            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"));
 
             Location[] locations =
                 await this.SendRequest(
@@ -504,7 +501,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\FindReferences.ps1"
+                            Uri = TestUtilities.NormalizePath("TestFiles/FindReferences.ps1")
                         },
                         Position = new Position
                         {
@@ -525,7 +522,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
         [Fact]
         public async Task FindsOccurencesOnFunctionDefinition()
         {
-            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"));
 
             DocumentHighlight[] highlights =
                 await this.SendRequest(
@@ -534,7 +531,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\FindReferences.ps1"
+                            Uri = TestUtilities.NormalizePath("TestFiles/FindReferences.ps1")
                         },
                         Position = new Position
                         {
@@ -548,10 +545,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal(2, highlights[1].Range.Start.Line);
         }
 
-        [Fact(Skip = "This test hangs in VSTS for some reason...")]
+        [Fact]
         public async Task GetsParameterHintsOnCommand()
         {
-            await this.SendOpenFileEvent("TestFiles\\FindReferences.ps1");
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/FindReferences.ps1"));
 
             SignatureHelp signatureHelp =
                 await this.SendRequest(
@@ -560,7 +557,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     {
                         TextDocument = new TextDocumentIdentifier
                         {
-                            Uri = "TestFiles\\FindReferences.ps1"
+                            Uri = TestUtilities.NormalizePath("TestFiles/FindReferences.ps1")
                         },
                         Position = new Position
                         {
@@ -603,9 +600,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             string expandedText =
                 await this.SendRequest(
                     ExpandAliasRequest.Type,
-                    "gci\r\npwd");
+                    TestUtilities.NormalizeNewlines("gci\npwd"));
 
-            Assert.Equal("Get-ChildItem\r\nGet-Location", expandedText);
+            Assert.Equal(TestUtilities.NormalizeNewlines("Get-ChildItem\nGet-Location"), expandedText);
         }
 
         [Fact]
@@ -647,7 +644,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal(1, showChoicePromptRequest.DefaultChoices[0]);
 
             // Respond to the prompt request
-            await requestContext.SendResult(
+            await requestContext.SendResultAsync(
                 new ShowChoicePromptResponse
                 {
                     ResponseText = "a"
@@ -698,7 +695,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             Assert.Equal("Name", showInputPromptRequest.Name);
 
             // Respond to the prompt request
-            await requestContext.SendResult(
+            await requestContext.SendResultAsync(
                 new ShowInputPromptResponse
                 {
                     ResponseText = "John"
@@ -757,7 +754,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             string testProfilePath =
                 Path.Combine(
                     Path.GetFullPath(
-                        @"..\..\..\..\PowerShellEditorServices.Test.Shared\Profile\"),
+                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/")),
                     profileName);
 
             string currentUserCurrentHostPath =
@@ -868,7 +865,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             bool enableProfileLoading = false)
         {
             // Send the configuration change to cause profiles to be loaded
-            await this.languageServiceClient.SendEvent(
+            await this.languageServiceClient.SendEventAsync(
                 DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type,
                 new DidChangeConfigurationParams<LanguageServerSettingsWrapper>
                 {

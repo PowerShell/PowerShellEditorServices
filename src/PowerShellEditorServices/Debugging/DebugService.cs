@@ -15,6 +15,7 @@ using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Session.Capabilities;
+using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -47,6 +48,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private static int breakpointHitCounter = 0;
 
+        private SemaphoreSlim debugInfoHandle = AsyncUtils.CreateSimpleLockingSemaphore();
         #endregion
 
         #region Properties
@@ -106,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.logger = logger;
             this.powerShellContext = powerShellContext;
-            this.powerShellContext.DebuggerStop += this.OnDebuggerStop;
+            this.powerShellContext.DebuggerStop += this.OnDebuggerStopAsync;
             this.powerShellContext.DebuggerResumed += this.OnDebuggerResumed;
 
             this.powerShellContext.BreakpointUpdated += this.OnBreakpointUpdated;
@@ -131,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="breakpoints">BreakpointDetails for each breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<BreakpointDetails[]> SetLineBreakpoints(
+        public async Task<BreakpointDetails[]> SetLineBreakpointsAsync(
             ScriptFile scriptFile,
             BreakpointDetails[] breakpoints,
             bool clearExisting = true)
@@ -184,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (clearExisting)
                 {
-                    await this.ClearBreakpointsInFile(scriptFile);
+                    await this.ClearBreakpointsInFileAsync(scriptFile);
                 }
 
                 foreach (BreakpointDetails breakpoint in breakpoints)
@@ -222,7 +224,7 @@ namespace Microsoft.PowerShell.EditorServices
                     }
 
                     IEnumerable<Breakpoint> configuredBreakpoints =
-                        await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
+                        await this.powerShellContext.ExecuteCommandAsync<Breakpoint>(psCommand);
 
                     // The order in which the breakpoints are returned is significant to the
                     // VSCode client and should match the order in which they are passed in.
@@ -233,7 +235,7 @@ namespace Microsoft.PowerShell.EditorServices
             else
             {
                 resultBreakpointDetails =
-                    await dscBreakpoints.SetLineBreakpoints(
+                    await dscBreakpoints.SetLineBreakpointsAsync(
                         this.powerShellContext,
                         escapedScriptPath,
                         breakpoints);
@@ -248,7 +250,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="breakpoints">CommandBreakpointDetails for each command breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing function breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<CommandBreakpointDetails[]> SetCommandBreakpoints(
+        public async Task<CommandBreakpointDetails[]> SetCommandBreakpointsAsync(
             CommandBreakpointDetails[] breakpoints,
             bool clearExisting = true)
         {
@@ -256,7 +258,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (clearExisting)
             {
-                await this.ClearCommandBreakpoints();
+                await this.ClearCommandBreakpointsAsync();
             }
 
             if (breakpoints.Length > 0)
@@ -285,7 +287,7 @@ namespace Microsoft.PowerShell.EditorServices
                     }
 
                     IEnumerable<Breakpoint> configuredBreakpoints =
-                        await this.powerShellContext.ExecuteCommand<Breakpoint>(psCommand);
+                        await this.powerShellContext.ExecuteCommandAsync<Breakpoint>(psCommand);
 
                     // The order in which the breakpoints are returned is significant to the
                     // VSCode client and should match the order in which they are passed in.
@@ -350,7 +352,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public void Abort()
         {
-            this.powerShellContext.AbortExecution();
+            this.powerShellContext.AbortExecution(shouldAbortDebugSession: true);
         }
 
         /// <summary>
@@ -362,33 +364,40 @@ namespace Microsoft.PowerShell.EditorServices
         public VariableDetailsBase[] GetVariables(int variableReferenceId)
         {
             VariableDetailsBase[] childVariables;
-
-            if ((variableReferenceId < 0) || (variableReferenceId >= this.variables.Count))
+            this.debugInfoHandle.Wait();
+            try
             {
-                logger.Write(LogLevel.Warning, $"Received request for variableReferenceId {variableReferenceId} that is out of range of valid indices.");
-                return new VariableDetailsBase[0];
-            }
-
-            VariableDetailsBase parentVariable = this.variables[variableReferenceId];
-            if (parentVariable.IsExpandable)
-            {
-                childVariables = parentVariable.GetChildren(this.logger);
-                foreach (var child in childVariables)
+                if ((variableReferenceId < 0) || (variableReferenceId >= this.variables.Count))
                 {
-                    // Only add child if it hasn't already been added.
-                    if (child.Id < 0)
+                    logger.Write(LogLevel.Warning, $"Received request for variableReferenceId {variableReferenceId} that is out of range of valid indices.");
+                    return new VariableDetailsBase[0];
+                }
+
+                VariableDetailsBase parentVariable = this.variables[variableReferenceId];
+                if (parentVariable.IsExpandable)
+                {
+                    childVariables = parentVariable.GetChildren(this.logger);
+                    foreach (var child in childVariables)
                     {
-                        child.Id = this.nextVariableId++;
-                        this.variables.Add(child);
+                        // Only add child if it hasn't already been added.
+                        if (child.Id < 0)
+                        {
+                            child.Id = this.nextVariableId++;
+                            this.variables.Add(child);
+                        }
                     }
                 }
-            }
-            else
-            {
-                childVariables = new VariableDetailsBase[0];
-            }
+                else
+                {
+                    childVariables = new VariableDetailsBase[0];
+                }
 
-            return childVariables;
+                return childVariables;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
         }
 
         /// <summary>
@@ -410,7 +419,18 @@ namespace Microsoft.PowerShell.EditorServices
             string[] variablePathParts = variableExpression.Split('.');
 
             VariableDetailsBase resolvedVariable = null;
-            IEnumerable<VariableDetailsBase> variableList = this.variables;
+            IEnumerable<VariableDetailsBase> variableList;
+
+            // Ensure debug info isn't currently being built.
+            this.debugInfoHandle.Wait();
+            try
+            {
+                variableList = this.variables;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
 
             foreach (var variableName in variablePathParts)
             {
@@ -450,7 +470,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="value">The new string value.  This value must not be null.  If you want to set the variable to $null
         /// pass in the string "$null".</param>
         /// <returns>The string representation of the value the variable was set to.</returns>
-        public async Task<string> SetVariable(int variableContainerReferenceId, string name, string value)
+        public async Task<string> SetVariableAsync(int variableContainerReferenceId, string name, string value)
         {
             Validate.IsNotNull(nameof(name), name);
             Validate.IsNotNull(nameof(value), value);
@@ -468,7 +488,7 @@ namespace Microsoft.PowerShell.EditorServices
             psCommand.AddScript(value);
             var errorMessages = new StringBuilder();
             var results =
-                await this.powerShellContext.ExecuteCommand<object>(
+                await this.powerShellContext.ExecuteCommandAsync<object>(
                     psCommand,
                     errorMessages,
                     false,
@@ -491,9 +511,18 @@ namespace Microsoft.PowerShell.EditorServices
 
             // OK, now we have a PS object from the supplied value string (expression) to assign to a variable.
             // Get the variable referenced by variableContainerReferenceId and variable name.
-            VariableContainerDetails variableContainer = (VariableContainerDetails)this.variables[variableContainerReferenceId];
-            VariableDetailsBase variable = variableContainer.Children[name];
+            VariableContainerDetails variableContainer = null;
+            await this.debugInfoHandle.WaitAsync();
+            try
+            {
+                variableContainer = (VariableContainerDetails)this.variables[variableContainerReferenceId];
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
 
+            VariableDetailsBase variable = variableContainer.Children[name];
             // Determine scope in which the variable lives. This is required later for the call to Get-Variable -Scope.
             string scope = null;
             if (variableContainerReferenceId == this.scriptScopeVariables.Id)
@@ -507,9 +536,10 @@ namespace Microsoft.PowerShell.EditorServices
             else
             {
                 // Determine which stackframe's local scope the variable is in.
-                for (int i = 0; i < this.stackFrameDetails.Length; i++)
+                StackFrameDetails[] stackFrames = await this.GetStackFramesAsync();
+                for (int i = 0; i < stackFrames.Length; i++)
                 {
-                    var stackFrame = this.stackFrameDetails[i];
+                    var stackFrame = stackFrames[i];
                     if (stackFrame.LocalVariables.ContainsVariable(variable.Id))
                     {
                         scope = i.ToString();
@@ -531,7 +561,7 @@ namespace Microsoft.PowerShell.EditorServices
             psCommand.AddParameter("Name", name.TrimStart('$'));
             psCommand.AddParameter("Scope", scope);
 
-            IEnumerable<PSVariable> result = await this.powerShellContext.ExecuteCommand<PSVariable>(psCommand, sendErrorToHost: false);
+            IEnumerable<PSVariable> result = await this.powerShellContext.ExecuteCommandAsync<PSVariable>(psCommand, sendErrorToHost: false);
             PSVariable psVariable = result.FirstOrDefault();
             if (psVariable == null)
             {
@@ -560,7 +590,7 @@ namespace Microsoft.PowerShell.EditorServices
                 errorMessages.Clear();
 
                 var getExecContextResults =
-                    await this.powerShellContext.ExecuteCommand<object>(
+                    await this.powerShellContext.ExecuteCommandAsync<object>(
                         psCommand,
                         errorMessages,
                         sendErrorToHost: false);
@@ -598,13 +628,13 @@ namespace Microsoft.PowerShell.EditorServices
         /// If true, writes the expression result as host output rather than returning the results.
         /// In this case, the return value of this function will be null.</param>
         /// <returns>A VariableDetails object containing the result.</returns>
-        public async Task<VariableDetails> EvaluateExpression(
+        public async Task<VariableDetails> EvaluateExpressionAsync(
             string expressionString,
             int stackFrameId,
             bool writeResultAsOutput)
         {
             var results =
-                await this.powerShellContext.ExecuteScriptString(
+                await this.powerShellContext.ExecuteScriptStringAsync(
                     expressionString,
                     false,
                     writeResultAsOutput);
@@ -637,7 +667,54 @@ namespace Microsoft.PowerShell.EditorServices
         /// </returns>
         public StackFrameDetails[] GetStackFrames()
         {
-            return this.stackFrameDetails;
+            this.debugInfoHandle.Wait();
+            try
+            {
+                return this.stackFrameDetails;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
+        }
+
+        internal StackFrameDetails[] GetStackFrames(CancellationToken cancellationToken)
+        {
+            this.debugInfoHandle.Wait(cancellationToken);
+            try
+            {
+                return this.stackFrameDetails;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
+        }
+
+        internal async Task<StackFrameDetails[]> GetStackFramesAsync()
+        {
+            await this.debugInfoHandle.WaitAsync();
+            try
+            {
+                return this.stackFrameDetails;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
+        }
+
+        internal async Task<StackFrameDetails[]> GetStackFramesAsync(CancellationToken cancellationToken)
+        {
+            await this.debugInfoHandle.WaitAsync(cancellationToken);
+            try
+            {
+                return this.stackFrameDetails;
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
         }
 
         /// <summary>
@@ -648,8 +725,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>The list of VariableScope instances which describe the available variable scopes.</returns>
         public VariableScope[] GetVariableScopes(int stackFrameId)
         {
-            int localStackFrameVariableId = this.stackFrameDetails[stackFrameId].LocalVariables.Id;
-            int autoVariablesId = this.stackFrameDetails[stackFrameId].AutoVariables.Id;
+            var stackFrames = this.GetStackFrames();
+            int localStackFrameVariableId = stackFrames[stackFrameId].LocalVariables.Id;
+            int autoVariablesId = stackFrames[stackFrameId].AutoVariables.Id;
 
             return new VariableScope[]
             {
@@ -663,20 +741,20 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Clears all breakpoints in the current session.
         /// </summary>
-        public async Task ClearAllBreakpoints()
+        public async Task ClearAllBreakpointsAsync()
         {
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
             psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
 
-            await this.powerShellContext.ExecuteCommand<object>(psCommand);
+            await this.powerShellContext.ExecuteCommandAsync<object>(psCommand);
         }
 
         #endregion
 
         #region Private Methods
 
-        private async Task ClearBreakpointsInFile(ScriptFile scriptFile)
+        private async Task ClearBreakpointsInFileAsync(ScriptFile scriptFile)
         {
             List<Breakpoint> breakpoints = null;
 
@@ -689,7 +767,7 @@ namespace Microsoft.PowerShell.EditorServices
                     psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
                     psCommand.AddParameter("Id", breakpoints.Select(b => b.Id).ToArray());
 
-                    await this.powerShellContext.ExecuteCommand<object>(psCommand);
+                    await this.powerShellContext.ExecuteCommandAsync<object>(psCommand);
 
                     // Clear the existing breakpoints list for the file
                     breakpoints.Clear();
@@ -697,41 +775,49 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private async Task ClearCommandBreakpoints()
+        private async Task ClearCommandBreakpointsAsync()
         {
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
             psCommand.AddParameter("Type", "Command");
             psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
 
-            await this.powerShellContext.ExecuteCommand<object>(psCommand);
+            await this.powerShellContext.ExecuteCommandAsync<object>(psCommand);
         }
 
-        private async Task FetchStackFramesAndVariables(string scriptNameOverride)
+        private async Task FetchStackFramesAndVariablesAsync(string scriptNameOverride)
         {
-            this.nextVariableId = VariableDetailsBase.FirstVariableId;
-            this.variables = new List<VariableDetailsBase>();
+            await this.debugInfoHandle.WaitAsync();
+            try
+            {
+                this.nextVariableId = VariableDetailsBase.FirstVariableId;
+                this.variables = new List<VariableDetailsBase>();
 
-            // Create a dummy variable for index 0, should never see this.
-            this.variables.Add(new VariableDetails("Dummy", null));
+                // Create a dummy variable for index 0, should never see this.
+                this.variables.Add(new VariableDetails("Dummy", null));
 
-            // Must retrieve global/script variales before stack frame variables
-            // as we check stack frame variables against globals.
-            await FetchGlobalAndScriptVariables();
-            await FetchStackFrames(scriptNameOverride);
+                // Must retrieve global/script variales before stack frame variables
+                // as we check stack frame variables against globals.
+                await FetchGlobalAndScriptVariablesAsync();
+                await FetchStackFramesAsync(scriptNameOverride);
+            }
+            finally
+            {
+                this.debugInfoHandle.Release();
+            }
         }
 
-        private async Task FetchGlobalAndScriptVariables()
+        private async Task FetchGlobalAndScriptVariablesAsync()
         {
             // Retrieve globals first as script variable retrieval needs to search globals.
             this.globalScopeVariables =
-                await FetchVariableContainer(VariableContainerDetails.GlobalScopeName, null);
+                await FetchVariableContainerAsync(VariableContainerDetails.GlobalScopeName, null);
 
             this.scriptScopeVariables =
-                await FetchVariableContainer(VariableContainerDetails.ScriptScopeName, null);
+                await FetchVariableContainerAsync(VariableContainerDetails.ScriptScopeName, null);
         }
 
-        private async Task<VariableContainerDetails> FetchVariableContainer(
+        private async Task<VariableContainerDetails> FetchVariableContainerAsync(
             string scope,
             VariableContainerDetails autoVariables)
         {
@@ -743,7 +829,7 @@ namespace Microsoft.PowerShell.EditorServices
                 new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
             this.variables.Add(scopeVariableContainer);
 
-            var results = await this.powerShellContext.ExecuteCommand<PSObject>(psCommand, sendErrorToHost: false);
+            var results = await this.powerShellContext.ExecuteCommandAsync<PSObject>(psCommand, sendErrorToHost: false);
             if (results != null)
             {
                 foreach (PSObject psVariableObject in results)
@@ -837,7 +923,7 @@ namespace Microsoft.PowerShell.EditorServices
             return true;
         }
 
-        private async Task FetchStackFrames(string scriptNameOverride)
+        private async Task FetchStackFramesAsync(string scriptNameOverride)
         {
             PSCommand psCommand = new PSCommand();
 
@@ -848,9 +934,10 @@ namespace Microsoft.PowerShell.EditorServices
             var callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
             psCommand.AddScript($"{callStackVarName} = Get-PSCallStack; {callStackVarName}");
 
-            var results = await this.powerShellContext.ExecuteCommand<PSObject>(psCommand);
+            var results = await this.powerShellContext.ExecuteCommandAsync<PSObject>(psCommand);
 
             var callStackFrames = results.ToArray();
+
             this.stackFrameDetails = new StackFrameDetails[callStackFrames.Length];
 
             for (int i = 0; i < callStackFrames.Length; i++)
@@ -863,7 +950,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.variables.Add(autoVariables);
 
                 VariableContainerDetails localVariables =
-                    await FetchVariableContainer(i.ToString(), autoVariables);
+                    await FetchVariableContainerAsync(i.ToString(), autoVariables);
 
                 // When debugging, this is the best way I can find to get what is likely the workspace root.
                 // This is controlled by the "cwd:" setting in the launch config.
@@ -1103,7 +1190,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public event EventHandler<DebuggerStoppedEventArgs> DebuggerStopped;
 
-        private async void OnDebuggerStop(object sender, DebuggerStopEventArgs e)
+        private async void OnDebuggerStopAsync(object sender, DebuggerStopEventArgs e)
         {
             bool noScriptName = false;
             string localScriptPath = e.InvocationInfo.ScriptName;
@@ -1116,7 +1203,7 @@ namespace Microsoft.PowerShell.EditorServices
                 command.AddScript($"list 1 {int.MaxValue}");
 
                 IEnumerable<PSObject> scriptListingLines =
-                    await this.powerShellContext.ExecuteCommand<PSObject>(
+                    await this.powerShellContext.ExecuteCommandAsync<PSObject>(
                         command, false, false);
 
                 if (scriptListingLines != null)
@@ -1151,7 +1238,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             // Get call stack and variables.
-            await this.FetchStackFramesAndVariables(
+            await this.FetchStackFramesAndVariablesAsync(
                 noScriptName ? localScriptPath : null);
 
             // If this is a remote connection and the debugger stopped at a line
@@ -1161,7 +1248,7 @@ namespace Microsoft.PowerShell.EditorServices
                 !noScriptName)
             {
                 localScriptPath =
-                    await this.remoteFileManager.FetchRemoteFile(
+                    await this.remoteFileManager.FetchRemoteFileAsync(
                         e.InvocationInfo.ScriptName,
                         this.powerShellContext.CurrentRunspace);
             }

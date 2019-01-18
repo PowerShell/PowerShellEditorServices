@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Protocol.Server;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -39,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             // Assert that there's only one event with the expected string
             Assert.Equal(1, messageSender.OutputEvents.Count);
             Assert.Equal(
-                "This is a test\r\nAnother line",
+                TestUtilities.NormalizeNewlines("This is a test\nAnother line"),
                 messageSender.OutputEvents[0].Output);
 
             // Wait for the next output to be flushed
@@ -48,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             // Assert that there's only one event with the expected string
             Assert.Equal(2, messageSender.OutputEvents.Count);
             Assert.Equal(
-                "Another test line\r\nfor great justice",
+                TestUtilities.NormalizeNewlines("Another test line\nfor great justice"),
                 messageSender.OutputEvents[1].Output);
         }
 
@@ -76,8 +77,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
 
             // Ensure that the two events start with the correct lines
             Assert.Equal(2, messageSender.OutputEvents.Count);
-            Assert.Equal("Output 1", messageSender.OutputEvents[0].Output.Split('\r')[0]);
-            Assert.Equal("Output 26", messageSender.OutputEvents[1].Output.Split('\r')[0]);
+            Assert.Equal("Output 1", messageSender.OutputEvents[0].Output.Split('\n')[0].Trim('\r'));
+            Assert.Equal("Output 26", messageSender.OutputEvents[1].Output.Split('\n')[0].Trim('\r'));
         }
 
         private static Task SendOutput(
@@ -85,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             string outputText,
             bool includeNewLine = false)
         {
-            return debouncer.Invoke(
+            return debouncer.InvokeAsync(
                 new OutputWrittenEventArgs(
                     outputText,
                     includeNewLine,
@@ -99,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
     {
         public List<OutputEventBody> OutputEvents { get; } = new List<OutputEventBody>();
 
-        public Task SendEvent<TParams, TRegistrationOptions>(
+        public Task SendEventAsync<TParams, TRegistrationOptions>(
             NotificationType<TParams, TRegistrationOptions> eventType,
             TParams eventParams)
         {
@@ -113,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             return Task.FromResult(true);
         }
 
-        public Task<TResult> SendRequest<TParams, TResult, TError, TRegistrationOptions>(
+        public Task<TResult> SendRequestAsync<TParams, TResult, TError, TRegistrationOptions>(
             RequestType<TParams, TResult, TError, TRegistrationOptions> requestType,
             TParams requestParams, bool waitForResponse)
         {
@@ -121,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Protocol.Server
             throw new NotImplementedException();
         }
 
-        public Task<TResult> SendRequest<TResult, TError, TRegistrationOptions>(RequestType0<TResult, TError, TRegistrationOptions> requestType0)
+        public Task<TResult> SendRequestAsync<TResult, TError, TRegistrationOptions>(RequestType0<TResult, TError, TRegistrationOptions> requestType0)
         {
             // Legitimately not implemented for these tests.
             throw new NotImplementedException();

@@ -1,4 +1,4 @@
-version: '1.10.3{build}'
+version: '2.0.0-{build}'
 image: Visual Studio 2017
 clone_depth: 10
 skip_tags: true
@@ -6,6 +6,7 @@ skip_tags: true
 branches:
   only:
   - master
+  - 2.0.0
 
 environment:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true  # Don't download unneeded packages
@@ -13,7 +14,12 @@ environment:
 
 install:
   - ps: |
-      Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force | Out-Null
+      Get-Module PowerShellGet,PackageManagement | Remove-Module -Force -Verbose
+      powershell -Command { Install-Module -Name PowershellGet -MinimumVersion 1.6 -force -confirm:$false -verbose }
+      powershell -Command { Install-Module -Name PackageManagement -MinimumVersion 1.1.7.0 -Force -Confirm:$false -Verbose }
+      Import-Module -Name PowerShellGet -MinimumVersion 1.6 -Force
+      Import-Module -Name PackageManagement -MinimumVersion 1.1.7.0 -Force
+      Install-PackageProvider -Name NuGet -Force | Out-Null
       Import-PackageProvider NuGet -Force | Out-Null
       Set-PSRepository -Name PSGallery -InstallationPolicy Trusted | Out-Null
       Install-Module InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser -Force | Out-Null

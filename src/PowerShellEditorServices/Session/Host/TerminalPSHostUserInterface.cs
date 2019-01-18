@@ -69,9 +69,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// A CancellationToken used to cancel the command line request.
         /// </param>
         /// <returns>A Task that can be awaited for the resulting input string.</returns>
-        protected override Task<string> ReadCommandLine(CancellationToken cancellationToken)
+        protected override Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
         {
-            return this.consoleReadLine.ReadCommandLine(cancellationToken);
+            return this.consoleReadLine.ReadCommandLineAsync(cancellationToken);
         }
 
         /// <summary>

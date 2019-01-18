@@ -3,15 +3,20 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
-if (!$PSVersionTable.PSEdition -or $PSVersionTable.PSEdition -eq "Desktop") {
-    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.dll"
-    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/Microsoft.PowerShell.EditorServices.Host.dll"
+# Need to load pipe handling shim assemblies in Windows PowerShell and PSCore 6.0 because they don't have WCP
+if ($PSEdition -eq 'Desktop') {
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/System.IO.Pipes.AccessControl.dll"
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/System.Security.AccessControl.dll"
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/System.Security.Principal.Windows.dll"
+} elseif ($PSVersionTable.PSVersion -ge '6.0' -and $PSVersionTable.PSVersion -lt '6.1' -and $IsWindows) {
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/6.0/System.IO.Pipes.AccessControl.dll"
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/6.0/System.Security.AccessControl.dll"
+    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/6.0/System.Security.Principal.Windows.dll"
 }
-else {
-    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.dll"
-    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.Protocol.dll"
-    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Core/Microsoft.PowerShell.EditorServices.Host.dll"
-}
+
+Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Microsoft.PowerShell.EditorServices.dll"
+Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Microsoft.PowerShell.EditorServices.Host.dll"
+Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Microsoft.PowerShell.EditorServices.Protocol.dll"
 
 function Start-EditorServicesHost {
     [CmdletBinding()]

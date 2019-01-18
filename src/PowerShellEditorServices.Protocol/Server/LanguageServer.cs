@@ -80,13 +80,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.editorSession = editorSession;
             this.serverCompletedTask = serverCompletedTask;
             // Attach to the underlying PowerShell context to listen for changes in the runspace or execution status
-            this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChanged;
-            this.editorSession.PowerShellContext.ExecutionStatusChanged += PowerShellContext_ExecutionStatusChanged;
+            this.editorSession.PowerShellContext.RunspaceChanged += PowerShellContext_RunspaceChangedAsync;
+            this.editorSession.PowerShellContext.ExecutionStatusChanged += PowerShellContext_ExecutionStatusChangedAsync;
 
             // Attach to ExtensionService events
-            this.editorSession.ExtensionService.CommandAdded += ExtensionService_ExtensionAdded;
-            this.editorSession.ExtensionService.CommandUpdated += ExtensionService_ExtensionUpdated;
-            this.editorSession.ExtensionService.CommandRemoved += ExtensionService_ExtensionRemoved;
+            this.editorSession.ExtensionService.CommandAdded += ExtensionService_ExtensionAddedAsync;
+            this.editorSession.ExtensionService.CommandUpdated += ExtensionService_ExtensionUpdatedAsync;
+            this.editorSession.ExtensionService.CommandRemoved += ExtensionService_ExtensionRemovedAsync;
 
             this.messageSender = messageSender;
             this.messageHandlers = messageHandlers;
@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     this.messageSender);
 
             this.editorSession.StartDebugService(this.editorOperations);
-            this.editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStopped;
+            this.editorSession.DebugService.DebuggerStopped += DebugService_DebuggerStoppedAsync;
         }
 
         /// <summary>
@@ -109,62 +109,61 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         {
             // Register all supported message types
 
-            this.messageHandlers.SetRequestHandler(ShutdownRequest.Type, this.HandleShutdownRequest);
-            this.messageHandlers.SetEventHandler(ExitNotification.Type, this.HandleExitNotification);
+            this.messageHandlers.SetRequestHandler(ShutdownRequest.Type, this.HandleShutdownRequestAsync);
+            this.messageHandlers.SetEventHandler(ExitNotification.Type, this.HandleExitNotificationAsync);
 
-            this.messageHandlers.SetRequestHandler(InitializeRequest.Type, this.HandleInitializeRequest);
-            this.messageHandlers.SetEventHandler(InitializedNotification.Type, this.HandleInitializedNotification);
+            this.messageHandlers.SetRequestHandler(InitializeRequest.Type, this.HandleInitializeRequestAsync);
+            this.messageHandlers.SetEventHandler(InitializedNotification.Type, this.HandleInitializedNotificationAsync);
 
-            this.messageHandlers.SetEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotification);
-            this.messageHandlers.SetEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotification);
-            this.messageHandlers.SetEventHandler(DidSaveTextDocumentNotification.Type, this.HandleDidSaveTextDocumentNotification);
-            this.messageHandlers.SetEventHandler(DidChangeTextDocumentNotification.Type, this.HandleDidChangeTextDocumentNotification);
-            this.messageHandlers.SetEventHandler(DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type, this.HandleDidChangeConfigurationNotification);
+            this.messageHandlers.SetEventHandler(DidOpenTextDocumentNotification.Type, this.HandleDidOpenTextDocumentNotificationAsync);
+            this.messageHandlers.SetEventHandler(DidCloseTextDocumentNotification.Type, this.HandleDidCloseTextDocumentNotificationAsync);
+            this.messageHandlers.SetEventHandler(DidSaveTextDocumentNotification.Type, this.HandleDidSaveTextDocumentNotificationAsync);
+            this.messageHandlers.SetEventHandler(DidChangeTextDocumentNotification.Type, this.HandleDidChangeTextDocumentNotificationAsync);
+            this.messageHandlers.SetEventHandler(DidChangeConfigurationNotification<LanguageServerSettingsWrapper>.Type, this.HandleDidChangeConfigurationNotificationAsync);
 
-            this.messageHandlers.SetRequestHandler(DefinitionRequest.Type, this.HandleDefinitionRequest);
-            this.messageHandlers.SetRequestHandler(ReferencesRequest.Type, this.HandleReferencesRequest);
-            this.messageHandlers.SetRequestHandler(CompletionRequest.Type, this.HandleCompletionRequest);
-            this.messageHandlers.SetRequestHandler(CompletionResolveRequest.Type, this.HandleCompletionResolveRequest);
-            this.messageHandlers.SetRequestHandler(SignatureHelpRequest.Type, this.HandleSignatureHelpRequest);
-            this.messageHandlers.SetRequestHandler(DocumentHighlightRequest.Type, this.HandleDocumentHighlightRequest);
-            this.messageHandlers.SetRequestHandler(HoverRequest.Type, this.HandleHoverRequest);
-            this.messageHandlers.SetRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequest);
-            this.messageHandlers.SetRequestHandler(CodeActionRequest.Type, this.HandleCodeActionRequest);
-            this.messageHandlers.SetRequestHandler(DocumentFormattingRequest.Type, this.HandleDocumentFormattingRequest);
+            this.messageHandlers.SetRequestHandler(DefinitionRequest.Type, this.HandleDefinitionRequestAsync);
+            this.messageHandlers.SetRequestHandler(ReferencesRequest.Type, this.HandleReferencesRequestAsync);
+            this.messageHandlers.SetRequestHandler(CompletionRequest.Type, this.HandleCompletionRequestAsync);
+            this.messageHandlers.SetRequestHandler(CompletionResolveRequest.Type, this.HandleCompletionResolveRequestAsync);
+            this.messageHandlers.SetRequestHandler(SignatureHelpRequest.Type, this.HandleSignatureHelpRequestAsync);
+            this.messageHandlers.SetRequestHandler(DocumentHighlightRequest.Type, this.HandleDocumentHighlightRequestAsync);
+            this.messageHandlers.SetRequestHandler(HoverRequest.Type, this.HandleHoverRequestAsync);
+            this.messageHandlers.SetRequestHandler(WorkspaceSymbolRequest.Type, this.HandleWorkspaceSymbolRequestAsync);
+            this.messageHandlers.SetRequestHandler(CodeActionRequest.Type, this.HandleCodeActionRequestAsync);
+            this.messageHandlers.SetRequestHandler(DocumentFormattingRequest.Type, this.HandleDocumentFormattingRequestAsync);
             this.messageHandlers.SetRequestHandler(
                 DocumentRangeFormattingRequest.Type,
-                this.HandleDocumentRangeFormattingRequest);
+                this.HandleDocumentRangeFormattingRequestAsync);
             this.messageHandlers.SetRequestHandler(FoldingRangeRequest.Type, this.HandleFoldingRangeRequestAsync);
 
-            this.messageHandlers.SetRequestHandler(ShowOnlineHelpRequest.Type, this.HandleShowOnlineHelpRequest);
-            this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequest);
+            this.messageHandlers.SetRequestHandler(ShowHelpRequest.Type, this.HandleShowHelpRequestAsync);
 
-            this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequest);
+            this.messageHandlers.SetRequestHandler(ExpandAliasRequest.Type, this.HandleExpandAliasRequestAsync);
             this.messageHandlers.SetRequestHandler(GetCommandRequest.Type, this.HandleGetCommandRequestAsync);
 
-            this.messageHandlers.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequest);
-            this.messageHandlers.SetRequestHandler(InstallModuleRequest.Type, this.HandleInstallModuleRequest);
+            this.messageHandlers.SetRequestHandler(FindModuleRequest.Type, this.HandleFindModuleRequestAsync);
+            this.messageHandlers.SetRequestHandler(InstallModuleRequest.Type, this.HandleInstallModuleRequestAsync);
 
-            this.messageHandlers.SetRequestHandler(InvokeExtensionCommandRequest.Type, this.HandleInvokeExtensionCommandRequest);
+            this.messageHandlers.SetRequestHandler(InvokeExtensionCommandRequest.Type, this.HandleInvokeExtensionCommandRequestAsync);
 
-            this.messageHandlers.SetRequestHandler(PowerShellVersionRequest.Type, this.HandlePowerShellVersionRequest);
+            this.messageHandlers.SetRequestHandler(PowerShellVersionRequest.Type, this.HandlePowerShellVersionRequestAsync);
 
-            this.messageHandlers.SetRequestHandler(NewProjectFromTemplateRequest.Type, this.HandleNewProjectFromTemplateRequest);
-            this.messageHandlers.SetRequestHandler(GetProjectTemplatesRequest.Type, this.HandleGetProjectTemplatesRequest);
+            this.messageHandlers.SetRequestHandler(NewProjectFromTemplateRequest.Type, this.HandleNewProjectFromTemplateRequestAsync);
+            this.messageHandlers.SetRequestHandler(GetProjectTemplatesRequest.Type, this.HandleGetProjectTemplatesRequestAsync);
 
-            this.messageHandlers.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequest);
+            this.messageHandlers.SetRequestHandler(DebugAdapterMessages.EvaluateRequest.Type, this.HandleEvaluateRequestAsync);
 
-            this.messageHandlers.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequest);
-            this.messageHandlers.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequest);
+            this.messageHandlers.SetRequestHandler(GetPSSARulesRequest.Type, this.HandleGetPSSARulesRequestAsync);
+            this.messageHandlers.SetRequestHandler(SetPSSARulesRequest.Type, this.HandleSetPSSARulesRequestAsync);
 
-            this.messageHandlers.SetRequestHandler(ScriptRegionRequest.Type, this.HandleGetFormatScriptRegionRequest);
+            this.messageHandlers.SetRequestHandler(ScriptRegionRequest.Type, this.HandleGetFormatScriptRegionRequestAsync);
 
-            this.messageHandlers.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequest);
-            this.messageHandlers.SetRequestHandler(CommentHelpRequest.Type, this.HandleCommentHelpRequest);
+            this.messageHandlers.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequestAsync);
+            this.messageHandlers.SetRequestHandler(CommentHelpRequest.Type, this.HandleCommentHelpRequestAsync);
 
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
-            this.editorSession.ExtensionService.Initialize(
+            this.editorSession.ExtensionService.InitializeAsync(
                 this.editorOperations,
                 this.editorSession.Components).Wait();
         }
@@ -181,15 +180,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         #region Built-in Message Handlers
 
-        private async Task HandleShutdownRequest(
+        private async Task HandleShutdownRequestAsync(
             RequestContext<object> requestContext)
         {
             // Allow the implementor to shut down gracefully
 
-            await requestContext.SendResult(new object());
+            await requestContext.SendResultAsync(new object());
         }
 
-        private async Task HandleExitNotification(
+        private async Task HandleExitNotificationAsync(
             object exitParams,
             EventContext eventContext)
         {
@@ -197,14 +196,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             await this.Stop();
         }
 
-        private Task HandleInitializedNotification(InitializedParams initializedParams,
+        private Task HandleInitializedNotificationAsync(InitializedParams initializedParams,
             EventContext eventContext)
         {
             // Can do dynamic registration of capabilities in this notification handler
             return Task.FromResult(true);
         }
 
-        protected async Task HandleInitializeRequest(
+        protected async Task HandleInitializeRequestAsync(
             InitializeParams initializeParams,
             RequestContext<InitializeResult> requestContext)
         {
@@ -214,12 +213,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // Set the working directory of the PowerShell session to the workspace path
             if (editorSession.Workspace.WorkspacePath != null)
             {
-                await editorSession.PowerShellContext.SetWorkingDirectory(
+                await editorSession.PowerShellContext.SetWorkingDirectoryAsync(
                     editorSession.Workspace.WorkspacePath,
                     isPathAlreadyEscaped: false);
             }
 
-            await requestContext.SendResult(
+            await requestContext.SendResultAsync(
                 new InitializeResult
                 {
                     Capabilities = new ServerCapabilities
@@ -250,7 +249,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 });
         }
 
-        protected async Task HandleShowHelpRequest(
+        protected async Task HandleShowHelpRequestAsync(
             string helpParams,
             RequestContext<object> requestContext)
         {
@@ -293,24 +292,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             // TODO: Rather than print the help in the console, we should send the string back
             //       to VSCode to display in a help pop-up (or similar)
-            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(checkHelpPSCommand, sendOutputToHost: true);
-            await requestContext.SendResult(null);
+            await editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(checkHelpPSCommand, sendOutputToHost: true);
+            await requestContext.SendResultAsync(null);
         }
 
-        protected async Task HandleShowOnlineHelpRequest(
-            string helpParams,
-            RequestContext<object> requestContext
-        )
-        {
-            PSCommand commandDeprecated = new PSCommand()
-                .AddCommand("Microsoft.PowerShell.Utility\\Write-Verbose")
-                .AddParameter("Message", "'powerShell/showOnlineHelp' has been deprecated. Use 'powerShell/showHelp' instead.");
-
-            await editorSession.PowerShellContext.ExecuteCommand<PSObject>(commandDeprecated, sendOutputToHost: true);
-            await this.HandleShowHelpRequest(helpParams, requestContext);
-        }
-
-        private async Task HandleSetPSSARulesRequest(
+        private async Task HandleSetPSSARulesRequestAsync(
             object param,
             RequestContext<object> requestContext)
         {
@@ -330,16 +316,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 editorSession.AnalysisService.ActiveRules = activeRules.ToArray();
             }
 
-            var sendresult = requestContext.SendResult(null);
+            var sendresult = requestContext.SendResultAsync(null);
             var scripFile = editorSession.Workspace.GetFile((string)dynParams.filepath);
-            await RunScriptDiagnostics(
+            await RunScriptDiagnosticsAsync(
                     new ScriptFile[] { scripFile },
                         editorSession,
-                        this.messageSender.SendEvent);
+                        this.messageSender.SendEventAsync);
             await sendresult;
         }
 
-        private async Task HandleGetFormatScriptRegionRequest(
+        private async Task HandleGetFormatScriptRegionRequestAsync(
             ScriptRegionRequestParams requestParams,
             RequestContext<ScriptRegionRequestResult> requestContext)
         {
@@ -375,13 +361,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     break;
             }
 
-            await requestContext.SendResult(new ScriptRegionRequestResult
+            await requestContext.SendResultAsync(new ScriptRegionRequestResult
             {
                 scriptRegion = scriptRegion
             });
         }
 
-        private async Task HandleGetPSSARulesRequest(
+        private async Task HandleGetPSSARulesRequestAsync(
             object param,
             RequestContext<object> requestContext)
         {
@@ -398,10 +384,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 }
             }
 
-            await requestContext.SendResult(rules);
+            await requestContext.SendResultAsync(rules);
         }
 
-        private async Task HandleInstallModuleRequest(
+        private async Task HandleInstallModuleRequestAsync(
             string moduleName,
             RequestContext<object> requestContext
         )
@@ -409,15 +395,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             var script = string.Format("Install-Module -Name {0} -Scope CurrentUser", moduleName);
 
             var executeTask =
-               editorSession.PowerShellContext.ExecuteScriptString(
+               editorSession.PowerShellContext.ExecuteScriptStringAsync(
                    script,
                    true,
                    true).ConfigureAwait(false);
 
-            await requestContext.SendResult(null);
+            await requestContext.SendResultAsync(null);
         }
 
-        private Task HandleInvokeExtensionCommandRequest(
+        private Task HandleInvokeExtensionCommandRequestAsync(
             InvokeExtensionCommandRequest commandDetails,
             RequestContext<string> requestContext)
         {
@@ -430,29 +416,29 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     commandDetails.Context);
 
             Task commandTask =
-                this.editorSession.ExtensionService.InvokeCommand(
+                this.editorSession.ExtensionService.InvokeCommandAsync(
                     commandDetails.Name,
                     editorContext);
 
             commandTask.ContinueWith(t =>
             {
-                return requestContext.SendResult(null);
+                return requestContext.SendResultAsync(null);
             });
 
             return Task.FromResult(true);
         }
 
-        private Task HandleNewProjectFromTemplateRequest(
+        private Task HandleNewProjectFromTemplateRequestAsync(
             NewProjectFromTemplateRequest newProjectArgs,
             RequestContext<NewProjectFromTemplateResponse> requestContext)
         {
             // Don't await the Task here so that we don't block the session
             this.editorSession.TemplateService
-                .CreateFromTemplate(newProjectArgs.TemplatePath, newProjectArgs.DestinationPath)
+                .CreateFromTemplateAsync(newProjectArgs.TemplatePath, newProjectArgs.DestinationPath)
                 .ContinueWith(
                     async task =>
                     {
-                        await requestContext.SendResult(
+                        await requestContext.SendResultAsync(
                             new NewProjectFromTemplateResponse
                             {
                                 CreationSuccessful = task.Result
@@ -462,19 +448,19 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             return Task.FromResult(true);
         }
 
-        private async Task HandleGetProjectTemplatesRequest(
+        private async Task HandleGetProjectTemplatesRequestAsync(
             GetProjectTemplatesRequest requestArgs,
             RequestContext<GetProjectTemplatesResponse> requestContext)
         {
-            bool plasterInstalled = await this.editorSession.TemplateService.ImportPlasterIfInstalled();
+            bool plasterInstalled = await this.editorSession.TemplateService.ImportPlasterIfInstalledAsync();
 
             if (plasterInstalled)
             {
                 var availableTemplates =
-                    await this.editorSession.TemplateService.GetAvailableTemplates(
+                    await this.editorSession.TemplateService.GetAvailableTemplatesAsync(
                         requestArgs.IncludeInstalledModules);
 
-                await requestContext.SendResult(
+                await requestContext.SendResultAsync(
                     new GetProjectTemplatesResponse
                     {
                         Templates = availableTemplates
@@ -482,7 +468,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
             else
             {
-                await requestContext.SendResult(
+                await requestContext.SendResultAsync(
                     new GetProjectTemplatesResponse
                     {
                         NeedsModuleInstall = true,
@@ -491,7 +477,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
         }
 
-        private async Task HandleExpandAliasRequest(
+        private async Task HandleExpandAliasRequestAsync(
             string content,
             RequestContext<string> requestContext)
         {
@@ -520,13 +506,13 @@ function __Expand-Alias {
 }";
             var psCommand = new PSCommand();
             psCommand.AddScript(script);
-            await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+            await this.editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(psCommand);
 
             psCommand = new PSCommand();
             psCommand.AddCommand("__Expand-Alias").AddArgument(content);
-            var result = await this.editorSession.PowerShellContext.ExecuteCommand<string>(psCommand);
+            var result = await this.editorSession.PowerShellContext.ExecuteCommandAsync<string>(psCommand);
 
-            await requestContext.SendResult(result.First().ToString());
+            await requestContext.SendResultAsync(result.First().ToString());
         }
 
         private async Task HandleGetCommandRequestAsync(
@@ -550,9 +536,10 @@ function __Expand-Alias {
                     .AddCommand("Microsoft.PowerShell.Utility\\Sort-Object")
                         .AddParameter("Property", "Name");
             }
-            IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
-            var commandList = new List<PSCommandMessage>();
 
+            IEnumerable<PSObject> result = await this.editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(psCommand);
+
+            var commandList = new List<PSCommandMessage>();
             if (result != null)
             {
                 foreach (dynamic command in result)
@@ -568,17 +555,17 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(commandList);
+            await requestContext.SendResultAsync(commandList);
         }
 
-        private async Task HandleFindModuleRequest(
+        private async Task HandleFindModuleRequestAsync(
             object param,
             RequestContext<object> requestContext)
         {
             var psCommand = new PSCommand();
             psCommand.AddScript("Find-Module | Select Name, Description");
 
-            var modules = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+            var modules = await editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(psCommand);
 
             var moduleList = new List<PSModuleMessage>();
 
@@ -590,10 +577,10 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(moduleList);
+            await requestContext.SendResultAsync(moduleList);
         }
 
-        protected Task HandleDidOpenTextDocumentNotification(
+        protected Task HandleDidOpenTextDocumentNotificationAsync(
             DidOpenTextDocumentParams openParams,
             EventContext eventContext)
         {
@@ -603,7 +590,7 @@ function __Expand-Alias {
                     openParams.TextDocument.Text);
 
             // TODO: Get all recently edited files in the workspace
-            this.RunScriptDiagnostics(
+            this.RunScriptDiagnosticsAsync(
                 new ScriptFile[] { openedFile },
                 editorSession,
                 eventContext);
@@ -613,7 +600,7 @@ function __Expand-Alias {
             return Task.FromResult(true);
         }
 
-        protected async Task HandleDidCloseTextDocumentNotification(
+        protected async Task HandleDidCloseTextDocumentNotificationAsync(
             DidCloseTextDocumentParams closeParams,
             EventContext eventContext)
         {
@@ -623,12 +610,12 @@ function __Expand-Alias {
             if (fileToClose != null)
             {
                 editorSession.Workspace.CloseFile(fileToClose);
-                await ClearMarkers(fileToClose, eventContext);
+                await ClearMarkersAsync(fileToClose, eventContext);
             }
 
             Logger.Write(LogLevel.Verbose, "Finished closing document.");
         }
-        protected async Task HandleDidSaveTextDocumentNotification(
+        protected async Task HandleDidSaveTextDocumentNotificationAsync(
             DidSaveTextDocumentParams saveParams,
             EventContext eventContext)
         {
@@ -640,13 +627,13 @@ function __Expand-Alias {
             {
                 if (this.editorSession.RemoteFileManager.IsUnderRemoteTempPath(savedFile.FilePath))
                 {
-                    await this.editorSession.RemoteFileManager.SaveRemoteFile(
+                    await this.editorSession.RemoteFileManager.SaveRemoteFileAsync(
                         savedFile.FilePath);
                 }
             }
         }
 
-        protected Task HandleDidChangeTextDocumentNotification(
+        protected Task HandleDidChangeTextDocumentNotificationAsync(
             DidChangeTextDocumentParams textChangeParams,
             EventContext eventContext)
         {
@@ -666,7 +653,7 @@ function __Expand-Alias {
             }
 
             // TODO: Get all recently edited files in the workspace
-            this.RunScriptDiagnostics(
+            this.RunScriptDiagnosticsAsync(
                 changedFiles.ToArray(),
                 editorSession,
                 eventContext);
@@ -674,7 +661,7 @@ function __Expand-Alias {
             return Task.FromResult(true);
         }
 
-        protected async Task HandleDidChangeConfigurationNotification(
+        protected async Task HandleDidChangeConfigurationNotificationAsync(
             DidChangeConfigurationParams<LanguageServerSettingsWrapper> configChangeParams,
             EventContext eventContext)
         {
@@ -693,7 +680,7 @@ function __Expand-Alias {
                 this.currentSettings.EnableProfileLoading &&
                 oldLoadProfiles != this.currentSettings.EnableProfileLoading)
             {
-                await this.editorSession.PowerShellContext.LoadHostProfiles();
+                await this.editorSession.PowerShellContext.LoadHostProfilesAsync();
                 this.profilesLoaded = true;
             }
 
@@ -727,18 +714,18 @@ function __Expand-Alias {
                 {
                     foreach (var scriptFile in editorSession.Workspace.GetOpenedFiles())
                     {
-                        await ClearMarkers(scriptFile, eventContext);
+                        await ClearMarkersAsync(scriptFile, eventContext);
                     }
                 }
 
-                await this.RunScriptDiagnostics(
+                await this.RunScriptDiagnosticsAsync(
                     this.editorSession.Workspace.GetOpenedFiles(),
                     this.editorSession,
                     eventContext);
             }
         }
 
-        protected async Task HandleDefinitionRequest(
+        protected async Task HandleDefinitionRequestAsync(
             TextDocumentPositionParams textDocumentPosition,
             RequestContext<Location[]> requestContext)
         {
@@ -758,7 +745,7 @@ function __Expand-Alias {
             if (foundSymbol != null)
             {
                 definition =
-                    await editorSession.LanguageService.GetDefinitionOfSymbol(
+                    await editorSession.LanguageService.GetDefinitionOfSymbolAsync(
                         scriptFile,
                         foundSymbol,
                         editorSession.Workspace);
@@ -774,10 +761,10 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(definitionLocations.ToArray());
+            await requestContext.SendResultAsync(definitionLocations.ToArray());
         }
 
-        protected async Task HandleReferencesRequest(
+        protected async Task HandleReferencesRequestAsync(
             ReferencesParams referencesParams,
             RequestContext<Location[]> requestContext)
         {
@@ -792,7 +779,7 @@ function __Expand-Alias {
                     referencesParams.Position.Character + 1);
 
             FindReferencesResult referencesResult =
-                await editorSession.LanguageService.FindReferencesOfSymbol(
+                await editorSession.LanguageService.FindReferencesOfSymbolAsync(
                     foundSymbol,
                     editorSession.Workspace.ExpandScriptReferences(scriptFile),
                     editorSession.Workspace);
@@ -813,10 +800,10 @@ function __Expand-Alias {
                 referenceLocations = locations.ToArray();
             }
 
-            await requestContext.SendResult(referenceLocations);
+            await requestContext.SendResultAsync(referenceLocations);
         }
 
-        protected async Task HandleCompletionRequest(
+        protected async Task HandleCompletionRequestAsync(
             TextDocumentPositionParams textDocumentPositionParams,
             RequestContext<CompletionItem[]> requestContext)
         {
@@ -828,7 +815,7 @@ function __Expand-Alias {
                     textDocumentPositionParams.TextDocument.Uri);
 
             CompletionResults completionResults =
-                await editorSession.LanguageService.GetCompletionsInFile(
+                await editorSession.LanguageService.GetCompletionsInFileAsync(
                     scriptFile,
                     cursorLine,
                     cursorColumn);
@@ -844,10 +831,10 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(completionItems);
+            await requestContext.SendResultAsync(completionItems);
         }
 
-        protected async Task HandleCompletionResolveRequest(
+        protected async Task HandleCompletionResolveRequestAsync(
             CompletionItem completionItem,
             RequestContext<CompletionItem> requestContext)
         {
@@ -855,24 +842,24 @@ function __Expand-Alias {
             {
                 // Get the documentation for the function
                 CommandInfo commandInfo =
-                    await CommandHelpers.GetCommandInfo(
+                    await CommandHelpers.GetCommandInfoAsync(
                         completionItem.Label,
                         this.editorSession.PowerShellContext);
 
                 if (commandInfo != null)
                 {
                     completionItem.Documentation =
-                        await CommandHelpers.GetCommandSynopsis(
+                        await CommandHelpers.GetCommandSynopsisAsync(
                             commandInfo,
                             this.editorSession.PowerShellContext);
                 }
             }
 
             // Send back the updated CompletionItem
-            await requestContext.SendResult(completionItem);
+            await requestContext.SendResultAsync(completionItem);
         }
 
-        protected async Task HandleSignatureHelpRequest(
+        protected async Task HandleSignatureHelpRequestAsync(
             TextDocumentPositionParams textDocumentPositionParams,
             RequestContext<SignatureHelp> requestContext)
         {
@@ -881,7 +868,7 @@ function __Expand-Alias {
                     textDocumentPositionParams.TextDocument.Uri);
 
             ParameterSetSignatures parameterSets =
-                await editorSession.LanguageService.FindParameterSetsInFile(
+                await editorSession.LanguageService.FindParameterSetsInFileAsync(
                     scriptFile,
                     textDocumentPositionParams.Position.Line + 1,
                     textDocumentPositionParams.Position.Character + 1);
@@ -910,7 +897,7 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(
+            await requestContext.SendResultAsync(
                 new SignatureHelp
                 {
                     Signatures = signatures,
@@ -919,7 +906,7 @@ function __Expand-Alias {
                 });
         }
 
-        protected async Task HandleDocumentHighlightRequest(
+        protected async Task HandleDocumentHighlightRequestAsync(
             TextDocumentPositionParams textDocumentPositionParams,
             RequestContext<DocumentHighlight[]> requestContext)
         {
@@ -949,10 +936,10 @@ function __Expand-Alias {
                 documentHighlights = highlights.ToArray();
             }
 
-            await requestContext.SendResult(documentHighlights);
+            await requestContext.SendResultAsync(documentHighlights);
         }
 
-        protected async Task HandleHoverRequest(
+        protected async Task HandleHoverRequestAsync(
             TextDocumentPositionParams textDocumentPositionParams,
             RequestContext<Hover> requestContext)
         {
@@ -963,7 +950,7 @@ function __Expand-Alias {
             SymbolDetails symbolDetails =
                 await editorSession
                     .LanguageService
-                    .FindSymbolDetailsAtLocation(
+                    .FindSymbolDetailsAtLocationAsync(
                         scriptFile,
                         textDocumentPositionParams.Position.Line + 1,
                         textDocumentPositionParams.Position.Character + 1);
@@ -993,7 +980,7 @@ function __Expand-Alias {
                 symbolRange = GetRangeFromScriptRegion(symbolDetails.SymbolReference.ScriptRegion);
             }
 
-            await requestContext.SendResult(
+            await requestContext.SendResultAsync(
                 new Hover
                 {
                     Contents = symbolInfo.ToArray(),
@@ -1001,7 +988,7 @@ function __Expand-Alias {
                 });
         }
 
-        protected async Task HandleDocumentSymbolRequest(
+        protected async Task HandleDocumentSymbolRequestAsync(
             DocumentSymbolParams documentSymbolParams,
             RequestContext<SymbolInformation[]> requestContext)
         {
@@ -1038,7 +1025,7 @@ function __Expand-Alias {
                 symbols = symbolAcc.ToArray();
             }
 
-            await requestContext.SendResult(symbols);
+            await requestContext.SendResultAsync(symbols);
         }
 
         public static SymbolKind GetSymbolKind(SymbolType symbolType)
@@ -1069,7 +1056,7 @@ function __Expand-Alias {
             return name;
         }
 
-        protected async Task HandleWorkspaceSymbolRequest(
+        protected async Task HandleWorkspaceSymbolRequestAsync(
             WorkspaceSymbolParams workspaceSymbolParams,
             RequestContext<SymbolInformation[]> requestContext)
         {
@@ -1110,19 +1097,19 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(symbols.ToArray());
+            await requestContext.SendResultAsync(symbols.ToArray());
         }
 
-        protected async Task HandlePowerShellVersionRequest(
+        protected async Task HandlePowerShellVersionRequestAsync(
             object noParams,
             RequestContext<PowerShellVersion> requestContext)
         {
-            await requestContext.SendResult(
+            await requestContext.SendResultAsync(
                 new PowerShellVersion(
                     this.editorSession.PowerShellContext.LocalPowerShellVersion));
         }
 
-        protected async Task HandleGetPSHostProcessesRequest(
+        protected async Task HandleGetPSHostProcessesRequestAsync(
             object noParams,
             RequestContext<GetPSHostProcessesResponse[]> requestContext)
         {
@@ -1138,7 +1125,7 @@ function __Expand-Alias {
                     .AddParameter("NE")
                     .AddParameter("Value", processId.ToString());
 
-                var processes = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand);
+                var processes = await editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(psCommand);
                 if (processes != null)
                 {
                     foreach (dynamic p in processes)
@@ -1155,10 +1142,10 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(psHostProcesses.ToArray());
+            await requestContext.SendResultAsync(psHostProcesses.ToArray());
         }
 
-        protected async Task HandleCommentHelpRequest(
+        protected async Task HandleCommentHelpRequestAsync(
            CommentHelpRequestParams requestParams,
            RequestContext<CommentHelpRequestResult> requestContext)
         {
@@ -1167,7 +1154,7 @@ function __Expand-Alias {
             ScriptFile scriptFile;
             if (!this.editorSession.Workspace.TryGetFile(requestParams.DocumentUri, out scriptFile))
             {
-                await requestContext.SendResult(result);
+                await requestContext.SendResultAsync(result);
                 return;
             }
 
@@ -1181,7 +1168,7 @@ function __Expand-Alias {
 
             if (functionDefinitionAst == null)
             {
-                await requestContext.SendResult(result);
+                await requestContext.SendResultAsync(result);
                 return;
             }
 
@@ -1214,7 +1201,7 @@ function __Expand-Alias {
 
             if (helpText == null)
             {
-                await requestContext.SendResult(result);
+                await requestContext.SendResultAsync(result);
                 return;
             }
 
@@ -1228,7 +1215,7 @@ function __Expand-Alias {
                 result.Content = result.Content.Skip(1).ToArray();
             }
 
-            await requestContext.SendResult(result);
+            await requestContext.SendResultAsync(result);
         }
 
         private bool IsQueryMatch(string query, string symbolName)
@@ -1237,7 +1224,7 @@ function __Expand-Alias {
         }
 
         // https://microsoft.github.io/language-server-protocol/specification#textDocument_codeAction
-        protected async Task HandleCodeActionRequest(
+        protected async Task HandleCodeActionRequestAsync(
             CodeActionParams codeActionParams,
             RequestContext<CodeActionCommand[]> requestContext)
         {
@@ -1296,19 +1283,20 @@ function __Expand-Alias {
                 }
             }
 
-            await requestContext.SendResult(codeActionCommands.ToArray());
+            await requestContext.SendResultAsync(
+                codeActionCommands.ToArray());
         }
 
-        protected async Task HandleDocumentFormattingRequest(
+        protected async Task HandleDocumentFormattingRequestAsync(
             DocumentFormattingParams formattingParams,
             RequestContext<TextEdit[]> requestContext)
         {
-            var result = await Format(
+            var result = await FormatAsync(
                 formattingParams.TextDocument.Uri,
                 formattingParams.options,
                 null);
 
-            await requestContext.SendResult(new TextEdit[1]
+            await requestContext.SendResultAsync(new TextEdit[1]
             {
                 new TextEdit
                 {
@@ -1318,16 +1306,16 @@ function __Expand-Alias {
             });
         }
 
-        protected async Task HandleDocumentRangeFormattingRequest(
+        protected async Task HandleDocumentRangeFormattingRequestAsync(
             DocumentRangeFormattingParams formattingParams,
             RequestContext<TextEdit[]> requestContext)
         {
-            var result = await Format(
+            var result = await FormatAsync(
                 formattingParams.TextDocument.Uri,
                 formattingParams.Options,
                 formattingParams.Range);
 
-            await requestContext.SendResult(new TextEdit[1]
+            await requestContext.SendResultAsync(new TextEdit[1]
             {
                 new TextEdit
                 {
@@ -1341,10 +1329,10 @@ function __Expand-Alias {
             FoldingRangeParams foldingParams,
             RequestContext<FoldingRange[]> requestContext)
         {
-            await requestContext.SendResult(Fold(foldingParams.TextDocument.Uri));
+            await requestContext.SendResultAsync(Fold(foldingParams.TextDocument.Uri));
         }
 
-        protected Task HandleEvaluateRequest(
+        protected Task HandleEvaluateRequestAsync(
             DebugAdapterMessages.EvaluateRequestArguments evaluateParams,
             RequestContext<DebugAdapterMessages.EvaluateResponseBody> requestContext)
         {
@@ -1353,7 +1341,7 @@ function __Expand-Alias {
             // is executing.  This important in cases where the pipeline thread
             // gets blocked by something in the script like a prompt to the user.
             var executeTask =
-                this.editorSession.PowerShellContext.ExecuteScriptString(
+                this.editorSession.PowerShellContext.ExecuteScriptStringAsync(
                     evaluateParams.Expression,
                     writeInputToHost: true,
                     writeOutputToHost: true,
@@ -1367,7 +1355,7 @@ function __Expand-Alias {
                     // Return an empty result since the result value is irrelevant
                     // for this request in the LanguageServer
                     return
-                        requestContext.SendResult(
+                        requestContext.SendResultAsync(
                             new DebugAdapterMessages.EvaluateResponseBody
                             {
                                 Result = "",
@@ -1414,7 +1402,7 @@ function __Expand-Alias {
             return result.ToArray();
         }
 
-        private async Task<Tuple<string, Range>> Format(
+        private async Task<Tuple<string, Range>> FormatAsync(
             string documentUri,
             FormattingOptions options,
             Range range)
@@ -1449,7 +1437,7 @@ function __Expand-Alias {
                 }
             };
 
-            formattedScript = await editorSession.AnalysisService.Format(
+            formattedScript = await editorSession.AnalysisService.FormatAsync(
                 scriptFile.Contents,
                 pssaSettings,
                 rangeList);
@@ -1457,9 +1445,9 @@ function __Expand-Alias {
             return Tuple.Create(formattedScript, editRange);
         }
 
-        private async void PowerShellContext_RunspaceChanged(object sender, Session.RunspaceChangedEventArgs e)
+        private async void PowerShellContext_RunspaceChangedAsync(object sender, Session.RunspaceChangedEventArgs e)
         {
-            await this.messageSender.SendEvent(
+            await this.messageSender.SendEventAsync(
                 RunspaceChangedEvent.Type,
                 new Protocol.LanguageServer.RunspaceDetails(e.NewRunspace));
         }
@@ -1469,16 +1457,16 @@ function __Expand-Alias {
         /// </summary>
         /// <param name="sender">the PowerShell context sending the execution event</param>
         /// <param name="e">details of the execution status change</param>
-        private async void PowerShellContext_ExecutionStatusChanged(object sender, ExecutionStatusChangedEventArgs e)
+        private async void PowerShellContext_ExecutionStatusChangedAsync(object sender, ExecutionStatusChangedEventArgs e)
         {
-            await this.messageSender.SendEvent(
+            await this.messageSender.SendEventAsync(
                 ExecutionStatusChangedEvent.Type,
                 e);
         }
 
-        private async void ExtensionService_ExtensionAdded(object sender, EditorCommand e)
+        private async void ExtensionService_ExtensionAddedAsync(object sender, EditorCommand e)
         {
-            await this.messageSender.SendEvent(
+            await this.messageSender.SendEventAsync(
                 ExtensionCommandAddedNotification.Type,
                 new ExtensionCommandAddedNotification
                 {
@@ -1487,9 +1475,9 @@ function __Expand-Alias {
                 });
         }
 
-        private async void ExtensionService_ExtensionUpdated(object sender, EditorCommand e)
+        private async void ExtensionService_ExtensionUpdatedAsync(object sender, EditorCommand e)
         {
-            await this.messageSender.SendEvent(
+            await this.messageSender.SendEventAsync(
                 ExtensionCommandUpdatedNotification.Type,
                 new ExtensionCommandUpdatedNotification
                 {
@@ -1497,9 +1485,9 @@ function __Expand-Alias {
                 });
         }
 
-        private async void ExtensionService_ExtensionRemoved(object sender, EditorCommand e)
+        private async void ExtensionService_ExtensionRemovedAsync(object sender, EditorCommand e)
         {
-            await this.messageSender.SendEvent(
+            await this.messageSender.SendEventAsync(
                 ExtensionCommandRemovedNotification.Type,
                 new ExtensionCommandRemovedNotification
                 {
@@ -1507,11 +1495,11 @@ function __Expand-Alias {
                 });
         }
 
-        private async void DebugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
+        private async void DebugService_DebuggerStoppedAsync(object sender, DebuggerStoppedEventArgs e)
         {
             if (!this.editorSession.DebugService.IsClientAttached)
             {
-                await this.messageSender.SendEvent(
+                await this.messageSender.SendEventAsync(
                     StartDebuggerEvent.Type,
                     new StartDebuggerEvent());
             }
@@ -1564,15 +1552,15 @@ function __Expand-Alias {
             };
         }
 
-        private Task RunScriptDiagnostics(
+        private Task RunScriptDiagnosticsAsync(
             ScriptFile[] filesToAnalyze,
             EditorSession editorSession,
             EventContext eventContext)
         {
-            return RunScriptDiagnostics(filesToAnalyze, editorSession, this.messageSender.SendEvent);
+            return RunScriptDiagnosticsAsync(filesToAnalyze, editorSession, this.messageSender.SendEventAsync);
         }
 
-        private Task RunScriptDiagnostics(
+        private Task RunScriptDiagnosticsAsync(
             ScriptFile[] filesToAnalyze,
             EditorSession editorSession,
             Func<NotificationType<PublishDiagnosticsNotification, object>, PublishDiagnosticsNotification, Task> eventSender)
@@ -1618,7 +1606,7 @@ function __Expand-Alias {
             s_existingRequestCancellation = new CancellationTokenSource();
             Task.Factory.StartNew(
                 () =>
-                    DelayThenInvokeDiagnostics(
+                    DelayThenInvokeDiagnosticsAsync(
                         750,
                         filesToAnalyze,
                         this.currentSettings.ScriptAnalysis?.Enable.Value ?? false,
@@ -1634,7 +1622,29 @@ function __Expand-Alias {
             return Task.FromResult(true);
         }
 
-        private static async Task DelayThenInvokeDiagnostics(
+        private static async Task DelayThenInvokeDiagnosticsAsync(
+            int delayMilliseconds,
+            ScriptFile[] filesToAnalyze,
+            bool isScriptAnalysisEnabled,
+            Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
+            EditorSession editorSession,
+            EventContext eventContext,
+            ILogger Logger,
+            CancellationToken cancellationToken)
+        {
+            await DelayThenInvokeDiagnosticsAsync(
+                delayMilliseconds,
+                filesToAnalyze,
+                isScriptAnalysisEnabled,
+                correctionIndex,
+                editorSession,
+                eventContext.SendEventAsync,
+                Logger,
+                cancellationToken);
+        }
+
+
+        private static async Task DelayThenInvokeDiagnosticsAsync(
             int delayMilliseconds,
             ScriptFile[] filesToAnalyze,
             bool isScriptAnalysisEnabled,
@@ -1653,6 +1663,15 @@ function __Expand-Alias {
             catch (TaskCanceledException)
             {
                 // If the task is cancelled, exit directly
+                foreach (var script in filesToAnalyze)
+                {
+                    await PublishScriptDiagnosticsAsync(
+                        script,
+                        script.SyntaxMarkers,
+                        correctionIndex,
+                        eventSender);
+                }
+
                 return;
             }
 
@@ -1681,7 +1700,7 @@ function __Expand-Alias {
                     semanticMarkers = new ScriptFileMarker[0];
                 }
 
-                await PublishScriptDiagnostics(
+                await PublishScriptDiagnosticsAsync(
                     scriptFile,
                     // Concat script analysis errors to any existing parse errors
                     scriptFile.SyntaxMarkers.Concat(semanticMarkers).ToArray(),
@@ -1690,30 +1709,30 @@ function __Expand-Alias {
             }
         }
 
-        private async Task ClearMarkers(ScriptFile scriptFile, EventContext eventContext)
+        private async Task ClearMarkersAsync(ScriptFile scriptFile, EventContext eventContext)
         {
             // send empty diagnostic markers to clear any markers associated with the given file
-            await PublishScriptDiagnostics(
+            await PublishScriptDiagnosticsAsync(
                     scriptFile,
                     new ScriptFileMarker[0],
                     this.codeActionsPerFile,
                     eventContext);
         }
 
-        private static async Task PublishScriptDiagnostics(
+        private static async Task PublishScriptDiagnosticsAsync(
             ScriptFile scriptFile,
             ScriptFileMarker[] markers,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EventContext eventContext)
         {
-            await PublishScriptDiagnostics(
+            await PublishScriptDiagnosticsAsync(
                 scriptFile,
                 markers,
                 correctionIndex,
-                eventContext.SendEvent);
+                eventContext.SendEventAsync);
         }
 
-        private static async Task PublishScriptDiagnostics(
+        private static async Task PublishScriptDiagnosticsAsync(
             ScriptFile scriptFile,
             ScriptFileMarker[] markers,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,

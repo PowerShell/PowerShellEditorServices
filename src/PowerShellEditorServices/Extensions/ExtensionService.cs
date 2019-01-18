@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="editorOperations">An IEditorOperations implementation.</param>
         /// <param name="componentRegistry">An IComponentRegistry instance which provides components in the session.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
-        public async Task Initialize(
+        public async Task InitializeAsync(
             IEditorOperations editorOperations,
             IComponentRegistry componentRegistry)
         {
@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
             // Register the editor object in the runspace
             PSCommand variableCommand = new PSCommand();
-            using (RunspaceHandle handle = await this.PowerShellContext.GetRunspaceHandle())
+            using (RunspaceHandle handle = await this.PowerShellContext.GetRunspaceHandleAsync())
             {
                 handle.Runspace.SessionStateProxy.PSVariable.Set(
                     "psEditor",
@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="commandName">The unique name of the command to be invoked.</param>
         /// <param name="editorContext">The context in which the command is being invoked.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
-        public async Task InvokeCommand(string commandName, EditorContext editorContext)
+        public async Task InvokeCommandAsync(string commandName, EditorContext editorContext)
         {
             EditorCommand editorCommand;
 
@@ -108,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
                 executeCommand.AddParameter("ScriptBlock", editorCommand.ScriptBlock);
                 executeCommand.AddParameter("ArgumentList", new object[] { editorContext });
 
-                await this.PowerShellContext.ExecuteCommand<object>(
+                await this.PowerShellContext.ExecuteCommandAsync<object>(
                     executeCommand,
                     !editorCommand.SuppressOutput,
                     true);

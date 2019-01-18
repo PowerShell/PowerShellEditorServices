@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Debugging;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,11 +42,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Load the test debug file
             this.debugScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/VariableTest.ps1"));
 
             this.variableScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/VariableTest.ps1"));
 
             this.debugService = new DebugService(this.powerShellContext, logger);
             this.debugService.DebuggerStopped += debugService_DebuggerStopped;
@@ -55,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Load the test debug file
             this.debugScriptFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\DebugTest.ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/DebugTest.ps1"));
         }
 
         async void powerShellContext_SessionStateChanged(object sender, SessionStateChangedEventArgs e)
@@ -72,9 +73,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // TODO: Needed?
         }
 
-        async void debugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
+        void debugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
         {
-            await this.debuggerStoppedQueue.EnqueueAsync(e);
+            // We need to ensure this is run on a different thread than the one it's
+            // called on because it can cause PowerShellContext.OnDebuggerStopped to
+            // never hit the while loop.
+            Task.Run(() => this.debuggerStoppedQueue.Enqueue(e));
         }
 
         public void Dispose()
@@ -105,9 +109,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // it should not escape already escaped chars.
             ScriptFile debugWithParamsFile =
                 this.workspace.GetFile(
-                    @"..\..\..\..\PowerShellEditorServices.Test.Shared\Debugging\Debug` W&ith Params `[Test].ps1");
+                    TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/Debug` W&ith Params `[Test].ps1"));
 
-            await this.debugService.SetLineBreakpoints(
+            await this.debugService.SetLineBreakpointsAsync(
                 debugWithParamsFile,
                 new[] { BreakpointDetails.Create("", 3) });
 
@@ -115,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // Execute the script and wait for the breakpoint to be hit
             Task executeTask =
-                this.powerShellContext.ExecuteScriptWithArgs(
+                this.powerShellContext.ExecuteScriptWithArgsAsync(
                     debugWithParamsFile.FilePath, arguments);
 
             await this.AssertDebuggerStopped(debugWithParamsFile.FilePath);
@@ -160,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         public async Task DebuggerSetsAndClearsFunctionBreakpoints()
         {
             CommandBreakpointDetails[] breakpoints =
-                await this.debugService.SetCommandBreakpoints(
+                await this.debugService.SetCommandBreakpointsAsync(
                     new[] {
                         CommandBreakpointDetails.Create("Write-Host"),
                         CommandBreakpointDetails.Create("Get-Date")
@@ -171,14 +175,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("Get-Date", breakpoints[1].Name);
 
             breakpoints =
-                await this.debugService.SetCommandBreakpoints(
+                await this.debugService.SetCommandBreakpointsAsync(
                     new[] { CommandBreakpointDetails.Create("Get-Host") });
 
             Assert.Equal(1, breakpoints.Length);
             Assert.Equal("Get-Host", breakpoints[0].Name);
 
             breakpoints =
-                await this.debugService.SetCommandBreakpoints(
+                await this.debugService.SetCommandBreakpointsAsync(
                     new CommandBreakpointDetails[] {});
 
             Assert.Equal(0, breakpoints.Length);
@@ -188,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         public async Task DebuggerStopsOnFunctionBreakpoints()
         {
             CommandBreakpointDetails[] breakpoints =
-                await this.debugService.SetCommandBreakpoints(
+                await this.debugService.SetCommandBreakpointsAsync(
                     new[] {
                         CommandBreakpointDetails.Create("Write-Host")
                     });
@@ -196,7 +200,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             Task executeTask =
-                this.powerShellContext.ExecuteScriptWithArgs(
+                this.powerShellContext.ExecuteScriptWithArgsAsync(
                     this.debugScriptFile.FilePath);
 
             // Wait for function breakpoint to hit
@@ -234,7 +238,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         public async Task DebuggerSetsAndClearsLineBreakpoints()
         {
             BreakpointDetails[] breakpoints =
-                await this.debugService.SetLineBreakpoints(
+                await this.debugService.SetLineBreakpointsAsync(
                     this.debugScriptFile,
                     new[] {
                         BreakpointDetails.Create("", 5),
@@ -248,7 +252,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal(10, breakpoints[1].LineNumber);
 
             breakpoints =
-                await this.debugService.SetLineBreakpoints(
+                await this.debugService.SetLineBreakpointsAsync(
                     this.debugScriptFile,
                     new[] { BreakpointDetails.Create("", 2) });
 
@@ -257,7 +261,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal(1, confirmedBreakpoints.Count());
             Assert.Equal(2, breakpoints[0].LineNumber);
 
-            await this.debugService.SetLineBreakpoints(
+            await this.debugService.SetLineBreakpointsAsync(
                 this.debugScriptFile,
                 new[] { BreakpointDetails.Create("", 0) });
 
@@ -272,7 +276,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         public async Task DebuggerStopsOnLineBreakpoints()
         {
             BreakpointDetails[] breakpoints =
-                await this.debugService.SetLineBreakpoints(
+                await this.debugService.SetLineBreakpointsAsync(
                     this.debugScriptFile,
                     new[] {
                         BreakpointDetails.Create("", 5),
@@ -282,7 +286,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             Task executeTask =
-                this.powerShellContext.ExecuteScriptWithArgs(
+                this.powerShellContext.ExecuteScriptWithArgsAsync(
                     this.debugScriptFile.FilePath);
 
             // Wait for a couple breakpoints
@@ -303,7 +307,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             const int breakpointValue2 = 20;
 
             BreakpointDetails[] breakpoints =
-                await this.debugService.SetLineBreakpoints(
+                await this.debugService.SetLineBreakpointsAsync(
                     this.debugScriptFile,
                     new[] {
                         BreakpointDetails.Create("", 7, null, $"$i -eq {breakpointValue1} -or $i -eq {breakpointValue2}"),
@@ -312,7 +316,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             Task executeTask =
-                this.powerShellContext.ExecuteScriptWithArgs(
+                this.powerShellContext.ExecuteScriptWithArgsAsync(
                     this.debugScriptFile.FilePath);
 
             // Wait for conditional breakpoint to hit
@@ -353,7 +357,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             const int hitCount = 5;
 
             BreakpointDetails[] breakpoints =
-                await this.debugService.SetLineBreakpoints(
+                await this.debugService.SetLineBreakpointsAsync(
                     this.debugScriptFile,
                     new[] {
                         BreakpointDetails.Create("", 6, null, null, $"{hitCount}"),
@@ -362,7 +366,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             Task executeTask =
-                this.powerShellContext.ExecuteScriptWithArgs(
+                this.powerShellContext.ExecuteScriptWithArgsAsync(
                     this.debugScriptFile.FilePath);
 
             // Wait for conditional breakpoint to hit
@@ -389,7 +393,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             const int hitCount = 5;
 
             BreakpointDetails[] breakpoints =
-                await this.debugService.SetLineBreakpoints(
+                await this.debugService.SetLineBreakpointsAsync(
                     this.debugScriptFile,
                     new[] {
                         BreakpointDetails.Create("", 6, null, $"$i % 2 -eq 0", $"{hitCount}"),
@@ -398,7 +402,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await this.AssertStateChange(PowerShellContextState.Ready);
 
             Task executeTask =
-                this.powerShellContext.ExecuteScriptWithArgs(
+                this.powerShellContext.ExecuteScriptWithArgsAsync(
                     this.debugScriptFile.FilePath);
 
             // Wait for conditional breakpoint to hit
@@ -424,7 +428,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         public async Task DebuggerProvidesMessageForInvalidConditionalBreakpoint()
         {
             BreakpointDetails[] breakpoints =
-                await this.debugService.SetLineBreakpoints(
+                await this.debugService.SetLineBreakpointsAsync(
                     this.debugScriptFile,
                     new[] {
                         BreakpointDetails.Create("", 5),
@@ -446,7 +450,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         public async Task DebuggerFindsParseableButInvalidSimpleBreakpointConditions()
         {
             BreakpointDetails[] breakpoints =
-                await this.debugService.SetLineBreakpoints(
+                await this.debugService.SetLineBreakpointsAsync(
                     this.debugScriptFile,
                     new[] {
                         BreakpointDetails.Create("", 5, column: null, condition: "$i == 100"),
@@ -478,7 +482,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 "Unexpected breakpoint found in script file");
 
             Task executeTask =
-                this.powerShellContext.ExecuteScriptString(
+                this.powerShellContext.ExecuteScriptStringAsync(
                     this.debugScriptFile.FilePath);
 
             // Break execution and wait for the debugger to stop
@@ -491,16 +495,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // Abort execution and wait for the debugger to exit
             this.debugService.Abort();
+
             await this.AssertStateChange(
                 PowerShellContextState.Ready,
-                PowerShellExecutionResult.Aborted);
+                PowerShellExecutionResult.Stopped);
         }
 
         [Fact]
         public async Task DebuggerRunsCommandsWhileStopped()
         {
             Task executeTask =
-                this.powerShellContext.ExecuteScriptString(
+                this.powerShellContext.ExecuteScriptStringAsync(
                     this.debugScriptFile.FilePath);
 
             // Break execution and wait for the debugger to stop
@@ -510,25 +515,26 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 PowerShellExecutionResult.Stopped);
 
             // Try running a command from outside the pipeline thread
-            await this.powerShellContext.ExecuteScriptString("Get-Command Get-Process");
+            await this.powerShellContext.ExecuteScriptStringAsync("Get-Command Get-Process");
 
             // Abort execution and wait for the debugger to exit
             this.debugService.Abort();
+
             await this.AssertStateChange(
                 PowerShellContextState.Ready,
-                PowerShellExecutionResult.Aborted);
+                PowerShellExecutionResult.Stopped);
         }
 
         [Fact]
         public async Task DebuggerVariableStringDisplaysCorrectly()
         {
-            await this.debugService.SetLineBreakpoints(
+            await this.debugService.SetLineBreakpointsAsync(
                 this.variableScriptFile,
                 new[] { BreakpointDetails.Create("", 18) });
 
             // Execute the script and wait for the breakpoint to be hit
             Task executeTask =
-                this.powerShellContext.ExecuteScriptString(
+                this.powerShellContext.ExecuteScriptStringAsync(
                     this.variableScriptFile.FilePath);
 
             await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
@@ -550,13 +556,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerGetsVariables()
         {
-            await this.debugService.SetLineBreakpoints(
+            await this.debugService.SetLineBreakpointsAsync(
                 this.variableScriptFile,
                 new[] { BreakpointDetails.Create("", 14) });
 
             // Execute the script and wait for the breakpoint to be hit
             Task executeTask =
-                this.powerShellContext.ExecuteScriptString(
+                this.powerShellContext.ExecuteScriptStringAsync(
                     this.variableScriptFile.FilePath);
 
             await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
@@ -600,13 +606,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerSetsVariablesNoConversion()
         {
-            await this.debugService.SetLineBreakpoints(
+            await this.debugService.SetLineBreakpointsAsync(
                 this.variableScriptFile,
                 new[] { BreakpointDetails.Create("", 14) });
 
             // Execute the script and wait for the breakpoint to be hit
             Task executeTask =
-                this.powerShellContext.ExecuteScriptString(
+                this.powerShellContext.ExecuteScriptStringAsync(
                     this.variableScriptFile.FilePath);
 
             await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
@@ -618,7 +624,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // Test set of a local string variable (not strongly typed)
             string newStrValue = "\"Goodbye\"";
-            string setStrValue = await debugService.SetVariable(stackFrames[0].LocalVariables.Id, "$strVar", newStrValue);
+            string setStrValue = await debugService.SetVariableAsync(stackFrames[0].LocalVariables.Id, "$strVar", newStrValue);
             Assert.Equal(newStrValue, setStrValue);
 
             VariableScope[] scopes = this.debugService.GetVariableScopes(0);
@@ -627,13 +633,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableScope scriptScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.ScriptScopeName);
             string newIntValue = "49";
             string newIntExpr = "7 * 7";
-            string setIntValue = await debugService.SetVariable(scriptScope.Id, "$scriptInt", newIntExpr);
+            string setIntValue = await debugService.SetVariableAsync(scriptScope.Id, "$scriptInt", newIntExpr);
             Assert.Equal(newIntValue, setIntValue);
 
             // Test set of global scope int variable (not strongly typed)
             VariableScope globalScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.GlobalScopeName);
             string newGlobalIntValue = "4242";
-            string setGlobalIntValue = await debugService.SetVariable(globalScope.Id, "$MaximumAliasCount", newGlobalIntValue);
+            string setGlobalIntValue = await debugService.SetVariableAsync(globalScope.Id, "$MaximumHistoryCount", newGlobalIntValue);
             Assert.Equal(newGlobalIntValue, setGlobalIntValue);
 
             // The above just tests that the debug service returns the correct new value string.
@@ -659,7 +665,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Test set of global scope int variable (not strongly typed)
             globalScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.GlobalScopeName);
             variables = debugService.GetVariables(globalScope.Id);
-            var intGlobalVar = variables.FirstOrDefault(v => v.Name == "$MaximumAliasCount");
+            var intGlobalVar = variables.FirstOrDefault(v => v.Name == "$MaximumHistoryCount");
             Assert.Equal(newGlobalIntValue, intGlobalVar.ValueString);
 
             // Abort execution of the script
@@ -669,13 +675,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerSetsVariablesWithConversion()
         {
-            await this.debugService.SetLineBreakpoints(
+            await this.debugService.SetLineBreakpointsAsync(
                 this.variableScriptFile,
                 new[] { BreakpointDetails.Create("", 14) });
 
             // Execute the script and wait for the breakpoint to be hit
             Task executeTask =
-                this.powerShellContext.ExecuteScriptString(
+                this.powerShellContext.ExecuteScriptStringAsync(
                     this.variableScriptFile.FilePath);
 
             await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
@@ -688,7 +694,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // Test set of a local string variable (not strongly typed but force conversion)
             string newStrValue = "\"False\"";
             string newStrExpr = "$false";
-            string setStrValue = await debugService.SetVariable(stackFrames[0].LocalVariables.Id, "$strVar2", newStrExpr);
+            string setStrValue = await debugService.SetVariableAsync(stackFrames[0].LocalVariables.Id, "$strVar2", newStrExpr);
             Assert.Equal(newStrValue, setStrValue);
 
             VariableScope[] scopes = this.debugService.GetVariableScopes(0);
@@ -697,14 +703,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableScope scriptScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.ScriptScopeName);
             string newBoolValue = "$true";
             string newBoolExpr = "1";
-            string setBoolValue = await debugService.SetVariable(scriptScope.Id, "$scriptBool", newBoolExpr);
+            string setBoolValue = await debugService.SetVariableAsync(scriptScope.Id, "$scriptBool", newBoolExpr);
             Assert.Equal(newBoolValue, setBoolValue);
 
             // Test set of global scope ActionPreference variable (strongly typed)
             VariableScope globalScope = scopes.FirstOrDefault(s => s.Name == VariableContainerDetails.GlobalScopeName);
             string newGlobalValue = "Continue";
             string newGlobalExpr = "'Continue'";
-            string setGlobalValue = await debugService.SetVariable(globalScope.Id, "$VerbosePreference", newGlobalExpr);
+            string setGlobalValue = await debugService.SetVariableAsync(globalScope.Id, "$VerbosePreference", newGlobalExpr);
             Assert.Equal(newGlobalValue, setGlobalValue);
 
             // The above just tests that the debug service returns the correct new value string.
@@ -740,13 +746,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerVariableEnumDisplaysCorrectly()
         {
-            await this.debugService.SetLineBreakpoints(
+            await this.debugService.SetLineBreakpointsAsync(
                 this.variableScriptFile,
                 new[] { BreakpointDetails.Create("", 18) });
 
             // Execute the script and wait for the breakpoint to be hit
             Task executeTask =
-                this.powerShellContext.ExecuteScriptString(
+                this.powerShellContext.ExecuteScriptStringAsync(
                     this.variableScriptFile.FilePath);
 
             await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
@@ -768,13 +774,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerVariableHashtableDisplaysCorrectly()
         {
-            await this.debugService.SetLineBreakpoints(
+            await this.debugService.SetLineBreakpointsAsync(
                 this.variableScriptFile,
                 new[] { BreakpointDetails.Create("", 18) });
 
             // Execute the script and wait for the breakpoint to be hit
             Task executeTask =
-                this.powerShellContext.ExecuteScriptString(
+                this.powerShellContext.ExecuteScriptStringAsync(
                     this.variableScriptFile.FilePath);
 
             await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
@@ -784,17 +790,26 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] variables =
                 debugService.GetVariables(stackFrames[0].LocalVariables.Id);
 
-            var var = variables.FirstOrDefault(v => v.Name == "$assocArrVar");
+            VariableDetailsBase var = variables.FirstOrDefault(v => v.Name == "$assocArrVar");
             Assert.NotNull(var);
             Assert.Equal("[Hashtable: 2]", var.ValueString);
             Assert.True(var.IsExpandable);
 
-            var childVars = debugService.GetVariables(var.Id);
+            VariableDetailsBase[] childVars = debugService.GetVariables(var.Id);
             Assert.Equal(9, childVars.Length);
             Assert.Equal("[0]", childVars[0].Name);
-            Assert.Equal("[secondChild, 42]", childVars[0].ValueString);
             Assert.Equal("[1]", childVars[1].Name);
-            Assert.Equal("[firstChild, \"Child\"]", childVars[1].ValueString);
+
+            var childVarStrs = new HashSet<string>(childVars.Select(v => v.ValueString));
+            var expectedVars = new [] {
+                "[firstChild, \"Child\"]",
+                "[secondChild, 42]"
+            };
+
+            foreach (string expectedVar in expectedVars)
+            {
+                Assert.Contains(expectedVar, childVarStrs);
+            }
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
@@ -803,13 +818,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerVariablePSObjectDisplaysCorrectly()
         {
-            await this.debugService.SetLineBreakpoints(
+            await this.debugService.SetLineBreakpointsAsync(
                 this.variableScriptFile,
                 new[] { BreakpointDetails.Create("", 18) });
 
             // Execute the script and wait for the breakpoint to be hit
             Task executeTask =
-                this.powerShellContext.ExecuteScriptString(
+                this.powerShellContext.ExecuteScriptStringAsync(
                     this.variableScriptFile.FilePath);
 
             await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
@@ -819,17 +834,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] variables =
                 debugService.GetVariables(stackFrames[0].LocalVariables.Id);
 
-            var var = variables.FirstOrDefault(v => v.Name == "$psObjVar");
-            Assert.NotNull(var);
-            Assert.Equal("@{Age=75; Name=John}", var.ValueString);
-            Assert.True(var.IsExpandable);
+            var psObjVar = variables.FirstOrDefault(v => v.Name == "$psObjVar");
+            Assert.NotNull(psObjVar);
+            Assert.True("@{Age=75; Name=John}".Equals(psObjVar.ValueString) || "@{Name=John; Age=75}".Equals(psObjVar.ValueString));
+            Assert.True(psObjVar.IsExpandable);
 
-            var childVars = debugService.GetVariables(var.Id);
-            Assert.Equal(2, childVars.Length);
-            Assert.Equal("Age", childVars[0].Name);
-            Assert.Equal("75", childVars[0].ValueString);
-            Assert.Equal("Name", childVars[1].Name);
-            Assert.Equal("\"John\"", childVars[1].ValueString);
+            IDictionary<string, string> childVars = debugService.GetVariables(psObjVar.Id).ToDictionary(v => v.Name, v => v.ValueString);
+            Assert.Equal(2, childVars.Count);
+            Assert.Contains("Age", childVars.Keys);
+            Assert.Contains("Name", childVars.Keys);
+            Assert.Equal(childVars["Age"], "75");
+            Assert.Equal(childVars["Name"], "\"John\"");
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
@@ -838,13 +853,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerVariablePSCustomObjectDisplaysCorrectly()
         {
-            await this.debugService.SetLineBreakpoints(
+            await this.debugService.SetLineBreakpointsAsync(
                 this.variableScriptFile,
                 new[] { BreakpointDetails.Create("", 18) });
 
             // Execute the script and wait for the breakpoint to be hit
             Task executeTask =
-                this.powerShellContext.ExecuteScriptString(
+                this.powerShellContext.ExecuteScriptStringAsync(
                     this.variableScriptFile.FilePath);
 
             await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
@@ -870,18 +885,24 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.powerShellContext.AbortExecution();
         }
 
+// TODO: Make this test cross platform by using the PowerShell process
+//       (the only process we can guarantee cross-platform)
+#if CoreCLR
+        [Fact(Skip = "Need to use the PowerShell process in a cross-platform way for this test to work")]
+#else
         // Verifies fix for issue #86, $proc = Get-Process foo displays just the
         // ETS property set and not all process properties.
         [Fact]
+#endif
         public async Task DebuggerVariableProcessObjDisplaysCorrectly()
         {
-            await this.debugService.SetLineBreakpoints(
+            await this.debugService.SetLineBreakpointsAsync(
                 this.variableScriptFile,
                 new[] { BreakpointDetails.Create("", 18) });
 
             // Execute the script and wait for the breakpoint to be hit
             Task executeTask =
-                this.powerShellContext.ExecuteScriptString(
+                this.powerShellContext.ExecuteScriptStringAsync(
                     this.variableScriptFile.FilePath);
 
             await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
@@ -901,14 +922,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
-        }
+    }
 
         public async Task AssertDebuggerPaused()
         {
             SynchronizationContext syncContext = SynchronizationContext.Current;
 
             DebuggerStoppedEventArgs eventArgs =
-                await this.debuggerStoppedQueue.DequeueAsync();
+                await this.debuggerStoppedQueue.DequeueAsync(new CancellationTokenSource(5000).Token);
 
             Assert.Equal(0, eventArgs.OriginalEvent.Breakpoints.Count);
         }
@@ -920,7 +941,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             SynchronizationContext syncContext = SynchronizationContext.Current;
 
             DebuggerStoppedEventArgs eventArgs =
-                await this.debuggerStoppedQueue.DequeueAsync();
+                await this.debuggerStoppedQueue.DequeueAsync(new CancellationTokenSource(5000).Token);
 
 
 
@@ -936,7 +957,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             PowerShellExecutionResult expectedResult = PowerShellExecutionResult.Completed)
         {
             SessionStateChangedEventArgs newState =
-                await this.sessionStateQueue.DequeueAsync();
+                await this.sessionStateQueue.DequeueAsync(new CancellationTokenSource(5000).Token);
 
             Assert.Equal(expectedState, newState.NewSessionState);
             Assert.Equal(expectedResult, newState.ExecutionResult);
@@ -945,7 +966,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         private async Task<IEnumerable<LineBreakpoint>> GetConfirmedBreakpoints(ScriptFile scriptFile)
         {
             return
-                await this.powerShellContext.ExecuteCommand<LineBreakpoint>(
+                await this.powerShellContext.ExecuteCommandAsync<LineBreakpoint>(
                     new PSCommand()
                         .AddCommand("Get-PSBreakpoint")
                         .AddParameter("Script", scriptFile.FilePath));
