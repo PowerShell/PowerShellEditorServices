@@ -32,7 +32,8 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
 
             return commandAsts.OfType<CommandAst>()
                               .Where(IsPesterCommand)
-                              .Select(ast => ConvertPesterAstToSymbolReference(scriptFile, ast));
+                              .Select(ast => ConvertPesterAstToSymbolReference(scriptFile, ast))
+                              .Where(pesterSymbol => pesterSymbol?.TestName != null);
         }
 
         /// <summary>
@@ -104,21 +105,20 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
                 // Check for an explicit "-Name" parameter
                 if (currentCommandElement is CommandParameterAst parameterAst)
                 {
-                    // Found -Name parameter, move to next element which is the argument for -TestName
                     i++;
-
-                    if (!alreadySawName && TryGetTestNameArgument(pesterCommandAst.CommandElements[i], out testName))
+                    if (parameterAst.ParameterName == "Name" && i < pesterCommandAst.CommandElements.Count)
                     {
+                        testName = alreadySawName ? null : (pesterCommandAst.CommandElements[i] as StringConstantExpressionAst)?.Value;
                         alreadySawName = true;
                     }
-
                     continue;
                 }
 
                 // Otherwise, if an argument is given with no parameter, we assume it's the name
                 // If we've already seen a name, we set the name to null
-                if (!alreadySawName && TryGetTestNameArgument(pesterCommandAst.CommandElements[i], out testName))
+                if (pesterCommandAst.CommandElements[i] is StringConstantExpressionAst testNameStrAst)
                 {
+                    testName = alreadySawName ? null : testNameStrAst.Value;
                     alreadySawName = true;
                 }
             }
@@ -130,19 +130,6 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
                 testName,
                 pesterCommandAst.Extent
             );
-        }
-
-        private static bool TryGetTestNameArgument(CommandElementAst commandElementAst, out string testName)
-        {
-            testName = null;
-
-            if (commandElementAst is StringConstantExpressionAst testNameStrAst)
-            {
-                testName = testNameStrAst.Value;
-                return true;
-            }
-
-            return (commandElementAst is ExpandableStringExpressionAst);
         }
     }
 
