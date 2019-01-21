@@ -20,7 +20,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 text,
                 Version.Parse("5.0"));
 
-            var result = Microsoft.PowerShell.EditorServices.TokenOperations.FoldableReferences(scriptFile.ScriptTokens).ToArray();
+            var result = Microsoft.PowerShell.EditorServices.FoldingOperations.FoldableRegions(
+                scriptFile.ScriptTokens,
+                scriptFile.ScriptAst).ToArray();
             // The foldable regions need to be deterministic for testing so sort the array.
             Array.Sort(result);
             return result;
@@ -256,6 +258,7 @@ $y = $(
         }
 
         // A simple PowerShell Classes test
+        [Trait("Category", "Folding")]
         [Fact]
         public void LaguageServiceFindsFoldablRegionsWithClasses() {
             string testString =
@@ -271,7 +274,7 @@ $y = $(
 }
 ";
             FoldingReference[] expectedFolds = {
-                CreateFoldingReference(0, 16, 9,  1, null),
+                CreateFoldingReference(0, 0, 9,  1, null),
                 CreateFoldingReference(1, 31, 4, 16, null),
                 CreateFoldingReference(6, 26, 8,  5, null)
             };
@@ -282,6 +285,7 @@ $y = $(
         }
 
         // This tests DSC style keywords and param blocks
+        [Trait("Category", "Folding")]
         [Fact]
         public void LaguageServiceFindsFoldablRegionsWithDSC() {
             string testString =
@@ -322,7 +326,7 @@ $y = $(
 ";
             FoldingReference[] expectedFolds = {
                 CreateFoldingReference(1,  0, 33, 1, null),
-                CreateFoldingReference(3,  4, 12, 5, null),
+                CreateFoldingReference(2,  4, 12, 5, null),
                 CreateFoldingReference(17, 4, 32, 5, null),
                 CreateFoldingReference(19, 8, 22, 9, null),
                 CreateFoldingReference(25, 8, 31, 9, null)

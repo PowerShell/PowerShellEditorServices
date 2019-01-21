@@ -33,61 +33,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Extracts all of the unique foldable regions in a script given the list tokens
         /// </summary>
-        internal static FoldingReferenceList FoldableReferences(
-            Token[] tokens)
+        internal static void FoldableReferences(
+            Token[] tokens,
+            ref FoldingReferenceList refList)
         {
-            var refList = new FoldingReferenceList();
-
-            Stack<Token> tokenCurlyStack = new Stack<Token>();
-            Stack<Token> tokenParenStack = new Stack<Token>();
-            foreach (Token token in tokens)
-            {
-                switch (token.Kind)
-                {
-                    // Find matching braces  { -> }
-                    // Find matching hashes @{ -> }
-                    case TokenKind.LCurly:
-                    case TokenKind.AtCurly:
-                        tokenCurlyStack.Push(token);
-                        break;
-
-                    case TokenKind.RCurly:
-                        if (tokenCurlyStack.Count > 0)
-                        {
-                            refList.SafeAdd(CreateFoldingReference(tokenCurlyStack.Pop(), token, RegionKindNone));
-                        }
-                        break;
-
-                    // Find matching parentheses     ( -> )
-                    // Find matching array literals @( -> )
-                    // Find matching subexpressions $( -> )
-                    case TokenKind.LParen:
-                    case TokenKind.AtParen:
-                    case TokenKind.DollarParen:
-                        tokenParenStack.Push(token);
-                        break;
-
-                    case TokenKind.RParen:
-                        if (tokenParenStack.Count > 0)
-                        {
-                            refList.SafeAdd(CreateFoldingReference(tokenParenStack.Pop(), token, RegionKindNone));
-                        }
-                        break;
-
-                    // Find contiguous here strings @' -> '@
-                    // Find unopinionated variable names ${ \n \n }
-                    // Find contiguous expandable here strings @" -> "@
-                    case TokenKind.HereStringLiteral:
-                    case TokenKind.Variable:
-                    case TokenKind.HereStringExpandable:
-                        if (token.Extent.StartLineNumber != token.Extent.EndLineNumber)
-                        {
-                            refList.SafeAdd(CreateFoldingReference(token, token, RegionKindNone));
-                        }
-                        break;
-                }
-            }
-
             // Find matching comment regions   #region -> #endregion
             // Given a list of tokens, find the tokens that are comments and
             // the comment text is either `#region` or `#endregion`, and then use a stack to determine
@@ -153,8 +102,6 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 refList.SafeAdd(CreateFoldingReference(blockStartToken, blockNextLine - 1, RegionKindComment));
             }
-
-            return refList;
         }
 
         /// <summary>
