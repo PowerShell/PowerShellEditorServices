@@ -348,9 +348,9 @@ function UploadTestLogs {
     }
 }
 
-function XunitTraitFilter {
+function DotNetTestFilter {
     # Reference https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
-    if ($TestFilter) { "-trait $TestFilter" } else { "" }
+    if ($TestFilter) { @("--filter",$TestFilter) } else { "" }
 }
 
 task Test TestServer,TestProtocol
@@ -359,11 +359,11 @@ task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop (DotNetTestFilter) }
     }
 
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Core (DotNetTestFilter) }
     }
 }
 
@@ -371,11 +371,11 @@ task TestProtocol {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop (DotNetTestFilter) }
     }
 
     Invoke-WithCreateDefaultHook {
-        exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Core (DotNetTestFilter) }
     }
 }
 
@@ -384,11 +384,11 @@ task TestHost {
 
     if (-not $script:IsUnix) {
         exec { & $script:dotnetExe build -f $script:TestRuntime.Desktop }
-        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop }
+        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop (DotNetTestFilter) }
     }
 
     exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
-    exec { & $script:dotnetExe test -f $script:TestRuntime.Core }
+    exec { & $script:dotnetExe test -f $script:TestRuntime.Core (DotNetTestFilter) }
 }
 
 task CITest ?Test, {
