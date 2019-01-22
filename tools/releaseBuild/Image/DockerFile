@@ -17,15 +17,10 @@ RUN Import-Module PackageManagement; `
     Install-Module InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser -Force; `
     Install-Module platyPS -RequiredVersion 0.9.0 -Scope CurrentUser -Force;
 
-# Install .NET Framework 4.5.2 Developer Packs
-RUN Import-Module ./containerFiles/dockerInstall.psm1; `
-    Install-ChocolateyPackage -PackageName netfx-4.5.2-devpack;
+RUN Install-Module -Name PowerShellGet -Force;
 
 # Copy build script over
 COPY build.ps1 containerFiles/build.ps1
-
-# Add env var for release build logic
-ENV VSTS_BUILD=1
 
 # Uncomment to debug locally
 # RUN Import-Module ./containerFiles/dockerInstall.psm1; `
@@ -33,4 +28,3 @@ ENV VSTS_BUILD=1
 #     git clone https://github.com/PowerShell/PowerShellEditorServices;
 
 ENTRYPOINT ["C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-command"]
-
