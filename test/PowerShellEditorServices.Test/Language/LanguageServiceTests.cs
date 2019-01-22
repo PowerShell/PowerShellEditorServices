@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetCompletionResults(
                     CompleteCommandInFile.SourceDetails);
 
-            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.NotEmpty(completionResults.Completions);
             Assert.Equal(
                 CompleteCommandInFile.ExpectedCompletion,
                 completionResults.Completions[0]);
@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetCompletionResults(
                     CompleteCommandFromModule.SourceDetails);
 
-            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.NotEmpty(completionResults.Completions);
             Assert.Equal(
                 CompleteCommandFromModule.ExpectedCompletion,
                 completionResults.Completions[0]);
@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetCompletionResults(
                     CompleteVariableInFile.SourceDetails);
 
-            Assert.Equal(1, completionResults.Completions.Length);
+            Assert.Single(completionResults.Completions);
             Assert.Equal(
                 CompleteVariableInFile.ExpectedCompletion,
                 completionResults.Completions[0]);
@@ -88,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetCompletionResults(
                     CompleteAttributeValue.SourceDetails);
 
-            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.NotEmpty(completionResults.Completions);
             Assert.Equal(
                 CompleteAttributeValue.ExpectedRange,
                 completionResults.ReplacedRange);
@@ -101,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.GetCompletionResults(
                     CompleteFilePath.SourceDetails);
 
-            Assert.NotEqual(0, completionResults.Completions.Length);
+            Assert.NotEmpty(completionResults.Completions);
             // TODO: Since this is a path completion, this test will need to be
             //       platform specific. Probably something like:
             //         - Windows: C:\Program
@@ -133,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             Assert.NotNull(paramSignatures);
             Assert.Equal("Write-Host", paramSignatures.CommandName);
-            Assert.Equal(1, paramSignatures.Signatures.Count());
+            Assert.Single(paramSignatures.Signatures);
         }
 
         [Fact]
@@ -299,9 +299,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 this.FindSymbolsInFile(
                     FindSymbolsInMultiSymbolFile.SourceDetails);
 
-            Assert.Equal(4, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Function).Count());
-            Assert.Equal(3, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Variable).Count());
-            Assert.Equal(1, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Workflow).Count());
+            Assert.Equal(4, symbolsResult.FoundOccurrences.Where(symbolReference => symbolReference.SymbolType == SymbolType.Function).Count());
+            Assert.Equal(3, symbolsResult.FoundOccurrences.Where(symbolReference => symbolReference.SymbolType == SymbolType.Variable).Count());
+            Assert.Single(symbolsResult.FoundOccurrences.Where(symbolReference => symbolReference.SymbolType == SymbolType.Workflow));
 
             SymbolReference firstFunctionSymbol = symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Function).First();
             Assert.Equal("AFunction", firstFunctionSymbol.SymbolName);
@@ -347,7 +347,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 this.FindSymbolsInFile(
                     FindSymbolsInNoSymbolsFile.SourceDetails);
 
-            Assert.Equal(0, symbolsResult.FoundOccurrences.Count());
+            Assert.Empty(symbolsResult.FoundOccurrences);
         }
 
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion)
