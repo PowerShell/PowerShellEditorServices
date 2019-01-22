@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <SignConfigXML>
  <job platform="" configuration="" dest="__OUTPATHROOT__\signed" jobname="PowerShell Editor Services" approvers="vigarg;gstolt">
+    <!-- PowerShellEditorServices Script -->
     <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\PowerShellEditorServices.psd1" signType="Authenticode"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\PowerShellEditorServices.psd1" />
     <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\PowerShellEditorServices.psm1" signType="Authenticode"
@@ -38,7 +39,15 @@
     <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Test-ScriptExtent.ps1" signType="Authenticode"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Test-ScriptExtent.ps1" />
 
-    <!-- PowerShellEditorServices.VSCode -->
+    <!-- PowerShellEditorServices Binary -->
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.dll" signType="Authenticode"
+      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.dll" />
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.Host.dll" signType="Authenticode"
+      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.Host.dll" />
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.Protocol.dll" signType="Authenticode"
+      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.Protocol.dll" />
+
+    <!-- PowerShellEditorServices.VSCode Script -->
     <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.psd1" signType="Authenticode"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.psd1" />
     <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.psm1" signType="Authenticode"
@@ -53,30 +62,10 @@
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Show-VSCodeHtmlContentView.ps1" />
     <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Write-VSCodeHtmlContentView.ps1" signType="Authenticode"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Write-VSCodeHtmlContentView.ps1" />
- </job>
- <job platform="" configuration="" dest="__OUTPATHROOT__\signed" jobname="PowerShell Editor Services Desktop" approvers="vigarg;gstolt">
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Core\Microsoft.PowerShell.EditorServices.dll" signType="Authenticode"
-      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Core\Microsoft.PowerShell.EditorServices.dll" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Core\Microsoft.PowerShell.EditorServices.Host.dll" signType="Authenticode"
-      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Core\Microsoft.PowerShell.EditorServices.Host.dll" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Core\Microsoft.PowerShell.EditorServices.Protocol.dll" signType="Authenticode"
-      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Core\Microsoft.PowerShell.EditorServices.Protocol.dll" />
 
-    <!-- PowerShellEditorServices.VSCode -->
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\bin\Core\Microsoft.PowerShell.EditorServices.VSCode.dll" signType="Authenticode"
-      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\bin\Core\Microsoft.PowerShell.EditorServices.VSCode.dll" />
- </job>
- <job platform="" configuration="" dest="__OUTPATHROOT__\signed" jobname="PowerShell Editor Services Core" approvers="vigarg;gstolt">
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Desktop\Microsoft.PowerShell.EditorServices.dll" signType="Authenticode"
-      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Desktop\Microsoft.PowerShell.EditorServices.dll" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Desktop\Microsoft.PowerShell.EditorServices.Host.dll" signType="Authenticode"
-      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Desktop\Microsoft.PowerShell.EditorServices.Host.dll" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Desktop\Microsoft.PowerShell.EditorServices.Protocol.dll" signType="Authenticode"
-      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Desktop\Microsoft.PowerShell.EditorServices.Protocol.dll" />
-
-    <!-- PowerShellEditorServices.VSCode -->
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\bin\Desktop\Microsoft.PowerShell.EditorServices.VSCode.dll" signType="Authenticode"
-      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\bin\Desktop\Microsoft.PowerShell.EditorServices.VSCode.dll" />
+    <!-- PowerShellEditorServices.VSCode Binary -->
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\bin\Microsoft.PowerShell.EditorServices.VSCode.dll" signType="Authenticode"
+      dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\bin\Microsoft.PowerShell.EditorServices.VSCode.dll" />
  </job>
 </SignConfigXML>
 
