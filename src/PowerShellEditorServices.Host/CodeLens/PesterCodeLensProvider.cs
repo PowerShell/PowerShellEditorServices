@@ -8,6 +8,7 @@ using Microsoft.PowerShell.EditorServices.Symbols;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,6 +27,12 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         private IDocumentSymbolProvider _symbolProvider;
 
         /// <summary>
+        /// Pester 4.6.0 introduced a new ScriptblockFilter parameter to be able to run a test based on a line,
+        /// therefore knowing this information is important.
+        /// </summary>
+        private bool _pesterV4_6_0_OrHigherAvailable;
+
+        /// <summary>
         /// Create a new Pester CodeLens provider for a given editor session.
         /// </summary>
         /// <param name="editorSession">The editor session context for which to provide Pester CodeLenses.</param>
@@ -33,6 +40,38 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         {
             _editorSession = editorSession;
             _symbolProvider = new PesterDocumentSymbolProvider();
+
+            DeterminePesterVersion();
+        }
+
+        /// <summary>
+        /// Used to determine the value of <see cref="_pesterV4_6_0_OrHigherAvailable"/> as a background task.
+        /// </summary>
+        private void DeterminePesterVersion()
+        {
+            Task.Run(() =>
+            {
+                using (var powerShell = System.Management.Automation.PowerShell.Create())
+                {
+                    powerShell.AddCommand("Get-Module")
+                              .AddParameter("ListAvailable")
+                              .AddParameter("Name", "Pester");
+                    var result = powerShell.Invoke();
+                    if (result != null && result.Count > 0)
+                    {
+                        foreach (var module in result)
+                        {
+                            if (module.BaseObject is PSModuleInfo psmoduleInfo)
+                            {
+                                if (psmoduleInfo.Version > new Version(4, 6))
+                                {
+                                    _pesterV4_6_0_OrHigherAvailable = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         /// <summary>
@@ -54,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     new ClientCommand(
                         "PowerShell.RunPesterTests",
                         "Run tests",
-                        new object[] { scriptFile.ClientFilePath, false /* No debug */, pesterSymbol.TestName })),
+                        new object[] { scriptFile.ClientFilePath, false /* No debug */, pesterSymbol.TestName, pesterSymbol.ScriptRegion.StartLineNumber, _pesterV4_6_0_OrHigherAvailable })),
 
                 new CodeLens(
                     this,
@@ -63,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     new ClientCommand(
                         "PowerShell.RunPesterTests",
                         "Debug tests",
-                        new object[] { scriptFile.ClientFilePath, true /* Run in debugger */, pesterSymbol.TestName })),
+                        new object[] { scriptFile.ClientFilePath, true /* Run in debugger */, pesterSymbol.TestName, pesterSymbol.ScriptRegion.StartLineNumber, _pesterV4_6_0_OrHigherAvailable })),
             };
 
             return codeLensResults;
