@@ -84,6 +84,9 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             PesterSymbolReference pesterSymbol,
             ScriptFile scriptFile)
         {
+            // A value of null is a signal to PSES that the available Pester version does not support
+            // running Describe blocks by name (the test name will used instead then)
+            int? describeBlockLineNumber = _pesterV4_6_0_OrHigherAvailable ? pesterSymbol.ScriptRegion.StartLineNumber : default(int?);
             var codeLensResults = new CodeLens[]
             {
                 new CodeLens(
@@ -93,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     new ClientCommand(
                         "PowerShell.RunPesterTests",
                         "Run tests",
-                        new object[] { scriptFile.ClientFilePath, false /* No debug */, pesterSymbol.TestName, pesterSymbol.ScriptRegion.StartLineNumber, _pesterV4_6_0_OrHigherAvailable })),
+                        new object[] { scriptFile.ClientFilePath, false /* No debug */, pesterSymbol.TestName, describeBlockLineNumber })),
 
                 new CodeLens(
                     this,
@@ -102,7 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     new ClientCommand(
                         "PowerShell.RunPesterTests",
                         "Debug tests",
-                        new object[] { scriptFile.ClientFilePath, true /* Run in debugger */, pesterSymbol.TestName, pesterSymbol.ScriptRegion.StartLineNumber, _pesterV4_6_0_OrHigherAvailable })),
+                        new object[] { scriptFile.ClientFilePath, true /* Run in debugger */, pesterSymbol.TestName, describeBlockLineNumber })),
             };
 
             return codeLensResults;
