@@ -1,7 +1,7 @@
 # PowerShell Editor Services Release History
 
 ## v2.0.0-preview.1
-### Tuesday, January 22, 2019
+### Wednesday, January 23, 2019
 
 - [PowerShellEditorServices #792](https://github.com/PowerShell/PowerShellEditorServices/pull/792) -
   Add Async suffix to async methods  (Thanks @dee-see!)
