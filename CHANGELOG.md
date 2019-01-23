@@ -4,31 +4,31 @@
 ### Wednesday, January 23, 2019
 
 - [PowerShellEditorServices #851](https://github.com/PowerShell/PowerShellEditorServices/pull/851) -
-  Fix #827 Pester TestName w/expandable str returns nothing  (Thanks @rkeithhill!)
+  Fix #827 Pester TestName w/expandable str returns nothing (Thanks @rkeithhill!)
 - [PowerShellEditorServices #850](https://github.com/PowerShell/PowerShellEditorServices/pull/850) -
-  Fix VSCODE 1683 - HelpCommentReqHdlr crash on GetFile  (Thanks @rkeithhill!)
+  Fix VSCODE 1683 - HelpCommentReqHdlr crash on GetFile (Thanks @rkeithhill!)
 - [PowerShellEditorServices #825](https://github.com/PowerShell/PowerShellEditorServices/pull/825) -
-  (GH-824)(GH-812) Improve code folding speed  (Thanks @glennsarti!)
+  (GH-824)(GH-812) Improve code folding speed (Thanks @glennsarti!)
 - [PowerShellEditorServices #829](https://github.com/PowerShell/PowerShellEditorServices/pull/829) -
-  Update various NuGet packages  (Thanks @bergmeister!)
+  Update various NuGet packages (Thanks @bergmeister!)
 - [PowerShellEditorServices #846](https://github.com/PowerShell/PowerShellEditorServices/pull/846) -
   Workaround "attach to process" hang
 - [PowerShellEditorServices #848](https://github.com/PowerShell/PowerShellEditorServices/pull/848) -
   switch an instance of GetFile to TryGetFile to fix #1689
 - [PowerShellEditorServices #828](https://github.com/PowerShell/PowerShellEditorServices/pull/828) -
-  Compile against net452 because net451 is not supported any more  (Thanks @bergmeister!)
+  Compile against net452 because net451 is not supported any more (Thanks @bergmeister!)
 - [PowerShellEditorServices #844](https://github.com/PowerShell/PowerShellEditorServices/pull/844) -
-  Fix an empty verbose message when importing an editor command  (Thanks @alexandair!)
+  Fix an empty verbose message when importing an editor command (Thanks @alexandair!)
 - [PowerShellEditorServices #843](https://github.com/PowerShell/PowerShellEditorServices/pull/843) -
-  Simplify the parameter descriptions and fix typos  (Thanks @alexandair!)
+  Simplify the parameter descriptions and fix typos (Thanks @alexandair!)
 - [PowerShellEditorServices #839](https://github.com/PowerShell/PowerShellEditorServices/pull/839) -
-  Fix FileNotFoundEx crash when Fold happens on untitled: scheme doc  (Thanks @rkeithhill!)
+  Fix FileNotFoundEx crash when Fold happens on untitled: scheme doc (Thanks @rkeithhill!)
 - [PowerShellEditorServices #838](https://github.com/PowerShell/PowerShellEditorServices/pull/838) -
-  Fix NullRefEx bug when accessing scriptFile.ReferencedFiles  (Thanks @rkeithhill!)
+  Fix NullRefEx bug when accessing scriptFile.ReferencedFiles (Thanks @rkeithhill!)
 - [PowerShellEditorServices #842](https://github.com/PowerShell/PowerShellEditorServices/pull/842) -
-  Fix typos  (Thanks @alexandair!)
+  Fix typos (Thanks @alexandair!)
 - [PowerShellEditorServices #837](https://github.com/PowerShell/PowerShellEditorServices/pull/837) -
-  (maint) Add traits for folding tests  (Thanks @glennsarti!)
+  (maint) Add traits for folding tests (Thanks @glennsarti!)
 
 ## v1.10.2
 ### Tuesday, December 18, 2018
