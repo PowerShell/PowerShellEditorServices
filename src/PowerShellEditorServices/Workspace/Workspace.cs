@@ -345,6 +345,12 @@ namespace Microsoft.PowerShell.EditorServices
 
                     continue;
                 }
+                catch (Exception e)
+                {
+                    this.logger.WriteHandledException(
+                        $"Could not enumerate files in the path '{folderPath}' due to an exception",
+                        e);
+                }
 
                 foundFiles.AddRange(psFiles);
             }
@@ -386,6 +392,13 @@ namespace Microsoft.PowerShell.EditorServices
 
                 return;
             }
+            catch (Exception e)
+            {
+                this.logger.WriteHandledException(
+                    $"Could not enumerate directories in the path '{folderPath}' due to an exception",
+                    e);
+            }
+
 
             foreach (string subDir in subDirs)
             {
