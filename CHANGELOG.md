@@ -11,17 +11,17 @@ The v2.0.0-preview.1 version of the extension is built on .NET Standard (enablin
 
 It also contains PSReadLine support in the integrated console for Windows behind a feature flag. PSReadLine provides a consistent and rich interactive experience, including syntax coloring and multi-line editing and history, in the PowerShell console, in Cloud Shell, and now in VSCode terminal. For more information on the benefits of PSReadLine, check out their [documentation](https://docs.microsoft.com/en-us/powershell/module/psreadline/about/about_psreadline?view=powershell-6).
 
-To enable PSReadLine support in the Preview version on Windows, please add the following to your user settings:
+To enable PSReadLine support in the Preview version on Windows, please add the following flag to your `Start-EditorServices.ps1` call:
 
 ```
-"powershell.developer.featureFlags": [ "PSReadLine" ]
+-FeatureFlags @('PSReadLine')
 ```
 
 HUGE thanks to @SeeminglyScience for all his amazing work getting PSReadLine working in PowerShell Editor Services!
 
 #### Breaking Changes
 
-Due to the above changes, this version of the PowerShell Editor Services only works with PowerShell versions 5.1 and higher.
+Due to the above changes, this version of the PowerShell Editor Services only works with Windows PowerShell 5.1 and PowerShell Core 6.
 
 - [PowerShellEditorServices #792](https://github.com/PowerShell/PowerShellEditorServices/pull/792) -
   Add Async suffix to async methods (Thanks @dee-see!)
