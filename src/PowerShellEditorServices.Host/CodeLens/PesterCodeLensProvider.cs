@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         {
             // A value of null is a signal to PSES that the available Pester version does not support
             // running Describe blocks by name (the test name will used instead then)
-            int? describeBlockLineNumber = _pesterV4_6_0_OrHigherAvailable ? pesterSymbol.ScriptRegion.StartLineNumber : default(int?);
+            int? describeBlockLineNumber = _pesterV4_6_0_OrHigherAvailable ? (int?)pesterSymbol.ScriptRegion.StartLineNumber : null;
             var codeLensResults = new CodeLens[]
             {
                 new CodeLens(
