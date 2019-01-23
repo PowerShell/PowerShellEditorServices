@@ -1,5 +1,19 @@
 # PowerShell Editor Services Release History
 
+## v2.0.0-preview.1
+### Tuesday, January 22, 2019
+
+- [PowerShellEditorServices #792](https://github.com/PowerShell/PowerShellEditorServices/pull/792) -
+  Add Async suffix to async methods  (Thanks @dee-see!)
+- [PowerShellEditorServices #775](https://github.com/PowerShell/PowerShellEditorServices/pull/775) -
+  Removed ShowOnlineHelp Message  (Thanks @corbob!)
+- [PowerShellEditorServices #769](https://github.com/PowerShell/PowerShellEditorServices/pull/769) -
+  Set Runspaces to use STA when running in Windows PowerShell
+- [PowerShellEditorServices #741](https://github.com/PowerShell/PowerShellEditorServices/pull/741) -
+  Migrate to netstandard2.0 and PSStandard
+- [PowerShellEditorServices #672](https://github.com/PowerShell/PowerShellEditorServices/pull/672) -
+  PSReadLine integration  (Thanks @SeeminglyScience!)
+
 ## v1.10.2
 ### Tuesday, December 18, 2018
 
