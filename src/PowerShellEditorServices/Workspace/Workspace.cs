@@ -350,6 +350,7 @@ namespace Microsoft.PowerShell.EditorServices
                     this.logger.WriteHandledException(
                         $"Could not enumerate files in the path '{folderPath}' due to an exception",
                         e);
+                    
                     continue;
                 }
 
@@ -398,6 +399,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.logger.WriteHandledException(
                     $"Could not enumerate directories in the path '{folderPath}' due to an exception",
                     e);
+                
                 return;
             }
 
