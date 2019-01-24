@@ -56,14 +56,14 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     powerShell.AddCommand("Get-Module")
                               .AddParameter("ListAvailable")
                               .AddParameter("Name", "Pester");
-                    var result = powerShell.Invoke();
+                    ICollection <PSObject> result = powerShell.Invoke();
                     if (result != null && result.Count > 0)
                     {
-                        foreach (var module in result)
+                        foreach (PSObject module in result)
                         {
-                            if (module.BaseObject is PSModuleInfo psmoduleInfo)
+                            if (module.BaseObject is PSModuleInfo psModuleInfo)
                             {
-                                if (psmoduleInfo.Version > new Version(4, 6))
+                                if (psModuleInfo.Version > new Version(4, 6))
                                 {
                                     _pesterV4_6_0_OrHigherAvailable = true;
                                 }
