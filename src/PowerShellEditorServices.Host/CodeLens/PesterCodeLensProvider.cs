@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Commands;
 using Microsoft.PowerShell.EditorServices.Symbols;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// Pester 4.6.0 introduced a new ScriptblockFilter parameter to be able to run a test based on a line,
         /// therefore knowing this information is important.
         /// </summary>
-        private Lazy<bool> _pesterV4_6_0_OrHigherAvailable = new Lazy<bool>(DeterminePesterVersion);
+        private Lazy<bool> _pesterV4_6_0_OrHigherAvailable;
 
         /// <summary>
         /// Create a new Pester CodeLens provider for a given editor session.
@@ -39,6 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         {
             _editorSession = editorSession;
             _symbolProvider = new PesterDocumentSymbolProvider();
+            _pesterV4_6_0_OrHigherAvailable = new Lazy<bool>(() => DeterminePesterVersion());
         }
 
         /// <summary>
@@ -81,24 +83,27 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <summary>
         /// Used to determine the value of <see cref="_pesterV4_6_0_OrHigherAvailable"/> as a background task.
         /// </summary>
-        private static bool DeterminePesterVersion()
+        private bool DeterminePesterVersion()
         {
-            using (var powerShell = System.Management.Automation.PowerShell.Create())
+            var powerShell = new PSCommand();
+            powerShell.AddCommand("Get-Module")
+                      .AddParameter("ListAvailable")
+                      .AddParameter("Name", "Pester");
+
+            IEnumerable<PSObject> result = Task.Run(() =>
             {
-                powerShell.AddCommand("Get-Module")
-                            .AddParameter("ListAvailable")
-                            .AddParameter("Name", "Pester");
-                ICollection<PSObject> result = powerShell.Invoke();
-                if (result != null && result.Count > 0)
+                return _editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(powerShell);
+            }).Result;
+
+            if (result != null && result.Any())
+            {
+                foreach (PSObject module in result)
                 {
-                    foreach (PSObject module in result)
+                    if (module.BaseObject is PSModuleInfo psModuleInfo)
                     {
-                        if (module.BaseObject is PSModuleInfo psModuleInfo)
+                        if (psModuleInfo.Version >= new Version(4, 6))
                         {
-                            if (psModuleInfo.Version > new Version(4, 6))
-                            {
-                                return true;
-                            }
+                            return true;
                         }
                     }
                 }
