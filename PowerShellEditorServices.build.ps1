@@ -465,6 +465,13 @@ task RestorePsesModules -After Build {
         $moduleInfos.Add($name, $body)
     }
 
+    if ($moduleInfos.Keys.Count -gt 0) {
+        # `#Requires` doesn't display the version needed in the error message and `using module` doesn't work with InvokeBuild in Windows PowerShell
+        # so we'll just use Import-Module to check that PowerShellGet 1.6.0 or higher is installed.
+        # This is needed in order to use the `-AllowPrerelease` parameter
+        Import-Module -Name PowerShellGet -MinimumVersion 1.6.0 -ErrorAction Stop
+    }
+
     # Save each module in the modules.json file
     foreach ($moduleName in $moduleInfos.Keys)
     {
