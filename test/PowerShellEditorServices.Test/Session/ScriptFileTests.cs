@@ -194,8 +194,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void ThrowsExceptionWithEditOutsideOfRange()
         {
-            Assert.Throws(
-                typeof(ArgumentOutOfRangeException),
+            Assert.Throws<ArgumentOutOfRangeException>(
                 () =>
                 {
                     this.AssertFileChange(
@@ -293,7 +292,7 @@ namespace PSLanguageService.Test
                 _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(5, 1, 5, 10));
 
-            Assert.Equal(1, lines.Length);
+            Assert.Single(lines);
             Assert.Equal("Line Five", lines[0]);
         }
 
@@ -314,7 +313,7 @@ namespace PSLanguageService.Test
                 _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(4, 3, 4, 8));
 
-            Assert.Equal(1, lines.Length);
+            Assert.Single(lines);
             Assert.Equal("ne Fo", lines[0]);
         }
 
@@ -325,7 +324,7 @@ namespace PSLanguageService.Test
                 _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(4, 3, 4, 3));
 
-            Assert.Equal(1, lines.Length);
+            Assert.Single(lines);
             Assert.Equal("", lines[0]);
         }
 
@@ -386,7 +385,7 @@ namespace PSLanguageService.Test
         public void CanGetLineForEmptyString()
         {
             var emptyFile = ScriptFileChangeTests.CreateScriptFile(string.Empty);
-            Assert.Equal(1, emptyFile.FileLines.Count);
+            Assert.Single(emptyFile.FileLines);
             Assert.Equal(string.Empty, emptyFile.FileLines[0]);
         }
 
@@ -394,7 +393,7 @@ namespace PSLanguageService.Test
         public void CanGetLineForSpace()
         {
             var spaceFile = ScriptFileChangeTests.CreateScriptFile(" ");
-            Assert.Equal(1, spaceFile.FileLines.Count);
+            Assert.Single(spaceFile.FileLines);
             Assert.Equal(" ", spaceFile.FileLines[0]);
         }
     }
@@ -445,8 +444,7 @@ First line
         public void ThrowsWhenPositionOutOfRange()
         {
             // Less than line range
-            Assert.Throws(
-                typeof(ArgumentOutOfRangeException),
+            Assert.Throws<ArgumentOutOfRangeException>(
                 () =>
                 {
                     scriptFile.CalculatePosition(
@@ -455,8 +453,7 @@ First line
                 });
 
             // Greater than line range
-            Assert.Throws(
-                typeof(ArgumentOutOfRangeException),
+            Assert.Throws<ArgumentOutOfRangeException>(
                 () =>
                 {
                     scriptFile.CalculatePosition(
@@ -465,8 +462,7 @@ First line
                 });
 
             // Less than column range
-            Assert.Throws(
-                typeof(ArgumentOutOfRangeException),
+            Assert.Throws<ArgumentOutOfRangeException>(
                 () =>
                 {
                     scriptFile.CalculatePosition(
@@ -475,8 +471,7 @@ First line
                 });
 
             // Greater than column range
-            Assert.Throws(
-                typeof(ArgumentOutOfRangeException),
+            Assert.Throws<ArgumentOutOfRangeException>(
                 () =>
                 {
                     scriptFile.CalculatePosition(

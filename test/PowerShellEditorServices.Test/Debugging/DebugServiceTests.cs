@@ -178,14 +178,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 await this.debugService.SetCommandBreakpointsAsync(
                     new[] { CommandBreakpointDetails.Create("Get-Host") });
 
-            Assert.Equal(1, breakpoints.Length);
+            Assert.Single(breakpoints);
             Assert.Equal("Get-Host", breakpoints[0].Name);
 
             breakpoints =
                 await this.debugService.SetCommandBreakpointsAsync(
                     new CommandBreakpointDetails[] {});
 
-            Assert.Equal(0, breakpoints.Length);
+            Assert.Empty(breakpoints);
         }
 
         [Fact]
@@ -258,7 +258,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             confirmedBreakpoints = await this.GetConfirmedBreakpoints(this.debugScriptFile);
 
-            Assert.Equal(1, confirmedBreakpoints.Count());
+            Assert.Single(confirmedBreakpoints);
             Assert.Equal(2, breakpoints[0].LineNumber);
 
             await this.debugService.SetLineBreakpointsAsync(
@@ -843,8 +843,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal(2, childVars.Count);
             Assert.Contains("Age", childVars.Keys);
             Assert.Contains("Name", childVars.Keys);
-            Assert.Equal(childVars["Age"], "75");
-            Assert.Equal(childVars["Name"], "\"John\"");
+            Assert.Equal("75", childVars["Age"]);
+            Assert.Equal("\"John\"", childVars["Name"]);
 
             // Abort execution of the script
             this.powerShellContext.AbortExecution();
@@ -931,7 +931,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             DebuggerStoppedEventArgs eventArgs =
                 await this.debuggerStoppedQueue.DequeueAsync(new CancellationTokenSource(5000).Token);
 
-            Assert.Equal(0, eventArgs.OriginalEvent.Breakpoints.Count);
+            Assert.Empty(eventArgs.OriginalEvent.Breakpoints);
         }
 
         public async Task AssertDebuggerStopped(
