@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
 
             // At this point, numbers 0 through 299 should be in the outputItems
             IEnumerable<int> expectedItems = Enumerable.Range(0, 300);
-            Assert.Equal(0, expectedItems.Except(outputItems).Count());
+            Assert.Empty(expectedItems.Except(outputItems));
         }
 
         [Fact]

@@ -82,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     PublishDiagnosticsNotification.Type);
 
             // Was there a syntax error?
-            Assert.NotEqual(0, diagnostics.Diagnostics.Length);
+            Assert.NotEmpty(diagnostics.Diagnostics);
             Assert.False(
                 string.IsNullOrEmpty(diagnostics.Diagnostics[0].Message));
         }
@@ -99,7 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     PublishDiagnosticsNotification.Type);
 
             // Was there a semantic error?
-            Assert.NotEqual(0, diagnostics.Diagnostics.Length);
+            Assert.NotEmpty(diagnostics.Diagnostics);
             Assert.Contains("unapproved", diagnostics.Diagnostics[0].Message);
         }
 
@@ -115,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     PublishDiagnosticsNotification.Type);
 
             // Was there a syntax error?
-            Assert.Equal(0, diagnostics.Diagnostics.Length);
+            Assert.Empty(diagnostics.Diagnostics);
         }
 
         [Fact]
@@ -140,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     });
 
             Assert.NotNull(completions);
-            Assert.NotEqual(completions.Length, 0);
+            Assert.NotEmpty(completions);
 
             // TODO: Add more asserts
         }
@@ -279,7 +279,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                 });
 
             Assert.NotNull(locations);
-            Assert.Equal(locations.Length, 3);
+            Assert.Equal(3, locations.Length);
 
             Assert.Equal(5, locations[0].Range.Start.Line);
             Assert.Equal(0, locations[0].Range.Start.Character);
@@ -311,7 +311,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     });
 
             Assert.NotNull(locations);
-            Assert.Equal(0, locations.Length);
+            Assert.Empty(locations);
         }
 
         [Fact]
@@ -400,7 +400,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     });
 
             Assert.NotNull(locations);
-            Assert.Equal(1, locations.Length);
+            Assert.Single(locations);
             Assert.Equal(0, locations[0].Range.Start.Line);
             Assert.Equal(9, locations[0].Range.Start.Character);
         }
@@ -427,7 +427,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     });
 
             Assert.NotNull(locations);
-            Assert.Equal(0, locations.Length);
+            Assert.Empty(locations);
         }
 
         [Fact]
@@ -452,7 +452,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     });
 
             Assert.NotNull(locations);
-            Assert.Equal(1, locations.Length);
+            Assert.Single(locations);
             Assert.Equal(5, locations[0].Range.Start.Line);
             Assert.Equal(0, locations[0].Range.Start.Character);
             Assert.Equal(5, locations[0].Range.End.Line);
@@ -481,7 +481,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     });
 
             Assert.NotNull(locations);
-            Assert.Equal(1, locations.Length);
+            Assert.Single(locations);
             Assert.EndsWith("VariableDefinition.ps1", locations[0].Uri);
             Assert.Equal(0, locations[0].Range.Start.Line);
             Assert.Equal(0, locations[0].Range.Start.Character);
@@ -511,7 +511,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     });
 
             Assert.NotNull(locations);
-            Assert.Equal(1, locations.Length);
+            Assert.Single(locations);
             Assert.EndsWith("FindReferences.ps1", locations[0].Uri);
             Assert.Equal(17, locations[0].Range.Start.Line);
             Assert.Equal(0, locations[0].Range.Start.Character);
@@ -567,7 +567,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
                     });
 
             Assert.NotNull(signatureHelp);
-            Assert.Equal(1, signatureHelp.Signatures.Length);
+            Assert.Single(signatureHelp.Signatures);
             Assert.Equal(2, signatureHelp.Signatures[0].Parameters.Length);
             Assert.Equal(
                 "Write-Output [-InputObject] <psobject[]> [-NoEnumerate] [<CommonParameters>]",
