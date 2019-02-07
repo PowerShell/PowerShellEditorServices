@@ -152,7 +152,7 @@ function Restore-NugetAsmForRuntime {
         try {
             $packageUri = "$script:NugetApiUriBase/$PackageName/$PackageVersion"
             Invoke-WebRequest -Uri $packageUri -OutFile $tmpNupkgPath
-            Expand-Archive -Path $tmpNupkgPath -DestinationPath $packageDirPath
+            Microsoft.PowerShell.Archive\Expand-Archive -Path $tmpNupkgPath -DestinationPath $packageDirPath
         } finally {
             Remove-Item -Force $tmpNupkgPath -ErrorAction SilentlyContinue
         }
