@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// Pester 4.6.0 introduced a new ScriptblockFilter parameter to be able to run a test based on a line,
         /// therefore knowing this information is important.
         /// </summary>
-        private Lazy<bool> _pesterV4_6_0_OrHigherAvailable;
+        private readonly Lazy<bool> _pesterV4_6_0_OrHigherAvailable;
 
         /// <summary>
         /// Create a new Pester CodeLens provider for a given editor session.
