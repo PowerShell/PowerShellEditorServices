@@ -85,27 +85,27 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         private bool DeterminePesterVersion()
         {
-            var powerShell = new PSCommand();
-            powerShell.AddCommand("Get-Module")
-                      .AddParameter("ListAvailable")
-                      .AddParameter("Name", "Pester");
+            var powerShell = new PSCommand()
+                .AddCommand("Get-Module")
+                .AddParameter("ListAvailable")
+                .AddParameter("Name", "Pester");
 
             IEnumerable<PSObject> result = Task.Run(() =>
             {
                 return _editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(powerShell);
             }).Result;
 
-            if (result != null && result.Any())
+            if (result == null)
             {
-                foreach (PSObject module in result)
+                return false;
+            }
+
+            var minimumPesterVersionSupportingInlineInvocation = new Version(4, 6);
+            foreach (PSObject module in result)
+            {
+                if (module.BaseObject is PSModuleInfo psModuleInfo && psModuleInfo.Version >= minimumPesterVersionSupportingInlineInvocation)
                 {
-                    if (module.BaseObject is PSModuleInfo psModuleInfo)
-                    {
-                        if (psModuleInfo.Version >= new Version(4, 6))
-                        {
-                            return true;
-                        }
-                    }
+                    return true;
                 }
             }
             return false;
