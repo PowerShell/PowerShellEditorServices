@@ -10,6 +10,7 @@ function Out-CurrentFile {
     [CmdletBinding()]
     param(
         [Switch]$AsNewFile,
+
         [Parameter(ValueFromPipeline, Mandatory = $true)]
         $InputObject
     )
