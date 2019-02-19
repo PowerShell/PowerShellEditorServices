@@ -148,11 +148,12 @@ namespace Microsoft.PowerShell.EditorServices
                 return true;
             }
             catch (Exception e) when (
-                e is IOException ||
-                e is SecurityException ||
+                e is NotSupportedException ||
                 e is FileNotFoundException ||
                 e is DirectoryNotFoundException ||
                 e is PathTooLongException ||
+                e is IOException ||
+                e is SecurityException ||
                 e is UnauthorizedAccessException)
             {
                 this.logger.WriteHandledException($"Failed to get file for {nameof(filePath)}: '{filePath}'", e);
