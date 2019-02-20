@@ -85,14 +85,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         private async Task<bool> DeterminePesterVersion()
         {
-            //if (System.Diagnostics.Debugger.IsAttached)
-            //{
-            //    System.Diagnostics.Debugger.Break();
-            //}
-            //else
-            //{
-            //    System.Diagnostics.Debugger.Launch();
-            //}
             var powerShell = new PSCommand()
                 .AddCommand("Get-Command")
                 .AddParameter("Name", "Invoke-Pester");
