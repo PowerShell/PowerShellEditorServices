@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -50,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="scriptFile">The PowerShell script file to get code lenses for.</param>
         /// <returns>An array of CodeLenses describing all functions in the given script file.</returns>
-        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
+        public async Task<CodeLens[]> ProvideCodeLenses(ScriptFile scriptFile)
         {
             var acc = new List<CodeLens>();
             foreach (SymbolReference sym in _symbolProvider.ProvideDocumentSymbols(scriptFile))

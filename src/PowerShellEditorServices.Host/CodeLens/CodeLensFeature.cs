@@ -8,8 +8,6 @@ using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -99,11 +97,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="scriptFile">The PowerShell script file to get CodeLenses for.</param>
         /// <returns>All generated CodeLenses for the given script file.</returns>
-        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
+        public async Task<CodeLens[]> ProvideCodeLenses(ScriptFile scriptFile)
         {
-            return InvokeProviders(provider => provider.ProvideCodeLenses(scriptFile))
-                .SelectMany(codeLens => codeLens)
-                .ToArray();
+            var providers = await Task.WhenAll(InvokeProviders(async provider => await provider.ProvideCodeLenses(scriptFile)));
+            return providers.SelectMany(codeLens => codeLens)
+                            .ToArray();
         }
 
         /// <summary>
@@ -118,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             ScriptFile scriptFile = _editorSession.Workspace.GetFile(
                 codeLensParams.TextDocument.Uri);
 
-            CodeLens[] codeLensResults = ProvideCodeLenses(scriptFile);
+            CodeLens[] codeLensResults = await ProvideCodeLenses(scriptFile);
 
             var codeLensResponse = new LanguageServer.CodeLens[codeLensResults.Length];
             for (int i = 0; i < codeLensResults.Length; i++)

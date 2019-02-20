@@ -3,9 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Utility;
-using System.Collections.Generic;
-using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// The document for which CodeLenses should be provided.
         /// </param>
         /// <returns>An array of CodeLenses.</returns>
-        CodeLens[] ProvideCodeLenses(ScriptFile scriptFile);
+        Task<CodeLens[]> ProvideCodeLenses(ScriptFile scriptFile);
 
         /// <summary>
         /// Resolves a CodeLens that was created without a Command.

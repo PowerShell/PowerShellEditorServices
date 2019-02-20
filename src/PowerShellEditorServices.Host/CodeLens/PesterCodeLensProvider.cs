@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// Pester 4.6.0 introduced a new ScriptblockFilter parameter to be able to run a test based on a line,
         /// therefore knowing this information is important.
         /// </summary>
-        private readonly Lazy<bool> _pesterV4_6_0_OrHigherAvailable;
+        private readonly Lazy<Task<bool>> _pesterV4_6_0_OrHigherAvailable;
 
         /// <summary>
         /// Create a new Pester CodeLens provider for a given editor session.
@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         {
             _editorSession = editorSession;
             _symbolProvider = new PesterDocumentSymbolProvider();
-            _pesterV4_6_0_OrHigherAvailable = new Lazy<bool>(() => DeterminePesterVersion());
+            _pesterV4_6_0_OrHigherAvailable = new Lazy<Task<bool>>(async () => await DeterminePesterVersion());
         }
 
         /// <summary>
@@ -49,13 +49,13 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <param name="pesterSymbol">The Pester symbol to get CodeLenses for.</param>
         /// <param name="scriptFile">The script file the Pester symbol comes from.</param>
         /// <returns>All CodeLenses for the given Pester symbol.</returns>
-        private CodeLens[] GetPesterLens(
+        private async Task<CodeLens[]> GetPesterLens(
             PesterSymbolReference pesterSymbol,
             ScriptFile scriptFile)
         {
             // A value of null is a signal to PSES that the available Pester version does not support
             // running Describe blocks by name (the test name will used instead then).
-            int? describeBlockLineNumber = _pesterV4_6_0_OrHigherAvailable.Value ? (int?)pesterSymbol.ScriptRegion.StartLineNumber : null;
+            int? describeBlockLineNumber = await _pesterV4_6_0_OrHigherAvailable.Value ? (int?)pesterSymbol.ScriptRegion.StartLineNumber : null;
             var codeLensResults = new CodeLens[]
             {
                 new CodeLens(
@@ -83,27 +83,31 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <summary>
         /// Used to determine the value of <see cref="_pesterV4_6_0_OrHigherAvailable"/> as a background task.
         /// </summary>
-        private bool DeterminePesterVersion()
+        private async Task<bool> DeterminePesterVersion()
         {
+            //if (System.Diagnostics.Debugger.IsAttached)
+            //{
+            //    System.Diagnostics.Debugger.Break();
+            //}
+            //else
+            //{
+            //    System.Diagnostics.Debugger.Launch();
+            //}
             var powerShell = new PSCommand()
-                .AddCommand("Get-Module")
-                .AddParameter("ListAvailable")
-                .AddParameter("Name", "Pester");
+                .AddCommand("Get-Command")
+                .AddParameter("Name", "Invoke-Pester");
 
-            IEnumerable<PSObject> result = Task.Run(() =>
-            {
-                return _editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(powerShell);
-            }).Result;
-
-            if (result == null)
+            IEnumerable<PSObject> result = await _editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(powerShell);
+            var pesterCommand = result.FirstOrDefault();
+            if (pesterCommand == null)
             {
                 return false;
             }
 
-            var minimumPesterVersionSupportingInlineInvocation = new Version(4, 6);
-            foreach (PSObject module in result)
+            if (pesterCommand.BaseObject is FunctionInfo invokePesterFunction)
             {
-                if (module.BaseObject is PSModuleInfo psModuleInfo && psModuleInfo.Version >= minimumPesterVersionSupportingInlineInvocation)
+                var pesterVersion = invokePesterFunction.Version;
+                if (pesterVersion.Major >= 4 && pesterVersion.Minor >= 6)
                 {
                     return true;
                 }
@@ -116,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="scriptFile">The script file to get Pester CodeLenses for.</param>
         /// <returns>All Pester CodeLenses for the given script file.</returns>
-        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
+        public async Task<CodeLens[]> ProvideCodeLenses(ScriptFile scriptFile)
         {
             var lenses = new List<CodeLens>();
             foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
@@ -128,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         continue;
                     }
 
-                    lenses.AddRange(GetPesterLens(pesterSymbol, scriptFile));
+                    lenses.AddRange(await GetPesterLens(pesterSymbol, scriptFile));
                 }
             }
 
