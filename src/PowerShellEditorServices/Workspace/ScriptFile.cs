@@ -3,13 +3,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Runtime.InteropServices;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -27,6 +28,7 @@ namespace Microsoft.PowerShell.EditorServices
         };
 
         private Version powerShellVersion;
+        private string _clientPath;
 
         #endregion
 
@@ -50,7 +52,20 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Gets the path which the editor client uses to identify this file.
         /// </summary>
-        public string ClientFilePath { get; private set; }
+        public string ClientFilePath
+        {
+            get { return _clientPath; }
+
+            private set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value));
+                }
+
+                _clientPath = GetPathAsClientPath(value);
+            }
+        }
 
         /// <summary>
         /// Gets or sets a boolean that determines whether
@@ -563,6 +578,43 @@ namespace Microsoft.PowerShell.EditorServices
         #endregion
 
         #region Private Methods
+
+        private static string GetPathAsClientPath(string path)
+        {
+            const string fileUriPrefix = "file:///";
+
+            if (path.StartsWith("untitled:", StringComparison.Ordinal))
+            {
+                return path;
+            }
+
+            if (path.StartsWith("file:///", StringComparison.Ordinal))
+            {
+                return path;
+            }
+
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return new Uri(path).AbsoluteUri;
+            }
+
+            // VSCode file URIs on Windows need the drive letter lowercase, and the colon
+            // URI encoded. System.Uri won't do that, so we manually create the URI.
+            var newUri = System.Web.HttpUtility.UrlPathEncode(path);
+            int colonIndex = path.IndexOf(":");
+            for (var i = colonIndex - 1; i >= 0; i--)
+            {
+                newUri.Remove(i, 1);
+                newUri.Insert(i, char.ToLowerInvariant(path[i]).ToString());
+            }
+
+            return newUri
+                .Remove(colonIndex, 1)
+                .Insert(colonIndex, "%3A")
+                .Replace("\\", "/")
+                .Insert(0, fileUriPrefix)
+                .ToString();
+        }
 
         private void SetFileContents(string fileContents)
         {
