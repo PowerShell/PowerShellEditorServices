@@ -3,13 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Commands;
-using Microsoft.PowerShell.EditorServices.Symbols;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Commands;
+using Microsoft.PowerShell.EditorServices.Symbols;
 
 namespace Microsoft.PowerShell.EditorServices.CodeLenses
 {
@@ -53,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         "PowerShell.RunPesterTests",
                         "Run tests",
                         new object[] {
-                            scriptFile.ClientFilePath,
+                            scriptFile.DocumentUri,
                             false /* No debug */,
                             pesterSymbol.TestName,
                             pesterSymbol.ScriptRegion?.StartLineNumber })),
@@ -66,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         "PowerShell.RunPesterTests",
                         "Debug tests",
                         new object[] {
-                            scriptFile.ClientFilePath,
+                            scriptFile.DocumentUri,
                             true /* Run in the debugger */,
                             pesterSymbol.TestName,
                             pesterSymbol.ScriptRegion?.StartLineNumber })),

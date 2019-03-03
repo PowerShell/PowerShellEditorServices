@@ -28,7 +28,6 @@ namespace Microsoft.PowerShell.EditorServices
         };
 
         private Version powerShellVersion;
-        private string _clientPath;
 
         #endregion
 
@@ -52,18 +51,18 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Gets the path which the editor client uses to identify this file.
         /// </summary>
-        public string ClientFilePath
+        public string ClientFilePath { get; private set; }
+
+        /// <summary>
+        /// Gets the file path in LSP DocumentUri form.  The ClientPath property must not be null.
+        /// </summary>
+        public string DocumentUri
         {
-            get { return _clientPath; }
-
-            private set
+            get
             {
-                if (value == null)
-                {
-                    throw new ArgumentNullException(nameof(value));
-                }
-
-                _clientPath = GetPathAsClientPath(value);
+                return (this.ClientFilePath == null )
+                    ? string.Empty
+                    : Workspace.ConvertPathToDocumentUri(this.ClientFilePath);
             }
         }
 

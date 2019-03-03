@@ -351,7 +351,7 @@ namespace Microsoft.PowerShell.EditorServices
                     this.logger.WriteHandledException(
                         $"Could not enumerate files in the path '{folderPath}' due to an exception",
                         e);
-                    
+
                     continue;
                 }
 
@@ -400,7 +400,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.logger.WriteHandledException(
                     $"Could not enumerate directories in the path '{folderPath}' due to an exception",
                     e);
-                
+
                 return;
             }
 
@@ -623,6 +623,59 @@ namespace Microsoft.PowerShell.EditorServices
             sb.Append(fileUri.Substring(12)); // The rest of the URI after the colon
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Converts a file system path into a DocumentUri required by Language Server Protocol.
+        /// </summary>
+        /// <remarks>
+        /// When sending a document path to a LSP client, the path must be provided as a
+        /// DocumentUri in order to features like the Problems window or peek definition
+        /// to be able to open the specified file.
+        /// </remarks>
+        /// <param name="path">
+        /// A file system path. Note: if the path is already a DocumentUri, it will be returned unmodified.
+        /// </param>
+        /// <returns>The file system path encoded as a DocumentUri.</returns>
+        internal static string ConvertPathToDocumentUri(string path)
+        {
+            const string fileUriPrefix = "file:///";
+
+            if (path.StartsWith("untitled:", StringComparison.Ordinal))
+            {
+                return path;
+            }
+
+            if (path.StartsWith(fileUriPrefix, StringComparison.Ordinal))
+            {
+                return path;
+            }
+
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return new Uri(path).AbsoluteUri;
+            }
+
+            // VSCode file URIs on Windows need the drive letter lowercase, and the colon
+            // URI encoded. System.Uri won't do that, so we manually create the URI.
+            var newUri = System.Web.HttpUtility.UrlPathEncode(path);
+            int colonIndex = path.IndexOf(':');
+            for (var i = colonIndex - 1; i >= 0; i--)
+            {
+                newUri.Remove(i, 1);
+                newUri.Insert(i, char.ToLowerInvariant(path[i]).ToString());
+            }
+
+            // On a Linux filesystem, you can have multiple colons in a filename e.g. foo:bar:baz.txt
+            if (colonIndex >= 0)
+            {
+                newUri = newUri.Replace(":", "%3A");
+            }
+
+            return newUri
+                .Replace('\\', '/')
+                .Insert(0, fileUriPrefix)
+                .ToString();
         }
 
         #endregion
