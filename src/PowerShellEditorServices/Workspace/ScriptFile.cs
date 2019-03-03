@@ -578,43 +578,6 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Private Methods
 
-        private static string GetPathAsClientPath(string path)
-        {
-            const string fileUriPrefix = "file:///";
-
-            if (path.StartsWith("untitled:", StringComparison.Ordinal))
-            {
-                return path;
-            }
-
-            if (path.StartsWith("file:///", StringComparison.Ordinal))
-            {
-                return path;
-            }
-
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return new Uri(path).AbsoluteUri;
-            }
-
-            // VSCode file URIs on Windows need the drive letter lowercase, and the colon
-            // URI encoded. System.Uri won't do that, so we manually create the URI.
-            var newUri = System.Web.HttpUtility.UrlPathEncode(path);
-            int colonIndex = path.IndexOf(":");
-            for (var i = colonIndex - 1; i >= 0; i--)
-            {
-                newUri.Remove(i, 1);
-                newUri.Insert(i, char.ToLowerInvariant(path[i]).ToString());
-            }
-
-            return newUri
-                .Remove(colonIndex, 1)
-                .Insert(colonIndex, "%3A")
-                .Replace("\\", "/")
-                .Insert(0, fileUriPrefix)
-                .ToString();
-        }
-
         private void SetFileContents(string fileContents)
         {
             // Split the file contents into lines and trim
