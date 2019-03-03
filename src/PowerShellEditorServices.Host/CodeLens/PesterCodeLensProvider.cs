@@ -54,7 +54,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     new ClientCommand(
                         "PowerShell.RunPesterTests",
                         "Run tests",
-                        new object[] { scriptFile.ClientFilePath, false /* No debug */, pesterSymbol.TestName })),
+                        new object[] {
+                            scriptFile.ClientFilePath,
+                            false /* No debug */,
+                            pesterSymbol.TestName,
+                            pesterSymbol.ScriptRegion.StartLineNumber })),
 
                 new CodeLens(
                     this,
@@ -63,7 +67,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     new ClientCommand(
                         "PowerShell.RunPesterTests",
                         "Debug tests",
-                        new object[] { scriptFile.ClientFilePath, true /* Run in debugger */, pesterSymbol.TestName })),
+                        new object[] {
+                            scriptFile.ClientFilePath,
+                            true /* Run in debugger */,
+                            pesterSymbol.TestName,
+                            pesterSymbol.ScriptRegion.StartLineNumber })),
             };
 
             return codeLensResults;
