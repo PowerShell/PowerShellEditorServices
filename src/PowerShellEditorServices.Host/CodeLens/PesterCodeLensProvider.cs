@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                             scriptFile.ClientFilePath,
                             false /* No debug */,
                             pesterSymbol.TestName,
-                            pesterSymbol.ScriptRegion.StartLineNumber })),
+                            pesterSymbol.ScriptRegion?.StartLineNumber })),
 
                 new CodeLens(
                     this,
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                             scriptFile.ClientFilePath,
                             true /* Run in debugger */,
                             pesterSymbol.TestName,
-                            pesterSymbol.ScriptRegion.StartLineNumber })),
+                            pesterSymbol.ScriptRegion?.StartLineNumber })),
             };
 
             return codeLensResults;
