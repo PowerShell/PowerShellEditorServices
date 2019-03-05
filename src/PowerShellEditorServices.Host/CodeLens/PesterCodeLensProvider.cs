@@ -69,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         "Debug tests",
                         new object[] {
                             scriptFile.ClientFilePath,
-                            true /* Run in debugger */,
+                            true /* Run in the debugger */,
                             pesterSymbol.TestName,
                             pesterSymbol.ScriptRegion?.StartLineNumber })),
             };
