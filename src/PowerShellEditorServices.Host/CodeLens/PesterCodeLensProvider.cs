@@ -41,9 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <param name="pesterSymbol">The Pester symbol to get CodeLenses for.</param>
         /// <param name="scriptFile">The script file the Pester symbol comes from.</param>
         /// <returns>All CodeLenses for the given Pester symbol.</returns>
-        private CodeLens[] GetPesterLens(
-            PesterSymbolReference pesterSymbol,
-            ScriptFile scriptFile)
+        private CodeLens[] GetPesterLens(PesterSymbolReference pesterSymbol, ScriptFile scriptFile)
         {
             var codeLensResults = new CodeLens[]
             {
@@ -54,7 +52,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     new ClientCommand(
                         "PowerShell.RunPesterTests",
                         "Run tests",
-                        new object[] { scriptFile.ClientFilePath, false /* No debug */, pesterSymbol.TestName })),
+                        new object[] {
+                            scriptFile.ClientFilePath,
+                            false /* No debug */,
+                            pesterSymbol.TestName,
+                            pesterSymbol.ScriptRegion?.StartLineNumber })),
 
                 new CodeLens(
                     this,
@@ -63,7 +65,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     new ClientCommand(
                         "PowerShell.RunPesterTests",
                         "Debug tests",
-                        new object[] { scriptFile.ClientFilePath, true /* Run in debugger */, pesterSymbol.TestName })),
+                        new object[] {
+                            scriptFile.ClientFilePath,
+                            true /* Run in the debugger */,
+                            pesterSymbol.TestName,
+                            pesterSymbol.ScriptRegion?.StartLineNumber })),
             };
 
             return codeLensResults;
@@ -99,9 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <param name="codeLens">The code lens to resolve.</param>
         /// <param name="cancellationToken"></param>
         /// <returns>The given CodeLens, wrapped in a task.</returns>
-        public Task<CodeLens> ResolveCodeLensAsync(
-            CodeLens codeLens,
-            CancellationToken cancellationToken)
+        public Task<CodeLens> ResolveCodeLensAsync(CodeLens codeLens, CancellationToken cancellationToken)
         {
             // This provider has no specific behavior for
             // resolving CodeLenses.
