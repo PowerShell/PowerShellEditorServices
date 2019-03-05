@@ -461,7 +461,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
 
             // Clear any existing breakpoints before proceeding
-            await ClearSessionBreakpointsAsync();
+            await ClearSessionBreakpointsAsync().ConfigureAwait(false);
 
             // Execute the Debug-Runspace command but don't await it because it
             // will block the debug adapter initialization process.  The
@@ -470,9 +470,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             int runspaceId = attachParams.RunspaceId > 0 ? attachParams.RunspaceId : 1;
             _waitingForAttach = true;
             Task nonAwaitedTask =
-                _editorSession.PowerShellContext
-                    .ExecuteScriptStringAsync($"\nDebug-Runspace -Id {runspaceId}")
-                    .ContinueWith(OnExecutionCompletedAsync);
+            _editorSession.PowerShellContext
+                .ExecuteScriptStringAsync($"\nDebug-Runspace -Id {runspaceId}")
+                .ContinueWith(OnExecutionCompletedAsync);
 
             await requestContext.SendResultAsync(null);
         }
