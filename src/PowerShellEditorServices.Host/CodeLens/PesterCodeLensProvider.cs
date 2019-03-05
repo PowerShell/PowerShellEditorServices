@@ -41,9 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <param name="pesterSymbol">The Pester symbol to get CodeLenses for.</param>
         /// <param name="scriptFile">The script file the Pester symbol comes from.</param>
         /// <returns>All CodeLenses for the given Pester symbol.</returns>
-        private CodeLens[] GetPesterLens(
-            PesterSymbolReference pesterSymbol,
-            ScriptFile scriptFile)
+        private CodeLens[] GetPesterLens(PesterSymbolReference pesterSymbol, ScriptFile scriptFile)
         {
             var codeLensResults = new CodeLens[]
             {
@@ -107,9 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <param name="codeLens">The code lens to resolve.</param>
         /// <param name="cancellationToken"></param>
         /// <returns>The given CodeLens, wrapped in a task.</returns>
-        public Task<CodeLens> ResolveCodeLensAsync(
-            CodeLens codeLens,
-            CancellationToken cancellationToken)
+        public Task<CodeLens> ResolveCodeLensAsync(CodeLens codeLens, CancellationToken cancellationToken)
         {
             // This provider has no specific behavior for
             // resolving CodeLenses.
