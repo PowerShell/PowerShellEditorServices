@@ -5,6 +5,7 @@
     <Description>Provides common PowerShell editor capabilities as a .NET library.</Description>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices</AssemblyName>
+    <LangVersion>Latest</LangVersion>
   </PropertyGroup>
   <!-- Fail the release build if there are missing public API documentation comments -->
   <PropertyGroup>

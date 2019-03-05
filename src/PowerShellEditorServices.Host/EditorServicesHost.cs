@@ -20,6 +20,9 @@ using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using System.Management.Automation;
+using System.Management.Automation.Host;
+using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -61,6 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
     {
         #region Private Fields
 
+        private readonly PSHost internalHost;
         private string[] additionalModules;
         private string bundledModulesPath;
         private DebugAdapter debugAdapter;
@@ -103,6 +107,11 @@ namespace Microsoft.PowerShell.EditorServices.Host
         {
             Validate.IsNotNull(nameof(hostDetails), hostDetails);
 
+            using (var pwsh = System.Management.Automation.PowerShell.Create(RunspaceMode.CurrentRunspace))
+            {
+                this.internalHost = pwsh.AddScript("$Host").Invoke<PSHost>().First();
+            }
+
             this.hostDetails = hostDetails;
             this.enableConsoleRepl = enableConsoleRepl;
             this.bundledModulesPath = bundledModulesPath;
@@ -113,13 +122,13 @@ namespace Microsoft.PowerShell.EditorServices.Host
 #if DEBUG
             if (waitForDebugger)
             {
-                if (Debugger.IsAttached)
+                if (System.Diagnostics.Debugger.IsAttached)
                 {
-                    Debugger.Break();
+                    System.Diagnostics.Debugger.Break();
                 }
                 else
                 {
-                    Debugger.Launch();
+                    System.Diagnostics.Debugger.Launch();
                 }
             }
 #endif
@@ -377,7 +386,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl
-                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, this.logger)
+                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, this.logger, this.internalHost)
                     : new ProtocolPSHostUserInterface(powerShellContext, messageSender, this.logger);
 
             EditorServicesPSHost psHost =
@@ -419,7 +428,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl
-                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, this.logger)
+                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, this.logger, this.internalHost)
                     : new ProtocolPSHostUserInterface(powerShellContext, messageSender, this.logger);
 
             EditorServicesPSHost psHost =

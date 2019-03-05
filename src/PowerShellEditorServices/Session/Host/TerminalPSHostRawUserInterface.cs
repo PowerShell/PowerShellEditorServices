@@ -3,9 +3,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Console;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Management.Automation;
 using System.Management.Automation.Host;
+using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -21,7 +24,9 @@ namespace Microsoft.PowerShell.EditorServices
         private const int DefaultConsoleHeight = 100;
         private const int DefaultConsoleWidth = 120;
 
+        private readonly PSHostRawUserInterface internalRawUI;
         private ILogger Logger;
+        private KeyInfo? lastKeyDown;
 
         #endregion
 
@@ -32,9 +37,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// class with the given IConsoleHost implementation.
         /// </summary>
         /// <param name="logger">The ILogger implementation to use for this instance.</param>
-        public TerminalPSHostRawUserInterface(ILogger logger)
+        /// <param name="internalHost">The InternalHost instance from the origin runspace.</param>
+        public TerminalPSHostRawUserInterface(ILogger logger, PSHost internalHost)
         {
             this.Logger = logger;
+            this.internalRawUI = internalHost.UI.RawUI;
         }
 
         #endregion
@@ -64,18 +71,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Size BufferSize
         {
-            get
-            {
-                return
-                    new Size(
-                        System.Console.BufferWidth,
-                        System.Console.BufferHeight);
-            }
-            set
-            {
-                System.Console.BufferWidth = value.Width;
-                System.Console.BufferHeight = value.Height;
-            }
+            get => this.internalRawUI.BufferSize;
+            set => this.internalRawUI.BufferSize = value;
         }
 
         /// <summary>
@@ -85,16 +82,12 @@ namespace Microsoft.PowerShell.EditorServices
         {
             get
             {
-                return
-                    new Coordinates(
-                        System.Console.CursorLeft,
-                        System.Console.CursorTop);
+                return new Coordinates(
+                    ConsoleProxy.GetCursorLeft(),
+                    ConsoleProxy.GetCursorTop());
             }
-            set
-            {
-                System.Console.CursorLeft = value.X;
-                System.Console.CursorTop = value.Y;
-            }
+
+            set => this.internalRawUI.CursorPosition = value;
         }
 
         /// <summary>
@@ -102,8 +95,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override int CursorSize
         {
-            get;
-            set;
+            get => this.internalRawUI.CursorSize;
+            set => this.internalRawUI.CursorSize = value;
         }
 
         /// <summary>
@@ -111,18 +104,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Coordinates WindowPosition
         {
-            get
-            {
-                return
-                    new Coordinates(
-                        System.Console.WindowLeft,
-                        System.Console.WindowTop);
-            }
-            set
-            {
-                System.Console.WindowLeft = value.X;
-                System.Console.WindowTop = value.Y;
-            }
+            get => this.internalRawUI.WindowPosition;
+            set => this.internalRawUI.WindowPosition = value;
         }
 
         /// <summary>
@@ -130,18 +113,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override Size WindowSize
         {
-            get
-            {
-                return
-                    new Size(
-                        System.Console.WindowWidth,
-                        System.Console.WindowHeight);
-            }
-            set
-            {
-                System.Console.WindowWidth = value.Width;
-                System.Console.WindowHeight = value.Height;
-            }
+            get => this.internalRawUI.WindowSize;
+            set => this.internalRawUI.WindowSize = value;
         }
 
         /// <summary>
@@ -149,8 +122,8 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override string WindowTitle
         {
-            get;
-            set;
+            get => this.internalRawUI.WindowTitle;
+            set => this.internalRawUI.WindowTitle = value;
         }
 
         /// <summary>
@@ -158,24 +131,18 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public override bool KeyAvailable
         {
-            get { return System.Console.KeyAvailable; }
+            get => this.internalRawUI.KeyAvailable;
         }
 
         /// <summary>
         /// Gets the maximum physical size of the console window.
         /// </summary>
-        public override Size MaxPhysicalWindowSize
-        {
-            get { return new Size(DefaultConsoleWidth, DefaultConsoleHeight); }
-        }
+        public override Size MaxPhysicalWindowSize => this.internalRawUI.MaxPhysicalWindowSize;
 
         /// <summary>
         /// Gets the maximum size of the console window.
         /// </summary>
-        public override Size MaxWindowSize
-        {
-            get { return new Size(DefaultConsoleWidth, DefaultConsoleHeight); }
-        }
+        public override Size MaxWindowSize => this.internalRawUI.MaxWindowSize;
 
         /// <summary>
         /// Reads the current key pressed in the console.
@@ -184,11 +151,78 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A KeyInfo struct with details about the current keypress.</returns>
         public override KeyInfo ReadKey(ReadKeyOptions options)
         {
-            Logger.Write(
-                LogLevel.Warning,
-                "PSHostRawUserInterface.ReadKey was called");
+            KeyInfo ProcessKey(ConsoleKeyInfo key, bool isDown)
+            {
+                ControlKeyStates states = default;
+                if ((key.Modifiers & ConsoleModifiers.Alt) != 0)
+                {
+                    states |= ControlKeyStates.LeftAltPressed;
+                }
 
-            throw new System.NotImplementedException();
+                if ((key.Modifiers & ConsoleModifiers.Control) != 0)
+                {
+                    states |= ControlKeyStates.LeftCtrlPressed;
+                }
+
+                if ((key.Modifiers & ConsoleModifiers.Shift) != 0)
+                {
+                    states |= ControlKeyStates.ShiftPressed;
+                }
+
+                var result = new KeyInfo((int)key.Key, key.KeyChar, states, isDown);
+                if (isDown)
+                {
+                    this.lastKeyDown = result;
+                }
+
+                return result;
+            }
+
+            bool includeUp = (options & ReadKeyOptions.IncludeKeyUp) != 0;
+            if (includeUp && this.lastKeyDown != null)
+            {
+                KeyInfo info = this.lastKeyDown.Value;
+                this.lastKeyDown = null;
+                return new KeyInfo(
+                    info.VirtualKeyCode,
+                    info.Character,
+                    info.ControlKeyState,
+                    keyDown: false);
+            }
+
+            bool intercept = (options & ReadKeyOptions.NoEcho) != 0;
+            bool includeDown = (options & ReadKeyOptions.IncludeKeyDown) != 0;
+            if (!(includeDown || includeUp))
+            {
+                throw new ArgumentOutOfRangeException(nameof(options));
+            }
+
+            bool oldValue = System.Console.TreatControlCAsInput;
+            try
+            {
+                System.Console.TreatControlCAsInput = true;
+                ConsoleKeyInfo key = ConsoleProxy
+                    .ReadKeyAsync(default(CancellationToken))
+                    .ConfigureAwait(continueOnCapturedContext: false)
+                    .GetAwaiter()
+                    .GetResult();
+
+                if (key.Key == ConsoleKey.C && key.Modifiers == ConsoleModifiers.Control)
+                {
+                    if ((options & ReadKeyOptions.AllowCtrlC) == 0)
+                    {
+                        return ProcessKey(key, includeDown);
+                    }
+
+                    throw new PipelineStoppedException();
+                }
+
+                return ProcessKey(key, includeDown);
+            }
+            finally
+            {
+                System.Console.TreatControlCAsInput = oldValue;
+            }
         }
 
         /// <summary>
@@ -208,7 +242,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A BufferCell array with the requested buffer contents.</returns>
         public override BufferCell[,] GetBufferContents(Rectangle rectangle)
         {
-            return new BufferCell[0,0];
+            return this.internalRawUI.GetBufferContents(rectangle);
         }
 
         /// <summary>
@@ -224,9 +258,7 @@ namespace Microsoft.PowerShell.EditorServices
             Rectangle clip,
             BufferCell fill)
         {
-            Logger.Write(
-                LogLevel.Warning,
-                "PSHostRawUserInterface.ScrollBufferContents was called");
+            this.internalRawUI.ScrollBufferContents(source, destination, clip, fill);
         }
 
         /// <summary>
@@ -245,13 +277,10 @@ namespace Microsoft.PowerShell.EditorServices
                 rectangle.Right == -1)
             {
                 System.Console.Clear();
+                return;
             }
-            else
-            {
-                Logger.Write(
-                    LogLevel.Warning,
-                    "PSHostRawUserInterface.SetBufferContents was called with a specific region");
-            }
+
+            this.internalRawUI.SetBufferContents(rectangle, fill);
         }
 
         /// <summary>
@@ -263,9 +292,7 @@ namespace Microsoft.PowerShell.EditorServices
             Coordinates origin,
             BufferCell[,] contents)
         {
-            Logger.Write(
-                LogLevel.Warning,
-                "PSHostRawUserInterface.SetBufferContents was called");
+            this.internalRawUI.SetBufferContents(origin, contents);
         }
 
         #endregion
