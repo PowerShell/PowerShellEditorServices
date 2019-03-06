@@ -23,6 +23,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class DebugAdapter
     {
+        private static Version _minVersionForCustomPipeName = new Version(6, 2);
+
         private EditorSession _editorSession;
 
         private bool _noDebug;
@@ -429,7 +431,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
             else if (customPipeNameIsSet)
             {
-                if (runspaceVersion.Version.Major < 6 && runspaceVersion.Version.Minor < 2)
+                if (runspaceVersion.Version < _minVersionForCustomPipeName)
                 {
                     await requestContext.SendErrorAsync(
                         $"Attaching to a process with CustomPipeName is only available with PowerShell 6.2 and higher (current session is {runspaceVersion.Version}).");
@@ -461,7 +463,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
 
             // Clear any existing breakpoints before proceeding
-            await ClearSessionBreakpointsAsync().ConfigureAwait(false);
+            await ClearSessionBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
 
             // Execute the Debug-Runspace command but don't await it because it
             // will block the debug adapter initialization process.  The
@@ -469,8 +471,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // event gets fired with the attached runspace.
             int runspaceId = attachParams.RunspaceId > 0 ? attachParams.RunspaceId : 1;
             _waitingForAttach = true;
-            Task nonAwaitedTask =
-            _editorSession.PowerShellContext
+            Task nonAwaitedTask = _editorSession.PowerShellContext
                 .ExecuteScriptStringAsync($"\nDebug-Runspace -Id {runspaceId}")
                 .ContinueWith(OnExecutionCompletedAsync);
 
