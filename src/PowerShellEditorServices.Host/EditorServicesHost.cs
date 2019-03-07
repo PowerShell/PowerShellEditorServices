@@ -90,6 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
         #region Constructors
 
+
         /// <summary>
         /// Initializes a new instance of the EditorServicesHost class and waits for
         /// the debugger to attach if waitForDebugger is true.
@@ -97,6 +98,8 @@ namespace Microsoft.PowerShell.EditorServices.Host
         /// <param name="hostDetails">The details of the host which is launching PowerShell Editor Services.</param>
         /// <param name="bundledModulesPath">Provides a path to PowerShell modules bundled with the host, if any.  Null otherwise.</param>
         /// <param name="waitForDebugger">If true, causes the host to wait for the debugger to attach before proceeding.</param>
+        /// <param name="additionalModules">Modules to be loaded when initializing the new runspace.</param>
+        /// <param name="featureFlags">Features to enable for this instance.</param>
         public EditorServicesHost(
             HostDetails hostDetails,
             string bundledModulesPath,
@@ -104,13 +107,38 @@ namespace Microsoft.PowerShell.EditorServices.Host
             bool waitForDebugger,
             string[] additionalModules,
             string[] featureFlags)
+            : this(
+                hostDetails,
+                bundledModulesPath,
+                enableConsoleRepl,
+                waitForDebugger,
+                additionalModules,
+                featureFlags,
+                GetInternalHostFromDefaultRunspace())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the EditorServicesHost class and waits for
+        /// the debugger to attach if waitForDebugger is true.
+        /// </summary>
+        /// <param name="hostDetails">The details of the host which is launching PowerShell Editor Services.</param>
+        /// <param name="bundledModulesPath">Provides a path to PowerShell modules bundled with the host, if any.  Null otherwise.</param>
+        /// <param name="waitForDebugger">If true, causes the host to wait for the debugger to attach before proceeding.</param>
+        /// <param name="additionalModules">Modules to be loaded when initializing the new runspace.</param>
+        /// <param name="featureFlags">Features to enable for this instance.</param>
+        /// <param name="internalHost">The value of the $Host variable in the original runspace.</param>
+        public EditorServicesHost(
+            HostDetails hostDetails,
+            string bundledModulesPath,
+            bool enableConsoleRepl,
+            bool waitForDebugger,
+            string[] additionalModules,
+            string[] featureFlags,
+            PSHost internalHost)
         {
             Validate.IsNotNull(nameof(hostDetails), hostDetails);
-
-            using (var pwsh = System.Management.Automation.PowerShell.Create(RunspaceMode.CurrentRunspace))
-            {
-                this.internalHost = pwsh.AddScript("$Host").Invoke<PSHost>().First();
-            }
+            Validate.IsNotNull(nameof(internalHost), internalHost);
 
             this.hostDetails = hostDetails;
             this.enableConsoleRepl = enableConsoleRepl;
@@ -118,6 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.additionalModules = additionalModules ?? new string[0];
             this.featureFlags = new HashSet<string>(featureFlags ?? new string[0]);
             this.serverCompletedTask = new TaskCompletionSource<bool>();
+            this.internalHost = internalHost;
 
 #if DEBUG
             if (waitForDebugger)
@@ -373,6 +402,14 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         #endregion
 
         #region Private Methods
+
+        private static PSHost GetInternalHostFromDefaultRunspace()
+        {
+            using (var pwsh = System.Management.Automation.PowerShell.Create(RunspaceMode.CurrentRunspace))
+            {
+                return pwsh.AddScript("$Host").Invoke<PSHost>().First();
+            }
+        }
 
         private EditorSession CreateSession(
             HostDetails hostDetails,
