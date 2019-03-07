@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         public Task<int> GetCursorTopAsync(CancellationToken cancellationToken) => Task.FromResult(System.Console.CursorTop);
 
-        public async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken)
+        public async Task<ConsoleKeyInfo> ReadKeyAsync(bool intercept, CancellationToken cancellationToken)
         {
             await _readKeyHandle.WaitAsync(cancellationToken);
             try
@@ -41,7 +41,27 @@ namespace Microsoft.PowerShell.EditorServices.Console
                     _bufferedKey.HasValue
                         ? _bufferedKey.Value
                         : await Task.Factory.StartNew(
-                            () => (_bufferedKey = System.Console.ReadKey(intercept: true)).Value);
+                            () => (_bufferedKey = System.Console.ReadKey(intercept)).Value);
+            }
+            finally
+            {
+                _readKeyHandle.Release();
+
+                // Throw if we're cancelled so the buffered key isn't cleared.
+                cancellationToken.ThrowIfCancellationRequested();
+                _bufferedKey = null;
+            }
+        }
+
+        public ConsoleKeyInfo ReadKey(bool intercept, CancellationToken cancellationToken)
+        {
+            _readKeyHandle.Wait(cancellationToken);
+            try
+            {
+                return
+                    _bufferedKey.HasValue
+                        ? _bufferedKey.Value
+                        : (_bufferedKey = System.Console.ReadKey(intercept)).Value;
             }
             finally
             {

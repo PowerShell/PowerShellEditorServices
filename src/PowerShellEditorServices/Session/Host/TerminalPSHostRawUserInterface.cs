@@ -21,9 +21,6 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private const int DefaultConsoleHeight = 100;
-        private const int DefaultConsoleWidth = 120;
-
         private readonly PSHostRawUserInterface internalRawUI;
         private ILogger Logger;
         private KeyInfo? lastKeyDown;
@@ -194,20 +191,17 @@ namespace Microsoft.PowerShell.EditorServices
             bool includeDown = (options & ReadKeyOptions.IncludeKeyDown) != 0;
             if (!(includeDown || includeUp))
             {
-                throw new ArgumentOutOfRangeException(nameof(options));
+                throw new PSArgumentException(
+                    "Cannot read key options. To read options, set one or both of the following: IncludeKeyDown, IncludeKeyUp.",
+                    nameof(options));
             }
 
             bool oldValue = System.Console.TreatControlCAsInput;
             try
             {
                 System.Console.TreatControlCAsInput = true;
-                ConsoleKeyInfo key = ConsoleProxy
-                    .ReadKeyAsync(default(CancellationToken))
-                    .ConfigureAwait(continueOnCapturedContext: false)
-                    .GetAwaiter()
-                    .GetResult();
-
-                if (key.Key == ConsoleKey.C && key.Modifiers == ConsoleModifiers.Control)
+                ConsoleKeyInfo key = ConsoleProxy.ReadKey(intercept, default(CancellationToken));
+                if (IsCtrlC(key))
                 {
                     if ((options & ReadKeyOptions.AllowCtrlC) == 0)
                     {
@@ -296,5 +290,17 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         #endregion
+
+        private static bool IsCtrlC(ConsoleKeyInfo keyInfo)
+        {
+            // In the VSCode terminal Ctrl C is processed as virtual key code "3", which
+            // is not a named value in the ConsoleKey enum.
+            if ((int)keyInfo.Key == 3)
+            {
+                return true;
+            }
+
+            return keyInfo.Key == ConsoleKey.C && (keyInfo.Modifiers & ConsoleModifiers.Control) != 0;
+        }
     }
 }

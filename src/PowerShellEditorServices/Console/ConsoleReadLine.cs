@@ -129,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         private static async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken)
         {
-            return await ConsoleProxy.ReadKeyAsync(cancellationToken);
+            return await ConsoleProxy.ReadKeyAsync(intercept: true, cancellationToken);
         }
 
         private async Task<string> ReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)

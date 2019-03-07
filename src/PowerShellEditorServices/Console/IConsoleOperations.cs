@@ -18,16 +18,37 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// Obtains the next character or function key pressed by the user asynchronously.
         /// Does not block when other console API's are called.
         /// </summary>
+        /// <param name="intercept">
+        /// Determines whether to display the pressed key in the console window. <see langword="true" />
+        /// to not display the pressed key; otherwise, <see langword="false" />.
+        /// </param>
+        /// <param name="cancellationToken">The CancellationToken to observe.</param>
+        /// <returns>
+        /// An object that describes the <see cref="ConsoleKey" /> constant and Unicode character, if any,
+        /// that correspond to the pressed console key. The <see cref="ConsoleKeyInfo" /> object also
+        /// describes, in a bitwise combination of <see cref="ConsoleModifiers" /> values, whether
+        /// one or more Shift, Alt, or Ctrl modifier keys was pressed simultaneously with the console key.
+        /// </returns>
+        ConsoleKeyInfo ReadKey(bool intercept, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Obtains the next character or function key pressed by the user asynchronously.
+        /// Does not block when other console API's are called.
+        /// </summary>
+        /// <param name="intercept">
+        /// Determines whether to display the pressed key in the console window. <see langword="true" />
+        /// to not display the pressed key; otherwise, <see langword="false" />.
+        /// </param>
         /// <param name="cancellationToken">The CancellationToken to observe.</param>
         /// <returns>
         /// A task that will complete with a result of the key pressed by the user.
         /// </returns>
-        Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken);
+        Task<ConsoleKeyInfo> ReadKeyAsync(bool intercept, CancellationToken cancellationToken);
 
         /// <summary>
         /// Obtains the horizontal position of the console cursor. Use this method
         /// instead of <see cref="System.Console.CursorLeft" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(CancellationToken)" />
+        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
         /// on Unix platforms.
         /// </summary>
         /// <returns>The horizontal position of the console cursor.</returns>
@@ -36,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Obtains the horizontal position of the console cursor. Use this method
         /// instead of <see cref="System.Console.CursorLeft" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(CancellationToken)" />
+        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
         /// on Unix platforms.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
@@ -46,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Obtains the horizontal position of the console cursor. Use this method
         /// instead of <see cref="System.Console.CursorLeft" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(CancellationToken)" />
+        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
         /// on Unix platforms.
         /// </summary>
         /// <returns>
@@ -59,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Obtains the horizontal position of the console cursor. Use this method
         /// instead of <see cref="System.Console.CursorLeft" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(CancellationToken)" />
+        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
         /// on Unix platforms.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
@@ -73,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Obtains the vertical position of the console cursor. Use this method
         /// instead of <see cref="System.Console.CursorTop" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(CancellationToken)" />
+        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
         /// on Unix platforms.
         /// </summary>
         /// <returns>The vertical position of the console cursor.</returns>
@@ -82,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Obtains the vertical position of the console cursor. Use this method
         /// instead of <see cref="System.Console.CursorTop" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(CancellationToken)" />
+        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
         /// on Unix platforms.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
@@ -92,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Obtains the vertical position of the console cursor. Use this method
         /// instead of <see cref="System.Console.CursorTop" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(CancellationToken)" />
+        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
         /// on Unix platforms.
         /// </summary>
         /// <returns>
@@ -105,7 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
         /// <summary>
         /// Obtains the vertical position of the console cursor. Use this method
         /// instead of <see cref="System.Console.CursorTop" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(CancellationToken)" />
+        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
         /// on Unix platforms.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
