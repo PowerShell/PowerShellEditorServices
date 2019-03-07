@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class DebugAdapter
     {
-        private static Version _minVersionForCustomPipeName = new Version(6, 2);
+        private static readonly Version _minVersionForCustomPipeName = new Version(6, 2);
 
         private EditorSession _editorSession;
 
