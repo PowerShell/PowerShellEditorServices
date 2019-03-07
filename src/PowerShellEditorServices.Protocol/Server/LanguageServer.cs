@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -160,6 +161,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.messageHandlers.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequestAsync);
             this.messageHandlers.SetRequestHandler(CommentHelpRequest.Type, this.HandleCommentHelpRequestAsync);
+
+            this.messageHandlers.SetRequestHandler(GetRunspaceRequest.Type, this.HandleGetRunspaceRequestAsync);
 
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
@@ -1216,6 +1219,36 @@ function __Expand-Alias {
             }
 
             await requestContext.SendResultAsync(result);
+        }
+
+        protected async Task HandleGetRunspaceRequestAsync(
+            object noParams,
+            RequestContext<GetRunspaceResponse[]> requestContext)
+        {
+            var runspaceResponses = new List<GetRunspaceResponse>();
+
+            if (this.editorSession.PowerShellContext.LocalPowerShellVersion.Version.Major >= 5)
+            {
+                var psCommand = new PSCommand();
+                psCommand.AddCommand("Get-Runspace");
+
+                var runspaces = await editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(psCommand);
+                if (runspaces != null)
+                {
+                    foreach (dynamic p in runspaces) //.Select(m => m.BaseObject as Runspace))
+                    {
+                        runspaceResponses.Add(
+                            new GetRunspaceResponse
+                            {
+                                Id = p.Id,
+                                Name = p.Name,
+                                Availability = p.RunspaceAvailability.ToString()
+                            });
+                    }
+                }
+            }
+
+            await requestContext.SendResultAsync(runspaceResponses.ToArray());
         }
 
         private bool IsQueryMatch(string query, string symbolName)

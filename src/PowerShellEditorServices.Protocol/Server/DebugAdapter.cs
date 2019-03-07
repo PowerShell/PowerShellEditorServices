@@ -403,7 +403,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 _isRemoteAttach = true;
             }
 
-            if (int.TryParse(attachParams.ProcessId, out int processId) && (processId > 0))
+            if ((int.TryParse(attachParams.ProcessId, out int processId) && (processId > 0)) || attachParams.ProcessId == "current")
             {
                 PowerShellVersionDetails runspaceVersion =
                     _editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
@@ -416,16 +416,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     return;
                 }
 
-                await _editorSession.PowerShellContext.ExecuteScriptStringAsync(
+                if (attachParams.ProcessId != "current") {
+                    await _editorSession.PowerShellContext.ExecuteScriptStringAsync(
                     $"Enter-PSHostProcess -Id {processId}",
                     errorMessages);
 
-                if (errorMessages.Length > 0)
-                {
-                    await requestContext.SendErrorAsync(
-                        $"Could not attach to process '{processId}'");
+                    if (errorMessages.Length > 0)
+                    {
+                        await requestContext.SendErrorAsync(
+                            $"Could not attach to process '{processId}'");
 
-                    return;
+                        return;
+                    }
                 }
 
                 // Clear any existing breakpoints before proceeding
@@ -435,7 +437,28 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // will block the debug adapter initialization process.  The
                 // InitializedEvent will be sent as soon as the RunspaceChanged
                 // event gets fired with the attached runspace.
-                int runspaceId = attachParams.RunspaceId > 0 ? attachParams.RunspaceId : 1;
+
+                int runspaceId = 1;
+                if (string.IsNullOrEmpty(attachParams.LocalRunspaceId))
+                {
+                    runspaceId = attachParams.RunspaceId > 0 ? attachParams.RunspaceId : 1;
+                }
+                else if (int.TryParse(attachParams.LocalRunspaceId, out int localRunspaceId))
+                {
+                    runspaceId = localRunspaceId;
+                }
+                else
+                {
+                    Logger.Write(
+                        LogLevel.Error,
+                        $"Attach request failed, '{attachParams.LocalRunspaceId}' is an invalid value for the processId.");
+
+                    await requestContext.SendErrorAsync(
+                        "A positive integer must be specified for the LocalRunspaceId field.");
+
+                    return;
+                }
+
                 _waitingForAttach = true;
                 Task nonAwaitedTask =
                     _editorSession.PowerShellContext
