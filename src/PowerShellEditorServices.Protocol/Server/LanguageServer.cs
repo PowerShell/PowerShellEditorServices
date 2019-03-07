@@ -1235,7 +1235,7 @@ function __Expand-Alias {
                 var runspaces = await editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(psCommand);
                 if (runspaces != null)
                 {
-                    foreach (dynamic p in runspaces) //.Select(m => m.BaseObject as Runspace))
+                    foreach (dynamic p in runspaces)
                     {
                         runspaceResponses.Add(
                             new GetRunspaceResponse
