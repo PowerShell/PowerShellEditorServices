@@ -24,6 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             : string.Empty;
 
         [Fact]
+        [Trait("Category", "Workspace")]
         public void CanResolveWorkspaceRelativePath()
         {
             string workspacePath = TestUtilities.NormalizePath("c:/Test/Workspace/");
@@ -47,6 +48,42 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         }
 
         [Fact]
+        [Trait("Category", "Workspace")]
+        public void CanRecurseDirectoryTree()
+        {
+            Workspace workspace = new Workspace(PowerShellVersion, Logging.NullLogger);
+            workspace.WorkspacePath = TestUtilities.NormalizePath("Fixtures/Workspace");
+
+            IEnumerable<string> result = workspace.EnumeratePSFiles();
+            List<string> fileList = new List<string>();
+            foreach (string file in result) { fileList.Add(file); }
+            // Assume order is not important from EnumeratePSFiles and sort the array so we can use deterministic asserts
+            fileList.Sort();
+
+            if (RuntimeInformation.FrameworkDescription.StartsWith(".NET Core"))
+            {
+                // .Net Core doesn't appear to use the same three letter pattern matching rule although the docs
+                // suggest it should be find the '.ps1xml' files because we search for the pattern '*.ps1'
+                // ref https://docs.microsoft.com/en-us/dotnet/api/system.io.directory.getfiles?view=netcore-2.1#System_IO_Directory_GetFiles_System_String_System_String_System_IO_EnumerationOptions_
+                Assert.Equal(4, fileList.Count);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "donotfind.ps1"), fileList[0]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "nestedmodule.psd1"), fileList[1]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "nestedmodule.psm1"), fileList[2]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"rootfile.ps1"), fileList[3]);
+            }
+            else
+            {
+                Assert.Equal(5, fileList.Count);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "donotfind.ps1"), fileList[0]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "nestedmodule.psd1"), fileList[1]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "nestedmodule.psm1"), fileList[2]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"other", "other.ps1xml"), fileList[3]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"rootfile.ps1"), fileList[4]);
+            }
+        }
+
+        [Fact]
+        [Trait("Category", "Workspace")]
         public void CanDetermineIsPathInMemory()
         {
             string tempDir = Path.GetTempPath();
@@ -84,6 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         }
 
         [Theory()]
+        [Trait("Category", "Workspace")]
         [MemberData(nameof(PathsToResolve), parameters: 2)]
         public void CorrectlyResolvesPaths(string givenPath, string expectedPath)
         {

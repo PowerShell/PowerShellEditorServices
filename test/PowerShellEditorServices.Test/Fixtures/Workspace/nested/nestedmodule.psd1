@@ -1,0 +1,1 @@
+# nestedmodule.psd1
