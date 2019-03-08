@@ -640,6 +640,7 @@ namespace Microsoft.PowerShell.EditorServices
         internal static string ConvertPathToDocumentUri(string path)
         {
             const string fileUriPrefix = "file:///";
+            int colonIndex;
 
             if (path.StartsWith("untitled:", StringComparison.Ordinal))
             {
@@ -654,13 +655,24 @@ namespace Microsoft.PowerShell.EditorServices
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // On a Linux filesystem, you can have multiple colons in a filename e.g. foo:bar:baz.txt
-                return new Uri(path).AbsoluteUri.Replace(":", "%3A");
+                string absoluteUri = new Uri(path).AbsoluteUri;
+
+                // First colon is part of the protocol scheme, see if there are other colons in the path
+                int firstColonIndex = absoluteUri.IndexOf(':');
+                if (absoluteUri.IndexOf(':', firstColonIndex + 1) >= 0)
+                {
+                    absoluteUri =
+                        absoluteUri.Substring(0, firstColonIndex + 1) +
+                        absoluteUri.Substring(firstColonIndex + 1).Replace(":", "%3A");
+                }
+
+                return absoluteUri;
             }
 
             // VSCode file URIs on Windows need the drive letter lowercase, and the colon
             // URI encoded. System.Uri won't do that, so we manually create the URI.
             var newUri = System.Web.HttpUtility.UrlPathEncode(path);
-            int colonIndex = path.IndexOf(':');
+            colonIndex = path.IndexOf(':');
             if (colonIndex > 0)
             {
                 int driveLetterIndex = colonIndex - 1;
