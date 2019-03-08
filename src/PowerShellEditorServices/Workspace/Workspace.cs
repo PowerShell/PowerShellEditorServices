@@ -653,23 +653,20 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return new Uri(path).AbsoluteUri;
+                // On a Linux filesystem, you can have multiple colons in a filename e.g. foo:bar:baz.txt
+                return new Uri(path).AbsoluteUri.Replace(":", "%3A");
             }
 
             // VSCode file URIs on Windows need the drive letter lowercase, and the colon
             // URI encoded. System.Uri won't do that, so we manually create the URI.
             var newUri = System.Web.HttpUtility.UrlPathEncode(path);
             int colonIndex = path.IndexOf(':');
-            for (var i = colonIndex - 1; i >= 0; i--)
+            if (colonIndex > 0)
             {
-                newUri.Remove(i, 1);
-                newUri.Insert(i, char.ToLowerInvariant(path[i]).ToString());
-            }
-
-            // On a Linux filesystem, you can have multiple colons in a filename e.g. foo:bar:baz.txt
-            if (colonIndex >= 0)
-            {
-                newUri = newUri.Replace(":", "%3A");
+                int driveLetterIndex = colonIndex - 1;
+                var driveLetter = char.ToLowerInvariant(path[driveLetterIndex]).ToString();
+                newUri = newUri.Remove(driveLetterIndex, 2);
+                newUri = newUri.Insert(driveLetterIndex, driveLetter + "%3A");
             }
 
             return newUri

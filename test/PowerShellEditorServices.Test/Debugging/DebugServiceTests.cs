@@ -101,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         }
 
         [Theory]
-        [MemberData("DebuggerAcceptsScriptArgsTestData")]
+        [MemberData(nameof(DebuggerAcceptsScriptArgsTestData))]
         public async Task DebuggerAcceptsScriptArgs(string[] args)
         {
             // The path is intentionally odd (some escaped chars but not all) because we are testing
