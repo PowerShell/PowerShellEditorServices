@@ -107,12 +107,14 @@ namespace Microsoft.PowerShell.EditorServices
             string scriptPath = (callStackFrameObject.Properties["ScriptName"].Value as string) ?? NoFileScriptPath;
             int startLineNumber = (int)(callStackFrameObject.Properties["ScriptLineNumber"].Value ?? 0);
 
-            if (workspaceRootPath != null && 
-                invocationInfo != null &&
-                !scriptPath.StartsWith(workspaceRootPath, StringComparison.OrdinalIgnoreCase))
-            {
-                isExternal = true;
-            }
+            // TODO: RKH 2019-03-07 Temporarily disable "external" code until I have a chance to add 
+            // settings to control this feature.
+            //if (workspaceRootPath != null && 
+            //    invocationInfo != null &&
+            //    !scriptPath.StartsWith(workspaceRootPath, StringComparison.OrdinalIgnoreCase))
+            //{
+            //    isExternal = true;
+            //}
 
             return new StackFrameDetails
             {
