@@ -547,7 +547,6 @@ First line
 
             Assert.Equal(path, scriptFile.FilePath);
             Assert.Equal(path, scriptFile.ClientFilePath);
-            Assert.Equal("file:///TestFile.ps1", scriptFile.DocumentUri);
             Assert.True(scriptFile.IsAnalysisEnabled);
             Assert.False(scriptFile.IsInMemory);
             Assert.Empty(scriptFile.ReferencedFiles);
@@ -590,13 +589,19 @@ First line
             ScriptFile scriptFile;
             var emptyStringReader = new StringReader("");
 
-            path = @"C:\Users\AmosBurton\projects\Rocinate\ProtoMolecule.ps1";
-            scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
-            Assert.Equal("file:///c%3A/Users/AmosBurton/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
-
-            if (Environment.OSVersion.Platform == PlatformID.Unix)
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                path = @"C:\Users\AmosBurton\projects\Rocinate\ProtoMolecule.ps1";
+                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                Assert.Equal("file:///c%3A/Users/AmosBurton/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
+            }
+            else
             {
                 // Test the following only on Linux and macOS.
+                path = "/home/AmosBurton/projects/Rocinate/ProtoMolecule.ps1";
+                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                Assert.Equal("file:///home/AmosBurton/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
+
                 path = "/home/AmosBurton/projects/Rocinate/Proto:Mole:cule.ps1";
                 scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/AmosBurton/projects/Rocinate/Proto%3AMole%3Acule.ps1", scriptFile.DocumentUri);

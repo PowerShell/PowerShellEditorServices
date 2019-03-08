@@ -640,7 +640,6 @@ namespace Microsoft.PowerShell.EditorServices
         internal static string ConvertPathToDocumentUri(string path)
         {
             const string fileUriPrefix = "file:///";
-            int colonIndex;
 
             if (path.StartsWith("untitled:", StringComparison.Ordinal))
             {
@@ -671,8 +670,8 @@ namespace Microsoft.PowerShell.EditorServices
 
             // VSCode file URIs on Windows need the drive letter lowercase, and the colon
             // URI encoded. System.Uri won't do that, so we manually create the URI.
-            var newUri = System.Web.HttpUtility.UrlPathEncode(path);
-            colonIndex = path.IndexOf(':');
+            string newUri = System.Web.HttpUtility.UrlPathEncode(path);
+            int colonIndex = path.IndexOf(':');
             if (colonIndex > 0)
             {
                 int driveLetterIndex = colonIndex - 1;
@@ -681,10 +680,7 @@ namespace Microsoft.PowerShell.EditorServices
                 newUri = newUri.Insert(driveLetterIndex, driveLetter + "%3A");
             }
 
-            return newUri
-                .Replace('\\', '/')
-                .Insert(0, fileUriPrefix)
-                .ToString();
+            return newUri.Replace('\\', '/').Insert(0, fileUriPrefix);
         }
 
         #endregion
