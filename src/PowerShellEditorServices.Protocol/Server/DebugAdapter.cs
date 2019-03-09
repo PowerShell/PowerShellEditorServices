@@ -439,22 +439,18 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // event gets fired with the attached runspace.
 
                 int runspaceId = 1;
-                if (string.IsNullOrEmpty(attachParams.LocalRunspaceId))
+                if (int.TryParse(attachParams.RunspaceId, out runspaceId))
                 {
-                    runspaceId = attachParams.RunspaceId > 0 ? attachParams.RunspaceId : 1;
-                }
-                else if (int.TryParse(attachParams.LocalRunspaceId, out int localRunspaceId))
-                {
-                    runspaceId = localRunspaceId;
+                    runspaceId = runspaceId > 0 ? runspaceId : 1;
                 }
                 else
                 {
                     Logger.Write(
                         LogLevel.Error,
-                        $"Attach request failed, '{attachParams.LocalRunspaceId}' is an invalid value for the processId.");
+                        $"Attach request failed, '{attachParams.RunspaceId}' is an invalid value for the processId.");
 
                     await requestContext.SendErrorAsync(
-                        "A positive integer must be specified for the LocalRunspaceId field.");
+                        "A positive integer must be specified for the RunspaceId field.");
 
                     return;
                 }

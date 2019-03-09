@@ -20,8 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
 
         public string ProcessId { get; set; }
 
-        public int RunspaceId { get; set; }
-
-        public string LocalRunspaceId { get; set; }
+        public string RunspaceId { get; set; }
     }
 }
