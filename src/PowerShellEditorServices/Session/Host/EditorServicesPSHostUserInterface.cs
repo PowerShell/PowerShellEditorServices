@@ -650,7 +650,11 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 // This constructor throws if the activity description is empty even
                 // with completed records.
-                var record = new ProgressRecord(key.ActivityId, nonEmptyString, nonEmptyString);
+                var record = new ProgressRecord(
+                    key.ActivityId,
+                    activity: nonEmptyString,
+                    statusDescription: nonEmptyString);
+
                 record.RecordType = ProgressRecordType.Completed;
                 this.WriteProgressImpl(key.SourceId, record);
             }

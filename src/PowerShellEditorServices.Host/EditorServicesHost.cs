@@ -16,13 +16,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Management.Automation.Runspaces;
-using System.Reflection;
-using System.Threading.Tasks;
-using System.Runtime.InteropServices;
-using System.Management.Automation;
-using System.Management.Automation.Host;
 using System.Linq;
+using System.Management.Automation;
+using System.Management.Automation.Runspaces;
+using System.Management.Automation.Host;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Host
 {
@@ -89,7 +89,6 @@ namespace Microsoft.PowerShell.EditorServices.Host
         #endregion
 
         #region Constructors
-
 
         /// <summary>
         /// Initializes a new instance of the EditorServicesHost class and waits for

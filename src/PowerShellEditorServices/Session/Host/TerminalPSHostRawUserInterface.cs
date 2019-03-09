@@ -126,10 +126,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Gets a boolean that determines whether a keypress is available.
         /// </summary>
-        public override bool KeyAvailable
-        {
-            get => this.internalRawUI.KeyAvailable;
-        }
+        public override bool KeyAvailable => this.internalRawUI.KeyAvailable;
 
         /// <summary>
         /// Gets the maximum physical size of the console window.
@@ -148,8 +145,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A KeyInfo struct with details about the current keypress.</returns>
         public override KeyInfo ReadKey(ReadKeyOptions options)
         {
+            // Converts ConsoleKeyInfo objects to KeyInfo objects and caches key down events
+            // for the next key up request.
             KeyInfo ProcessKey(ConsoleKeyInfo key, bool isDown)
             {
+                // Translate ConsoleModifiers to ControlKeyStates
                 ControlKeyStates states = default;
                 if ((key.Modifiers & ConsoleModifiers.Alt) != 0)
                 {
@@ -176,6 +176,8 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             bool includeUp = (options & ReadKeyOptions.IncludeKeyUp) != 0;
+
+            // Key Up was requested and we have a cached key down we can return.
             if (includeUp && this.lastKeyDown != null)
             {
                 KeyInfo info = this.lastKeyDown.Value;
@@ -196,18 +198,25 @@ namespace Microsoft.PowerShell.EditorServices
                     nameof(options));
             }
 
+            // Allow ControlC as input so we can emulate pipeline stop requests. We can't actually
+            // determine if a stop is requested without using non-public API's.
             bool oldValue = System.Console.TreatControlCAsInput;
             try
             {
                 System.Console.TreatControlCAsInput = true;
                 ConsoleKeyInfo key = ConsoleProxy.ReadKey(intercept, default(CancellationToken));
+
                 if (IsCtrlC(key))
                 {
+                    // Caller wants CtrlC as input so return it.
                     if ((options & ReadKeyOptions.AllowCtrlC) == 0)
                     {
                         return ProcessKey(key, includeDown);
                     }
 
+                    // Caller doesn't want CtrlC so throw a PipelineStoppedException to emulate
+                    // a real stop.  This will not show an exception to a script based caller and it
+                    // will avoid having to return something like default(KeyInfo).
                     throw new PipelineStoppedException();
                 }
 
