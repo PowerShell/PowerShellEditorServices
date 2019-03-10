@@ -660,9 +660,11 @@ namespace Microsoft.PowerShell.EditorServices
                 int firstColonIndex = absoluteUri.IndexOf(':');
                 if (absoluteUri.IndexOf(':', firstColonIndex + 1) >= 0)
                 {
-                    absoluteUri =
-                        absoluteUri.Substring(0, firstColonIndex + 1) +
-                        absoluteUri.Substring(firstColonIndex + 1).Replace(":", "%3A");
+                    absoluteUri = new StringBuilder()
+                        .Append(absoluteUri, firstColonIndex + 1, absoluteUri.Length - firstColonIndex - 1)
+                        .Replace(":", "%3A")
+                        .Insert(0, absoluteUri.ToCharArray(0, firstColonIndex + 1))
+                        .ToString();
                 }
 
                 return absoluteUri;
@@ -670,17 +672,19 @@ namespace Microsoft.PowerShell.EditorServices
 
             // VSCode file URIs on Windows need the drive letter lowercase, and the colon
             // URI encoded. System.Uri won't do that, so we manually create the URI.
-            string newUri = System.Web.HttpUtility.UrlPathEncode(path);
+            var newUri = new StringBuilder(System.Web.HttpUtility.UrlPathEncode(path));
             int colonIndex = path.IndexOf(':');
             if (colonIndex > 0)
             {
                 int driveLetterIndex = colonIndex - 1;
-                var driveLetter = char.ToLowerInvariant(path[driveLetterIndex]).ToString();
-                newUri = newUri.Remove(driveLetterIndex, 2);
-                newUri = newUri.Insert(driveLetterIndex, driveLetter + "%3A");
+                char driveLetter = char.ToLowerInvariant(path[driveLetterIndex]);
+                newUri
+                    .Remove(driveLetterIndex, 2)
+                    .Insert(driveLetterIndex, driveLetter)
+                    .Insert(driveLetterIndex + 1, "%3A");
             }
 
-            return newUri.Replace('\\', '/').Insert(0, fileUriPrefix);
+            return newUri.Replace('\\', '/').Insert(0, fileUriPrefix).ToString();
         }
 
         #endregion

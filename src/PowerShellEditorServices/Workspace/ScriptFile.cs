@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices
         {
             get
             {
-                return (this.ClientFilePath == null )
+                return (this.ClientFilePath == null)
                     ? string.Empty
                     : Workspace.ConvertPathToDocumentUri(this.ClientFilePath);
             }
