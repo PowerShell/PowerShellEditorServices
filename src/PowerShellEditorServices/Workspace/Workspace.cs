@@ -660,10 +660,12 @@ namespace Microsoft.PowerShell.EditorServices
                 int firstColonIndex = absoluteUri.IndexOf(':');
                 if (absoluteUri.IndexOf(':', firstColonIndex + 1) >= 0)
                 {
-                    absoluteUri = new StringBuilder()
-                        .Append(absoluteUri, firstColonIndex + 1, absoluteUri.Length - firstColonIndex - 1)
-                        .Replace(":", "%3A")
-                        .Insert(0, absoluteUri.ToCharArray(0, firstColonIndex + 1))
+                    absoluteUri = new StringBuilder(absoluteUri)
+                        .Replace(
+                            oldValue: ":",
+                            newValue: "%3A",
+                            startIndex: firstColonIndex + 1,
+                            count: absoluteUri.Length - firstColonIndex - 1)
                         .ToString();
                 }
 
@@ -679,9 +681,8 @@ namespace Microsoft.PowerShell.EditorServices
                 int driveLetterIndex = colonIndex - 1;
                 char driveLetter = char.ToLowerInvariant(path[driveLetterIndex]);
                 newUri
-                    .Remove(driveLetterIndex, 2)
-                    .Insert(driveLetterIndex, driveLetter)
-                    .Insert(driveLetterIndex + 1, "%3A");
+                    .Replace(path[driveLetterIndex], driveLetter, driveLetterIndex, 1)
+                    .Replace(":", "%3A", colonIndex, 1);
             }
 
             return newUri.Replace('\\', '/').Insert(0, fileUriPrefix).ToString();
