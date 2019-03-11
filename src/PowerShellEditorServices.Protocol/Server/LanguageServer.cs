@@ -1738,7 +1738,7 @@ function __Expand-Alias {
                 diagnostics.Add(markerDiagnostic);
             }
 
-            correctionIndex[scriptFile.ClientFilePath] = fileCorrections;
+            correctionIndex[scriptFile.DocumentUri] = fileCorrections;
 
             // Always send syntax and semantic errors.  We want to
             // make sure no out-of-date markers are being displayed.
@@ -1746,7 +1746,7 @@ function __Expand-Alias {
                 PublishDiagnosticsNotification.Type,
                 new PublishDiagnosticsNotification
                 {
-                    Uri = scriptFile.ClientFilePath,
+                    Uri = scriptFile.DocumentUri,
                     Diagnostics = diagnostics.ToArray()
                 });
         }

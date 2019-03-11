@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     GetReferenceCountHeader(referenceLocations.Length),
                     new object[]
                     {
-                        codeLens.File.ClientFilePath,
+                        codeLens.File.DocumentUri,
                         codeLens.ScriptExtent.ToRange().Start,
                         referenceLocations,
                     }
