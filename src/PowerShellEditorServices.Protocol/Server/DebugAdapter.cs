@@ -470,7 +470,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // InitializedEvent will be sent as soon as the RunspaceChanged
             // event gets fired with the attached runspace.
 
-            int runspaceId = 1;
+            var runspaceId = 1;
             if (!int.TryParse(attachParams.RunspaceId, out runspaceId) || runspaceId <= 0)
             {
                 Logger.Write(
