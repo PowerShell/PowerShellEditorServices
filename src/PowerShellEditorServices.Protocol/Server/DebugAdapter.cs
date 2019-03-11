@@ -417,18 +417,16 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     return;
                 }
 
-                if (attachParams.ProcessId != "current") {
-                    await _editorSession.PowerShellContext.ExecuteScriptStringAsync(
+                await _editorSession.PowerShellContext.ExecuteScriptStringAsync(
                     $"Enter-PSHostProcess -Id {processId}",
                     errorMessages);
 
-                    if (errorMessages.Length > 0)
-                    {
-                        await requestContext.SendErrorAsync(
-                            $"Could not attach to process '{processId}'");
+                if (errorMessages.Length > 0)
+                {
+                    await requestContext.SendErrorAsync(
+                        $"Could not attach to process '{processId}'");
 
-                        return;
-                    }
+                    return;
                 }
             }
             else if (customPipeNameIsSet)
