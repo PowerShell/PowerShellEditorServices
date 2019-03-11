@@ -23,6 +23,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
     public class DebugAdapter
     {
+        private static readonly Version _minVersionForCustomPipeName = new Version(6, 2);
+
         private EditorSession _editorSession;
 
         private bool _noDebug;
@@ -350,11 +352,17 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             RegisterEventHandlers();
 
+            bool processIdIsSet = !string.IsNullOrEmpty(attachParams.ProcessId) && attachParams.ProcessId != "undefined";
+            bool customPipeNameIsSet = !string.IsNullOrEmpty(attachParams.CustomPipeName) && attachParams.CustomPipeName != "undefined";
+
+            PowerShellVersionDetails runspaceVersion =
+                _editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
+
             // If there are no host processes to attach to or the user cancels selection, we get a null for the process id.
             // This is not an error, just a request to stop the original "attach to" request.
             // Testing against "undefined" is a HACK because I don't know how to make "Cancel" on quick pick loading
             // to cancel on the VSCode side without sending an attachRequest with processId set to "undefined".
-            if (string.IsNullOrEmpty(attachParams.ProcessId) || (attachParams.ProcessId == "undefined"))
+            if (!processIdIsSet && !customPipeNameIsSet)
             {
                 Logger.Write(
                     LogLevel.Normal,
@@ -370,9 +378,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             if (attachParams.ComputerName != null)
             {
-                PowerShellVersionDetails runspaceVersion =
-                    _editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
-
                 if (runspaceVersion.Version.Major < 4)
                 {
                     await requestContext.SendErrorAsync(
@@ -403,16 +408,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 _isRemoteAttach = true;
             }
 
-            if ((int.TryParse(attachParams.ProcessId, out int processId) && (processId > 0)) || attachParams.ProcessId == "current")
+            if (processIdIsSet && int.TryParse(attachParams.ProcessId, out int processId) && (processId > 0))
             {
-                PowerShellVersionDetails runspaceVersion =
-                    _editorSession.PowerShellContext.CurrentRunspace.PowerShellVersion;
-
                 if (runspaceVersion.Version.Major < 5)
                 {
                     await requestContext.SendErrorAsync(
                         $"Attaching to a process is only available with PowerShell 5 and higher (current session is {runspaceVersion.Version}).");
-
                     return;
                 }
 
@@ -429,39 +430,29 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         return;
                     }
                 }
-
-                // Clear any existing breakpoints before proceeding
-                await ClearSessionBreakpointsAsync();
-
-                // Execute the Debug-Runspace command but don't await it because it
-                // will block the debug adapter initialization process.  The
-                // InitializedEvent will be sent as soon as the RunspaceChanged
-                // event gets fired with the attached runspace.
-
-                int runspaceId = 1;
-                if (int.TryParse(attachParams.RunspaceId, out runspaceId))
+            }
+            else if (customPipeNameIsSet)
+            {
+                if (runspaceVersion.Version < _minVersionForCustomPipeName)
                 {
-                    runspaceId = runspaceId > 0 ? runspaceId : 1;
-                }
-                else
-                {
-                    Logger.Write(
-                        LogLevel.Error,
-                        $"Attach request failed, '{attachParams.RunspaceId}' is an invalid value for the processId.");
-
                     await requestContext.SendErrorAsync(
-                        "A positive integer must be specified for the RunspaceId field.");
-
+                        $"Attaching to a process with CustomPipeName is only available with PowerShell 6.2 and higher (current session is {runspaceVersion.Version}).");
                     return;
                 }
 
-                _waitingForAttach = true;
-                Task nonAwaitedTask =
-                    _editorSession.PowerShellContext
-                        .ExecuteScriptStringAsync($"\nDebug-Runspace -Id {runspaceId}")
-                        .ContinueWith(OnExecutionCompletedAsync);
+                await _editorSession.PowerShellContext.ExecuteScriptStringAsync(
+                    $"Enter-PSHostProcess -CustomPipeName {attachParams.CustomPipeName}",
+                    errorMessages);
+
+                if (errorMessages.Length > 0)
+                {
+                    await requestContext.SendErrorAsync(
+                        $"Could not attach to process with CustomPipeName: '{attachParams.CustomPipeName}'");
+
+                    return;
+                }
             }
-            else
+            else if (attachParams.ProcessId != "current")
             {
                 Logger.Write(
                     LogLevel.Error,
@@ -472,6 +463,36 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
                 return;
             }
+
+            // Clear any existing breakpoints before proceeding
+            await ClearSessionBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
+
+            // Execute the Debug-Runspace command but don't await it because it
+            // will block the debug adapter initialization process.  The
+            // InitializedEvent will be sent as soon as the RunspaceChanged
+            // event gets fired with the attached runspace.
+
+            int runspaceId = 1;
+            if (int.TryParse(attachParams.RunspaceId, out runspaceId))
+            {
+                runspaceId = runspaceId > 0 ? runspaceId : 1;
+            }
+            else
+            {
+                Logger.Write(
+                    LogLevel.Error,
+                    $"Attach request failed, '{attachParams.RunspaceId}' is an invalid value for the processId.");
+
+                await requestContext.SendErrorAsync(
+                    "A positive integer must be specified for the RunspaceId field.");
+
+                return;
+            }
+
+            _waitingForAttach = true;
+            Task nonAwaitedTask = _editorSession.PowerShellContext
+                .ExecuteScriptStringAsync($"\nDebug-Runspace -Id {runspaceId}")
+                .ContinueWith(OnExecutionCompletedAsync);
 
             await requestContext.SendResultAsync(null);
         }

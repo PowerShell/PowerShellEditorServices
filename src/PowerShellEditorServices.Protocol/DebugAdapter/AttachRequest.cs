@@ -21,5 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.DebugAdapter
         public string ProcessId { get; set; }
 
         public string RunspaceId { get; set; }
+
+        public string CustomPipeName { get; set; }
     }
 }
