@@ -145,35 +145,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>A KeyInfo struct with details about the current keypress.</returns>
         public override KeyInfo ReadKey(ReadKeyOptions options)
         {
-            // Converts ConsoleKeyInfo objects to KeyInfo objects and caches key down events
-            // for the next key up request.
-            KeyInfo ProcessKey(ConsoleKeyInfo key, bool isDown)
-            {
-                // Translate ConsoleModifiers to ControlKeyStates
-                ControlKeyStates states = default;
-                if ((key.Modifiers & ConsoleModifiers.Alt) != 0)
-                {
-                    states |= ControlKeyStates.LeftAltPressed;
-                }
-
-                if ((key.Modifiers & ConsoleModifiers.Control) != 0)
-                {
-                    states |= ControlKeyStates.LeftCtrlPressed;
-                }
-
-                if ((key.Modifiers & ConsoleModifiers.Shift) != 0)
-                {
-                    states |= ControlKeyStates.ShiftPressed;
-                }
-
-                var result = new KeyInfo((int)key.Key, key.KeyChar, states, isDown);
-                if (isDown)
-                {
-                    this.lastKeyDown = result;
-                }
-
-                return result;
-            }
 
             bool includeUp = (options & ReadKeyOptions.IncludeKeyUp) != 0;
 
@@ -209,7 +180,7 @@ namespace Microsoft.PowerShell.EditorServices
                 if (IsCtrlC(key))
                 {
                     // Caller wants CtrlC as input so return it.
-                    if ((options & ReadKeyOptions.AllowCtrlC) == 0)
+                    if ((options & ReadKeyOptions.AllowCtrlC) != 0)
                     {
                         return ProcessKey(key, includeDown);
                     }
@@ -300,6 +271,14 @@ namespace Microsoft.PowerShell.EditorServices
 
         #endregion
 
+        /// <summary>
+        /// Determines if a key press represents the input Ctrl + C.
+        /// </summary>
+        /// <param name="keyInfo">The key to test.</param>
+        /// <returns>
+        /// <see langword="true" /> if the key represents the input Ctrl + C,
+        /// otherwise <see langword="false" />.
+        /// </returns>
         private static bool IsCtrlC(ConsoleKeyInfo keyInfo)
         {
             // In the VSCode terminal Ctrl C is processed as virtual key code "3", which
@@ -310,6 +289,43 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return keyInfo.Key == ConsoleKey.C && (keyInfo.Modifiers & ConsoleModifiers.Control) != 0;
+        }
+
+        /// <summary>
+        /// Converts <see cref="ConsoleKeyInfo" /> objects to <see cref="KeyInfo" /> objects and caches
+        /// key down events for the next key up request.
+        /// </summary>
+        /// <param name="key">The key to convert.</param>
+        /// <param name="isDown">
+        /// A value indicating whether the result should be a key down event.
+        /// </param>
+        /// <returns>The converted value.</returns>
+        private KeyInfo ProcessKey(ConsoleKeyInfo key, bool isDown)
+        {
+            // Translate ConsoleModifiers to ControlKeyStates
+            ControlKeyStates states = default;
+            if ((key.Modifiers & ConsoleModifiers.Alt) != 0)
+            {
+                states |= ControlKeyStates.LeftAltPressed;
+            }
+
+            if ((key.Modifiers & ConsoleModifiers.Control) != 0)
+            {
+                states |= ControlKeyStates.LeftCtrlPressed;
+            }
+
+            if ((key.Modifiers & ConsoleModifiers.Shift) != 0)
+            {
+                states |= ControlKeyStates.ShiftPressed;
+            }
+
+            var result = new KeyInfo((int)key.Key, key.KeyChar, states, isDown);
+            if (isDown)
+            {
+                this.lastKeyDown = result;
+            }
+
+            return result;
         }
     }
 }
