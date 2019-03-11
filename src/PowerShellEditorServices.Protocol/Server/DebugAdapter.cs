@@ -471,11 +471,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // event gets fired with the attached runspace.
 
             int runspaceId = 1;
-            if (int.TryParse(attachParams.RunspaceId, out runspaceId))
-            {
-                runspaceId = runspaceId > 0 ? runspaceId : 1;
-            }
-            else
+            if (!int.TryParse(attachParams.RunspaceId, out runspaceId) || runspaceId <= 0)
             {
                 Logger.Write(
                     LogLevel.Error,
