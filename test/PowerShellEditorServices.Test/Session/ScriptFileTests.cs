@@ -598,13 +598,17 @@ First line
             else
             {
                 // Test the following only on Linux and macOS.
-                path = "/home/AmosBurton/projects/Rocinate/ProtoMolecule.ps1";
+                path = "/home/AlexKamal/projects/Rocinate/ProtoMolecule.ps1";
                 scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
-                Assert.Equal("file:///home/AmosBurton/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
+                Assert.Equal("file:///home/AlexKamal/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
 
-                path = "/home/AmosBurton/projects/Rocinate/Proto:Mole:cule.ps1";
+                path = "/home/NaomiNagata/projects/Rocinate/Proto:Mole:cule.ps1";
                 scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
-                Assert.Equal("file:///home/AmosBurton/projects/Rocinate/Proto%3AMole%3Acule.ps1", scriptFile.DocumentUri);
+                Assert.Equal("file:///home/NaomiNagata/projects/Rocinate/Proto%3AMole%3Acule.ps1", scriptFile.DocumentUri);
+
+                path = "/home/JamesHolden/projects/Rocinate/Proto:Mole\\cule.ps1";
+                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                Assert.Equal("file:///home/JamesHolden/projects/Rocinate/Proto%3AMole%5Ccule.ps1", scriptFile.DocumentUri);
             }
         }
     }
