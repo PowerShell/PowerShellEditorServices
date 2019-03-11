@@ -1232,10 +1232,10 @@ function __Expand-Alias {
                 var psCommand = new PSCommand();
                 psCommand.AddCommand("Get-Runspace");
 
-                var runspaces = await editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(psCommand);
+                IEnumerable<Runspace> runspaces = await editorSession.PowerShellContext.ExecuteCommandAsync<Runspace>(psCommand);
                 if (runspaces != null)
                 {
-                    foreach (dynamic p in runspaces)
+                    foreach (var p in runspaces)
                     {
                         runspaceResponses.Add(
                             new GetRunspaceResponse
