@@ -658,7 +658,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                 // First colon is part of the protocol scheme, see if there are other colons in the path
                 int firstColonIndex = absoluteUri.IndexOf(':');
-                if (absoluteUri.IndexOf(':', firstColonIndex + 1) >= 0)
+                if (absoluteUri.IndexOf(':', firstColonIndex + 1) > firstColonIndex)
                 {
                     absoluteUri = new StringBuilder(absoluteUri)
                         .Replace(
