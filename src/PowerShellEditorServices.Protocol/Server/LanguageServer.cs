@@ -1222,17 +1222,27 @@ function __Expand-Alias {
         }
 
         protected async Task HandleGetRunspaceRequestAsync(
-            object noParams,
+            object processId,
             RequestContext<GetRunspaceResponse[]> requestContext)
         {
             var runspaceResponses = new List<GetRunspaceResponse>();
 
             if (this.editorSession.PowerShellContext.LocalPowerShellVersion.Version.Major >= 5)
             {
+                if (processId == null) {
+                    processId = "current";
+                }
+
                 var psCommand = new PSCommand();
+
+                if (processId != null && processId.ToString() != "current") {
+                    psCommand.AddCommand("Enter-PSHostProcess").AddParameter("Id", processId).AddStatement();
+                }
+
                 psCommand.AddCommand("Get-Runspace");
 
-                IEnumerable<Runspace> runspaces = await editorSession.PowerShellContext.ExecuteCommandAsync<Runspace>(psCommand);
+                StringBuilder sb = new StringBuilder();
+                IEnumerable<Runspace> runspaces = await editorSession.PowerShellContext.ExecuteCommandAsync<Runspace>(psCommand, sb);
                 if (runspaces != null)
                 {
                     foreach (var p in runspaces)
@@ -1245,6 +1255,12 @@ function __Expand-Alias {
                                 Availability = p.RunspaceAvailability.ToString()
                             });
                     }
+                }
+
+                if (processId != null && processId.ToString() != "current") {
+                    var exitCommand = new PSCommand();
+                    exitCommand.AddCommand("Exit-PSHostProcess");
+                    await editorSession.PowerShellContext.ExecuteCommandAsync(exitCommand);
                 }
             }
 
