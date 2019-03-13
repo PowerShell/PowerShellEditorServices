@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
@@ -32,7 +33,8 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private readonly HashSet<ProgressKey> currentProgressMessages = new HashSet<ProgressKey>();
+        private readonly ConcurrentDictionary<ProgressKey, object> currentProgressMessages =
+            new ConcurrentDictionary<ProgressKey, object>();
         private PromptHandler activePromptHandler;
         private PSHostRawUserInterface rawUserInterface;
         private CancellationTokenSource commandLoopCancellationToken;
@@ -613,11 +615,11 @@ namespace Microsoft.PowerShell.EditorServices
             // clean them up after the pipeline ends.
             if (record.RecordType == ProgressRecordType.Completed)
             {
-                this.currentProgressMessages.Remove(new ProgressKey(sourceId, record));
+                this.currentProgressMessages.TryRemove(new ProgressKey(sourceId, record), out _);
             }
             else
             {
-                this.currentProgressMessages.Add(new ProgressKey(sourceId, record));
+                this.currentProgressMessages.TryAdd(new ProgressKey(sourceId, record), null);
             }
 
             this.WriteProgressImpl(sourceId, record);
@@ -646,7 +648,7 @@ namespace Microsoft.PowerShell.EditorServices
                 return;
             }
 
-            foreach (ProgressKey key in this.currentProgressMessages)
+            foreach (ProgressKey key in this.currentProgressMessages.Keys)
             {
                 // This constructor throws if the activity description is empty even
                 // with completed records.
