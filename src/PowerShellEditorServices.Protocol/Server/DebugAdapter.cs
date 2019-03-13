@@ -444,7 +444,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     return;
                 }
             }
-            else
+            else if (attachParams.ProcessId != "current")
             {
                 Logger.Write(
                     LogLevel.Error,
@@ -463,7 +463,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // will block the debug adapter initialization process.  The
             // InitializedEvent will be sent as soon as the RunspaceChanged
             // event gets fired with the attached runspace.
-            int runspaceId = attachParams.RunspaceId > 0 ? attachParams.RunspaceId : 1;
+
+            var runspaceId = 1;
+            if (!int.TryParse(attachParams.RunspaceId, out runspaceId) || runspaceId <= 0)
+            {
+                Logger.Write(
+                    LogLevel.Error,
+                    $"Attach request failed, '{attachParams.RunspaceId}' is an invalid value for the processId.");
+
+                await requestContext.SendErrorAsync(
+                    "A positive integer must be specified for the RunspaceId field.");
+
+                return;
+            }
+
             _waitingForAttach = true;
             Task nonAwaitedTask = _editorSession.PowerShellContext
                 .ExecuteScriptString($"\nDebug-Runspace -Id {runspaceId}")
