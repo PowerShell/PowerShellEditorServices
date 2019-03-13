@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -160,6 +161,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
             this.messageHandlers.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequestAsync);
             this.messageHandlers.SetRequestHandler(CommentHelpRequest.Type, this.HandleCommentHelpRequestAsync);
+
+            this.messageHandlers.SetRequestHandler(GetRunspaceRequest.Type, this.HandleGetRunspaceRequestAsync);
 
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
@@ -1216,6 +1219,54 @@ function __Expand-Alias {
             }
 
             await requestContext.SendResultAsync(result);
+        }
+
+        protected async Task HandleGetRunspaceRequestAsync(
+            string processId,
+            RequestContext<GetRunspaceResponse[]> requestContext)
+        {
+            var runspaceResponses = new List<GetRunspaceResponse>();
+
+            if (this.editorSession.PowerShellContext.LocalPowerShellVersion.Version.Major >= 5)
+            {
+                if (processId == null) {
+                    processId = "current";
+                }
+
+                var isNotCurrentProcess = processId != null && processId != "current";
+
+                var psCommand = new PSCommand();
+
+                if (isNotCurrentProcess) {
+                    psCommand.AddCommand("Enter-PSHostProcess").AddParameter("Id", processId).AddStatement();
+                }
+
+                psCommand.AddCommand("Get-Runspace");
+
+                StringBuilder sb = new StringBuilder();
+                IEnumerable<Runspace> runspaces = await editorSession.PowerShellContext.ExecuteCommandAsync<Runspace>(psCommand, sb);
+                if (runspaces != null)
+                {
+                    foreach (var p in runspaces)
+                    {
+                        runspaceResponses.Add(
+                            new GetRunspaceResponse
+                            {
+                                Id = p.Id,
+                                Name = p.Name,
+                                Availability = p.RunspaceAvailability.ToString()
+                            });
+                    }
+                }
+
+                if (isNotCurrentProcess) {
+                    var exitCommand = new PSCommand();
+                    exitCommand.AddCommand("Exit-PSHostProcess");
+                    await editorSession.PowerShellContext.ExecuteCommandAsync(exitCommand);
+                }
+            }
+
+            await requestContext.SendResultAsync(runspaceResponses.ToArray());
         }
 
         private bool IsQueryMatch(string query, string symbolName)
