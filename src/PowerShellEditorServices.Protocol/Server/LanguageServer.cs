@@ -1222,7 +1222,7 @@ function __Expand-Alias {
         }
 
         protected async Task HandleGetRunspaceRequestAsync(
-            object processId,
+            string processId,
             RequestContext<GetRunspaceResponse[]> requestContext)
         {
             var runspaceResponses = new List<GetRunspaceResponse>();
@@ -1233,9 +1233,11 @@ function __Expand-Alias {
                     processId = "current";
                 }
 
+                var isNotCurrentProcess = processId != null && processId != "current";
+
                 var psCommand = new PSCommand();
 
-                if (processId != null && processId.ToString() != "current") {
+                if (isNotCurrentProcess) {
                     psCommand.AddCommand("Enter-PSHostProcess").AddParameter("Id", processId).AddStatement();
                 }
 
@@ -1257,7 +1259,7 @@ function __Expand-Alias {
                     }
                 }
 
-                if (processId != null && processId.ToString() != "current") {
+                if (isNotCurrentProcess) {
                     var exitCommand = new PSCommand();
                     exitCommand.AddCommand("Exit-PSHostProcess");
                     await editorSession.PowerShellContext.ExecuteCommandAsync(exitCommand);

@@ -10,8 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     public class GetRunspaceRequest
     {
         public static readonly
-            RequestType<object, GetRunspaceResponse[], object, object> Type =
-                RequestType<object, GetRunspaceResponse[], object, object>.Create("powerShell/getRunspace");
+            RequestType<string, GetRunspaceResponse[], object, object> Type =
+                RequestType<string, GetRunspaceResponse[], object, object>.Create("powerShell/getRunspace");
     }
 
     public class GetRunspaceResponse
