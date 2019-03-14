@@ -471,7 +471,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     LogLevel.Error,
                     $"Attach request failed, '{attachParams.RunspaceId}' is an invalid value for the processId.");
 
-                await requestContext.SendErrorAsync(
+                await requestContext.SendError(
                     "A positive integer must be specified for the RunspaceId field.");
 
                 return;

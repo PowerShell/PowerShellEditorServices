@@ -1257,7 +1257,7 @@ function __Expand-Alias {
                 psCommand.AddCommand("Get-Runspace");
 
                 StringBuilder sb = new StringBuilder();
-                IEnumerable<Runspace> runspaces = await editorSession.PowerShellContext.ExecuteCommandAsync<Runspace>(psCommand, sb);
+                IEnumerable<Runspace> runspaces = await editorSession.PowerShellContext.ExecuteCommand<Runspace>(psCommand, sb);
                 if (runspaces != null)
                 {
                     foreach (var p in runspaces)
@@ -1275,11 +1275,11 @@ function __Expand-Alias {
                 if (isNotCurrentProcess) {
                     var exitCommand = new PSCommand();
                     exitCommand.AddCommand("Exit-PSHostProcess");
-                    await editorSession.PowerShellContext.ExecuteCommandAsync(exitCommand);
+                    await editorSession.PowerShellContext.ExecuteCommand(exitCommand);
                 }
             }
 
-            await requestContext.SendResultAsync(runspaceResponses.ToArray());
+            await requestContext.SendResult(runspaceResponses.ToArray());
         }
 
         private bool IsQueryMatch(string query, string symbolName)
