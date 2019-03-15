@@ -160,13 +160,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 // Respond to the disconnect request and stop the server
                 await _disconnectRequestContext.SendResultAsync(null);
                 Stop();
+                return;
             }
-            else
-            {
-                await _messageSender.SendEventAsync(
-                    TerminatedEvent.Type,
-                    new TerminatedEvent());
-            }
+
+            await _messageSender.SendEventAsync(
+                TerminatedEvent.Type,
+                new TerminatedEvent());
         }
 
         protected void Stop()

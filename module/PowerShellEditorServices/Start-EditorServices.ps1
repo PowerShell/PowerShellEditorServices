@@ -257,32 +257,6 @@ function Test-NamedPipeName {
     return !(Test-Path $path)
 }
 
-function Set-NamedPipeMode {
-    param(
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $PipeFile
-    )
-
-    if (($PSVersionTable.PSVersion.Major -le 5) -or $IsWindows) {
-        return
-    }
-
-    chmod $DEFAULT_USER_MODE $PipeFile
-
-    if ($IsLinux) {
-        $mode = /usr/bin/stat -c "%a" $PipeFile
-    }
-    elseif ($IsMacOS) {
-        $mode = /usr/bin/stat -f "%A" $PipeFile
-    }
-
-    if ($mode -ne $DEFAULT_USER_MODE) {
-        ExitWithError "Permissions to the pipe file were not set properly. Expected: $DEFAULT_USER_MODE Actual: $mode for file: $PipeFile"
-    }
-}
-
 LogSection "Console Encoding"
 Log $OutputEncoding
 
@@ -316,9 +290,6 @@ function Set-PipeFileResult {
     )
 
     $ResultTable[$PipeNameKey] = Get-NamedPipePath -PipeName $PipeNameValue
-    if (($PSVersionTable.PSVersion.Major -ge 6) -and ($IsLinux -or $IsMacOS)) {
-        Set-NamedPipeMode -PipeFile $ResultTable[$PipeNameKey]
-    }
 }
 
 # Add BundledModulesPath to $env:PSModulePath
