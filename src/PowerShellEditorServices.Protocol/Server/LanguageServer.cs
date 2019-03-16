@@ -727,6 +727,36 @@ function __Expand-Alias {
                     this.editorSession,
                     eventContext);
             }
+
+            // Convert the editor file glob patterns into an array for the Workspace
+            // Both the files.exclude and search.exclude hash tables look like (glob-text, is-enabled):
+            // "files.exclude" : {
+            //     "Makefile": true,
+            //     "*.html": true,
+            //     "build/*": true
+            // }
+            var excludeFilePatterns = new List<string>();
+            if (configChangeParams.Settings.Files?.Exclude != null)
+            {
+                foreach(KeyValuePair<string, bool> patternEntry in configChangeParams.Settings.Files.Exclude)
+                {
+                    if (patternEntry.Value) { excludeFilePatterns.Add(patternEntry.Key); }
+                }
+            }
+            if (configChangeParams.Settings.Search?.Exclude != null)
+            {
+                foreach(KeyValuePair<string, bool> patternEntry in configChangeParams.Settings.Files.Exclude)
+                {
+                    if (patternEntry.Value && !excludeFilePatterns.Contains(patternEntry.Key)) { excludeFilePatterns.Add(patternEntry.Key); }
+                }
+            }
+            editorSession.Workspace.ExcludeFilesGlob = excludeFilePatterns;
+
+            // Convert the editor file search options to Workspace properties
+            if (configChangeParams.Settings.Search?.FollowSymlinks != null)
+            {
+                editorSession.Workspace.FollowSymlinks = configChangeParams.Settings.Search.FollowSymlinks;
+            }
         }
 
         protected async Task HandleDefinitionRequestAsync(
