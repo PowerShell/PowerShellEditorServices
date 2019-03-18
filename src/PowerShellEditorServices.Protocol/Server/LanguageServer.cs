@@ -1251,7 +1251,7 @@ function __Expand-Alias {
                 else
                 {
                     var psCommand = new PSCommand().AddCommand("Get-Runspace");
-                    StringBuilder sb = new StringBuilder();
+                    var sb = new StringBuilder();
                     // returns (not deserialized) Runspaces. For simpler code, we use PSObject and rely on dynamic later.
                     runspaces = await editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(psCommand, sb);
                 }
