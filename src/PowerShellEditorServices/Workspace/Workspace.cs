@@ -639,13 +639,11 @@ namespace Microsoft.PowerShell.EditorServices
         public static string ConvertPathToDocumentUri(string path)
         {
             const string fileUriPrefix = "file:///";
+            const string untitledUriPrefix = "untitled:";
 
-            if (path.StartsWith("untitled:", StringComparison.Ordinal))
-            {
-                return path;
-            }
-
-            if (path.StartsWith(fileUriPrefix, StringComparison.Ordinal))
+            // If path is already in document uri form, there is nothing to convert.
+            if (path.StartsWith(untitledUriPrefix, StringComparison.Ordinal) ||
+                path.StartsWith(fileUriPrefix, StringComparison.Ordinal))
             {
                 return path;
             }
@@ -656,8 +654,12 @@ namespace Microsoft.PowerShell.EditorServices
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // VSCode file URIs on Windows need the drive letter lowercase.
+                // Search original path for colon since a char search (no string culture involved)
+                // is faster than a string search.
                 if (path.Contains(':'))
                 {
+                    // Start at index 1 to avoid an index out of range check when accessing index - 1.
+                    // Also, if the colon is at index 0 there is no drive letter before it to lower case.
                     for (int i = 1; i < docUriStrBld.Length - 2; i++)
                     {
                         if ((docUriStrBld[i] == '%') && (docUriStrBld[i + 1] == '3') && (docUriStrBld[i + 2] == 'A'))
@@ -670,11 +672,13 @@ namespace Microsoft.PowerShell.EditorServices
                     }
                 }
 
-                // Uri.EscapeDataString goes a bit far, encoding \ chars. Besides VSCode wants / instead of \.
+                // Uri.EscapeDataString goes a bit far, encoding \ chars. Also, VSCode wants / instead of \.
                 docUriStrBld.Replace("%5C", "/");
             }
             else
             {
+                // Because we will prefix later with file:///, remove the initial encoded / if this is an absolute path.
+                // See https://docs.microsoft.com/en-us/dotnet/api/system.uri?view=netframework-4.7.2#implicit-file-path-support
                 // Uri.EscapeDataString goes a bit far, encoding / chars.
                 docUriStrBld.Replace("%2F", "", 0, 3).Replace("%2F", "/");
             }
