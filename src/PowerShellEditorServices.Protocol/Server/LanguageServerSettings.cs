@@ -141,6 +141,27 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         Stroustrup
     }
 
+    /// <summary>
+    /// Multi-line pipeline style settings.
+    /// </summary>
+    public enum PipelineIndentationStyle
+    {
+        /// <summary>
+        /// After the indentation level only once after the first pipeline and keep this level for the following pipelines.
+        /// </summary>
+        IncreaseIndentationForFirstPipeline,
+
+        /// <summary>
+        /// After every pipeline, keep increasing the indentation.
+        /// </summary>
+        IncreaseIndentationAfterEveryPipeline,
+
+        /// <summary>
+        /// Do not increase indentation level at all after pipeline.
+        /// </summary>
+        NoIndentation
+    }
+
     public class CodeFormattingSettings
     {
         /// <summary>
@@ -172,6 +193,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public bool OpenBraceOnSameLine { get; set; }
         public bool NewLineAfterOpenBrace { get; set; }
         public bool NewLineAfterCloseBrace { get; set; }
+        public PipelineIndentationStyle PipelineIndentationStyle { get; set; }
         public bool WhitespaceBeforeOpenBrace { get; set; }
         public bool WhitespaceBeforeOpenParen { get; set; }
         public bool WhitespaceAroundOperator { get; set; }
@@ -250,6 +272,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     {"PSUseConsistentIndentation", new Hashtable {
                         {"Enable", true},
                         {"IndentationSize", tabSize},
+                        {"PipelineIndentation", PipelineIndentationStyle },
                         {"Kind", insertSpaces ? "space" : "tab"}
                     }},
                     {"PSUseConsistentWhitespace", new Hashtable {
