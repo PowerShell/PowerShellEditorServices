@@ -18,7 +18,6 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -1237,19 +1236,19 @@ function __Expand-Alias {
         }
 
         // Since the NamedPipeConnectionInfo type is only available in 5.1+
-        // we have to use reflection to support older version of PS.
+        // we have to use Activator to support older version of PS.
         // This code only lives in the v1.X of the extension.
         // The 2.x version of the code can be found here:
         // https://github.com/PowerShell/PowerShellEditorServices/pull/881
         private static Type _namedPipeConnectionInfoType = Type.GetType("System.Management.Automation.Runspaces.NamedPipeConnectionInfo, System.Management.Automation");
-        private static MethodInfo _runspaceFactoryCreateRunspaceMethod = typeof(RunspaceFactory)
-                .GetMethod("CreateRunspace", new Type[] { _namedPipeConnectionInfoType });
-        private Runspace GetRemoteRunspace(int pid)
+
+        private static Runspace GetRemoteRunspace(int pid)
         {
             var namedPipeConnectionInfoInstance = Activator.CreateInstance(
                 _namedPipeConnectionInfoType,
                 pid);
-            return _runspaceFactoryCreateRunspaceMethod.Invoke(null, new [] { namedPipeConnectionInfoInstance }) as Runspace;
+
+            return RunspaceFactory.CreateRunspace(namedPipeConnectionInfoInstance as RunspaceConnectionInfo);
         }
 
         protected async Task HandleGetRunspaceRequestAsync(
