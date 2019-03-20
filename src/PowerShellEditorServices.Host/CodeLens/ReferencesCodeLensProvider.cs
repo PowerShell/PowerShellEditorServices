@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     GetReferenceCountHeader(referenceLocations.Length),
                     new object[]
                     {
-                        codeLens.File.ClientFilePath,
+                        codeLens.File.DocumentUri,
                         codeLens.ScriptExtent.ToRange().Start,
                         referenceLocations,
                     }
@@ -151,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             // If the file isn't untitled, return a URI-style path
             return
                 !filePath.StartsWith("untitled") && !filePath.StartsWith("inmemory")
-                    ? new Uri("file://" + filePath).AbsoluteUri
+                    ? Workspace.ConvertPathToDocumentUri(filePath)
                     : filePath;
         }
 

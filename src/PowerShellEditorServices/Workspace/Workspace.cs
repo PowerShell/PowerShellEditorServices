@@ -351,7 +351,7 @@ namespace Microsoft.PowerShell.EditorServices
                     this.logger.WriteHandledException(
                         $"Could not enumerate files in the path '{folderPath}' due to an exception",
                         e);
-                    
+
                     continue;
                 }
 
@@ -400,7 +400,7 @@ namespace Microsoft.PowerShell.EditorServices
                 this.logger.WriteHandledException(
                     $"Could not enumerate directories in the path '{folderPath}' due to an exception",
                     e);
-                
+
                 return;
             }
 
@@ -623,6 +623,69 @@ namespace Microsoft.PowerShell.EditorServices
             sb.Append(fileUri.Substring(12)); // The rest of the URI after the colon
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Converts a file system path into a DocumentUri required by Language Server Protocol.
+        /// </summary>
+        /// <remarks>
+        /// When sending a document path to a LSP client, the path must be provided as a
+        /// DocumentUri in order to features like the Problems window or peek definition
+        /// to be able to open the specified file.
+        /// </remarks>
+        /// <param name="path">
+        /// A file system path. Note: if the path is already a DocumentUri, it will be returned unmodified.
+        /// </param>
+        /// <returns>The file system path encoded as a DocumentUri.</returns>
+        public static string ConvertPathToDocumentUri(string path)
+        {
+            const string fileUriPrefix = "file:///";
+            const string untitledUriPrefix = "untitled:";
+
+            // If path is already in document uri form, there is nothing to convert.
+            if (path.StartsWith(untitledUriPrefix, StringComparison.Ordinal) ||
+                path.StartsWith(fileUriPrefix, StringComparison.Ordinal))
+            {
+                return path;
+            }
+
+            string escapedPath = Uri.EscapeDataString(path);
+            var docUriStrBld = new StringBuilder(escapedPath);
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // VSCode file URIs on Windows need the drive letter lowercase.
+                // Search original path for colon since a char search (no string culture involved)
+                // is faster than a string search.
+                if (path.Contains(':'))
+                {
+                    // Start at index 1 to avoid an index out of range check when accessing index - 1.
+                    // Also, if the colon is at index 0 there is no drive letter before it to lower case.
+                    for (int i = 1; i < docUriStrBld.Length - 2; i++)
+                    {
+                        if ((docUriStrBld[i] == '%') && (docUriStrBld[i + 1] == '3') && (docUriStrBld[i + 2] == 'A'))
+                        {
+                            int driveLetterIndex = i - 1;
+                            char driveLetter = char.ToLowerInvariant(docUriStrBld[driveLetterIndex]);
+                            docUriStrBld.Replace(path[driveLetterIndex], driveLetter, driveLetterIndex, 1);
+                            break;
+                        }
+                    }
+                }
+
+                // Uri.EscapeDataString goes a bit far, encoding \ chars. Also, VSCode wants / instead of \.
+                docUriStrBld.Replace("%5C", "/");
+            }
+            else
+            {
+                // Because we will prefix later with file:///, remove the initial encoded / if this is an absolute path.
+                // See https://docs.microsoft.com/en-us/dotnet/api/system.uri?view=netframework-4.7.2#implicit-file-path-support
+                // Uri.EscapeDataString goes a bit far, encoding / chars.
+                docUriStrBld.Replace("%2F", string.Empty, 0, 3).Replace("%2F", "/");
+            }
+
+            // ' is not always encoded.  I've seen this in Windows PowerShell.
+            return docUriStrBld.Replace("'", "%27").Insert(0, fileUriPrefix).ToString();
         }
 
         #endregion

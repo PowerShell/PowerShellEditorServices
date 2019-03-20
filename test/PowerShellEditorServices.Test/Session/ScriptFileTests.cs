@@ -570,12 +570,51 @@ First line
 
                 Assert.Equal(path, scriptFile.FilePath);
                 Assert.Equal(path, scriptFile.ClientFilePath);
+                Assert.Equal(path, scriptFile.DocumentUri);
                 Assert.True(scriptFile.IsAnalysisEnabled);
                 Assert.True(scriptFile.IsInMemory);
                 Assert.Empty(scriptFile.ReferencedFiles);
                 Assert.Empty(scriptFile.SyntaxMarkers);
                 Assert.Equal(10, scriptFile.ScriptTokens.Length);
                 Assert.Equal(3, scriptFile.FileLines.Count);
+            }
+        }
+
+        [Fact]
+        public void DocumentUriRetunsCorrectStringForAbsolutePath()
+        {
+            string path;
+            ScriptFile scriptFile;
+            var emptyStringReader = new StringReader("");
+
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                path = @"C:\Users\AmosBurton\projects\Rocinate\ProtoMolecule.ps1";
+                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                Assert.Equal("file:///c%3A/Users/AmosBurton/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
+
+                path = @"c:\Users\BobbyDraper\projects\Rocinate\foo's_~#-[@] +,;=%.ps1";
+                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                Assert.Equal("file:///c%3A/Users/BobbyDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
+            }
+            else
+            {
+                // Test the following only on Linux and macOS.
+                path = "/home/AlexKamal/projects/Rocinate/ProtoMolecule.ps1";
+                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                Assert.Equal("file:///home/AlexKamal/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
+
+                path = "/home/BobbyDraper/projects/Rocinate/foo's_~#-[@] +,;=%.ps1";
+                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                Assert.Equal("file:///home/BobbyDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
+
+                path = "/home/NaomiNagata/projects/Rocinate/Proto:Mole:cule.ps1";
+                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                Assert.Equal("file:///home/NaomiNagata/projects/Rocinate/Proto%3AMole%3Acule.ps1", scriptFile.DocumentUri);
+
+                path = "/home/JamesHolden/projects/Rocinate/Proto:Mole\\cule.ps1";
+                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                Assert.Equal("file:///home/JamesHolden/projects/Rocinate/Proto%3AMole%5Ccule.ps1", scriptFile.DocumentUri);
             }
         }
     }
