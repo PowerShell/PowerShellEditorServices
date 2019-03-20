@@ -1235,22 +1235,22 @@ function __Expand-Alias {
                 }
 
                 // If the processId is a valid int, we need to run Get-Runspace within that process
-                // otherwise just use the current runspace
+                // otherwise just use the current runspace.
                 if (int.TryParse(processId, out int pid))
                 {
-                    // Create a remote runspace that we will invoke Get-Runspace in
+                    // Create a remote runspace that we will invoke Get-Runspace in.
                     using(var rs = RunspaceFactory.CreateRunspace(new NamedPipeConnectionInfo(pid)))
                     using(var ps = PowerShell.Create())
                     {
                         rs.Open();
                         ps.Runspace = rs;
-                        // returns deserialized Runspaces. For simpler code, we use PSObject and rely on dynamic later.
-                        runspaces = ps.AddCommand("Get-Runspace").Invoke<PSObject>();
+                        // Returns deserialized Runspaces. For simpler code, we use PSObject and rely on dynamic later.
+                        runspaces = ps.AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace").Invoke<PSObject>();
                     }
                 }
                 else
                 {
-                    var psCommand = new PSCommand().AddCommand("Get-Runspace");
+                    var psCommand = new PSCommand().AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace");
                     var sb = new StringBuilder();
                     // returns (not deserialized) Runspaces. For simpler code, we use PSObject and rely on dynamic later.
                     runspaces = await editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(psCommand, sb);
@@ -1261,14 +1261,14 @@ function __Expand-Alias {
 
             if (runspaces != null)
             {
-                foreach (dynamic p in runspaces)
+                foreach (dynamic runspace in runspaces)
                 {
                     runspaceResponses.Add(
                         new GetRunspaceResponse
                         {
-                            Id = p.Id,
-                            Name = p.Name,
-                            Availability = p.RunspaceAvailability.ToString()
+                            Id = runspace.Id,
+                            Name = runspace.Name,
+                            Availability = runspace.RunspaceAvailability.ToString()
                         });
                 }
             }
