@@ -680,7 +680,7 @@ namespace Microsoft.PowerShell.EditorServices
                 // Because we will prefix later with file:///, remove the initial encoded / if this is an absolute path.
                 // See https://docs.microsoft.com/en-us/dotnet/api/system.uri?view=netframework-4.7.2#implicit-file-path-support
                 // Uri.EscapeDataString goes a bit far, encoding / chars.
-                docUriStrBld.Replace("%2F", "", 0, 3).Replace("%2F", "/");
+                docUriStrBld.Replace("%2F", string.Empty, 0, 3).Replace("%2F", "/");
             }
 
             // ' is not always encoded.  I've seen this in Windows PowerShell.
