@@ -637,55 +637,55 @@ namespace Microsoft.PowerShell.EditorServices
         /// A file system path. Note: if the path is already a DocumentUri, it will be returned unmodified.
         /// </param>
         /// <returns>The file system path encoded as a DocumentUri.</returns>
-        internal static string ConvertPathToDocumentUri(string path)
+        public static string ConvertPathToDocumentUri(string path)
         {
             const string fileUriPrefix = "file:///";
+            const string untitledUriPrefix = "untitled:";
 
-            if (path.StartsWith("untitled:", StringComparison.Ordinal))
+            // If path is already in document uri form, there is nothing to convert.
+            if (path.StartsWith(untitledUriPrefix, StringComparison.Ordinal) ||
+                path.StartsWith(fileUriPrefix, StringComparison.Ordinal))
             {
                 return path;
             }
 
-            if (path.StartsWith(fileUriPrefix, StringComparison.Ordinal))
-            {
-                return path;
-            }
+            string escapedPath = Uri.EscapeDataString(path);
+            var docUriStrBld = new StringBuilder(escapedPath);
 
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // On a Linux filesystem, you can have multiple colons in a filename e.g. foo:bar:baz.txt
-                string absoluteUri = new Uri(path).AbsoluteUri;
-
-                // First colon is part of the protocol scheme, see if there are other colons in the path
-                int firstColonIndex = absoluteUri.IndexOf(':');
-                if (absoluteUri.IndexOf(':', firstColonIndex + 1) > firstColonIndex)
+                // VSCode file URIs on Windows need the drive letter lowercase.
+                // Search original path for colon since a char search (no string culture involved)
+                // is faster than a string search.
+                if (path.Contains(':'))
                 {
-                    absoluteUri = new StringBuilder(absoluteUri)
-                        .Replace(
-                            oldValue: ":",
-                            newValue: "%3A",
-                            startIndex: firstColonIndex + 1,
-                            count: absoluteUri.Length - firstColonIndex - 1)
-                        .ToString();
+                    // Start at index 1 to avoid an index out of range check when accessing index - 1.
+                    // Also, if the colon is at index 0 there is no drive letter before it to lower case.
+                    for (int i = 1; i < docUriStrBld.Length - 2; i++)
+                    {
+                        if ((docUriStrBld[i] == '%') && (docUriStrBld[i + 1] == '3') && (docUriStrBld[i + 2] == 'A'))
+                        {
+                            int driveLetterIndex = i - 1;
+                            char driveLetter = char.ToLowerInvariant(docUriStrBld[driveLetterIndex]);
+                            docUriStrBld.Replace(path[driveLetterIndex], driveLetter, driveLetterIndex, 1);
+                            break;
+                        }
+                    }
                 }
 
-                return absoluteUri;
+                // Uri.EscapeDataString goes a bit far, encoding \ chars. Also, VSCode wants / instead of \.
+                docUriStrBld.Replace("%5C", "/");
             }
-
-            // VSCode file URIs on Windows need the drive letter lowercase, and the colon
-            // URI encoded. System.Uri won't do that, so we manually create the URI.
-            var newUri = new StringBuilder(System.Web.HttpUtility.UrlPathEncode(path));
-            int colonIndex = path.IndexOf(':');
-            if (colonIndex > 0)
+            else
             {
-                int driveLetterIndex = colonIndex - 1;
-                char driveLetter = char.ToLowerInvariant(path[driveLetterIndex]);
-                newUri
-                    .Replace(path[driveLetterIndex], driveLetter, driveLetterIndex, 1)
-                    .Replace(":", "%3A", colonIndex, 1);
+                // Because we will prefix later with file:///, remove the initial encoded / if this is an absolute path.
+                // See https://docs.microsoft.com/en-us/dotnet/api/system.uri?view=netframework-4.7.2#implicit-file-path-support
+                // Uri.EscapeDataString goes a bit far, encoding / chars.
+                docUriStrBld.Replace("%2F", string.Empty, 0, 3).Replace("%2F", "/");
             }
 
-            return newUri.Replace('\\', '/').Insert(0, fileUriPrefix).ToString();
+            // ' is not always encoded.  I've seen this in Windows PowerShell.
+            return docUriStrBld.Replace("'", "%27").Insert(0, fileUriPrefix).ToString();
         }
 
         #endregion
