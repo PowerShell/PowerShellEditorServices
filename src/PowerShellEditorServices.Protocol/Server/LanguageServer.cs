@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -1241,13 +1242,10 @@ function __Expand-Alias {
         // The 2.x version of the code can be found here:
         // https://github.com/PowerShell/PowerShellEditorServices/pull/881
         private static Type _namedPipeConnectionInfoType = Type.GetType("System.Management.Automation.Runspaces.NamedPipeConnectionInfo, System.Management.Automation");
-
+        private static ConstructorInfo _namedPipeConnectionInfoCtor = _namedPipeConnectionInfoType.GetConstructor(new [] { typeof(int) });
         private static Runspace GetRemoteRunspace(int pid)
         {
-            var namedPipeConnectionInfoInstance = Activator.CreateInstance(
-                _namedPipeConnectionInfoType,
-                pid);
-
+            var namedPipeConnectionInfoInstance = _namedPipeConnectionInfoCtor.Invoke(new object[] { pid });
             return RunspaceFactory.CreateRunspace(namedPipeConnectionInfoInstance as RunspaceConnectionInfo);
         }
 
