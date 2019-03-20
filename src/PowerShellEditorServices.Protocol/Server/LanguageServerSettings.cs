@@ -176,6 +176,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         public bool WhitespaceBeforeOpenParen { get; set; }
         public bool WhitespaceAroundOperator { get; set; }
         public bool WhitespaceAfterSeparator { get; set; }
+        public bool WhitespaceInsideBrace { get; set; }
+        public bool WhitespaceAroundPipe { get; set; }
         public bool IgnoreOneLineBlock { get; set; }
         public bool AlignPropertyValuePairs { get; set; }
         public bool UseCorrectCasing { get; set; }
@@ -255,7 +257,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         {"CheckOpenBrace", WhitespaceBeforeOpenBrace},
                         {"CheckOpenParen", WhitespaceBeforeOpenParen},
                         {"CheckOperator", WhitespaceAroundOperator},
-                        {"CheckSeparator", WhitespaceAfterSeparator}
+                        {"CheckSeparator", WhitespaceAfterSeparator},
+                        {"CheckInnerBrace", WhitespaceInsideBrace},
+                        {"CheckPipe", WhitespaceAroundPipe},
                     }},
                     {"PSAlignAssignmentStatement", new Hashtable {
                         {"Enable", true},
