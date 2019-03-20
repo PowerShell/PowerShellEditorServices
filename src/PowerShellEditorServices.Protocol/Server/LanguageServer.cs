@@ -16,9 +16,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -28,6 +28,8 @@ using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugA
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
+    using System.Management.Automation;
+
     public class LanguageServer
     {
         private static CancellationTokenSource s_existingRequestCancellation;
@@ -1234,11 +1236,27 @@ function __Expand-Alias {
             await requestContext.SendResult(result);
         }
 
+        // Since the NamedPipeConnectionInfo type is only available in 5.1+
+        // we have to use reflection to support older version of PS.
+        // This code only lives in the v1.X of the extension.
+        // The 2.x version of the code can be found here:
+        // https://github.com/PowerShell/PowerShellEditorServices/pull/881
+        private static Type _namedPipeConnectionInfoType = Type.GetType("System.Management.Automation.Runspaces.NamedPipeConnectionInfo, System.Management.Automation");
+        private static MethodInfo _runspaceFactoryCreateRunspaceMethod = typeof(RunspaceFactory)
+                .GetMethod("CreateRunspace", new Type[] { _namedPipeConnectionInfoType });
+        private Runspace GetRemoteRunspace(int pid)
+        {
+            var namedPipeConnectionInfoInstance = Activator.CreateInstance(
+                _namedPipeConnectionInfoType,
+                pid);
+            return _runspaceFactoryCreateRunspaceMethod.Invoke(null, new [] { namedPipeConnectionInfoInstance }) as Runspace;
+        }
+
         protected async Task HandleGetRunspaceRequestAsync(
             string processId,
             RequestContext<GetRunspaceResponse[]> requestContext)
         {
-            var runspaceResponses = new List<GetRunspaceResponse>();
+            IEnumerable<PSObject> runspaces = null;
 
             if (this.editorSession.PowerShellContext.LocalPowerShellVersion.Version.Major >= 5)
             {
@@ -1246,36 +1264,43 @@ function __Expand-Alias {
                     processId = "current";
                 }
 
-                var isNotCurrentProcess = processId != null && processId != "current";
-
-                var psCommand = new PSCommand();
-
-                if (isNotCurrentProcess) {
-                    psCommand.AddCommand("Enter-PSHostProcess").AddParameter("Id", processId).AddStatement();
-                }
-
-                psCommand.AddCommand("Get-Runspace");
-
-                StringBuilder sb = new StringBuilder();
-                IEnumerable<Runspace> runspaces = await editorSession.PowerShellContext.ExecuteCommand<Runspace>(psCommand, sb);
-                if (runspaces != null)
+                // If the processId is a valid int, we need to run Get-Runspace within that process
+                // otherwise just use the current runspace.
+                if (int.TryParse(processId, out int pid))
                 {
-                    foreach (var p in runspaces)
+
+                    // Create a remote runspace that we will invoke Get-Runspace in.
+                    using(var rs = GetRemoteRunspace(pid))
+                    using(var ps = PowerShell.Create())
                     {
-                        runspaceResponses.Add(
-                            new GetRunspaceResponse
-                            {
-                                Id = p.Id,
-                                Name = p.Name,
-                                Availability = p.RunspaceAvailability.ToString()
-                            });
+                        rs.Open();
+                        ps.Runspace = rs;
+                        // Returns deserialized Runspaces. For simpler code, we use PSObject and rely on dynamic later.
+                        runspaces = ps.AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace").Invoke<PSObject>();
                     }
                 }
+                else
+                {
+                    var psCommand = new PSCommand().AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace");
+                    var sb = new StringBuilder();
+                    // returns (not deserialized) Runspaces. For simpler code, we use PSObject and rely on dynamic later.
+                    runspaces = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand, sb);
+                }
+            }
 
-                if (isNotCurrentProcess) {
-                    var exitCommand = new PSCommand();
-                    exitCommand.AddCommand("Exit-PSHostProcess");
-                    await editorSession.PowerShellContext.ExecuteCommand(exitCommand);
+            var runspaceResponses = new List<GetRunspaceResponse>();
+
+            if (runspaces != null)
+            {
+                foreach (dynamic runspace in runspaces)
+                {
+                    runspaceResponses.Add(
+                        new GetRunspaceResponse
+                        {
+                            Id = runspace.Id,
+                            Name = runspace.Name,
+                            Availability = runspace.RunspaceAvailability.ToString()
+                        });
                 }
             }
 
