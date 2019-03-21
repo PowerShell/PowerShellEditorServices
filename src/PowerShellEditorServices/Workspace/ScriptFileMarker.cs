@@ -33,20 +33,22 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public enum ScriptFileMarkerLevel
     {
-        /// <summary>
-        /// The marker represents an informational message.
-        /// </summary>
-        Information = 0,
-
-        /// <summary>
-        /// The marker represents a warning message.
-        /// </summary>
-        Warning,
-
-        /// <summary>
-        /// The marker represents an error message.
-        /// </summary>
-        Error
+        /// <summary>
+        /// Information: This warning is trivial, but may be useful. They are recommended by PowerShell best practice.
+        /// </summary>
+        Information = 0,
+        /// <summary>
+        /// WARNING: This warning may cause a problem or does not follow PowerShell's recommended guidelines.
+        /// </summary>
+        Warning = 1,
+        /// <summary>
+        /// ERROR: This warning is likely to cause a problem or does not follow PowerShell's required guidelines.
+        /// </summary>
+        Error = 2,
+        /// <summary>
+        /// ERROR: This diagnostic is caused by an actual parsing error, and is generated only by the engine.
+        /// </summary>
+        ParseError = 3
     };
 
     /// <summary>
@@ -62,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets or sets the marker's message string.
         /// </summary>
         public string Message { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the ruleName associated with this marker.
         /// </summary>
@@ -176,21 +178,16 @@ namespace Microsoft.PowerShell.EditorServices
         private static ScriptFileMarkerLevel GetMarkerLevelFromDiagnosticSeverity(
             string diagnosticSeverity)
         {
-            switch (diagnosticSeverity)
+            if(Enum.TryParse(diagnosticSeverity, out ScriptFileMarkerLevel level))
             {
-                case "Information":
-                    return ScriptFileMarkerLevel.Information;
-                case "Warning":
-                    return ScriptFileMarkerLevel.Warning;
-                case "Error":
-                    return ScriptFileMarkerLevel.Error;
-                default:
-                    throw new ArgumentException(
-                        string.Format(
-                            "The provided DiagnosticSeverity value '{0}' is unknown.",
-                            diagnosticSeverity),
-                        "diagnosticSeverity");
+                return level;
             }
+
+            throw new ArgumentException(
+                string.Format(
+                    "The provided DiagnosticSeverity value '{0}' is unknown.",
+                    diagnosticSeverity),
+                "diagnosticSeverity");
         }
         #endregion
     }
