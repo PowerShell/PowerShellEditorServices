@@ -619,6 +619,8 @@ namespace Microsoft.PowerShell.EditorServices
             }
             else
             {
+                // Adding with a value of null here because we don't actually need a dictionary. We're
+                // only using ConcurrentDictionary<,> becuase there is no ConcurrentHashSet<>.
                 this.currentProgressMessages.TryAdd(new ProgressKey(sourceId, record), null);
             }
 
