@@ -44,6 +44,14 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private static readonly SymbolInformation[] s_emptySymbolResult = new SymbolInformation[0];
 
+        // Since the NamedPipeConnectionInfo type is only available in 5.1+
+        // we have to use Activator to support older version of PS.
+        // This code only lives in the v1.X of the extension.
+        // The 2.x version of the code can be found here:
+        // https://github.com/PowerShell/PowerShellEditorServices/pull/881
+        private static readonly Type s_namedPipeConnectionInfoType = Type.GetType("System.Management.Automation.Runspaces.NamedPipeConnectionInfo, System.Management.Automation");
+        private static readonly ConstructorInfo s_namedPipeConnectionInfoCtor = s_namedPipeConnectionInfoType.GetConstructor(new [] { typeof(int) });
+
         private ILogger Logger;
         private bool profilesLoaded;
         private bool consoleReplStarted;
@@ -1236,16 +1244,9 @@ function __Expand-Alias {
             await requestContext.SendResult(result);
         }
 
-        // Since the NamedPipeConnectionInfo type is only available in 5.1+
-        // we have to use Activator to support older version of PS.
-        // This code only lives in the v1.X of the extension.
-        // The 2.x version of the code can be found here:
-        // https://github.com/PowerShell/PowerShellEditorServices/pull/881
-        private static Type _namedPipeConnectionInfoType = Type.GetType("System.Management.Automation.Runspaces.NamedPipeConnectionInfo, System.Management.Automation");
-        private static ConstructorInfo _namedPipeConnectionInfoCtor = _namedPipeConnectionInfoType.GetConstructor(new [] { typeof(int) });
         private static Runspace GetRemoteRunspace(int pid)
         {
-            var namedPipeConnectionInfoInstance = _namedPipeConnectionInfoCtor.Invoke(new object[] { pid });
+            var namedPipeConnectionInfoInstance = s_namedPipeConnectionInfoCtor.Invoke(new object[] { pid });
             return RunspaceFactory.CreateRunspace(namedPipeConnectionInfoInstance as RunspaceConnectionInfo);
         }
 
@@ -1267,7 +1268,7 @@ function __Expand-Alias {
                 {
 
                     // Create a remote runspace that we will invoke Get-Runspace in.
-                    using(var rs = GetRemoteRunspace(pid))
+                    using(Runspace rs = GetRemoteRunspace(pid))
                     using(var ps = PowerShell.Create())
                     {
                         rs.Open();
