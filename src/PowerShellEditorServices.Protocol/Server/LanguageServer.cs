@@ -49,8 +49,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         // This code only lives in the v1.X of the extension.
         // The 2.x version of the code can be found here:
         // https://github.com/PowerShell/PowerShellEditorServices/pull/881
-        private static readonly Type s_namedPipeConnectionInfoType = typeof(PSObject).GetTypeInfo().Assembly.GetType("System.Management.Automation.Runspaces.NamedPipeConnectionInfo");
-        private static readonly ConstructorInfo s_namedPipeConnectionInfoCtor = s_namedPipeConnectionInfoType.GetConstructor(new [] { typeof(int) });
+        private static readonly ConstructorInfo s_namedPipeConnectionInfoCtor = typeof(PSObject).GetTypeInfo().Assembly
+            .GetType("System.Management.Automation.Runspaces.NamedPipeConnectionInfo")
+            ?.GetConstructor(new [] { typeof(int) });
 
         private ILogger Logger;
         private bool profilesLoaded;
