@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the list of syntax markers found by parsing this
         /// file's contents.
         /// </summary>
-        public ScriptFileMarker[] SyntaxMarkers
+        public List<ScriptFileMarker> SyntaxMarkers
         {
             get;
             private set;
@@ -657,7 +657,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.SyntaxMarkers =
                 parseErrors
                     .Select(ScriptFileMarker.FromParseError)
-                    .ToArray();
+                    .ToList();
 
             // Untitled files have no directory
             // Discussed in https://github.com/PowerShell/PowerShellEditorServices/pull/815.

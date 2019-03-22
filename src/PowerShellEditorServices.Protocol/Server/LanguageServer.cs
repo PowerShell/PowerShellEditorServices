@@ -1192,7 +1192,7 @@ function __Expand-Alias {
                 funcText = string.Join("\n", lines);
             }
 
-            ScriptFileMarker[] analysisResults = await this.editorSession.AnalysisService.GetSemanticMarkersAsync(
+            List<ScriptFileMarker> analysisResults = await this.editorSession.AnalysisService.GetSemanticMarkersAsync(
                 funcText,
                 AnalysisService.GetCommentHelpRuleSettings(
                     enable: true,
@@ -1743,7 +1743,7 @@ function __Expand-Alias {
             // Get the requested files
             foreach (ScriptFile scriptFile in filesToAnalyze)
             {
-                ScriptFileMarker[] semanticMarkers = null;
+                List<ScriptFileMarker> semanticMarkers = null;
                 if (isScriptAnalysisEnabled && editorSession.AnalysisService != null)
                 {
                     using (Logger.LogExecutionTime($"Script analysis of {scriptFile.FilePath} completed."))
@@ -1755,13 +1755,15 @@ function __Expand-Alias {
                 {
                     // Semantic markers aren't available if the AnalysisService
                     // isn't available
-                    semanticMarkers = new ScriptFileMarker[0];
+                    semanticMarkers = new List<ScriptFileMarker>();
                 }
+
+                scriptFile.SyntaxMarkers.AddRange(semanticMarkers);
 
                 await PublishScriptDiagnosticsAsync(
                     scriptFile,
                     // Concat script analysis errors to any existing parse errors
-                    scriptFile.SyntaxMarkers.Concat(semanticMarkers).ToArray(),
+                    scriptFile.SyntaxMarkers,
                     correctionIndex,
                     eventSender);
             }
@@ -1772,14 +1774,14 @@ function __Expand-Alias {
             // send empty diagnostic markers to clear any markers associated with the given file
             await PublishScriptDiagnosticsAsync(
                     scriptFile,
-                    new ScriptFileMarker[0],
+                    new List<ScriptFileMarker>(),
                     this.codeActionsPerFile,
                     eventContext);
         }
 
         private static async Task PublishScriptDiagnosticsAsync(
             ScriptFile scriptFile,
-            ScriptFileMarker[] markers,
+            List<ScriptFileMarker> markers,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EventContext eventContext)
         {
@@ -1792,7 +1794,7 @@ function __Expand-Alias {
 
         private static async Task PublishScriptDiagnosticsAsync(
             ScriptFile scriptFile,
-            ScriptFileMarker[] markers,
+            List<ScriptFileMarker> markers,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             Func<NotificationType<PublishDiagnosticsNotification, object>, PublishDiagnosticsNotification, Task> eventSender)
         {

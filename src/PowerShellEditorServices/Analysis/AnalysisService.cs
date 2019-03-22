@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// An empty script marker result to return when no script markers can be returned.
         /// </summary>
-        private static readonly ScriptFileMarker[] s_emptyScriptMarkerResult = new ScriptFileMarker[0];
+        private static readonly List<ScriptFileMarker> s_emptyScriptMarkerResult = new List<ScriptFileMarker>();
 
         private static readonly string[] s_emptyGetRuleResult = new string[0];
 
@@ -266,7 +266,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="file">The ScriptFile which will be analyzed for semantic markers.</param>
         /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
-        public async Task<ScriptFileMarker[]> GetSemanticMarkersAsync(ScriptFile file)
+        public async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(ScriptFile file)
         {
             return await GetSemanticMarkersAsync<string>(file, ActiveRules, SettingsPath);
         }
@@ -277,7 +277,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="file">The ScriptFile to be analyzed.</param>
         /// <param name="settings">ScriptAnalyzer settings</param>
         /// <returns></returns>
-        public async Task<ScriptFileMarker[]> GetSemanticMarkersAsync(ScriptFile file, Hashtable settings)
+        public async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(ScriptFile file, Hashtable settings)
         {
             return await GetSemanticMarkersAsync<Hashtable>(file, null, settings);
         }
@@ -288,7 +288,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="scriptContent">The script content to be analyzed.</param>
         /// <param name="settings">ScriptAnalyzer settings</param>
         /// <returns></returns>
-        public async Task<ScriptFileMarker[]> GetSemanticMarkersAsync(
+        public async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(
            string scriptContent,
            Hashtable settings)
         {
@@ -379,7 +379,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Private Methods
 
-        private async Task<ScriptFileMarker[]> GetSemanticMarkersAsync<TSettings>(
+        private async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync<TSettings>(
             ScriptFile file,
             string[] rules,
             TSettings settings) where TSettings : class
@@ -398,7 +398,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private async Task<ScriptFileMarker[]> GetSemanticMarkersAsync<TSettings>(
+        private async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync<TSettings>(
             string scriptContent,
             string[] rules,
             TSettings settings) where TSettings : class
@@ -407,7 +407,7 @@ namespace Microsoft.PowerShell.EditorServices
                 && (rules != null || settings != null))
             {
                 var scriptFileMarkers = await GetDiagnosticRecordsAsync(scriptContent, rules, settings);
-                return scriptFileMarkers.Select(ScriptFileMarker.FromDiagnosticRecord).ToArray();
+                return scriptFileMarkers.Select(ScriptFileMarker.FromDiagnosticRecord).ToList();
             }
             else
             {
@@ -514,7 +514,9 @@ namespace Microsoft.PowerShell.EditorServices
                     new Dictionary<string, object>
                     {
                         { "ScriptDefinition", scriptContent },
-                        { settingParameter, settingArgument }
+                        { settingParameter, settingArgument },
+                        // We ignore ParseErrors from PSSA because we already send them when we parse the file.
+                        { "Severity", new [] { ScriptFileMarkerLevel.Error, ScriptFileMarkerLevel.Information, ScriptFileMarkerLevel.Warning }}
                     });
 
                 diagnosticRecords = result?.Output;

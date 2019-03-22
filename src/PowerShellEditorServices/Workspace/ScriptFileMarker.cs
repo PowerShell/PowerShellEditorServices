@@ -164,31 +164,27 @@ namespace Microsoft.PowerShell.EditorServices
                 };
             }
 
+            string severity = diagnosticRecord.Severity.ToString();
+            if(!Enum.TryParse(severity, out ScriptFileMarkerLevel level))
+            {
+                throw new ArgumentException(
+                string.Format(
+                        "The provided DiagnosticSeverity value '{0}' is unknown.",
+                        severity),
+                    "diagnosticSeverity");
+            }
+
             return new ScriptFileMarker
             {
                 Message = $"{diagnosticRecord.Message as string}",
                 RuleName = $"{diagnosticRecord.RuleName as string}",
-                Level = GetMarkerLevelFromDiagnosticSeverity((diagnosticRecord.Severity as Enum).ToString()),
+                Level = level,
                 ScriptRegion = ScriptRegion.Create(diagnosticRecord.Extent as IScriptExtent),
                 Correction = correction,
                 Source = "PSScriptAnalyzer"
             };
         }
 
-        private static ScriptFileMarkerLevel GetMarkerLevelFromDiagnosticSeverity(
-            string diagnosticSeverity)
-        {
-            if(Enum.TryParse(diagnosticSeverity, out ScriptFileMarkerLevel level))
-            {
-                return level;
-            }
-
-            throw new ArgumentException(
-                string.Format(
-                    "The provided DiagnosticSeverity value '{0}' is unknown.",
-                    diagnosticSeverity),
-                "diagnosticSeverity");
-        }
         #endregion
     }
 }
