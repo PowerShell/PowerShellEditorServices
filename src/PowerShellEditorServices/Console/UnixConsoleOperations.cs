@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             WaitForKeyAvailableAsync = LongWaitForKeyAsync;
         }
 
-        internal ConsoleKeyInfo ReadKey(bool intercept, CancellationToken cancellationToken)
+        public ConsoleKeyInfo ReadKey(bool intercept, CancellationToken cancellationToken)
         {
             s_readKeyHandle.Wait(cancellationToken);
 
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
         }
 
-        public async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken)
+        public async Task<ConsoleKeyInfo> ReadKeyAsync(bool intercept, CancellationToken cancellationToken)
         {
             await s_readKeyHandle.WaitAsync(cancellationToken);
 
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             await s_stdInHandle.WaitAsync(cancellationToken);
             try
             {
-                return System.Console.ReadKey(intercept: true);
+                return System.Console.ReadKey(intercept);
             }
             finally
             {

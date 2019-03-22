@@ -8,6 +8,8 @@ using Microsoft.PowerShell.EditorServices.Console;
 namespace Microsoft.PowerShell.EditorServices
 {
     using System;
+    using System.Management.Automation;
+    using System.Management.Automation.Host;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.PowerShell.EditorServices.Utility;
@@ -20,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
+        private readonly PSHostUserInterface internalHostUI;
         private ConsoleReadLine consoleReadLine;
 
         #endregion
@@ -32,14 +35,17 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="powerShellContext">The PowerShellContext to use for executing commands.</param>
         /// <param name="logger">An ILogger implementation to use for this host.</param>
+        /// <param name="internalHost">The InternalHost instance from the origin runspace.</param>
         public TerminalPSHostUserInterface(
             PowerShellContext powerShellContext,
-            ILogger logger)
+            ILogger logger,
+            PSHost internalHost)
             : base(
                 powerShellContext,
-                new TerminalPSHostRawUserInterface(logger),
+                new TerminalPSHostRawUserInterface(logger, internalHost),
                 logger)
         {
+            this.internalHostUI = internalHost.UI;
             this.consoleReadLine = new ConsoleReadLine(powerShellContext);
 
             // Set the output encoding to UTF-8 so that special
@@ -59,6 +65,11 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         #endregion
+
+        /// <summary>
+        /// Gets a value indicating whether writing progress is supported.
+        /// </summary>
+        internal protected override bool SupportsWriteProgress => true;
 
         /// <summary>
         /// Requests that the HostUI implementation read a command line
@@ -140,6 +151,22 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
+        /// Invoked by <see cref="Cmdlet.WriteProgress(ProgressRecord)" /> to display a progress record.
+        /// </summary>
+        /// <param name="sourceId">
+        /// Unique identifier of the source of the record. An int64 is used because typically,
+        /// the 'this' pointer of the command from whence the record is originating is used, and
+        /// that may be from a remote Runspace on a 64-bit machine.
+        /// </param>
+        /// <param name="record">
+        /// The record being reported to the host.
+        /// </param>
+        protected override void WriteProgressImpl(long sourceId, ProgressRecord record)
+        {
+            this.internalHostUI.WriteProgress(sourceId, record);
+        }
+
+        /// <summary>
         /// Sends a progress update event to the user.
         /// </summary>
         /// <param name="sourceId">The source ID of the progress event.</param>
@@ -148,7 +175,6 @@ namespace Microsoft.PowerShell.EditorServices
             long sourceId,
             ProgressDetails progressDetails)
         {
-
         }
     }
 }

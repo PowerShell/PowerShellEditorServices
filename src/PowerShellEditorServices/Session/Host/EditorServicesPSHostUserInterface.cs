@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
@@ -32,6 +33,8 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
+        private readonly ConcurrentDictionary<ProgressKey, object> currentProgressMessages =
+            new ConcurrentDictionary<ProgressKey, object>();
         private PromptHandler activePromptHandler;
         private PSHostRawUserInterface rawUserInterface;
         private CancellationTokenSource commandLoopCancellationToken;
@@ -82,6 +85,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the ILogger implementation used for this host.
         /// </summary>
         protected ILogger Logger { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether writing progress is supported.
+        /// </summary>
+        internal protected virtual bool SupportsWriteProgress => false;
 
         #endregion
 
@@ -582,17 +590,80 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        ///
+        /// Invoked by <see cref="Cmdlet.WriteProgress(ProgressRecord)" /> to display a progress record.
         /// </summary>
-        /// <param name="sourceId"></param>
-        /// <param name="record"></param>
-        public override void WriteProgress(
+        /// <param name="sourceId">
+        /// Unique identifier of the source of the record. An int64 is used because typically,
+        /// the 'this' pointer of the command from whence the record is originating is used, and
+        /// that may be from a remote Runspace on a 64-bit machine.
+        /// </param>
+        /// <param name="record">
+        /// The record being reported to the host.
+        /// </param>
+        public sealed override void WriteProgress(
             long sourceId,
             ProgressRecord record)
         {
-            this.UpdateProgress(
-                sourceId,
-                ProgressDetails.Create(record));
+            // Maintain old behavior if this isn't overridden.
+            if (!this.SupportsWriteProgress)
+            {
+                this.UpdateProgress(sourceId, ProgressDetails.Create(record));
+                return;
+            }
+
+            // Keep a list of progress records we write so we can automatically
+            // clean them up after the pipeline ends.
+            if (record.RecordType == ProgressRecordType.Completed)
+            {
+                this.currentProgressMessages.TryRemove(new ProgressKey(sourceId, record), out _);
+            }
+            else
+            {
+                // Adding with a value of null here because we don't actually need a dictionary. We're
+                // only using ConcurrentDictionary<,> becuase there is no ConcurrentHashSet<>.
+                this.currentProgressMessages.TryAdd(new ProgressKey(sourceId, record), null);
+            }
+
+            this.WriteProgressImpl(sourceId, record);
+        }
+
+        /// <summary>
+        /// Invoked by <see cref="Cmdlet.WriteProgress(ProgressRecord)" /> to display a progress record.
+        /// </summary>
+        /// <param name="sourceId">
+        /// Unique identifier of the source of the record. An int64 is used because typically,
+        /// the 'this' pointer of the command from whence the record is originating is used, and
+        /// that may be from a remote Runspace on a 64-bit machine.
+        /// </param>
+        /// <param name="record">
+        /// The record being reported to the host.
+        /// </param>
+        protected virtual void WriteProgressImpl(long sourceId, ProgressRecord record)
+        {
+        }
+
+        internal void ClearProgress()
+        {
+            const string nonEmptyString = "noop";
+            if (!this.SupportsWriteProgress)
+            {
+                return;
+            }
+
+            foreach (ProgressKey key in this.currentProgressMessages.Keys)
+            {
+                // This constructor throws if the activity description is empty even
+                // with completed records.
+                var record = new ProgressRecord(
+                    key.ActivityId,
+                    activity: nonEmptyString,
+                    statusDescription: nonEmptyString);
+
+                record.RecordType = ProgressRecordType.Completed;
+                this.WriteProgressImpl(key.SourceId, record);
+            }
+
+            this.currentProgressMessages.Clear();
         }
 
         #endregion
@@ -917,6 +988,8 @@ namespace Microsoft.PowerShell.EditorServices
             // The command loop should only be manipulated if it's already started
             if (eventArgs.ExecutionStatus == ExecutionStatus.Aborted)
             {
+                this.ClearProgress();
+
                 // When aborted, cancel any lingering prompts
                 if (this.activePromptHandler != null)
                 {
@@ -932,6 +1005,8 @@ namespace Microsoft.PowerShell.EditorServices
                 // the display of the prompt
                 if (eventArgs.ExecutionStatus != ExecutionStatus.Running)
                 {
+                    this.ClearProgress();
+
                     // Execution has completed, start the input prompt
                     this.ShowCommandPrompt();
                     StartCommandLoop();
@@ -948,11 +1023,48 @@ namespace Microsoft.PowerShell.EditorServices
                 (eventArgs.ExecutionStatus == ExecutionStatus.Failed ||
                     eventArgs.HadErrors))
             {
+                this.ClearProgress();
                 this.WriteOutput(string.Empty, true);
                 var unusedTask = this.WritePromptStringToHostAsync(CancellationToken.None);
             }
         }
 
         #endregion
+
+        private readonly struct ProgressKey : IEquatable<ProgressKey>
+        {
+            internal readonly long SourceId;
+
+            internal readonly int ActivityId;
+
+            internal readonly int ParentActivityId;
+
+            internal ProgressKey(long sourceId, ProgressRecord record)
+            {
+                SourceId = sourceId;
+                ActivityId = record.ActivityId;
+                ParentActivityId = record.ParentActivityId;
+            }
+
+            public bool Equals(ProgressKey other)
+            {
+                return SourceId == other.SourceId
+                    && ActivityId == other.ActivityId
+                    && ParentActivityId == other.ParentActivityId;
+            }
+
+            public override int GetHashCode()
+            {
+                // Algorithm from https://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations
+                unchecked
+                {
+                    int hash = 17;
+                    hash = hash * 31 + SourceId.GetHashCode();
+                    hash = hash * 31 + ActivityId.GetHashCode();
+                    hash = hash * 31 + ParentActivityId.GetHashCode();
+                    return hash;
+                }
+            }
+        }
     }
 }

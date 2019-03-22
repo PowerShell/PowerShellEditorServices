@@ -109,7 +109,8 @@ function Start-EditorServicesHost {
             $EnableConsoleRepl.IsPresent,
             $WaitForDebugger.IsPresent,
             $AdditionalModules,
-            $FeatureFlags)
+            $FeatureFlags,
+            $Host)
 
     # Build the profile paths using the root paths of the current $profile variable
     $profilePaths =
