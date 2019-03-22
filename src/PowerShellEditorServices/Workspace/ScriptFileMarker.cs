@@ -165,7 +165,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             string severity = diagnosticRecord.Severity.ToString();
-            if(!Enum.TryParse(severity, out ScriptFileMarkerLevel level))
+            if (!Enum.TryParse(severity, out ScriptFileMarkerLevel level))
             {
                 throw new ArgumentException(
                 string.Format(

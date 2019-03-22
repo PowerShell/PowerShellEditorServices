@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the list of syntax markers found by parsing this
         /// file's contents.
         /// </summary>
-        public List<ScriptFileMarker> SyntaxMarkers
+        public List<ScriptFileMarker> DiagnosticMarkers
         {
             get;
             private set;
@@ -654,7 +654,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             // Translate parse errors into syntax markers
-            this.SyntaxMarkers =
+            this.DiagnosticMarkers =
                 parseErrors
                     .Select(ScriptFileMarker.FromParseError)
                     .ToList();

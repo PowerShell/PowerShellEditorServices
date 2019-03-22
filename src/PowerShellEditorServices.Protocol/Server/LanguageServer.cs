@@ -1725,7 +1725,7 @@ function __Expand-Alias {
                 {
                     await PublishScriptDiagnosticsAsync(
                         script,
-                        script.SyntaxMarkers,
+                        script.DiagnosticMarkers,
                         correctionIndex,
                         eventSender);
                 }
@@ -1758,12 +1758,12 @@ function __Expand-Alias {
                     semanticMarkers = new List<ScriptFileMarker>();
                 }
 
-                scriptFile.SyntaxMarkers.AddRange(semanticMarkers);
+                scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
 
                 await PublishScriptDiagnosticsAsync(
                     scriptFile,
                     // Concat script analysis errors to any existing parse errors
-                    scriptFile.SyntaxMarkers,
+                    scriptFile.DiagnosticMarkers,
                     correctionIndex,
                     eventSender);
             }
