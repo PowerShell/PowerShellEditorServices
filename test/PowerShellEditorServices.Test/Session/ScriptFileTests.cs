@@ -550,7 +550,7 @@ First line
             Assert.True(scriptFile.IsAnalysisEnabled);
             Assert.False(scriptFile.IsInMemory);
             Assert.Empty(scriptFile.ReferencedFiles);
-            Assert.Null(scriptFile.SyntaxMarkers);
+            Assert.Empty(scriptFile.DiagnosticMarkers);
             Assert.Single(scriptFile.ScriptTokens);
             Assert.Single(scriptFile.FileLines);
         }
@@ -576,7 +576,7 @@ First line
                 Assert.True(scriptFile.IsAnalysisEnabled);
                 Assert.True(scriptFile.IsInMemory);
                 Assert.Empty(scriptFile.ReferencedFiles);
-                Assert.Null(scriptFile.SyntaxMarkers);
+                Assert.Empty(scriptFile.DiagnosticMarkers);
                 Assert.Equal(10, scriptFile.ScriptTokens.Length);
                 Assert.Equal(3, scriptFile.FileLines.Count);
             }
