@@ -168,9 +168,7 @@ namespace Microsoft.PowerShell.EditorServices
             if (!Enum.TryParse(severity, out ScriptFileMarkerLevel level))
             {
                 throw new ArgumentException(
-                string.Format(
-                        "The provided DiagnosticSeverity value '{0}' is unknown.",
-                        severity),
+                    $"The provided DiagnosticSeverity value '{severity}' is unknown.",
                     "diagnosticSeverity");
             }
 

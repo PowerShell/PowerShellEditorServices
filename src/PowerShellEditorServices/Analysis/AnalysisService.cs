@@ -52,11 +52,6 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         private static readonly PSObject[] s_emptyDiagnosticResult = new PSObject[0];
 
-        /// <summary>
-        /// An empty script marker result to return when no script markers can be returned.
-        /// </summary>
-        private static readonly List<ScriptFileMarker> s_emptyScriptMarkerResult = new List<ScriptFileMarker>();
-
         private static readonly string[] s_emptyGetRuleResult = new string[0];
 
         /// <summary>
@@ -394,7 +389,7 @@ namespace Microsoft.PowerShell.EditorServices
             else
             {
                 // Return an empty marker list
-                return s_emptyScriptMarkerResult;
+                return new List<ScriptFileMarker>();
             }
         }
 
@@ -412,7 +407,7 @@ namespace Microsoft.PowerShell.EditorServices
             else
             {
                 // Return an empty marker list
-                return s_emptyScriptMarkerResult;
+                return new List<ScriptFileMarker>();
             }
         }
 
