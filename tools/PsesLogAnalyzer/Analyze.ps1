@@ -1,3 +1,22 @@
+<#
+.SYNOPSIS
+    Gets LSP notification messages sent from either PSES to the client or vice-versa.
+.DESCRIPTION
+    Gets LSP notification messages sent from either PSES to the client or vice-versa.
+.EXAMPLE
+    C:\> Get-PsesRpcNotificationMessage $log
+    Gets all LSP notification messages in the specified log.
+.EXAMPLE
+    C:\> Get-PsesRpcNotificationMessage $log -MessageName $/cancelRequest
+    Gets all LSP $/cancelRequest notification messages in the specified log.
+.EXAMPLE
+    C:\> Get-PsesRpcNotificationMessage $log -Pattern powershell/.*
+    Gets all LSP powershell notification messages in the specified log.
+.INPUTS
+    System.String or PsesLogEntry
+.OUTPUTS
+    PsesLogEntry
+#>
 function Get-PsesRpcNotificationMessage {
     [CmdletBinding(DefaultParameterSetName = "PsesLogEntry")]
     param(
@@ -13,6 +32,27 @@ function Get-PsesRpcNotificationMessage {
         [ValidateNotNull()]
         [psobject[]]
         $LogEntry,
+
+        # Specifies a specific LSP notification.
+        [Parameter(Position=1)]
+        [ValidateSet(
+            "$/cancelRequest",
+            "initialized",
+            "powerShell/executionStatusChanged",
+            "textDocument/didChange",
+            "textDocument/didClose",
+            "textDocument/didOpen",
+            "textDocument/didSave",
+            "textDocument/publishDiagnostics",
+            "workspace/didChangeConfiguration")]
+        [string]
+        $MessageName,
+
+        # Specifies a regular expression pattern that filters the output based on the message name
+        # e.g. 'cancelRequest'
+        [Parameter()]
+        [string]
+        $Pattern,
 
         # Specifies a filter for either client or server sourced notifications.  By default both are output.
         [Parameter()]
@@ -33,10 +73,13 @@ function Get-PsesRpcNotificationMessage {
         }
 
         foreach ($entry in $logEntries) {
-            if ($entry.LogMessageType -eq 'Notification') {
-                if (!$Source -or ($entry.Message.Source -eq $Source)) {
-                    $entry
-                }
+            if ($entry.LogMessageType -ne 'Notification') { continue }
+
+            if ((!$MessageName -or ($entry.Message.Name -eq $MessageName)) -and
+                (!$Pattern -or ($entry.Message.Name -match $Pattern)) -and
+                (!$Source -or ($entry.Message.Source -eq $Source))) {
+
+                $entry
             }
         }
     }
@@ -52,7 +95,7 @@ function Get-PsesRpcNotificationMessage {
     C:\> Get-PsesRpcMessageResponseTime $log
     Gets the response time of all LSP messages.
 .EXAMPLE
-    C:\> Get-PsesRpcMessageResponseTime $log -MessageName foldingRange
+    C:\> Get-PsesRpcMessageResponseTime $log -MessageName textDocument/foldingRange
     Gets the response time of all foldingRange LSP messages.
 .EXAMPLE
     C:\> Get-PsesRpcMessageResponseTime $log -Pattern 'textDocument/.*Formatting'
@@ -80,8 +123,14 @@ function Get-PsesRpcMessageResponseTime {
 
         # Specifies a specific LSP message for which to get response times.
         [Parameter(Position=1)]
-        [ValidateSet("codeAction", "codeLens", "documentSymbol", "formatting", "hover", "foldingRange",
-                     "rangeFormatting")]
+        [ValidateSet(
+            "textDocument/codeAction",
+            "textDocument/codeLens",
+            "textDocument/documentSymbol",
+            "textDocument/foldingRange",
+            "textDocument/formatting",
+            "textDocument/hover",
+            "textDocument/rangeFormatting")]
         [string]
         $MessageName,
 
@@ -111,7 +160,7 @@ function Get-PsesRpcMessageResponseTime {
         foreach ($entry in $logEntries) {
             if (($entry.LogMessageType -ne 'Request') -and ($entry.LogMessageType -ne 'Response')) { continue }
 
-            if ((!$MessageName -or ($entry.Message.Name -eq "textDocument/$MessageName")) -and
+            if ((!$MessageName -or ($entry.Message.Name -eq $MessageName)) -and
                 (!$Pattern -or ($entry.Message.Name -match $Pattern))) {
 
                 $key = "$($entry.Message.Name)-$($entry.Message.Id)"
