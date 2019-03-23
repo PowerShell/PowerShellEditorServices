@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-    Gets LSP notification messages sent from either PSES to the client or vice-versa.
+    Gets LSP notification messages sent from either server to the client or vice-versa.
 .DESCRIPTION
-    Gets LSP notification messages sent from either PSES to the client or vice-versa.
+    Gets LSP notification messages sent from either server to the client or vice-versa.
 .EXAMPLE
     C:\> Get-PsesRpcNotificationMessage $log
     Gets all LSP notification messages in the specified log.
 .EXAMPLE
-    C:\> Get-PsesRpcNotificationMessage $log -MessageName $/cancelRequest
+    C:\> Get-PsesRpcNotificationMessage $log -MessageName '$/cancelRequest'
     Gets all LSP $/cancelRequest notification messages in the specified log.
 .EXAMPLE
     C:\> Get-PsesRpcNotificationMessage $log -Pattern powershell/.*
