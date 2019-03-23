@@ -42,6 +42,26 @@ function Get-PsesRpcNotificationMessage {
     }
 }
 
+<#
+.SYNOPSIS
+    Outputs the response time for message LSP message.
+.DESCRIPTION
+    Outputs the response time for message LSP message.  Use the MessageNamePattern to
+    limit the response time output to a specific message (or pattern of messages).
+.EXAMPLE
+    C:\> Get-PsesRpcMessageResponseTime $log
+    Gets the response time of all LSP messages.
+.EXAMPLE
+    C:\> Get-PsesRpcMessageResponseTime $log -MessageName foldingRange
+    Gets the response time of all foldingRange LSP messages.
+.EXAMPLE
+    C:\> Get-PsesRpcMessageResponseTime $log -Pattern 'textDocument/.*Formatting'
+    Gets the response time of all formatting LSP messages.
+.INPUTS
+    System.String or PsesLogEntry
+.OUTPUTS
+    PsesLogEntryElapsed
+#>
 function Get-PsesRpcMessageResponseTime {
     [CmdletBinding(DefaultParameterSetName = "PsesLogEntry")]
     param(
@@ -56,7 +76,20 @@ function Get-PsesRpcMessageResponseTime {
         [Parameter(Mandatory=$true, Position=0, ParameterSetName="PsesLogEntry", ValueFromPipeline=$true)]
         [ValidateNotNull()]
         [psobject[]]
-        $LogEntry
+        $LogEntry,
+
+        # Specifies a specific LSP message for which to get response times.
+        [Parameter(Position=1)]
+        [ValidateSet("codeAction", "codeLens", "documentSymbol", "formatting", "hover", "foldingRange",
+                     "rangeFormatting")]
+        [string]
+        $MessageName,
+
+        # Specifies a regular expression pattern that filters the output based on the message name
+        # e.g. 'textDocument/.*Formatting'
+        [Parameter()]
+        [string]
+        $Pattern
     )
 
     begin {
@@ -74,18 +107,29 @@ function Get-PsesRpcMessageResponseTime {
     end {
         # Populate $requests hashtable with request timestamps
         $requests = @{}
-        $logEntries |
-            Where-Object LogMessageType -match Request |
-            Foreach-Object { $requests[$_.Message.Id] = $_.Timestamp }
 
-        $res = $logEntries |
-            Where-Object LogMessageType -match Response |
-            Foreach-Object {
-                $elapsedMilliseconds = [int]($_.Timestamp - $requests[$_.Message.Id]).TotalMilliseconds
-                [PsesLogEntryElapsed]::new($_, $elapsedMilliseconds)
+        foreach ($entry in $logEntries) {
+            if (($entry.LogMessageType -ne 'Request') -and ($entry.LogMessageType -ne 'Response')) { continue }
+
+            if ((!$MessageName -or ($entry.Message.Name -eq "textDocument/$MessageName")) -and
+                (!$Pattern -or ($entry.Message.Name -match $Pattern))) {
+
+                $key = "$($entry.Message.Name)-$($entry.Message.Id)"
+                if ($entry.LogMessageType -eq 'Request') {
+                    $requests[$key] = $entry
+                }
+                else {
+                    $request = $requests[$key]
+                    if (!$request) {
+                        Write-Warning "No corresponding request for response: $($entry.Message)"
+                        continue
+                    }
+
+                    $elapsedMilliseconds = [int]($entry.Timestamp - $request.Timestamp).TotalMilliseconds
+                    [PsesLogEntryElapsed]::new($entry, $elapsedMilliseconds)
+                }
             }
-
-        $res
+        }
     }
 }
 
