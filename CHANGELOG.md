@@ -4,43 +4,43 @@
 ### Wednesday, March 27, 2019
 
 - [PowerShellEditorServices #888](https://github.com/PowerShell/PowerShellEditorServices/pull/888) -
-  Add new ParseError level to ScriptFileMarkerLevel and only have it send parse errors
+  Add new ParseError level to ScriptFileMarkerLevel and filter out PSSA parse errors
 - [PowerShellEditorServices #858](https://github.com/PowerShell/PowerShellEditorServices/pull/858) -
-  Fix XUnit warnings that better assertion operators should be used.  (Thanks @bergmeister!)
+  Fix XUnit warnings that better assertion operators should be used. (Thanks @bergmeister!)
 - [PowerShellEditorServices #854](https://github.com/PowerShell/PowerShellEditorServices/pull/854) -
-  (maint) Reinstate test filtering  (Thanks @glennsarti!)
+  Reinstate test filtering (Thanks @glennsarti!)
 - [PowerShellEditorServices #866](https://github.com/PowerShell/PowerShellEditorServices/pull/866) -
-  Catch NotSupportedException which can be thrown by FilleStream ctor  (Thanks @rkeithhill!)
+  Catch NotSupportedException which can be thrown by FileStream constructor (Thanks @rkeithhill!)
 - [PowerShellEditorServices #868](https://github.com/PowerShell/PowerShellEditorServices/pull/868) -
-  Speed up travis builds by skipping the .net core initialisation  (Thanks @bergmeister!)
+  Speed up Travis builds by skipping the .NET Core initialization (Thanks @bergmeister!)
 - [PowerShellEditorServices #869](https://github.com/PowerShell/PowerShellEditorServices/pull/869) -
-  Added `AsNewFile` switch to Out-CurrentFile  (Thanks @dfinke!)
+  Added `AsNewFile` switch to Out-CurrentFile (Thanks @dfinke!)
 - [PowerShellEditorServices #873](https://github.com/PowerShell/PowerShellEditorServices/pull/873) -
-  Return the start line number for Describe block  (Thanks @rkeithhill!)
+  Return the start line number for Describe block (Thanks @rkeithhill!)
 - [PowerShellEditorServices #876](https://github.com/PowerShell/PowerShellEditorServices/pull/876) -
-  Temporarily disable deemphasized stack frames to fix VSCode issue 1750  (Thanks @rkeithhill!)
+  Temporarily disable deemphasized stack frames to fix VSCode issue 1750 (Thanks @rkeithhill!)
 - [PowerShellEditorServices #871](https://github.com/PowerShell/PowerShellEditorServices/pull/871) -
-  Support -CustomPipeName
+  Support -CustomPipeName, allowing configuration of custom namedpipes for LSP transport
 - [PowerShellEditorServices #872](https://github.com/PowerShell/PowerShellEditorServices/pull/872) -
-  Fix unable to open files in problems/peek windows issue  (Thanks @rkeithhill!)
+  Fix unable to open files in problems/peek windows issue (Thanks @rkeithhill!)
 - [PowerShellEditorServices #875](https://github.com/PowerShell/PowerShellEditorServices/pull/875) -
-  Add attach to local runspace.  (Thanks @adamdriscoll!)
+  Add attach to local runspace. (Thanks @adamdriscoll!)
 - [PowerShellEditorServices #881](https://github.com/PowerShell/PowerShellEditorServices/pull/881) -
-  NamedPipeConnectionInfo <= Enter-PSHostProcess
+  Use `NamedPipeConnectionInfo` to connect to remote runspaces instead of Enter-PSHostProcess
 - [PowerShellEditorServices #845](https://github.com/PowerShell/PowerShellEditorServices/pull/845) -
-  add UseCorrectCasing  (Thanks @bergmeister!)
+  Enable UseCorrectCasing as a default rule (Thanks @bergmeister!)
 - [PowerShellEditorServices #835](https://github.com/PowerShell/PowerShellEditorServices/pull/835) -
-  Map new powershell.codeformatting settings WhitespaceInsideBrace and WhitespaceAroundPipe to PSSA settings hash table (Thanks @bergmeister!)
+  Map new `powershell.codeformatting` settings WhitespaceInsideBrace and WhitespaceAroundPipe to PSSA settings hashtable (Thanks @bergmeister!)
 - [PowerShellEditorServices #836](https://github.com/PowerShell/PowerShellEditorServices/pull/836) -
-  add PipelineIndentationStyle mapping  (Thanks @bergmeister!)
+  Add PipelineIndentationStyle configuration mapping (Thanks @bergmeister!)
 - [PowerShellEditorServices #887](https://github.com/PowerShell/PowerShellEditorServices/pull/887) -
-  Cherry pick PR 1750 merge commit to legacy/v1.x, has additional fixes  (Thanks @rkeithhill!)
+  Cherry pick PR 1750 merge commit to legacy/v1.x, has additional fixes (Thanks @rkeithhill!)
 - [PowerShellEditorServices #874](https://github.com/PowerShell/PowerShellEditorServices/pull/874) -
-  Use public InternalHost from origin runspace  (Thanks @SeeminglyScience!)
+  Use public `InternalHost` from origin runspace (Thanks @SeeminglyScience!)
 - [PowerShellEditorServices #889](https://github.com/PowerShell/PowerShellEditorServices/pull/889) -
-  Enhance Get-PsesRpcNotificationMessage/MessageResponseTimes to allow filtering by message name  (Thanks @rkeithhill!)
+  Enhance Get-PsesRpcNotificationMessage/MessageResponseTimes to allow filtering by message name (Thanks @rkeithhill!)
 - [PowerShellEditorServices #859](https://github.com/PowerShell/PowerShellEditorServices/pull/859) -
-  Upgrade PowerShellStandard.Library, PowerShell.SDK, NET.Test.SDK and Serilog NuGet packages to latest released version and enable AppVeyor build on any branch  (Thanks @bergmeister!)
+  Upgrade PowerShellStandard.Library, PowerShell.SDK, NET.Test.SDK and Serilog NuGet packages to latest released version and enable AppVeyor build on any branch (Thanks @bergmeister!)
 - [PowerShellEditorServices #862](https://github.com/PowerShell/PowerShellEditorServices/pull/862) -
   Handle arbitrary exceptions when recursing workspace
 
