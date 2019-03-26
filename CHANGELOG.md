@@ -1,5 +1,39 @@
 # PowerShell Editor Services Release History
 
+## v1.12.0
+### Wednesday, March 27, 2019
+
+- [PowerShellEditorServices #888](https://github.com/PowerShell/PowerShellEditorServices/pull/888) -
+  Add new ParseError level to ScriptFileMarkerLevel and filter out PSSA parse errors
+- [PowerShellEditorServices #866](https://github.com/PowerShell/PowerShellEditorServices/pull/866) -
+  Catch NotSupportedException which can be thrown by FileStream constructor (Thanks @rkeithhill!)
+- [PowerShellEditorServices #868](https://github.com/PowerShell/PowerShellEditorServices/pull/868) -
+  Speed up Travis builds by skipping the .NET Core initialization (Thanks @bergmeister!)
+- [PowerShellEditorServices #869](https://github.com/PowerShell/PowerShellEditorServices/pull/869) -
+  Added `AsNewFile` switch to Out-CurrentFile (Thanks @dfinke!)
+- [PowerShellEditorServices #873](https://github.com/PowerShell/PowerShellEditorServices/pull/873) -
+  Return the start line number for Describe block (Thanks @rkeithhill!)
+- [PowerShellEditorServices #876](https://github.com/PowerShell/PowerShellEditorServices/pull/876) -
+  Temporarily disable deemphasized stack frames to fix VSCode issue 1750 (Thanks @rkeithhill!)
+- [PowerShellEditorServices #871](https://github.com/PowerShell/PowerShellEditorServices/pull/871) -
+  Support -CustomPipeName, allowing configuration of custom namedpipes for LSP transport
+- [PowerShellEditorServices #872](https://github.com/PowerShell/PowerShellEditorServices/pull/872) -
+  Fix unable to open files in problems/peek windows issue (Thanks @rkeithhill!)
+- [PowerShellEditorServices #875](https://github.com/PowerShell/PowerShellEditorServices/pull/875) -
+  Add attach to local runspace. (Thanks @adamdriscoll!)
+- [PowerShellEditorServices #881](https://github.com/PowerShell/PowerShellEditorServices/pull/881) -
+  Use `NamedPipeConnectionInfo` to connect to remote runspaces instead of Enter-PSHostProcess
+- [PowerShellEditorServices #845](https://github.com/PowerShell/PowerShellEditorServices/pull/845) -
+  Enable UseCorrectCasing as a default rule (Thanks @bergmeister!)
+- [PowerShellEditorServices #835](https://github.com/PowerShell/PowerShellEditorServices/pull/835) -
+  Map new `powershell.codeformatting` settings WhitespaceInsideBrace and WhitespaceAroundPipe to PSSA settings hashtable (Thanks @bergmeister!)
+- [PowerShellEditorServices #836](https://github.com/PowerShell/PowerShellEditorServices/pull/836) -
+  Add PipelineIndentationStyle configuration mapping (Thanks @bergmeister!)
+- [PowerShellEditorServices #887](https://github.com/PowerShell/PowerShellEditorServices/pull/887) -
+  Cherry pick PR 1750 merge commit to legacy/v1.x, has additional fixes (Thanks @rkeithhill!)
+- [PowerShellEditorServices #862](https://github.com/PowerShell/PowerShellEditorServices/pull/862) -
+  Handle arbitrary exceptions when recursing workspace
+
 ## v1.11.0
 ### Wednesday, January 23, 2019
 
