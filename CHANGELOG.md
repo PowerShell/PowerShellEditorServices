@@ -1,8 +1,12 @@
 # PowerShell Editor Services Release History
 
 ## v1.12.0
-### Wednesday, March 27, 2019
+### Friday, March 29, 2019
 
+- [PowerShellEditorServices #895](https://github.com/PowerShell/PowerShellEditorServices/pull/895) -
+  Add warning to parameter validation set  (Thanks @Benny1007!)
+- [PowerShellEditorServices #897](https://github.com/PowerShell/PowerShellEditorServices/pull/897) -
+  Clean up and pop dead runspaces when using 'attach' debugging
 - [PowerShellEditorServices #888](https://github.com/PowerShell/PowerShellEditorServices/pull/888) -
   Add new ParseError level to ScriptFileMarkerLevel and filter out PSSA parse errors
 - [PowerShellEditorServices #866](https://github.com/PowerShell/PowerShellEditorServices/pull/866) -
