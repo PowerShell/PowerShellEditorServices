@@ -771,7 +771,7 @@ namespace Microsoft.PowerShell.EditorServices
                 {
                     if (this.CurrentRunspace.Runspace.RunspaceAvailability == RunspaceAvailability.None)
                     {
-                        this.AbortExecution(true);
+                        this.AbortExecution(shouldAbortDebugSession: true);
                         this.PopRunspace();
                     }
 
