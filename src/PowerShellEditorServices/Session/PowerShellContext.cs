@@ -769,6 +769,11 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 finally
                 {
+                    // If the RunspaceAvailability is None, it means that the runspace we're in is dead.
+                    // If this is the case, we should abort the execution which will clean up the runspace
+                    // (and clean up the debugger) and then pop it off the stack.
+                    // An example of when this happens is when the "attach" debug config is used and the
+                    // process you're attached to dies randomly.
                     if (this.CurrentRunspace.Runspace.RunspaceAvailability == RunspaceAvailability.None)
                     {
                         this.AbortExecution(shouldAbortDebugSession: true);
