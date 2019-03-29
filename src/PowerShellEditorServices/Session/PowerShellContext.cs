@@ -765,10 +765,16 @@ namespace Microsoft.PowerShell.EditorServices
                         executionOptions,
                         true);
 
-                    throw e;
+                    throw;
                 }
                 finally
                 {
+                    if (this.CurrentRunspace.Runspace.RunspaceAvailability == RunspaceAvailability.None)
+                    {
+                        this.AbortExecution(true);
+                        this.PopRunspace();
+                    }
+
                     // Get the new prompt before releasing the runspace handle
                     if (executionOptions.WriteOutputToHost)
                     {
