@@ -1,7 +1,7 @@
 # PowerShell Editor Services Release History
 
 ## v1.12.0
-### Wednesday, March 27, 2019
+### Friday, March 29, 2019
 
 - [PowerShellEditorServices #895](https://github.com/PowerShell/PowerShellEditorServices/pull/895) -
   Add warning to parameter validation set  (Thanks @Benny1007!)
