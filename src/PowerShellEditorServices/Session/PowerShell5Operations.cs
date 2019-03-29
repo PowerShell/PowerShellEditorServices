@@ -85,7 +85,11 @@ namespace Microsoft.PowerShell.EditorServices.Session
 
         public void StopCommandInDebugger(PowerShellContext powerShellContext)
         {
-            powerShellContext.CurrentRunspace.Runspace.Debugger.StopProcessCommand();
+            // If the RunspaceAvailability is None, the runspace is dead and we should not try to run anything in it.
+            if (powerShellContext.CurrentRunspace.Runspace.RunspaceAvailability != RunspaceAvailability.None)
+            {
+                powerShellContext.CurrentRunspace.Runspace.Debugger.StopProcessCommand();
+            }
         }
 
         public void ExitNestedPrompt(PSHost host)
