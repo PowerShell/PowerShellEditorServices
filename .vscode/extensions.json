@@ -3,8 +3,8 @@
     // for the documentation about the extensions.json format
     "recommendations": [
         "ms-vscode.csharp",
-        "ms-vscode.PowerShell",
-        "EditorConfig.EditorConfig",
-        "DavidAnson.vscode-markdownlint"
+        "ms-vscode.powershell",
+        "davidanson.vscode-markdownlint",
+        "editorconfig.editorconfig"
     ]
 }
