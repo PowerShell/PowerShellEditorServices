@@ -129,7 +129,10 @@ function Restore-NugetAsmForRuntime {
         [string]$TargetRuntime = $script:WindowsPowerShellFrameworkTarget
     )
 
-    $tmpDir = [System.IO.Path]::GetTempPath()
+    $tmpDir = Join-Path $PSScriptRoot '.tmp'
+    if (-not (Test-Path $tmpDir)) {
+        New-Item -ItemType Directory -Path $tmpDir
+    }
 
     if (-not $DllName) {
         $DllName = "$PackageName.dll"
