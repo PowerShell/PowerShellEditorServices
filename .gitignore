@@ -5,6 +5,7 @@ obj
 objd
 out/
 tmp/
+.tmp
 App_Data
 *.user
 *.sln.cache
