@@ -1915,6 +1915,8 @@ function __Expand-Alias {
         {
             string detailString = null;
             string documentationString = null;
+            string completionText = completionDetails.CompletionText;
+            InsertTextFormat insertTextFormat = InsertTextFormat.PlainText;
 
             if ((completionDetails.CompletionType == CompletionType.Variable) ||
                 (completionDetails.CompletionType == CompletionType.ParameterName))
@@ -1956,6 +1958,14 @@ function __Expand-Alias {
                     }
                 }
             }
+            else if (((completionDetails.CompletionType == CompletionType.File) ||
+                      (completionDetails.CompletionType == CompletionType.Folder)) &&
+                     (completionText.EndsWith("\"") || completionText.EndsWith("'")))
+            {
+                int len = completionDetails.CompletionText.Length;
+                completionText = completionDetails.CompletionText.Insert(len - 1, "$0");
+                insertTextFormat = InsertTextFormat.Snippet;
+            }
 
             // Force the client to maintain the sort order in which the
             // original completion results were returned. We just need to
@@ -1966,7 +1976,8 @@ function __Expand-Alias {
 
             return new CompletionItem
             {
-                InsertText = completionDetails.CompletionText,
+                InsertText = completionText,
+                InsertTextFormat = insertTextFormat,
                 Label = completionDetails.ListItemText,
                 Kind = MapCompletionKind(completionDetails.CompletionType),
                 Detail = detailString,
@@ -1975,7 +1986,7 @@ function __Expand-Alias {
                 FilterText = completionDetails.CompletionText,
                 TextEdit = new TextEdit
                 {
-                    NewText = completionDetails.CompletionText,
+                    NewText = completionText,
                     Range = new Range
                     {
                         Start = new Position

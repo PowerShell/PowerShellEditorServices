@@ -58,6 +58,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         Folder = 19
     }
 
+    public enum InsertTextFormat
+    {
+        PlainText = 1,
+        Snippet = 2,
+    }
+
     [DebuggerDisplay("NewText = {NewText}, Range = {Range.Start.Line}:{Range.Start.Character} - {Range.End.Line}:{Range.End.Character}")]
     public class TextEdit
     {
@@ -69,6 +75,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     [DebuggerDisplay("Kind = {Kind.ToString()}, Label = {Label}, Detail = {Detail}")]
     public class CompletionItem
     {
+        public CompletionItem()
+        {
+            this.InsertTextFormat = InsertTextFormat.PlainText;
+        }
+
         public string Label { get; set; }
 
         public CompletionItemKind? Kind { get; set; }
@@ -85,6 +96,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public string FilterText { get; set; }
 
         public string InsertText { get; set; }
+
+        public InsertTextFormat InsertTextFormat { get; set; }
 
         public Range Range { get; set; }
 
