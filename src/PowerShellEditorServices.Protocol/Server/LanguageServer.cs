@@ -1962,6 +1962,12 @@ function __Expand-Alias {
                       (completionDetails.CompletionType == CompletionType.Folder)) &&
                      (completionText.EndsWith("\"") || completionText.EndsWith("'")))
             {
+                // Insert a final "tab stop" as identified by $0 in the snippet provided for completion.
+                // For paths, we take the path returned by PowerShell e.g. 'C:\Program Files' and insert
+                // the tab stop marker before the closing quote char e.g. 'C:\Program Files$0'.
+                // This causes the editing cursor to be placed *before* the final quote after completion,
+                // which makes subsequent path completions work. See this part of the LSP spec for details:
+                // https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
                 int len = completionDetails.CompletionText.Length;
                 completionText = completionDetails.CompletionText.Insert(len - 1, "$0");
                 insertTextFormat = InsertTextFormat.Snippet;
