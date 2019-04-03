@@ -253,6 +253,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, Packa
 task Clean {
     exec { & $script:dotnetExe restore }
     exec { & $script:dotnetExe clean }
+    Remove-Item $PSScriptRoot\.tmp -Recurse -Force -ErrorAction Ignore
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
     Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
