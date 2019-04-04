@@ -75,11 +75,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
     [DebuggerDisplay("Kind = {Kind.ToString()}, Label = {Label}, Detail = {Detail}")]
     public class CompletionItem
     {
-        public CompletionItem()
-        {
-            this.InsertTextFormat = InsertTextFormat.PlainText;
-        }
-
         public string Label { get; set; }
 
         public CompletionItemKind? Kind { get; set; }
@@ -97,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
 
         public string InsertText { get; set; }
 
-        public InsertTextFormat InsertTextFormat { get; set; }
+        public InsertTextFormat InsertTextFormat { get; set; } = InsertTextFormat.PlainText;
 
         public Range Range { get; set; }
 
