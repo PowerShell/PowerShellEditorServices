@@ -16,6 +16,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -255,6 +256,97 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             // returned.
             Assert.NotNull(updatedCompletionItem);
             Assert.True(updatedCompletionItem.Documentation.Length > 0);
+        }
+
+        [Fact]
+        public async Task CompletesDetailOnFilePathSuggestion()
+        {
+            string expectedPathSnippet;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                expectedPathSnippet = @".\TestFiles\CompleteFunctionName.ps1";
+            }
+            else
+            {
+                expectedPathSnippet = "./TestFiles/CompleteFunctionName.ps1";
+            }
+
+            // Change dir to root of this test project's folder
+            await this.SetLocationForServerTest(this.TestRootDir);
+
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1"));
+
+            CompletionItem[] completions =
+                await this.SendRequest(
+                    CompletionRequest.Type,
+                    new TextDocumentPositionParams
+                    {
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1")
+                        },
+                        Position = new Position
+                        {
+                            Line = 8,
+                            Character = 35
+                        }
+                    });
+
+            CompletionItem completionItem =
+                completions
+                    .FirstOrDefault(
+                        c => c.InsertText == expectedPathSnippet);
+
+            Assert.NotNull(completionItem);
+            Assert.Equal(InsertTextFormat.PlainText, completionItem.InsertTextFormat);
+        }
+
+        [Fact]
+        public async Task CompletesDetailOnFolderPathSuggestion()
+        {
+            string expectedPathSnippet;
+            InsertTextFormat insertTextFormat;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                expectedPathSnippet = @"'.\TestFiles\Folder With Spaces$0'";
+                insertTextFormat = InsertTextFormat.Snippet;
+            }
+            else
+            {
+                expectedPathSnippet = @"./TestFiles/Folder\ With\ Spaces";
+                insertTextFormat = InsertTextFormat.PlainText;
+            }
+
+            // Change dir to root of this test project's folder
+            await this.SetLocationForServerTest(this.TestRootDir);
+
+            await this.SendOpenFileEvent(TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1"));
+
+            CompletionItem[] completions =
+                await this.SendRequest(
+                    CompletionRequest.Type,
+                    new TextDocumentPositionParams
+                    {
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = TestUtilities.NormalizePath("TestFiles/CompleteFunctionName.ps1")
+                        },
+                        Position = new Position
+                        {
+                            Line = 7,
+                            Character = 32
+                        }
+                    });
+
+            CompletionItem completionItem =
+                completions
+                    .FirstOrDefault(
+                        c => c.InsertText == expectedPathSnippet);
+
+            Assert.NotNull(completionItem);
+            Assert.Equal(insertTextFormat, completionItem.InsertTextFormat);
         }
 
         [Fact]
@@ -824,6 +916,27 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
 
             string expectedArchitecture = (IntPtr.Size == 8) ? "x64" : "x86";
             Assert.Equal(expectedArchitecture, versionDetails.Architecture);
+        }
+
+        private string TestRootDir
+        {
+            get
+            {
+                string assemblyDir = Path.GetDirectoryName(this.GetType().Assembly.Location);
+                return Path.Combine(assemblyDir, @"..\..\..");
+            }
+        }
+
+        private async Task SetLocationForServerTest(string path)
+        {
+            // Change dir to root of this test project's folder
+            await this.SendRequest(
+                EvaluateRequest.Type,
+                new EvaluateRequestArguments
+                {
+                    Expression = $"Set-Location {path}",
+                    Context = "repl"
+                });
         }
 
         private async Task SendOpenFileEvent(string filePath, bool waitForDiagnostics = true)
