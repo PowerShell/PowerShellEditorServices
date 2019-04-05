@@ -639,7 +639,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>The file system path encoded as a DocumentUri.</returns>
         public static string ConvertPathToDocumentUri(string path)
         {
-            const string fileUriPrefix = "file:///";
+            const string fileUriPrefix = "file:";
             const string untitledUriPrefix = "untitled:";
 
             // If path is already in document uri form, there is nothing to convert.
@@ -685,7 +685,15 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             // ' is not always encoded.  I've seen this in Windows PowerShell.
-            return docUriStrBld.Replace("'", "%27").Insert(0, fileUriPrefix).ToString();
+            docUriStrBld.Replace("'", "%27");
+
+            // Insert /// unless path is a UNC path in which case the proper URI form is file://server/share.
+            if ((docUriStrBld.Length < 2) || ((docUriStrBld[0] != '/') && (docUriStrBld[1] != '/')))
+            {
+                docUriStrBld.Insert(0, "///");
+            }
+
+            return docUriStrBld.Insert(0, fileUriPrefix).ToString();
         }
 
         #endregion

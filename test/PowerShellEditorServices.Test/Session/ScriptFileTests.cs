@@ -595,9 +595,14 @@ First line
                 scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///c%3A/Users/AmosBurton/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
 
-                path = @"c:\Users\BobbyDraper\projects\Rocinate\foo's_~#-[@] +,;=%.ps1";
+                path = @"c:\Users\BobbieDraper\projects\Rocinate\foo's_~#-[@] +,;=%.ps1";
                 scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
-                Assert.Equal("file:///c%3A/Users/BobbyDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
+                Assert.Equal("file:///c%3A/Users/BobbieDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
+
+                // Test UNC path
+                path = @"\\ClarissaMao\projects\Rocinate\foo's_~#-[@] +,;=%.ps1";
+                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                Assert.Equal("file://ClarissaMao/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
             }
             else
             {
@@ -606,9 +611,9 @@ First line
                 scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/AlexKamal/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
 
-                path = "/home/BobbyDraper/projects/Rocinate/foo's_~#-[@] +,;=%.ps1";
+                path = "/home/BobbieDraper/projects/Rocinate/foo's_~#-[@] +,;=%.ps1";
                 scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
-                Assert.Equal("file:///home/BobbyDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
+                Assert.Equal("file:///home/BobbieDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
 
                 path = "/home/NaomiNagata/projects/Rocinate/Proto:Mole:cule.ps1";
                 scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
