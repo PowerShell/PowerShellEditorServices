@@ -198,16 +198,9 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, Packa
     # Make sure the dotnet we found is the right version
     if ($dotnetExePath) {
         # dotnet --version can write to stderr, which causes builds to abort, therefore use --list-sdks instead.
-        [System.Management.Automation.SemanticVersion] $version = & $dotnetExePath --list-sdks |
+        $script:dotnetExe = & $dotnetExePath --list-sdks |
             ForEach-Object { $_.Split()[0] } |
-            Select-Object -Last 1
-        if ($version -and [version]$version -ge [version]$script:RequiredSdkVersion) {
-            $script:dotnetExe = $dotnetExePath
-        }
-        else {
-            # Clear the path so that we invoke installation
-            $script:dotnetExe = $null
-        }
+            Where-Object { $_ -eq $script:RequiredSdkVersion }
     }
     else {
         # Clear the path so that we invoke installation
