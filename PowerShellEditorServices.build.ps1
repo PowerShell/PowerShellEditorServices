@@ -197,9 +197,10 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, Packa
 
     # Make sure the dotnet we found is the right version
     if ($dotnetExePath) {
-        # dotnet --version can return a semver that System.Version can't handle
-        # e.g.: 2.1.300-preview-01. The replace operator is used to remove any build suffix.
-        $version = (& $dotnetExePath --version) -replace '[+-].*$',''
+        # dotnet --version can write to stderr, which causes builds to abort, therefore use --list-sdks instead.
+        [System.Management.Automation.SemanticVersion] $version = & $dotnetExePath --list-sdks |
+            ForEach-Object { $_.Split()[0] } |
+            Select-Object -Last 1
         if ($version -and [version]$version -ge [version]$script:RequiredSdkVersion) {
             $script:dotnetExe = $dotnetExePath
         }
