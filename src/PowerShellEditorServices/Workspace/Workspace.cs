@@ -709,8 +709,9 @@ namespace Microsoft.PowerShell.EditorServices
             }
             else
             {
-                // On non-Windows system, simply append the escaped path.
-                docUriStrBld.Append(escapedPath);
+                // On non-Windows systems, append the escapedPath and undo the over-aggressive
+                // escaping of / done by Uri.EscapeDataString.
+                docUriStrBld.Append(escapedPath).Replace("%2F", "/");
             }
 
 #if !CoreCLR
