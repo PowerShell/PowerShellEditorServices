@@ -650,50 +650,76 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             string escapedPath = Uri.EscapeDataString(path);
-            var docUriStrBld = new StringBuilder(escapedPath);
+
+            // Max capacity of the StringBuilder will be the current escapedPath length
+            // plus extra chars for file:///.
+            var docUriStrBld = new StringBuilder(escapedPath.Length + fileUriPrefix.Length + 3);
+            docUriStrBld.Append(fileUriPrefix).Append("//");
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // VSCode file URIs on Windows need the drive letter lowercase.
-                // Search original path for colon since a char search (no string culture involved)
-                // is faster than a string search.
+                // VSCode file URIs on Windows need the drive letter to be lowercase. Search the
+                // original path for colon since a char search (no string culture involved) is
+                // faster than a string search.  If found, then lowercase the associated drive letter.
                 if (path.Contains(':'))
                 {
-                    // Start at index 1 to avoid an index out of range check when accessing index - 1.
-                    // Also, if the colon is at index 0 there is no drive letter before it to lower case.
-                    for (int i = 1; i < docUriStrBld.Length - 2; i++)
+                    // A valid, drive-letter based path converted to URI form needs to be prefixed
+                    // with a / to indicate the path is an absolute path.
+                    docUriStrBld.Append("/");
+                    int prefixLen = docUriStrBld.Length;
+
+                    docUriStrBld.Append(escapedPath);
+
+                    // Uri.EscapeDataString goes a bit far, encoding \ chars. Also, VSCode wants / instead of \.
+                    docUriStrBld.Replace("%5C", "/");
+
+                    // Find the first colon after the "file:///" prefix, skipping the first char after
+                    // the prefix since a Windows path cannot start with a colon. End the check at
+                    // less than docUriStrBld.Length - 2 since we need to look-ahead two characters.
+                    for (int i = prefixLen + 1; i < docUriStrBld.Length - 2; i++)
                     {
                         if ((docUriStrBld[i] == '%') && (docUriStrBld[i + 1] == '3') && (docUriStrBld[i + 2] == 'A'))
                         {
                             int driveLetterIndex = i - 1;
                             char driveLetter = char.ToLowerInvariant(docUriStrBld[driveLetterIndex]);
-                            docUriStrBld.Replace(path[driveLetterIndex], driveLetter, driveLetterIndex, 1);
+                            docUriStrBld.Replace(docUriStrBld[driveLetterIndex], driveLetter, driveLetterIndex, 1);
                             break;
                         }
                     }
                 }
+                else
+                {
+                    // This is a Windows path without a drive specifier, must be either a relative or UNC path.
+                    int prefixLen = docUriStrBld.Length;
 
-                // Uri.EscapeDataString goes a bit far, encoding \ chars. Also, VSCode wants / instead of \.
-                docUriStrBld.Replace("%5C", "/");
+                    docUriStrBld.Append(escapedPath);
+
+                    // Uri.EscapeDataString goes a bit far, encoding \ chars. Also, VSCode wants / instead of \.
+                    docUriStrBld.Replace("%5C", "/");
+
+                    // The proper URI form for a UNC path is file://server/share.  In the case of a UNC
+                    // path, remove the path's leading // because the file:// prefix already provides it.
+                    if ((docUriStrBld.Length > prefixLen + 1) &&
+                        (docUriStrBld[prefixLen] == '/') &&
+                        (docUriStrBld[prefixLen + 1] == '/'))
+                    {
+                        docUriStrBld.Remove(prefixLen, 2);
+                    }
+                }
             }
             else
             {
-                // Because we will prefix later with file:///, remove the initial encoded / if this is an absolute path.
-                // See https://docs.microsoft.com/en-us/dotnet/api/system.uri?view=netframework-4.7.2#implicit-file-path-support
-                // Uri.EscapeDataString goes a bit far, encoding / chars.
-                docUriStrBld.Replace("%2F", string.Empty, 0, 3).Replace("%2F", "/");
+                // On non-Windows system, simply append the escaped path.
+                docUriStrBld.Append(escapedPath);
             }
 
-            // ' is not always encoded.  I've seen this in Windows PowerShell.
+#if !CoreCLR
+            // ' is not encoded by Uri.EscapeDataString in Windows PowerShell 5.x.
+            // This is apparently a difference between .NET Framework and .NET Core.
             docUriStrBld.Replace("'", "%27");
+#endif
 
-            // Insert /// unless path is a UNC path in which case the proper URI form is file://server/share.
-            if ((docUriStrBld.Length < 2) || ((docUriStrBld[0] != '/') && (docUriStrBld[1] != '/')))
-            {
-                docUriStrBld.Insert(0, "///");
-            }
-
-            return docUriStrBld.Insert(0, fileUriPrefix).ToString();
+            return docUriStrBld.ToString();
         }
 
         #endregion
