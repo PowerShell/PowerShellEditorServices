@@ -315,8 +315,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Host
             }
             else
             {
-                expectedPathSnippet = @"./TestFiles/Folder\ With\ Spaces";
-                insertTextFormat = InsertTextFormat.PlainText;
+                expectedPathSnippet = @"'./TestFiles/Folder With Spaces$0'";
+                insertTextFormat = InsertTextFormat.Snippet;
             }
 
             // Change dir to root of this test project's folder
