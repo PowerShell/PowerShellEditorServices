@@ -22,13 +22,12 @@ $script:IsCIBuild = $env:APPVEYOR -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:TargetPlatform = "netstandard2.0"
 $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
-$script:RequiredSdkVersion = "2.1.402"
+$script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
 $script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
 $script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
 $script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSCode/bin/"
 $script:WindowsPowerShellFrameworkTarget = 'net461'
 $script:NetFrameworkPlatformId = 'win'
-$script:NetCoreTestingFrameworkVersion = '2.1.4'
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Host", "BuildInfo", "BuildInfo.cs")
 
 $script:PSCoreModulePath = $null
@@ -198,10 +197,8 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, Packa
 
     # Make sure the dotnet we found is the right version
     if ($dotnetExePath) {
-        # dotnet --version can return a semver that System.Version can't handle
-        # e.g.: 2.1.300-preview-01. The replace operator is used to remove any build suffix.
-        $version = (& $dotnetExePath --version) -replace '[+-].*$',''
-        if ($version -and [version]$version -ge [version]$script:RequiredSdkVersion) {
+        # dotnet --version can write to stderr, which causes builds to abort, therefore use --list-sdks instead.
+        if ((& $dotnetExePath --list-sdks | ForEach-Object { $_.Split()[0] } ) -contains $script:RequiredSdkVersion) {
             $script:dotnetExe = $dotnetExePath
         }
         else {
