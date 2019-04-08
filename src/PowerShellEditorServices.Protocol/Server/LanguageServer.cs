@@ -1915,6 +1915,8 @@ function __Expand-Alias {
         {
             string detailString = null;
             string documentationString = null;
+            string completionText = completionDetails.CompletionText;
+            InsertTextFormat insertTextFormat = InsertTextFormat.PlainText;
 
             if ((completionDetails.CompletionType == CompletionType.Variable) ||
                 (completionDetails.CompletionType == CompletionType.ParameterName))
@@ -1956,6 +1958,19 @@ function __Expand-Alias {
                     }
                 }
             }
+            else if ((completionDetails.CompletionType == CompletionType.Folder) &&
+                     (completionText.EndsWith("\"") || completionText.EndsWith("'")))
+            {
+                // Insert a final "tab stop" as identified by $0 in the snippet provided for completion.
+                // For folder paths, we take the path returned by PowerShell e.g. 'C:\Program Files' and insert
+                // the tab stop marker before the closing quote char e.g. 'C:\Program Files$0'.
+                // This causes the editing cursor to be placed *before* the final quote after completion,
+                // which makes subsequent path completions work. See this part of the LSP spec for details:
+                // https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
+                int len = completionDetails.CompletionText.Length;
+                completionText = completionDetails.CompletionText.Insert(len - 1, "$0");
+                insertTextFormat = InsertTextFormat.Snippet;
+            }
 
             // Force the client to maintain the sort order in which the
             // original completion results were returned. We just need to
@@ -1966,7 +1981,8 @@ function __Expand-Alias {
 
             return new CompletionItem
             {
-                InsertText = completionDetails.CompletionText,
+                InsertText = completionText,
+                InsertTextFormat = insertTextFormat,
                 Label = completionDetails.ListItemText,
                 Kind = MapCompletionKind(completionDetails.CompletionType),
                 Detail = detailString,
@@ -1975,7 +1991,7 @@ function __Expand-Alias {
                 FilterText = completionDetails.CompletionText,
                 TextEdit = new TextEdit
                 {
-                    NewText = completionDetails.CompletionText,
+                    NewText = completionText,
                     Range = new Range
                     {
                         Start = new Position
