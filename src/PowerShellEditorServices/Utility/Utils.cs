@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// True if we are running on .NET Core, false otherwise.
         /// </summary>
 #if CoreCLR
-        public static bool IsNetCore { get; } = RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
+        public static bool IsNetCore { get; } = true;
 #else
         public static bool IsNetCore { get; } = false;
 #endif
