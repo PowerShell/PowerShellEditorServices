@@ -34,14 +34,12 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public class PowerShellContext : IDisposable, IHostSupportsInteractiveSession
     {
-        private const string DotNetFrameworkDescription = ".NET Framework";
-
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
 
         static PowerShellContext()
         {
             // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection
-            if (RuntimeInformation.FrameworkDescription.Equals(DotNetFrameworkDescription))
+            if (!Utils.IsNetCore)
             {
                 MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
                 Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
@@ -195,7 +193,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             // Windows PowerShell must be hosted in STA mode
             // This must be set on the runspace *before* it is opened
-            if (RuntimeInformation.FrameworkDescription.Equals(DotNetFrameworkDescription))
+            if (s_runspaceApartmentStateSetter != null)
             {
                 s_runspaceApartmentStateSetter(runspace, ApartmentState.STA);
             }
