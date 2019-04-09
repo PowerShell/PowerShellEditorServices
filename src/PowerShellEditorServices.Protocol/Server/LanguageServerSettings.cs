@@ -288,8 +288,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         {"Enable", true},
                         {"CheckHashtable", AlignPropertyValuePairs}
                     }},
-                    { "PSUseCorrectCasing", new Hashtable {
-                        { "Enable", UseCorrectCasing }
+                    {"PSUseCorrectCasing", new Hashtable {
+                        {"Enable", UseCorrectCasing }
                     }},
                 }}
             };
