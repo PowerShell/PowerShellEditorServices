@@ -522,7 +522,7 @@ namespace Microsoft.PowerShell.EditorServices
                                         if (!e.SerializedRemoteException.TypeNames[0].EndsWith("PipelineStoppedException"))
                                         {
                                             // Rethrow anything that isn't a PipelineStoppedException
-                                            throw e;
+                                            throw;
                                         }
                                     }
 
@@ -608,7 +608,18 @@ namespace Microsoft.PowerShell.EditorServices
                 }
                 finally
                 {
-                    // Get the new prompt before releasing the runspace handle
+                    // If the RunspaceAvailability is None, it means that the runspace we're in is dead.
+                    // If this is the case, we should abort the execution which will clean up the runspace
+                    // (and clean up the debugger) and then pop it off the stack.
+                    // An example of when this happens is when the "attach" debug config is used and the
+                    // process you're attached to dies randomly.
+                    if (this.CurrentRunspace.Runspace.RunspaceAvailability == RunspaceAvailability.None)
+                    {
+                        this.AbortExecution();
+                        this.PopRunspace();
+                    }
+
+                    // Get the new prompt before releasing the runspace:?> handle
                     if (executionOptions.WriteOutputToHost)
                     {
                         SessionDetails sessionDetails = null;
@@ -792,10 +803,10 @@ namespace Microsoft.PowerShell.EditorServices
 
                 var strBld = new StringBuilder();
 
-                // The script parameter can refer to either a "script path" or a "command name".  If it is a 
+                // The script parameter can refer to either a "script path" or a "command name".  If it is a
                 // script path, we can determine that by seeing if the path exists.  If so, we always single
                 // quote that path in case it includes special PowerShell characters like ', &, (, ), [, ] and
-                // <space>.  Any embedded single quotes are escaped.  
+                // <space>.  Any embedded single quotes are escaped.
                 // If the provided path is already quoted, then File.Exists will not find it.
                 // This keeps us from quoting an already quoted path.
                 // Related to issue #123.

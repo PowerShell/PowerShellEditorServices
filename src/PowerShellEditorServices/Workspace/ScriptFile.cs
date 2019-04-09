@@ -3,13 +3,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Runtime.InteropServices;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -53,6 +54,19 @@ namespace Microsoft.PowerShell.EditorServices
         public string ClientFilePath { get; private set; }
 
         /// <summary>
+        /// Gets the file path in LSP DocumentUri form.  The ClientPath property must not be null.
+        /// </summary>
+        public string DocumentUri
+        {
+            get
+            {
+                return this.ClientFilePath == null
+                    ? string.Empty
+                    : Workspace.ConvertPathToDocumentUri(this.ClientFilePath);
+            }
+        }
+
+        /// <summary>
         /// Gets or sets a boolean that determines whether
         /// semantic analysis should be enabled for this file.
         /// For internal use only.
@@ -86,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the list of syntax markers found by parsing this
         /// file's contents.
         /// </summary>
-        public ScriptFileMarker[] SyntaxMarkers
+        public List<ScriptFileMarker> DiagnosticMarkers
         {
             get;
             private set;
@@ -648,10 +662,10 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             // Translate parse errors into syntax markers
-            this.SyntaxMarkers =
+            this.DiagnosticMarkers =
                 parseErrors
                     .Select(ScriptFileMarker.FromParseError)
-                    .ToArray();
+                    .ToList();
 
             // Untitled files have no directory
             // Discussed in https://github.com/PowerShell/PowerShellEditorServices/pull/815.

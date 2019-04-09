@@ -1,5 +1,73 @@
 # PowerShell Editor Services Release History
 
+## v1.12.0
+### Friday, March 29, 2019
+
+- [PowerShellEditorServices #895](https://github.com/PowerShell/PowerShellEditorServices/pull/895) -
+  Add warning to parameter validation set  (Thanks @Benny1007!)
+- [PowerShellEditorServices #897](https://github.com/PowerShell/PowerShellEditorServices/pull/897) -
+  Clean up and pop dead runspaces when using 'attach' debugging
+- [PowerShellEditorServices #888](https://github.com/PowerShell/PowerShellEditorServices/pull/888) -
+  Add new ParseError level to ScriptFileMarkerLevel and filter out PSSA parse errors
+- [PowerShellEditorServices #866](https://github.com/PowerShell/PowerShellEditorServices/pull/866) -
+  Catch NotSupportedException which can be thrown by FileStream constructor (Thanks @rkeithhill!)
+- [PowerShellEditorServices #868](https://github.com/PowerShell/PowerShellEditorServices/pull/868) -
+  Speed up Travis builds by skipping the .NET Core initialization (Thanks @bergmeister!)
+- [PowerShellEditorServices #869](https://github.com/PowerShell/PowerShellEditorServices/pull/869) -
+  Added `AsNewFile` switch to Out-CurrentFile (Thanks @dfinke!)
+- [PowerShellEditorServices #873](https://github.com/PowerShell/PowerShellEditorServices/pull/873) -
+  Return the start line number for Describe block (Thanks @rkeithhill!)
+- [PowerShellEditorServices #876](https://github.com/PowerShell/PowerShellEditorServices/pull/876) -
+  Temporarily disable deemphasized stack frames to fix VSCode issue 1750 (Thanks @rkeithhill!)
+- [PowerShellEditorServices #871](https://github.com/PowerShell/PowerShellEditorServices/pull/871) -
+  Support -CustomPipeName, allowing configuration of custom namedpipes for LSP transport
+- [PowerShellEditorServices #872](https://github.com/PowerShell/PowerShellEditorServices/pull/872) -
+  Fix unable to open files in problems/peek windows issue (Thanks @rkeithhill!)
+- [PowerShellEditorServices #875](https://github.com/PowerShell/PowerShellEditorServices/pull/875) -
+  Add attach to local runspace. (Thanks @adamdriscoll!)
+- [PowerShellEditorServices #881](https://github.com/PowerShell/PowerShellEditorServices/pull/881) -
+  Use `NamedPipeConnectionInfo` to connect to remote runspaces instead of Enter-PSHostProcess
+- [PowerShellEditorServices #845](https://github.com/PowerShell/PowerShellEditorServices/pull/845) -
+  Enable UseCorrectCasing as a default rule (Thanks @bergmeister!)
+- [PowerShellEditorServices #835](https://github.com/PowerShell/PowerShellEditorServices/pull/835) -
+  Map new `powershell.codeformatting` settings WhitespaceInsideBrace and WhitespaceAroundPipe to PSSA settings hashtable (Thanks @bergmeister!)
+- [PowerShellEditorServices #836](https://github.com/PowerShell/PowerShellEditorServices/pull/836) -
+  Add PipelineIndentationStyle configuration mapping (Thanks @bergmeister!)
+- [PowerShellEditorServices #887](https://github.com/PowerShell/PowerShellEditorServices/pull/887) -
+  Cherry pick PR 1750 merge commit to legacy/v1.x, has additional fixes (Thanks @rkeithhill!)
+- [PowerShellEditorServices #862](https://github.com/PowerShell/PowerShellEditorServices/pull/862) -
+  Handle arbitrary exceptions when recursing workspace
+
+## v1.11.0
+### Wednesday, January 23, 2019
+
+- [PowerShellEditorServices #851](https://github.com/PowerShell/PowerShellEditorServices/pull/851) -
+  Fix #827 Pester TestName w/expandable str returns nothing (Thanks @rkeithhill!)
+- [PowerShellEditorServices #850](https://github.com/PowerShell/PowerShellEditorServices/pull/850) -
+  Fix VSCODE 1683 - HelpCommentReqHdlr crash on GetFile (Thanks @rkeithhill!)
+- [PowerShellEditorServices #825](https://github.com/PowerShell/PowerShellEditorServices/pull/825) -
+  (GH-824)(GH-812) Improve code folding speed (Thanks @glennsarti!)
+- [PowerShellEditorServices #829](https://github.com/PowerShell/PowerShellEditorServices/pull/829) -
+  Update various NuGet packages (Thanks @bergmeister!)
+- [PowerShellEditorServices #846](https://github.com/PowerShell/PowerShellEditorServices/pull/846) -
+  Workaround "attach to process" hang
+- [PowerShellEditorServices #848](https://github.com/PowerShell/PowerShellEditorServices/pull/848) -
+  switch an instance of GetFile to TryGetFile to fix #1689
+- [PowerShellEditorServices #828](https://github.com/PowerShell/PowerShellEditorServices/pull/828) -
+  Compile against net452 because net451 is not supported any more (Thanks @bergmeister!)
+- [PowerShellEditorServices #844](https://github.com/PowerShell/PowerShellEditorServices/pull/844) -
+  Fix an empty verbose message when importing an editor command (Thanks @alexandair!)
+- [PowerShellEditorServices #843](https://github.com/PowerShell/PowerShellEditorServices/pull/843) -
+  Simplify the parameter descriptions and fix typos (Thanks @alexandair!)
+- [PowerShellEditorServices #839](https://github.com/PowerShell/PowerShellEditorServices/pull/839) -
+  Fix FileNotFoundEx crash when Fold happens on untitled: scheme doc (Thanks @rkeithhill!)
+- [PowerShellEditorServices #838](https://github.com/PowerShell/PowerShellEditorServices/pull/838) -
+  Fix NullRefEx bug when accessing scriptFile.ReferencedFiles (Thanks @rkeithhill!)
+- [PowerShellEditorServices #842](https://github.com/PowerShell/PowerShellEditorServices/pull/842) -
+  Fix typos (Thanks @alexandair!)
+- [PowerShellEditorServices #837](https://github.com/PowerShell/PowerShellEditorServices/pull/837) -
+  (maint) Add traits for folding tests (Thanks @glennsarti!)
+
 ## v1.10.2
 ### Tuesday, December 18, 2018
 
