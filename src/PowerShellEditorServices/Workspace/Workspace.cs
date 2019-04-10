@@ -714,11 +714,12 @@ namespace Microsoft.PowerShell.EditorServices
                 docUriStrBld.Append(escapedPath).Replace("%2F", "/");
             }
 
-#if !CoreCLR
-            // ' is not encoded by Uri.EscapeDataString in Windows PowerShell 5.x.
-            // This is apparently a difference between .NET Framework and .NET Core.
-            docUriStrBld.Replace("'", "%27");
-#endif
+            if (!Utils.IsNetCore)
+            {
+                // ' is not encoded by Uri.EscapeDataString in Windows PowerShell 5.x.
+                // This is apparently a difference between .NET Framework and .NET Core.
+                docUriStrBld.Replace("'", "%27");
+            }
 
             return docUriStrBld.ToString();
         }
