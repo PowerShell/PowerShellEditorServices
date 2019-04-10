@@ -58,6 +58,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         Folder = 19
     }
 
+    public enum InsertTextFormat
+    {
+        PlainText = 1,
+        Snippet = 2,
+    }
+
     [DebuggerDisplay("NewText = {NewText}, Range = {Range.Start.Line}:{Range.Start.Character} - {Range.End.Line}:{Range.End.Character}")]
     public class TextEdit
     {
@@ -85,6 +91,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         public string FilterText { get; set; }
 
         public string InsertText { get; set; }
+
+        public InsertTextFormat InsertTextFormat { get; set; } = InsertTextFormat.PlainText;
 
         public Range Range { get; set; }
 
