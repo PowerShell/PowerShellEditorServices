@@ -1,5 +1,7 @@
 # PowerShell Editor Services Release History
+
 ## v2.0.0-preview.3
+### Wednesday, April 10, 2019
 
 - [PowerShellEditorServices #902](https://github.com/PowerShell/PowerShellEditorServices/pull/902) -
   Improve path auto-completion  (Thanks @rkeithhill!)
