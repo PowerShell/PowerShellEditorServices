@@ -10,7 +10,7 @@
 - [PowerShellEditorServices #902](https://github.com/PowerShell/PowerShellEditorServices/pull/902) -
   Improve path auto-completion (Thanks @rkeithhill!)
 - [PowerShellEditorServices #910](https://github.com/PowerShell/PowerShellEditorServices/pull/910) -
-  Fix UseCorrectCasing to be actually configurable via"powershell.codeFormatting.useCorrectCasing" (Thanks @bergmeister!)
+  Fix UseCorrectCasing to be actually configurable via `powershell.codeFormatting.useCorrectCasing` (Thanks @bergmeister!)
 
 ## v1.12.0
 ### Friday, March 29, 2019
