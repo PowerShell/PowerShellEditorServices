@@ -1,5 +1,5 @@
 steps:
-  - pwsh: ../scripts/azurePipelinesBuild.ps1
+  - pwsh: scripts/azurePipelinesBuild.ps1
   - task: PublishTestResults@2
     inputs:
       testRunner: VSTest
