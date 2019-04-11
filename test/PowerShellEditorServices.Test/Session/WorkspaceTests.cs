@@ -98,7 +98,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             }
         }
 
-        private static string s_driveLetter => Path.GetPathRoot(Environment.SystemDirectory).Substring(0, 1);
+        private static string s_driveLetter
+        {
+            get
+            {
+                return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? Path.GetPathRoot(Environment.SystemDirectory).Substring(0, 1)
+                    : "";
+            }
+        }
+
         private static object[][] s_winPathsToResolve = new object[][]
         {
             new object[] { "file:///C%3A/banana/", @"C:\banana\" },
