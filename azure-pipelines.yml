@@ -1,5 +1,6 @@
 trigger:
 - master
+- legacy/1.x
 variables:
    # Don't download unneeded packages
   - name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
@@ -29,6 +30,10 @@ jobs:
       testRunner: VSTest
       testResultsFiles: '**/*.trx'
     condition: succeededOrFailed()
+  - task: PublishBuildArtifacts@1
+    inputs:
+      ArtifactName: PowerShellEditorServices
+      PathtoPublish: PowerShellEditorServices-*.zip
 
 - job: macOS
   pool:
@@ -40,6 +45,10 @@ jobs:
       testRunner: VSTest
       testResultsFiles: '**/*.trx'
     condition: succeededOrFailed()
+  - task: PublishBuildArtifacts@1
+    inputs:
+      ArtifactName: PowerShellEditorServices
+      PathtoPublish: PowerShellEditorServices-*.zip
 
 - job: Linux
   pool:
@@ -51,3 +60,7 @@ jobs:
       testRunner: VSTest
       testResultsFiles: '**/*.trx'
     condition: succeededOrFailed()
+  - task: PublishBuildArtifacts@1
+    inputs:
+      ArtifactName: PowerShellEditorServices
+      PathtoPublish: PowerShellEditorServices-*.zip
