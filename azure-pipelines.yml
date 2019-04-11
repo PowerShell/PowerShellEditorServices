@@ -33,7 +33,7 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       ArtifactName: PowerShellEditorServices
-      PathtoPublish: PowerShellEditorServices-*.zip
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
 
 - job: macOS
   pool:
@@ -48,7 +48,7 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       ArtifactName: PowerShellEditorServices
-      PathtoPublish: PowerShellEditorServices-*.zip
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
 
 - job: Linux
   pool:
@@ -63,4 +63,4 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       ArtifactName: PowerShellEditorServices
-      PathtoPublish: PowerShellEditorServices-*.zip
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'

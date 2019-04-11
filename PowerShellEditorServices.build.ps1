@@ -18,7 +18,7 @@ param(
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
-$script:IsCIBuild = $env:APPVEYOR -ne $null
+$script:IsCIBuild = $env:APPVEYOR -ne $null -or $env:TF_BUILD
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:TargetPlatform = "netstandard2.0"
 $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
@@ -267,7 +267,7 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
     if ($env:APPVEYOR) {
         $script:BuildNumber = $env:APPVEYOR_BUILD_NUMBER
     } elseif ($env:TF_BUILD) {
-        $script:BuildNumber = ${env:Build.BuildNumber}
+        $script:BuildNumber = $env:BUILD_BUILDNUMBER
     }
 
     if ($script:VersionSuffix -ne $null) {
@@ -334,7 +334,7 @@ task Build {
 }
 
 function UploadTestLogs {
-    if ($script:IsCIBuild) {
+    if ($script:IsCIBuild -and $env:APPVEYOR) {
         $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net452/logs"
         $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
 
@@ -527,6 +527,8 @@ task UploadArtifacts -If ($script:IsCIBuild) {
         Push-AppveyorArtifact .\src\PowerShellEditorServices.Protocol\bin\$Configuration\Microsoft.PowerShell.EditorServices.Protocol.$($script:FullVersion).nupkg
         Push-AppveyorArtifact .\src\PowerShellEditorServices.Host\bin\$Configuration\Microsoft.PowerShell.EditorServices.Host.$($script:FullVersion).nupkg
         Push-AppveyorArtifact .\PowerShellEditorServices-$($script:FullVersion).zip
+    } elseif ($env:TF_BUILD) {
+        Copy-Item -Path .\PowerShellEditorServices-$($script:FullVersion).zip -Destination $env:BUILD_ARTIFACTSTAGINGDIRECTORY
     }
 }
 
