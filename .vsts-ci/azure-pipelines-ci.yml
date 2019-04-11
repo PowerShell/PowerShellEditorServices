@@ -13,8 +13,17 @@ jobs:
   pool:
     vmImage: 'VS2017-Win2016'
   steps:
-  - powershell: Write-Host "##vso[task.setvariable variable=USE_WINDOWS_POWERSHELL;]$true"
-  - template: templates/ci-general.yml
+  - powershell: scripts/azurePipelinesBuild.ps1
+  - task: PublishTestResults@2
+    inputs:
+      testRunner: VSTest
+      testResultsFiles: '**/*.trx'
+    condition: succeededOrFailed()
+  - task: PublishBuildArtifacts@1
+    inputs:
+      ArtifactName: PowerShellEditorServices
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+
 
 - job: Windows_pwsh
   pool:

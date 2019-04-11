@@ -1,10 +1,5 @@
 $ErrorActionPreference = 'Stop'
 
-if($env:USE_WINDOWS_POWERSHELL) {
-    powershell $PSScriptRoot/azurePipelinesBuild.ps1
-    return
-}
-
 # Needed for build and docs gen.
 Install-Module InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser -Force
 Install-Module PlatyPS -RequiredVersion 0.9.0 -Scope CurrentUser -Force
