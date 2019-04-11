@@ -26,7 +26,7 @@ jobs:
   - powershell: Invoke-Build -Configuration Release
   - task: PublishTestResults@2
     inputs:
-      testRunner: NUnit
+      testRunner: VSTest
       testResultsFiles: '**/*.trx'
     condition: succeededOrFailed()
 
@@ -37,7 +37,7 @@ jobs:
   - pwsh: scripts/travis.ps1
   - task: PublishTestResults@2
     inputs:
-      testRunner: NUnit
+      testRunner: VSTest
       testResultsFiles: '**/*.trx'
     condition: succeededOrFailed()
 
@@ -48,6 +48,6 @@ jobs:
   - pwsh: scripts/travis.ps1
   - task: PublishTestResults@2
     inputs:
-      testRunner: NUnit
+      testRunner: VSTest
       testResultsFiles: '**/*.trx'
     condition: succeededOrFailed()
