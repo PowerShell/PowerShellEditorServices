@@ -1,5 +1,21 @@
 # PowerShell Editor Services Release History
 
+## v2.0.0-preview.3
+### Wednesday, April 10, 2019
+
+- [PowerShellEditorServices #906](https://github.com/PowerShell/PowerShellEditorServices/pull/906) -
+  Fix New-EditorFile with no folder or no files open
+- [PowerShellEditorServices #908](https://github.com/PowerShell/PowerShellEditorServices/pull/908) -
+  Fix crash in CodeLens with UNC paths on Windows (Thanks @rkeithhill!)
+- [PowerShellEditorServices #902](https://github.com/PowerShell/PowerShellEditorServices/pull/902) -
+  Improve path auto-completion (Thanks @rkeithhill!)
+- [PowerShellEditorServices #910](https://github.com/PowerShell/PowerShellEditorServices/pull/910) -
+  Fix UseCorrectCasing to be actually configurable via `powershell.codeFormatting.useCorrectCasing` (Thanks @bergmeister!)
+- [PowerShellEditorServices #909](https://github.com/PowerShell/PowerShellEditorServices/pull/909) -
+  Use global.json to pin .Net Core SDK version and update it from 2.1.402 to 2.1.602 (Thanks @bergmeister!)
+- [PowerShellEditorServices #903](https://github.com/PowerShell/PowerShellEditorServices/pull/903) -
+  Move temp folder into repo to avoid state that causes build errors from time to time when rebuilding locally (and packages have updated) (Thanks @bergmeister!)
+
 ## v2.0.0-preview.2
 ### Friday, March 29, 2019
 
