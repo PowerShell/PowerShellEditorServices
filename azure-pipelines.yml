@@ -1,6 +1,12 @@
 trigger:
 - master
-
+variables:
+   # Don't download unneeded packages
+  - name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
+    value: 'true'
+    # Don't send telemetry
+  - name: DOTNET_CLI_TELEMETRY_OPTOUT
+    value: 'true'
 jobs:
 - job: Windows
   pool:
@@ -21,7 +27,7 @@ jobs:
   - task: PublishTestResults@2
     inputs:
       testRunner: NUnit
-      testResultsFiles: '**/TestResults.xml'
+      testResultsFiles: '**/*.trx'
     condition: succeededOrFailed()
 
 - job: macOS
@@ -32,7 +38,7 @@ jobs:
   - task: PublishTestResults@2
     inputs:
       testRunner: NUnit
-      testResultsFiles: '**/TestResults.xml'
+      testResultsFiles: '**/*.trx'
     condition: succeededOrFailed()
 
 - job: Linux
@@ -43,5 +49,5 @@ jobs:
   - task: PublishTestResults@2
     inputs:
       testRunner: NUnit
-      testResultsFiles: '**/TestResults.xml'
+      testResultsFiles: '**/*.trx'
     condition: succeededOrFailed()
