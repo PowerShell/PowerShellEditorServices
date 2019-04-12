@@ -1,14 +1,14 @@
 # Contribution Guidelines
 
-We welcome many kinds of community contributions to this project!  Whether it's a feature implementation, 
-bug fix, or a good idea, please create an issue so that we can discuss it.  It is not necessary to create an 
-issue before sending a pull request but it may speed up the process if we can discuss your idea before 
+We welcome many kinds of community contributions to this project!  Whether it's a feature implementation,
+bug fix, or a good idea, please create an issue so that we can discuss it.  It is not necessary to create an
+issue before sending a pull request but it may speed up the process if we can discuss your idea before
 you start implementing it.
 
-Because this project exposes a couple different public APIs, we must be very mindful of any potential breaking 
-changes.  Some contributions may not be accepted if they risk introducing breaking changes or if they 
+Because this project exposes a couple different public APIs, we must be very mindful of any potential breaking
+changes.  Some contributions may not be accepted if they risk introducing breaking changes or if they
 don't match the goals of the project.  The core maintainer team has the right of final approval over
-any contribution to this project.  However, we are very happy to hear community feedback on any decision 
+any contribution to this project.  However, we are very happy to hear community feedback on any decision
 so that we can ensure we are solving the right problems in the right way.
 
 **NOTE**: If you believe there is a security vulnerability, please see [Security Reporting](#security-reporting).
@@ -31,7 +31,7 @@ Here's a high level list of guidelines to follow to ensure your code contributio
 - Follow established guidelines for commit hygiene
 - Write unit tests to validate new features and bug fixes
 - Ensure that the 'Release' build and unit tests pass locally
-- Ensure that the AppVeyor build passes for your change
+- Ensure that the Azure DevOps build passes for your change
 - Respond to all review feedback and final commit cleanup
 
 ### Practice Good Commit Hygiene
@@ -44,46 +44,46 @@ so that your commits provide a good history of the changes you are making.  To b
   Commit messages should be clearly written so that a person can look at the commit log and understand
   how and why a given change was made.  Here is a great model commit message taken from a [blog post
   by Tim Pope](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html):
-  
+
       Capitalized, short (50 chars or less) summary
-      
+
       More detailed explanatory text, if necessary.  Wrap it to about 72
       characters or so.  In some contexts, the first line is treated as the
       subject of an email and the rest of the text as the body.  The blank
       line separating the summary from the body is critical (unless you omit
       the body entirely); tools like rebase can get confused if you run the
       two together.
-      
+
       Write your commit message in the imperative: "Fix bug" and not "Fixed bug"
       or "Fixes bug."  This convention matches up with commit messages generated
       by commands like git merge and git revert.
-      
+
       Further paragraphs come after blank lines.
-      
+
       - Bullet points are okay, too
-      
+
       - Typically a hyphen or asterisk is used for the bullet, followed by a
         single space, with blank lines in between, but conventions vary here
-      
+
       - Use a hanging indent
-  
+
   A change that fixes a known bug with an issue filed should use the proper syntax so that the [issue
-  is automatically closed](https://help.github.com/articles/closing-issues-via-commit-messages/) once 
+  is automatically closed](https://help.github.com/articles/closing-issues-via-commit-messages/) once
   your change is merged.  Here's an example of what such a commit message should look like:
-  
+
       Fix #3: Catch NullReferenceException from DoThing
-      
+
       This change adds a try/catch block to catch a NullReferenceException that
       gets thrown by DoThing [...]
 
 - **Squash your commits**
 
-  If you are introducing a new feature but have implemented it over multiple commits, 
-  please [squash those commits](http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html) 
+  If you are introducing a new feature but have implemented it over multiple commits,
+  please [squash those commits](http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html)
   into a single commit that contains all the changes in one place.  This especially applies to any "oops"
-  commits where a file is forgotten or a typo is being fixed.  Following this approach makes it a lot easier 
+  commits where a file is forgotten or a typo is being fixed.  Following this approach makes it a lot easier
   to pull those changes to other branches or roll back the change if necessary.
-  
+
 - **Keep individual commits for larger changes**
 
   You can certainly maintain individual commits for different phases of a big change.  For example, if
@@ -96,10 +96,10 @@ so that your commits provide a good history of the changes you are making.  To b
 If you're adding a new feature to the project, please make sure to include adequate [xUnit](http://xunit.github.io/)
 tests with your change.  In this project, we have chosen write out unit tests in a way that uses the
 actual PowerShell environment rather than extensive interface mocking.  This allows us to be sure that
-our features will work in practice.  
+our features will work in practice.
 
-We do both component-level and scenario-level testing depending on what code is being tested.  We don't 
-expect contributors to test every possible edge case.  Testing mainline scenarios and the most common 
+We do both component-level and scenario-level testing depending on what code is being tested.  We don't
+expect contributors to test every possible edge case.  Testing mainline scenarios and the most common
 failure scenarios is often good enough.
 
 We are very happy to accept unit test contributions for any feature areas that are more error-prone than
@@ -118,7 +118,7 @@ on this check so that our project will always have good generated documentation.
 
 - **Create your pull request**
 
-  Use the [typical process](https://help.github.com/articles/using-pull-requests/) to send a pull request 
+  Use the [typical process](https://help.github.com/articles/using-pull-requests/) to send a pull request
   from your fork of the project.  In your pull request message, please give a high-level summary of the
   changes that you have made so that reviewers understand the intent of the changes.  You should receive
   initial comments within a day or two, but please feel free to ping if things are taking longer than
@@ -126,7 +126,7 @@ on this check so that our project will always have good generated documentation.
 
 - **The build and unit tests must run green**
 
-  When you submit your pull request, our automated build system on AppVeyor will attempt to run a
+  When you submit your pull request, our automated build system on Azure DevOps will attempt to run a
   Release build of your changes and then run all unit tests against the build.  If you notice that
   any of your unit tests have failed, please fix them by creating a new commit and then pushing it
   to your branch.  If you see that some unrelated test has failed, try re-running the build for your
@@ -137,15 +137,15 @@ on this check so that our project will always have good generated documentation.
 
   If the reviewers ask you to make changes, make them as a new commit to your branch and push them so
   that they are made available for a final review pass.  Do not rebase the fixes just yet so that the
-  commit hash changes don't upset GitHub's pull request UI.  
-  
+  commit hash changes don't upset GitHub's pull request UI.
+
 - **If necessary, do a final rebase**
 
   Once your final changes have been accepted, we may ask you to do a final rebase to have your commits
   so that they follow our commit guidelines.  If specific guidance is given, please follow it when
-  rebasing your commits.  Once you do your final push and we see the AppVeyor build pass, we will
+  rebasing your commits.  Once you do your final push and we see the Azure DevOps build pass, we will
   merge your changes!
-  
+
 ### Security Reporting
 
 If you believe that there is a security vulnerability in the PowerShell extension for VSCode,
