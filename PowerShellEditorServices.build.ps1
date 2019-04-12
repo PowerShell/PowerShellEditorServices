@@ -18,7 +18,6 @@ param(
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
-$script:IsCIBuild = $env:APPVEYOR -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:TargetFrameworksParam = "/p:TargetFrameworks=\`"$(if (!$script:IsUnix) { "net452;" })netstandard1.6\`""
 $script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
@@ -120,8 +119,11 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
     $script:BuildNumber = 9999
     $script:VersionSuffix = $props.Project.PropertyGroup.VersionSuffix
 
-    if ($env:APPVEYOR) {
-        $script:BuildNumber = $env:APPVEYOR_BUILD_NUMBER
+    if ($env:TF_BUILD) {
+        # SYSTEM_PHASENAME is the Job name.
+        # Job names can only include `_` but that's not a valid character for versions.
+        $jobname = $env:SYSTEM_PHASENAME -replace '_', ''
+        $script:BuildNumber = "$jobname-$env:BUILD_BUILDNUMBER"
     }
 
     if ($script:VersionSuffix -ne $null) {
@@ -155,12 +157,7 @@ task CreateBuildInfo -Before Build {
     $buildOrigin = "<development>"
 
     # Set build info fields on build platforms
-    if ($env:APPVEYOR)
-    {
-        $buildVersion = $env:APPVEYOR_BUILD_VERSION
-        $buildOrigin = if ($env:CI) { "AppVeyor CI" } else { "AppVeyor" }
-    }
-    elseif ($env:TF_BUILD)
+    if ($env:TF_BUILD)
     {
         $psd1Path = [System.IO.Path]::Combine($PSScriptRoot, "module", "PowerShellEditorServices", "PowerShellEditorServices.psd1")
         $buildVersion = (Import-PowerShellDataFile -LiteralPath $psd1Path).Version
@@ -207,25 +204,7 @@ task Build {
     Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\runtimes\linux-64\native\libdisablekeyecho.so -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
 }
 
-function UploadTestLogs {
-    if ($script:IsCIBuild) {
-        $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net452/logs"
-        $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
-
-        if (Test-Path $testLogsPath) {
-            [System.IO.Compression.ZipFile]::CreateFromDirectory(
-                $testLogsPath,
-                $testLogsZipPath)
-
-            Push-AppveyorArtifact $testLogsZipPath
-        }
-        else {
-            Write-Host "`n### WARNING: Test logs could not be found!`n" -ForegroundColor Yellow
-        }
-    }
-}
-
-function XunitTraitFilter {
+function DotNetTestFilter {
     # Reference https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
     if ($TestFilter) { "-trait $TestFilter" } else { "" }
 }
@@ -248,15 +227,6 @@ task TestHost -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
     exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
-}
-
-task CITest ?Test, {
-    # This task is used to ensure we have a chance to upload
-    # test logs as a CI artifact when the tests fail
-    if (error Test) {
-        UploadTestLogs
-        Write-Error "Failing build due to test failure."
-    }
 }
 
 task LayoutModule -After Build {
@@ -375,12 +345,6 @@ task BuildCmdletHelp {
     New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US -Force
 }
 
-task PackageNuGet {
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
-}
-
 task PackageModule {
     [System.IO.Compression.ZipFile]::CreateFromDirectory(
         "$PSScriptRoot/module/",
@@ -389,13 +353,8 @@ task PackageModule {
         $false)
 }
 
-task UploadArtifacts -If ($script:IsCIBuild) {
-    if ($env:APPVEYOR) {
-        Push-AppveyorArtifact .\src\PowerShellEditorServices\bin\$Configuration\Microsoft.PowerShell.EditorServices.$($script:FullVersion).nupkg
-        Push-AppveyorArtifact .\src\PowerShellEditorServices.Protocol\bin\$Configuration\Microsoft.PowerShell.EditorServices.Protocol.$($script:FullVersion).nupkg
-        Push-AppveyorArtifact .\src\PowerShellEditorServices.Host\bin\$Configuration\Microsoft.PowerShell.EditorServices.Host.$($script:FullVersion).nupkg
-        Push-AppveyorArtifact .\PowerShellEditorServices-$($script:FullVersion).zip
-    }
+task UploadArtifacts -If ($null -ne $env:TF_BUILD) {
+    Copy-Item -Path .\PowerShellEditorServices-$($script:FullVersion).zip -Destination $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 }
 
 # The default task is to run the entire CI build
