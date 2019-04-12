@@ -268,7 +268,9 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
         $script:BuildNumber = $env:APPVEYOR_BUILD_NUMBER
     } elseif ($env:TF_BUILD) {
         # SYSTEM_PHASENAME is the Job name.
-        $script:BuildNumber = "$env:SYSTEM_PHASENAME-$env:BUILD_BUILDNUMBER"
+        # Job names can only include `_` but that's not a valid character for versions.
+        $jobname = $env:SYSTEM_PHASENAME -replace '_', ''
+        $script:BuildNumber = "$jobname-$env:BUILD_BUILDNUMBER"
     }
 
     if ($script:VersionSuffix -ne $null) {
