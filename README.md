@@ -1,5 +1,6 @@
 # PowerShell Editor Services
 
+[![Build Status](https://powershell.visualstudio.com/PowerShellEditorServices/_apis/build/status/PowerShellEditorServices-ci?branchName=master)](https://powershell.visualstudio.com/PowerShellEditorServices/_build/latest?definitionId=50&branchName=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/fb9129c327dc4f459ad2fd167d9a574f)](https://app.codacy.com/app/TylerLeonhardt/PowerShellEditorServices?utm_source=github.com&utm_medium=referral&utm_content=PowerShell/PowerShellEditorServices&utm_campaign=Badge_Grade_Dashboard)
 [![Join the chat at https://gitter.im/PowerShell/PowerShellEditorServices](https://badges.gitter.im/PowerShell/PowerShellEditorServices.svg)](https://gitter.im/PowerShell/PowerShellEditorServices?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -34,12 +35,6 @@ The intended usage model is now to host PowerShell Editor Services within powers
 and communicate with it over named pipes (or Unix domain sockets on macOS & Linux) via the [Language Server Protocol](https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md)
 and [Debug Adapter Protocol](https://github.com/Microsoft/vscode-debugadapter-node/blob/master/protocol/src/debugProtocol.ts).
 Detailed usage documentation for this module is coming soon!
-
-## Build Status
-
-| AppVeyor (Windows)                                                                                                                                                                        | Travis CI (Linux / macOS)                                                                                                                                 |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [![Build status](https://ci.appveyor.com/api/projects/status/85tyhckawwxoiim2/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/powershelleditorservices/branch/master) | [![Build Status](https://travis-ci.org/PowerShell/PowerShellEditorServices.svg?branch=master)](https://travis-ci.org/PowerShell/PowerShellEditorServices) |
 
 ## Documentation
 
