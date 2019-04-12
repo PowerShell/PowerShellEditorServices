@@ -490,7 +490,7 @@ task PackageModule {
         $false)
 }
 
-task UploadArtifacts -If ($env:TF_BUILD -ne $null) {
+task UploadArtifacts -If ($null -ne $env:TF_BUILD) {
     Copy-Item -Path .\PowerShellEditorServices-$($script:FullVersion).zip -Destination $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 }
 
