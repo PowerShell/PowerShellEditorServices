@@ -267,7 +267,7 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
     if ($env:APPVEYOR) {
         $script:BuildNumber = $env:APPVEYOR_BUILD_NUMBER
     } elseif ($env:TF_BUILD) {
-        $script:BuildNumber = "$env:JOBNAME-$env:BUILD_BUILDNUMBER"
+        $script:BuildNumber = "$env:AGENT_JOBNAME-$env:BUILD_BUILDNUMBER"
     }
 
     if ($script:VersionSuffix -ne $null) {
