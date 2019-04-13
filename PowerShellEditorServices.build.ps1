@@ -214,19 +214,19 @@ task Test TestServer,TestProtocol
 task TestServer -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (DotNetTestFilter) }
 }
 
 task TestProtocol -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (DotNetTestFilter) }
 }
 
 task TestHost -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
+    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (DotNetTestFilter) }
 }
 
 task LayoutModule -After Build {
