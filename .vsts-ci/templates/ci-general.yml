@@ -2,8 +2,8 @@ steps:
   - pwsh: scripts/azurePipelinesBuild.ps1
   - task: PublishTestResults@2
     inputs:
-      testRunner: VSTest
-      testResultsFiles: '**/*.trx'
+      testRunner: xUnit
+      testResultsFiles: '**/*.Results.xml'
     condition: succeededOrFailed()
   - task: PublishBuildArtifacts@1
     inputs:
