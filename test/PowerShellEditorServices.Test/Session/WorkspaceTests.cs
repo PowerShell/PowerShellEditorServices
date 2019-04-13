@@ -79,22 +79,25 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         }
 
         [Theory()]
-        [InlineData("file:///C%3A/banana/", @"C:\banana\")]
-        [InlineData("file:///C%3A/banana/ex.ps1", @"C:\banana\ex.ps1")]
-        [InlineData("file:///E%3A/Path/to/awful%23path", @"E:\Path\to\awful#path")]
-        [InlineData("file:///path/with/no/drive", @"C:\path\with\no\drive")]
-        [InlineData("file:///path/wi[th]/squ[are/brackets/", @"C:\path\wi[th]\squ[are\brackets\")]
-        [InlineData("file:///Carrots/A%5Ere/Good/", @"C:\Carrots\A^re\Good\")]
-        [InlineData("file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", @"C:\Users\barnaby\脚本\Reduce-Directory")]
-        [InlineData("file:///C%3A/Program%20Files%20%28x86%29/PowerShell/6/pwsh.exe", @"C:\Program Files (x86)\PowerShell\6\pwsh.exe")]
-        [InlineData("file:///home/maxim/test%20folder/%D0%9F%D0%B0%D0%BF%D0%BA%D0%B0/helloworld.ps1", @"C:\home\maxim\test folder\Папка\helloworld.ps1")]
+        [MemberData(nameof(s_PathsToResolve), parameters: 2)]
         public void CorrectlyResolvesPaths(string givenPath, string expectedPath)
         {
             Workspace workspace = new Workspace(PowerShellVersion, Logging.NullLogger);
-
             string resolvedPath = workspace.ResolveFilePath(givenPath);
-
             Assert.Equal(expectedPath, resolvedPath);
         }
+
+        private static object[][] s_PathsToResolve = new object[][]
+        {
+            new object[] { "file:///C%3A/banana/", @"C:\banana\" },
+            new object[] { "file:///C%3A/banana/ex.ps1", @"C:\banana\ex.ps1" },
+            new object[] { "file:///E%3A/Path/to/awful%23path", @"E:\Path\to\awful#path" },
+            new object[] { "file:///path/with/no/drive", $@"{CurrentDriveLetter}:\path\with\no\drive" },
+            new object[] { "file:///path/wi[th]/squ[are/brackets/", $@"{CurrentDriveLetter}:\path\wi[th]\squ[are\brackets\" },
+            new object[] { "file:///Carrots/A%5Ere/Good/", $@"{CurrentDriveLetter}:\Carrots\A^re\Good\" },
+            new object[] { "file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", $@"{CurrentDriveLetter}:\Users\barnaby\脚本\Reduce-Directory" },
+            new object[] { "file:///C%3A/Program%20Files%20%28x86%29/PowerShell/6/pwsh.exe", @"C:\Program Files (x86)\PowerShell\6\pwsh.exe" },
+            new object[] { "file:///home/maxim/test%20folder/%D0%9F%D0%B0%D0%BF%D0%BA%D0%B0/helloworld.ps1", $@"{CurrentDriveLetter}:\home\maxim\test folder\Папка\helloworld.ps1" }
+        };
     }
 }
