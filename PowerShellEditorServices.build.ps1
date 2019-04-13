@@ -32,7 +32,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
 }
 
-task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi, PackageNuGet {
+task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi {
 
     $requiredSdkVersion = "2.0.0"
 
@@ -113,7 +113,7 @@ task Clean {
     Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
 }
 
-task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
+task GetProductVersion -Before PackageModule, UploadArtifacts {
     [xml]$props = Get-Content .\PowerShellEditorServices.Common.props
 
     $script:BuildNumber = 9999
@@ -358,4 +358,4 @@ task UploadArtifacts -If ($null -ne $env:TF_BUILD) {
 }
 
 # The default task is to run the entire CI build
-task . GetProductVersion, Clean, Build, TestPowerShellApi, CITest, BuildCmdletHelp, PackageNuGet, PackageModule, UploadArtifacts
+task . GetProductVersion, Clean, Build, TestPowerShellApi, CITest, BuildCmdletHelp, PackageModule, UploadArtifacts
