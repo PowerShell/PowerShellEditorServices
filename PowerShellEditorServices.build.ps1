@@ -358,4 +358,4 @@ task UploadArtifacts -If ($null -ne $env:TF_BUILD) {
 }
 
 # The default task is to run the entire CI build
-task . GetProductVersion, Clean, Build, TestPowerShellApi, CITest, BuildCmdletHelp, PackageModule, UploadArtifacts
+task . GetProductVersion, Build, TestPowerShellApi, Test, BuildCmdletHelp, PackageModule, UploadArtifacts
