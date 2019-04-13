@@ -213,6 +213,8 @@ task Test TestServer,TestProtocol
 
 task TestServer -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test\
+    Write-Host "HERE HERE HERE"
+    exec { & $script:dotnetExe xunit --help }
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
     exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (DotNetTestFilter) }
 }
