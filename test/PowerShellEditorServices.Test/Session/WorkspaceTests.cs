@@ -79,7 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         }
 
         [Theory()]
-        [MemberData(nameof(s_PathsToResolve), parameters: 2)]
+        [MemberData(nameof(PathsToResolve), parameters: 2)]
         public void CorrectlyResolvesPaths(string givenPath, string expectedPath)
         {
             Workspace workspace = new Workspace(PowerShellVersion, Logging.NullLogger);
@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             Assert.Equal(expectedPath, resolvedPath);
         }
 
-        private static readonly object[][] s_PathsToResolve = new object[][]
+        public static IReadOnlyList<object[]> PathsToResolve => new object[][]
         {
             new [] { "file:///C%3A/banana/", @"C:\banana\" },
             new [] { "file:///C%3A/banana/ex.ps1", @"C:\banana\ex.ps1" },
