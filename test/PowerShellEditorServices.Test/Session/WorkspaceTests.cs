@@ -5,7 +5,9 @@
 
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using Microsoft.PowerShell.EditorServices.Utility;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Session
@@ -13,6 +15,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
     public class WorkspaceTests
     {
         private static readonly Version PowerShellVersion = new Version("5.0");
+
+        private static readonly Lazy<string> s_lazyDriveLetter = new Lazy<string>(() => Path.GetFullPath("\\").Substring(0, 1));
+
+        public static string CurrentDriveLetter => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? s_lazyDriveLetter.Value
+            : string.Empty;
 
         [Fact]
         public void CanResolveWorkspaceRelativePath()
@@ -72,22 +80,25 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         }
 
         [Theory()]
-        [InlineData("file:///C%3A/banana/", @"C:\banana\")]
-        [InlineData("file:///C%3A/banana/ex.ps1", @"C:\banana\ex.ps1")]
-        [InlineData("file:///E%3A/Path/to/awful%23path", @"E:\Path\to\awful#path")]
-        [InlineData("file:///path/with/no/drive", @"C:\path\with\no\drive")]
-        [InlineData("file:///path/wi[th]/squ[are/brackets/", @"C:\path\wi[th]\squ[are\brackets\")]
-        [InlineData("file:///Carrots/A%5Ere/Good/", @"C:\Carrots\A^re\Good\")]
-        [InlineData("file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", @"C:\Users\barnaby\脚本\Reduce-Directory")]
-        [InlineData("file:///C%3A/Program%20Files%20%28x86%29/PowerShell/6/pwsh.exe", @"C:\Program Files (x86)\PowerShell\6\pwsh.exe")]
-        [InlineData("file:///home/maxim/test%20folder/%D0%9F%D0%B0%D0%BF%D0%BA%D0%B0/helloworld.ps1", @"C:\home\maxim\test folder\Папка\helloworld.ps1")]
+        [MemberData(nameof(PathsToResolve), parameters: 2)]
         public void CorrectlyResolvesPaths(string givenPath, string expectedPath)
         {
             Workspace workspace = new Workspace(PowerShellVersion, Logging.NullLogger);
-
             string resolvedPath = workspace.ResolveFilePath(givenPath);
-
             Assert.Equal(expectedPath, resolvedPath);
         }
+
+        public static IReadOnlyList<object[]> PathsToResolve => new object[][]
+        {
+            new [] { "file:///C%3A/banana/", @"C:\banana\" },
+            new [] { "file:///C%3A/banana/ex.ps1", @"C:\banana\ex.ps1" },
+            new [] { "file:///E%3A/Path/to/awful%23path", @"E:\Path\to\awful#path" },
+            new [] { "file:///path/with/no/drive", $@"{CurrentDriveLetter}:\path\with\no\drive" },
+            new [] { "file:///path/wi[th]/squ[are/brackets/", $@"{CurrentDriveLetter}:\path\wi[th]\squ[are\brackets\" },
+            new [] { "file:///Carrots/A%5Ere/Good/", $@"{CurrentDriveLetter}:\Carrots\A^re\Good\" },
+            new [] { "file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", $@"{CurrentDriveLetter}:\Users\barnaby\脚本\Reduce-Directory" },
+            new [] { "file:///C%3A/Program%20Files%20%28x86%29/PowerShell/6/pwsh.exe", @"C:\Program Files (x86)\PowerShell\6\pwsh.exe" },
+            new [] { "file:///home/maxim/test%20folder/%D0%9F%D0%B0%D0%BF%D0%BA%D0%B0/helloworld.ps1", $@"{CurrentDriveLetter}:\home\maxim\test folder\Папка\helloworld.ps1" }
+        };
     }
 }
