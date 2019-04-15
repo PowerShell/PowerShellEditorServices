@@ -45,7 +45,7 @@
 
   <ItemGroup Condition=" '$(PowerShellVersion)' == '' Or '$(PowerShellVersion)' == 'v5r2'">
     <PackageReference Include="Microsoft.PowerShell.SDK">
-      <Version>6.0.0-alpha13</Version>
+      <Version>6.2.0</Version>
     </PackageReference>
   </ItemGroup>
 

@@ -12,7 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3">
     </PackageReference>
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="6.0.0-alpha13">
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="6.2.0">
     </PackageReference>
     <PackageReference Include="System.IO.Pipes.AccessControl" Version="4.5.1" Condition=" '$(TargetFramework)' == 'netstandard1.6' " />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
