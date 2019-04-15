@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.PowerShell.EditorServices.Utility;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Session
