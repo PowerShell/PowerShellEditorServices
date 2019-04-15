@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             Assert.Equal(expectedPath, resolvedPath);
         }
 
-        public static readonly object[][] s_PathsToResolve = new object[][]
+        private static readonly object[][] s_PathsToResolve = new object[][]
         {
             new [] { "file:///C%3A/banana/", @"C:\banana\" },
             new [] { "file:///C%3A/banana/ex.ps1", @"C:\banana\ex.ps1" },
