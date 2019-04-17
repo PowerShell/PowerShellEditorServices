@@ -1,5 +1,5 @@
 variables:
-  - name: excludedPaths
+  - name: codePRExcludedBranches
     value:
       /.dependabot
       /.github
@@ -10,7 +10,7 @@ variables:
       .gitattributes
       .gitignore
       '**/*.md'
-  - name: includedBranches
+  - name: prBuildBranches
     value:
       master
       legacy/1.x

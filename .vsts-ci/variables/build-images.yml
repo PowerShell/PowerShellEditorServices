@@ -1,0 +1,9 @@
+variables:
+  - name: imgWin10
+    value: 'vs2017-win2016'
+  - name: imgWin7
+    value: 'vs2015-win2012r2'
+  - name: imgMacOS
+    value: 'macOS-10.14'
+  - name: imgUbuntu
+    value: 'ubuntu-16.04'
