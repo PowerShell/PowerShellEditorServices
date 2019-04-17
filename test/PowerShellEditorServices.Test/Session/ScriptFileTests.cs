@@ -24,6 +24,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanApplySingleLineInsert()
         {
+
             this.AssertFileChange(
                 "This is a test.",
                 "This is a working test.",
