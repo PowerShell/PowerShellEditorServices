@@ -15,7 +15,7 @@ trigger:
       - $(codePRExcludedBranches)
 
 jobs:
-- job: 'PowerShell 5.1 - Windows 10'
+- job: 'PowerShell 5.1 | Windows 10'
   pool:
     vmImage: $(imgWin10)
   steps:
@@ -23,19 +23,19 @@ jobs:
     parameters:
       pwsh: false
 
-- job: 'PowerShell 6 - Windows 10'
+- job: 'PowerShell 6 | Windows 10'
   pool:
     vmImage: $(imgWin10)
   steps:
   - template: templates/ci-general.yml
 
-- job: 'PowerShell 6 - macOS'
+- job: 'PowerShell 6 | macOS'
   pool:
     vmImage: $(imgMacOS)
   steps:
   - template: templates/ci-general.yml
 
-- job: 'PowerShell 6 - Ubuntu'
+- job: 'PowerShell 6 | Ubuntu'
   pool:
     vmImage: $(imgUbuntu)
   steps:
