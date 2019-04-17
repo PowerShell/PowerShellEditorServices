@@ -1,5 +1,5 @@
 parameters:
-  pwsh: true
+  - pwsh: true
 
 steps:
   - task: PowerShell@2
