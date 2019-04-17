@@ -1,3 +1,5 @@
+name: PR-$(System.PullRequest.PullRequestNumber)-$(Date:yyyyMMdd)$(Rev:.rr)
+
 variables:
   - template: variables/environment.yml
   - template: variables/pr-triggers.yml
