@@ -26,15 +26,21 @@ jobs:
     vmImage: $(imgWin10)
   steps:
   - template: templates/ci-general.yml
+    parameters:
+      pwsh: true
 
 - job: macOS
   pool:
     vmImage: $(imgMacOS)
   steps:
   - template: templates/ci-general.yml
+    parameters:
+      pwsh: true
 
 - job: Linux
   pool:
     vmImage: $(imgUbuntu)
   steps:
   - template: templates/ci-general.yml
+    parameters:
+      pwsh: true
