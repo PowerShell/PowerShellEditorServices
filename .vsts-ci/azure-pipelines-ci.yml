@@ -15,7 +15,7 @@ trigger:
       - $(codePRExcludedBranches)
 
 jobs:
-- job: 'PS-5.1-Win10'
+- job: 'PS5.1_Win10'
   pool:
     vmImage: $(imgWin10)
   steps:
@@ -23,19 +23,19 @@ jobs:
     parameters:
       pwsh: false
 
-- job: 'PS-6-Win10'
+- job: 'PS6_Win10'
   pool:
     vmImage: $(imgWin10)
   steps:
   - template: templates/ci-general.yml
 
-- job: 'PS-6-macOS'
+- job: 'PS6_macOS'
   pool:
     vmImage: $(imgMacOS)
   steps:
   - template: templates/ci-general.yml
 
-- job: 'PS-6-Ubuntu'
+- job: 'PS6_Ubuntu'
   pool:
     vmImage: $(imgUbuntu)
   steps:
