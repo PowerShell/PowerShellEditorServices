@@ -34,6 +34,6 @@ jobs:
     pool:
       vmImage: 'macOS-10.13'
     steps:
-    - template: templates/ci-generic.yml
+    - template: templates/ci-general.yml
       parameters:
         pwsh: true
