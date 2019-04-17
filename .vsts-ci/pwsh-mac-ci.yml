@@ -7,22 +7,22 @@ trigger:
   batch: true
   branches:
     include:
-      $(includedBranches)
+      - $(includedBranches)
   paths:
     include:
-      '*'
+      - '*'
     exclude:
-      $(excludedPaths)
+      - $(excludedPaths)
 
 pr:
   branches:
     include:
-      $(includedBranches)
+      - $(includedBranches)
   paths:
     include:
-      '*'
+      - '*'
     exclude:
-      $(excludedPaths)
+      - $(excludedPaths)
 
 # Clean up the directory structure
 resources:
@@ -35,5 +35,5 @@ jobs:
       vmImage: 'macOS-10.13'
     steps:
     - template: templates/ci-generic.yml
-        parameters:
-          pwsh: true
+      parameters:
+        pwsh: true
