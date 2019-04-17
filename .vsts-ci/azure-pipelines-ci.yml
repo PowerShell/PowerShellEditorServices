@@ -2,17 +2,31 @@ name: PR-$(System.PullRequest.PullRequestNumber)-$(Date:yyyyMMdd)$(Rev:.rr)
 
 variables:
   - template: variables/environment.yml
-  - template: variables/pr-triggers.yml
   - template: variables/build-images.yml
 
 trigger:
   batch: true
   branches:
     include:
-      - $(prBuildBranches)
+      - master
+      - legacy/1.x
   paths:
     exclude:
-      - $(codePRExcludedBranches)
+      - /.dependabot/*
+      - /.poshchan/*
+      - /.github/**/*
+      - /.vscode/**/*
+      - /.vsts-ci/misc-analysis.yml
+      - /tools/**/*
+      - .editorconfig
+      - .gitattributes
+      - .gitignore
+      - /docs/**/*
+      - /CHANGELOG.md
+      - /CONTRIBUTING.md
+      - /README.md
+      - /LICENSE
+      - /CODE_OF_CONDUCT.md
 
 jobs:
 - job: 'PS51_Win10'
