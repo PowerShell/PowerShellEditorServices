@@ -9,7 +9,7 @@ variables:
       .editorconfig
       .gitattributes
       .gitignore
-      '**/*.md'
+      /docs
   - name: prBuildBranches
     value:
       master
