@@ -1,5 +1,11 @@
+parameters:
+  pwsh: true
+
 steps:
-  - pwsh: scripts/azurePipelinesBuild.ps1
+  - task: PowerShell@2
+    targetType: inline
+    script: scripts/azurePipelinesBuild.ps1
+    pwsh: ${{ parameters.pwsh }}
   - task: PublishTestResults@2
     inputs:
       testRunner: VSTest

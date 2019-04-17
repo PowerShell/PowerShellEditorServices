@@ -1,0 +1,39 @@
+variables:
+  - template: variables/environment.yml
+  - template: variables/pr-triggers.yml
+
+trigger:
+  # Batch merge builds together while a merge build is running
+  batch: true
+  branches:
+    include:
+      $(includedBranches)
+  paths:
+    include:
+      '*'
+    exclude:
+      $(excludedPaths)
+
+pr:
+  branches:
+    include:
+      $(includedBranches)
+  paths:
+    include:
+      '*'
+    exclude:
+      $(excludedPaths)
+
+# Clean up the directory structure
+resources:
+  - repo: self
+    clean: true
+
+jobs:
+  - job: macOS
+    pool:
+      vmImage: 'macOS-10.13'
+    steps:
+    - template: templates/ci-generic.yml
+        parameters:
+          pwsh: true

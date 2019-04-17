@@ -1,0 +1,16 @@
+variables:
+  - name: excludedPaths
+    value:
+      /.dependabot
+      /.github
+      /.vscode
+      /.vsts-ci/misc-analysis.yml
+      /tools
+      .editorconfig
+      .gitattributes
+      .gitignore
+      '**/*.md'
+  - name: includedBranches
+    value:
+      master
+      legacy/1.x
