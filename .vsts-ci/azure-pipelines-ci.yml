@@ -1,8 +1,12 @@
 name: PR-$(System.PullRequest.PullRequestNumber)-$(Date:yyyyMMdd)$(Rev:.rr)
 
 variables:
-  - template: variables/environment.yml
-  - template: variables/build-images.yml
+  # Don't download unneeded packages
+  - name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
+    value: 'true'
+  # Improve performance by not sending telemetry
+  - name: DOTNET_CLI_TELEMETRY_OPTOUT
+    value: 'true'
 
 trigger:
   batch: true
@@ -32,7 +36,7 @@ jobs:
 - job: 'PS51_Win10'
   displayName: PowerShell 5.1 | Windows 10
   pool:
-    vmImage: $(imgWin10)
+    vmImage: 'vs2017-win2016'
   steps:
   - template: templates/ci-general.yml
     parameters:
@@ -41,20 +45,20 @@ jobs:
 - job: 'PS6_Win10'
   displayName: PowerShell 6 | Windows 10
   pool:
-    vmImage: $(imgWin10)
+    vmImage: 'vs2017-win2016'
   steps:
   - template: templates/ci-general.yml
 
 - job: 'PS6_macOS'
   displayName: PowerShell 6 | macOS
   pool:
-    vmImage: $(imgMacOS)
+    vmImage: 'macOS-10.13'
   steps:
   - template: templates/ci-general.yml
 
 - job: 'PS6_Ubuntu'
   displayName: PowerShell 6 | Ubuntu
   pool:
-    vmImage: $(imgUbuntu)
+    vmImage: 'ubuntu-16.04'
   steps:
   - template: templates/ci-general.yml
