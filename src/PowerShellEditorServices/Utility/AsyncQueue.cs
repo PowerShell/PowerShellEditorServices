@@ -59,14 +59,6 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
         #endregion
 
-        /// <summary>
-        /// Gets the number of items in the AsyncQueue.
-        /// </summary>
-        public int Count
-        {
-            get { return this.itemQueue.Count; }
-        }
-
         #region Public Methods
 
         /// <summary>
@@ -100,7 +92,6 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 this.itemQueue.Enqueue(item);
                 this.IsEmpty = false;
             }
-
         }
 
         /// <summary>

@@ -44,9 +44,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
         private Dictionary<string, TaskCompletionSource<Message>> pendingRequests =
             new Dictionary<string, TaskCompletionSource<Message>>();
 
-        private AsyncQueue<QueuedMessage> _messageQueue = new AsyncQueue<QueuedMessage>();
-        private AsyncQueue<QueuedMessage> _lowPriorityMessageQueue = new AsyncQueue<QueuedMessage>();
-        private ConcurrentDictionary<string, QueuedMessage> _pendingCancelMessage = new ConcurrentDictionary<string, QueuedMessage>();
+        private readonly ConcurrentQueue<QueuedMessage> _messageQueue = new ConcurrentQueue<QueuedMessage>();
+        private readonly ConcurrentDictionary<string, QueuedMessage> _pendingCancelMessage = new ConcurrentDictionary<string, QueuedMessage>();
 
         public SynchronizationContext SynchronizationContext { get; private set; }
 
@@ -422,23 +421,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                                 $"{_logCategory} Failed to queue message {newMessage.Method} - could not find message id");
                         }
                     }
-                    else if (newMessage.Method == "textDocument/codeLens" ||
-                             newMessage.Method == "textDocument/codeAction" ||
-                             newMessage.Method == "textDocument/documentSymbol")
-                    {
-                        // Put these message types in the low priority queue, which only gets serviced when there are no pending
-                        // messages in the default queue.
-                        await _lowPriorityMessageQueue.EnqueueAsync(queuedMessage);
-
-                        Logger.Write(
-                            LogLevel.Diagnostic,
-                            $"{_logCategory} Queued message {newMessage.Method} id:{newMessage.Id} (low priority) at " +
-                            $"{queuedMessage.QueueEntryTimeStr}, " +
-                            $"seq:{queuedMessage.SequenceNumber} #queued:{_lowPriorityMessageQueue.Count}");
-                    }
                     else
                     {
-                        await _messageQueue.EnqueueAsync(queuedMessage);
+                        _messageQueue.Enqueue(queuedMessage);
 
                         Logger.Write(
                             LogLevel.Diagnostic,
@@ -472,7 +457,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             bool isRunning = true;
             while (isRunning && !cancellationToken.IsCancellationRequested)
             {
-                QueuedMessage dequeuedMessage = null;
+                QueuedMessage dequeuedMessage;
                 string timeOnQueue = string.Empty;
                 string queueName = string.Empty;
 
@@ -480,15 +465,10 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                 {
                     Logger.Write(LogLevel.Diagnostic, $"{_logCategory} Waiting for message to dequeue");
 
-                    // TODO: Do we need to worry about the low priority queue never getting any service?
-                    if (_messageQueue.IsEmpty && !_lowPriorityMessageQueue.IsEmpty)
+                    while (!_messageQueue.TryDequeue(out dequeuedMessage))
                     {
-                        dequeuedMessage = await _lowPriorityMessageQueue.DequeueAsync(cancellationToken);
-                        queueName = "low priority ";
-                    }
-                    else
-                    {
-                        dequeuedMessage = await _messageQueue.DequeueAsync(cancellationToken);
+                        // Don't busy wait for a message to dequeue.
+                        await Task.Delay(250);
                     }
 
                     // The message could be null if there was an error parsing the
