@@ -14,19 +14,74 @@ class NamedPipeWrapper
 
     hidden [System.IO.StreamWriter] $Writer
 
+    hidden [char[]] $ReaderBuffer
+
     Connect()
     {
-        $this.NamedPipeClient.Connect()
+        $this.NamedPipeClient.Connect(1000)
 
         $encoding = [System.Text.UTF8Encoding]::new($false)
         $this.Reader = [System.IO.StreamReader]::new($this.NamedPipeClient, $encoding)
         $this.Writer = [System.IO.StreamWriter]::new($this.NamedPipeClient, $encoding)
         $this.Writer.AutoFlush = $true
+        $this.ReaderBuffer = [char[]]::new(1024)
     }
 
-    Send([string]$message)
+    Write([string]$message)
     {
         $this.Writer.Write($message)
+    }
+
+    [bool]
+    HasContent()
+    {
+        return $this.Reader.Peek() -gt 0
+    }
+
+    [string]
+    ReadMessage()
+    {
+        $sb = [System.Text.StringBuilder]::new()
+
+        $charCount = $this.Reader.Peek()
+        $remainingMessageChars = -1
+        while ($remainingMessageChars -ne 0 -and $charCount -gt 0)
+        {
+            if ($charCount -gt $this.ReaderBuffer.Length)
+            {
+                [array]::Resize([ref]$this.ReaderBuffer, $this.ReaderBuffer.Length * 2)
+            }
+
+            $this.Reader.Read($this.ReaderBuffer, 0, $charCount)
+
+            $sb.Append($this.ReaderBuffer, 0, $charCount)
+
+            if ($remainingMessageChars -ge 0)
+            {
+                $remainingMessageChars -= $charCount
+            }
+            else
+            {
+                $msgSoFar = $sb.ToString()
+                $endHeaderIdx = $msgSoFar.IndexOf("`r`n`r`n")
+
+                if ($endHeaderIdx -ge 0)
+                {
+                    $remainingMessageChars = [int]($msgSoFar.Substring(16, $endHeaderIdx - 16))
+
+                    $overflowLength = $charCount - ($endHeaderIdx + 4)
+
+                    if ($overflowLength -gt 0)
+                    {
+                        $remainingMessageChars -= $overflowLength
+                    }
+                }
+            }
+
+            $charCount = [System.Math]::Min($remainingMessageChars, $this.Reader.Peek())
+        }
+
+        return $sb.ToString()
     }
 
     Dispose()
@@ -181,7 +236,11 @@ function Connect-NamedPipe
         $PipeName
     )
 
-    Wait-Debugger
+    $psesIdx = $PipeName.IndexOf('PSES')
+    if ($psesIdx -gt 0)
+    {
+        $PipeName = $PipeName.Substring($psesIdx)
+    }
 
     $pipe = [NamedPipeWrapper]::new(([System.IO.Pipes.NamedPipeClientStream]::new('.', $PipeName, 'InOut')))
     $pipe.Connect()
