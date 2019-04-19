@@ -68,7 +68,25 @@ function Parse-PsesLog {
                 [System.IO.FileShare]::ReadWrite,
                 4096,
                 [System.IO.FileOptions]::SequentialScan)
+        $streamReader = [System.IO.StreamReader]::new($filestream, [System.Text.Encoding]::UTF8)
 
+        # Count number of lines so we can provide % progress while parsing
+        $numLines = 0
+        while ($null -ne $streamReader.ReadLine()) {
+            $numLines++
+        }
+
+        # Recreate the stream & reader. Tried seeking to 0 on the stream and having the
+        # reader discard buffered data but still wound up with in an invalid $log[0] entry.
+        $streamReader.Dispose()
+        $filestream =
+            [System.IO.FileStream]::new(
+                $Path,
+                [System.IO.FileMode]:: Open,
+                [System.IO.FileAccess]::Read,
+                [System.IO.FileShare]::ReadWrite,
+                4096,
+                [System.IO.FileOptions]::SequentialScan)
         $streamReader = [System.IO.StreamReader]::new($filestream, [System.Text.Encoding]::UTF8)
 
         function nextLine() {
@@ -105,8 +123,9 @@ function Parse-PsesLog {
                 $line = nextLine
             }
 
-            if (!$HideProgress -and ($script:logEntryIndex % 50 -eq 0)) {
-                Write-Progress "Processing log entry ${script:logEntryIndex} on line: ${script:currentLineNum}"
+            if (!$HideProgress -and ($script:logEntryIndex % 100 -eq 0)) {
+                Write-Progress "Processing log entry ${script:logEntryIndex} on line: ${script:currentLineNum}" `
+                    -PercentComplete (100 * $script:currentLineNum / $numLines)
             }
 
             [string]$timestampStr = $matches["ts"]
@@ -144,7 +163,7 @@ function Parse-PsesLog {
                 return $result
             }
 
-            if (($Method -eq 'ReadMessage') -and
+            if (($Method -eq 'ReadMessageAsync' -or $Method -eq 'ReadMessage') -and
                 ($line -match '^\s+Received Request ''(?<msg>[^'']+)'' with id (?<id>\d+)')) {
                 $result.LogMessageType = [PsesLogMessageType]::Request
                 $msg = $matches["msg"]
@@ -152,14 +171,14 @@ function Parse-PsesLog {
                 $json = parseLogMessageBodyAsJson
                 $result.LogMessage = [PsesJsonRpcMessage]::new($msg, $id, $json.Data, $json.DataSize)
             }
-            elseif (($Method -eq 'ReadMessage') -and
+            elseif (($Method -eq 'ReadMessageAsync' -or $Method -eq 'ReadMessage') -and
                     ($line -match '^\s+Received event ''(?<msg>[^'']+)''')) {
                 $result.LogMessageType = [PsesLogMessageType]::Notification
                 $msg = $matches["msg"]
                 $json = parseLogMessageBodyAsJson
                 $result.LogMessage = [PsesNotificationMessage]::new($msg, [PsesNotificationSource]::Client, $json.Data, $json.DataSize)
             }
-            elseif (($Method -eq 'WriteMessage') -and
+            elseif (($Method -eq 'WriteMessageAsync' -or $Method -eq 'WriteMessage') -and
                     ($line -match '^\s+Writing Response ''(?<msg>[^'']+)'' with id (?<id>\d+)')) {
                 $result.LogMessageType = [PsesLogMessageType]::Response
                 $msg = $matches["msg"]
@@ -167,7 +186,7 @@ function Parse-PsesLog {
                 $json = parseLogMessageBodyAsJson
                 $result.LogMessage = [PsesJsonRpcMessage]::new($msg, $id, $json.Data, $json.DataSize)
             }
-            elseif (($Method -eq 'WriteMessage') -and
+            elseif (($Method -eq 'WriteMessageAsync' -or $Method -eq 'WriteMessage') -and
                     ($line -match '^\s+Writing event ''(?<msg>[^'']+)''')) {
                 $result.LogMessageType = [PsesLogMessageType]::Notification
                 $msg = $matches["msg"]
