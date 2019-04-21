@@ -559,13 +559,13 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
 
     internal class QueuedMessage
     {
-        private static ulong s_counter = 1;
+        private static long s_counter = 1;
 
         public QueuedMessage(Message message)
         {
             this.QueueEntryTime = DateTime.Now;
             this.Message = message;
-            this.SequenceNumber = s_counter++;
+            this.SequenceNumber = Interlocked.Increment(ref s_counter);
         }
 
         public Message Message { get; private set; }
@@ -577,7 +577,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             get { return QueueEntryTime.ToString("hh:mm:ss.fff"); }
         }
 
-        public ulong SequenceNumber { get; private set; }
+        public long SequenceNumber { get; private set; }
 
         public override string ToString()
         {
