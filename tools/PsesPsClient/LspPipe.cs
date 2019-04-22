@@ -132,7 +132,7 @@ namespace PsesPsClient
 
         private char[] _readerBuffer;
 
-        private CancellationTokenSource _cancellationSource;
+        private readonly CancellationTokenSource _cancellationSource;
 
         public MessageStreamListener(StreamReader stream)
         {
@@ -185,7 +185,7 @@ namespace PsesPsClient
         {
             while (!_cancellationSource.IsCancellationRequested)
             {
-                LspMessage msg = await ReadMessage();
+                LspMessage msg = await ReadMessage().ConfigureAwait(false);
                 switch (msg)
                 {
                     case LspNotification notification:
@@ -206,7 +206,7 @@ namespace PsesPsClient
         private async Task<LspMessage> ReadMessage()
         {
             int contentLength = GetContentLength();
-            string msgString = await ReadString(contentLength);
+            string msgString = await ReadString(contentLength).ConfigureAwait(false);
             JObject msgJson = JObject.Parse(msgString);
 
             if (msgJson.TryGetValue("method", out JToken methodToken))
@@ -241,7 +241,7 @@ namespace PsesPsClient
                 Array.Resize(ref _readerBuffer, _readerBuffer.Length * 2);
             }
 
-            int readLen = await _stream.ReadAsync(_readerBuffer, 0, bytesToRead);
+            int readLen = await _stream.ReadAsync(_readerBuffer, 0, bytesToRead).ConfigureAwait(false);
 
             return new string(_readerBuffer, 0, readLen);
         }
@@ -347,7 +347,6 @@ namespace PsesPsClient
     public class LspNotification : LspMessage
     {
         public LspNotification(string method, JToken parameters)
-            : base()
         {
             Method = method;
             Params = parameters;
