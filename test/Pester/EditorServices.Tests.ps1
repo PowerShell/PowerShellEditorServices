@@ -17,4 +17,12 @@ Describe "Loading and running PowerShellEditorServices" {
         $pipe.TryGetNextResponse([ref]$response, 5000) | Should -BeTrue
         $response.Id | Should -BeExactly $request.Id
     }
+
+    It "Shuts down the process properly" {
+        $request = Send-LspShutdownRequest -Pipe $pipe
+        $response = $null
+        $pipe.TryGetNextResponse([ref]$response, 5000) | Should -BeTrue
+        $response.Id | Should -BeExactly $request.Id
+        $response.Result.Type | Should -Be 'Null'
+    }
 }

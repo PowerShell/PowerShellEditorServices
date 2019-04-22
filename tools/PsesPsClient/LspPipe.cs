@@ -82,7 +82,7 @@ namespace PsesPsClient
             Message msg = Message.Request(
                 _msgId.ToString(),
                 method,
-                JToken.FromObject(parameters, _jsonSerializer));
+                parameters != null ? JToken.FromObject(parameters, _jsonSerializer) : JValue.CreateNull());
 
             JObject msgJson = _jsonRpcSerializer.SerializeMessage(msg);
             string msgString = JsonConvert.SerializeObject(msgJson, _jsonSettings);

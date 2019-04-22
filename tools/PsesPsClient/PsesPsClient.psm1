@@ -158,7 +158,7 @@ function Connect-NamedPipe
 function Send-LspInitializeRequest
 {
     param(
-        [Parameter()]
+        [Parameter(Position = 0, Mandatory)]
         [PsesPsClient.LspPipe]
         $Pipe,
 
@@ -199,6 +199,17 @@ function Send-LspInitializeRequest
     }
 
     return $Pipe.WriteRequest('initialize', $parameters)
+}
+
+function Send-LspShutdownRequest
+{
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.LspPipe]
+        $Pipe
+    )
+
+    $Pipe.WriteRequest('shutdown', $null)
 }
 
 function Unsplat
@@ -264,7 +275,7 @@ function Get-RandomHexString
 
     $buffer = [byte[]]::new($Length / 2)
     $script:Random.NextBytes($buffer)
-    $str = ($buffer | % { "{0:x02}" -f $_ }) -join ''
+    $str = ($buffer | ForEach-Object { "{0:x02}" -f $_ }) -join ''
 
     if ($Length % 2 -ne 0)
     {

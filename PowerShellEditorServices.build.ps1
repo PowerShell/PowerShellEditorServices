@@ -329,12 +329,16 @@ task Build {
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
 }
 
+task BuildPsesClientModule {
+    & $PSScriptRoot/tools/PsesPsClient/build.ps1 -Clean
+}
+
 function DotNetTestFilter {
     # Reference https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
     if ($TestFilter) { @("--filter",$TestFilter) } else { "" }
 }
 
-task Test TestServer,TestProtocol
+task Test TestServer,TestProtocol,TestPester
 
 task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
@@ -370,6 +374,12 @@ task TestHost {
 
     exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
     exec { & $script:dotnetExe test -f $script:TestRuntime.Core (DotNetTestFilter) }
+}
+
+task TestPester -After Build,BuildPsesClientModule {
+    $pwshExe = (Get-Process -Id $PID).Path
+    $pesterTestDir = Resolve-Path "$PSScriptRoot/test/Pester/"
+    exec { & $pwshExe -Command "cd $pesterTestDir; Invoke-Pester" }
 }
 
 task LayoutModule -After Build {
