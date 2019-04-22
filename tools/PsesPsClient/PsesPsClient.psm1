@@ -5,9 +5,33 @@ Import-Module "$script:PsesBundledModulesDir/PowerShellEditorServices"
 
 Import-Module $PSScriptRoot/bin/Debug/netstandard2.0/PsesPsClient.dll
 
+class PsesStartupOptions
+{
+    [string]   $LogPath
+    [string]   $LogLevel
+    [string]   $SessionDetailsPath
+    [string[]] $FeatureFlags
+    [string]   $HostName
+    [string]   $HostProfileId
+    [version]  $HostVersion
+    [string[]] $AdditionalModules
+    [string]   $BundledModulesPath
+    [bool]     $EnableConsoleRepl
+}
+
+class PsesServerInfo
+{
+    [pscustomobject]$SessionDetails
+
+    [System.Diagnostics.Process]$PsesProcess
+
+    [PsesStartupOptions]$StartupOptions
+}
+
 function Start-PsesServer
 {
     [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([PsesServerInfo])]
     param(
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -129,8 +153,8 @@ function Start-PsesServer
         $null = $i++
     }
 
-    return @{
-        Process = $serverProcess
+    return [PsesServerInfo]@{
+        PsesProcess = $serverProcess
         SessionDetails = Get-Content -Raw $editorServicesOptions.SessionDetailsPath | ConvertFrom-Json
         StartupOptions = $editorServicesOptions
     }
@@ -279,7 +303,7 @@ function Get-RandomHexString
 
     if ($Length % 2 -ne 0)
     {
-        $str += ($script:Random.Next() | % { "{0:02}" -f $_ })
+        $str += ($script:Random.Next() | ForEach-Object { "{0:02}" -f $_ })
     }
 
     return $str
