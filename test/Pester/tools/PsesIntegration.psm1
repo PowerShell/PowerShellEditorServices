@@ -6,7 +6,23 @@ class NamedPipeWrapper
     )
     {
         $this.NamedPipeClient = $namedPipeClient
+
+        $this.ReaderBuffer = [char[]]::new(1024)
+
+        $this.MessageId = -1
+
+        $this.JsonSerializerSettings = [Newtonsoft.Json.JsonSerializerSettings]@{
+            ContractResolver = [Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver]::new()
+        }
+
+        $this.JsonSerializer = [Newtonsoft.Json.JsonSerializer]::Create($this.JsonSerializerSettings)
+
+        $this.JsonRpcSerializer = [Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers.JsonRpcMessageSerializer]::new()
+
+        $this.PipeEncoding = [System.Text.UTF8Encoding]::new($false)
     }
+
+    [bool] $Debug
 
     hidden [System.IO.Pipes.NamedPipeClientStream] $NamedPipeClient
 
@@ -16,6 +32,16 @@ class NamedPipeWrapper
 
     hidden [char[]] $ReaderBuffer
 
+    hidden [int] $MessageId
+
+    hidden [Newtonsoft.Json.JsonSerializerSettings] $JsonSerializerSettings
+
+    hidden [Newtonsoft.Json.JsonSerializer] $JsonSerializer
+
+    hidden [System.Text.Encoding] $PipeEncoding
+
+    hidden [Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers.JsonRpcMessageSerializer] $JsonRpcSerializer
+
     Connect()
     {
         $this.NamedPipeClient.Connect(1000)
@@ -24,12 +50,35 @@ class NamedPipeWrapper
         $this.Reader = [System.IO.StreamReader]::new($this.NamedPipeClient, $encoding)
         $this.Writer = [System.IO.StreamWriter]::new($this.NamedPipeClient, $encoding)
         $this.Writer.AutoFlush = $true
-        $this.ReaderBuffer = [char[]]::new(1024)
     }
 
-    Write([string]$message)
+    Write([string]$method, [object]$parameters)
     {
-        $this.Writer.Write($message)
+        $this.MessageId++
+
+        $msg = [Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Message]::Request(
+            $script:MessageId,
+            $Method,
+            [Newtonsoft.Json.Linq.JToken]::FromObject($Parameters, $this.JsonSerializer))
+
+        $msgJson = $this.JsonRpcSerializer.SerializeMessage($msg)
+        $msgString = [Newtonsoft.Json.JsonConvert]::SerializeObject($msgJson, $this.JsonSerializerSettings)
+        $msgBytes = $this.PipeEncoding.GetBytes($msgString)
+
+        $header = "Content-Length: $($msgBytes.Length)`r`n`r`n"
+        $headerBytes = $script:Utf8Encoding.GetBytes($header)
+
+        $bytesToSend = $headerBytes + $msgBytes
+
+        $stringToSend = $this.PipeEncoding.GetBytes($bytesToSend)
+
+        if ($this.Debug)
+        {
+            Write-Debug "Sending pipe message: $stringToSend"
+            return
+        }
+
+        $this.Writer.Write($stringToSend)
     }
 
     [bool]
@@ -38,9 +87,31 @@ class NamedPipeWrapper
         return $this.Reader.Peek() -gt 0
     }
 
-    [string]
+    [object]
     ReadMessage()
     {
+        # Read the headers to get the content-length
+        $charCount = $this.Reader.Peek()
+        $charsRead = 0
+        contentLength: while ($charCount -gt 0)
+        {
+            if ($charCount + $charsRead -gt $this.ReaderBuffer.Length)
+            {
+                [array]::Resize([ref]$this.ReaderBuffer.Length, $this.ReaderBuffer.Length * 2)
+            }
+
+            $this.Reader.Read($this.ReaderBuffer, $charsRead, $charCount)
+
+            for ($i = 0; $i -lt $this.ReaderBuffer.Length - 3; $i++)
+            {
+                if ($this.ReaderBuffer[$i] -eq 0xD -and
+                    $this.ReaderBuffer[$i+1] -eq 0xA -and
+                    $this.ReaderBuffer[$i]
+            }
+
+            $charsRead += $charCount
+        }
+
         $sb = [System.Text.StringBuilder]::new()
 
         $charCount = $this.Reader.Peek()
@@ -249,7 +320,6 @@ function Connect-NamedPipe
 
 function Send-LspInitializeRequest
 {
-    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter()]
         [NamedPipeWrapper]
@@ -291,55 +361,7 @@ function Send-LspInitializeRequest
         $parameters.RootPath = $RootPath
     }
 
-    Send-LspRequest -Pipe $Pipe -Method 'initialize' -Parameters $parameters -WhatIf:$PSBoundParameters.ContainsKey('WhatIf')
-}
-
-$script:MessageId = -1
-$script:JsonSerializerSettings = [Newtonsoft.Json.JsonSerializerSettings]@{
-    ContractResolver = [Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver]::new()
-}
-$script:Utf8Encoding = [System.Text.UTF8Encoding]::new($false)
-$script:JsonSerializer = [Newtonsoft.Json.JsonSerializer]::Create($script:JsonSerializerSettings)
-$script:JsonRpcSerializer = [Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers.JsonRpcMessageSerializer]::new()
-function Send-LspRequest
-{
-    [CmdletBinding(SupportsShouldProcess)]
-    param(
-        [Parameter()]
-        [NamedPipeWrapper]
-        $Pipe,
-
-        [Parameter()]
-        [string]
-        $Method,
-
-        [Parameter()]
-        [object]
-        $Parameters
-    )
-
-    $null = $script:MessageId++
-
-    $msg = [Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Message]::Request(
-        $script:MessageId,
-        $Method,
-        [Newtonsoft.Json.Linq.JToken]::FromObject($Parameters, $JsonSerializer))
-
-    $msgJson = $script:JsonRpcSerializer.SerializeMessage($msg)
-    $msgString = [Newtonsoft.Json.JsonConvert]::SerializeObject($msgJson, $script:JsonSerializerSettings)
-    $msgBytes = $script:Utf8Encoding.GetBytes($msgString)
-
-    $header = "Content-Length: $($msgBytes.Length)`r`n`r`n"
-    $headerBytes = $script:Utf8Encoding.GetBytes($header)
-
-    $bytesToSend = $headerBytes + $msgBytes
-
-    if (-not $PSCmdlet.ShouldProcess("Send '$Method' message to server"))
-    {
-        return $script:Utf8Encoding.GetString($bytesToSend)
-    }
-
-    $Pipe.Write($bytesToSend)
+    $Pipe.Write('initialize', $parameters)
 }
 
 function Unsplat
