@@ -1,172 +1,9 @@
-class NamedPipeWrapper
-{
-    NamedPipeWrapper(
-        [System.IO.Pipes.NamedPipeClientStream]
-        $namedPipeClient
-    )
-    {
-        $this.NamedPipeClient = $namedPipeClient
-
-        $this.ReaderBuffer = [char[]]::new(1024)
-
-        $this.MessageId = -1
-
-        $this.JsonSerializerSettings = [Newtonsoft.Json.JsonSerializerSettings]@{
-            ContractResolver = [Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver]::new()
-        }
-
-        $this.JsonSerializer = [Newtonsoft.Json.JsonSerializer]::Create($this.JsonSerializerSettings)
-
-        $this.JsonRpcSerializer = [Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers.JsonRpcMessageSerializer]::new()
-
-        $this.PipeEncoding = [System.Text.UTF8Encoding]::new($false)
-    }
-
-    [bool] $Debug
-
-    hidden [System.IO.Pipes.NamedPipeClientStream] $NamedPipeClient
-
-    hidden [System.IO.StreamReader] $Reader
-
-    hidden [System.IO.StreamWriter] $Writer
-
-    hidden [char[]] $ReaderBuffer
-
-    hidden [int] $MessageId
-
-    hidden [Newtonsoft.Json.JsonSerializerSettings] $JsonSerializerSettings
-
-    hidden [Newtonsoft.Json.JsonSerializer] $JsonSerializer
-
-    hidden [System.Text.Encoding] $PipeEncoding
-
-    hidden [Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Serializers.JsonRpcMessageSerializer] $JsonRpcSerializer
-
-    Connect()
-    {
-        $this.NamedPipeClient.Connect(1000)
-
-        $encoding = [System.Text.UTF8Encoding]::new($false)
-        $this.Reader = [System.IO.StreamReader]::new($this.NamedPipeClient, $encoding)
-        $this.Writer = [System.IO.StreamWriter]::new($this.NamedPipeClient, $encoding)
-        $this.Writer.AutoFlush = $true
-    }
-
-    Write([string]$method, [object]$parameters)
-    {
-        $this.MessageId++
-
-        $msg = [Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Message]::Request(
-            $script:MessageId,
-            $Method,
-            [Newtonsoft.Json.Linq.JToken]::FromObject($Parameters, $this.JsonSerializer))
-
-        $msgJson = $this.JsonRpcSerializer.SerializeMessage($msg)
-        $msgString = [Newtonsoft.Json.JsonConvert]::SerializeObject($msgJson, $this.JsonSerializerSettings)
-        $msgBytes = $this.PipeEncoding.GetBytes($msgString)
-
-        $header = "Content-Length: $($msgBytes.Length)`r`n`r`n"
-        $headerBytes = $script:Utf8Encoding.GetBytes($header)
-
-        $bytesToSend = $headerBytes + $msgBytes
-
-        $stringToSend = $this.PipeEncoding.GetBytes($bytesToSend)
-
-        if ($this.Debug)
-        {
-            Write-Debug "Sending pipe message: $stringToSend"
-            return
-        }
-
-        $this.Writer.Write($stringToSend)
-    }
-
-    [bool]
-    HasContent()
-    {
-        return $this.Reader.Peek() -gt 0
-    }
-
-    [object]
-    ReadMessage()
-    {
-        # Read the headers to get the content-length
-        $charCount = $this.Reader.Peek()
-        $charsRead = 0
-        contentLength: while ($charCount -gt 0)
-        {
-            if ($charCount + $charsRead -gt $this.ReaderBuffer.Length)
-            {
-                [array]::Resize([ref]$this.ReaderBuffer.Length, $this.ReaderBuffer.Length * 2)
-            }
-
-            $this.Reader.Read($this.ReaderBuffer, $charsRead, $charCount)
-
-            for ($i = 0; $i -lt $this.ReaderBuffer.Length - 3; $i++)
-            {
-                if ($this.ReaderBuffer[$i] -eq 0xD -and
-                    $this.ReaderBuffer[$i+1] -eq 0xA -and
-                    $this.ReaderBuffer[$i]
-            }
-
-            $charsRead += $charCount
-        }
-
-        $sb = [System.Text.StringBuilder]::new()
-
-        $charCount = $this.Reader.Peek()
-        $remainingMessageChars = -1
-        while ($remainingMessageChars -ne 0 -and $charCount -gt 0)
-        {
-            if ($charCount -gt $this.ReaderBuffer.Length)
-            {
-                [array]::Resize([ref]$this.ReaderBuffer, $this.ReaderBuffer.Length * 2)
-            }
-
-            $this.Reader.Read($this.ReaderBuffer, 0, $charCount)
-
-            $sb.Append($this.ReaderBuffer, 0, $charCount)
-
-            if ($remainingMessageChars -ge 0)
-            {
-                $remainingMessageChars -= $charCount
-            }
-            else
-            {
-                $msgSoFar = $sb.ToString()
-                $endHeaderIdx = $msgSoFar.IndexOf("`r`n`r`n")
-
-                if ($endHeaderIdx -ge 0)
-                {
-                    $remainingMessageChars = [int]($msgSoFar.Substring(16, $endHeaderIdx - 16))
-
-                    $overflowLength = $charCount - ($endHeaderIdx + 4)
-
-                    if ($overflowLength -gt 0)
-                    {
-                        $remainingMessageChars -= $overflowLength
-                    }
-                }
-            }
-
-            $charCount = [System.Math]::Min($remainingMessageChars, $this.Reader.Peek())
-        }
-
-        return $sb.ToString()
-    }
-
-    Dispose()
-    {
-        $this.Reader.Dispose()
-        $this.Writer.Dispose()
-        $this.NamedPipeClient.Dispose()
-    }
-}
-
 $script:PsesBundledModulesDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath(
-    "$PSScriptRoot/../../../PowerShellEditorServices")
+    "$PSScriptRoot/../../module")
 
 Import-Module "$script:PsesBundledModulesDir/PowerShellEditorServices"
+
+Import-Module $PSScriptRoot/bin/Debug/netstandard2.0/PsesPsClient.dll
 
 function Start-PsesServer
 {
@@ -313,7 +150,7 @@ function Connect-NamedPipe
         $PipeName = $PipeName.Substring($psesIdx)
     }
 
-    $pipe = [NamedPipeWrapper]::new(([System.IO.Pipes.NamedPipeClientStream]::new('.', $PipeName, 'InOut')))
+    $pipe = [PsesPsClient.LspPipe]::Create($PipeName)
     $pipe.Connect()
     return $pipe
 }
@@ -322,7 +159,7 @@ function Send-LspInitializeRequest
 {
     param(
         [Parameter()]
-        [NamedPipeWrapper]
+        [PsesPsClient.LspPipe]
         $Pipe,
 
         [Parameter()]
@@ -361,7 +198,7 @@ function Send-LspInitializeRequest
         $parameters.RootPath = $RootPath
     }
 
-    $Pipe.Write('initialize', $parameters)
+    return $Pipe.WriteRequest('initialize', $parameters)
 }
 
 function Unsplat

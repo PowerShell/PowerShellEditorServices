@@ -8,19 +8,28 @@ using System.IO;
 using Newtonsoft.Json.Linq;
 using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 using System.Collections.Generic;
+using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Linq;
 
 namespace PsesPsClient
 {
     public class LspPipe : IDisposable
     {
-        private static readonly IReadOnlyDictionary<string, Type> s_messageBodyTypes = new Dictionary<string, Type>()
+        public static LspPipe Create(string pipeName)
         {
+            var pipeClient = new NamedPipeClientStream(
+                serverName: ".",
+                pipeName: pipeName,
+                direction: PipeDirection.InOut,
+                options: PipeOptions.Asynchronous);
 
-        };
+            return new LspPipe(pipeClient);
+        }
 
         private readonly NamedPipeClientStream _namedPipeClient;
-
-        private readonly StringBuilder _headerBuffer;
 
         private readonly JsonSerializerSettings _jsonSettings;
 
@@ -32,19 +41,13 @@ namespace PsesPsClient
 
         private int _msgId;
 
-        private StreamReader _reader;
-
         private StreamWriter _writer;
 
-        private char[] _readerBuffer;
+        private MessageStreamListener _listener;
 
         public LspPipe(NamedPipeClientStream namedPipeClient)
         {
             _namedPipeClient = namedPipeClient;
-
-            _readerBuffer = new char[1024];
-
-            _headerBuffer = new StringBuilder(128);
 
             _jsonSettings = new JsonSerializerSettings()
             {
@@ -58,25 +61,19 @@ namespace PsesPsClient
             _pipeEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
         }
 
-        public bool HasContent
-        {
-            get
-            {
-                return _reader.Peek() > 0;
-            }
-        }
-
         public void Connect()
         {
             _namedPipeClient.Connect(timeout: 1000);
-            _reader = new StreamReader(_namedPipeClient, _pipeEncoding);
+            _listener = new MessageStreamListener(new StreamReader(_namedPipeClient, _pipeEncoding));
             _writer = new StreamWriter(_namedPipeClient, _pipeEncoding)
             {
                 AutoFlush = true
             };
+
+            _listener.Start();
         }
 
-        public void Write(
+        public LspRequest WriteRequest(
             string method,
             object parameters)
         {
@@ -93,50 +90,160 @@ namespace PsesPsClient
 
             string header = "Content-Length: " + msgBytes.Length + "\r\n\r\n";
 
-            _writer.Write(header);
-            _writer.Write(msgBytes);
+            _writer.Write(header + msgString);
+            _writer.Flush();
+
+            return new LspRequest(msg.Id, method, msgJson["params"]);
         }
 
-        public LspMessage Read()
+        public IEnumerable<LspNotification> GetNotifications()
         {
-            int contentLength = GetContentLength();
-            string msgString = ReadString(contentLength);
-            JObject msgJson = JObject.Parse(msgString);
+            return _listener.DrainNotifications();
+        }
 
-            if (!msgJson.TryGetValue("method", out JToken methodJsonToken)
-                || !(methodJsonToken is JValue methodJsonValue)
-                || !(methodJsonValue.Value is string method))
-            {
-                throw new Exception($"No method given on message: '{msgString}'");
-            }
+        public IEnumerable<LspRequest> GetRequests()
+        {
+            return _listener.DrainRequests();
+        }
 
-            if (!s_messageBodyTypes.TryGetValue(method, out Type bodyType))
-            {
-                throw new Exception($"Unknown message method: '{method}'");
-            }
-
-            int id = (int)msgJson["id"];
-
-            object body = msgJson["params"].ToObject(bodyType);
-
-            return new LspMessage(id, method, body);
+        public bool TryGetNextResponse(out LspResponse response, int millisTimeout)
+        {
+            return _listener.TryGetNextResponse(out response, millisTimeout);
         }
 
         public void Dispose()
         {
+            _listener.Dispose();
             _namedPipeClient.Dispose();
         }
+    }
 
-        private string ReadString(int bytesToRead)
+    public class MessageStreamListener : IDisposable
+    {
+        private readonly StreamReader _stream;
+
+        private readonly StringBuilder _headerBuffer;
+
+        private readonly ConcurrentQueue<LspRequest> _requestQueue;
+
+        private readonly ConcurrentQueue<LspNotification> _notificationQueue;
+
+        private readonly BlockingCollection<LspResponse> _responseBlockingOutput;
+
+        private char[] _readerBuffer;
+
+        private CancellationTokenSource _cancellationSource;
+
+        public MessageStreamListener(StreamReader stream)
+        {
+            _stream = stream;
+            _readerBuffer = new char[1024];
+            _headerBuffer = new StringBuilder(128);
+            _notificationQueue = new ConcurrentQueue<LspNotification>();
+            _requestQueue = new ConcurrentQueue<LspRequest>();
+            _responseBlockingOutput = new BlockingCollection<LspResponse>();
+            _cancellationSource = new CancellationTokenSource();
+        }
+
+        public IEnumerable<LspNotification> DrainNotifications()
+        {
+            return DrainQueue(_notificationQueue);
+        }
+
+        public IEnumerable<LspRequest> DrainRequests()
+        {
+            return DrainQueue(_requestQueue);
+        }
+
+        public bool TryGetNextResponse(out LspResponse response)
+        {
+            return _responseBlockingOutput.TryTake(out response);
+        }
+
+        public bool TryGetNextResponse(out LspResponse response, int millisTimeout)
+        {
+            return _responseBlockingOutput.TryTake(out response, millisTimeout);
+        }
+
+        public void Start()
+        {
+            Task.Run(() => RunListenLoop());
+        }
+
+        public void Stop()
+        {
+            _cancellationSource.Cancel();
+        }
+
+        public void Dispose()
+        {
+            Stop();
+            _stream.Dispose();
+        }
+
+        private async Task RunListenLoop()
+        {
+            while (!_cancellationSource.IsCancellationRequested)
+            {
+                LspMessage msg = await ReadMessage();
+                switch (msg)
+                {
+                    case LspNotification notification:
+                        _notificationQueue.Enqueue(notification);
+                        continue;
+
+                    case LspResponse response:
+                        _responseBlockingOutput.Add(response);
+                        continue;
+
+                    case LspRequest request:
+                        _requestQueue.Enqueue(request);
+                        continue;
+                }
+            }
+        }
+
+        private async Task<LspMessage> ReadMessage()
+        {
+            int contentLength = GetContentLength();
+            string msgString = await ReadString(contentLength);
+            JObject msgJson = JObject.Parse(msgString);
+
+            if (msgJson.TryGetValue("method", out JToken methodToken))
+            {
+                string method = ((JValue)methodToken).Value.ToString();
+                if (msgJson.TryGetValue("id", out JToken idToken))
+                {
+                    string requestId = ((JValue)idToken).Value.ToString();
+                    return new LspRequest(requestId, method, msgJson["params"]);
+                }
+
+                return new LspNotification(method, msgJson["params"]);
+            }
+
+            string id = ((JValue)msgJson["id"]).Value.ToString();
+
+            if (msgJson.TryGetValue("result", out JToken resultToken))
+            {
+                return new LspSuccessfulResponse(id, resultToken);
+            }
+
+            JObject errorBody = (JObject)msgJson["error"];
+            JsonRpcErrorCode errorCode = (JsonRpcErrorCode)(int)((JValue)errorBody["code"]).Value;
+            string message = (string)((JValue)errorBody["message"]).Value;
+            return new LspErrorResponse(id, errorCode, message, errorBody["data"]);
+        }
+
+        private async Task<string> ReadString(int bytesToRead)
         {
             if (bytesToRead > _readerBuffer.Length)
             {
                 Array.Resize(ref _readerBuffer, _readerBuffer.Length * 2);
             }
 
-            _reader.Read(_readerBuffer, 0, bytesToRead);
+            int readLen = await _stream.ReadAsync(_readerBuffer, 0, bytesToRead);
 
-            return new string(_readerBuffer);
+            return new string(_readerBuffer, 0, readLen);
         }
 
         private int GetContentLength()
@@ -144,7 +251,7 @@ namespace PsesPsClient
             _headerBuffer.Clear();
             int endHeaderState = 0;
             int currChar;
-            while ((currChar = _reader.Read()) >= 0)
+            while ((currChar = _stream.Read()) >= 0)
             {
                 char c = (char)currChar;
                 _headerBuffer.Append(c);
@@ -156,7 +263,14 @@ namespace PsesPsClient
                             endHeaderState = 3;
                             continue;
                         }
-                        endHeaderState = 1;
+
+                        if (endHeaderState == 0)
+                        {
+                            endHeaderState = 1;
+                            continue;
+                        }
+
+                        endHeaderState = 0;
                         continue;
 
                     case '\n':
@@ -172,6 +286,11 @@ namespace PsesPsClient
                             return ParseContentLength(_headerBuffer.ToString());
                         }
 
+                        endHeaderState = 0;
+                        continue;
+
+                    default:
+                        endHeaderState = 0;
                         continue;
                 }
             }
@@ -200,21 +319,115 @@ namespace PsesPsClient
 
             return int.Parse(headers.Substring(numStartIdx, numLength));
         }
-    }
 
-    public class LspMessage
-    {
-        public LspMessage(int id, string method, object body)
+        private static IEnumerable<TElement> DrainQueue<TElement>(ConcurrentQueue<TElement> queue)
         {
-            Id = id;
-            Method = method;
-            Body = body;
+            if (queue.IsEmpty)
+            {
+                return Enumerable.Empty<TElement>();
+            }
+
+            var list = new List<TElement>();
+            while (queue.TryDequeue(out TElement element))
+            {
+                list.Add(element);
+            }
+            return list;
         }
 
-        public int Id { get; }
+    }
+
+    public abstract class LspMessage
+    {
+        protected LspMessage()
+        {
+        }
+    }
+
+    public class LspNotification : LspMessage
+    {
+        public LspNotification(string method, JToken parameters)
+            : base()
+        {
+            Method = method;
+            Params = parameters;
+        }
 
         public string Method { get; }
 
-        public object Body;
+        public JToken Params { get; }
+    }
+
+    public class LspRequest : LspMessage
+    {
+        public LspRequest(string id, string method, JToken parameters)
+        {
+            Id = id;
+            Method = method;
+            Params = parameters;
+        }
+
+        public string Id { get; }
+
+        public string Method { get; }
+
+        public JToken Params { get; }
+    }
+
+    public abstract class LspResponse : LspMessage
+    {
+        protected LspResponse(string id)
+        {
+            Id = id;
+        }
+
+        public string Id { get; }
+    }
+
+    public class LspSuccessfulResponse : LspResponse
+    {
+        public LspSuccessfulResponse(string id, JToken result)
+            : base(id)
+        {
+            Result = result;
+        }
+
+        public JToken Result { get; }
+    }
+
+    public class LspErrorResponse : LspResponse
+    {
+        public LspErrorResponse(
+            string id,
+            JsonRpcErrorCode code,
+            string message,
+            JToken data)
+                : base(id)
+        {
+            Code = code;
+            Message = message;
+            Data = data;
+        }
+
+        public JsonRpcErrorCode Code { get; }
+
+        public string Message { get; }
+
+        public JToken Data { get; }
+    }
+
+    public enum JsonRpcErrorCode : int
+    {
+        ParseError = -32700,
+        InvalidRequest = -32600,
+        MethodNotFound = -32601,
+        InvalidParams = -32602,
+        InternalError = -32603,
+        ServerErrorStart = -32099,
+        ServerErrorEnd = -32000,
+        ServerNotInitialized = -32002,
+        UnknownErrorCode = -32001,
+        RequestCancelled = -32800,
+        ContentModified = -32801,
     }
 }
