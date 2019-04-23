@@ -376,7 +376,7 @@ task TestHost {
     exec { & $script:dotnetExe test -f $script:TestRuntime.Core (DotNetTestFilter) }
 }
 
-task TestPester -After Build,BuildPsesClientModule,EnsurePesterInstalled {
+task TestPester Build,BuildPsesClientModule,EnsurePesterInstalled,{
     $pwshExe = (Get-Process -Id $PID).Path
     $pesterTestDir = Resolve-Path "$PSScriptRoot/test/Pester/"
     exec { & $pwshExe -Command "cd $pesterTestDir; Invoke-Pester" }

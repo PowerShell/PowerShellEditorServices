@@ -162,6 +162,7 @@ function Start-PsesServer
 
 function Connect-NamedPipe
 {
+    [OutputType([PsesPsClient.LspPipe])]
     param(
         [Parameter(Mandatory)]
         [string]
@@ -181,6 +182,7 @@ function Connect-NamedPipe
 
 function Send-LspInitializeRequest
 {
+    [OutputType([PsesPsClient.LspRequest])]
     param(
         [Parameter(Position = 0, Mandatory)]
         [PsesPsClient.LspPipe]
@@ -227,6 +229,7 @@ function Send-LspInitializeRequest
 
 function Send-LspShutdownRequest
 {
+    [OutputType([PsesPsClient.LspRequest])]
     param(
         [Parameter(Position = 0, Mandatory)]
         [PsesPsClient.LspPipe]

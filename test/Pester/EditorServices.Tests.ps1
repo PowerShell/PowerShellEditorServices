@@ -23,6 +23,8 @@ Describe "Loading and running PowerShellEditorServices" {
         $response = $null
         $pipe.TryGetNextResponse([ref]$response, 5000) | Should -BeTrue
         $response.Id | Should -BeExactly $request.Id
-        $response.Result.Type | Should -Be 'Null'
+        $response.Result | Should -BeNull
+        # TODO: The server stays up waiting for the debug connection
+        # $psesServer.PsesProcess.HasExited | Should -BeTrue
     }
 }
