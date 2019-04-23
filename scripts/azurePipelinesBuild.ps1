@@ -16,4 +16,4 @@ Install-Module PlatyPS -RequiredVersion 0.9.0 -Scope CurrentUser
 
 Invoke-Build -Configuration Release
 
-Write-Host 'Done'
+exit 0
