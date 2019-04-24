@@ -228,7 +228,8 @@ namespace PsesPsClient
 
         private async Task RunListenLoop()
         {
-            while (!_cancellationSource.IsCancellationRequested)
+            CancellationToken cancellationToken = _cancellationSource.Token;
+            while (!cancellationToken.IsCancellationRequested)
             {
                 LspMessage msg = await ReadMessage().ConfigureAwait(false);
                 switch (msg)

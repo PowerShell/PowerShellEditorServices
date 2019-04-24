@@ -15,5 +15,3 @@ Install-Module InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser
 Install-Module PlatyPS -RequiredVersion 0.9.0 -Scope CurrentUser
 
 Invoke-Build -Configuration Release
-
-exit 0
