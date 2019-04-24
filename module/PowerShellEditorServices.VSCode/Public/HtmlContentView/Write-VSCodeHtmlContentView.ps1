@@ -41,6 +41,6 @@ function Write-VSCodeHtmlContentView {
     )
 
     process {
-        $HtmlContentView.AppendContent($AppendedHtmlBodyContent).Wait();
+        $HtmlContentView.AppendContentAsync($AppendedHtmlBodyContent).Wait();
     }
 }
