@@ -148,6 +148,8 @@ namespace PsesPsClient
 
         public void Dispose()
         {
+            _namedPipeClient.Close();
+            _writer.Dispose();
             _listener.Dispose();
             _namedPipeClient.Dispose();
         }
