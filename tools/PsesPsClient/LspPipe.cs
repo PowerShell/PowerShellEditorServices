@@ -16,13 +16,21 @@ using System.Linq;
 
 namespace PsesPsClient
 {
+    /// <summary>
+    /// A Language Server Protocol named pipe connection.
+    /// </summary>
     public class LspPipe : IDisposable
     {
+        /// <summary>
+        /// Create a new LSP pipe around a given named pipe.
+        /// </summary>
+        /// <param name="pipeName">The name of the named pipe to use.</param>
+        /// <returns>A new LspPipe instance around the given named pipe.</returns>
         public static LspPipe Create(string pipeName)
         {
             var pipeClient = new NamedPipeClientStream(
-                serverName: ".",
                 pipeName: pipeName,
+                serverName: ".",
                 direction: PipeDirection.InOut,
                 options: PipeOptions.Asynchronous);
 
@@ -45,6 +53,10 @@ namespace PsesPsClient
 
         private MessageStreamListener _listener;
 
+        /// <summary>
+        /// Create a new LSP pipe around a named pipe client stream.
+        /// </summary>
+        /// <param name="namedPipeClient">The named pipe client stream to use for the LSP pipe.</param>
         public LspPipe(NamedPipeClientStream namedPipeClient)
         {
             _namedPipeClient = namedPipeClient;
@@ -61,6 +73,9 @@ namespace PsesPsClient
             _pipeEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
         }
 
+        /// <summary>
+        /// Connect to the named pipe server.
+        /// </summary>
         public void Connect()
         {
             _namedPipeClient.Connect(timeout: 1000);
@@ -73,6 +88,12 @@ namespace PsesPsClient
             _listener.Start();
         }
 
+        /// <summary>
+        /// Write a request to the LSP pipe.
+        /// </summary>
+        /// <param name="method">The method of the request.</param>
+        /// <param name="parameters">The parameters of the request. May be null.</param>
+        /// <returns>A representation of the request sent.</returns>
         public LspRequest WriteRequest(
             string method,
             object parameters)
@@ -96,16 +117,30 @@ namespace PsesPsClient
             return new LspRequest(msg.Id, method, msgJson["params"]);
         }
 
+        /// <summary>
+        /// Get all the pending notifications from the server.
+        /// </summary>
+        /// <returns>Any pending notifications from the server.</returns>
         public IEnumerable<LspNotification> GetNotifications()
         {
             return _listener.DrainNotifications();
         }
 
+        /// <summary>
+        /// Get all the pending requests from the server.
+        /// </summary>
+        /// <returns>Any pending requests from the server.</returns>
         public IEnumerable<LspRequest> GetRequests()
         {
             return _listener.DrainRequests();
         }
 
+        /// <summary>
+        /// Get the next response from the server, if one is available within the given time.
+        /// </summary>
+        /// <param name="response">The next response from the server.</param>
+        /// <param name="millisTimeout">How long to wait for a response.</param>
+        /// <returns>True if there is a next response, false if it timed out.</returns>
         public bool TryGetNextResponse(out LspResponse response, int millisTimeout)
         {
             return _listener.TryGetNextResponse(out response, millisTimeout);
@@ -118,6 +153,10 @@ namespace PsesPsClient
         }
     }
 
+    /// <summary>
+    /// A dedicated listener to run a thread for receiving pipe messages,
+    /// so the the pipe is not blocked.
+    /// </summary>
     public class MessageStreamListener : IDisposable
     {
         private readonly StreamReader _stream;
@@ -134,6 +173,10 @@ namespace PsesPsClient
 
         private readonly CancellationTokenSource _cancellationSource;
 
+        /// <summary>
+        /// Create a listener around a stream.
+        /// </summary>
+        /// <param name="stream">The stream to listen for messages on.</param>
         public MessageStreamListener(StreamReader stream)
         {
             _stream = stream;
