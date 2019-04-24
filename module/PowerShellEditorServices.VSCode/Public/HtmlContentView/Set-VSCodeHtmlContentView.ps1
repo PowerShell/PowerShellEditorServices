@@ -64,6 +64,6 @@ function Set-VSCodeHtmlContentView {
         $htmlContent.JavaScriptPaths = $JavaScriptPaths
         $htmlContent.StyleSheetPaths = $StyleSheetPaths
 
-        $HtmlContentView.SetContent($htmlContent).Wait();
+        $HtmlContentView.SetContentAsync($htmlContent).Wait();
     }
 }
