@@ -377,13 +377,13 @@ namespace PsesPsClient
         {
             const string clHeaderPrefix = "Content-Length: ";
 
-            int clIdx = headers.IndexOf(clHeaderPrefix);
+            int clIdx = headers.IndexOf(clHeaderPrefix, StringComparison.Ordinal);
             if (clIdx < 0)
             {
                 throw new InvalidDataException("No Content-Length header found");
             }
 
-            int endIdx = headers.IndexOf("\r\n", clIdx);
+            int endIdx = headers.IndexOf("\r\n", clIdx, StringComparison.Ordinal);
             if (endIdx < 0)
             {
                 throw new InvalidDataException("Header CRLF terminator not found");
