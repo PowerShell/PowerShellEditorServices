@@ -146,6 +146,9 @@ namespace PsesPsClient
             return _listener.TryGetNextResponse(out response, millisTimeout);
         }
 
+        /// <summary>
+        /// Dispose of the pipe. This will also close the pipe.
+        /// </summary>
         public void Dispose()
         {
             _writer.Dispose();
@@ -190,36 +193,62 @@ namespace PsesPsClient
             _cancellationSource = new CancellationTokenSource();
         }
 
+        /// <summary>
+        /// Get all pending notifications.
+        /// </summary>
         public IEnumerable<LspNotification> DrainNotifications()
         {
             return DrainQueue(_notificationQueue);
         }
 
+        /// <summary>
+        /// Get all pending requests.
+        /// </summary>
         public IEnumerable<LspRequest> DrainRequests()
         {
             return DrainQueue(_requestQueue);
         }
 
+        /// <summary>
+        /// Get the next response if there is one, otherwise instantly return false.
+        /// </summary>
+        /// <param name="response">The first response in the response queue if any, otherwise null.</param>
+        /// <returns>True if there was a response to get, false otherwise.</returns>
         public bool TryGetNextResponse(out LspResponse response)
         {
             return _responseBlockingOutput.TryTake(out response);
         }
 
+        /// <summary>
+        /// Get the next response within the given timeout.
+        /// </summary>
+        /// <param name="response">The first response in the queue, if any.</param>
+        /// <param name="millisTimeout">The maximum number of milliseconds to wait for a response.</param>
+        /// <returns>True if there was a response to get, false otherwise.</returns>
         public bool TryGetNextResponse(out LspResponse response, int millisTimeout)
         {
             return _responseBlockingOutput.TryTake(out response, millisTimeout);
         }
 
+        /// <summary>
+        /// Start the pipe listener on its own thread.
+        /// </summary>
         public void Start()
         {
             Task.Run(() => RunListenLoop());
         }
 
+        /// <summary>
+        /// End the pipe listener loop.
+        /// </summary>
         public void Stop()
         {
             _cancellationSource.Cancel();
         }
 
+        /// <summary>
+        /// Stops and disposes the pipe listener.
+        /// </summary>
         public void Dispose()
         {
             Stop();
@@ -383,6 +412,9 @@ namespace PsesPsClient
 
     }
 
+    /// <summary>
+    /// Represents a Language Server Protocol message.
+    /// </summary>
     public abstract class LspMessage
     {
         protected LspMessage()
@@ -390,6 +422,9 @@ namespace PsesPsClient
         }
     }
 
+    /// <summary>
+    /// A Language Server Protocol notifcation or event.
+    /// </summary>
     public class LspNotification : LspMessage
     {
         public LspNotification(string method, JToken parameters)
@@ -398,11 +433,21 @@ namespace PsesPsClient
             Params = parameters;
         }
 
+        /// <summary>
+        /// The notification method.
+        /// </summary>
         public string Method { get; }
 
+        /// <summary>
+        /// Any parameters for the notification.
+        /// </summary>
         public JToken Params { get; }
     }
 
+    /// <summary>
+    /// A Language Server Protocol request.
+    /// May be a client -> server or a server -> client request.
+    /// </summary>
     public class LspRequest : LspMessage
     {
         public LspRequest(string id, string method, JToken parameters)
@@ -412,13 +457,25 @@ namespace PsesPsClient
             Params = parameters;
         }
 
+        /// <summary>
+        /// The ID of the request. Usually an integer.
+        /// </summary>
         public string Id { get; }
 
+        /// <summary>
+        /// The method of the request.
+        /// </summary>
         public string Method { get; }
 
+        /// <summary>
+        /// Any parameters of the request.
+        /// </summary>
         public JToken Params { get; }
     }
 
+    /// <summary>
+    /// A Language Server Protocol response message.
+    /// </summary>
     public abstract class LspResponse : LspMessage
     {
         protected LspResponse(string id)
@@ -426,9 +483,15 @@ namespace PsesPsClient
             Id = id;
         }
 
+        /// <summary>
+        /// The ID of the response. Will match the ID of the request triggering it.
+        /// </summary>
         public string Id { get; }
     }
 
+    /// <summary>
+    /// A successful Language Server Protocol response message.
+    /// </summary>
     public class LspSuccessfulResponse : LspResponse
     {
         public LspSuccessfulResponse(string id, JToken result)
@@ -437,9 +500,15 @@ namespace PsesPsClient
             Result = result;
         }
 
+        /// <summary>
+        /// The result field of the response.
+        /// </summary>
         public JToken Result { get; }
     }
 
+    /// <summary>
+    /// A Language Server Protocol error response message.
+    /// </summary>
     public class LspErrorResponse : LspResponse
     {
         public LspErrorResponse(
@@ -454,13 +523,25 @@ namespace PsesPsClient
             Data = data;
         }
 
+        /// <summary>
+        /// The error code sent by the server, may not correspond to a known enum type.
+        /// </summary>
         public JsonRpcErrorCode Code { get; }
 
+        /// <summary>
+        /// The error message.
+        /// </summary>
         public string Message { get; }
 
+        /// <summary>
+        /// Extra error data.
+        /// </summary>
         public JToken Data { get; }
     }
 
+    /// <summary>
+    /// Error codes used by the Language Server Protocol.
+    /// </summary>
     public enum JsonRpcErrorCode : int
     {
         ParseError = -32700,
