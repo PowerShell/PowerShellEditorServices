@@ -370,7 +370,7 @@ namespace PsesPsClient
                 }
             }
 
-            throw new Exception("Buffer emptied before end of headers");
+            throw new InvalidDataException("Buffer emptied before end of headers");
         }
 
         private static int ParseContentLength(string headers)
@@ -380,13 +380,13 @@ namespace PsesPsClient
             int clIdx = headers.IndexOf(clHeaderPrefix);
             if (clIdx < 0)
             {
-                throw new Exception("No Content-Length header found");
+                throw new InvalidDataException("No Content-Length header found");
             }
 
             int endIdx = headers.IndexOf("\r\n", clIdx);
             if (endIdx < 0)
             {
-                throw new Exception("Header CRLF terminator not found");
+                throw new InvalidDataException("Header CRLF terminator not found");
             }
 
             int numStartIdx = clIdx + clHeaderPrefix.Length;
