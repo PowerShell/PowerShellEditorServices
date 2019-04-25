@@ -377,9 +377,7 @@ task TestHost {
 }
 
 task TestPester Build,BuildPsesClientModule,EnsurePesterInstalled,{
-    $pwshExe = (Get-Process -Id $PID).Path
-    $pesterTestDir = Resolve-Path "$PSScriptRoot/test/Pester/"
-    exec { & $pwshExe -Command "cd $pesterTestDir; Invoke-Pester" }
+    Invoke-Pester "$PSScriptRoot/test/Pester/"
 }
 
 task EnsurePesterInstalled {

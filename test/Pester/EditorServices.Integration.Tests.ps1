@@ -25,7 +25,7 @@ Describe "Loading and running PowerShellEditorServices" {
         $pipe.TryGetNextResponse([ref]$response, 5000) | Should -BeTrue
         $response.Id | Should -BeExactly $request.Id
         $response.Result | Should -BeNull
-        # TODO: The server stays up waiting for the debug connection
+        # TODO: The server seems to stay up waiting for the debug connection
         # $psesServer.PsesProcess.HasExited | Should -BeTrue
     }
 }
