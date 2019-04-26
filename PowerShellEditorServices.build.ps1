@@ -399,7 +399,8 @@ task EnsurePesterInstalled {
         return
     }
 
-    Install-Module -Scope CurrentUser Pester
+    Write-Warning "Required Pester version not found, installing Pester to current user scope"
+    Install-Module -Scope CurrentUser Pester -Force
 }
 
 task LayoutModule -After Build {
