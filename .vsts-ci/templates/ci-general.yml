@@ -5,6 +5,11 @@ steps:
       testRunner: VSTest
       testResultsFiles: '**/*.trx'
     condition: succeededOrFailed()
+  - task: PublishTestResults@2
+    inputs:
+      testRunner: NUnit
+      testResultsFiles: '**/TestResults.xml'
+    condition: suceededOrFailed()
   - task: PublishBuildArtifacts@1
     inputs:
       ArtifactName: PowerShellEditorServices

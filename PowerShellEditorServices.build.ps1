@@ -377,7 +377,20 @@ task TestHost {
 }
 
 task TestPester Build,BuildPsesClientModule,EnsurePesterInstalled,{
-    Invoke-Pester "$PSScriptRoot/test/Pester/"
+    $testParams = @{}
+    if ($env:TF_BUILD)
+    {
+        $testParams += @{
+            OutputFormat = 'NUnitXml'
+            OutputFile = 'TestResults.xml'
+        }
+    }
+    $result = Invoke-Pester "$PSScriptRoot/test/Pester/" @testParams -PassThru
+
+    if ($result.FailedCount -gt 0)
+    {
+        throw "$($result.FailedCount) tests failed."
+    }
 }
 
 task EnsurePesterInstalled {
