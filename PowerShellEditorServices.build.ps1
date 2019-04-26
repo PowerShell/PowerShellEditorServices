@@ -18,11 +18,11 @@ param(
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
-$script:IsCIBuild = $env:TF_BUILD -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:TargetPlatform = "netstandard2.0"
 $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
+$script:MinimumPesterVersion = '4.7'
 $script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
 $script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
 $script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSCode/bin/"
@@ -394,7 +394,7 @@ task TestPester Build,BuildPsesClientModule,EnsurePesterInstalled,{
 }
 
 task EnsurePesterInstalled {
-    if (Get-Command Invoke-Pester -ErrorAction SilentlyContinue)
+    if (Get-Module Pester -ListAvailable | Where-Object { $_.Version -ge $script:MinimumPesterVersion})
     {
         return
     }
