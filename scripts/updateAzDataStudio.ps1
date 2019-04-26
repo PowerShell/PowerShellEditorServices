@@ -398,6 +398,7 @@ function CommitAndPushChanges
     Push-Location $repoLocation
     try
     {
+        git checkout $Branch
         git add $File
         git commit -m $Message
         git push origin $Branch
@@ -445,9 +446,9 @@ function OpenGitHubPr
 
     $uri = "https://api.github.com/repos/$Organization/$Repository/pulls"
 
-    if ($FromOrg)
+    if ($FromOrg -and $FromOrg -ne $Organization)
     {
-        $Branch = "${FromOrg}:${TargetBranch}"
+        $Branch = "${FromOrg}:${Branch}"
     }
 
     $body = @{
@@ -478,7 +479,6 @@ $prParams = @{
     Branch = $branchName
     Title = "Update PowerShell extension to v$ExtensionVersion"
     Description = "Updates the version of the PowerShell extension in ADS to $ExtensionVersion.`n**Note**: This is an automated PR."
-    Organization = 'rjmholt'
     GitHubToken = $GitHubToken
 }
 OpenGitHubPr @prParams
