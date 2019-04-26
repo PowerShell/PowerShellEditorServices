@@ -4,6 +4,10 @@
 #
 
 param(
+    [Parameter()]
+    [string]
+    $DotnetExe = 'dotnet',
+
     [switch]
     $Clean
 )
@@ -36,7 +40,7 @@ if ($Clean)
 Push-Location $PSScriptRoot
 try
 {
-    dotnet publish
+    & $DotnetExe publish --framework 'netstandard2.0'
 
     New-Item -Path $script:OutModDir -ItemType Directory
     foreach ($key in $script:ModuleComponents.get_Keys())

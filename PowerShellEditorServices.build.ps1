@@ -329,8 +329,8 @@ task Build {
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
 }
 
-task BuildPsesClientModule {
-    & $PSScriptRoot/tools/PsesPsClient/build.ps1 -Clean
+task BuildPsesClientModule SetupDotNet,{
+    & $PSScriptRoot/tools/PsesPsClient/build.ps1 -Clean -DotnetExe $script:dotnetExe
 }
 
 function DotNetTestFilter {
