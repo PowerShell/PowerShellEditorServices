@@ -126,6 +126,7 @@ function Get-PsesRpcMessageResponseTime {
         [ValidateSet(
             "textDocument/codeAction",
             "textDocument/codeLens",
+            "textDocument/completion",
             "textDocument/documentSymbol",
             "textDocument/foldingRange",
             "textDocument/formatting",

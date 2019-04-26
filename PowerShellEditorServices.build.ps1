@@ -268,7 +268,7 @@ task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
         # SYSTEM_PHASENAME is the Job name.
         # Job names can only include `_` but that's not a valid character for versions.
         $jobname = $env:SYSTEM_PHASENAME -replace '_', ''
-        $script:BuildNumber = "$jobname-$env:BUILD_BUILDNUMBER"
+        $script:BuildNumber = "$jobname-$env:BUILD_BUILDID"
     }
 
     if ($script:VersionSuffix -ne $null) {
