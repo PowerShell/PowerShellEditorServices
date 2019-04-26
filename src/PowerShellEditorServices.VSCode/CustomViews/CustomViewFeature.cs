@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     {
         protected IMessageSender messageSender;
         protected ILogger logger;
-        private Dictionary<Guid, TView> viewIndex;
+        private readonly Dictionary<Guid, TView> viewIndex;
 
         public CustomViewFeatureBase(
             IMessageSender messageSender,
