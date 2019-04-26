@@ -1,9 +1,10 @@
+#
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+#
+
 $script:PsesBundledModulesDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath(
-    "$PSScriptRoot/../../module")
-
-Import-Module "$script:PsesBundledModulesDir/PowerShellEditorServices"
-
-Import-Module $PSScriptRoot/bin/Debug/netstandard2.0/PsesPsClient.dll
+    "$PSScriptRoot/../../../../module")
 
 class PsesStartupOptions
 {

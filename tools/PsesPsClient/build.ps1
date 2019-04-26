@@ -1,13 +1,30 @@
+#
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+#
+
 param(
     [switch]
     $Clean
 )
 
+$ErrorActionPreference = 'Stop'
+
+$script:OutDir = "$PSScriptRoot/out"
+$script:OutModDir = "$script:OutDir/PsesPsClient"
+
+$script:ModuleComponents = @{
+    "bin/Debug/netstandard2.0/publish/PsesPsClient.dll" = "PsesPsClient.dll"
+    "bin/Debug/netstandard2.0/publish/Newtonsoft.Json.dll" = "Newtonsoft.Json.dll"
+    "PsesPsClient.psm1" = "PsesPsClient.psm1"
+    "PsesPsClient.psd1" = "PsesPsClient.psd1"
+}
+
 if ($Clean)
 {
     $binDir = "$PSScriptRoot/bin"
     $objDir = "$PSScriptRoot/obj"
-    foreach ($dir in $binDir,$objDir)
+    foreach ($dir in $binDir,$objDir,$script:OutDir)
     {
         if (Test-Path $dir)
         {
@@ -19,7 +36,14 @@ if ($Clean)
 Push-Location $PSScriptRoot
 try
 {
-    dotnet build
+    dotnet publish
+
+    New-Item -Path $script:OutModDir -ItemType Directory
+    foreach ($key in $script:ModuleComponents.get_Keys())
+    {
+        $val = $script:ModuleComponents[$key]
+        Copy-Item -Path "$PSScriptRoot/$key" -Destination "$script:OutModDir/$val"
+    }
 }
 finally
 {
