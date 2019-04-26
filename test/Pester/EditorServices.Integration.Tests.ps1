@@ -7,9 +7,16 @@ Describe "Loading and running PowerShellEditorServices" {
     }
 
     AfterAll {
-        $pipe.Dispose()
-        $psesServer.PsesProcess.Kill()
-        $psesServer.PsesProcess.Dispose()
+        try
+        {
+            $pipe.Dispose()
+            $psesServer.PsesProcess.Kill()
+            $psesServer.PsesProcess.Dispose()
+        }
+        catch
+        {
+            # Do nothing
+        }
     }
 
     It "Starts and responds to an initialization request" {
