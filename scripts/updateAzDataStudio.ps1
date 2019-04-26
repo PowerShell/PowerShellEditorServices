@@ -456,6 +456,7 @@ function OpenGitHubPr
         body = $Description
         head = $Branch
         base = $TargetBranch
+        maintainer_can_modify = $true
     } | ConvertTo-Json
 
     $headers = @{
