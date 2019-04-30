@@ -24,14 +24,14 @@ namespace PsesPsClient
     /// <summary>
     /// A Language Server Protocol named pipe connection.
     /// </summary>
-    public class LspPipe : IDisposable
+    public class PsesLspClient : IDisposable
     {
         /// <summary>
         /// Create a new LSP pipe around a given named pipe.
         /// </summary>
         /// <param name="pipeName">The name of the named pipe to use.</param>
         /// <returns>A new LspPipe instance around the given named pipe.</returns>
-        public static LspPipe Create(string pipeName)
+        public static PsesLspClient Create(string pipeName)
         {
             var pipeClient = new NamedPipeClientStream(
                 pipeName: pipeName,
@@ -39,7 +39,7 @@ namespace PsesPsClient
                 direction: PipeDirection.InOut,
                 options: PipeOptions.Asynchronous);
 
-            return new LspPipe(pipeClient);
+            return new PsesLspClient(pipeClient);
         }
 
         private readonly NamedPipeClientStream _namedPipeClient;
@@ -62,7 +62,7 @@ namespace PsesPsClient
         /// Create a new LSP pipe around a named pipe client stream.
         /// </summary>
         /// <param name="namedPipeClient">The named pipe client stream to use for the LSP pipe.</param>
-        public LspPipe(NamedPipeClientStream namedPipeClient)
+        public PsesLspClient(NamedPipeClientStream namedPipeClient)
         {
             _namedPipeClient = namedPipeClient;
 
@@ -73,6 +73,7 @@ namespace PsesPsClient
 
             _jsonSerializer = JsonSerializer.Create(_jsonSettings);
 
+            // Reuse the PSES JSON RPC serializer
             _jsonRpcSerializer = new JsonRpcMessageSerializer();
 
             _pipeEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
@@ -146,9 +147,9 @@ namespace PsesPsClient
         /// <param name="response">The next response from the server.</param>
         /// <param name="millisTimeout">How long to wait for a response.</param>
         /// <returns>True if there is a next response, false if it timed out.</returns>
-        public bool TryGetNextResponse(out LspResponse response, int millisTimeout)
+        public bool TryGetResponse(string id, out LspResponse response, int millisTimeout)
         {
-            return _listener.TryGetNextResponse(out response, millisTimeout);
+            return _listener.TryGetResponse(id, out response, millisTimeout);
         }
 
         /// <summary>
@@ -177,11 +178,13 @@ namespace PsesPsClient
 
         private readonly ConcurrentQueue<LspNotification> _notificationQueue;
 
-        private readonly BlockingCollection<LspResponse> _responseBlockingOutput;
-
-        private char[] _readerBuffer;
+        private readonly ConcurrentDictionary<string, LspResponse> _responses;
 
         private readonly CancellationTokenSource _cancellationSource;
+
+        private readonly BlockingCollection<bool> _responseReceivedChannel;
+
+        private char[] _readerBuffer;
 
         /// <summary>
         /// Create a listener around a stream.
@@ -194,8 +197,9 @@ namespace PsesPsClient
             _headerBuffer = new StringBuilder(128);
             _notificationQueue = new ConcurrentQueue<LspNotification>();
             _requestQueue = new ConcurrentQueue<LspRequest>();
-            _responseBlockingOutput = new BlockingCollection<LspResponse>();
+            _responses = new ConcurrentDictionary<string, LspResponse>();
             _cancellationSource = new CancellationTokenSource();
+            _responseReceivedChannel = new BlockingCollection<bool>();
         }
 
         /// <summary>
@@ -219,9 +223,10 @@ namespace PsesPsClient
         /// </summary>
         /// <param name="response">The first response in the response queue if any, otherwise null.</param>
         /// <returns>True if there was a response to get, false otherwise.</returns>
-        public bool TryGetNextResponse(out LspResponse response)
+        public bool TryGetResponse(string id, out LspResponse response)
         {
-            return _responseBlockingOutput.TryTake(out response);
+            _responseReceivedChannel.TryTake(out bool _, millisecondsTimeout: 0);
+            return _responses.TryRemove(id, out response);
         }
 
         /// <summary>
@@ -230,9 +235,20 @@ namespace PsesPsClient
         /// <param name="response">The first response in the queue, if any.</param>
         /// <param name="millisTimeout">The maximum number of milliseconds to wait for a response.</param>
         /// <returns>True if there was a response to get, false otherwise.</returns>
-        public bool TryGetNextResponse(out LspResponse response, int millisTimeout)
+        public bool TryGetResponse(string id, out LspResponse response, int millisTimeout)
         {
-            return _responseBlockingOutput.TryTake(out response, millisTimeout);
+            if (_responses.TryRemove(id, out response))
+            {
+                return true;
+            }
+
+            if (_responseReceivedChannel.TryTake(out bool _, millisTimeout))
+            {
+                return _responses.TryRemove(id, out response);
+            }
+
+            response = null;
+            return false;
         }
 
         /// <summary>
@@ -265,7 +281,8 @@ namespace PsesPsClient
             CancellationToken cancellationToken = _cancellationSource.Token;
             while (!cancellationToken.IsCancellationRequested)
             {
-                LspMessage msg = await ReadMessage().ConfigureAwait(false);
+                LspMessage msg;
+                msg = await ReadMessage().ConfigureAwait(false);
                 switch (msg)
                 {
                     case LspNotification notification:
@@ -273,7 +290,8 @@ namespace PsesPsClient
                         continue;
 
                     case LspResponse response:
-                        _responseBlockingOutput.Add(response);
+                        _responses[response.Id] = response;
+                        _responseReceivedChannel.Add(true);
                         continue;
 
                     case LspRequest request:

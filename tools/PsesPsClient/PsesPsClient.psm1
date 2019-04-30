@@ -23,9 +23,7 @@ class PsesStartupOptions
 class PsesServerInfo
 {
     [pscustomobject]$SessionDetails
-
     [System.Diagnostics.Process]$PsesProcess
-
     [PsesStartupOptions]$StartupOptions
 }
 
@@ -161,9 +159,9 @@ function Start-PsesServer
     }
 }
 
-function Connect-NamedPipe
+function Connect-PsesServer
 {
-    [OutputType([PsesPsClient.LspPipe])]
+    [OutputType([PsesPsClient.PsesLspClient])]
     param(
         [Parameter(Mandatory)]
         [string]
@@ -176,9 +174,9 @@ function Connect-NamedPipe
         $PipeName = $PipeName.Substring($psesIdx)
     }
 
-    $pipe = [PsesPsClient.LspPipe]::Create($PipeName)
-    $pipe.Connect()
-    return $pipe
+    $client = [PsesPsClient.PsesLspClient]::Create($PipeName)
+    $client.Connect()
+    return $client
 }
 
 function Send-LspInitializeRequest
@@ -186,8 +184,8 @@ function Send-LspInitializeRequest
     [OutputType([PsesPsClient.LspRequest])]
     param(
         [Parameter(Position = 0, Mandatory)]
-        [PsesPsClient.LspPipe]
-        $Pipe,
+        [PsesPsClient.PsesLspClient]
+        $Client,
 
         [Parameter()]
         [int]
@@ -225,7 +223,7 @@ function Send-LspInitializeRequest
         $parameters.RootPath = $RootPath
     }
 
-    return $Pipe.WriteRequest('initialize', $parameters)
+    return Send-LspRequest -Client $Client -Method 'initialize' -Parameters $parameters
 }
 
 function Send-LspShutdownRequest
@@ -233,11 +231,55 @@ function Send-LspShutdownRequest
     [OutputType([PsesPsClient.LspRequest])]
     param(
         [Parameter(Position = 0, Mandatory)]
-        [PsesPsClient.LspPipe]
-        $Pipe
+        [PsesPsClient.PsesLspClient]
+        $Client
     )
 
-    $Pipe.WriteRequest('shutdown', $null)
+    return Send-LspRequest -Client $Client -Method 'shutdown'
+}
+
+function Send-LspRequest
+{
+    [OutputType([PsesPsClient.LspRequest])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter(Position = 1, Mandatory)]
+        [string]
+        $Method,
+
+        [Parameter(Position = 2)]
+        $Parameters = $null
+    )
+
+    return $Client.WriteRequest($Method, $Parameters)
+}
+
+function Get-LspResponse
+{
+    [OutputType([PsesPsClient.LspResponse])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter(Position = 1, Mandatory)]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [int]
+        $WaitMillis = 5000
+    )
+
+    $lspResponse = $null
+
+    if ($Client.TryGetResponse($Id, [ref]$lspResponse, $WaitMillis))
+    {
+        return $lspResponse
+    }
 }
 
 function Unsplat

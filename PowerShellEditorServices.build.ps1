@@ -330,6 +330,7 @@ task Build {
 }
 
 task BuildPsesClientModule SetupDotNet,{
+    Write-Verbose 'Building PsesPsClient testing module'
     & $PSScriptRoot/tools/PsesPsClient/build.ps1 -Clean -DotnetExe $script:dotnetExe
 }
 
@@ -393,14 +394,9 @@ task TestPester Build,BuildPsesClientModule,EnsurePesterInstalled,{
     }
 }
 
-task EnsurePesterInstalled {
-    if (Get-Module Pester -ListAvailable | Where-Object { $_.Version -ge $script:MinimumPesterVersion})
-    {
-        return
-    }
-
+task EnsurePesterInstalled -If (-not (Get-Module Pester -ListAvailable | Where-Object Version -GE $script:MinimumPesterVersion)) {
     Write-Warning "Required Pester version not found, installing Pester to current user scope"
-    Install-Module -Scope CurrentUser Pester -Force
+    Install-Module -Scope CurrentUser Pester -Force -SkipPublisherCheck
 }
 
 task LayoutModule -After Build {
