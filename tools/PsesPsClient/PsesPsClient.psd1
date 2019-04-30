@@ -24,7 +24,7 @@ GUID = 'ce491ff9-3eab-443c-b3a2-cc412ddeef65'
 Author = 'Microsoft Corporation'
 
 # Company or vendor of this module
-CompanyName = 'Unknown'
+CompanyName = 'Microsoft Corporation'
 
 # Copyright statement for this module
 Copyright = '(c) Microsoft Corporation'
