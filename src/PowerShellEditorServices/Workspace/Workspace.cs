@@ -357,7 +357,7 @@ namespace Microsoft.PowerShell.EditorServices
             var fileMatchResult = matcher.Execute(fsFactory.RootDirectory);
             foreach (FilePatternMatch item in fileMatchResult.Files)
             {
-                yield return Path.Combine(WorkspacePath, item.Path.Replace('/', Path.DirectorySeparatorChar));
+                yield return Path.Combine(WorkspacePath, item.Path);
             }
         }
 

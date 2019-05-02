@@ -102,18 +102,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
                 // suggest it should be find the '.ps1xml' files because we search for the pattern '*.ps1'
                 // ref https://docs.microsoft.com/en-us/dotnet/api/system.io.directory.getfiles?view=netcore-2.1#System_IO_Directory_GetFiles_System_String_System_String_System_IO_EnumerationOptions_
                 Assert.Equal(4, fileList.Count);
-                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "donotfind.ps1"), fileList[0]);
-                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "nestedmodule.psd1"), fileList[1]);
-                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "nestedmodule.psm1"), fileList[2]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/donotfind.ps1", fileList[0]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/nestedmodule.psd1", fileList[1]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/nestedmodule.psm1", fileList[2]);
                 Assert.Equal(Path.Combine(workspace.WorkspacePath,"rootfile.ps1"), fileList[3]);
             }
             else
             {
                 Assert.Equal(5, fileList.Count);
-                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "donotfind.ps1"), fileList[0]);
-                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "nestedmodule.psd1"), fileList[1]);
-                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "nestedmodule.psm1"), fileList[2]);
-                Assert.Equal(Path.Combine(workspace.WorkspacePath,"other", "other.ps1xml"), fileList[3]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/donotfind.ps1", fileList[0]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/nestedmodule.psd1", fileList[1]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/nestedmodule.psm1", fileList[2]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"other") + "/other.ps1xml", fileList[3]);
                 Assert.Equal(Path.Combine(workspace.WorkspacePath,"rootfile.ps1"), fileList[4]);
             }
         }
@@ -149,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             );
 
             Assert.Equal(2, fileList.Count);
-            Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested", "nestedmodule.psd1"), fileList[0]);
+            Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/nestedmodule.psd1", fileList[0]);
             Assert.Equal(Path.Combine(workspace.WorkspacePath,"rootfile.ps1"), fileList[1]);
         }
 
