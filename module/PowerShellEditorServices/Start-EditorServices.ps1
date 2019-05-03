@@ -142,7 +142,8 @@ function WriteSessionFile($sessionInfo) {
 }
 
 # Are we running in PowerShell 2 or earlier?
-if ($PSVersionTable.PSVersion.Major -le 2) {
+$version = $PSVersionTable.PSVersion
+if (($version.Major -le 2) -or ($version.Major -eq 6 -and $version.Minor -eq 0)) {
     # No ConvertTo-Json on PSv2 and below, so write out the JSON manually
     "{`"status`": `"failed`", `"reason`": `"unsupported`", `"powerShellVersion`": `"$($PSVersionTable.PSVersion.ToString())`"}" |
         Microsoft.PowerShell.Management\Set-Content -Force -Path "$SessionDetailsPath" -ErrorAction Stop
