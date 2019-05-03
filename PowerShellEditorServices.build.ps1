@@ -394,7 +394,7 @@ task TestPester Build,BuildPsesClientModule,EnsurePesterInstalled,{
     }
 }
 
-task EnsurePesterInstalled -If (-not (Get-Module Pester -ListAvailable | Where-Object Version -GE $script:MinimumPesterVersion)) {
+task EnsurePesterInstalled -If (-not (Get-Module Pester -ListAvailable | Where-Object Version -ge $script:MinimumPesterVersion)) {
     Write-Warning "Required Pester version not found, installing Pester to current user scope"
     Install-Module -Scope CurrentUser Pester -Force -SkipPublisherCheck
 }
