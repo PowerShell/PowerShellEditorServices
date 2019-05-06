@@ -470,22 +470,35 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // InitializedEvent will be sent as soon as the RunspaceChanged
             // event gets fired with the attached runspace.
 
-            var runspaceId = 1;
-            if (!int.TryParse(attachParams.RunspaceId, out runspaceId) || runspaceId <= 0)
+            string debugRunspaceCmd;
+            if(attachParams.RunspaceName != null)
             {
-                Logger.Write(
-                    LogLevel.Error,
-                    $"Attach request failed, '{attachParams.RunspaceId}' is an invalid value for the processId.");
+                debugRunspaceCmd = $"\nDebug-Runspace -Name '{attachParams.RunspaceName}'";
+            }
+            else if(attachParams.RunspaceId != null)
+            {
+                if (!int.TryParse(attachParams.RunspaceId, out int runspaceId) || runspaceId <= 0)
+                {
+                    Logger.Write(
+                        LogLevel.Error,
+                        $"Attach request failed, '{attachParams.RunspaceId}' is an invalid value for the processId.");
 
-                await requestContext.SendErrorAsync(
-                    "A positive integer must be specified for the RunspaceId field.");
+                    await requestContext.SendErrorAsync(
+                        "A positive integer must be specified for the RunspaceId field.");
 
-                return;
+                    return;
+                }
+
+                debugRunspaceCmd = $"\nDebug-Runspace -Id {runspaceId}";
+            }
+            else
+            {
+                debugRunspaceCmd = "\nDebug-Runspace -Id 1";
             }
 
             _waitingForAttach = true;
             Task nonAwaitedTask = _editorSession.PowerShellContext
-                .ExecuteScriptStringAsync($"\nDebug-Runspace -Id {runspaceId}")
+                .ExecuteScriptStringAsync(debugRunspaceCmd)
                 .ContinueWith(OnExecutionCompletedAsync);
 
             await requestContext.SendResultAsync(null);
