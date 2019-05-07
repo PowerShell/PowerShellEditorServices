@@ -16,6 +16,9 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         private ILogger logger;
         private NamedPipeClientStream pipeClient;
 
+        // This int will be casted to a PipeOptions enum that only exists in .NET Core 2.1 and up which is why it's not available to us in .NET Standard.
+        private const int CurrentUserOnly = 536870912;
+
         private const string NAMED_PIPE_UNIX_PREFIX = "CoreFxPipe_";
 
         public NamedPipeClientChannel(
@@ -56,10 +59,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         {
             string pipeName = System.IO.Path.GetFileName(pipeFile);
 
+            var options = PipeOptions.Asynchronous;
             // on macOS and Linux, the named pipe name is prefixed by .NET Core
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 pipeName = pipeFile.Split(new [] {NAMED_PIPE_UNIX_PREFIX}, StringSplitOptions.None)[1];
+                options |= (PipeOptions)CurrentUserOnly;
             }
 
             var pipeClient =
@@ -67,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                     ".",
                     pipeName,
                     PipeDirection.InOut,
-                    PipeOptions.Asynchronous);
+                    options);
 
             await pipeClient.ConnectAsync();
             var clientChannel = new NamedPipeClientChannel(pipeClient, logger);
@@ -77,4 +82,3 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         }
     }
 }
-
