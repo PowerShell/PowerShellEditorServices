@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             end {
                 $module = Get-Module -ListAvailable PSReadLine |
                     Where-Object Version -eq '2.0.0' |
-                    Where-Object { $_.PrivateData.PSData.Prerelease -notin 'beta1','beta2' } |
+                    Where-Object { $_.PrivateData.PSData.Prerelease -notin 'beta1','beta2','beta3' } |
                     Sort-Object -Descending Version |
                     Select-Object -First 1
                 if (-not $module) {
