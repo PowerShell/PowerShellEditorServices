@@ -378,7 +378,6 @@ namespace PsesPsClient
                             continue;
                         }
 
-                        // This is the end, my only friend, the end
                         if (endHeaderState == 3)
                         {
                             return ParseContentLength(_headerBuffer.ToString());
