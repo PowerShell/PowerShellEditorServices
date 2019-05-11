@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Security;
@@ -331,12 +332,51 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         }
     }
 
-    public class LanguageServerSettingsWrapper
-        {
-            // NOTE: This property is capitalized as 'Powershell' because the
-            // mode name sent from the client is written as 'powershell' and
-            // JSON.net is using camelCasing.
-
-            public LanguageServerSettings Powershell { get; set; }
-        }
+    /// <summary>
+    /// Additional settings from the Language Client that affect Language Server operations but
+    /// do not exist under the 'powershell' section
+    /// </summary>
+    public class EditorFileSettings
+    {
+        /// <summary>
+        /// Exclude files globs consists of hashtable with the key as the glob and a boolean value to indicate if the
+        /// the glob is in effect.
+        /// </summary>
+        public Dictionary<string, bool> Exclude { get; set; }
     }
+
+    /// <summary>
+    /// Additional settings from the Language Client that affect Language Server operations but
+    /// do not exist under the 'powershell' section
+    /// </summary>
+    public class EditorSearchSettings
+    {
+        /// <summary>
+        /// Exclude files globs consists of hashtable with the key as the glob and a boolean value to indicate if the
+        /// the glob is in effect.
+        /// </summary>
+        public Dictionary<string, bool> Exclude { get; set; }
+        /// <summary>
+        /// Whether to follow symlinks when searching
+        /// </summary>
+        public bool FollowSymlinks { get; set; } = true;
+    }
+
+    public class LanguageServerSettingsWrapper
+    {
+        // NOTE: This property is capitalized as 'Powershell' because the
+        // mode name sent from the client is written as 'powershell' and
+        // JSON.net is using camelCasing.
+        public LanguageServerSettings Powershell { get; set; }
+
+        // NOTE: This property is capitalized as 'Files' because the
+        // mode name sent from the client is written as 'files' and
+        // JSON.net is using camelCasing.
+        public EditorFileSettings Files { get; set; }
+
+        // NOTE: This property is capitalized as 'Search' because the
+        // mode name sent from the client is written as 'search' and
+        // JSON.net is using camelCasing.
+        public EditorSearchSettings Search { get; set; }
+    }
+}

@@ -11,6 +11,8 @@ using System.IO;
 using System.Security;
 using System.Text;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -22,11 +24,29 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        private static readonly string[] s_psFilePatterns = new []
+        // List of all file extensions considered PowerShell files in the .Net Core Framework.
+        private static readonly string[] s_psFileExtensionsCoreFramework =
         {
-            "*.ps1",
-            "*.psm1",
-            "*.psd1"
+            ".ps1",
+            ".psm1",
+            ".psd1"
+        };
+
+        // .Net Core doesn't appear to use the same three letter pattern matching rule although the docs
+        // suggest it should be find the '.ps1xml' files because we search for the pattern '*.ps1'.
+        // ref https://docs.microsoft.com/en-us/dotnet/api/system.io.directory.getfiles?view=netcore-2.1#System_IO_Directory_GetFiles_System_String_System_String_System_IO_EnumerationOptions_
+        private static readonly string[] s_psFileExtensionsFullFramework =
+        {
+            ".ps1",
+            ".psm1",
+            ".psd1",
+            ".ps1xml"
+        };
+
+        // An array of globs which includes everything.
+        private static readonly string[] s_psIncludeAllGlob = new []
+        {
+            "**/*"
         };
 
         private ILogger logger;
@@ -42,6 +62,16 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public string WorkspacePath { get; set; }
 
+        /// <summary>
+        /// Gets or sets the default list of file globs to exclude during workspace searches.
+        /// </summary>
+        public List<string> ExcludeFilesGlob { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the workspace should follow symlinks in search operations.
+        /// </summary>
+        public bool FollowSymlinks { get; set; }
+
         #endregion
 
         #region Constructors
@@ -55,6 +85,8 @@ namespace Microsoft.PowerShell.EditorServices
         {
             this.powerShellVersion = powerShellVersion;
             this.logger = logger;
+            this.ExcludeFilesGlob = new List<string>();
+            this.FollowSymlinks = true;
         }
 
         #endregion
@@ -282,135 +314,56 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         /// <summary>
-        /// Enumerate all the PowerShell (ps1, psm1, psd1) files in the workspace in a recursive manner
+        /// Enumerate all the PowerShell (ps1, psm1, psd1) files in the workspace in a recursive manner, using default values.
         /// </summary>
-        /// <returns>An enumerator over the PowerShell files found in the workspace</returns>
+        /// <returns>An enumerator over the PowerShell files found in the workspace.</returns>
         public IEnumerable<string> EnumeratePSFiles()
+        {
+            return EnumeratePSFiles(
+                ExcludeFilesGlob.ToArray(),
+                s_psIncludeAllGlob,
+                maxDepth: 64,
+                ignoreReparsePoints: !FollowSymlinks
+            );
+        }
+
+        /// <summary>
+        /// Enumerate all the PowerShell (ps1, psm1, psd1) files in the workspace in a recursive manner.
+        /// </summary>
+        /// <returns>An enumerator over the PowerShell files found in the workspace.</returns>
+        public IEnumerable<string> EnumeratePSFiles(
+            string[] excludeGlobs,
+            string[] includeGlobs,
+            int maxDepth,
+            bool ignoreReparsePoints
+        )
         {
             if (WorkspacePath == null || !Directory.Exists(WorkspacePath))
             {
-                return Enumerable.Empty<string>();
+                yield break;
             }
 
-            var foundFiles = new List<string>();
-            this.RecursivelyEnumerateFiles(WorkspacePath, ref foundFiles);
-            return foundFiles;
+            var matcher = new Microsoft.Extensions.FileSystemGlobbing.Matcher();
+            foreach (string pattern in includeGlobs) { matcher.AddInclude(pattern); }
+            foreach (string pattern in excludeGlobs) { matcher.AddExclude(pattern); }
+
+            var fsFactory = new WorkspaceFileSystemWrapperFactory(
+                WorkspacePath,
+                maxDepth,
+                Utils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
+                ignoreReparsePoints,
+                logger
+            );
+            var fileMatchResult = matcher.Execute(fsFactory.RootDirectory);
+            foreach (FilePatternMatch item in fileMatchResult.Files)
+            {
+                yield return Path.Combine(WorkspacePath, item.Path);
+            }
         }
 
         #endregion
 
         #region Private Methods
-
-        /// <summary>
-        /// Find PowerShell files recursively down from a given directory path.
-        /// Currently collects files in depth-first order.
-        /// Directory.GetFiles(folderPath, pattern, SearchOption.AllDirectories) would provide this,
-        /// but a cycle in the filesystem will cause that to enter an infinite loop.
-        /// </summary>
-        /// <param name="folderPath">The path of the current directory to find files in</param>
-        /// <param name="foundFiles">The accumulator for files found so far.</param>
-        /// <param name="currDepth">The current depth of the recursion from the original base directory.</param>
-        private void RecursivelyEnumerateFiles(string folderPath, ref List<string> foundFiles, int currDepth = 0)
-        {
-            const int recursionDepthLimit = 64;
-
-            // Look for any PowerShell files in the current directory
-            foreach (string pattern in s_psFilePatterns)
-            {
-                string[] psFiles;
-                try
-                {
-                    psFiles = Directory.GetFiles(folderPath, pattern, SearchOption.TopDirectoryOnly);
-                }
-                catch (DirectoryNotFoundException e)
-                {
-                    this.logger.WriteHandledException(
-                        $"Could not enumerate files in the path '{folderPath}' due to it being an invalid path",
-                        e);
-
-                    continue;
-                }
-                catch (PathTooLongException e)
-                {
-                    this.logger.WriteHandledException(
-                        $"Could not enumerate files in the path '{folderPath}' due to the path being too long",
-                        e);
-
-                    continue;
-                }
-                catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
-                {
-                    this.logger.WriteHandledException(
-                        $"Could not enumerate files in the path '{folderPath}' due to the path not being accessible",
-                        e);
-
-                    continue;
-                }
-                catch (Exception e)
-                {
-                    this.logger.WriteHandledException(
-                        $"Could not enumerate files in the path '{folderPath}' due to an exception",
-                        e);
-
-                    continue;
-                }
-
-                foundFiles.AddRange(psFiles);
-            }
-
-            // Prevent unbounded recursion here
-            if (currDepth >= recursionDepthLimit)
-            {
-                this.logger.Write(LogLevel.Warning, $"Recursion depth limit hit for path {folderPath}");
-                return;
-            }
-
-            // Add the recursive directories to search next
-            string[] subDirs;
-            try
-            {
-                subDirs = Directory.GetDirectories(folderPath);
-            }
-            catch (DirectoryNotFoundException e)
-            {
-                this.logger.WriteHandledException(
-                    $"Could not enumerate directories in the path '{folderPath}' due to it being an invalid path",
-                    e);
-
-                return;
-            }
-            catch (PathTooLongException e)
-            {
-                this.logger.WriteHandledException(
-                    $"Could not enumerate directories in the path '{folderPath}' due to the path being too long",
-                    e);
-
-                return;
-            }
-            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
-            {
-                this.logger.WriteHandledException(
-                    $"Could not enumerate directories in the path '{folderPath}' due to the path not being accessible",
-                    e);
-
-                return;
-            }
-            catch (Exception e)
-            {
-                this.logger.WriteHandledException(
-                    $"Could not enumerate directories in the path '{folderPath}' due to an exception",
-                    e);
-
-                return;
-            }
-
-
-            foreach (string subDir in subDirs)
-            {
-                RecursivelyEnumerateFiles(subDir, ref foundFiles, currDepth: currDepth + 1);
-            }
-        }
-
         /// <summary>
         /// Recusrively searches through referencedFiles in scriptFiles
         /// and builds a Dictonary of the file references

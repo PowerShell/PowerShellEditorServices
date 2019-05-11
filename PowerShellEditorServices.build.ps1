@@ -56,6 +56,7 @@ $script:RequiredBuildAssets = @{
             'publish/Serilog.Sinks.Async.dll',
             'publish/Serilog.Sinks.Console.dll',
             'publish/Serilog.Sinks.File.dll',
+            'publish/Microsoft.Extensions.FileSystemGlobbing.dll',
             'Microsoft.PowerShell.EditorServices.dll',
             'Microsoft.PowerShell.EditorServices.pdb'
         )

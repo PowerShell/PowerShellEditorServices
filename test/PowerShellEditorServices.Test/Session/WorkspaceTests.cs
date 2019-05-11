@@ -24,6 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             : string.Empty;
 
         [Fact]
+        [Trait("Category", "Workspace")]
         public void CanResolveWorkspaceRelativePath()
         {
             string workspacePath = TestUtilities.NormalizePath("c:/Test/Workspace/");
@@ -46,7 +47,114 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             Assert.Equal(testPathAnotherDrive, workspace.GetRelativePath(testPathAnotherDrive));
         }
 
+        public static Workspace FixturesWorkspace()
+        {
+            return new Workspace(PowerShellVersion, Logging.NullLogger) {
+                WorkspacePath = TestUtilities.NormalizePath("Fixtures/Workspace")
+            };
+        }
+
+        // These are the default values for the EnumeratePSFiles() method
+        // in Microsoft.PowerShell.EditorServices.Workspace class
+        private static string[] s_defaultExcludeGlobs        = new string[0];
+        private static string[] s_defaultIncludeGlobs        = new [] { "**/*" };
+        private static int      s_defaultMaxDepth            = 64;
+        private static bool     s_defaultIgnoreReparsePoints = false;
+
+        public static List<string> ExecuteEnumeratePSFiles(
+            Workspace workspace,
+            string[] excludeGlobs,
+            string[] includeGlobs,
+            int maxDepth,
+            bool ignoreReparsePoints
+        )
+        {
+            var result = workspace.EnumeratePSFiles(
+                excludeGlobs: excludeGlobs,
+                includeGlobs: includeGlobs,
+                maxDepth: maxDepth,
+                ignoreReparsePoints: ignoreReparsePoints
+            );
+            var fileList = new List<string>();
+            foreach (string file in result) { fileList.Add(file); }
+            // Assume order is not important from EnumeratePSFiles and sort the array so we can use deterministic asserts
+            fileList.Sort();
+
+            return fileList;
+        }
+
         [Fact]
+        [Trait("Category", "Workspace")]
+        public void CanRecurseDirectoryTree()
+        {
+            var workspace = FixturesWorkspace();
+            var fileList = ExecuteEnumeratePSFiles(
+                workspace: workspace,
+                excludeGlobs: s_defaultExcludeGlobs,
+                includeGlobs: s_defaultIncludeGlobs,
+                maxDepth: s_defaultMaxDepth,
+                ignoreReparsePoints: s_defaultIgnoreReparsePoints
+            );
+
+            if (RuntimeInformation.FrameworkDescription.StartsWith(".NET Core"))
+            {
+                // .Net Core doesn't appear to use the same three letter pattern matching rule although the docs
+                // suggest it should be find the '.ps1xml' files because we search for the pattern '*.ps1'
+                // ref https://docs.microsoft.com/en-us/dotnet/api/system.io.directory.getfiles?view=netcore-2.1#System_IO_Directory_GetFiles_System_String_System_String_System_IO_EnumerationOptions_
+                Assert.Equal(4, fileList.Count);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/donotfind.ps1", fileList[0]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/nestedmodule.psd1", fileList[1]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/nestedmodule.psm1", fileList[2]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"rootfile.ps1"), fileList[3]);
+            }
+            else
+            {
+                Assert.Equal(5, fileList.Count);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/donotfind.ps1", fileList[0]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/nestedmodule.psd1", fileList[1]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/nestedmodule.psm1", fileList[2]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"other") + "/other.ps1xml", fileList[3]);
+                Assert.Equal(Path.Combine(workspace.WorkspacePath,"rootfile.ps1"), fileList[4]);
+            }
+        }
+
+        [Fact]
+        [Trait("Category", "Workspace")]
+        public void CanRecurseDirectoryTreeWithLimit()
+        {
+            var workspace = FixturesWorkspace();
+            var fileList = ExecuteEnumeratePSFiles(
+                workspace: workspace,
+                excludeGlobs: s_defaultExcludeGlobs,
+                includeGlobs: s_defaultIncludeGlobs,
+                maxDepth: 1,
+                ignoreReparsePoints: s_defaultIgnoreReparsePoints
+            );
+
+            Assert.Equal(1, fileList.Count);
+            Assert.Equal(Path.Combine(workspace.WorkspacePath,"rootfile.ps1"), fileList[0]);
+        }
+
+        [Fact]
+        [Trait("Category", "Workspace")]
+        public void CanRecurseDirectoryTreeWithGlobs()
+        {
+            var workspace = FixturesWorkspace();
+            var fileList = ExecuteEnumeratePSFiles(
+                workspace: workspace,
+                excludeGlobs: new [] {"**/donotfind*"},         // Exclude any files starting with donotfind
+                includeGlobs: new [] {"**/*.ps1", "**/*.psd1"}, // Only include PS1 and PSD1 files
+                maxDepth: s_defaultMaxDepth,
+                ignoreReparsePoints: s_defaultIgnoreReparsePoints
+            );
+
+            Assert.Equal(2, fileList.Count);
+            Assert.Equal(Path.Combine(workspace.WorkspacePath,"nested") + "/nestedmodule.psd1", fileList[0]);
+            Assert.Equal(Path.Combine(workspace.WorkspacePath,"rootfile.ps1"), fileList[1]);
+        }
+
+        [Fact]
+        [Trait("Category", "Workspace")]
         public void CanDetermineIsPathInMemory()
         {
             string tempDir = Path.GetTempPath();
@@ -84,6 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         }
 
         [Theory()]
+        [Trait("Category", "Workspace")]
         [MemberData(nameof(PathsToResolve), parameters: 2)]
         public void CorrectlyResolvesPaths(string givenPath, string expectedPath)
         {
