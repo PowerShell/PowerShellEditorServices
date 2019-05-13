@@ -10,7 +10,7 @@
         "AllowPrerelease":false
     },
     "PSReadLine":{
-        "MinimumVersion":"2.0.0-beta3",
+        "MinimumVersion":"2.0.0-beta4",
         "MaximumVersion":"2.1",
         "AllowPrerelease":true
     }
