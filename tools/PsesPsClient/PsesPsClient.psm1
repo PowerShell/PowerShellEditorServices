@@ -84,7 +84,11 @@ function Start-PsesServer
 
         [Parameter()]
         [switch]
-        $EnableConsoleRepl
+        $EnableConsoleRepl,
+
+        [Parameter()]
+        [switch]
+        $NoNewWindow
     )
 
     $EditorServicesPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($EditorServicesPath)
@@ -130,7 +134,7 @@ function Start-PsesServer
         return
     }
 
-    $serverProcess = Start-Process -PassThru -FilePath $pwshPath -ArgumentList @(
+    $serverProcess = Start-Process -PassThru -FilePath $pwshPath -NoNewWindow:$NoNewWindow -ArgumentList @(
         '-NoLogo',
         '-NoProfile',
         '-NoExit',

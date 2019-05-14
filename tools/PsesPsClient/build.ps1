@@ -6,10 +6,7 @@
 param(
     [Parameter()]
     [string]
-    $DotnetExe = 'dotnet',
-
-    [switch]
-    $Clean
+    $DotnetExe = 'dotnet'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -24,16 +21,13 @@ $script:ModuleComponents = @{
     "PsesPsClient.psd1" = "PsesPsClient.psd1"
 }
 
-if ($Clean)
+$binDir = "$PSScriptRoot/bin"
+$objDir = "$PSScriptRoot/obj"
+foreach ($dir in $binDir,$objDir,$script:OutDir)
 {
-    $binDir = "$PSScriptRoot/bin"
-    $objDir = "$PSScriptRoot/obj"
-    foreach ($dir in $binDir,$objDir,$script:OutDir)
+    if (Test-Path $dir)
     {
-        if (Test-Path $dir)
-        {
-            Remove-Item -Force -Recurse $dir
-        }
+        Remove-Item -Force -Recurse $dir
     }
 }
 

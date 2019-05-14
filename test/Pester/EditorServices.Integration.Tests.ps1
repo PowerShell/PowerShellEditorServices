@@ -3,7 +3,7 @@ Describe "Loading and running PowerShellEditorServices" {
         Import-Module -Force "$PSScriptRoot/../../module/PowerShellEditorServices"
         Import-Module -Force "$PSScriptRoot/../../tools/PsesPsClient/out/PsesPsClient"
 
-        $psesServer = Start-PsesServer
+        $psesServer = Start-PsesServer -NoNewWindow
         $client = Connect-PsesServer -PipeName $psesServer.SessionDetails.languageServicePipeName
     }
 

@@ -331,7 +331,7 @@ task Build {
 
 task BuildPsesClientModule SetupDotNet,{
     Write-Verbose 'Building PsesPsClient testing module'
-    & $PSScriptRoot/tools/PsesPsClient/build.ps1 -Clean -DotnetExe $script:dotnetExe
+    & $PSScriptRoot/tools/PsesPsClient/build.ps1 -DotnetExe $script:dotnetExe
 }
 
 function DotNetTestFilter {
