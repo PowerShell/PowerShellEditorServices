@@ -3,11 +3,22 @@ Describe "Loading and running PowerShellEditorServices" {
         Import-Module -Force "$PSScriptRoot/../../module/PowerShellEditorServices"
         Import-Module -Force "$PSScriptRoot/../../tools/PsesPsClient/out/PsesPsClient"
 
-        $psesServer = Start-PsesServer -NoNewWindow
+        $stderrFile = [System.IO.Path]::GetTempFileName()
+
+        $psesServer = Start-PsesServer -StderrFile $stderrFile
         $client = Connect-PsesServer -PipeName $psesServer.SessionDetails.languageServicePipeName
     }
 
     AfterAll {
+        if (Test-Path $stderrFile)
+        {
+            $errorMessages = Get-Content -Raw $stderrFile
+            if ($errorMessages)
+            {
+                Write-Error $errorMessages
+            }
+        }
+
         try
         {
             $client.Dispose()
