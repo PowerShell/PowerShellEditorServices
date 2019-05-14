@@ -26,7 +26,7 @@ function ReportLogErrors
 
     if ($errorLogs)
     {
-        $errorLogs | ForEach-Object { Write-Error $_.Message.Data }
+        $errorLogs | ForEach-Object { Write-Error "ERROR from PSES log: $($_.Message.Data)" }
     }
 }
 
