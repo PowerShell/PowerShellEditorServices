@@ -10,7 +10,7 @@ Describe "Loading and running PowerShellEditorServices" {
     }
 
     AfterAll {
-        $errs = $psesServer.StandardError.ReadToEnd()
+        $errs = if ($psesServer.StandardError) { $psesServer.StandardError.ReadToEnd() }
 
         if ($errs)
         {
