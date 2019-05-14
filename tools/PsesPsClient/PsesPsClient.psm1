@@ -87,8 +87,8 @@ function Start-PsesServer
         $EnableConsoleRepl,
 
         [Parameter()]
-        [string]
-        $StderrFile
+        [switch]
+        $RetainOutput
     )
 
     $EditorServicesPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($EditorServicesPath)
@@ -134,18 +134,31 @@ function Start-PsesServer
         return
     }
 
-    $startProcParams = @{
-        PassThru = $true
-        FilePath = $pwshPath
-        ArgumentList = '-NoLogo','-NoProfile','-NoExit','-Command',$startPsesCommand
-    }
+    $startArgs = @(
+        '-NoLogo',
+        '-NoProfile',
+        '-NoExit',
+        '-Command',
+        $startPsesCommand
+    )
 
-    if ($StderrFile)
+    if ($RetainOutput)
     {
-        $startProcParams.RedirectStandardError = $StderrFile
+        $serverProcess = [System.Diagnostics.Process]@{
+            StartInfo = [System.Diagnostics.ProcessStartInfo]@{
+                FileName = $pwshPath
+                RedirectStandardOutput = $true
+                RedirectStandardError = $true
+                UseShellExecute = $false
+                Arguments = ($startArgs -join ' ').Replace("'", "'''")
+            }
+        }
+        $serverProcess.Start()
     }
-
-    $serverProcess = Start-Process @startProcParams
+    else
+    {
+        $serverProcess = Start-Process -PassThru -FilePath $pwshPath -ArgumentList $startArgs
+    }
 
     $sessionPath = $editorServicesOptions.SessionDetailsPath
 
