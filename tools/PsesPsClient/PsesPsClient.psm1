@@ -25,6 +25,7 @@ class PsesServerInfo
     [pscustomobject]$SessionDetails
     [System.Diagnostics.Process]$PsesProcess
     [PsesStartupOptions]$StartupOptions
+    [string]$LogPath
 }
 
 function Start-PsesServer
@@ -173,6 +174,7 @@ function Start-PsesServer
         PsesProcess = $serverProcess
         SessionDetails = Get-Content -Raw $editorServicesOptions.SessionDetailsPath | ConvertFrom-Json
         StartupOptions = $editorServicesOptions
+        LogPath = $LogPath
     }
 }
 
