@@ -2,22 +2,17 @@ Describe "Loading and running PowerShellEditorServices" {
     BeforeAll {
         Import-Module -Force "$PSScriptRoot/../../module/PowerShellEditorServices"
         Import-Module -Force "$PSScriptRoot/../../tools/PsesPsClient/out/PsesPsClient"
+        Import-Module -Force "$PSScriptRoot/../../tools/PsesLogAnalyzer"
 
         $stderrFile = [System.IO.Path]::GetTempFileName()
 
-        $psesServer = Start-PsesServer -ErrorFile $stderrFile
+        $logPath = Join-Path ([System.IO.Path]::GetTempPath()) 'PSES_IntegrationTest.log'
+
+        $psesServer = Start-PsesServer -ErrorFile $stderrFile -LogPath $logPath
         $client = Connect-PsesServer -PipeName $psesServer.SessionDetails.languageServicePipeName
     }
 
     AfterAll {
-        $errs = if (Test-Path $stderrFile) { Get-Content -Raw $stderrFile }
-
-        if ($errs)
-        {
-            Write-Host 'ERRORS with EditorServices server:'
-            Write-Error $errs
-        }
-
         try
         {
             $client.Dispose()
@@ -27,6 +22,15 @@ Describe "Loading and running PowerShellEditorServices" {
         catch
         {
             # Do nothing
+        }
+
+        $errorLogs = Parse-PsesLog $logPath |
+            Where-Object LogLevel -eq Error
+
+        if ($errorLogs)
+        {
+            $errorLogs | ForEach-Object { Write-Error $_.Message.Data }
+            throw "Error found in logs post execution"
         }
     }
 
