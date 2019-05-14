@@ -5,12 +5,12 @@ Describe "Loading and running PowerShellEditorServices" {
 
         $stderrFile = [System.IO.Path]::GetTempFileName()
 
-        $psesServer = Start-PsesServer -RetainOutput
+        $psesServer = Start-PsesServer -ErrorFile $stderrFile
         $client = Connect-PsesServer -PipeName $psesServer.SessionDetails.languageServicePipeName
     }
 
     AfterAll {
-        $errs = if ($psesServer.StandardError) { $psesServer.StandardError.ReadToEnd() }
+        $errs = if (Test-Path $stderrFile) { Get-Content -Raw $stderrFile }
 
         if ($errs)
         {
