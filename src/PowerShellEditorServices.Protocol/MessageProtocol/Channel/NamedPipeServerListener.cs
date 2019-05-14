@@ -13,7 +13,9 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 {
@@ -60,8 +62,27 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
         {
             try
             {
+                if (Utils.IsNetCore)
+                {
+                    this.inOutPipeServer = new NamedPipeServerStream(
+                        pipeName: inOutPipeName,
+                        direction: PipeDirection.InOut,
+                        maxNumberOfServerInstances: 1,
+                        transmissionMode: PipeTransmissionMode.Byte,
+                        options: PipeOptions.Asynchronous | (PipeOptions)CurrentUserOnly);
+                    if (this.outPipeName != null)
+                    {
+                        this.outPipeServer = new NamedPipeServerStream(
+                            pipeName: outPipeName,
+                            direction: PipeDirection.Out,
+                            maxNumberOfServerInstances: 1,
+                            transmissionMode: PipeTransmissionMode.Byte,
+                            options: (PipeOptions)CurrentUserOnly);
+                    }
+
+                }
                 // If we're running in Windows PowerShell, we use the constructor via Reflection
-                if (RuntimeInformation.FrameworkDescription.StartsWith(".NET Framework"))
+                else
                 {
                     PipeSecurity pipeSecurity = new PipeSecurity();
 
@@ -83,7 +104,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                             PipeAccessRights.ReadWrite, AccessControlType.Allow));
                     }
 
-                    _netFrameworkPipeServerConstructor.Invoke(new object[]
+                    this.inOutPipeServer = (NamedPipeServerStream)_netFrameworkPipeServerConstructor.Invoke(new object[]
                     {
                         inOutPipeName,
                         PipeDirection.InOut,
@@ -97,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
                     if (this.outPipeName != null)
                     {
-                        _netFrameworkPipeServerConstructor.Invoke(new object[]
+                        this.outPipeServer = (NamedPipeServerStream)_netFrameworkPipeServerConstructor.Invoke(new object[]
                         {
                             outPipeName,
                             PipeDirection.InOut,
@@ -108,24 +129,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
                             1024, // outBufferSize
                             pipeSecurity
                         });
-                    }
-                }
-                else
-                {
-                    this.inOutPipeServer = new NamedPipeServerStream(
-                        pipeName: inOutPipeName,
-                        direction: PipeDirection.InOut,
-                        maxNumberOfServerInstances: 1,
-                        transmissionMode: PipeTransmissionMode.Byte,
-                        options: PipeOptions.Asynchronous | (PipeOptions)CurrentUserOnly);
-                    if (this.outPipeName != null)
-                    {
-                        this.outPipeServer = new NamedPipeServerStream(
-                            pipeName: outPipeName,
-                            direction: PipeDirection.Out,
-                            maxNumberOfServerInstances: 1,
-                            transmissionMode: PipeTransmissionMode.Byte,
-                            options: (PipeOptions)CurrentUserOnly);
                     }
                 }
                 ListenForConnection();
@@ -188,11 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol.Channel
 
         private static async Task WaitForConnectionAsync(NamedPipeServerStream pipeServerStream)
         {
-#if CoreCLR
             await pipeServerStream.WaitForConnectionAsync();
-#else
-            await Task.Factory.FromAsync(pipeServerStream.BeginWaitForConnection, pipeServerStream.EndWaitForConnection, null);
-#endif
             await pipeServerStream.FlushAsync();
         }
     }
