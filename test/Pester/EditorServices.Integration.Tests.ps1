@@ -53,8 +53,9 @@ Describe "Loading and running PowerShellEditorServices" {
             # Do nothing
         }
 
-        # TODO: We shouldn't need to skip this error
-        ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx) -IgnoreException 'EndOfStreamException'
+        # TODO: We shouldn't need to skip this error.
+        #       It's not clear why we get it but it only occurs on Windows
+        ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx) #-IgnoreException 'EndOfStreamException'
     }
 
     It "Starts and responds to an initialization request" {
