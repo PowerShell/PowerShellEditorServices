@@ -41,23 +41,6 @@ Describe "Loading and running PowerShellEditorServices" {
         $client = Connect-PsesServer -PipeName $psesServer.SessionDetails.languageServicePipeName
     }
 
-    AfterAll {
-        try
-        {
-            $psesServer.PsesProcess.Kill()
-            $psesServer.PsesProcess.Dispose()
-            $client.Dispose()
-        }
-        catch
-        {
-            # Do nothing
-        }
-
-        # TODO: We shouldn't need to skip this error.
-        #       It's not clear why we get it but it only occurs on Windows
-        ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx) #-IgnoreException 'EndOfStreamException'
-    }
-
     It "Starts and responds to an initialization request" {
         $request = Send-LspInitializeRequest -Client $client
         $response = Get-LspResponse -Client $client -Id $request.Id
@@ -73,6 +56,28 @@ Describe "Loading and running PowerShellEditorServices" {
         $response.Result | Should -BeNull
         # TODO: The server seems to stay up waiting for the debug connection
         # $psesServer.PsesProcess.HasExited | Should -BeTrue
+
+        # We close the process here rather than in an AfterAll
+        # since errors can occur and we want to test for them.
+        # Naturally this depends on Pester executing tests in order.
+
+        # We also have to dispose of everything properly,
+        # which means we have to use these cascading try/finally statements
+        try
+        {
+            $psesServer.PsesProcess.Kill()
+        }
+        finally
+        {
+            try
+            {
+                $psesServer.PsesProcess.Dispose()
+            }
+            finally
+            {
+                $client.Dispose()
+            }
+        }
 
         ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
     }
