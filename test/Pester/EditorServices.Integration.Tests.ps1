@@ -41,6 +41,7 @@ Describe "Loading and running PowerShellEditorServices" {
         $client = Connect-PsesServer -PipeName $psesServer.SessionDetails.languageServicePipeName
     }
 
+    # This test MUST be first
     It "Starts and responds to an initialization request" {
         $request = Send-LspInitializeRequest -Client $client
         $response = Get-LspResponse -Client $client -Id $request.Id
@@ -49,6 +50,7 @@ Describe "Loading and running PowerShellEditorServices" {
         ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
     }
 
+    # This test MUST be last
     It "Shuts down the process properly" {
         $request = Send-LspShutdownRequest -Client $client
         $response = Get-LspResponse -Client $client -Id $request.Id
