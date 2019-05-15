@@ -44,9 +44,9 @@ Describe "Loading and running PowerShellEditorServices" {
     AfterAll {
         try
         {
-            $client.Dispose()
             $psesServer.PsesProcess.Kill()
             $psesServer.PsesProcess.Dispose()
+            $client.Dispose()
         }
         catch
         {
