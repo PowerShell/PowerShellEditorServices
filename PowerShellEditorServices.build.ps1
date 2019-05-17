@@ -18,11 +18,11 @@ param(
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
-$script:IsCIBuild = $env:TF_BUILD -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:TargetPlatform = "netstandard2.0"
 $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
+$script:MinimumPesterVersion = '4.7'
 $script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
 $script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
 $script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSCode/bin/"
@@ -330,12 +330,17 @@ task Build {
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
 }
 
+task BuildPsesClientModule SetupDotNet,{
+    Write-Verbose 'Building PsesPsClient testing module'
+    & $PSScriptRoot/tools/PsesPsClient/build.ps1 -DotnetExe $script:dotnetExe
+}
+
 function DotNetTestFilter {
     # Reference https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
     if ($TestFilter) { @("--filter",$TestFilter) } else { "" }
 }
 
-task Test TestServer,TestProtocol
+task Test TestServer,TestProtocol,TestPester
 
 task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
@@ -371,6 +376,28 @@ task TestHost {
 
     exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
     exec { & $script:dotnetExe test -f $script:TestRuntime.Core (DotNetTestFilter) }
+}
+
+task TestPester Build,BuildPsesClientModule,EnsurePesterInstalled,{
+    $testParams = @{}
+    if ($env:TF_BUILD)
+    {
+        $testParams += @{
+            OutputFormat = 'NUnitXml'
+            OutputFile = 'TestResults.xml'
+        }
+    }
+    $result = Invoke-Pester "$PSScriptRoot/test/Pester/" @testParams -PassThru
+
+    if ($result.FailedCount -gt 0)
+    {
+        throw "$($result.FailedCount) tests failed."
+    }
+}
+
+task EnsurePesterInstalled -If (-not (Get-Module Pester -ListAvailable | Where-Object Version -ge $script:MinimumPesterVersion)) {
+    Write-Warning "Required Pester version not found, installing Pester to current user scope"
+    Install-Module -Scope CurrentUser Pester -Force -SkipPublisherCheck
 }
 
 task LayoutModule -After Build {
