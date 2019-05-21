@@ -471,11 +471,11 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             // event gets fired with the attached runspace.
 
             string debugRunspaceCmd;
-            if(attachParams.RunspaceName != null)
+            if (attachParams.RunspaceName != null)
             {
                 debugRunspaceCmd = $"\nDebug-Runspace -Name '{attachParams.RunspaceName}'";
             }
-            else if(attachParams.RunspaceId != null)
+            else if (attachParams.RunspaceId != null)
             {
                 if (!int.TryParse(attachParams.RunspaceId, out int runspaceId) || runspaceId <= 0)
                 {
