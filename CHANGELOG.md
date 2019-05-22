@@ -15,7 +15,7 @@
   Add filtering for CodeLens and References (Thanks @glennsarti!)
 - 🐛 [vscode-powershell #1933](https://github.com/PowerShell/PowerShellEditorServices/pull/949) -
   Stop crash when workspace doesn't exist 
-- [PowerShellEditorServices #878](https://github.com/PowerShell/PowerShellEditorServices/pull/878) -
+- 👷 [PowerShellEditorServices #878](https://github.com/PowerShell/PowerShellEditorServices/pull/878) -
   Remove native named pipes implementation 
 - 🐛 [PowerShellEditorServices #947](https://github.com/PowerShell/PowerShellEditorServices/pull/947) -
   Fix silent failure in VSCode WebViews by using Id for dictionary since multiple pages could have the same title 
