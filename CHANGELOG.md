@@ -1,5 +1,61 @@
 # PowerShell Editor Services Release History
 
+## v1.12.2
+### Thursday, May 23, 2019
+
+- [PowerShellEditorServices #957](https://github.com/PowerShell/PowerShellEditorServices/pull/957) -
+  Allow passing RunspaceName (#951).
+- [PowerShellEditorServices #956](https://github.com/PowerShell/PowerShellEditorServices/pull/956) -
+  Add check for workspace path.
+- [PowerShellEditorServices #947](https://github.com/PowerShell/PowerShellEditorServices/pull/947) -
+  Fix silent failure by using Id for dictionary since multiple pages could have the same title.
+- [PowerShellEditorServices #923](https://github.com/PowerShell/PowerShellEditorServices/pull/923) -
+  Legacy moved to Azure DevOps.
+- [PowerShellEditorServices #917](https://github.com/PowerShell/PowerShellEditorServices/pull/917) -
+  Fix issue with reference code lens not working with UNC paths (#908). (Thanks @rkeithhill!)
+- [PowerShellEditorServices #910](https://github.com/PowerShell/PowerShellEditorServices/pull/910) -
+  Fix UseCorrectCasing to be actually configurable via"powershell.codeFormatting.useCorrectCasing". (Thanks @bergmeister!)
+- [PowerShellEditorServices #906](https://github.com/PowerShell/PowerShellEditorServices/pull/906) -
+  Fix New-EditorFile with no folder or no files open.
+- [PowerShellEditorServices #916](https://github.com/PowerShell/PowerShellEditorServices/pull/916) -
+  Improve path auto-completion (#902). (Thanks @rkeithhill!)
+- [PowerShellEditorServices #912](https://github.com/PowerShell/PowerShellEditorServices/pull/912) -
+  Add API for runtime CoreCLR check.
+- [PowerShellEditorServices #895](https://github.com/PowerShell/PowerShellEditorServices/pull/895) -
+  Add warning to parameter validation set. (Thanks @Benny1007!)
+- [PowerShellEditorServices #896](https://github.com/PowerShell/PowerShellEditorServices/pull/896) -
+  Clean up and pop dead runspace when using 'attach'.
+- [PowerShellEditorServices #891](https://github.com/PowerShell/PowerShellEditorServices/pull/891) -
+  Cherry pick #888 Add new ParseError level to ScriptFileMarkerLevel and only have it send parse errors.
+- [PowerShellEditorServices #884](https://github.com/PowerShell/PowerShellEditorServices/pull/884) -
+  Backport #881 in a different way.
+- [PowerShellEditorServices #886](https://github.com/PowerShell/PowerShellEditorServices/pull/886) -
+  Rev to version 1.12.
+- [PowerShellEditorServices #835](https://github.com/PowerShell/PowerShellEditorServices/pull/835) -
+  Mao new powershell.codeformatting settings WhitespaceInsideBrace and WhitespaceAroundPipe to PSSA settings hash table.
+- [PowerShellEditorServices #845](https://github.com/PowerShell/PowerShellEditorServices/pull/845) -
+  Add UseCorrectCasing. (Thanks @bergmeister!)
+- [PowerShellEditorServices #836](https://github.com/PowerShell/PowerShellEditorServices/pull/836) -
+  Add PipelineIndentationStyle mapping. (Thanks @bergmeister!)
+- [PowerShellEditorServices #880](https://github.com/PowerShell/PowerShellEditorServices/pull/880) -
+  Cherry pick PR 1750 to legacy/1.x branch, fix more issues. (Thanks @rkeithhill!)
+- [PowerShellEditorServices #880](https://github.com/PowerShell/PowerShellEditorServices) -
+  Remove Async suffixes.
+- [PowerShellEditorServices #875](https://github.com/PowerShell/PowerShellEditorServices/pull/875) -
+  Add attach to local runspace.. (Thanks @adamdriscoll!)
+- 🐛 [vscode-powershell #1750](https://github.com/PowerShell/PowerShellEditorServices/pull/876) -
+  Temporarily disable deemphasized stack frames to fix VSCode issue 1750. (Thanks @rkeithhill!)
+- [PowerShellEditorServices #873](https://github.com/PowerShell/PowerShellEditorServices/pull/873) -
+  Return the start line number for Describe block. (Thanks @rkeithhill!)
+- [PowerShellEditorServices #869](https://github.com/PowerShell/PowerShellEditorServices/pull/869) -
+  Added `AsNewFile` switch to Out-CurrentFile. (Thanks @dfinke!)
+- [PowerShellEditorServices #868](https://github.com/PowerShell/PowerShellEditorServices/pull/868) -
+  Speed up travis builds by skipping the .net core initialisation. (Thanks @bergmeister!)
+- [PowerShellEditorServices #866](https://github.com/PowerShell/PowerShellEditorServices/pull/866) -
+  Catch NotSupportedException which can be thrown by FilleStream ctor. (Thanks @rkeithhill!)
+- [vscode-powershell #1704](https://github.com/PowerShell/PowerShellEditorServices/pull/862) -
+  Handle arbitrary exceptions when recursing workspace.
+
 ## v2.0.0-preview.4
 ### Wednesday, May 22, 2019
 
