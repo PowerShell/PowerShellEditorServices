@@ -1,6 +1,6 @@
 # PowerShell Editor Services Release History
 
-## v2.0.0-preview.3
+## v2.0.0-preview.2
 ### Wednesday, May 22, 2019
 
 - ✨ [PowerShellEditorServices #951](https://github.com/PowerShell/PowerShellEditorServices/pull/951) -
