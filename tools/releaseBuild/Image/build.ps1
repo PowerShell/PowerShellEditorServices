@@ -19,5 +19,5 @@ else {
     }
 }
 push-location C:/PowerShellEditorServices
-Invoke-Build GetProductVersion,Clean,Build,BuildCmdletHelp,PackageNuget,PackageModule,UploadArtifacts -Configuration Release
+Invoke-Build GetProductVersion,Clean,Build,BuildCmdletHelp,PackageModule,UploadArtifacts -Configuration Release
 Copy-Item -Verbose -Recurse "C:/PowerShellEditorServices/module" "${target}/PowerShellEditorServices"
