@@ -10,6 +10,14 @@ PowerShell Editor Services is a PowerShell module that provides common
 functionality needed to enable a consistent and robust PowerShell development
 experience in almost any editor or integrated development environment (IDE).
 
+## Front-ends using PSES
+
+The functionality in PSES is already available in the following editor extensions:
+
+- [The VSCode PowerShell extension](https://github.com/PowerShell/vscode-powershell), also available in Azure Data Studio
+- [coc-powershell](https://github.com/yatli/coc-powershell), a vim/neovim PowerShell plugin
+- [The IntelliJ PowerShell plugin](https://plugins.jetbrains.com/plugin/10249-powershell)
+
 ## Features
 
 - The Language Service provides common editor features for the PowerShell language:
