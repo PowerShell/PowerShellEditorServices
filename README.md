@@ -10,7 +10,7 @@ PowerShell Editor Services is a PowerShell module that provides common
 functionality needed to enable a consistent and robust PowerShell development
 experience in almost any editor or integrated development environment (IDE).
 
-## Front-ends using PSES
+## PowerShell Language Server Protocol clients using PSES
 
 The functionality in PSES is already available in the following editor extensions:
 
