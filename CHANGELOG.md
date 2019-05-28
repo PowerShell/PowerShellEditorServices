@@ -1,5 +1,17 @@
 # PowerShell Editor Services Release History
 
+## v1.12.2
+### Friday, May 24, 2019
+
+- ✨ [PowerShellEditorServices #957](https://github.com/PowerShell/PowerShellEditorServices/pull/957) -
+  Allow passing RunspaceName.
+- 🐛 [PowerShellEditorServices #956](https://github.com/PowerShell/PowerShellEditorServices/pull/956) -
+  Add check for workspace path.
+- 🐛 [PowerShellEditorServices #947](https://github.com/PowerShell/PowerShellEditorServices/pull/947) -
+  Fix silent failure by using Id for dictionary since multiple pages could have the same title.
+- 💻 [PowerShellEditorServices #923](https://github.com/PowerShell/PowerShellEditorServices/pull/923) -
+  Moved to Azure DevOps for CI.
+
 ## v1.12.1
 ### Wednesday, April 10, 2019
 
