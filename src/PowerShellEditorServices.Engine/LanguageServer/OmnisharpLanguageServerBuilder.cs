@@ -42,5 +42,6 @@ namespace Microsoft.PowerShell.EditorServices.Engine
             };
 
             return new OmnisharpLanguageServer(config);
-}
+        }
     }
+}
