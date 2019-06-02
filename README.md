@@ -12,7 +12,7 @@ experience in almost any editor or integrated development environment (IDE).
 
 ## PowerShell Language Server Protocol clients using PowerShell Editor Services
 
-The functionality in PSES is already available in the following editor extensions:
+The functionality in PowerShell Editor Services is already available in the following editor extensions:
 
 - [The VSCode PowerShell extension](https://github.com/PowerShell/vscode-powershell), also available in Azure Data Studio
 - [coc-powershell](https://github.com/yatli/coc-powershell), a vim/neovim PowerShell plugin
