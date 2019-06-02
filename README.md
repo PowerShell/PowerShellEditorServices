@@ -16,7 +16,7 @@ The functionality in PowerShell Editor Services is already available in the foll
 
 - [The VSCode PowerShell extension](https://github.com/PowerShell/vscode-powershell), also available in Azure Data Studio
 - [coc-powershell](https://github.com/yatli/coc-powershell), a vim/neovim PowerShell plugin
-- [The IntelliJ PowerShell plugin](https://plugins.jetbrains.com/plugin/10249-powershell)
+- [The IntelliJ PowerShell plugin](https://github.com/ant-druha/intellij-powershell)
 
 ## Features
 
