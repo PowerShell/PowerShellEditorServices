@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -15,6 +16,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Extensions.Logging;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
 {
@@ -56,11 +58,13 @@ namespace Microsoft.PowerShell.EditorServices.Engine
     {
         #region Private Fields
 
-        private readonly IServiceCollection _services;
+        private readonly IServiceCollection _serviceCollection;
+
+        private readonly HostDetails _hostDetails;
 
         private ILanguageServer _languageServer;
 
-        private ILogger _logger;
+        private Extensions.Logging.ILogger _logger;
 
         #endregion
 
@@ -121,10 +125,19 @@ namespace Microsoft.PowerShell.EditorServices.Engine
             Validate.IsNotNull(nameof(hostDetails), hostDetails);
             Validate.IsNotNull(nameof(internalHost), internalHost);
 
-            _services = new ServiceCollection();
+            _serviceCollection = new ServiceCollection();
 
-            _services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
+            Log.Logger = new LoggerConfiguration().Enrich.FromLogContext()
+                            .WriteTo.Console()
+                            .CreateLogger();
 
+            _logger = new SerilogLoggerProvider().CreateLogger(nameof(EditorServicesHost));
+
+            _serviceCollection.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
+
+            _hostDetails = hostDetails;
+
+            /*
             this.hostDetails = hostDetails;
             this.enableConsoleRepl = enableConsoleRepl;
             this.bundledModulesPath = bundledModulesPath;
@@ -132,6 +145,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
             this.featureFlags = new HashSet<string>(featureFlags ?? Array.Empty<string>();
             this.serverCompletedTask = new TaskCompletionSource<bool>();
             this.internalHost = internalHost;
+            */
 
 #if DEBUG
             if (waitForDebugger)
@@ -160,7 +174,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
         /// </summary>
         /// <param name="logFilePath">The path of the log file to be written.</param>
         /// <param name="logLevel">The minimum level of log messages to be written.</param>
-        public void StartLogging(string logFilePath, LogLevel logLevel)
+        public void StartLogging(string logFilePath, PsesLogLevel logLevel)
         {
             FileVersionInfo fileVersionInfo =
                 FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
@@ -176,9 +190,9 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
   Host application details:
 
-    Name:      {this.hostDetails.Name}
-    Version:   {this.hostDetails.Version}
-    ProfileId: {this.hostDetails.ProfileId}
+    Name:      {_hostDetails.Name}
+    Version:   {_hostDetails.Version}
+    ProfileId: {_hostDetails.ProfileId}
     Arch:      {osArch}
 
   Operating system details:
@@ -193,7 +207,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
     Date:    {buildTime}
 ";
 
-            this.logger.Write(LogLevel.Normal, logHeader);
+            _logger.LogInformation(logHeader);
         }
 
         /// <summary>
@@ -205,15 +219,28 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             EditorServiceTransportConfig config,
             ProfilePaths profilePaths)
         {
-            this.profilePaths = profilePaths;
+            if (!System.Diagnostics.Debugger.IsAttached)
+            {
+                Console.WriteLine($"{System.Diagnostics.Process.GetCurrentProcess().Id}");
+                System.Threading.Thread.Sleep(2000);
+            }
 
-            this.languageServiceListener = CreateServiceListener(MessageProtocolType.LanguageServer, config);
+            _logger.LogInformation($"LSP NamedPipe: {config.InOutPipeName}\nLSP OutPipe: {config.OutPipeName}");
 
-            this.languageServiceListener.ClientConnect += this.OnLanguageServiceClientConnectAsync;
-            this.languageServiceListener.Start();
+            _languageServer = new OmnisharpLanguageServerBuilder(_serviceCollection)
+            {
+                NamedPipeName = config.InOutPipeName ?? config.InPipeName,
+                OutNamedPipeName = config.OutPipeName,
+            }
+            .BuildLanguageServer();
 
-            this.logger.Write(
-                LogLevel.Normal,
+            _logger.LogInformation("Starting language server");
+
+            Task serviceStart = _languageServer.StartAsync();
+            serviceStart.ConfigureAwait(continueOnCapturedContext: false);
+            serviceStart.Wait();
+
+            _logger.LogInformation(
                 string.Format(
                     "Language service started, type = {0}, endpoint = {1}",
                     config.TransportType, config.Endpoint));
@@ -230,6 +257,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             ProfilePaths profilePaths,
             bool useExistingSession)
         {
+            /*
             this.debugServiceListener = CreateServiceListener(MessageProtocolType.DebugAdapter, config);
             this.debugServiceListener.ClientConnect += OnDebugServiceClientConnect;
             this.debugServiceListener.Start();
@@ -239,6 +267,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                 string.Format(
                     "Debug service started, type = {0}, endpoint = {1}",
                     config.TransportType, config.Endpoint));
+            */
         }
 
         /// <summary>
@@ -247,9 +276,6 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         public void StopServices()
         {
             // TODO: Need a new way to shut down the services
-
-            this.languageServer = null;
-            this.debugAdapter = null;
         }
 
         /// <summary>
@@ -258,7 +284,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         public void WaitForCompletion()
         {
             // TODO: We need a way to know when to complete this task!
-            this.serverCompletedTask.Task.Wait();
+            _languageServer.WaitForShutdown().Wait();
         }
 
         #endregion
@@ -298,7 +324,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             UnhandledExceptionEventArgs e)
         {
             // Log the exception
-            this.logger.Write(LogLevel.Error, $"FATAL UNHANDLED EXCEPTION: {e.ExceptionObject}");
+            _logger.LogError($"FATAL UNHANDLED EXCEPTION: {e.ExceptionObject}");
         }
 
         #endregion

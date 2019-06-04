@@ -74,6 +74,24 @@ $script:RequiredBuildAssets = @{
             'Microsoft.PowerShell.EditorServices.Protocol.dll',
             'Microsoft.PowerShell.EditorServices.Protocol.pdb'
         )
+
+        'PowerShellEditorServices.Engine' = @(
+            'publish/Microsoft.PowerShell.EditorServices.Engine.dll',
+            'publish/Microsoft.PowerShell.EditorServices.Engine.pdb',
+            'publish/OmniSharp.Extensions.JsonRpc.dll',
+            'publish/OmniSharp.Extensions.LanguageProtocol.dll',
+            'publish/OmniSharp.Extensions.LanguageServer.dll',
+            'publish/Serilog.dll',
+            'publish/Serilog.Extensions.Logging.dll',
+            'publish/Serilog.Sinks.Console.dll',
+            'publish/Microsoft.Extensions.DependencyInjection.Abstractions.dll',
+            'publish/Microsoft.Extensions.DependencyInjection.dll',
+            'publish/Microsoft.Extensions.Logging.Abstractions.dll',
+            'publish/Microsoft.Extensions.Logging.dll',
+            'publish/Microsoft.Extensions.Options.dll',
+            'publish/Microsoft.Extensions.Primitives.dll',
+            'publish/System.Reactive.dll'
+        )
     }
 
     $script:VSCodeModuleBinPath = @{
@@ -101,12 +119,6 @@ $script:RequiredNugetBinaries = @{
         @{ PackageName = 'System.Security.Principal.Windows'; PackageVersion = '4.5.0'; TargetRuntime = 'net461' },
         @{ PackageName = 'System.Security.AccessControl';     PackageVersion = '4.5.0'; TargetRuntime = 'net461' },
         @{ PackageName = 'System.IO.Pipes.AccessControl';     PackageVersion = '4.5.1'; TargetRuntime = 'net461' }
-    )
-
-    '6.0' = @(
-        @{ PackageName = 'System.Security.Principal.Windows'; PackageVersion = '4.5.0'; TargetRuntime = 'netcoreapp2.0' },
-        @{ PackageName = 'System.Security.AccessControl';     PackageVersion = '4.5.0'; TargetRuntime = 'netcoreapp2.0' },
-        @{ PackageName = 'System.IO.Pipes.AccessControl';     PackageVersion = '4.5.1'; TargetRuntime = 'netstandard2.0' }
     )
 }
 
@@ -326,6 +338,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
 task Build {
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:TargetPlatform }
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Engine\PowerShellEditorServices.Engine.csproj -f $script:TargetPlatform }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f $script:TargetPlatform }
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
 }
