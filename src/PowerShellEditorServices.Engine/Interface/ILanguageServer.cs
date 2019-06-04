@@ -6,6 +6,6 @@ namespace Microsoft.PowerShell.EditorServices.Engine
     {
         Task StartAsync();
 
-        Task ShutdownComplete { get; }
+        Task WaitForShutdown();
     }
 }

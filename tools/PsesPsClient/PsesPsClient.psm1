@@ -124,6 +124,7 @@ function Start-PsesServer
         AdditionalModules = $AdditionalModules
         BundledModulesPath = $BundledModulesPath
         EnableConsoleRepl = $EnableConsoleRepl
+        SplitInOutPipes = [switch]::Present
     }
 
     $startPsesCommand = Unsplat -Prefix "& '$EditorServicesPath'" -SplatParams $editorServicesOptions

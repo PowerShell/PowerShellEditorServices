@@ -31,18 +31,26 @@ namespace PsesPsClient
         /// </summary>
         /// <param name="pipeName">The name of the named pipe to use.</param>
         /// <returns>A new LspPipe instance around the given named pipe.</returns>
-        public static PsesLspClient Create(string pipeName)
+        public static PsesLspClient Create(string inPipeName, string outPipeName)
         {
-            var pipeClient = new NamedPipeClientStream(
-                pipeName: pipeName,
+            var inPipeStream = new NamedPipeClientStream(
+                pipeName: inPipeName,
                 serverName: ".",
-                direction: PipeDirection.InOut,
+                direction: PipeDirection.In,
                 options: PipeOptions.Asynchronous);
 
-            return new PsesLspClient(pipeClient);
+            var outPipeStream = new NamedPipeClientStream(
+                pipeName: outPipeName,
+                serverName: ".",
+                direction: PipeDirection.Out,
+                options: PipeOptions.Asynchronous);
+
+            return new PsesLspClient(inPipeStream, outPipeStream);
         }
 
-        private readonly NamedPipeClientStream _namedPipeClient;
+        private readonly NamedPipeClientStream _inPipe;
+
+        private readonly NamedPipeClientStream _outPipe;
 
         private readonly JsonSerializerSettings _jsonSettings;
 
@@ -62,9 +70,10 @@ namespace PsesPsClient
         /// Create a new LSP pipe around a named pipe client stream.
         /// </summary>
         /// <param name="namedPipeClient">The named pipe client stream to use for the LSP pipe.</param>
-        public PsesLspClient(NamedPipeClientStream namedPipeClient)
+        public PsesLspClient(NamedPipeClientStream inPipe, NamedPipeClientStream outPipe)
         {
-            _namedPipeClient = namedPipeClient;
+            _inPipe = inPipe;
+            _outPipe = outPipe;
 
             _jsonSettings = new JsonSerializerSettings()
             {
@@ -84,9 +93,10 @@ namespace PsesPsClient
         /// </summary>
         public void Connect()
         {
-            _namedPipeClient.Connect(timeout: 1000);
-            _listener = new MessageStreamListener(new StreamReader(_namedPipeClient, _pipeEncoding));
-            _writer = new StreamWriter(_namedPipeClient, _pipeEncoding)
+            _inPipe.Connect(timeout: 1000);
+            _outPipe.Connect(timeout: 1000);
+            _listener = new MessageStreamListener(new StreamReader(_inPipe, _pipeEncoding));
+            _writer = new StreamWriter(_outPipe, _pipeEncoding)
             {
                 AutoFlush = true
             };
@@ -159,8 +169,10 @@ namespace PsesPsClient
         {
             _writer.Dispose();
             _listener.Dispose();
-            _namedPipeClient.Close();
-            _namedPipeClient.Dispose();
+            _inPipe.Close();
+            _outPipe.Close();
+            _inPipe.Dispose();
+            _outPipe.Dispose();
         }
     }
 
