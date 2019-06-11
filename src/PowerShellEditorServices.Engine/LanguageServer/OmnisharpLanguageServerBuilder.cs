@@ -20,16 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.Engine
 
         public IServiceCollection Services { get; }
 
-        public ILanguageServerBuilder AddHandler<THandler>(THandler handler)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public ILanguageServerBuilder AddService<TService>(TService service)
-        {
-            throw new System.NotImplementedException();
-        }
-
         public ILanguageServer BuildLanguageServer()
         {
             var config = new OmnisharpLanguageServer.Configuration()

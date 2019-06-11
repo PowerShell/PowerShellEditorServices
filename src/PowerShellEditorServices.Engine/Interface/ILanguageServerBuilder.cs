@@ -12,10 +12,6 @@ namespace Microsoft.PowerShell.EditorServices.Engine
 
         LogLevel MinimumLogLevel { get; set; }
 
-        ILanguageServerBuilder AddHandler<THandler>(THandler handler);
-
-        ILanguageServerBuilder AddService<TService>(TService service);
-
         ILanguageServer BuildLanguageServer();
     }
 }

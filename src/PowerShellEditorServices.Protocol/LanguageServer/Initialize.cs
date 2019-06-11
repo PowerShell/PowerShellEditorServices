@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         ///
         /// This is defined as `any` type on the client side.
         /// </summary>
-        public object InitializeOptions { get; set; }
+        public object InitializationOptions { get; set; }
 
         // TODO We need to verify if the deserializer will map the type defined in the client
         // to an enum.

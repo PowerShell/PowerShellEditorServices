@@ -77,7 +77,8 @@ namespace PsesPsClient
 
             _jsonSettings = new JsonSerializerSettings()
             {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
+                ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                Formatting = Formatting.Indented
             };
 
             _jsonSerializer = JsonSerializer.Create(_jsonSettings);
@@ -331,7 +332,7 @@ namespace PsesPsClient
                 return new LspNotification(method, msgJson["params"]);
             }
 
-            string id = ((JValue)msgJson["id"]).Value.ToString();
+            string id = ((JValue)msgJson["id"])?.Value?.ToString();
 
             if (msgJson.TryGetValue("result", out JToken resultToken))
             {
@@ -339,7 +340,7 @@ namespace PsesPsClient
             }
 
             JObject errorBody = (JObject)msgJson["error"];
-            JsonRpcErrorCode errorCode = (JsonRpcErrorCode)(int)((JValue)errorBody["code"]).Value;
+            JsonRpcErrorCode errorCode = (JsonRpcErrorCode)((JValue)errorBody["code"]).Value;
             string message = (string)((JValue)errorBody["message"]).Value;
             return new LspErrorResponse(id, errorCode, message, errorBody["data"]);
         }
@@ -576,7 +577,7 @@ namespace PsesPsClient
     /// <summary>
     /// Error codes used by the Language Server Protocol.
     /// </summary>
-    public enum JsonRpcErrorCode : int
+    public enum JsonRpcErrorCode : long
     {
         ParseError = -32700,
         InvalidRequest = -32600,
