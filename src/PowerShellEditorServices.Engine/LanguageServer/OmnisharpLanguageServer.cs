@@ -35,49 +35,47 @@ namespace Microsoft.PowerShell.EditorServices.Engine
 
         private OS.ILanguageServer _languageServer;
 
-        private Task _serverStart;
+        private TaskCompletionSource<bool> _serverStart;
 
         private readonly Configuration _configuration;
-
-        public async Task WaitForShutdown()
-        {
-            await _serverStart;
-            await _languageServer.WaitForExit;
-        }
 
         public OmnisharpLanguageServer(
             Configuration configuration)
         {
             _configuration = configuration;
+            _serverStart = new TaskCompletionSource<bool>();
         }
 
         public async Task StartAsync()
         {
-            _serverStart = OS.LanguageServer.From(options => {
-                Task.Run(async () => {
-                    NamedPipeServerStream namedPipe = CreateNamedPipe(
-                        _configuration.NamedPipeName,
-                        _configuration.OutNamedPipeName,
-                        out NamedPipeServerStream outNamedPipe);
+            _languageServer = await OS.LanguageServer.From(options => {
+                NamedPipeServerStream namedPipe = CreateNamedPipe(
+                    _configuration.NamedPipeName,
+                    _configuration.OutNamedPipeName,
+                    out NamedPipeServerStream outNamedPipe);
 
-                    await namedPipe.WaitForConnectionAsync();
-                    if (outNamedPipe != null)
-                    {
-                        await outNamedPipe.WaitForConnectionAsync();
-                    }
+                namedPipe.WaitForConnection();
+                if (outNamedPipe != null)
+                {
+                    outNamedPipe.WaitForConnection();
+                }
 
-                    options.Input = namedPipe;
-                    options.Output = outNamedPipe != null
-                        ? outNamedPipe
-                        : namedPipe;
+                options.Input = namedPipe;
+                options.Output = outNamedPipe != null
+                    ? outNamedPipe
+                    : namedPipe;
 
-                    options.LoggerFactory = _configuration.LoggerFactory;
-                    options.MinimumLogLevel = _configuration.MinimumLogLevel;
-                    options.Services = _configuration.Services;
-                });
+                options.LoggerFactory = _configuration.LoggerFactory;
+                options.MinimumLogLevel = _configuration.MinimumLogLevel;
+                options.Services = _configuration.Services;
             });
+            _serverStart.SetResult(true);
+        }
 
-            await _serverStart;
+        public async Task WaitForShutdown()
+        {
+            await _serverStart.Task;
+            await _languageServer.WaitForExit;
         }
 
         private static NamedPipeServerStream CreateNamedPipe(

@@ -18,6 +18,7 @@ class PsesStartupOptions
     [string[]] $AdditionalModules
     [string]   $BundledModulesPath
     [bool]     $EnableConsoleRepl
+    [switch]   $SplitInOutPipes
 }
 
 class PsesServerInfo
@@ -185,16 +186,21 @@ function Connect-PsesServer
     param(
         [Parameter(Mandatory)]
         [string]
-        $PipeName
+        $InPipeName,
+
+        [Parameter(Mandatory)]
+        [string]
+        $OutPipeName
     )
 
-    $psesIdx = $PipeName.IndexOf('PSES')
+    $psesIdx = $InPipeName.IndexOf('PSES')
     if ($psesIdx -gt 0)
     {
-        $PipeName = $PipeName.Substring($psesIdx)
+        $InPipeName = $InPipeName.Substring($psesIdx)
+        $OutPipeName = $OutPipeName.Substring($psesIdx)
     }
 
-    $client = [PsesPsClient.PsesLspClient]::Create($PipeName)
+    $client = [PsesPsClient.PsesLspClient]::Create($InPipeName, $OutPipeName)
     $client.Connect()
     return $client
 }
@@ -221,17 +227,17 @@ function Send-LspInitializeRequest
 
         [Parameter()]
         [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.ClientCapabilities]
-        $ClientCapabilities = ([Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.ClientCapabilities]::new()),
+        $ClientCapabilities = (Get-ClientCapabilities),
 
         [Parameter()]
-        [hashtable]
-        $InitializeOptions = $null
+        [object]
+        $IntializationOptions = ([object]::new())
     )
 
     $parameters = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.InitializeParams]@{
         ProcessId = $ProcessId
         Capabilities = $ClientCapabilities
-        InitializeOptions = $InitializeOptions
+        InitializationOptions = $IntializationOptions
     }
 
     if ($RootUri)
@@ -240,7 +246,7 @@ function Send-LspInitializeRequest
     }
     else
     {
-        $parameters.RootPath = $RootPath
+        $parameters.RootUri = [uri]::new($RootPath)
     }
 
     return Send-LspRequest -Client $Client -Method 'initialize' -Parameters $parameters
@@ -373,4 +379,81 @@ function Get-RandomHexString
     }
 
     return $str
+}
+
+function Get-ClientCapabilities
+{
+    return [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.ClientCapabilities]@{
+        Workspace = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.WorkspaceClientCapabilities]@{
+            ApplyEdit = $true
+            WorkspaceEdit = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.WorkspaceEditCapabilities]@{
+                DocumentChanges = $false
+            }
+            DidChangeConfiguration = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            DidChangeWatchedFiles = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            Symbol = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            ExecuteCommand = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+        }
+        TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentClientCapabilities]@{
+            Synchronization = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.SynchronizationCapabilities]@{
+                WillSave = $true
+                WillSaveWaitUntil = $true
+                DidSave = $true
+            }
+            Completion = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.CompletionCapabilities]@{
+                DynamicRegistration = $false
+                CompletionItem = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.CompletionItemCapabilities]@{
+                    SnippetSupport = $true
+                }
+            }
+            Hover = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            SignatureHelp = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            References = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            DocumentHighlight = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            DocumentSymbol = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            Formatting = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            RangeFormatting = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            OnTypeFormatting = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            Definition = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            CodeLens = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            CodeAction = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            DocumentLink = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+            Rename = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DynamicRegistrationCapability]@{
+                DynamicRegistration = $false
+            }
+        }
+        Experimental = [System.Object]::new()
+    }
 }

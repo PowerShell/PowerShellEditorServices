@@ -30,32 +30,63 @@ function ReportLogErrors
     }
 }
 
+function CheckErrorResponse
+{
+    [CmdletBinding()]
+    param(
+        $Response
+    )
+
+    if (-not ($Response -is [PsesPsClient.LspErrorResponse]))
+    {
+        return
+    }
+
+    $msg = @"
+Error Response Received
+Code: $($Response.Code)
+Message:
+    $($Response.Message)
+
+Data:
+    $($Response.Data)
+"@
+
+    throw $msg
+}
+
 Describe "Loading and running PowerShellEditorServices" {
     BeforeAll {
         Import-Module -Force "$PSScriptRoot/../../module/PowerShellEditorServices"
+        Import-Module -Force "$PSScriptRoot/../../src/PowerShellEditorServices.Engine/bin/Debug/netstandard2.0/publish/Omnisharp.Extensions.LanguageProtocol.dll"
         Import-Module -Force "$PSScriptRoot/../../tools/PsesPsClient/out/PsesPsClient"
         Import-Module -Force "$PSScriptRoot/../../tools/PsesLogAnalyzer"
 
         $logIdx = 0
         $psesServer = Start-PsesServer
-        $client = Connect-PsesServer -PipeName $psesServer.SessionDetails.languageServicePipeName
+        $client = Connect-PsesServer -InPipeName $psesServer.SessionDetails.languageServiceWritePipeName -OutPipeName $psesServer.SessionDetails.languageServiceReadPipeName
     }
 
     # This test MUST be first
     It "Starts and responds to an initialization request" {
         $request = Send-LspInitializeRequest -Client $client
-        $response = Get-LspResponse -Client $client -Id $request.Id
+        $response = Get-LspResponse -Client $client -Id $request.Id #-WaitMillis 99999
         $response.Id | Should -BeExactly $request.Id
 
-        ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
+        CheckErrorResponse -Response $response
+
+        #ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
     }
 
     # This test MUST be last
     It "Shuts down the process properly" {
         $request = Send-LspShutdownRequest -Client $client
-        $response = Get-LspResponse -Client $client -Id $request.Id
+        $response = Get-LspResponse -Client $client -Id $request.Id #-WaitMillis 99999
         $response.Id | Should -BeExactly $request.Id
         $response.Result | Should -BeNull
+
+        CheckErrorResponse -Response $response
+
         # TODO: The server seems to stay up waiting for the debug connection
         # $psesServer.PsesProcess.HasExited | Should -BeTrue
 
@@ -81,6 +112,27 @@ Describe "Loading and running PowerShellEditorServices" {
             }
         }
 
-        ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
+        #ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
+    }
+
+    AfterAll {
+        if ($psesServer.PsesProcess.HasExited -eq $false)
+        {
+            try
+            {
+                $psesServer.PsesProcess.Kill()
+            }
+            finally
+            {
+                try
+                {
+                    $psesServer.PsesProcess.Dispose()
+                }
+                finally
+                {
+                    $client.Dispose()
+                }
+            }
+        }
     }
 }

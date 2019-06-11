@@ -219,7 +219,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             EditorServiceTransportConfig config,
             ProfilePaths profilePaths)
         {
-            if (!System.Diagnostics.Debugger.IsAttached)
+            while (System.Diagnostics.Debugger.IsAttached)
             {
                 Console.WriteLine($"{System.Diagnostics.Process.GetCurrentProcess().Id}");
                 System.Threading.Thread.Sleep(2000);
@@ -236,9 +236,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             _logger.LogInformation("Starting language server");
 
-            Task serviceStart = _languageServer.StartAsync();
-            serviceStart.ConfigureAwait(continueOnCapturedContext: false);
-            serviceStart.Wait();
+            Task.Run(_languageServer.StartAsync);
 
             _logger.LogInformation(
                 string.Format(

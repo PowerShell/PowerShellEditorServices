@@ -6,7 +6,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// The client supports applying batch edits to the workspace by
         /// by supporting the request `workspace/applyEdit'
         /// /// </summary>
-        bool? ApplyEdit { get; set; }
+        public bool? ApplyEdit { get; set; }
+
 
         /// <summary>
         /// Capabilities specific to `WorkspaceEdit`.
@@ -42,6 +43,6 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
         /// <summary>
         /// The client supports versioned document changes in `WorkspaceEdit`
         /// </summary>
-        bool? DocumentChanges { get; set; }
+        public bool? DocumentChanges { get; set; }
     }
 }
