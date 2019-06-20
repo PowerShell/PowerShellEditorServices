@@ -32,6 +32,8 @@ namespace Microsoft.PowerShell.EditorServices
 
         private static readonly SemaphoreSlim s_completionHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
+        private static PowerShell pwsh = PowerShell.Create();
+
         /// <summary>
         /// Gets completions for the symbol found in the Ast at
         /// the given file offset.
@@ -69,6 +71,11 @@ namespace Microsoft.PowerShell.EditorServices
                 return null;
             }
 
+            if (!RunspaceSynchronizer.IsReadyForEvents)
+            {
+                RunspaceSynchronizer.InitializeRunspaces(powerShellContext.CurrentRunspace.Runspace, pwsh.Runspace);
+            }
+
             try
             {
                 IScriptPosition cursorPosition = (IScriptPosition)s_extentCloneWithNewOffset.Invoke(
@@ -90,49 +97,65 @@ namespace Microsoft.PowerShell.EditorServices
 
                 var stopwatch = new Stopwatch();
 
+                stopwatch.Start();
+
+                try
+                {
+                return CommandCompletion.CompleteInput(
+                    scriptAst,
+                    currentTokens,
+                    cursorPosition,
+                    options: null,
+                    powershell: pwsh);
+                }
+                finally
+                {
+                    stopwatch.Stop();
+                    logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
+                }
                 // If the current runspace is out of process we can use
                 // CommandCompletion.CompleteInput because PSReadLine won't be taking up the
                 // main runspace.
-                if (powerShellContext.IsCurrentRunspaceOutOfProcess())
-                {
-                    using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandleAsync(cancellationToken))
-                    using (PowerShell powerShell = PowerShell.Create())
-                    {
-                        powerShell.Runspace = runspaceHandle.Runspace;
-                        stopwatch.Start();
-                        try
-                        {
-                            return CommandCompletion.CompleteInput(
-                                scriptAst,
-                                currentTokens,
-                                cursorPosition,
-                                options: null,
-                                powershell: powerShell);
-                        }
-                        finally
-                        {
-                            stopwatch.Stop();
-                            logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
-                        }
-                    }
-                }
+                // if (powerShellContext.IsCurrentRunspaceOutOfProcess())
+                // {
+                //     using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandleAsync(cancellationToken))
+                //     using (PowerShell powerShell = PowerShell.Create())
+                //     {
+                //         powerShell.Runspace = runspaceHandle.Runspace;
+                //         stopwatch.Start();
+                //         try
+                //         {
+                //             return CommandCompletion.CompleteInput(
+                //                 scriptAst,
+                //                 currentTokens,
+                //                 cursorPosition,
+                //                 options: null,
+                //                 powershell: powerShell);
+                //         }
+                //         finally
+                //         {
+                //             stopwatch.Stop();
+                //             logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
+                //         }
+                //     }
+                // }
 
-                CommandCompletion commandCompletion = null;
-                await powerShellContext.InvokeOnPipelineThreadAsync(
-                    pwsh =>
-                    {
-                        stopwatch.Start();
-                        commandCompletion = CommandCompletion.CompleteInput(
-                            scriptAst,
-                            currentTokens,
-                            cursorPosition,
-                            options: null,
-                            powershell: pwsh);
-                    });
-                stopwatch.Stop();
-                logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
+                // CommandCompletion commandCompletion = null;
+                // await powerShellContext.InvokeOnPipelineThreadAsync(
+                //     pwsh =>
+                //     {
+                //         stopwatch.Start();
+                //         commandCompletion = CommandCompletion.CompleteInput(
+                //             scriptAst,
+                //             currentTokens,
+                //             cursorPosition,
+                //             options: null,
+                //             powershell: pwsh);
+                //     });
+                // stopwatch.Stop();
+                // logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
 
-                return commandCompletion;
+                // return commandCompletion;
             }
             finally
             {
