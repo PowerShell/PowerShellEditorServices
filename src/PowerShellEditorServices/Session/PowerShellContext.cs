@@ -51,7 +51,6 @@ namespace Microsoft.PowerShell.EditorServices
 
         private readonly SemaphoreSlim resumeRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
-        private bool isPSReadLineEnabled;
         private ILogger logger;
         private PowerShell powerShell;
         private bool ownsInitialRunspace;
@@ -65,6 +64,11 @@ namespace Microsoft.PowerShell.EditorServices
         private Stack<RunspaceDetails> runspaceStack = new Stack<RunspaceDetails>();
 
         private int isCommandLoopRestarterSet;
+
+        private readonly ScriptBlock psReadLineEnterKeyHandlerScriptBlock = ScriptBlock.Create(@"
+[Microsoft.PowerShell.EditorServices.RunspaceSynchronizer]::Activate()
+[Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+");
 
         #endregion
 
@@ -93,6 +97,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the current state of the session.
         /// </summary>
         public PowerShellContextState SessionState
+        {
+            get;
+            private set;
+        }
+
+        internal bool IsPSReadLineEnabled
         {
             get;
             private set;
@@ -150,7 +160,7 @@ namespace Microsoft.PowerShell.EditorServices
         public PowerShellContext(ILogger logger, bool isPSReadLineEnabled)
         {
             this.logger = logger;
-            this.isPSReadLineEnabled = isPSReadLineEnabled;
+            this.IsPSReadLineEnabled = isPSReadLineEnabled;
         }
 
         /// <summary>
@@ -328,7 +338,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.InvocationEventQueue = InvocationEventQueue.Create(this, this.PromptNest);
 
             if (powerShellVersion.Major >= 5 &&
-                this.isPSReadLineEnabled &&
+                this.IsPSReadLineEnabled &&
                 PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, out PSReadLineProxy proxy))
             {
                 this.PromptContext = new PSReadLinePromptContext(
@@ -336,6 +346,16 @@ namespace Microsoft.PowerShell.EditorServices
                     this.PromptNest,
                     this.InvocationEventQueue,
                     proxy);
+
+                // Set up the PSReadLine key handler for the Runspace synchronizer used in completions.
+                using (PowerShell pwsh = PowerShell.Create())
+                {
+                    pwsh.Runspace = initialRunspace;
+                    pwsh.AddCommand("Set-PSReadLineKeyHandler")
+                        .AddParameter("Chord", "ENTER")
+                        .AddParameter("ScriptBlock", psReadLineEnterKeyHandlerScriptBlock)
+                        .Invoke();
+                }
             }
             else
             {

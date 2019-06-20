@@ -12,14 +12,18 @@ using System.Reflection;
 namespace Microsoft.PowerShell.EditorServices
 {
     using System.Management.Automation;
+
     /// <summary>
-    /// Does a thing
+    /// This class is used to sync the state of one runspace to another.
+    /// It's done by copying over variables and reimporting modules into the target runspace.
+    /// It doesn't rely on the pipeline of the source runspace at all, instead leverages Reflection
+    /// to access internal properties and methods on the Runspace type.
+    /// Lastly, in order to trigger the synchronizing, you must call the Activate method. This will go
+    /// in the PSReadLine key handler for ENTER.
     /// </summary>
     public class RunspaceSynchronizer
     {
-        /// <summary>
-        /// Does a thing
-        /// </summary>
+        // Determines whether the HandleRunspaceStateChange event should attempt to sync the runspaces.
         private static bool SourceActionEnabled = false;
 
         // 'moduleCache' keeps track of all modules imported in the source Runspace.
@@ -33,20 +37,70 @@ namespace Microsoft.PowerShell.EditorServices
         // in the target Runspace, because all tab completion needs is the type information.
         private static Dictionary<string, Type> variableCache = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
 
-        private static List<PSModuleInfo> moduleToImport = new List<PSModuleInfo>();
-        private static List<PSVariable> variablesToSet = new List<PSVariable>();
-
         private static Runspace sourceRunspace;
         private static Runspace targetRunspace;
         private static EngineIntrinsics sourceEngineIntrinsics;
         private static EngineIntrinsics targetEngineIntrinsics;
 
-        private static object syncObj = new object();
+        private readonly static HashSet<string> POWERSHELL_MAGIC_VARIABLES = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "PID",
+            "PSVersionTable",
+            "PSEdition",
+            "PSHOME",
+            "HOST",
+            "true",
+            "false",
+            "null",
+            "Error",
+            "IsMacOS",
+            "IsLinux",
+            "IsWindows"
+        };
+
+        /// <summary>
+        /// Determines if the RunspaceSynchronizer has been initialized.
+        /// </summary>
+        public static bool IsReadyForEvents { get; private set; }
+
+        #region Public methods
 
         /// <summary>
         /// Does a thing
         /// </summary>
-        public static bool IsReadyForEvents { get; private set; }
+        public static void InitializeRunspaces(Runspace runspaceSource, Runspace runspaceTarget)
+        {
+            sourceRunspace = runspaceSource;
+            sourceEngineIntrinsics = ReflectionUtils.GetEngineIntrinsics(sourceRunspace);
+            targetRunspace = runspaceTarget;
+            targetEngineIntrinsics = ReflectionUtils.GetEngineIntrinsics(runspaceTarget);
+            IsReadyForEvents = true;
+
+            sourceEngineIntrinsics.Events.SubscribeEvent(
+                source: null,
+                eventName: null,
+                sourceIdentifier: PSEngineEvent.OnIdle.ToString(),
+                data: null,
+                handlerDelegate: HandleRunspaceStateChange,
+                supportEvent: true,
+                forwardEvent: false);
+
+            Activate();
+            // Trigger events
+            HandleRunspaceStateChange(sender: null, args: null);
+        }
+
+        /// <summary>
+        /// Does a thing
+        /// </summary>
+        public static void Activate()
+        {
+            SourceActionEnabled = true;
+        }
+
+        #endregion
+
+        #region Private Methods
 
         private static void HandleRunspaceStateChange(object sender, PSEventArgs args)
         {
@@ -57,72 +111,37 @@ namespace Microsoft.PowerShell.EditorServices
 
             SourceActionEnabled = false;
 
-            try
+            var newOrChangedModules = new List<PSModuleInfo>();
+            List<PSModuleInfo> modules = ReflectionUtils.GetModules(sourceRunspace);
+            foreach (PSModuleInfo module in modules)
             {
-                // Maybe also track the latest history item id ($h = Get-History -Count 1; $h.Id)
-                // to make sure we do the collection only if there was actually any input.
-
-                var newOrChangedModules = new List<PSModuleInfo>();
-                List<PSModuleInfo> modules = ReflectionUtils.GetModules(sourceRunspace);
-                foreach (PSModuleInfo module in modules)
+                if (moduleCache.Add(module))
                 {
-                    if (moduleCache.Add(module))
-                    {
-                        newOrChangedModules.Add(module);
-                    }
+                    newOrChangedModules.Add(module);
                 }
-
-
-                var newOrChangedVars = new List<PSVariable>();
-
-                var variables = sourceEngineIntrinsics.GetVariables();
-                foreach (var variable in variables)
-                {
-                    // TODO: first filter out the built-in variables.
-                    if(!variableCache.TryGetValue(variable.Name, out Type value) || value != variable.Value?.GetType())
-                    {
-                        variableCache[variable.Name] = variable.Value?.GetType();
-
-                        newOrChangedVars.Add(variable);
-                    }
-                }
-
-                if (newOrChangedModules.Count == 0 && newOrChangedVars.Count == 0)
-                {
-                    return;
-                }
-
-                lock (syncObj)
-                {
-                    moduleToImport.AddRange(newOrChangedModules);
-                    variablesToSet.AddRange(newOrChangedVars);
-                }
-
-                // Enable the action in target Runspace
-                UpdateTargetRunspaceState();
-            } catch (Exception ex) {
-                System.Console.WriteLine(ex.Message);
-                System.Console.WriteLine(ex.StackTrace);
             }
-        }
 
-        private static void UpdateTargetRunspaceState()
-        {
-            List<PSModuleInfo> newOrChangedModules;
-            List<PSVariable> newOrChangedVars;
 
-            lock (syncObj)
+            var newOrChangedVars = new List<PSVariable>();
+
+            var variables = sourceEngineIntrinsics.GetVariables();
+            foreach (var variable in variables)
             {
-                newOrChangedModules = new List<PSModuleInfo>(moduleToImport);
-                newOrChangedVars = new List<PSVariable>(variablesToSet);
+                // If the variable is a magic variable or it's type has not changed, then skip it.
+                if(POWERSHELL_MAGIC_VARIABLES.Contains(variable.Name) ||
+                    (variableCache.TryGetValue(variable.Name, out Type value) && value == variable.Value?.GetType()))
+                {
+                    continue;
+                }
 
-                moduleToImport.Clear();
-                variablesToSet.Clear();
+                // Add the variable to the cache and mark it as a newOrChanged variable.
+                variableCache[variable.Name] = variable.Value?.GetType();
+                newOrChangedVars.Add(variable);
             }
 
             if (newOrChangedModules.Count > 0)
             {
-                // Import the modules with -Force
+                // Import the modules in the targetRunspace with -Force
                 using (PowerShell pwsh = PowerShell.Create())
                 {
                     pwsh.Runspace = targetRunspace;
@@ -152,47 +171,15 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        /// <summary>
-        /// Does a thing
-        /// </summary>
-        public static void InitializeRunspaces(Runspace runspaceSource, Runspace runspaceTarget)
-        {
-            sourceRunspace = runspaceSource;
-            sourceEngineIntrinsics = ReflectionUtils.GetEngineIntrinsics(sourceRunspace);
-            IsReadyForEvents = true;
+        #endregion
 
-            targetRunspace = runspaceTarget;
-            targetEngineIntrinsics = ReflectionUtils.GetEngineIntrinsics(runspaceTarget);
-
-            if(sourceEngineIntrinsics != null)
-            {
-                sourceEngineIntrinsics.Events.SubscribeEvent(
-                    source: null,
-                    eventName: null,
-                    sourceIdentifier: PSEngineEvent.OnIdle.ToString(),
-                    data: null,
-                    handlerDelegate: HandleRunspaceStateChange,
-                    supportEvent: true,
-                    forwardEvent: false);
-            }
-
-            Activate();
-            // Trigger events
-            HandleRunspaceStateChange(sender: null, args: null);
-        }
-
-        /// <summary>
-        /// Does a thing
-        /// </summary>
-        public static void Activate()
-        {
-            SourceActionEnabled = true;
-        }
-
-        internal class ReflectionUtils
+        // A collection of helper methods that use Reflection in some form.
+        private class ReflectionUtils
         {
             private static BindingFlags bindingFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Default;
 
+            // Gets the modules loaded in a runspace.
+            // This exists in runspace.ExecutionContext.Modules.GetModule(string[] patterns, bool all)
             internal static List<PSModuleInfo> GetModules(Runspace runspace)
             {
                 var executionContext = typeof(Runspace)
@@ -207,6 +194,8 @@ namespace Microsoft.PowerShell.EditorServices
                 return modules;
             }
 
+            // Gets the engine intrinsics object on a Runspace.
+            // This exists in runspace.ExecutionContext.EngineIntrinsics.
             internal static EngineIntrinsics GetEngineIntrinsics(Runspace runspace)
             {
                 var executionContext = typeof(Runspace)
@@ -220,12 +209,14 @@ namespace Microsoft.PowerShell.EditorServices
         }
     }
 
+    // Extension methods on EngineIntrinsics to streamline some setters and setters.
     internal static class EngineIntrinsicsExtensions
     {
+        private const int RETRY_ATTEMPTS = 3;
         internal static List<PSVariable> GetVariables(this EngineIntrinsics engineIntrinsics)
         {
             List<PSVariable> variables = new List<PSVariable>();
-            foreach (PSObject psobject in engineIntrinsics.GetItems(ItemType.Variable))
+            foreach (PSObject psobject in engineIntrinsics.GetItems(ItemProviderType.Variable))
             {
                 var variable = (PSVariable) psobject.BaseObject;
                 variables.Add(variable);
@@ -235,12 +226,12 @@ namespace Microsoft.PowerShell.EditorServices
 
         internal static void SetVariable(this EngineIntrinsics engineIntrinsics, PSVariable variable)
         {
-            engineIntrinsics.SetItem(ItemType.Variable, variable.Name, variable.Value);
+            engineIntrinsics.SetItem(ItemProviderType.Variable, variable.Name, variable.Value);
         }
 
-        private static Collection<PSObject> GetItems(this EngineIntrinsics engineIntrinsics, ItemType itemType)
+        private static Collection<PSObject> GetItems(this EngineIntrinsics engineIntrinsics, ItemProviderType itemType)
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < RETRY_ATTEMPTS; i++)
             {
                 try
                 {
@@ -255,9 +246,9 @@ namespace Microsoft.PowerShell.EditorServices
             return new Collection<PSObject>();
         }
 
-        private static void SetItem(this EngineIntrinsics engineIntrinsics, ItemType itemType, string name, object value)
+        private static void SetItem(this EngineIntrinsics engineIntrinsics, ItemProviderType itemType, string name, object value)
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < RETRY_ATTEMPTS; i++)
             {
                 try
                 {
@@ -271,7 +262,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
         }
 
-        private enum ItemType
+        private enum ItemProviderType
         {
             Variable,
             Function,
