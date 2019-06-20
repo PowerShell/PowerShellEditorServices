@@ -313,30 +313,50 @@ task RestorePsesModules -After Build {
     # Save each module in the modules.json file
     foreach ($moduleName in $moduleInfos.Keys)
     {
-        if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName))
-        {
-            Write-Host "`tModule '${moduleName}' already detected. Skipping"
-            continue
+        $moduleInstallPath = (Join-Path -Path $subModulePath -ChildPath $moduleName)
+
+        try {
+            $moduleFolderChildItems = Get-ChildItem -Path $moduleInstallPath -Force
+        }
+        catch {
+            Write-Host "`tInstalling module: ${moduleName}"
+
+            $moduleInstallDetails = $moduleInfos[$moduleName]
+
+            $splatParameters = @{
+               Name = $moduleName
+               MinimumVersion = $moduleInstallDetails.MinimumVersion
+               MaximumVersion = $moduleInstallDetails.MaximumVersion
+               Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
+               Path = $submodulePath
+            }
+
+            if ($script:SaveModuleSupportsAllowPrerelease)
+            {
+                $splatParameters += @{ AllowPrerelease = $moduleInstallDetails.AllowPrerelease }
+            }
+
+            Save-Module @splatParameters
+
+            $moduleFolderChildItems = Get-ChildItem -Path $moduleInstallPath -Force
         }
 
-        $moduleInstallDetails = $moduleInfos[$moduleName]
+        # Version number subfolders aren't supported in PowerShell < 5.0
+        # If the module is located in a subfolder, move the module files up one level and remove the (empty) subfolder.
+        if ($moduleFolderChildItems.Count -eq 1 -and $moduleFolderChildItems[0].Attributes.value__ -eq 16) {
+            $moduleSubfolder = $moduleFolderChildItems[0].FullName
 
-        $splatParameters = @{
-           Name = $moduleName
-           MinimumVersion = $moduleInstallDetails.MinimumVersion
-           MaximumVersion = $moduleInstallDetails.MaximumVersion
-           Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
-           Path = $submodulePath
+            Get-ChildItem -Path $moduleSubfolder -Recurse -Force | Move-Item -Destination $moduleInstallPath -Force
+
+            if ($null -eq (Get-ChildItem -Path $moduleSubfolder -Recurse -Force))
+            {
+                Remove-Item -Path $moduleSubfolder
+            }
+            else
+            {
+                throw "Cannot remove folder $moduleSubfolder because it is not empty!"
+            }
         }
-
-        if ($script:SaveModuleSupportsAllowPrerelease)
-        {
-            $splatParameters += @{ AllowPrerelease = $moduleInstallDetails.AllowPrerelease }
-        }
-
-        Write-Host "`tInstalling module: ${moduleName}"
-
-        Save-Module @splatParameters
     }
     Write-Host "`n"
 }
