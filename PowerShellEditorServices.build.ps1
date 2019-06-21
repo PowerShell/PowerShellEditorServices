@@ -315,10 +315,8 @@ task RestorePsesModules -After Build {
     {
         $moduleInstallPath = (Join-Path -Path $subModulePath -ChildPath $moduleName)
 
-        try {
-            $moduleFolderChildItems = Get-ChildItem -Path $moduleInstallPath -Force
-        }
-        catch {
+        if (-not (Test-Path -Path $moduleInstallPath))
+        {
             Write-Host "`tInstalling module: ${moduleName}"
 
             $moduleInstallDetails = $moduleInfos[$moduleName]
@@ -337,13 +335,20 @@ task RestorePsesModules -After Build {
             }
 
             Save-Module @splatParameters
-
-            $moduleFolderChildItems = Get-ChildItem -Path $moduleInstallPath -Force
+        }
+        else
+        {
+            Write-Host "`tModule '${moduleName}' already detected."
         }
 
         # Version number subfolders aren't supported in PowerShell < 5.0
         # If the module is located in a subfolder, move the module files up one level and remove the (empty) subfolder.
-        if ($moduleFolderChildItems.Count -eq 1 -and $moduleFolderChildItems[0].Attributes.value__ -eq 16) {
+        $moduleFolderChildItems = Get-ChildItem -Path $moduleInstallPath -Force
+
+        if ($moduleFolderChildItems.Count -eq 1 -and $moduleFolderChildItems[0].PSIsContainer)
+        {
+            Write-Host "`tMoving module '${moduleName}' out of subfolder."
+
             $moduleSubfolder = $moduleFolderChildItems[0].FullName
 
             Get-ChildItem -Path $moduleSubfolder -Recurse -Force | Move-Item -Destination $moduleInstallPath -Force
