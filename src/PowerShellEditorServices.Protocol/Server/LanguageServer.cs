@@ -1453,6 +1453,9 @@ function __Expand-Alias {
             executeTask.ContinueWith(
                 (task) =>
                 {
+                    // This is the equivalent of hitting ENTER in the Integrated Console
+                    // so we need to activate the RunspaceSynchronizer for completions.
+                    RunspaceSynchronizer.Activate();
                     // Return an empty result since the result value is irrelevant
                     // for this request in the LanguageServer
                     return
