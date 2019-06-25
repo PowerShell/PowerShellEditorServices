@@ -1380,6 +1380,12 @@ function __Expand-Alias {
             DocumentFormattingParams formattingParams,
             RequestContext<TextEdit[]> requestContext)
         {
+            if (this.editorSession.AnalysisService == null)
+            {
+                await requestContext.SendErrorAsync("Script analysis is not enabled in this session");
+                return;
+            }
+
             var result = await FormatAsync(
                 formattingParams.TextDocument.Uri,
                 formattingParams.options,
@@ -1399,6 +1405,12 @@ function __Expand-Alias {
             DocumentRangeFormattingParams formattingParams,
             RequestContext<TextEdit[]> requestContext)
         {
+            if (this.editorSession.AnalysisService == null)
+            {
+                await requestContext.SendErrorAsync("Script analysis is not enabled in this session");
+                return;
+            }
+
             var result = await FormatAsync(
                 formattingParams.TextDocument.Uri,
                 formattingParams.Options,
