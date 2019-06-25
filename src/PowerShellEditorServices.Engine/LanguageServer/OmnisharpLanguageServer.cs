@@ -84,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
             out NamedPipeServerStream outPipe)
         {
             // .NET Core implementation is simplest so try that first
-            if (Utility.IsNetCore)
+            if (DotNetFacade.IsNetCore)
             {
                 outPipe = outPipeName == null
                     ? null

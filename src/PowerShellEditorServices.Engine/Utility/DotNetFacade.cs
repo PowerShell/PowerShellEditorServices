@@ -1,12 +1,12 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Microsoft.PowerShell.EditorServices.Engine
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// General purpose common utilities to prevent reimplementation.
     /// </summary>
-    internal static class Utility
+    internal static class DotNetFacade
     {
         /// <summary>
         /// True if we are running on .NET Core, false otherwise.

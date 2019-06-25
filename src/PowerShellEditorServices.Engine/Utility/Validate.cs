@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.PowerShell.EditorServices.Engine
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides common validation methods to simplify method

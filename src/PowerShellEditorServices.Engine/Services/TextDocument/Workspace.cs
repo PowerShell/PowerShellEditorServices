@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +12,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -117,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             this.workspaceFiles[keyName] = scriptFile;
 
-            this.logger.Write(LogLevel.Verbose, "Opened file as in-memory buffer: " + resolvedFilePath);
+            this.logger.LogDebug("Opened file as in-memory buffer: " + resolvedFilePath);
 
             return scriptFile;
         }
@@ -161,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices
                     this.workspaceFiles.Add(keyName, scriptFile);
                 }
 
-                this.logger.Write(LogLevel.Verbose, "Opened file on disk: " + resolvedFilePath);
+                this.logger.LogDebug("Opened file on disk: " + resolvedFilePath);
             }
 
             return scriptFile;
@@ -202,7 +202,7 @@ namespace Microsoft.PowerShell.EditorServices
                 e is SecurityException ||
                 e is UnauthorizedAccessException)
             {
-                this.logger.WriteHandledException($"Failed to get file for {nameof(filePath)}: '{filePath}'", e);
+                this.logger.LogWarning($"Failed to get file for {nameof(filePath)}: '{filePath}'", e);
                 scriptFile = null;
                 return false;
             }
@@ -246,7 +246,7 @@ namespace Microsoft.PowerShell.EditorServices
 
                 this.workspaceFiles.Add(keyName, scriptFile);
 
-                this.logger.Write(LogLevel.Verbose, "Opened file as in-memory buffer: " + resolvedFilePath);
+                this.logger.LogDebug("Opened file as in-memory buffer: " + resolvedFilePath);
             }
 
             return scriptFile;
@@ -364,7 +364,7 @@ namespace Microsoft.PowerShell.EditorServices
             var fsFactory = new WorkspaceFileSystemWrapperFactory(
                 WorkspacePath,
                 maxDepth,
-                Utils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
+                DotNetFacade.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
                 ignoreReparsePoints,
                 logger
             );
@@ -406,8 +406,7 @@ namespace Microsoft.PowerShell.EditorServices
                     continue;
                 }
 
-                this.logger.Write(
-                    LogLevel.Verbose,
+                this.logger.LogDebug(
                     string.Format(
                         "Resolved relative path '{0}' to '{1}'",
                         referencedFileName,
@@ -442,13 +441,13 @@ namespace Microsoft.PowerShell.EditorServices
                 // Clients could specify paths with escaped space, [ and ] characters which .NET APIs
                 // will not handle.  These paths will get appropriately escaped just before being passed
                 // into the PowerShell engine.
-                filePath = PowerShellContext.UnescapeWildcardEscapedPath(filePath);
+                //filePath = PowerShellContext.UnescapeWildcardEscapedPath(filePath);
 
                 // Get the absolute file path
                 filePath = Path.GetFullPath(filePath);
             }
 
-            this.logger.Write(LogLevel.Verbose, "Resolved path: " + filePath);
+            this.logger.LogDebug("Resolved path: " + filePath);
 
             return filePath;
         }
@@ -548,8 +547,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (resolveException != null)
             {
-                this.logger.Write(
-                    LogLevel.Error,
+                this.logger.LogError(
                     $"Could not resolve relative script path\r\n" +
                     $"    baseFilePath = {baseFilePath}\r\n    " +
                     $"    relativePath = {relativePath}\r\n\r\n" +
@@ -681,7 +679,7 @@ namespace Microsoft.PowerShell.EditorServices
                 docUriStrBld.Append(escapedPath).Replace("%2F", "/");
             }
 
-            if (!Utils.IsNetCore)
+            if (!DotNetFacade.IsNetCore)
             {
                 // ' is not encoded by Uri.EscapeDataString in Windows PowerShell 5.x.
                 // This is apparently a difference between .NET Framework and .NET Core.
