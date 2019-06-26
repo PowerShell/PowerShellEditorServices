@@ -4,10 +4,12 @@
 //
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
+using Microsoft.PowerShell.Commands;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -23,6 +25,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public class RunspaceSynchronizer
     {
+        private static readonly Version versionZero = new Version(0, 0);
         // Determines whether the HandleRunspaceStateChange event should attempt to sync the runspaces.
         private static bool SourceActionEnabled = false;
 
@@ -71,9 +74,9 @@ namespace Microsoft.PowerShell.EditorServices
         public static void InitializeRunspaces(Runspace runspaceSource, Runspace runspaceTarget)
         {
             sourceRunspace = runspaceSource;
-            sourceEngineIntrinsics = ReflectionUtils.GetEngineIntrinsics(sourceRunspace);
+            sourceEngineIntrinsics = sourceRunspace.GetEngineIntrinsics();
             targetRunspace = runspaceTarget;
-            targetEngineIntrinsics = ReflectionUtils.GetEngineIntrinsics(runspaceTarget);
+            targetEngineIntrinsics = runspaceTarget.GetEngineIntrinsics();
             IsReadyForEvents = true;
 
             sourceEngineIntrinsics.Events.SubscribeEvent(
@@ -104,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private static void HandleRunspaceStateChange(object sender, PSEventArgs args)
         {
-            if (!SourceActionEnabled)
+            if (!SourceActionEnabled || sourceRunspace.Debugger.IsActive)
             {
                 return;
             }
@@ -112,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices
             SourceActionEnabled = false;
 
             var newOrChangedModules = new List<PSModuleInfo>();
-            List<PSModuleInfo> modules = ReflectionUtils.GetModules(sourceRunspace);
+            List<PSModuleInfo> modules = sourceRunspace.GetModules();
             foreach (PSModuleInfo module in modules)
             {
                 if (moduleCache.Add(module))
@@ -150,8 +153,16 @@ namespace Microsoft.PowerShell.EditorServices
                     {
                         if(moduleInfo.Path != null)
                         {
+                            string nameParameterValue = moduleInfo.Path;
+                            // If the version is greater than zero, the module info was probably imported by the psd1 or module base.
+                            // If so, we can just import from the module base which is the root of the module folder.
+                            if (moduleInfo.Version > versionZero)
+                            {
+                                nameParameterValue = moduleInfo.ModuleBase;
+                            }
+
                             pwsh.AddCommand("Import-Module")
-                                .AddParameter("Name", moduleInfo.Path)
+                                .AddParameter("Name", nameParameterValue)
                                 .AddParameter("Force")
                                 .AddStatement();
                         }
@@ -172,40 +183,39 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         #endregion
+    }
 
-        // A collection of helper methods that use Reflection in some form.
-        private class ReflectionUtils
+    internal static class RunspaceExtensions
+    {
+        private static BindingFlags bindingFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Default;
+
+        // Gets the modules loaded in a runspace.
+        // This exists in runspace.ExecutionContext.Modules.GetModule(string[] patterns, bool all)
+        internal static List<PSModuleInfo> GetModules(this Runspace runspace)
         {
-            private static BindingFlags bindingFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Default;
+            var executionContext = typeof(Runspace)
+                .GetProperty("ExecutionContext", bindingFlags)
+                .GetValue(runspace);
+            var ModuleIntrinsics = executionContext.GetType()
+                .GetProperty("Modules", bindingFlags)
+                .GetValue(executionContext);
+            var modules = ModuleIntrinsics.GetType()
+                .GetMethod("GetModules", bindingFlags, null, new Type[] { typeof(string[]), typeof(bool) }, null)
+                .Invoke(ModuleIntrinsics, new object[] { new string[] { "*" }, false }) as List<PSModuleInfo>;
+            return modules;
+        }
 
-            // Gets the modules loaded in a runspace.
-            // This exists in runspace.ExecutionContext.Modules.GetModule(string[] patterns, bool all)
-            internal static List<PSModuleInfo> GetModules(Runspace runspace)
-            {
-                var executionContext = typeof(Runspace)
-                    .GetProperty("ExecutionContext", bindingFlags)
-                    .GetValue(runspace);
-                var ModuleIntrinsics = executionContext.GetType()
-                    .GetProperty("Modules", bindingFlags)
-                    .GetValue(executionContext);
-                var modules = ModuleIntrinsics.GetType()
-                    .GetMethod("GetModules", bindingFlags, null, new Type[] { typeof(string[]), typeof(bool) }, null)
-                    .Invoke(ModuleIntrinsics, new object[] { new string[] { "*" }, false }) as List<PSModuleInfo>;
-                return modules;
-            }
-
-            // Gets the engine intrinsics object on a Runspace.
-            // This exists in runspace.ExecutionContext.EngineIntrinsics.
-            internal static EngineIntrinsics GetEngineIntrinsics(Runspace runspace)
-            {
-                var executionContext = typeof(Runspace)
-                    .GetProperty("ExecutionContext", bindingFlags)
-                    .GetValue(runspace);
-                var engineIntrinsics = executionContext.GetType()
-                    .GetProperty("EngineIntrinsics", bindingFlags)
-                    .GetValue(executionContext) as EngineIntrinsics;
-                return engineIntrinsics;
-            }
+        // Gets the engine intrinsics object on a Runspace.
+        // This exists in runspace.ExecutionContext.EngineIntrinsics.
+        internal static EngineIntrinsics GetEngineIntrinsics(this Runspace runspace)
+        {
+            var executionContext = typeof(Runspace)
+                .GetProperty("ExecutionContext", bindingFlags)
+                .GetValue(runspace);
+            var engineIntrinsics = executionContext.GetType()
+                .GetProperty("EngineIntrinsics", bindingFlags)
+                .GetValue(executionContext) as EngineIntrinsics;
+            return engineIntrinsics;
         }
     }
 

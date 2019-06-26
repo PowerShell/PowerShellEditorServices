@@ -12,12 +12,10 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Management.Automation.Language;
-using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices
 {
     using System.Management.Automation;
-    using System.Management.Automation.Language;
 
     /// <summary>
     /// Provides common operations for the syntax tree of a parsed script.
@@ -73,6 +71,7 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (!RunspaceSynchronizer.IsReadyForEvents)
             {
+                pwsh.Runspace.Name = "RunspaceSynchronizerTargetRunspace";
                 RunspaceSynchronizer.InitializeRunspaces(powerShellContext.CurrentRunspace.Runspace, pwsh.Runspace);
             }
 
@@ -97,7 +96,10 @@ namespace Microsoft.PowerShell.EditorServices
 
                 var stopwatch = new Stopwatch();
 
-                if (powerShellContext.IsPSReadLineEnabled)
+                // Static class members in Windows PowerShell had a thread synchronization issue.
+                // This issue was fixed in PowerShell 6+ so we only use the new completions if PSReadLine is enabled
+                // and we're running in .NET Core.
+                if (powerShellContext.IsPSReadLineEnabled && Utils.IsNetCore)
                 {
                     stopwatch.Start();
 
