@@ -353,14 +353,12 @@ task RestorePsesModules -After Build {
 
             Get-ChildItem -Path $moduleSubfolder -Recurse -Force | Move-Item -Destination $moduleInstallPath -Force
 
-            if ($null -eq (Get-ChildItem -Path $moduleSubfolder -Recurse -Force))
-            {
-                Remove-Item -Path $moduleSubfolder
-            }
-            else
+            if ($null -ne (Get-ChildItem -Path $moduleSubfolder -Recurse -Force))
             {
                 throw "Cannot remove folder $moduleSubfolder because it is not empty!"
             }
+
+            Remove-Item -Path $moduleSubfolder
         }
     }
     Write-Host "`n"
