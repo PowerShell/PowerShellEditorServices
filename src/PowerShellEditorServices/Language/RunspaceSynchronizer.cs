@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices
         // 'variableCache' keeps all global scope variable names and their value type.
         // As long as the value type doesn't change, we don't need to update the variable
         // in the target Runspace, because all tab completion needs is the type information.
-        private static Dictionary<string, Type> variableCache = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+        private static Dictionary<string, object> variableCache = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
         private static Runspace sourceRunspace;
         private static Runspace targetRunspace;
@@ -132,13 +132,13 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 // If the variable is a magic variable or it's type has not changed, then skip it.
                 if(POWERSHELL_MAGIC_VARIABLES.Contains(variable.Name) ||
-                    (variableCache.TryGetValue(variable.Name, out Type value) && value == variable.Value?.GetType()))
+                    (variableCache.TryGetValue(variable.Name, out object value) && value == variable.Value))
                 {
                     continue;
                 }
 
                 // Add the variable to the cache and mark it as a newOrChanged variable.
-                variableCache[variable.Name] = variable.Value?.GetType();
+                variableCache[variable.Name] = variable.Value;
                 newOrChangedVars.Add(variable);
             }
 
