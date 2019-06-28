@@ -313,30 +313,53 @@ task RestorePsesModules -After Build {
     # Save each module in the modules.json file
     foreach ($moduleName in $moduleInfos.Keys)
     {
-        if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName))
+        $moduleInstallPath = (Join-Path -Path $subModulePath -ChildPath $moduleName)
+
+        if (-not (Test-Path -Path $moduleInstallPath))
         {
-            Write-Host "`tModule '${moduleName}' already detected. Skipping"
-            continue
+            Write-Host "`tInstalling module: ${moduleName}"
+
+            $moduleInstallDetails = $moduleInfos[$moduleName]
+
+            $splatParameters = @{
+               Name = $moduleName
+               MinimumVersion = $moduleInstallDetails.MinimumVersion
+               MaximumVersion = $moduleInstallDetails.MaximumVersion
+               Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
+               Path = $submodulePath
+            }
+
+            if ($script:SaveModuleSupportsAllowPrerelease)
+            {
+                $splatParameters += @{ AllowPrerelease = $moduleInstallDetails.AllowPrerelease }
+            }
+
+            Save-Module @splatParameters
         }
-
-        $moduleInstallDetails = $moduleInfos[$moduleName]
-
-        $splatParameters = @{
-           Name = $moduleName
-           MinimumVersion = $moduleInstallDetails.MinimumVersion
-           MaximumVersion = $moduleInstallDetails.MaximumVersion
-           Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
-           Path = $submodulePath
-        }
-
-        if ($script:SaveModuleSupportsAllowPrerelease)
+        else
         {
-            $splatParameters += @{ AllowPrerelease = $moduleInstallDetails.AllowPrerelease }
+            Write-Host "`tModule '${moduleName}' already detected."
         }
 
-        Write-Host "`tInstalling module: ${moduleName}"
+        # Version number subfolders aren't supported in PowerShell < 5.0
+        # If the module is located in a subfolder, move the module files up one level and remove the (empty) subfolder.
+        $moduleFolderChildItems = Get-ChildItem -Path $moduleInstallPath -Force
 
-        Save-Module @splatParameters
+        if ($moduleFolderChildItems.Count -eq 1 -and $moduleFolderChildItems[0].PSIsContainer)
+        {
+            Write-Host "`tMoving module '${moduleName}' out of subfolder."
+
+            $moduleSubfolder = $moduleFolderChildItems[0].FullName
+
+            Get-ChildItem -Path $moduleSubfolder -Recurse -Force | Move-Item -Destination $moduleInstallPath -Force
+
+            if ($null -ne (Get-ChildItem -Path $moduleSubfolder -Recurse -Force))
+            {
+                throw "Cannot remove folder $moduleSubfolder because it is not empty!"
+            }
+
+            Remove-Item -Path $moduleSubfolder
+        }
     }
     Write-Host "`n"
 }
