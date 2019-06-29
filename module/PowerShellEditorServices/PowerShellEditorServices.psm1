@@ -3,15 +3,11 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
-# Need to load pipe handling shim assemblies in Windows PowerShell and PSCore 6.0 because they don't have WCP
+# Need to load pipe handling shim assemblies in Windows PowerShell
 if ($PSEdition -eq 'Desktop') {
     Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/System.IO.Pipes.AccessControl.dll"
     Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/System.Security.AccessControl.dll"
     Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/System.Security.Principal.Windows.dll"
-} elseif ($PSVersionTable.PSVersion -ge '6.0' -and $PSVersionTable.PSVersion -lt '6.1' -and $IsWindows) {
-    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/6.0/System.IO.Pipes.AccessControl.dll"
-    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/6.0/System.Security.AccessControl.dll"
-    Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/6.0/System.Security.Principal.Windows.dll"
 }
 
 Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Microsoft.PowerShell.EditorServices.dll"
