@@ -29,57 +29,11 @@ The functionality in PowerShell Editor Services is already available in the foll
 - The [$psEditor API](http://powershell.github.io/PowerShellEditorServices/guide/extensions.html) enables scripting of the host editor
 - A full, terminal-based Integrated Console experience for interactive development and debugging
 
-### Important note regarding the .NET APIs in Microsoft.PowerShell.EditorServices.dll
-
-With the 1.0 release of PowerShell Editor Services, we have deprecated the public APIs
-of the following classes:
-
-- EditorSession
-- LanguageService
-- DebugService
-- ConsoleService
-- AnalysisService
-- ExtensionService
-- TemplateService
-
-The intended usage model is now to host PowerShell Editor Services within powershell.exe
-and communicate with it over named pipes (or Unix domain sockets on macOS & Linux) via the [Language Server Protocol](https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md)
-and [Debug Adapter Protocol](https://github.com/Microsoft/vscode-debugadapter-node/blob/master/protocol/src/debugProtocol.ts).
-Detailed usage documentation for this module is coming soon!
-
-## Documentation
-
-Check out our **[documentation site](http://powershell.github.io/PowerShellEditorServices)** for information about
-how to use this project. You can also read our plans for future feature development by looking at the
-**[Development Roadmap](https://github.com/PowerShell/PowerShellEditorServices/wiki/Development-Roadmap)**.
-
-## Installation
-
-**TODO**: Add information about acquiring packages from NuGet and npm once those are available.
-
 ## Development
 
-### 1. On Linux or macOS, install PowerShell Core
+### 1. Install PowerShell 6+
 
-If you are using Windows, skip this step.  If you are using Linux or macOS, you will need to
-install PowerShell by following [these instructions](https://github.com/PowerShell/PowerShell#get-powershell).
-
-If you are using macOS you will need to download the latest version of OpenSSL. The easiest way to get this is from
-[Homebrew](http://brew.sh/). After installing Homebrew execute the following commands:
-
-```
-  brew update
-  brew install openssl
-  mkdir -p /usr/local/lib
-  ln -s /usr/local/opt/openssl/lib/libcrypto.1.0.0.dylib /usr/local/lib/
-  ln -s /usr/local/opt/openssl/lib/libssl.1.0.0.dylib /usr/local/lib/
-```
-### 2. On Windows, install the .NET 4.5.2 Targeting Pack
-
-**NOTE: This is only necessary if you don't have Visual Studio installed**
-
-If you try to build the code and receive an error about a missing .NET 4.5.2
-Targeting Pack, you should download and install the [.NET Framework 4.5.2 Developer Pack](https://www.microsoft.com/en-us/download/details.aspx?id=42637).
+Install PowerShell 6+ with [these instructions](https://github.com/PowerShell/PowerShell#get-powershell).
 
 ### 3. Clone the GitHub repository:
 
@@ -88,9 +42,6 @@ git clone https://github.com/PowerShell/PowerShellEditorServices.git
 ```
 
 ### 4. Install [Invoke-Build](https://github.com/nightroman/Invoke-Build)
-
-This step requires PowerShellGet, included by default with PowerShell v5 and up
-but installable on [PowerShell v3 and v4](https://github.com/PowerShell/PowerShellGet#get-powershellget-module-for-powershell-versions-30-and-40).
 
 ```powershell
 Install-Module InvokeBuild -Scope CurrentUser
@@ -118,8 +69,8 @@ contribute code, documentation, tests, or bug reports, please read our [Contribu
 
 - [Keith Hill](https://github.com/rkeithhill) - [@r_keith_hill](http://twitter.com/r_keith_hill)
 - [Patrick Meinecke](https://github.com/SeeminglyScience) - [@SeeminglyScienc](http://twitter.com/SeeminglyScienc)
-- [Tyler Leonhardt](https://github.com/tylerl0706) - [@TylerLeonhardt](http://twitter.com/tylerleonhardt)
-- [David Wilson](https://github.com/daviwil) - [@daviwil](http://twitter.com/daviwil)
+- [Tyler Leonhardt](https://github.com/tylerleonhardt) - [@TylerLeonhardt](http://twitter.com/tylerleonhardt)
+- [Rob Holt](https://github.com/rjmholt) - no twitter
 
 ## License
 
