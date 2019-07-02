@@ -67,15 +67,15 @@ namespace Microsoft.PowerShell.EditorServices.Session {
             _consoleReadLine = new ConsoleReadLine(powerShellContext);
             _readLineProxy = readLineProxy;
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return;
-            }
+            // if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            // {
+            //     return;
+            // }
 
-            _readLineProxy.OverrideReadKey(
-                intercept => ConsoleProxy.UnixReadKey(
-                    intercept,
-                    _readLineCancellationSource.Token));
+            // _readLineProxy.OverrideReadKey(
+            //     intercept => ConsoleProxy.UnixReadKey(
+            //         intercept,
+            //         _readLineCancellationSource.Token));
         }
 
         internal static bool TryGetPSReadLineProxy(
