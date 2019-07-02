@@ -20,13 +20,13 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
         static ConsoleProxy()
         {
-            // if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            // {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
                 s_consoleProxy = new WindowsConsoleOperations();
-            //     return;
-            // }
+                return;
+            }
 
-            // s_consoleProxy = new UnixConsoleOperations();
+            s_consoleProxy = new UnixConsoleOperations();
         }
 
         /// <summary>
@@ -189,7 +189,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
             catch (OperationCanceledException)
             {
-                return default(ConsoleKeyInfo);
+                return default;
             }
         }
     }
