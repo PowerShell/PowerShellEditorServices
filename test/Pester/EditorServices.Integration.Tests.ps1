@@ -78,6 +78,17 @@ Describe "Loading and running PowerShellEditorServices" {
         #ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
     }
 
+    It "Can handle WorkspaceSymbol request" {
+        $request = Send-LspRequest -Client $client -Method "workspace/symbol" -Parameters @{
+            query = ""
+        }
+        $response = Get-LspResponse -Client $client -Id $request.Id #-WaitMillis 99999
+        $response.Id | Should -BeExactly $request.Id
+        CheckErrorResponse -Response $response
+
+        # ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
+    }
+
     # This test MUST be last
     It "Shuts down the process properly" {
         $request = Send-LspShutdownRequest -Client $client
