@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OS = OmniSharp.Extensions.LanguageServer.Server;
 using System.Security.AccessControl;
+using OmniSharp.Extensions.LanguageServer.Server;
+using PowerShellEditorServices.Engine.Services.Workspace.Handlers;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
 {
@@ -61,14 +63,14 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                 }
 
                 options.Input = namedPipe;
-                options.Output = outNamedPipe != null
-                    ? outNamedPipe
-                    : namedPipe;
+                options.Output = outNamedPipe ?? namedPipe;
 
                 options.LoggerFactory = _configuration.LoggerFactory;
                 options.MinimumLogLevel = _configuration.MinimumLogLevel;
                 options.Services = _configuration.Services;
+                options.WithHandler<WorkspaceSymbolsHandler>();
             });
+
             _serverStart.SetResult(true);
         }
 

@@ -12,6 +12,7 @@ using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -236,7 +237,10 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             _logger.LogInformation("Starting language server");
 
-            Task.Run(_languageServer.StartAsync);
+            Task.Factory.StartNew(() => _languageServer.StartAsync(),
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
 
             _logger.LogInformation(
                 string.Format(
