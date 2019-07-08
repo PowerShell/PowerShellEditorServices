@@ -13,10 +13,10 @@ namespace PowerShellEditorServices.Engine.Services.Workspace.Handlers
 {
     public class WorkspaceSymbolsHandler : IWorkspaceSymbolsHandler
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
-        public WorkspaceSymbolsHandler() {
-            // _logger = logger;
+        public WorkspaceSymbolsHandler(ILoggerFactory loggerFactory) {
+            _logger = loggerFactory.CreateLogger<WorkspaceSymbolsHandler>();
         }
 
         public object GetRegistrationOptions()
@@ -63,7 +63,7 @@ namespace PowerShellEditorServices.Engine.Services.Workspace.Handlers
             //         }
             //     }
             // }
-            // _logger.LogWarning("HELLO FOOLS");
+            _logger.LogWarning("Logging in a handler works now.");
 
             return Task.FromResult(new SymbolInformationContainer(symbols));
         }
