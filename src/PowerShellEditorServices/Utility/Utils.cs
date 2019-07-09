@@ -43,13 +43,13 @@ namespace Microsoft.PowerShell.EditorServices
     internal static class PowerShellReflectionUtils
     {
 
-        private static readonly Assembly _psRuntimeAssembly = typeof(System.Management.Automation.Runspaces.Runspace).Assembly;
-        private static readonly PropertyInfo _psVersionProperty = _psRuntimeAssembly.GetType("System.Management.Automation.PSVersionInfo")
+        private static readonly Assembly s_psRuntimeAssembly = typeof(System.Management.Automation.Runspaces.Runspace).Assembly;
+        private static readonly PropertyInfo s_psVersionProperty = s_psRuntimeAssembly.GetType("System.Management.Automation.PSVersionInfo")
             .GetProperty("PSVersion", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
 
         /// <summary>
         /// Get's the Version of PowerShell being used.
         /// </summary>
-        public static Version PSVersion { get; } = _psVersionProperty.GetValue(null) as Version;
+        public static Version PSVersion { get; } = s_psVersionProperty.GetValue(null) as Version;
     }
 }
