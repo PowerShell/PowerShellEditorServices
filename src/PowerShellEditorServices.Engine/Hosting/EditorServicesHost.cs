@@ -219,11 +219,14 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         {
             while (System.Diagnostics.Debugger.IsAttached)
             {
-                Console.WriteLine($"{System.Diagnostics.Process.GetCurrentProcess().Id}");
-                System.Threading.Thread.Sleep(2000);
+                Console.WriteLine($"{Process.GetCurrentProcess().Id}");
+                Thread.Sleep(2000);
             }
 
             _logger.LogInformation($"LSP NamedPipe: {config.InOutPipeName}\nLSP OutPipe: {config.OutPipeName}");
+
+            _serviceCollection.AddSingleton<WorkspaceService>();
+            _serviceCollection.AddSingleton<SymbolsService>();
 
             _languageServer = new OmnisharpLanguageServerBuilder(_serviceCollection)
             {

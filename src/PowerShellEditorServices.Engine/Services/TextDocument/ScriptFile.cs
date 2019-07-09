@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 return this.ClientFilePath == null
                     ? string.Empty
-                    : Workspace.ConvertPathToDocumentUri(this.ClientFilePath);
+                    : WorkspaceService.ConvertPathToDocumentUri(this.ClientFilePath);
             }
         }
 
@@ -162,7 +162,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.FilePath = filePath;
             this.ClientFilePath = clientFilePath;
             this.IsAnalysisEnabled = true;
-            this.IsInMemory = Workspace.IsPathInMemory(filePath);
+            this.IsInMemory = WorkspaceService.IsPathInMemory(filePath);
             this.powerShellVersion = powerShellVersion;
 
             // SetFileContents() calls ParseFileContents() which initializes the rest of the properties.
