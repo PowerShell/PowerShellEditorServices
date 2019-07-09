@@ -4,19 +4,17 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using Serilog.Extensions.Logging;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
 {
@@ -64,7 +62,9 @@ namespace Microsoft.PowerShell.EditorServices.Engine
 
         private ILanguageServer _languageServer;
 
-        private Extensions.Logging.ILogger _logger;
+        private readonly Extensions.Logging.ILogger _logger;
+
+        private readonly ILoggerFactory _factory;
 
         #endregion
 
@@ -130,10 +130,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine
             Log.Logger = new LoggerConfiguration().Enrich.FromLogContext()
                             .WriteTo.Console()
                             .CreateLogger();
-
-            _logger = new SerilogLoggerProvider().CreateLogger(nameof(EditorServicesHost));
-
-            _serviceCollection.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
+            _factory = new LoggerFactory().AddSerilog(Log.Logger);
+            _logger = _factory.CreateLogger<EditorServicesHost>();
 
             _hostDetails = hostDetails;
 
@@ -231,12 +229,16 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             {
                 NamedPipeName = config.InOutPipeName ?? config.InPipeName,
                 OutNamedPipeName = config.OutPipeName,
+                LoggerFactory = _factory
             }
             .BuildLanguageServer();
 
             _logger.LogInformation("Starting language server");
 
-            Task.Run(_languageServer.StartAsync);
+            Task.Factory.StartNew(() => _languageServer.StartAsync(),
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
 
             _logger.LogInformation(
                 string.Format(
