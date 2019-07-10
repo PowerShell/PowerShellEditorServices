@@ -252,6 +252,43 @@ function Send-LspInitializeRequest
     return Send-LspRequest -Client $Client -Method 'initialize' -Parameters $parameters
 }
 
+function Send-LspDidOpenTextDocumentRequest
+{
+    [OutputType([PsesPsClient.LspRequest])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Uri,
+
+        [Parameter()]
+        [int]
+        $Version = 0,
+
+        [Parameter()]
+        [string]
+        $LanguageId = "powershell",
+
+        [Parameter()]
+        [string]
+        $Text
+    )
+
+    $parameters = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DidOpenTextDocumentParams]@{
+        TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentItem]@{
+            Uri = $Uri
+            LanguageId = $LanguageId
+            Text = $Text
+            Version = $Version
+        }
+    }
+
+    return Send-LspRequest -Client $Client -Method 'textDocument/didOpen' -Parameters $parameters
+}
+
 function Send-LspShutdownRequest
 {
     [OutputType([PsesPsClient.LspRequest])]
@@ -304,7 +341,11 @@ function Get-LspResponse
 
     if ($Client.TryGetResponse($Id, [ref]$lspResponse, $WaitMillis))
     {
-        return $lspResponse
+        $result = if ($lspResponse.Result) { $lspResponse.Result.ToString() | ConvertFrom-Json }
+        return [PSCustomObject]@{
+            Id = $lspResponse.Id
+            Result = $result
+        }
     }
 }
 

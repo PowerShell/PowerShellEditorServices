@@ -79,11 +79,29 @@ Describe "Loading and running PowerShellEditorServices" {
     }
 
     It "Can handle WorkspaceSymbol request" {
+        $script = "
+function Get-Foo {
+    Write-Host 'hello'
+}
+"
+
+        $file = Set-Content -Path TestDrive:\foo.ps1 -Value $script -PassThru
+        $response = Send-LspDidOpenTextDocumentRequest -Client $client `
+            -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
+            -Text ($file[0].ToString())
+
+        # There's no response for this message, but we need to call Get-LspResponse
+        # to increment the counter.
+        Get-LspResponse -Client $client -Id $response.Id | Out-Null
+
         $request = Send-LspRequest -Client $client -Method "workspace/symbol" -Parameters @{
             query = ""
         }
-        $response = Get-LspResponse -Client $client -Id $request.Id #-WaitMillis 99999
+        $response = Get-LspResponse -Client $client -Id $request.Id -WaitMillis 99999
         $response.Id | Should -BeExactly $request.Id
+
+        $response.Result.Count | Should -Be 1
+        $response.Result.name | Should -BeLike "Get-Foo*"
         CheckErrorResponse -Response $response
 
         # ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)

@@ -120,8 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
 
             foreach (var kvp in hashtableAst.KeyValuePairs)
             {
-                var keyStrConstExprAst = kvp.Item1 as StringConstantExpressionAst;
-                if (keyStrConstExprAst != null)
+                if (kvp.Item1 is StringConstantExpressionAst keyStrConstExprAst)
                 {
                     IScriptExtent nameExtent = new ScriptExtent()
                     {
