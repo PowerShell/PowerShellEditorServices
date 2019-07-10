@@ -49,7 +49,11 @@ namespace Microsoft.PowerShell.EditorServices.Console
             // To work around this we wait for a key to be pressed before actually calling Console.ReadKey.
             // However, any pressed keys during this time will be echoed to the console. To get around
             // this we use the UnixConsoleEcho package to disable echo prior to waiting.
-            InputEcho.Disable();
+            if (Utils.IsPS6)
+            {
+                InputEcho.Disable();
+            }
+
             try
             {
                 // The WaitForKeyAvailable delegate switches between a long delay between waits and
@@ -59,7 +63,10 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
             finally
             {
-                InputEcho.Disable();
+                if (Utils.IsPS6)
+                {
+                    InputEcho.Disable();
+                }
                 s_readKeyHandle.Release();
             }
 
@@ -82,14 +89,20 @@ namespace Microsoft.PowerShell.EditorServices.Console
 
             // I tried to replace this library with a call to `stty -echo`, but unfortunately
             // the library also sets up allowing backspace to trigger `Console.KeyAvailable`.
-            InputEcho.Disable();
+            if (Utils.IsPS6)
+            {
+                InputEcho.Disable();
+            }
             try
             {
                 while (!await WaitForKeyAvailableAsync(cancellationToken));
             }
             finally
             {
-                InputEcho.Enable();
+                if (Utils.IsPS6)
+                {
+                    InputEcho.Enable();
+                }
                 s_readKeyHandle.Release();
             }
 

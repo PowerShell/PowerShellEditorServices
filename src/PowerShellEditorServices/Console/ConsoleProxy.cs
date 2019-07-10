@@ -189,7 +189,7 @@ namespace Microsoft.PowerShell.EditorServices.Console
             }
             catch (OperationCanceledException)
             {
-                return default(ConsoleKeyInfo);
+                return default;
             }
         }
     }
