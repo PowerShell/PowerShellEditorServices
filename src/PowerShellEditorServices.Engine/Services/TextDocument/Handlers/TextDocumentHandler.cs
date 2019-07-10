@@ -65,7 +65,7 @@ namespace PowerShellEditorServices.Engine.Services.Workspace.Handlers
         {
             return new TextDocumentChangeRegistrationOptions()
             {
-                // DocumentSelector = _documentSelector,
+                DocumentSelector = _documentSelector,
                 SyncKind = Change
             };
         }
@@ -96,7 +96,7 @@ namespace PowerShellEditorServices.Engine.Services.Workspace.Handlers
         {
             return new TextDocumentRegistrationOptions()
             {
-                // DocumentSelector = _documentSelector,
+                DocumentSelector = _documentSelector,
             };
         }
 
@@ -136,8 +136,8 @@ namespace PowerShellEditorServices.Engine.Services.Workspace.Handlers
         {
             return new TextDocumentSaveRegistrationOptions()
             {
-                // DocumentSelector = _documentSelector,
-                // IncludeText = true
+                DocumentSelector = _documentSelector,
+                IncludeText = true
             };
         }
         public TextDocumentAttributes GetTextDocumentAttributes(Uri uri)

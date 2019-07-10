@@ -78,6 +78,16 @@ Describe "Loading and running PowerShellEditorServices" {
         #ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
     }
 
+    It "Can handle powerShell/getVersion request" {
+        $request = Send-LspRequest -Client $client -Method "powerShell/getVersion"
+        $response = Get-LspResponse -Client $client -Id $request.Id
+        if ($IsCoreCLR) {
+            $response.Result.edition | Should -Be "Core"
+        } else {
+            $response.Result.edition | Should -Be "Desktop"
+        }
+    }
+
     It "Can handle WorkspaceSymbol request" {
         $script = "
 function Get-Foo {
