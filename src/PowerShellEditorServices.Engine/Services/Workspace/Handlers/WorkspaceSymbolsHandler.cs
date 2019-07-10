@@ -18,6 +18,7 @@ namespace PowerShellEditorServices.Engine.Services.Workspace.Handlers
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
+        private WorkspaceSymbolCapability _capability;
 
         public WorkspaceSymbolsHandler(ILoggerFactory loggerFactory, SymbolsService symbols, WorkspaceService workspace) {
             _logger = loggerFactory.CreateLogger<WorkspaceSymbolsHandler>();
@@ -73,7 +74,7 @@ namespace PowerShellEditorServices.Engine.Services.Workspace.Handlers
 
         public void SetCapability(WorkspaceSymbolCapability capability)
         {
-            // throw new NotImplementedException();
+            _capability = capability;
         }
 
         #region private Methods
