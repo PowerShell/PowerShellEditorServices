@@ -11,7 +11,6 @@ using System.Security;
 using System.Text;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.FileSystemGlobbing;
-using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.PowerShell.EditorServices
@@ -20,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// Manages a "workspace" of script files that are open for a particular
     /// editing session.  Also helps to navigate references between ScriptFiles.
     /// </summary>
-    public class Workspace
+    public class WorkspaceService
     {
         #region Private Fields
 
@@ -49,9 +48,9 @@ namespace Microsoft.PowerShell.EditorServices
             "**/*"
         };
 
-        private ILogger logger;
-        private Version powerShellVersion;
-        private Dictionary<string, ScriptFile> workspaceFiles = new Dictionary<string, ScriptFile>();
+        private readonly ILogger logger;
+        private readonly Version powerShellVersion;
+        private readonly Dictionary<string, ScriptFile> workspaceFiles = new Dictionary<string, ScriptFile>();
 
         #endregion
 
@@ -81,10 +80,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="powerShellVersion">The version of PowerShell for which scripts will be parsed.</param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public Workspace(Version powerShellVersion, ILogger logger)
+        public WorkspaceService(ILoggerFactory factory)
         {
-            this.powerShellVersion = powerShellVersion;
-            this.logger = logger;
+            this.powerShellVersion = VersionUtils.PSVersion;
+            this.logger = factory.CreateLogger<WorkspaceService>();
             this.ExcludeFilesGlob = new List<string>();
             this.FollowSymlinks = true;
         }
@@ -113,11 +112,11 @@ namespace Microsoft.PowerShell.EditorServices
                     resolvedFilePath,
                     filePath,
                     initialBuffer,
-                    this.powerShellVersion);
+                    powerShellVersion);
 
-            this.workspaceFiles[keyName] = scriptFile;
+            workspaceFiles[keyName] = scriptFile;
 
-            this.logger.LogDebug("Opened file as in-memory buffer: " + resolvedFilePath);
+            logger.LogDebug("Opened file as in-memory buffer: " + resolvedFilePath);
 
             return scriptFile;
         }
@@ -125,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <summary>
         /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
         /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
-        /// <see cref="Workspace.TryGetFile(string, out ScriptFile)"/> instead.</para>
+        /// <see cref="WorkspaceService.TryGetFile(string, out ScriptFile)"/> instead.</para>
         /// </summary>
         /// <param name="filePath">The file path at which the script resides.</param>
         /// <exception cref="FileNotFoundException">
@@ -143,8 +142,7 @@ namespace Microsoft.PowerShell.EditorServices
             string keyName = resolvedFilePath.ToLower();
 
             // Make sure the file isn't already loaded into the workspace
-            ScriptFile scriptFile = null;
-            if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile))
+            if (!this.workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile))
             {
                 // This method allows FileNotFoundException to bubble up
                 // if the file isn't found.
@@ -234,8 +232,7 @@ namespace Microsoft.PowerShell.EditorServices
             string keyName = resolvedFilePath.ToLower();
 
             // Make sure the file isn't already loaded into the workspace
-            ScriptFile scriptFile = null;
-            if (!this.workspaceFiles.TryGetValue(keyName, out scriptFile) && initialBuffer != null)
+            if (!this.workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile) && initialBuffer != null)
             {
                 scriptFile =
                     new ScriptFile(
@@ -357,14 +354,14 @@ namespace Microsoft.PowerShell.EditorServices
                 yield break;
             }
 
-            var matcher = new Microsoft.Extensions.FileSystemGlobbing.Matcher();
+            var matcher = new Matcher();
             foreach (string pattern in includeGlobs) { matcher.AddInclude(pattern); }
             foreach (string pattern in excludeGlobs) { matcher.AddExclude(pattern); }
 
             var fsFactory = new WorkspaceFileSystemWrapperFactory(
                 WorkspacePath,
                 maxDepth,
-                DotNetFacade.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
+                VersionUtils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
                 ignoreReparsePoints,
                 logger
             );
@@ -379,8 +376,8 @@ namespace Microsoft.PowerShell.EditorServices
 
         #region Private Methods
         /// <summary>
-        /// Recusrively searches through referencedFiles in scriptFiles
-        /// and builds a Dictonary of the file references
+        /// Recursively searches through referencedFiles in scriptFiles
+        /// and builds a Dictionary of the file references
         /// </summary>
         /// <param name="scriptFile">Details an contents of "root" script file</param>
         /// <param name="referencedScriptFiles">A Dictionary of referenced script files</param>
@@ -413,7 +410,7 @@ namespace Microsoft.PowerShell.EditorServices
                         resolvedScriptPath));
 
                 // Get the referenced file if it's not already in referencedScriptFiles
-                if (this.TryGetFile(resolvedScriptPath, out ScriptFile referencedFile))
+                if (TryGetFile(resolvedScriptPath, out ScriptFile referencedFile))
                 {
                     // Normalize the resolved script path and add it to the
                     // referenced files list if it isn't there already
@@ -433,7 +430,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 if (filePath.StartsWith(@"file://"))
                 {
-                    filePath = Workspace.UnescapeDriveColon(filePath);
+                    filePath = WorkspaceService.UnescapeDriveColon(filePath);
                     // Client sent the path in URI format, extract the local path
                     filePath = new Uri(filePath).LocalPath;
                 }
@@ -462,7 +459,7 @@ namespace Microsoft.PowerShell.EditorServices
             // view of the current file or an untitled file.
             try
             {
-                // File system absoulute paths will have a URI scheme of file:.
+                // File system absolute paths will have a URI scheme of file:.
                 // Other schemes like "untitled:" and "gitlens-git:" will return false for IsFile.
                 var uri = new Uri(filePath);
                 isInMemory = !uri.IsFile;
@@ -679,7 +676,7 @@ namespace Microsoft.PowerShell.EditorServices
                 docUriStrBld.Append(escapedPath).Replace("%2F", "/");
             }
 
-            if (!DotNetFacade.IsNetCore)
+            if (!VersionUtils.IsNetCore)
             {
                 // ' is not encoded by Uri.EscapeDataString in Windows PowerShell 5.x.
                 // This is apparently a difference between .NET Framework and .NET Core.
