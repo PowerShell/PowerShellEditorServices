@@ -18,6 +18,7 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
     {
 
         private readonly ILogger _logger;
+        private readonly ILanguageServer _languageServer;
         private readonly AnalysisService _analysisService;
         private readonly WorkspaceService _workspaceService;
 
@@ -37,9 +38,10 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
 
         public TextDocumentSyncKind Change => TextDocumentSyncKind.Incremental;
 
-        public TextDocumentHandler(ILoggerFactory factory, AnalysisService analysisService, WorkspaceService workspaceService)
+        public TextDocumentHandler(ILoggerFactory factory, ILanguageServer languageServer, AnalysisService analysisService, WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<TextDocumentHandler>();
+            _languageServer = languageServer;
             _analysisService = analysisService;
             _workspaceService = workspaceService;
         }
