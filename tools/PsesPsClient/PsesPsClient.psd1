@@ -74,6 +74,7 @@ FunctionsToExport = @(
     'Connect-PsesServer',
     'Send-LspRequest',
     'Send-LspInitializeRequest',
+    'Send-LspDidOpenTextDocumentRequest',
     'Send-LspShutdownRequest',
     'Get-LspResponse'
 )

@@ -69,6 +69,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                 options.MinimumLogLevel = _configuration.MinimumLogLevel;
                 options.Services = _configuration.Services;
                 options.WithHandler<WorkspaceSymbolsHandler>();
+                options.WithHandler<TextDocumentHandler>();
+                options.WithHandler<GetVersionHandler>();
             });
 
             _serverStart.SetResult(true);
