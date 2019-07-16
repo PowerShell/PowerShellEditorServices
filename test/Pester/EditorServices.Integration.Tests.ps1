@@ -117,11 +117,7 @@ function Get-Foo {
         # ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
     }
 
-<<<<<<< HEAD
     It "Can get Diagnostics after opening a text document" {
-=======
-    It "Can get Diagnostics" {
->>>>>>> Added Diagnostics
         $script = '$a = 4'
         $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $script -PassThru -Force
 
