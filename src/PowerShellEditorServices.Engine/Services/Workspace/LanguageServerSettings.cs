@@ -178,6 +178,10 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>>
         public CodeFormattingSettings()
         {
+<<<<<<< HEAD
+=======
+
+>>>>>>> didChangeConfiguration message and general settings support
         }
 
         /// <summary>

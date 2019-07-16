@@ -18,14 +18,8 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
     {
 
         private readonly ILogger _logger;
-        private readonly ILanguageServer _languageServer;
         private readonly AnalysisService _analysisService;
         private readonly WorkspaceService _workspaceService;
-
-        private Dictionary<string, Dictionary<string, MarkerCorrection>> codeActionsPerFile =
-            new Dictionary<string, Dictionary<string, MarkerCorrection>>();
-
-        private static CancellationTokenSource s_existingRequestCancellation;
 
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
             new DocumentFilter()
@@ -38,10 +32,9 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
 
         public TextDocumentSyncKind Change => TextDocumentSyncKind.Incremental;
 
-        public TextDocumentHandler(ILoggerFactory factory, ILanguageServer languageServer, AnalysisService analysisService, WorkspaceService workspaceService)
+        public TextDocumentHandler(ILoggerFactory factory, AnalysisService analysisService, WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<TextDocumentHandler>();
-            _languageServer = languageServer;
             _analysisService = analysisService;
             _workspaceService = workspaceService;
         }
