@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using OS = OmniSharp.Extensions.LanguageServer.Server;
 using System.Security.AccessControl;
 using OmniSharp.Extensions.LanguageServer.Server;
-using PowerShellEditorServices.Engine.Services.Workspace.Handlers;
+using PowerShellEditorServices.Engine.Services.Handlers;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
 {

@@ -95,14 +95,14 @@ function Get-Foo {
 }
 "
 
-        $file = Set-Content -Path TestDrive:\foo.ps1 -Value $script -PassThru
-        $response = Send-LspDidOpenTextDocumentRequest -Client $client `
+        $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $script -PassThru -Force
+        $request = Send-LspDidOpenTextDocumentRequest -Client $client `
             -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
             -Text ($file[0].ToString())
 
         # There's no response for this message, but we need to call Get-LspResponse
         # to increment the counter.
-        Get-LspResponse -Client $client -Id $response.Id | Out-Null
+        Get-LspResponse -Client $client -Id $request.Id | Out-Null
 
         $request = Send-LspRequest -Client $client -Method "workspace/symbol" -Parameters @{
             query = ""
@@ -115,6 +115,25 @@ function Get-Foo {
         CheckErrorResponse -Response $response
 
         # ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
+    }
+
+    It "Can get Diagnostics" {
+        $script = '$a = 4'
+        $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $script -PassThru -Force
+
+        $request = Send-LspDidOpenTextDocumentRequest -Client $client `
+            -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
+            -Text ($file[0].ToString())
+
+        # There's no response for this message, but we need to call Get-LspResponse
+        # to increment the counter.
+        Get-LspResponse -Client $client -Id $request.Id | Out-Null
+
+        $notifications = Get-LspNotification -Client $client
+        $notifications | Should -Not -BeNullOrEmpty
+        $notifications.Params.diagnostics | Should -Not -BeNullOrEmpty
+        $notifications.Params.diagnostics.Count | Should -Be 1
+        $notifications.Params.diagnostics.code | Should -Be "PSUseDeclaredVarsMoreThanAssignments"
     }
 
     # This test MUST be last
@@ -148,10 +167,18 @@ function Get-Foo {
             finally
             {
                 $client.Dispose()
+                $client = $null
             }
         }
 
         #ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
+    }
+
+    AfterEach {
+        if($client) {
+            # Drain notifications
+            Get-LspNotification -Client $client | Out-Null
+        }
     }
 
     AfterAll {

@@ -227,6 +227,12 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             _serviceCollection.AddSingleton<WorkspaceService>();
             _serviceCollection.AddSingleton<SymbolsService>();
+            _serviceCollection.AddSingleton<AnalysisService>(
+                (provider) => {
+                    // TODO: Fill in settings
+                    return AnalysisService.Create(null, _factory.CreateLogger<AnalysisService>());
+                }
+            );
 
             _languageServer = new OmnisharpLanguageServerBuilder(_serviceCollection)
             {

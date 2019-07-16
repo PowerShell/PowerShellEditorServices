@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices;
 
-namespace PowerShellEditorServices.Engine.Services.Workspace.Handlers
+namespace PowerShellEditorServices.Engine.Services.Handlers
 {
     public class GetVersionHandler : IGetVersionHandler
     {

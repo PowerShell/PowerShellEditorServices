@@ -13,7 +13,7 @@ using System.Text;
 using System.Collections;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.PowerShell.EditorServices.Services
+namespace Microsoft.PowerShell.EditorServices
 {
     /// <summary>
     /// Provides a high-level service for performing semantic analysis
