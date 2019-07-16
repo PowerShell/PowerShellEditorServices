@@ -217,7 +217,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             EditorServiceTransportConfig config,
             ProfilePaths profilePaths)
         {
-            while (System.Diagnostics.Debugger.IsAttached)
+            while (!System.Diagnostics.Debugger.IsAttached)
             {
                 Console.WriteLine($"{Process.GetCurrentProcess().Id}");
                 Thread.Sleep(2000);
