@@ -286,7 +286,12 @@ function Send-LspDidOpenTextDocumentRequest
         }
     }
 
-    return Send-LspRequest -Client $Client -Method 'textDocument/didOpen' -Parameters $parameters
+    $result = Send-LspRequest -Client $Client -Method 'textDocument/didOpen' -Parameters $parameters
+
+    # Give PSScriptAnalyzer enough time to run
+    Start-Sleep -Seconds 1
+
+    $result
 }
 
 function Send-LspShutdownRequest
@@ -317,7 +322,13 @@ function Send-LspRequest
         $Parameters = $null
     )
 
-    return $Client.WriteRequest($Method, $Parameters)
+
+    $result = $Client.WriteRequest($Method, $Parameters)
+
+    # To allow for result/notification queue to fill up
+    Start-Sleep 1
+
+    $result
 }
 
 function Get-LspResponse
@@ -345,6 +356,24 @@ function Get-LspResponse
         return [PSCustomObject]@{
             Id = $lspResponse.Id
             Result = $result
+        }
+    }
+}
+
+function Get-LspNotification
+{
+    [OutputType([PsesPsClient.LspResponse])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client
+    )
+
+    $Client.GetNotifications() | ForEach-Object {
+        $result = if ($_.Params) { $_.Params.ToString() | ConvertFrom-Json }
+        [PSCustomObject]@{
+            Method = $_.Method
+            Params = $result
         }
     }
 }

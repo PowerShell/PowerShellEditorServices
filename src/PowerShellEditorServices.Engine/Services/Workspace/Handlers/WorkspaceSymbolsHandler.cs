@@ -11,7 +11,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using PowerShellEditorServices.Engine.Utility;
 
-namespace PowerShellEditorServices.Engine.Services.Workspace.Handlers
+namespace PowerShellEditorServices.Engine.Services.Handlers
 {
     public class WorkspaceSymbolsHandler : IWorkspaceSymbolsHandler
     {

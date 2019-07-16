@@ -1,7 +1,7 @@
 using OmniSharp.Extensions.Embedded.MediatR;
 using OmniSharp.Extensions.JsonRpc;
 
-namespace PowerShellEditorServices.Engine.Services.Workspace.Handlers
+namespace PowerShellEditorServices.Engine.Services.Handlers
 {
     [Serial, Method("powerShell/getVersion")]
     public interface IGetVersionHandler : IJsonRpcRequestHandler<GetVersionParams, PowerShellVersionDetails> { }
