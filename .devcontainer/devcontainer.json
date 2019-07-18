@@ -1,0 +1,14 @@
+// See https://aka.ms/vscode-remote/devcontainer.json for format details.
+{
+	"name": "C# (.NET Core 2.1) and PowerShell on Debian 9",
+	"dockerFile": "Dockerfile",
+
+	"postCreateCommand": "dotnet restore",
+
+	"extensions": [
+        "ms-vscode.csharp",
+        "ms-vscode.powershell",
+        "davidanson.vscode-markdownlint",
+        "editorconfig.editorconfig"
+	]
+}
