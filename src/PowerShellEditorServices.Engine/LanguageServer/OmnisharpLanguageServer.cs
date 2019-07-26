@@ -71,6 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                 options.WithHandler<WorkspaceSymbolsHandler>();
                 options.WithHandler<TextDocumentHandler>();
                 options.WithHandler<GetVersionHandler>();
+                options.WithHandler<ConfigurationHandler>();
             });
 
             _serverStart.SetResult(true);

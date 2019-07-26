@@ -294,6 +294,31 @@ function Send-LspDidOpenTextDocumentRequest
     $result
 }
 
+function Send-LspDidChangeConfigurationRequest
+{
+    [OutputType([PsesPsClient.LspRequest])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter(Mandatory)]
+        [Microsoft.PowerShell.EditorServices.Protocol.Server.LanguageServerSettingsWrapper]
+        $Settings
+    )
+
+    $parameters = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DidChangeConfigurationParams[Microsoft.PowerShell.EditorServices.Protocol.Server.LanguageServerSettingsWrapper]]@{
+        Settings = $Settings
+    }
+
+    $result = Send-LspRequest -Client $Client -Method 'workspace/didChangeConfiguration' -Parameters $parameters
+
+    # Give PSScriptAnalyzer enough time to run
+    Start-Sleep -Seconds 1
+
+    $result
+}
+
 function Send-LspShutdownRequest
 {
     [OutputType([PsesPsClient.LspRequest])]

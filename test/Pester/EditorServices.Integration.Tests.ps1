@@ -117,7 +117,7 @@ function Get-Foo {
         # ReportLogErrors -LogPath $psesServer.LogPath -FromIndex ([ref]$logIdx)
     }
 
-    It "Can get Diagnostics" {
+    It "Can get Diagnostics after opening a text document" {
         $script = '$a = 4'
         $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $script -PassThru -Force
 
@@ -129,11 +129,46 @@ function Get-Foo {
         # to increment the counter.
         Get-LspResponse -Client $client -Id $request.Id | Out-Null
 
-        $notifications = Get-LspNotification -Client $client
+        # Grab notifications for just the file opened in this test.
+        $notifications = Get-LspNotification -Client $client | Where-Object {
+            $_.Params.uri -match ([System.IO.Path]::GetFileName($file.PSPath))
+        }
+
         $notifications | Should -Not -BeNullOrEmpty
         $notifications.Params.diagnostics | Should -Not -BeNullOrEmpty
         $notifications.Params.diagnostics.Count | Should -Be 1
         $notifications.Params.diagnostics.code | Should -Be "PSUseDeclaredVarsMoreThanAssignments"
+    }
+
+    It "Can get Diagnostics after changing settings" {
+        $script = 'gci | % { $_ }'
+        $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $script -PassThru -Force
+
+        $request = Send-LspDidOpenTextDocumentRequest -Client $client `
+            -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
+            -Text ($file[0].ToString())
+
+        # There's no response for this message, but we need to call Get-LspResponse
+        # to increment the counter.
+        Get-LspResponse -Client $client -Id $request.Id | Out-Null
+
+        # Throw out any notifications from the first PSScriptAnalyzer run.
+        Get-LspNotification -Client $client | Out-Null
+
+        $request = Send-LspDidChangeConfigurationRequest -Client $client -Settings @{
+            PowerShell = @{
+                ScriptAnalysis = @{
+                    Enable = $false
+                }
+            }
+        }
+
+        # Grab notifications for just the file opened in this test.
+        $notifications = Get-LspNotification -Client $client | Where-Object {
+            $_.Params.uri -match ([System.IO.Path]::GetFileName($file.PSPath))
+        }
+        $notifications | Should -Not -BeNullOrEmpty
+        $notifications.Params.diagnostics | Should -BeNullOrEmpty
     }
 
     # This test MUST be last

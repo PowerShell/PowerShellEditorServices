@@ -12,6 +12,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Collections;
 using Microsoft.Extensions.Logging;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -51,6 +54,11 @@ namespace Microsoft.PowerShell.EditorServices
 
         private static readonly string[] s_emptyGetRuleResult = new string[0];
 
+        private Dictionary<string, Dictionary<string, MarkerCorrection>> codeActionsPerFile =
+            new Dictionary<string, Dictionary<string, MarkerCorrection>>();
+
+        private static CancellationTokenSource s_existingRequestCancellation;
+
         /// <summary>
         /// The indentation to add when the logger lists errors.
         /// </summary>
@@ -86,6 +94,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// to provide analysis services.
         /// </summary>
         private PSModuleInfo _pssaModuleInfo;
+
+        private readonly ILanguageServer _languageServer;
+        private readonly ConfigurationService _configurationService;
 
         #endregion // Private Fields
 
@@ -126,12 +137,16 @@ namespace Microsoft.PowerShell.EditorServices
             RunspacePool analysisRunspacePool,
             string pssaSettingsPath,
             IEnumerable<string> activeRules,
+            ILanguageServer languageServer,
+            ConfigurationService configurationService,
             ILogger logger,
             PSModuleInfo pssaModuleInfo = null)
         {
             _analysisRunspacePool = analysisRunspacePool;
             SettingsPath = pssaSettingsPath;
             ActiveRules = activeRules.ToArray();
+            _languageServer = languageServer;
+            _configurationService = configurationService;
             _logger = logger;
             _pssaModuleInfo = pssaModuleInfo;
         }
@@ -150,8 +165,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// A new analysis service instance with a freshly imported PSScriptAnalyzer module and runspace pool.
         /// Returns null if problems occur. This method should never throw.
         /// </returns>
-        public static AnalysisService Create(string settingsPath, ILogger logger)
+        public static AnalysisService Create(ConfigurationService configurationService, ILanguageServer languageServer, ILogger logger)
         {
+            string settingsPath = configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
             try
             {
                 RunspacePool analysisRunspacePool;
@@ -184,6 +200,8 @@ namespace Microsoft.PowerShell.EditorServices
                     analysisRunspacePool,
                     settingsPath,
                     s_includedRules,
+                    languageServer,
+                    configurationService,
                     logger,
                     pssaModuleInfo);
 
@@ -672,6 +690,232 @@ namespace Microsoft.PowerShell.EditorServices
             public ErrorRecord[] Errors { get; }
 
             public bool HasErrors { get; }
+        }
+
+        internal async Task RunScriptDiagnosticsAsync(
+            ScriptFile[] filesToAnalyze)
+        {
+            // If there's an existing task, attempt to cancel it
+            try
+            {
+                if (s_existingRequestCancellation != null)
+                {
+                    // Try to cancel the request
+                    s_existingRequestCancellation.Cancel();
+
+                    // If cancellation didn't throw an exception,
+                    // clean up the existing token
+                    s_existingRequestCancellation.Dispose();
+                    s_existingRequestCancellation = null;
+                }
+            }
+            catch (Exception e)
+            {
+                // TODO: Catch a more specific exception!
+                _logger.LogError(
+                    string.Format(
+                        "Exception while canceling analysis task:\n\n{0}",
+                        e.ToString()));
+
+                TaskCompletionSource<bool> cancelTask = new TaskCompletionSource<bool>();
+                cancelTask.SetCanceled();
+                return;
+            }
+
+            // If filesToAnalzye is empty, nothing to do so return early.
+            if (filesToAnalyze.Length == 0)
+            {
+                return;
+            }
+
+            // Create a fresh cancellation token and then start the task.
+            // We create this on a different TaskScheduler so that we
+            // don't block the main message loop thread.
+            // TODO: Is there a better way to do this?
+            s_existingRequestCancellation = new CancellationTokenSource();
+            await Task.Factory.StartNew(
+                () =>
+                    DelayThenInvokeDiagnosticsAsync(
+                        750,
+                        filesToAnalyze,
+                        _configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false,
+                        s_existingRequestCancellation.Token),
+                CancellationToken.None,
+                TaskCreationOptions.None,
+                TaskScheduler.Default);
+        }
+
+        private async Task DelayThenInvokeDiagnosticsAsync(
+            int delayMilliseconds,
+            ScriptFile[] filesToAnalyze,
+            bool isScriptAnalysisEnabled,
+            CancellationToken cancellationToken)
+        {
+            // First of all, wait for the desired delay period before
+            // analyzing the provided list of files
+            try
+            {
+                await Task.Delay(delayMilliseconds, cancellationToken);
+            }
+            catch (TaskCanceledException)
+            {
+                // If the task is cancelled, exit directly
+                foreach (var script in filesToAnalyze)
+                {
+                    PublishScriptDiagnostics(
+                        script,
+                        script.DiagnosticMarkers);
+                }
+
+                return;
+            }
+
+            // If we've made it past the delay period then we don't care
+            // about the cancellation token anymore.  This could happen
+            // when the user stops typing for long enough that the delay
+            // period ends but then starts typing while analysis is going
+            // on.  It makes sense to send back the results from the first
+            // delay period while the second one is ticking away.
+
+            // Get the requested files
+            foreach (ScriptFile scriptFile in filesToAnalyze)
+            {
+                List<ScriptFileMarker> semanticMarkers = null;
+                if (isScriptAnalysisEnabled)
+                {
+                    semanticMarkers = await GetSemanticMarkersAsync(scriptFile);
+                }
+                else
+                {
+                    // Semantic markers aren't available if the AnalysisService
+                    // isn't available
+                    semanticMarkers = new List<ScriptFileMarker>();
+                }
+
+                scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
+
+                PublishScriptDiagnostics(
+                    scriptFile,
+                    // Concat script analysis errors to any existing parse errors
+                    scriptFile.DiagnosticMarkers);
+            }
+        }
+
+        internal void ClearMarkers(ScriptFile scriptFile)
+        {
+            // send empty diagnostic markers to clear any markers associated with the given file
+            PublishScriptDiagnostics(
+                    scriptFile,
+                    new List<ScriptFileMarker>());
+        }
+
+        private void PublishScriptDiagnostics(
+            ScriptFile scriptFile,
+            List<ScriptFileMarker> markers)
+        {
+            List<Diagnostic> diagnostics = new List<Diagnostic>();
+
+            // Hold on to any corrections that may need to be applied later
+            Dictionary<string, MarkerCorrection> fileCorrections =
+                new Dictionary<string, MarkerCorrection>();
+
+            foreach (var marker in markers)
+            {
+                // Does the marker contain a correction?
+                Diagnostic markerDiagnostic = GetDiagnosticFromMarker(marker);
+                if (marker.Correction != null)
+                {
+                    string diagnosticId = GetUniqueIdFromDiagnostic(markerDiagnostic);
+                    fileCorrections[diagnosticId] = marker.Correction;
+                }
+
+                diagnostics.Add(markerDiagnostic);
+            }
+
+            codeActionsPerFile[scriptFile.DocumentUri] = fileCorrections;
+
+            var uriBuilder = new UriBuilder()
+            {
+                Scheme = Uri.UriSchemeFile,
+                Path = scriptFile.FilePath,
+                Host = string.Empty,
+            };
+
+            // Always send syntax and semantic errors.  We want to
+            // make sure no out-of-date markers are being displayed.
+            _languageServer.Document.PublishDiagnostics(new PublishDiagnosticsParams()
+            {
+                Uri = uriBuilder.Uri,
+                Diagnostics = new Container<Diagnostic>(diagnostics),
+            });
+        }
+
+        // Generate a unique id that is used as a key to look up the associated code action (code fix) when
+        // we receive and process the textDocument/codeAction message.
+        private static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
+        {
+            Position start = diagnostic.Range.Start;
+            Position end = diagnostic.Range.End;
+
+            var sb = new StringBuilder(256)
+            .Append(diagnostic.Source ?? "?")
+            .Append("_")
+            .Append(diagnostic.Code.ToString())
+            .Append("_")
+            .Append(diagnostic.Severity?.ToString() ?? "?")
+            .Append("_")
+            .Append(start.Line)
+            .Append(":")
+            .Append(start.Character)
+            .Append("-")
+            .Append(end.Line)
+            .Append(":")
+            .Append(end.Character);
+
+            var id = sb.ToString();
+            return id;
+        }
+
+        private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
+        {
+            return new Diagnostic
+            {
+                Severity = MapDiagnosticSeverity(scriptFileMarker.Level),
+                Message = scriptFileMarker.Message,
+                Code = scriptFileMarker.RuleName,
+                Source = scriptFileMarker.Source,
+                Range = new Range
+                {
+                    Start = new Position
+                    {
+                        Line = scriptFileMarker.ScriptRegion.StartLineNumber - 1,
+                        Character = scriptFileMarker.ScriptRegion.StartColumnNumber - 1
+                    },
+                    End = new Position
+                    {
+                        Line = scriptFileMarker.ScriptRegion.EndLineNumber - 1,
+                        Character = scriptFileMarker.ScriptRegion.EndColumnNumber - 1
+                    }
+                }
+            };
+        }
+
+        private static DiagnosticSeverity MapDiagnosticSeverity(ScriptFileMarkerLevel markerLevel)
+        {
+            switch (markerLevel)
+            {
+                case ScriptFileMarkerLevel.Error:
+                    return DiagnosticSeverity.Error;
+
+                case ScriptFileMarkerLevel.Warning:
+                    return DiagnosticSeverity.Warning;
+
+                case ScriptFileMarkerLevel.Information:
+                    return DiagnosticSeverity.Information;
+
+                default:
+                    return DiagnosticSeverity.Error;
+            }
         }
     }
 
