@@ -68,10 +68,12 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                 options.LoggerFactory = _configuration.LoggerFactory;
                 options.MinimumLogLevel = _configuration.MinimumLogLevel;
                 options.Services = _configuration.Services;
-                options.WithHandler<WorkspaceSymbolsHandler>();
-                options.WithHandler<TextDocumentHandler>();
-                options.WithHandler<GetVersionHandler>();
-                options.WithHandler<ConfigurationHandler>();
+                options
+                    .WithHandler<WorkspaceSymbolsHandler>()
+                    .WithHandler<TextDocumentHandler>()
+                    .WithHandler<GetVersionHandler>()
+                    .WithHandler<ConfigurationHandler>()
+                    .WithHandler<FoldingRangeHandler>();
             });
 
             _serverStart.SetResult(true);

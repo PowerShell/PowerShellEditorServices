@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="2.2.0" />
-    <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.12.1" />
+    <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.13.0-*" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="2.0.4" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />

@@ -241,7 +241,8 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             {
                 NamedPipeName = config.InOutPipeName ?? config.InPipeName,
                 OutNamedPipeName = config.OutPipeName,
-                LoggerFactory = _factory
+                LoggerFactory = _factory,
+                MinimumLogLevel = LogLevel.Trace,
             }
             .BuildLanguageServer();
 
