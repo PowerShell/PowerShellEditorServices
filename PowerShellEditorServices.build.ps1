@@ -102,6 +102,12 @@ $script:RequiredNugetBinaries = @{
         @{ PackageName = 'System.Security.AccessControl';     PackageVersion = '4.5.0'; TargetRuntime = 'net461' },
         @{ PackageName = 'System.IO.Pipes.AccessControl';     PackageVersion = '4.5.1'; TargetRuntime = 'net461' }
     )
+
+    '6.0' = @(
+        @{ PackageName = 'System.Security.Principal.Windows'; PackageVersion = '4.5.0'; TargetRuntime = 'netcoreapp2.0' },
+        @{ PackageName = 'System.Security.AccessControl';     PackageVersion = '4.5.0'; TargetRuntime = 'netcoreapp2.0' },
+        @{ PackageName = 'System.IO.Pipes.AccessControl';     PackageVersion = '4.5.1'; TargetRuntime = 'netstandard2.0' }
+    )
 }
 
 if (Get-Command git -ErrorAction SilentlyContinue) {
