@@ -171,6 +171,50 @@ function Get-Foo {
         $notifications.Params.diagnostics | Should -BeNullOrEmpty
     }
 
+    It "Can handle folding request" {
+        $script = 'gci | % {
+$_
+
+@"
+    $_
+"@
+}'
+
+        $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $script -PassThru -Force
+
+        $request = Send-LspDidOpenTextDocumentRequest -Client $client `
+            -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
+            -Text ($file[0].ToString())
+
+        # There's no response for this message, but we need to call Get-LspResponse
+        # to increment the counter.
+        Get-LspResponse -Client $client -Id $request.Id | Out-Null
+
+        # Throw out any notifications from the first PSScriptAnalyzer run.
+        Get-LspNotification -Client $client | Out-Null
+
+
+
+        $request = Send-LspRequest -Client $client -Method "textDocument/foldingRange" -Parameters ([Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.FoldingRangeParams] @{
+            TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentIdentifier] @{
+                Uri = ([Uri]::new($file.PSPath).AbsoluteUri)
+            }
+        })
+
+        $response = Get-LspResponse -Client $client -Id $request.Id
+
+        $sortedResults = $response.Result | Sort-Object -Property startLine
+        $sortedResults[0].startLine | Should -Be 0
+        $sortedResults[0].startCharacter | Should -Be 8
+        $sortedResults[0].endLine | Should -Be 5
+        $sortedResults[0].endCharacter | Should -Be 1
+
+        $sortedResults[1].startLine | Should -Be 3
+        $sortedResults[1].startCharacter | Should -Be 0
+        $sortedResults[1].endLine | Should -Be 4
+        $sortedResults[1].endCharacter | Should -Be 2
+    }
+
     # This test MUST be last
     It "Shuts down the process properly" {
         $request = Send-LspShutdownRequest -Client $client
