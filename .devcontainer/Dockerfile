@@ -23,14 +23,6 @@ RUN apt-get update && apt-get -y install --no-install-recommends apt-utils 2>&1 
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PowerShell
-RUN apt-get update \
-    && apt-get install curl gnupg apt-transport-https -y \
-    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-debian-stretch-prod stretch main" > /etc/apt/sources.list.d/microsoft.list \
-    && apt-get update \
-    && apt-get install -y powershell
-
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
 
