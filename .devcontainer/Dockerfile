@@ -10,7 +10,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Configure apt and install packages
 RUN apt-get update && apt-get -y install --no-install-recommends apt-utils 2>&1 \
-    #
     # Verify git, process tools, lsb-release (common in install instructions for CLIs) installed
     && apt-get -y install git procps lsb-release \
     # Install PowerShell
@@ -18,7 +17,7 @@ RUN apt-get update && apt-get -y install --no-install-recommends apt-utils 2>&1 
     && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
     && echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-debian-stretch-prod stretch main" > /etc/apt/sources.list.d/microsoft.list \
     && apt-get update \
-    && apt-get install -y powershell
+    && apt-get install -y powershell \
     # Clean up
     && apt-get autoremove -y \
     && apt-get clean -y \
