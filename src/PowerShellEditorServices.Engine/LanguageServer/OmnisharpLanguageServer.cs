@@ -73,7 +73,9 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     .WithHandler<TextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()
                     .WithHandler<ConfigurationHandler>()
-                    .WithHandler<FoldingRangeHandler>();
+                    .WithHandler<FoldingRangeHandler>()
+                    .WithHandler<DocumentFormattingHandler>()
+                    .WithHandler<DocumentRangeFormattingHandler>();
             });
 
             _serverStart.SetResult(true);
