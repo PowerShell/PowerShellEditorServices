@@ -1407,7 +1407,7 @@ function __Expand-Alias {
             if (this.editorSession.AnalysisService == null)
             {
                 await requestContext.SendError("Script analysis is not enabled in this session");
-                return
+                return;
             }
 
             var result = await Format(
