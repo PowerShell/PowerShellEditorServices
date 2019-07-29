@@ -55,6 +55,33 @@ Data:
     throw $msg
 }
 
+function New-TestFile
+{
+    param(
+        [Parameter(Mandatory)]
+        [string]
+        $Script
+    )
+
+    $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $Script -PassThru -Force
+
+    $request = Send-LspDidOpenTextDocumentRequest -Client $client `
+        -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
+        -Text ($file[0].ToString())
+
+    # To give PSScriptAnalyzer a chance to run.
+    Start-Sleep 1
+
+    # There's no response for this message, but we need to call Get-LspResponse
+    # to increment the counter.
+    Get-LspResponse -Client $client -Id $request.Id | Out-Null
+
+    # Throw out any notifications from the first PSScriptAnalyzer run.
+    Get-LspNotification -Client $client | Out-Null
+
+    $file.PSPath
+}
+
 Describe "Loading and running PowerShellEditorServices" {
     BeforeAll {
         Import-Module -Force "$PSScriptRoot/../../module/PowerShellEditorServices"
@@ -89,20 +116,11 @@ Describe "Loading and running PowerShellEditorServices" {
     }
 
     It "Can handle WorkspaceSymbol request" {
-        $script = "
+        New-TestFile -Script "
 function Get-Foo {
     Write-Host 'hello'
 }
 "
-
-        $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $script -PassThru -Force
-        $request = Send-LspDidOpenTextDocumentRequest -Client $client `
-            -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
-            -Text ($file[0].ToString())
-
-        # There's no response for this message, but we need to call Get-LspResponse
-        # to increment the counter.
-        Get-LspResponse -Client $client -Id $request.Id | Out-Null
 
         $request = Send-LspRequest -Client $client -Method "workspace/symbol" -Parameters @{
             query = ""
@@ -141,19 +159,7 @@ function Get-Foo {
     }
 
     It "Can get Diagnostics after changing settings" {
-        $script = 'gci | % { $_ }'
-        $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $script -PassThru -Force
-
-        $request = Send-LspDidOpenTextDocumentRequest -Client $client `
-            -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
-            -Text ($file[0].ToString())
-
-        # There's no response for this message, but we need to call Get-LspResponse
-        # to increment the counter.
-        Get-LspResponse -Client $client -Id $request.Id | Out-Null
-
-        # Throw out any notifications from the first PSScriptAnalyzer run.
-        Get-LspNotification -Client $client | Out-Null
+        $file = New-TestFile -Script 'gci | % { $_ }'
 
         $request = Send-LspDidChangeConfigurationRequest -Client $client -Settings @{
             PowerShell = @{
@@ -172,7 +178,7 @@ function Get-Foo {
     }
 
     It "Can handle folding request" {
-        $script = 'gci | % {
+        $filePath = New-TestFile -Script 'gci | % {
 $_
 
 @"
@@ -180,24 +186,9 @@ $_
 "@
 }'
 
-        $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $script -PassThru -Force
-
-        $request = Send-LspDidOpenTextDocumentRequest -Client $client `
-            -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
-            -Text ($file[0].ToString())
-
-        # There's no response for this message, but we need to call Get-LspResponse
-        # to increment the counter.
-        Get-LspResponse -Client $client -Id $request.Id | Out-Null
-
-        # Throw out any notifications from the first PSScriptAnalyzer run.
-        Get-LspNotification -Client $client | Out-Null
-
-
-
         $request = Send-LspRequest -Client $client -Method "textDocument/foldingRange" -Parameters ([Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.FoldingRangeParams] @{
             TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentIdentifier] @{
-                Uri = ([Uri]::new($file.PSPath).AbsoluteUri)
+                Uri = ([Uri]::new($filePath).AbsoluteUri)
             }
         })
 
@@ -213,6 +204,52 @@ $_
         $sortedResults[1].startCharacter | Should -Be 0
         $sortedResults[1].endLine | Should -Be 4
         $sortedResults[1].endCharacter | Should -Be 2
+    }
+
+    It "can handle a normal formatting request" {
+        $filePath = New-TestFile -Script '
+gci | % {
+Get-Process
+}
+
+'
+
+        $request = Send-LspFormattingRequest -Client $client `
+            -Uri ([Uri]::new($filePath).AbsoluteUri)
+
+        $response = Get-LspResponse -Client $client -Id $request.Id
+
+        # If we have a tab, formatting ran.
+        $response.Result.newText.Contains("`t") | Should -BeTrue -Because "We expect a tab."
+    }
+
+    It "can handle a range formatting request" {
+        $filePath = New-TestFile -Script '
+gci | % {
+Get-Process
+}
+
+'
+
+        $range = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Range]@{
+            Start = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Position]@{
+                Line = 2
+                Character = 0
+            }
+            End  = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Position]@{
+                Line = 3
+                Character = 0
+            }
+        }
+
+        $request = Send-LspRangeFormattingRequest -Client $client `
+            -Uri ([Uri]::new($filePath).AbsoluteUri) `
+            -Range $range
+
+        $response = Get-LspResponse -Client $client -Id $request.Id
+
+        # If we have a tab, formatting ran.
+        $response.Result.newText.Contains("`t") | Should -BeTrue -Because "We expect a tab."
     }
 
     # This test MUST be last

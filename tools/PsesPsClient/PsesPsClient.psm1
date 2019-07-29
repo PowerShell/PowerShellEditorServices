@@ -319,6 +319,79 @@ function Send-LspDidChangeConfigurationRequest
     $result
 }
 
+function Send-LspFormattingRequest
+{
+    [OutputType([PsesPsClient.LspRequest])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Uri,
+
+        [Parameter()]
+        [int]
+        $TabSize = 4,
+
+        [Parameter()]
+        [switch]
+        $InsertSpaces
+    )
+
+    $params = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DocumentFormattingParams]@{
+        TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentIdentifier]@{
+            Uri = $Uri
+        }
+        options = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.FormattingOptions]@{
+            TabSize = $TabSize
+            InsertSpaces = $InsertSpaces.IsPresent
+        }
+    }
+
+    return Send-LspRequest -Client $Client -Method 'textDocument/formatting' -Parameters $params
+}
+
+function Send-LspRangeFormattingRequest
+{
+    [OutputType([PsesPsClient.LspRequest])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Uri,
+
+        [Parameter(Mandatory)]
+        [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Range]
+        $Range,
+
+        [Parameter()]
+        [int]
+        $TabSize = 4,
+
+        [Parameter()]
+        [switch]
+        $InsertSpaces
+    )
+
+    $params = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DocumentRangeFormattingParams]@{
+        TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentIdentifier]@{
+            Uri = $Uri
+        }
+        Range = $Range
+        options = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.FormattingOptions]@{
+            TabSize = $TabSize
+            InsertSpaces = $InsertSpaces.IsPresent
+        }
+    }
+
+    return Send-LspRequest -Client $Client -Method 'textDocument/rangeFormatting' -Parameters $params
+}
+
 function Send-LspShutdownRequest
 {
     [OutputType([PsesPsClient.LspRequest])]
