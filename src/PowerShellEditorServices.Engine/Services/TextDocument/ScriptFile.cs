@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
-using System.Runtime.InteropServices;
+using Microsoft.PowerShell.EditorServices.Symbols;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -670,7 +670,7 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             // Get all dot sourced referenced files and store them
-            //this.ReferencedFiles = AstOperations.FindDotSourcedIncludes(this.ScriptAst, Path.GetDirectoryName(this.FilePath));
+            this.ReferencedFiles = AstOperations.FindDotSourcedIncludes(this.ScriptAst, Path.GetDirectoryName(this.FilePath));
         }
 
         #endregion
