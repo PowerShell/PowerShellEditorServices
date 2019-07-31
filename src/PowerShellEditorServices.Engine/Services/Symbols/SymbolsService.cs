@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Symbols;
 
@@ -67,6 +70,111 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return foundOccurrences;
+        }
+
+        /// <summary>
+        /// Finds the symbol in the script given a file location
+        /// </summary>
+        /// <param name="scriptFile">The details and contents of a open script file</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>A SymbolReference of the symbol found at the given location
+        /// or null if there is no symbol at that location
+        /// </returns>
+        public SymbolReference FindSymbolAtLocation(
+            ScriptFile scriptFile,
+            int lineNumber,
+            int columnNumber)
+        {
+            SymbolReference symbolReference =
+                AstOperations.FindSymbolAtPosition(
+                    scriptFile.ScriptAst,
+                    lineNumber,
+                    columnNumber);
+
+            if (symbolReference != null)
+            {
+                symbolReference.FilePath = scriptFile.FilePath;
+            }
+
+            return symbolReference;
+        }
+
+        /// <summary>
+        /// Finds all the references of a symbol
+        /// </summary>
+        /// <param name="foundSymbol">The symbol to find all references for</param>
+        /// <param name="referencedFiles">An array of scriptFiles too search for references in</param>
+        /// <param name="workspace">The workspace that will be searched for symbols</param>
+        /// <returns>FindReferencesResult</returns>
+        public List<SymbolReference> FindReferencesOfSymbol(
+            SymbolReference foundSymbol,
+            ScriptFile[] referencedFiles,
+            WorkspaceService workspace)
+        {
+            if (foundSymbol == null)
+            {
+                return null;
+            }
+
+            int symbolOffset = referencedFiles[0].GetOffsetAtPosition(
+                foundSymbol.ScriptRegion.StartLineNumber,
+                foundSymbol.ScriptRegion.StartColumnNumber);
+
+            // NOTE: we use to make sure aliases were loaded but took it out because we needed the pipeline thread.
+
+            // We want to look for references first in referenced files, hence we use ordered dictionary
+            // TODO: File system case-sensitivity is based on filesystem not OS, but OS is a much cheaper heuristic
+            var fileMap = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                ? new OrderedDictionary()
+                : new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
+
+            foreach (ScriptFile scriptFile in referencedFiles)
+            {
+                fileMap[scriptFile.FilePath] = scriptFile;
+            }
+
+            foreach (string filePath in workspace.EnumeratePSFiles())
+            {
+                if (!fileMap.Contains(filePath))
+                {
+                    if (!workspace.TryGetFile(filePath, out ScriptFile scriptFile))
+                    {
+                        // If we can't access the file for some reason, just ignore it
+                        continue;
+                    }
+
+                    fileMap[filePath] = scriptFile;
+                }
+            }
+
+            var symbolReferences = new List<SymbolReference>();
+            foreach (object fileName in fileMap.Keys)
+            {
+                var file = (ScriptFile)fileMap[fileName];
+
+                IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(
+                    file.ScriptAst,
+                    foundSymbol,
+                    needsAliases: false);
+
+                foreach (SymbolReference reference in references)
+                {
+                    try
+                    {
+                        reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
+                    }
+                    catch (ArgumentOutOfRangeException e)
+                    {
+                        reference.SourceLine = string.Empty;
+                        _logger.LogException("Found reference is out of range in script file", e);
+                    }
+                    reference.FilePath = file.FilePath;
+                    symbolReferences.Add(reference);
+                }
+            }
+
+            return symbolReferences;
         }
     }
 }
