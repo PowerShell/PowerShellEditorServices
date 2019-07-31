@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System;
 using System.Management.Automation.Language;
 
@@ -13,63 +14,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public sealed class ScriptRegion : IScriptExtent
     {
-        #region Properties
-
-        /// <summary>
-        /// Gets the file path of the script file in which this region is contained.
-        /// </summary>
-        public string File { get; set; }
-
-        /// <summary>
-        /// Gets or sets the text that is contained within the region.
-        /// </summary>
-        public string Text { get; set; }
-
-        /// <summary>
-        /// Gets or sets the starting line number of the region.
-        /// </summary>
-        public int StartLineNumber { get; set; }
-
-        /// <summary>
-        /// Gets or sets the starting column number of the region.
-        /// </summary>
-        public int StartColumnNumber { get; set; }
-
-        /// <summary>
-        /// Gets or sets the starting file offset of the region.
-        /// </summary>
-        public int StartOffset { get; set; }
-
-        /// <summary>
-        /// Gets or sets the ending line number of the region.
-        /// </summary>
-        public int EndLineNumber { get; set; }
-
-        /// <summary>
-        /// Gets or sets the ending column number of the region.
-        /// </summary>
-        public int EndColumnNumber { get; set; }
-
-        /// <summary>
-        /// Gets or sets the ending file offset of the region.
-        /// </summary>
-        public int EndOffset { get; set; }
-
-        /// <summary>
-        /// Gets the starting IScriptPosition in the script.
-        /// (Currently unimplemented.)
-        /// </summary>
-        IScriptPosition IScriptExtent.StartScriptPosition => throw new NotImplementedException();
-
-        /// <summary>
-        /// Gets the ending IScriptPosition in the script.
-        /// (Currently unimplemented.)
-        /// </summary>
-        IScriptPosition IScriptExtent.EndScriptPosition => throw new NotImplementedException();
-
-        #endregion
-
-        #region Constructors
+        #region Static Methods
 
         /// <summary>
         /// Creates a new instance of the ScriptRegion class from an
@@ -94,16 +39,115 @@ namespace Microsoft.PowerShell.EditorServices
                 scriptExtentText = string.Empty;
             }
 
-            return new ScriptRegion
+            return new ScriptRegion(
+                scriptExtent.File,
+                scriptExtentText,
+                scriptExtent.StartLineNumber,
+                scriptExtent.StartColumnNumber,
+                scriptExtent.StartOffset,
+                scriptExtent.EndLineNumber,
+                scriptExtent.EndColumnNumber,
+                scriptExtent.EndOffset);
+        }
+
+        #endregion
+
+        #region Constructors
+
+        public ScriptRegion(
+            string file,
+            string text,
+            int startLineNumber,
+            int startColumnNumber,
+            int startOffset,
+            int endLineNumber,
+            int endColumnNumber,
+            int endOffset)
+        {
+            File = file;
+            Text = text;
+            StartLineNumber = startLineNumber;
+            StartColumnNumber = startColumnNumber;
+            StartOffset = startOffset;
+            EndLineNumber = endLineNumber;
+            EndColumnNumber = endColumnNumber;
+            EndOffset = endOffset;
+        }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Gets the file path of the script file in which this region is contained.
+        /// </summary>
+        public string File { get; }
+
+        /// <summary>
+        /// Gets or sets the text that is contained within the region.
+        /// </summary>
+        public string Text { get; }
+
+        /// <summary>
+        /// Gets or sets the starting line number of the region.
+        /// </summary>
+        public int StartLineNumber { get; }
+
+        /// <summary>
+        /// Gets or sets the starting column number of the region.
+        /// </summary>
+        public int StartColumnNumber { get; }
+
+        /// <summary>
+        /// Gets or sets the starting file offset of the region.
+        /// </summary>
+        public int StartOffset { get; }
+
+        /// <summary>
+        /// Gets or sets the ending line number of the region.
+        /// </summary>
+        public int EndLineNumber { get; }
+
+        /// <summary>
+        /// Gets or sets the ending column number of the region.
+        /// </summary>
+        public int EndColumnNumber { get; }
+
+        /// <summary>
+        /// Gets or sets the ending file offset of the region.
+        /// </summary>
+        public int EndOffset { get; }
+
+        /// <summary>
+        /// Gets the starting IScriptPosition in the script.
+        /// (Currently unimplemented.)
+        /// </summary>
+        IScriptPosition IScriptExtent.StartScriptPosition => throw new NotImplementedException();
+
+        /// <summary>
+        /// Gets the ending IScriptPosition in the script.
+        /// (Currently unimplemented.)
+        /// </summary>
+        IScriptPosition IScriptExtent.EndScriptPosition => throw new NotImplementedException();
+
+        #endregion
+
+        #region Methods
+
+        public Range ToRange()
+        {
+            return new Range
             {
-                File = scriptExtent.File,
-                Text = scriptExtentText,
-                StartLineNumber = scriptExtent.StartLineNumber,
-                StartColumnNumber = scriptExtent.StartColumnNumber,
-                StartOffset = scriptExtent.StartOffset,
-                EndLineNumber = scriptExtent.EndLineNumber,
-                EndColumnNumber = scriptExtent.EndColumnNumber,
-                EndOffset = scriptExtent.EndOffset
+                Start = new Position
+                {
+                    Line = StartLineNumber - 1,
+                    Character = StartColumnNumber - 1
+                },
+                End = new Position
+                {
+                    Line = EndLineNumber - 1,
+                    Character = EndColumnNumber - 1
+                }
             };
         }
 

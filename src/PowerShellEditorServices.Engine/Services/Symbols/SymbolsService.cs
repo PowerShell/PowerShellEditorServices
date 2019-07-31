@@ -1,6 +1,12 @@
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Symbols;
@@ -46,8 +52,6 @@ namespace Microsoft.PowerShell.EditorServices
         }
 
         #endregion
-
-
 
         /// <summary>
         /// Finds all the symbols in a file.
@@ -175,6 +179,34 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return symbolReferences;
+        }
+
+        /// <summary>
+        /// Finds all the occurences of a symbol in the script given a file location
+        /// </summary>
+        /// <param name="file">The details and contents of a open script file</param>
+        /// <param name="symbolLineNumber">The line number of the cursor for the given script</param>
+        /// <param name="symbolColumnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>FindOccurrencesResult</returns>
+        public IReadOnlyList<SymbolReference> FindOccurrencesInFile(
+            ScriptFile file,
+            int symbolLineNumber,
+            int symbolColumnNumber)
+        {
+            SymbolReference foundSymbol = AstOperations.FindSymbolAtPosition(
+                file.ScriptAst,
+                symbolLineNumber,
+                symbolColumnNumber);
+
+            if (foundSymbol == null)
+            {
+                return null;
+            }
+
+            return AstOperations.FindReferencesOfSymbol(
+                file.ScriptAst,
+                foundSymbol,
+                needsAliases: false).ToArray();
         }
     }
 }
