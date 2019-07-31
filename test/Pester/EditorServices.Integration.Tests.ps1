@@ -252,6 +252,53 @@ Get-Process
         $response.Result.newText.Contains("`t") | Should -BeTrue -Because "We expect a tab."
     }
 
+    It "Can handle a textDocument/documentSymbol request" {
+        $filePath = New-TestFile -Script '
+function Get-Foo {
+
+}
+
+Get-Foo
+'
+
+        $request = Send-LspDocumentSymbolRequest -Client $client `
+            -Uri ([Uri]::new($filePath).AbsoluteUri)
+
+        $response = Get-LspResponse -Client $client -Id $request.Id
+
+        $response.Result.location.range.start.line | Should -BeExactly 1
+        $response.Result.location.range.start.character | Should -BeExactly 0
+        $response.Result.location.range.end.line | Should -BeExactly 3
+        $response.Result.location.range.end.character | Should -BeExactly 1
+    }
+
+    It "Can handle a textDocument/references request" {
+        $filePath = New-TestFile -Script '
+function Get-Bar {
+
+}
+
+Get-Bar
+'
+
+        $request = Send-LspReferencesRequest -Client $client `
+            -Uri ([Uri]::new($filePath).AbsoluteUri) `
+            -LineNumber 5 `
+            -CharacterNumber 0
+
+        $response = Get-LspResponse -Client $client -Id $request.Id
+
+        $response.Result.Count | Should -BeExactly 2
+        $response.Result[0].range.start.line | Should -BeExactly 1
+        $response.Result[0].range.start.character | Should -BeExactly 9
+        $response.Result[0].range.end.line | Should -BeExactly 1
+        $response.Result[0].range.end.character | Should -BeExactly 16
+        $response.Result[1].range.start.line | Should -BeExactly 5
+        $response.Result[1].range.start.character | Should -BeExactly 0
+        $response.Result[1].range.end.line | Should -BeExactly 5
+        $response.Result[1].range.end.character | Should -BeExactly 7
+    }
+
     # This test MUST be last
     It "Shuts down the process properly" {
         $request = Send-LspShutdownRequest -Client $client

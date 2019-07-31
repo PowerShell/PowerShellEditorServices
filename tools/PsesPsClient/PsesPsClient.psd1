@@ -78,6 +78,8 @@ FunctionsToExport = @(
     'Send-LspDidChangeConfigurationRequest',
     'Send-LspFormattingRequest',
     'Send-LspRangeFormattingRequest',
+    'Send-LspDocumentSymbolRequest',
+    'Send-LspReferencesRequest',
     'Send-LspShutdownRequest',
     'Get-LspNotification',
     'Get-LspResponse'

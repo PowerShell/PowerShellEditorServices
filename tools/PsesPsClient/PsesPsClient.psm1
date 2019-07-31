@@ -392,6 +392,67 @@ function Send-LspRangeFormattingRequest
     return Send-LspRequest -Client $Client -Method 'textDocument/rangeFormatting' -Parameters $params
 }
 
+function Send-LspDocumentSymbolRequest
+{
+    [OutputType([PsesPsClient.LspRequest])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Uri
+    )
+
+    $params = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.DocumentSymbolParams]@{
+        TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentIdentifier]@{
+            Uri = $Uri
+        }
+    }
+    return Send-LspRequest -Client $Client -Method 'textDocument/documentSymbol' -Parameters $params
+}
+
+function Send-LspReferencesRequest
+{
+    [OutputType([PsesPsClient.LspRequest])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Uri,
+
+        [Parameter(Mandatory)]
+        [int]
+        $LineNumber,
+
+        [Parameter(Mandatory)]
+        [int]
+        $CharacterNumber,
+
+        [Parameter()]
+        [switch]
+        $IncludeDeclaration
+    )
+
+    $params = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.ReferencesParams]@{
+        TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentIdentifier]@{
+            Uri = $Uri
+        }
+        Position = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Position]@{
+            Line = $LineNumber
+            Character = $CharacterNumber
+        }
+        Context = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.ReferencesContext]@{
+            IncludeDeclaration = $IncludeDeclaration
+        }
+    }
+    return Send-LspRequest -Client $Client -Method 'textDocument/references' -Parameters $params
+}
+
 function Send-LspShutdownRequest
 {
     [OutputType([PsesPsClient.LspRequest])]
