@@ -13,6 +13,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
+using System.Collections.Concurrent;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -47,6 +48,13 @@ namespace Microsoft.PowerShell.EditorServices
         private static readonly string[] s_psIncludeAllGlob = new []
         {
             "**/*"
+        };
+
+        private static readonly string[] s_supportedUriSchemes = new[]
+        {
+            "file",
+            "untitled",
+            "inmemory"
         };
 
         private ILogger logger;
@@ -174,6 +182,20 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
         public bool TryGetFile(string filePath, out ScriptFile scriptFile)
         {
+            try
+            {
+                if (filePath.Contains(":/") // Quick heuristic to determine if we might have a URI
+                    && !s_supportedUriSchemes.Contains(new Uri(filePath).Scheme))
+                {
+                    scriptFile = null;
+                    return false;
+                }
+            }
+            catch
+            {
+                // If something goes wrong trying to check for URIs, just proceed to normal logic
+            }
+
             try
             {
                 scriptFile = GetFile(filePath);
