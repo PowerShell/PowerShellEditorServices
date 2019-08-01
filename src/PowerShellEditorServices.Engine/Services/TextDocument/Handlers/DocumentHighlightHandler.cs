@@ -5,6 +5,7 @@
 
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Symbols;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using PowerShellEditorServices.Engine.Utility;
@@ -14,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.TextDocument
 {
-    public class PsesDocumentHighlightHandler : DocumentHighlightHandler
+    public class DocumentHighlightHandler : IDocumentHighlightHandler
     {
         private static readonly DocumentHighlightContainer s_emptyHighlightContainer = new DocumentHighlightContainer();
 
@@ -24,19 +25,31 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
 
         private readonly SymbolsService _symbolsService;
 
-        public PsesDocumentHighlightHandler(
+        private readonly TextDocumentRegistrationOptions _registrationOptions;
+
+        private DocumentHighlightCapability _capability;
+
+        public DocumentHighlightHandler(
             ILoggerFactory loggerFactory,
             WorkspaceService workspaceService,
-            SymbolsService symbolService,
-            TextDocumentRegistrationOptions registrationOptions)
-            : base(registrationOptions)
+            SymbolsService symbolService)
         {
-            _logger = loggerFactory.CreateLogger<DocumentHighlightHandler>();
+            _logger = loggerFactory.CreateLogger<OmniSharp.Extensions.LanguageServer.Protocol.Server.DocumentHighlightHandler>();
             _workspaceService = workspaceService;
             _symbolsService = symbolService;
+            _registrationOptions = new TextDocumentRegistrationOptions()
+            {
+                DocumentSelector = new DocumentSelector(new DocumentFilter() { Pattern = "**/*.ps*1" } )
+            };
+            _logger.LogInformation("highlight handler loaded");
         }
 
-        public override Task<DocumentHighlightContainer> Handle(
+        public TextDocumentRegistrationOptions GetRegistrationOptions()
+        {
+            return _registrationOptions;
+        }
+
+        public Task<DocumentHighlightContainer> Handle(
             DocumentHighlightParams request,
             CancellationToken cancellationToken)
         {
@@ -44,8 +57,8 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
 
             IReadOnlyList<SymbolReference> symbolOccurrences = _symbolsService.FindOccurrencesInFile(
                 scriptFile,
-                (int)(request.Position.Line + 1),
-                (int)(request.Position.Character + 1));
+                (int)request.Position.Line,
+                (int)request.Position.Character);
 
             if (symbolOccurrences == null)
             {
@@ -63,6 +76,11 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
             }
 
             return Task.FromResult(new DocumentHighlightContainer(highlights));
+        }
+
+        public void SetCapability(DocumentHighlightCapability capability)
+        {
+            _capability = capability;
         }
     }
 }

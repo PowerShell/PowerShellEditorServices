@@ -299,6 +299,34 @@ Get-Bar
         $response.Result[1].range.end.character | Should -BeExactly 7
     }
 
+    It "Can handle a textDocument/documentHighlight request" {
+        $filePath = New-TestFile -Script @'
+Write-Host 'Hello!'
+
+Write-Host 'Goodbye'
+'@
+
+        $documentHighlightParams = @{
+            Client = $client
+            Uri = ([uri]::new($filePath).AbsoluteUri)
+            LineNumber = 3
+            CharacterNumber = 1
+        }
+        $request = Send-LspDocumentHighlightRequest @documentHighlightParams
+
+        $response = Get-LspResponse -Client $client -Id $request.Id
+
+        $response.Result.Count | Should -BeExactly 2
+        $response.Result[0].Range.Start.Line | Should -BeExactly 0
+        $response.Result[0].Range.Start.Character | Should -BeExactly 0
+        $response.Result[0].Range.End.Line | Should -BeExactly 0
+        $response.Result[0].Range.End.Character | Should -BeExactly 10
+        $response.Result[1].Range.Start.Line | Should -BeExactly 2
+        $response.Result[1].Range.Start.Character | Should -BeExactly 0
+        $response.Result[1].Range.End.Line | Should -BeExactly 2
+        $response.Result[1].Range.End.Character | Should -BeExactly 10
+    }
+
     # This test MUST be last
     It "Shuts down the process properly" {
         $request = Send-LspShutdownRequest -Client $client

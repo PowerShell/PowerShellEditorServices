@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
@@ -225,6 +226,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             _logger.LogInformation($"LSP NamedPipe: {config.InOutPipeName}\nLSP OutPipe: {config.OutPipeName}");
 
+            _serviceCollection.AddSingleton<TextDocumentChangeRegistrationOptions>();
             _serviceCollection.AddSingleton<WorkspaceService>();
             _serviceCollection.AddSingleton<SymbolsService>();
             _serviceCollection.AddSingleton<ConfigurationService>();
