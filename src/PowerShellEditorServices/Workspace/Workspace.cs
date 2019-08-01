@@ -12,8 +12,6 @@ using System.Security;
 using System.Text;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.FileSystemGlobbing;
-using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
-using System.Collections.Concurrent;
 
 namespace Microsoft.PowerShell.EditorServices
 {
