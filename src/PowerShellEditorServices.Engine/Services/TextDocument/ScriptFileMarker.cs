@@ -139,20 +139,21 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (diagnosticRecord.SuggestedCorrections != null)
             {
-                var suggestedCorrections = diagnosticRecord.SuggestedCorrections as dynamic;
-                List<ScriptRegion> editRegions = new List<ScriptRegion>();
+                var editRegions = new List<ScriptRegion>();
                 string correctionMessage = null;
-                foreach (var suggestedCorrection in suggestedCorrections)
+                foreach (dynamic suggestedCorrection in diagnosticRecord.SuggestedCorrections)
                 {
-                    editRegions.Add(new ScriptRegion
-                    {
-                        File = diagnosticRecord.ScriptPath,
-                        Text = suggestedCorrection.Text,
-                        StartLineNumber = suggestedCorrection.StartLineNumber,
-                        StartColumnNumber = suggestedCorrection.StartColumnNumber,
-                        EndLineNumber = suggestedCorrection.EndLineNumber,
-                        EndColumnNumber = suggestedCorrection.EndColumnNumber
-                    });
+                    editRegions.Add(
+                        new ScriptRegion(
+                            diagnosticRecord.ScriptPath,
+                            suggestedCorrection.Text,
+                            suggestedCorrection.StartLineNumber,
+                            suggestedCorrection.StartColumnNumber,
+                            startOffset: -1,
+                            suggestedCorrection.EndLineNumber,
+                            suggestedCorrection.EndColumnNumber,
+                            endOffset: -1));
+
                     correctionMessage = suggestedCorrection.Description;
                 }
 

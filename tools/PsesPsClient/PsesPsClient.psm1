@@ -453,6 +453,40 @@ function Send-LspReferencesRequest
     return Send-LspRequest -Client $Client -Method 'textDocument/references' -Parameters $params
 }
 
+function Send-LspDocumentHighlightRequest
+{
+    [OutputType([PsesPsClient.LspRequest])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter(Position = 1, Mandatory)]
+        [string]
+        $Uri,
+
+        [Parameter(Mandatory)]
+        [int]
+        $LineNumber,
+
+        [Parameter(Mandatory)]
+        [int]
+        $CharacterNumber
+    )
+
+    $documentHighlightParams = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentPositionParams]@{
+        TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentIdentifier]@{
+            Uri = $Uri
+        }
+        Position = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Position]@{
+            Line = $LineNumber
+            Character = $CharacterNumber
+        }
+    }
+
+    return Send-LspRequest -Client $Client -Method 'textDocument/documentHighlight' -Parameters $documentHighlightParams
+}
+
 function Send-LspShutdownRequest
 {
     [OutputType([PsesPsClient.LspRequest])]

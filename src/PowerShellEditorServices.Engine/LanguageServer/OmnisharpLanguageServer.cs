@@ -1,3 +1,8 @@
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using System.IO.Pipes;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -8,6 +13,7 @@ using OS = OmniSharp.Extensions.LanguageServer.Server;
 using System.Security.AccessControl;
 using OmniSharp.Extensions.LanguageServer.Server;
 using PowerShellEditorServices.Engine.Services.Handlers;
+using Microsoft.PowerShell.EditorServices.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
 {
@@ -56,11 +62,16 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     _configuration.OutNamedPipeName,
                     out NamedPipeServerStream outNamedPipe);
 
+                ILogger logger = options.LoggerFactory.CreateLogger("OptionsStartup");
+
+                logger.LogInformation("Waiting for connection");
                 namedPipe.WaitForConnection();
                 if (outNamedPipe != null)
                 {
                     outNamedPipe.WaitForConnection();
                 }
+
+                logger.LogInformation("Connected");
 
                 options.Input = namedPipe;
                 options.Output = outNamedPipe ?? namedPipe;
@@ -68,6 +79,9 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                 options.LoggerFactory = _configuration.LoggerFactory;
                 options.MinimumLogLevel = _configuration.MinimumLogLevel;
                 options.Services = _configuration.Services;
+
+                logger.LogInformation("Adding handlers");
+
                 options
                     .WithHandler<WorkspaceSymbolsHandler>()
                     .WithHandler<TextDocumentHandler>()
@@ -77,7 +91,10 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     .WithHandler<DocumentFormattingHandler>()
                     .WithHandler<DocumentRangeFormattingHandler>()
                     .WithHandler<ReferencesHandler>()
-                    .WithHandler<DocumentSymbolHandler>();
+                    .WithHandler<DocumentSymbolHandler>()
+                    .WithHandler<DocumentHighlightHandler>();
+
+                logger.LogInformation("Handlers added");
             });
 
             _serverStart.SetResult(true);
