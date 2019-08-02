@@ -1,5 +1,9 @@
-﻿using System;
-namespace PowerShellEditorServices.Engine.Services.CodeLenses
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+namespace Microsoft.PowerShell.EditorServices.CodeLenses
 {
     /// <summary>
     /// Represents data expected back in an LSP CodeLens response.

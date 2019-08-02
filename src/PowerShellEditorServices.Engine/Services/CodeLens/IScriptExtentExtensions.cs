@@ -8,7 +8,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    public static class IScriptExtentExtensions
+    internal static class IScriptExtentExtensions
     {
         public static Range ToRange(this IScriptExtent scriptExtent)
         {
