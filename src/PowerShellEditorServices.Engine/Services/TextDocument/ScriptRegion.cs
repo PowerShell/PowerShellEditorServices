@@ -131,26 +131,5 @@ namespace Microsoft.PowerShell.EditorServices
         IScriptPosition IScriptExtent.EndScriptPosition => throw new NotImplementedException();
 
         #endregion
-
-        #region Methods
-
-        public Range ToRange()
-        {
-            return new Range
-            {
-                Start = new Position
-                {
-                    Line = StartLineNumber - 1,
-                    Character = StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = EndLineNumber - 1,
-                    Character = EndColumnNumber - 1
-                }
-            };
-        }
-
-        #endregion
     }
 }

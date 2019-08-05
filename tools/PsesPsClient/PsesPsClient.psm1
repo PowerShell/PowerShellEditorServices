@@ -506,6 +506,57 @@ function Send-LspGetRunspaceRequest
     return Send-LspRequest -Client $Client -Method 'powerShell/getRunspace' -Parameters $params
 }
 
+function Send-LspCodeLensRequest
+{
+    [OutputType([PsesPsClient.LspRequest])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [string]
+        $Uri
+    )
+
+    $params = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.CodeLensRequest]@{
+        TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentIdentifier]@{
+            Uri = $Uri
+        }
+    }
+    return Send-LspRequest -Client $Client -Method 'textDocument/codeLens' -Parameters $params
+}
+
+function Send-LspCodeLensResolveRequest
+{
+    [OutputType([PsesPsClient.LspRequest])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter(Mandatory)]
+        # Expects to be passed in a single item from the `Result` collection from
+        # Send-LspCodeLensRequest
+        $CodeLens
+    )
+
+    $params = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.CodeLens]@{
+        Data = [Newtonsoft.Json.Linq.JToken]::Parse(($CodeLens.data.data | ConvertTo-Json))
+        Range = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Range]@{
+            Start = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Position]@{
+                Line = $CodeLens.range.start.line
+                Character = $CodeLens.range.start.character
+            }
+            End = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Position]@{
+                Line = $CodeLens.range.end.line
+                Character = $CodeLens.range.end.character
+            }
+        }
+    }
+
+    return Send-LspRequest -Client $Client -Method 'codeLens/resolve' -Parameters $params
+}
+
 function Send-LspShutdownRequest
 {
     [OutputType([PsesPsClient.LspRequest])]
