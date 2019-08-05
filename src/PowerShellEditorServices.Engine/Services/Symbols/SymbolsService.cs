@@ -35,10 +35,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Constructs an instance of the SymbolsService class and uses
         /// the given Runspace to execute language service operations.
         /// </summary>
-        /// <param name="powerShellContext">
-        /// The PowerShellContext in which language service operations will be executed.
-        /// </param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
         public SymbolsService(
             ILoggerFactory factory)
         {
@@ -207,6 +204,34 @@ namespace Microsoft.PowerShell.EditorServices
                 file.ScriptAst,
                 foundSymbol,
                 needsAliases: false).ToArray();
+        }
+
+        /// Finds a function definition in the script given a file location
+        /// </summary>
+        /// <param name="scriptFile">The details and contents of a open script file</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>A SymbolReference of the symbol found at the given location
+        /// or null if there is no symbol at that location
+        /// </returns>
+        public SymbolReference FindFunctionDefinitionAtLocation(
+            ScriptFile scriptFile,
+            int lineNumber,
+            int columnNumber)
+        {
+            SymbolReference symbolReference =
+                AstOperations.FindSymbolAtPosition(
+                    scriptFile.ScriptAst,
+                    lineNumber,
+                    columnNumber,
+                    includeFunctionDefinitions: true);
+
+            if (symbolReference != null)
+            {
+                symbolReference.FilePath = scriptFile.FilePath;
+            }
+
+            return symbolReference;
         }
     }
 }

@@ -60,10 +60,14 @@ function New-TestFile
     param(
         [Parameter(Mandatory)]
         [string]
-        $Script
+        $Script,
+
+        [Parameter()]
+        [string]
+        $FileName = "$([System.IO.Path]::GetRandomFileName()).ps1"
     )
 
-    $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $Script -PassThru -Force
+    $file = Set-Content -Path (Join-Path $TestDrive $FileName) -Value $Script -PassThru -Force
 
     $request = Send-LspDidOpenTextDocumentRequest -Client $client `
         -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
@@ -325,6 +329,60 @@ Write-Host 'Goodbye'
         $response.Result[1].Range.Start.Character | Should -BeExactly 0
         $response.Result[1].Range.End.Line | Should -BeExactly 2
         $response.Result[1].Range.End.Character | Should -BeExactly 10
+    }
+
+    It "Can handle a textDocument/codeLens Pester request" {
+        $filePath = New-TestFile -FileName ("$([System.IO.Path]::GetRandomFileName()).Tests.ps1") -Script '
+Describe "DescribeName" {
+    Context "ContextName" {
+        It "ItName" {
+            1 | Should -Be 1
+        }
+    }
+}
+'
+
+        $request = Send-LspCodeLensRequest -Client $client `
+            -Uri ([Uri]::new($filePath).AbsoluteUri)
+
+        $response = Get-LspResponse -Client $client -Id $request.Id
+        $response.Result.Count | Should -BeExactly 2
+
+        # Both commands will have the same values for these so we can check them like so.
+        $response.Result.range.start.line | Should -Be @(1, 1)
+        $response.Result.range.start.character | Should -Be @(0, 0)
+        $response.Result.range.end.line | Should -Be @(7, 7)
+        $response.Result.range.end.character | Should -Be @(1, 1)
+
+        $response.Result.command.title[0] | Should -Be "Run tests"
+        $response.Result.command.title[1] | Should -Be "Debug tests"
+    }
+
+    It "Can handle a textDocument/codeLens and codeLens/resolve References request" {
+        $filePath = New-TestFile -Script '
+function Get-Foo {
+
+}
+
+Get-Foo
+'
+
+        $request = Send-LspCodeLensRequest -Client $client `
+            -Uri ([Uri]::new($filePath).AbsoluteUri)
+
+        $response = Get-LspResponse -Client $client -Id $request.Id
+        $response.Result.Count | Should -BeExactly 1
+        $response.Result.data.data.ProviderId | Should -Be ReferencesCodeLensProvider
+        $response.Result.range.start.line | Should -BeExactly 1
+        $response.Result.range.start.character | Should -BeExactly 0
+        $response.Result.range.end.line | Should -BeExactly 3
+        $response.Result.range.end.character | Should -BeExactly 1
+
+        $request = Send-LspCodeLensResolveRequest -Client $client -CodeLens $response.Result[0]
+        $response = Get-LspResponse -Client $client -Id $request.Id
+
+        $response.Result.command.title | Should -Be '1 reference'
+        $response.Result.command.command | Should -Be 'editor.action.showReferences'
     }
 
     # This test MUST be last
