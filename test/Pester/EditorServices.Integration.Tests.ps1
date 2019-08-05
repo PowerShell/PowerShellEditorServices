@@ -88,8 +88,6 @@ function New-TestFile
 
 Describe "Loading and running PowerShellEditorServices" {
     BeforeAll {
-        Import-Module -Force "$PSScriptRoot/../../module/PowerShellEditorServices"
-        Import-Module -Force (Resolve-Path "$PSScriptRoot/../../src/PowerShellEditorServices.Engine/bin/*/netstandard2.0/publish/Omnisharp.Extensions.LanguageProtocol.dll")
         Import-Module -Force "$PSScriptRoot/../../tools/PsesPsClient/out/PsesPsClient"
         Import-Module -Force "$PSScriptRoot/../../tools/PsesLogAnalyzer"
 
