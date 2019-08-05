@@ -487,6 +487,25 @@ function Send-LspDocumentHighlightRequest
     return Send-LspRequest -Client $Client -Method 'textDocument/documentHighlight' -Parameters $documentHighlightParams
 }
 
+function Send-LspGetRunspaceRequest
+{
+    [OutputType([PsesPsClient.LspRequest])]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter(Mandatory)]
+        [int]
+        $ProcessId
+    )
+
+    $params = [PowerShellEditorServices.Engine.Services.Handlers.GetRunspaceParams]@{
+        ProcessId = $ProcessId
+    }
+    return Send-LspRequest -Client $Client -Method 'powerShell/getRunspace' -Parameters $params
+}
+
 function Send-LspShutdownRequest
 {
     [OutputType([PsesPsClient.LspRequest])]

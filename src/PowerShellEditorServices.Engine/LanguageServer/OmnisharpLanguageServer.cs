@@ -92,7 +92,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     .WithHandler<DocumentRangeFormattingHandler>()
                     .WithHandler<ReferencesHandler>()
                     .WithHandler<DocumentSymbolHandler>()
-                    .WithHandler<DocumentHighlightHandler>();
+                    .WithHandler<DocumentHighlightHandler>()
+                    .WithHandler<PSHostProcessAndRunspaceHandlers>();
 
                 logger.LogInformation("Handlers added");
             });
