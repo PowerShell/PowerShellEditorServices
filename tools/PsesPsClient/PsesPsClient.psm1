@@ -6,6 +6,9 @@
 $script:PsesBundledModulesDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath(
     "$PSScriptRoot/../../../../module")
 
+Import-Module -Force "$PSScriptRoot/../../../../module/PowerShellEditorServices"
+Import-Module -Force (Resolve-Path "$PSScriptRoot/../../../../src/PowerShellEditorServices.Engine/bin/*/netstandard2.0/publish/Omnisharp.Extensions.LanguageProtocol.dll")
+
 class PsesStartupOptions
 {
     [string]   $LogPath
