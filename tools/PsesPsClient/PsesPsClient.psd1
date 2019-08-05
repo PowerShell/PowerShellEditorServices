@@ -81,6 +81,7 @@ FunctionsToExport = @(
     'Send-LspDocumentSymbolRequest',
     'Send-LspDocumentHighlightRequest',
     'Send-LspReferencesRequest',
+    'Send-LspGetRunspaceRequest',
     'Send-LspCodeLensRequest',
     'Send-LspCodeLensResolveRequest',
     'Send-LspShutdownRequest',
