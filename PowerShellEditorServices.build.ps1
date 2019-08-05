@@ -353,7 +353,8 @@ function DotNetTestFilter {
     if ($TestFilter) { @("--filter",$TestFilter) } else { "" }
 }
 
-task Test TestServer,TestProtocol,TestPester
+# task Test TestServer,TestProtocol,TestPester
+task Test TestPester
 
 task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
