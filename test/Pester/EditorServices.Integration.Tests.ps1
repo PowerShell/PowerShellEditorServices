@@ -331,6 +331,30 @@ Write-Host 'Goodbye'
         $response.Result[1].Range.End.Character | Should -BeExactly 10
     }
 
+    It "Can handle a powerShell/getPSHostProcesses request" {
+        $request = Send-LspRequest -Client $client -Method "powerShell/getPSHostProcesses"
+        $response = Get-LspResponse -Client $client -Id $request.Id
+        $response.Result | Should -Not -BeNullOrEmpty
+
+        $processInfos = @(Get-PSHostProcessInfo)
+
+        # We need to subtract one because this message fiilters out the "current" process.
+        $processInfos.Count - 1 | Should -BeExactly $response.Result.Count
+
+        $response.Result[0].processName |
+            Should -MatchExactly -RegularExpression "((pwsh)|(powershell))(.exe)*"
+    }
+
+    It "Can handle a powerShell/getRunspace request" {
+        $processInfos = Get-PSHostProcessInfo
+
+        $request = Send-LspGetRunspaceRequest -Client $client -ProcessId $processInfos[0].ProcessId
+        $response = Get-LspResponse -Client $client -Id $request.Id
+
+        $response.Result | Should -Not -BeNullOrEmpty
+        $response.Result.Count | Should -BeGreaterThan 0
+    }
+
     It "Can handle a textDocument/codeLens Pester request" {
         $filePath = New-TestFile -FileName ("$([System.IO.Path]::GetRandomFileName()).Tests.ps1") -Script '
 Describe "DescribeName" {
