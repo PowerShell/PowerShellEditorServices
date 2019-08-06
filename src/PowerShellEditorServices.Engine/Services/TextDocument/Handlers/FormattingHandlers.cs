@@ -10,7 +10,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace PowerShellEditorServices.Engine.Services.Handlers
 {
-    public class DocumentFormattingHandler : IDocumentFormattingHandler
+    internal class DocumentFormattingHandler : IDocumentFormattingHandler
     {
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
             new DocumentFilter()
@@ -88,7 +88,7 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
         }
     }
 
-    public class DocumentRangeFormattingHandler : IDocumentRangeFormattingHandler
+    internal class DocumentRangeFormattingHandler : IDocumentRangeFormattingHandler
     {
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
             new DocumentFilter()

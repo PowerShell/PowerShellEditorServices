@@ -92,6 +92,7 @@ Describe "Loading and running PowerShellEditorServices" {
         Import-Module -Force "$PSScriptRoot/../../tools/PsesLogAnalyzer"
 
         $logIdx = 0
+        Wait-Debugger
         $psesServer = Start-PsesServer
         $client = Connect-PsesServer -InPipeName $psesServer.SessionDetails.languageServiceWritePipeName -OutPipeName $psesServer.SessionDetails.languageServiceReadPipeName
     }
@@ -163,20 +164,34 @@ function Get-Foo {
     It "Can get Diagnostics after changing settings" {
         $file = New-TestFile -Script 'gci | % { $_ }'
 
-        $request = Send-LspDidChangeConfigurationRequest -Client $client -Settings @{
-            PowerShell = @{
-                ScriptAnalysis = @{
-                    Enable = $false
+        try
+        {
+            $request = Send-LspDidChangeConfigurationRequest -Client $client -Settings @{
+                PowerShell = @{
+                    ScriptAnalysis = @{
+                        Enable = $false
+                    }
+                }
+            }
+
+            # Grab notifications for just the file opened in this test.
+            $notifications = Get-LspNotification -Client $client | Where-Object {
+                $_.Params.uri -match ([System.IO.Path]::GetFileName($file.PSPath))
+            }
+            $notifications | Should -Not -BeNullOrEmpty
+            $notifications.Params.diagnostics | Should -BeNullOrEmpty
+        }
+        finally
+        {
+            # Restore PSSA state
+            Send-LspDidChangeConfigurationRequest -Client $client -Settings @{
+                PowerShell = @{
+                    ScriptAnalysis = @{
+                        Enable = $true
+                    }
                 }
             }
         }
-
-        # Grab notifications for just the file opened in this test.
-        $notifications = Get-LspNotification -Client $client | Where-Object {
-            $_.Params.uri -match ([System.IO.Path]::GetFileName($file.PSPath))
-        }
-        $notifications | Should -Not -BeNullOrEmpty
-        $notifications.Params.diagnostics | Should -BeNullOrEmpty
     }
 
     It "Can handle folding request" {
@@ -405,6 +420,38 @@ Get-Foo
 
         $response.Result.command.title | Should -Be '1 reference'
         $response.Result.command.command | Should -Be 'editor.action.showReferences'
+    }
+
+    It "Can handle a textDocument/codeAction request" {
+        $script = 'gci'
+        $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $script -PassThru -Force
+
+        $request = Send-LspDidOpenTextDocumentRequest -Client $client `
+            -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
+            -Text ($file[0].ToString())
+
+        # There's no response for this message, but we need to call Get-LspResponse
+        # to increment the counter.
+        Get-LspResponse -Client $client -Id $request.Id | Out-Null
+
+        # Grab notifications for just the file opened in this test.
+        $notifications = Get-LspNotification -Client $client | Where-Object {
+            $_.Params.uri -match ([System.IO.Path]::GetFileName($file.PSPath))
+        }
+
+        Wait-Debugger
+        $codeActionParams = @{
+            Client = $client
+            Uri = $uri
+            StartLine = 0
+            StartCharacter = 0
+            EndLine = 0
+            EndCharacter = 3
+            Diagnostics = $notifications.Params.diagnostics
+        }
+        $request = Send-LspCodeActionRequest @codeActionParams
+
+        $response = Get-LspResponse -Client $client -Id $request.Id
     }
 
     # This test MUST be last

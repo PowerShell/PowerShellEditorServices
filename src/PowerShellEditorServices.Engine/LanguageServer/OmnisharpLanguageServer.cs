@@ -94,7 +94,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     .WithHandler<DocumentSymbolHandler>()
                     .WithHandler<DocumentHighlightHandler>()
                     .WithHandler<PSHostProcessAndRunspaceHandlers>()
-                    .WithHandler<CodeLensHandlers>();
+                    .WithHandler<CodeLensHandlers>()
+                    .WithHandler<CodeActionHandler>();
 
                     logger.LogInformation("Handlers added");
             });

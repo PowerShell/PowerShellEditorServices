@@ -150,6 +150,7 @@ namespace Microsoft.PowerShell.EditorServices
             _configurationService = configurationService;
             _logger = logger;
             _pssaModuleInfo = pssaModuleInfo;
+            _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)>();
         }
 
         #endregion // constructors
@@ -814,7 +815,7 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile scriptFile,
             List<ScriptFileMarker> markers)
         {
-            List<Diagnostic> diagnostics = new List<Diagnostic>();
+            var diagnostics = new List<Diagnostic>();
 
             // Create the entry for this file if it does not already exist
             SemaphoreSlim fileLock;
@@ -917,7 +918,7 @@ namespace Microsoft.PowerShell.EditorServices
             var sb = new StringBuilder(256)
             .Append(diagnostic.Source ?? "?")
             .Append("_")
-            .Append(diagnostic.Code.ToString())
+            .Append(diagnostic.Code.IsString ? diagnostic.Code.String : diagnostic.Code.Long.ToString())
             .Append("_")
             .Append(diagnostic.Severity?.ToString() ?? "?")
             .Append("_")

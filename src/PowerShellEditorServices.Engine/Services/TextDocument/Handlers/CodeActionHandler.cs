@@ -27,12 +27,15 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
 
         private readonly AnalysisService _analysisService;
 
+        private readonly ILanguageServer _languageServer;
+
         private CodeActionCapability _capability;
 
-        public CodeActionHandler(ILoggerFactory factory, AnalysisService analysisService)
+        public CodeActionHandler(ILoggerFactory factory, ILanguageServer languageServer, AnalysisService analysisService)
         {
             _logger = factory.CreateLogger<TextDocumentHandler>();
             _analysisService = analysisService;
+            _languageServer = languageServer;
             _registrationOptions = new CodeActionRegistrationOptions()
             {
                 DocumentSelector = new DocumentSelector(new DocumentFilter() { Pattern = "**/*.ps*1" }),

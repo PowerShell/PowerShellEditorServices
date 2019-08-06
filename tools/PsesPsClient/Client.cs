@@ -94,8 +94,8 @@ namespace PsesPsClient
         /// </summary>
         public void Connect()
         {
-            _inPipe.Connect(timeout: 1000);
-            _outPipe.Connect(timeout: 1000);
+            _inPipe.Connect(timeout: 10000);
+            _outPipe.Connect(timeout: 10000);
             _listener = new MessageStreamListener(new StreamReader(_inPipe, _pipeEncoding));
             _writer = new StreamWriter(_outPipe, _pipeEncoding)
             {
