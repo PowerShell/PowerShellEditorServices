@@ -433,10 +433,14 @@ Get-Foo
         # to increment the counter.
         Get-LspResponse -Client $client -Id $request.Id | Out-Null
 
+        Start-Sleep 1
+
         # Grab notifications for just the file opened in this test.
         $notifications = Get-LspNotification -Client $client | Where-Object {
             $_.Params.uri -match ([System.IO.Path]::GetFileName($file.PSPath))
         }
+
+        $notifications.Count | Should -BeGreaterOrEqual 1
 
         $codeActionParams = @{
             Client = $client
