@@ -92,7 +92,6 @@ Describe "Loading and running PowerShellEditorServices" {
         Import-Module -Force "$PSScriptRoot/../../tools/PsesLogAnalyzer"
 
         $logIdx = 0
-        Wait-Debugger
         $psesServer = Start-PsesServer
         $client = Connect-PsesServer -InPipeName $psesServer.SessionDetails.languageServiceWritePipeName -OutPipeName $psesServer.SessionDetails.languageServiceReadPipeName
     }
@@ -223,7 +222,7 @@ $_
         $sortedResults[1].endCharacter | Should -Be 2
     }
 
-    It "can handle a normal formatting request" {
+    It "Can handle a normal formatting request" {
         $filePath = New-TestFile -Script '
 gci | % {
 Get-Process
@@ -240,7 +239,7 @@ Get-Process
         $response.Result.newText.Contains("`t") | Should -BeTrue -Because "We expect a tab."
     }
 
-    It "can handle a range formatting request" {
+    It "Can handle a range formatting request" {
         $filePath = New-TestFile -Script '
 gci | % {
 Get-Process
@@ -439,19 +438,26 @@ Get-Foo
             $_.Params.uri -match ([System.IO.Path]::GetFileName($file.PSPath))
         }
 
-        Wait-Debugger
         $codeActionParams = @{
             Client = $client
-            Uri = $uri
-            StartLine = 0
-            StartCharacter = 0
-            EndLine = 0
-            EndCharacter = 3
+            Uri = $notifications[0].Params.uri
+            StartLine = 1
+            StartCharacter = 1
+            EndLine = 1
+            EndCharacter = 4
             Diagnostics = $notifications.Params.diagnostics
         }
         $request = Send-LspCodeActionRequest @codeActionParams
 
         $response = Get-LspResponse -Client $client -Id $request.Id
+
+        $edits = $response.Result | Where-Object command -eq 'PowerShell.ApplyCodeActionEdits'
+        $edits.Count | Should -Be 1
+        $edits[0].Arguments.Text | Should -BeExactly 'Get-ChildItem'
+        $edits[0].Arguments.StartLineNumber | Should -Be 1
+        $edits[0].Arguments.StartColumnNumber | Should -Be 1
+        $edits[0].Arguments.EndLineNumber | Should -Be 1
+        $edits[0].Arguments.EndColumnNumber | Should -Be 4
     }
 
     # This test MUST be last

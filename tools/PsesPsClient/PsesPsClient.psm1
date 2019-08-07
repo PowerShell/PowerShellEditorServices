@@ -557,12 +557,16 @@ function Send-LspCodeLensResolveRequest
         }
     }
 
-    return Send-LspRequest -Client $Client -Method 'textDocument/codeAction' -Parameters $codeActionParams
+    return Send-LspRequest -Client $Client -Method 'codeLens/resolve' -Parameters $params
 }
 
 function Send-LspCodeActionRequest
 {
     param(
+        [Parameter()]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
         [Parameter()]
         [string]
         $Uri,
@@ -587,7 +591,7 @@ function Send-LspCodeActionRequest
         $Diagnostics
     )
 
-    $codeActionParams = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.CodeActionParams]@{
+    $params = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.CodeActionParams]@{
         TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentIdentifier]@{
             Uri = $Uri
         }
@@ -623,7 +627,7 @@ function Send-LspCodeActionRequest
         }
     }
 
-    return Send-LspRequest -Client $Client -Method 'codeLens/resolve' -Parameters $params
+    return Send-LspRequest -Client $Client -Method 'textDocument/codeAction' -Parameters $params
 }
 
 function Send-LspShutdownRequest
