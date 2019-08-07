@@ -440,11 +440,11 @@ Get-Foo
             $_.Params.uri -match ([System.IO.Path]::GetFileName($file.PSPath))
         }
 
-        $notifications.Count | Should -BeGreaterOrEqual 1
+        $notifications | Should -Not -BeNullOrEmpty
 
         $codeActionParams = @{
             Client = $client
-            Uri = $notifications[0].Params.uri
+            Uri = $notifications.Params.uri
             StartLine = 1
             StartCharacter = 1
             EndLine = 1
@@ -455,13 +455,13 @@ Get-Foo
 
         $response = Get-LspResponse -Client $client -Id $request.Id
 
-        $edits = $response.Result | Where-Object command -eq 'PowerShell.ApplyCodeActionEdits'
-        $edits.Count | Should -Be 1
-        $edits[0].Arguments.Text | Should -BeExactly 'Get-ChildItem'
-        $edits[0].Arguments.StartLineNumber | Should -Be 1
-        $edits[0].Arguments.StartColumnNumber | Should -Be 1
-        $edits[0].Arguments.EndLineNumber | Should -Be 1
-        $edits[0].Arguments.EndColumnNumber | Should -Be 4
+        $edit = $response.Result | Where-Object command -eq 'PowerShell.ApplyCodeActionEdits' | Select-Object -First 1
+        $edit | Should -Not -BeNullOrEmpty
+        $edit.Arguments.Text | Should -BeExactly 'Get-ChildItem'
+        $edit.Arguments.StartLineNumber | Should -Be 1
+        $edit.Arguments.StartColumnNumber | Should -Be 1
+        $edit.Arguments.EndLineNumber | Should -Be 1
+        $edit.Arguments.EndColumnNumber | Should -Be 4
     }
 
     # This test MUST be last

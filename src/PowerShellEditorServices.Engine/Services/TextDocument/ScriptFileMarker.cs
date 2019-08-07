@@ -147,11 +147,11 @@ namespace Microsoft.PowerShell.EditorServices
                         new ScriptRegion(
                             diagnosticRecord.ScriptPath,
                             suggestedCorrection.Text,
-                            suggestedCorrection.StartLineNumber,
-                            suggestedCorrection.StartColumnNumber,
+                            startLineNumber: suggestedCorrection.StartLineNumber,
+                            startColumnNumber: suggestedCorrection.StartColumnNumber,
+                            endLineNumber: suggestedCorrection.EndLineNumber,
+                            endColumnNumber: suggestedCorrection.EndColumnNumber,
                             startOffset: -1,
-                            suggestedCorrection.EndLineNumber,
-                            suggestedCorrection.EndColumnNumber,
                             endOffset: -1));
 
                     correctionMessage = suggestedCorrection.Description;
