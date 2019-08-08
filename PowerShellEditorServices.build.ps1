@@ -83,7 +83,7 @@ $script:RequiredBuildAssets = @{
             'publish/OmniSharp.Extensions.LanguageServer.dll',
             'publish/Serilog.dll',
             'publish/Serilog.Extensions.Logging.dll',
-            'publish/Serilog.Sinks.Console.dll',
+            'publish/Serilog.Sinks.File.dll',
             'publish/Microsoft.Extensions.DependencyInjection.Abstractions.dll',
             'publish/Microsoft.Extensions.DependencyInjection.dll',
             'publish/Microsoft.Extensions.Logging.Abstractions.dll',
