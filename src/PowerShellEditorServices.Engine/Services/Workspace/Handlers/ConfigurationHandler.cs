@@ -16,15 +16,23 @@ namespace Microsoft.PowerShell.EditorServices
         private readonly AnalysisService _analysisService;
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
+        private readonly PowerShellContextService _powerShellContextService;
         private DidChangeConfigurationCapability _capability;
+        private bool _profilesLoaded;
+        private bool _consoleReplStarted;
 
-
-        public ConfigurationHandler(ILoggerFactory factory, WorkspaceService workspaceService, AnalysisService analysisService, ConfigurationService configurationService)
+        public ConfigurationHandler(
+            ILoggerFactory factory,
+            WorkspaceService workspaceService,
+            AnalysisService analysisService,
+            ConfigurationService configurationService,
+            PowerShellContextService powerShellContextService)
         {
             _logger = factory.CreateLogger<ConfigurationHandler>();
             _workspaceService = workspaceService;
             _analysisService = analysisService;
             _configurationService = configurationService;
+            _powerShellContextService = powerShellContextService;
         }
 
         public object GetRegistrationOptions()
@@ -40,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices
                 return await Unit.Task;
             }
             // TODO ADD THIS BACK IN
-            // bool oldLoadProfiles = this.currentSettings.EnableProfileLoading;
+            bool oldLoadProfiles = _configurationService.CurrentSettings.EnableProfileLoading;
             bool oldScriptAnalysisEnabled =
                 _configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false;
             string oldScriptAnalysisSettingsPath =
@@ -51,23 +59,22 @@ namespace Microsoft.PowerShell.EditorServices
                 _workspaceService.WorkspacePath,
                 _logger);
 
-            // TODO ADD THIS BACK IN
-            // if (!this.profilesLoaded &&
-            //     this.currentSettings.EnableProfileLoading &&
-            //     oldLoadProfiles != this.currentSettings.EnableProfileLoading)
-            // {
-            //     await this.editorSession.PowerShellContext.LoadHostProfilesAsync();
-            //     this.profilesLoaded = true;
-            // }
+            if (!this._profilesLoaded &&
+                _configurationService.CurrentSettings.EnableProfileLoading &&
+                oldLoadProfiles != _configurationService.CurrentSettings.EnableProfileLoading)
+            {
+                await _powerShellContextService.LoadHostProfilesAsync();
+                this._profilesLoaded = true;
+            }
 
-            // // Wait until after profiles are loaded (or not, if that's the
-            // // case) before starting the interactive console.
-            // if (!this.consoleReplStarted)
-            // {
-            //     // Start the interactive terminal
-            //     this.editorSession.HostInput.StartCommandLoop();
-            //     this.consoleReplStarted = true;
-            // }
+            // Wait until after profiles are loaded (or not, if that's the
+            // case) before starting the interactive console.
+            if (!this._consoleReplStarted)
+            {
+                // Start the interactive terminal
+                _powerShellContextService.ConsoleReader.StartCommandLoop();
+                this._consoleReplStarted = true;
+            }
 
             // If there is a new settings file path, restart the analyzer with the new settigs.
             bool settingsPathChanged = false;
