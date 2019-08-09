@@ -10,7 +10,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices
 {
-    public class ConfigurationHandler : IDidChangeConfigurationHandler
+    internal class ConfigurationHandler : IDidChangeConfigurationHandler
     {
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;

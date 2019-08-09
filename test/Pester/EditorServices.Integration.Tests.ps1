@@ -163,20 +163,34 @@ function Get-Foo {
     It "Can get Diagnostics after changing settings" {
         $file = New-TestFile -Script 'gci | % { $_ }'
 
-        $request = Send-LspDidChangeConfigurationRequest -Client $client -Settings @{
-            PowerShell = @{
-                ScriptAnalysis = @{
-                    Enable = $false
+        try
+        {
+            $request = Send-LspDidChangeConfigurationRequest -Client $client -Settings @{
+                PowerShell = @{
+                    ScriptAnalysis = @{
+                        Enable = $false
+                    }
+                }
+            }
+
+            # Grab notifications for just the file opened in this test.
+            $notifications = Get-LspNotification -Client $client | Where-Object {
+                $_.Params.uri -match ([System.IO.Path]::GetFileName($file.PSPath))
+            }
+            $notifications | Should -Not -BeNullOrEmpty
+            $notifications.Params.diagnostics | Should -BeNullOrEmpty
+        }
+        finally
+        {
+            # Restore PSSA state
+            Send-LspDidChangeConfigurationRequest -Client $client -Settings @{
+                PowerShell = @{
+                    ScriptAnalysis = @{
+                        Enable = $true
+                    }
                 }
             }
         }
-
-        # Grab notifications for just the file opened in this test.
-        $notifications = Get-LspNotification -Client $client | Where-Object {
-            $_.Params.uri -match ([System.IO.Path]::GetFileName($file.PSPath))
-        }
-        $notifications | Should -Not -BeNullOrEmpty
-        $notifications.Params.diagnostics | Should -BeNullOrEmpty
     }
 
     It "Can handle folding request" {
@@ -208,7 +222,7 @@ $_
         $sortedResults[1].endCharacter | Should -Be 2
     }
 
-    It "can handle a normal formatting request" {
+    It "Can handle a normal formatting request" {
         $filePath = New-TestFile -Script '
 gci | % {
 Get-Process
@@ -225,7 +239,7 @@ Get-Process
         $response.Result.newText.Contains("`t") | Should -BeTrue -Because "We expect a tab."
     }
 
-    It "can handle a range formatting request" {
+    It "Can handle a range formatting request" {
         $filePath = New-TestFile -Script '
 gci | % {
 Get-Process
@@ -405,6 +419,49 @@ Get-Foo
 
         $response.Result.command.title | Should -Be '1 reference'
         $response.Result.command.command | Should -Be 'editor.action.showReferences'
+    }
+
+    It "Can handle a textDocument/codeAction request" {
+        $script = 'gci'
+        $file = Set-Content -Path (Join-Path $TestDrive "$([System.IO.Path]::GetRandomFileName()).ps1") -Value $script -PassThru -Force
+
+        $request = Send-LspDidOpenTextDocumentRequest -Client $client `
+            -Uri ([Uri]::new($file.PSPath).AbsoluteUri) `
+            -Text ($file[0].ToString())
+
+        # There's no response for this message, but we need to call Get-LspResponse
+        # to increment the counter.
+        Get-LspResponse -Client $client -Id $request.Id | Out-Null
+
+        Start-Sleep 1
+
+        # Grab notifications for just the file opened in this test.
+        $notifications = Get-LspNotification -Client $client | Where-Object {
+            $_.Params.uri -match ([System.IO.Path]::GetFileName($file.PSPath))
+        }
+
+        $notifications | Should -Not -BeNullOrEmpty
+
+        $codeActionParams = @{
+            Client = $client
+            Uri = $notifications.Params.uri
+            StartLine = 1
+            StartCharacter = 1
+            EndLine = 1
+            EndCharacter = 4
+            Diagnostics = $notifications.Params.diagnostics
+        }
+        $request = Send-LspCodeActionRequest @codeActionParams
+
+        $response = Get-LspResponse -Client $client -Id $request.Id
+
+        $edit = $response.Result | Where-Object command -eq 'PowerShell.ApplyCodeActionEdits' | Select-Object -First 1
+        $edit | Should -Not -BeNullOrEmpty
+        $edit.Arguments.Text | Should -BeExactly 'Get-ChildItem'
+        $edit.Arguments.StartLineNumber | Should -Be 1
+        $edit.Arguments.StartColumnNumber | Should -Be 1
+        $edit.Arguments.EndLineNumber | Should -Be 1
+        $edit.Arguments.EndColumnNumber | Should -Be 4
     }
 
     # This test MUST be last

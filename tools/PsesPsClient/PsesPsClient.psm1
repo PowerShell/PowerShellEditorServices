@@ -560,6 +560,76 @@ function Send-LspCodeLensResolveRequest
     return Send-LspRequest -Client $Client -Method 'codeLens/resolve' -Parameters $params
 }
 
+function Send-LspCodeActionRequest
+{
+    param(
+        [Parameter()]
+        [PsesPsClient.PsesLspClient]
+        $Client,
+
+        [Parameter()]
+        [string]
+        $Uri,
+
+        [Parameter()]
+        [int]
+        $StartLine,
+
+        [Parameter()]
+        [int]
+        $StartCharacter,
+
+        [Parameter()]
+        [int]
+        $EndLine,
+
+        [Parameter()]
+        [int]
+        $EndCharacter,
+
+        [Parameter()]
+        $Diagnostics
+    )
+
+    $params = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.CodeActionParams]@{
+        TextDocument = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.TextDocumentIdentifier]@{
+            Uri = $Uri
+        }
+        Range = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Range]@{
+            Start = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Position]@{
+                Line = $StartLine
+                Character = $StartCharacter
+            }
+            End = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Position]@{
+                Line = $EndLine
+                Character = $EndCharacter
+            }
+        }
+        Context = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.CodeActionContext]@{
+            Diagnostics = $Diagnostics | ForEach-Object {
+                [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Diagnostic]@{
+                    Code = $_.code
+                    Severity = $_.severity
+                    Source = $_.source
+                    Message = $_.message
+                    Range = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Range]@{
+                        Start = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Position]@{
+                            Line = $_.range.start.line
+                            Character = $_.range.start.character
+                        }
+                        End = [Microsoft.PowerShell.EditorServices.Protocol.LanguageServer.Position]@{
+                            Line = $_.range.end.line
+                            Character = $_.range.end.character
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return Send-LspRequest -Client $Client -Method 'textDocument/codeAction' -Parameters $params
+}
+
 function Send-LspShutdownRequest
 {
     [OutputType([PsesPsClient.LspRequest])]
