@@ -147,6 +147,12 @@ namespace Microsoft.PowerShell.EditorServices.Host
             this.serverCompletedTask = new TaskCompletionSource<bool>();
             this.internalHost = internalHost;
 
+            while (!System.Diagnostics.Debugger.IsAttached)
+            {
+                System.Console.WriteLine(System.Diagnostics.Process.GetCurrentProcess().Id);
+                System.Threading.Thread.Sleep(2000);
+            }
+
 #if DEBUG
             if (waitForDebugger)
             {
