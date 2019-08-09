@@ -4,10 +4,13 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Host;
+using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -60,11 +63,19 @@ namespace Microsoft.PowerShell.EditorServices.Engine
 
         private readonly HostDetails _hostDetails;
 
+        private readonly PSHost _internalHost;
+
+        private readonly bool _enableConsoleRepl;
+
+        private readonly HashSet<string> _featureFlags;
+
+        private readonly string[] _additionalModules;
+
         private ILanguageServer _languageServer;
 
-        private readonly Extensions.Logging.ILogger _logger;
+        private Microsoft.Extensions.Logging.ILogger _logger;
 
-        private readonly ILoggerFactory _factory;
+        private ILoggerFactory _factory;
 
         #endregion
 
@@ -126,24 +137,15 @@ namespace Microsoft.PowerShell.EditorServices.Engine
             Validate.IsNotNull(nameof(internalHost), internalHost);
 
             _serviceCollection = new ServiceCollection();
-
-            Log.Logger = new LoggerConfiguration().Enrich.FromLogContext()
-                            .WriteTo.Console()
-                            .CreateLogger();
-            _factory = new LoggerFactory().AddSerilog(Log.Logger);
-            _logger = _factory.CreateLogger<EditorServicesHost>();
-
             _hostDetails = hostDetails;
 
-            /*
-            this.hostDetails = hostDetails;
-            this.enableConsoleRepl = enableConsoleRepl;
-            this.bundledModulesPath = bundledModulesPath;
-            this.additionalModules = additionalModules ?? Array.Empty<string>();
-            this.featureFlags = new HashSet<string>(featureFlags ?? Array.Empty<string>();
-            this.serverCompletedTask = new TaskCompletionSource<bool>();
-            this.internalHost = internalHost;
-            */
+            //this._hostDetails = hostDetails;
+            this._enableConsoleRepl = enableConsoleRepl;
+            //this.bundledModulesPath = bundledModulesPath;
+            this._additionalModules = additionalModules ?? Array.Empty<string>();
+            this._featureFlags = new HashSet<string>(featureFlags ?? Array.Empty<string>());
+            //this.serverCompletedTask = new TaskCompletionSource<bool>();
+            this._internalHost = internalHost;
 
 #if DEBUG
             if (waitForDebugger)
@@ -174,6 +176,12 @@ namespace Microsoft.PowerShell.EditorServices.Engine
         /// <param name="logLevel">The minimum level of log messages to be written.</param>
         public void StartLogging(string logFilePath, PsesLogLevel logLevel)
         {
+            Log.Logger = new LoggerConfiguration().Enrich.FromLogContext()
+                            .WriteTo.File(logFilePath)
+                            .CreateLogger();
+            _factory = new LoggerFactory().AddSerilog(Log.Logger);
+            _logger = _factory.CreateLogger<EditorServicesHost>();
+
             FileVersionInfo fileVersionInfo =
                 FileVersionInfo.GetVersionInfo(this.GetType().GetTypeInfo().Assembly.Location);
 
@@ -184,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
             string buildTime = BuildInfo.BuildTime?.ToString("s", System.Globalization.CultureInfo.InvariantCulture) ?? "<unspecified>";
 
             string logHeader = $@"
-PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Process.GetCurrentProcess().Id}
+PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Process.GetCurrentProcess().Id})
 
   Host application details:
 
@@ -219,23 +227,69 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         {
             while (System.Diagnostics.Debugger.IsAttached)
             {
-                Console.WriteLine($"{Process.GetCurrentProcess().Id}");
+                System.Console.WriteLine($"{Process.GetCurrentProcess().Id}");
                 Thread.Sleep(2000);
             }
 
             _logger.LogInformation($"LSP NamedPipe: {config.InOutPipeName}\nLSP OutPipe: {config.OutPipeName}");
 
-            _serviceCollection.AddSingleton<WorkspaceService>();
-            _serviceCollection.AddSingleton<SymbolsService>();
-            _serviceCollection.AddSingleton<ConfigurationService>();
-            _serviceCollection.AddSingleton<AnalysisService>(
-                (provider) => {
-                    return AnalysisService.Create(
-                        provider.GetService<ConfigurationService>(),
-                        provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                        _factory.CreateLogger<AnalysisService>());
-                }
-            );
+            var logger = _factory.CreateLogger<PowerShellContextService>();
+            var powerShellContext = new PowerShellContextService(
+                logger,
+                _featureFlags.Contains("PSReadLine"));
+
+            // TODO: Bring this back
+            //EditorServicesPSHostUserInterface hostUserInterface =
+            //    _enableConsoleRepl
+            //        ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost)
+            //        : new ProtocolPSHostUserInterface(powerShellContext, messageSender, logger);
+            EditorServicesPSHostUserInterface hostUserInterface =
+                (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost);
+
+
+            EditorServicesPSHost psHost =
+                new EditorServicesPSHost(
+                    powerShellContext,
+                    _hostDetails,
+                    hostUserInterface,
+                    logger);
+
+            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
+            powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
+
+            powerShellContext.ImportCommandsModuleAsync(
+                Path.Combine(
+                    Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
+                    @"..\Commands"));
+
+            // TODO: This can be moved to the point after the $psEditor object
+            // gets initialized when that is done earlier than LanguageServer.Initialize
+            foreach (string module in this._additionalModules)
+            {
+                var command =
+                    new System.Management.Automation.PSCommand()
+                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                        .AddParameter("Name", module);
+
+                powerShellContext.ExecuteCommandAsync<System.Management.Automation.PSObject>(
+                    command,
+                    sendOutputToHost: false,
+                    sendErrorToHost: true);
+            }
+
+            _serviceCollection
+                .AddSingleton<WorkspaceService>()
+                .AddSingleton<SymbolsService>()
+                .AddSingleton<ConfigurationService>()
+                .AddSingleton<PowerShellContextService>(powerShellContext)
+                .AddSingleton<AnalysisService>(
+                    (provider) => {
+                        return AnalysisService.Create(
+                            provider.GetService<ConfigurationService>(),
+                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
+                            _factory.CreateLogger<AnalysisService>());
+                    }
+                );
 
             _languageServer = new OmnisharpLanguageServerBuilder(_serviceCollection)
             {
@@ -248,10 +302,11 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             _logger.LogInformation("Starting language server");
 
-            Task.Factory.StartNew(() => _languageServer.StartAsync(),
-                CancellationToken.None,
-                TaskCreationOptions.LongRunning,
-                TaskScheduler.Default);
+            Task.Run(_languageServer.StartAsync);
+            //Task.Factory.StartNew(() => _languageServer.StartAsync(),
+            //    CancellationToken.None,
+            //    TaskCreationOptions.LongRunning,
+            //    TaskScheduler.Default);
 
             _logger.LogInformation(
                 string.Format(
