@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System.Threading;
+using System.Collections.Concurrent;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -22,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// Provides a high-level service for performing semantic analysis
     /// of PowerShell scripts.
     /// </summary>
-    public class AnalysisService : IDisposable
+    internal class AnalysisService : IDisposable
     {
         #region Static fields
 
@@ -53,9 +54,6 @@ namespace Microsoft.PowerShell.EditorServices
         private static readonly PSObject[] s_emptyDiagnosticResult = new PSObject[0];
 
         private static readonly string[] s_emptyGetRuleResult = new string[0];
-
-        private Dictionary<string, Dictionary<string, MarkerCorrection>> codeActionsPerFile =
-            new Dictionary<string, Dictionary<string, MarkerCorrection>>();
 
         private static CancellationTokenSource s_existingRequestCancellation;
 
@@ -96,7 +94,10 @@ namespace Microsoft.PowerShell.EditorServices
         private PSModuleInfo _pssaModuleInfo;
 
         private readonly ILanguageServer _languageServer;
+
         private readonly ConfigurationService _configurationService;
+
+        private readonly ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)> _mostRecentCorrectionsByFile;
 
         #endregion // Private Fields
 
@@ -149,6 +150,7 @@ namespace Microsoft.PowerShell.EditorServices
             _configurationService = configurationService;
             _logger = logger;
             _pssaModuleInfo = pssaModuleInfo;
+            _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)>();
         }
 
         #endregion // constructors
@@ -813,26 +815,57 @@ namespace Microsoft.PowerShell.EditorServices
             ScriptFile scriptFile,
             List<ScriptFileMarker> markers)
         {
-            List<Diagnostic> diagnostics = new List<Diagnostic>();
+            var diagnostics = new List<Diagnostic>();
 
-            // Hold on to any corrections that may need to be applied later
-            Dictionary<string, MarkerCorrection> fileCorrections =
-                new Dictionary<string, MarkerCorrection>();
-
-            foreach (var marker in markers)
+            // Create the entry for this file if it does not already exist
+            SemaphoreSlim fileLock;
+            Dictionary<string, MarkerCorrection> fileCorrections;
+            bool newEntryNeeded = false;
+            if (_mostRecentCorrectionsByFile.TryGetValue(scriptFile.DocumentUri, out (SemaphoreSlim, Dictionary<string, MarkerCorrection>) fileCorrectionsEntry))
             {
-                // Does the marker contain a correction?
-                Diagnostic markerDiagnostic = GetDiagnosticFromMarker(marker);
-                if (marker.Correction != null)
-                {
-                    string diagnosticId = GetUniqueIdFromDiagnostic(markerDiagnostic);
-                    fileCorrections[diagnosticId] = marker.Correction;
-                }
-
-                diagnostics.Add(markerDiagnostic);
+                fileLock = fileCorrectionsEntry.Item1;
+                fileCorrections = fileCorrectionsEntry.Item2;
+            }
+            else
+            {
+                fileLock = new SemaphoreSlim(initialCount: 1, maxCount: 1);
+                fileCorrections = new Dictionary<string, MarkerCorrection>();
+                newEntryNeeded = true;
             }
 
-            codeActionsPerFile[scriptFile.DocumentUri] = fileCorrections;
+            fileLock.Wait();
+            try
+            {
+                if (newEntryNeeded)
+                {
+                    // If we create a new entry, we should do it after acquiring the lock we just created
+                    // to ensure a competing thread can never acquire it first and read invalid information from it
+                    _mostRecentCorrectionsByFile[scriptFile.DocumentUri] = (fileLock, fileCorrections);
+                }
+                else
+                {
+                    // Otherwise we need to clear the stale corrections
+                    fileCorrections.Clear();
+                }
+
+                foreach (ScriptFileMarker marker in markers)
+                {
+                    // Does the marker contain a correction?
+                    Diagnostic markerDiagnostic = GetDiagnosticFromMarker(marker);
+                    if (marker.Correction != null)
+                    {
+                        string diagnosticId = GetUniqueIdFromDiagnostic(markerDiagnostic);
+                        fileCorrections[diagnosticId] = marker.Correction;
+                    }
+
+                    diagnostics.Add(markerDiagnostic);
+                }
+            }
+            finally
+            {
+                fileLock.Release();
+            }
+
 
             var uriBuilder = new UriBuilder()
             {
@@ -850,9 +883,34 @@ namespace Microsoft.PowerShell.EditorServices
             });
         }
 
+        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(string documentUri)
+        {
+            if (!_mostRecentCorrectionsByFile.TryGetValue(documentUri, out (SemaphoreSlim fileLock, Dictionary<string, MarkerCorrection> corrections) fileCorrectionsEntry))
+            {
+                return null;
+            }
+
+            await fileCorrectionsEntry.fileLock.WaitAsync();
+            // We must copy the dictionary for thread safety
+            var corrections = new Dictionary<string, MarkerCorrection>(fileCorrectionsEntry.corrections.Count);
+            try
+            {
+                foreach (KeyValuePair<string, MarkerCorrection> correction in fileCorrectionsEntry.corrections)
+                {
+                    corrections.Add(correction.Key, correction.Value);
+                }
+
+                return corrections;
+            }
+            finally
+            {
+                fileCorrectionsEntry.fileLock.Release();
+            }
+        }
+
         // Generate a unique id that is used as a key to look up the associated code action (code fix) when
         // we receive and process the textDocument/codeAction message.
-        private static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
+        internal static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
         {
             Position start = diagnostic.Range.Start;
             Position end = diagnostic.Range.End;
@@ -860,7 +918,7 @@ namespace Microsoft.PowerShell.EditorServices
             var sb = new StringBuilder(256)
             .Append(diagnostic.Source ?? "?")
             .Append("_")
-            .Append(diagnostic.Code.ToString())
+            .Append(diagnostic.Code.IsString ? diagnostic.Code.String : diagnostic.Code.Long.ToString())
             .Append("_")
             .Append(diagnostic.Severity?.ToString() ?? "?")
             .Append("_")

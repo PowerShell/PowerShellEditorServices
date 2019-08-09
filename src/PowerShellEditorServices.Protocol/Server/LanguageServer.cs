@@ -1732,7 +1732,6 @@ function __Expand-Alias {
                 cancellationToken);
         }
 
-
         private static async Task DelayThenInvokeDiagnosticsAsync(
             int delayMilliseconds,
             ScriptFile[] filesToAnalyze,
