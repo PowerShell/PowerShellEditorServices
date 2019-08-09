@@ -351,4 +351,3 @@ namespace Microsoft.PowerShell.EditorServices.Console
         #endregion
     }
 }
-

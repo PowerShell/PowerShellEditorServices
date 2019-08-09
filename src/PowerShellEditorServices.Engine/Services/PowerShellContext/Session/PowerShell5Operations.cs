@@ -104,4 +104,3 @@ namespace Microsoft.PowerShell.EditorServices.Session
         }
     }
 }
-

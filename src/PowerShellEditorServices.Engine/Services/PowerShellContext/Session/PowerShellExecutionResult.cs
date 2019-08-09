@@ -37,4 +37,3 @@ namespace Microsoft.PowerShell.EditorServices
         Completed
     }
 }
-

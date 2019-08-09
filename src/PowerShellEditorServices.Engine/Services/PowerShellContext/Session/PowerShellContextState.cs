@@ -14,9 +14,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// Indicates an unknown, potentially uninitialized state.
         /// </summary>
         Unknown = 0,
-        
+
         /// <summary>
-        /// Indicates the state where the session is starting but 
+        /// Indicates the state where the session is starting but
         /// not yet fully initialized.
         /// </summary>
         NotStarted,
@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// for execution.
         /// </summary>
         Ready,
-        
+
         /// <summary>
         /// Indicates that the session is currently running a command.
         /// </summary>
@@ -44,4 +44,3 @@ namespace Microsoft.PowerShell.EditorServices
         Disposed
     }
 }
-

@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices
         public OutputType OutputType { get; private set; }
 
         /// <summary>
-        /// Gets a boolean which indicates whether a newline 
+        /// Gets a boolean which indicates whether a newline
         /// should be written after the output.
         /// </summary>
         public bool IncludeNewLine { get; private set; }
@@ -49,9 +49,9 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="backgroundColor">The background color of the output text.</param>
         public OutputWrittenEventArgs(
             string outputText,
-            bool includeNewLine, 
-            OutputType outputType, 
-            ConsoleColor foregroundColor, 
+            bool includeNewLine,
+            OutputType outputType,
+            ConsoleColor foregroundColor,
             ConsoleColor backgroundColor)
         {
             this.OutputText = outputText;
@@ -62,4 +62,3 @@ namespace Microsoft.PowerShell.EditorServices
         }
     }
 }
-

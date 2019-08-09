@@ -45,4 +45,3 @@ namespace Microsoft.PowerShell.EditorServices
         }
     }
 }
-

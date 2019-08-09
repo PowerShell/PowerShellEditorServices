@@ -125,4 +125,3 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         Task SetStatusBarMessageAsync(string message, int? timeout);
     }
 }
-
