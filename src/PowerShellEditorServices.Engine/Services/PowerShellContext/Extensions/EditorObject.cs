@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Components;
 using System;
 using System.Reflection;
 
@@ -17,8 +16,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     {
         #region Private Fields
 
-        private ExtensionService extensionService;
-        private IEditorOperations editorOperations;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ExtensionService _extensionService;
+        private readonly IEditorOperations _editorOperations;
 
         #endregion
 
@@ -42,12 +42,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         public EditorWindow Window { get; private set; }
 
-        /// <summary>
-        /// Gets the component registry for the session.
-        /// </summary>
-        /// <returns></returns>
-        public IComponentRegistry Components { get; private set; }
-
         #endregion
 
         /// <summary>
@@ -55,19 +49,18 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="extensionService">An ExtensionService which handles command registration.</param>
         /// <param name="editorOperations">An IEditorOperations implementation which handles operations in the host editor.</param>
-        /// <param name="componentRegistry">An IComponentRegistry instance which provides components in the session.</param>
         public EditorObject(
+            IServiceProvider serviceProvider,
             ExtensionService extensionService,
-            IEditorOperations editorOperations,
-            IComponentRegistry componentRegistry)
+            IEditorOperations editorOperations)
         {
-            this.extensionService = extensionService;
-            this.editorOperations = editorOperations;
-            this.Components = componentRegistry;
+            this._serviceProvider = serviceProvider;
+            this._extensionService = extensionService;
+            this._editorOperations = editorOperations;
 
             // Create API area objects
-            this.Workspace = new EditorWorkspace(this.editorOperations);
-            this.Window = new EditorWindow(this.editorOperations);
+            this.Workspace = new EditorWorkspace(this._editorOperations);
+            this.Window = new EditorWindow(this._editorOperations);
         }
 
         /// <summary>
@@ -77,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <returns>True if the command is newly registered, false if the command already exists.</returns>
         public bool RegisterCommand(EditorCommand editorCommand)
         {
-            return this.extensionService.RegisterCommand(editorCommand);
+            return this._extensionService.RegisterCommand(editorCommand);
         }
 
         /// <summary>
@@ -86,7 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="commandName">The name of the command to be unregistered.</param>
         public void UnregisterCommand(string commandName)
         {
-            this.extensionService.UnregisterCommand(commandName);
+            this._extensionService.UnregisterCommand(commandName);
         }
 
         /// <summary>
@@ -95,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <returns>An Array of all registered EditorCommands.</returns>
         public EditorCommand[] GetCommands()
         {
-            return this.extensionService.GetCommands();
+            return this._extensionService.GetCommands();
         }
         /// <summary>
         /// Gets the EditorContext which contains the state of the editor
@@ -104,7 +97,16 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <returns>A instance of the EditorContext class.</returns>
         public EditorContext GetEditorContext()
         {
-            return this.editorOperations.GetEditorContextAsync().Result;
+            return this._editorOperations.GetEditorContextAsync().Result;
+        }
+
+        /// <summary>
+        /// Get's the desired service which allows for advanced control of PowerShellEditorServices.
+        /// </summary>
+        /// <returns>The singleton service object of the type requested.</returns>
+        public object GetService(Type type)
+        {
+            return _serviceProvider.GetService(type);
         }
     }
 }

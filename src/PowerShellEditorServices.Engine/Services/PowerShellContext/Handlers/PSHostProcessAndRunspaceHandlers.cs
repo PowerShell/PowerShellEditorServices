@@ -55,7 +55,8 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
         {
             IEnumerable<PSObject> runspaces = null;
 
-            if (request.ProcessId == null) {
+            if (request.ProcessId == null)
+            {
                 request.ProcessId = "current";
             }
 
@@ -64,8 +65,8 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
             if (int.TryParse(request.ProcessId, out int pid))
             {
                 // Create a remote runspace that we will invoke Get-Runspace in.
-                using(var rs = RunspaceFactory.CreateRunspace(new NamedPipeConnectionInfo(pid)))
-                using(var ps = PowerShell.Create())
+                using (var rs = RunspaceFactory.CreateRunspace(new NamedPipeConnectionInfo(pid)))
+                using (var ps = PowerShell.Create())
                 {
                     rs.Open();
                     ps.Runspace = rs;

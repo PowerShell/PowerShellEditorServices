@@ -51,46 +51,27 @@ Schema is:
 #>
 $script:RequiredBuildAssets = @{
     $script:ModuleBinPath = @{
-        'PowerShellEditorServices' = @(
-            'publish/Serilog.dll',
-            'publish/Serilog.Sinks.Async.dll',
-            'publish/Serilog.Sinks.Console.dll',
-            'publish/Serilog.Sinks.File.dll',
-            'publish/Microsoft.Extensions.FileSystemGlobbing.dll',
-            'Microsoft.PowerShell.EditorServices.dll',
-            'Microsoft.PowerShell.EditorServices.pdb'
-        )
-
-        'PowerShellEditorServices.Host' = @(
-            'publish/UnixConsoleEcho.dll',
-            'publish/runtimes/osx-64/native/libdisablekeyecho.dylib',
-            'publish/runtimes/linux-64/native/libdisablekeyecho.so',
-            'publish/Newtonsoft.Json.dll',
-            'Microsoft.PowerShell.EditorServices.Host.dll',
-            'Microsoft.PowerShell.EditorServices.Host.pdb'
-        )
-
-        'PowerShellEditorServices.Protocol' = @(
-            'Microsoft.PowerShell.EditorServices.Protocol.dll',
-            'Microsoft.PowerShell.EditorServices.Protocol.pdb'
-        )
-
         'PowerShellEditorServices.Engine' = @(
-            'publish/Microsoft.PowerShell.EditorServices.Engine.dll',
-            'publish/Microsoft.PowerShell.EditorServices.Engine.pdb',
-            'publish/OmniSharp.Extensions.JsonRpc.dll',
-            'publish/OmniSharp.Extensions.LanguageProtocol.dll',
-            'publish/OmniSharp.Extensions.LanguageServer.dll',
-            'publish/Serilog.dll',
-            'publish/Serilog.Extensions.Logging.dll',
-            'publish/Serilog.Sinks.File.dll',
             'publish/Microsoft.Extensions.DependencyInjection.Abstractions.dll',
             'publish/Microsoft.Extensions.DependencyInjection.dll',
+            'publish/Microsoft.Extensions.FileSystemGlobbing.dll',
             'publish/Microsoft.Extensions.Logging.Abstractions.dll',
             'publish/Microsoft.Extensions.Logging.dll',
             'publish/Microsoft.Extensions.Options.dll',
             'publish/Microsoft.Extensions.Primitives.dll',
-            'publish/System.Reactive.dll'
+            'publish/Microsoft.PowerShell.EditorServices.Engine.dll',
+            'publish/Microsoft.PowerShell.EditorServices.Engine.pdb',
+            'publish/Newtonsoft.Json.dll',
+            'publish/OmniSharp.Extensions.JsonRpc.dll',
+            'publish/OmniSharp.Extensions.LanguageProtocol.dll',
+            'publish/OmniSharp.Extensions.LanguageServer.dll',
+            'publish/runtimes/linux-64/native/libdisablekeyecho.so',
+            'publish/runtimes/osx-64/native/libdisablekeyecho.dylib',
+            'publish/Serilog.dll',
+            'publish/Serilog.Extensions.Logging.dll',
+            'publish/Serilog.Sinks.File.dll',
+            'publish/System.Reactive.dll',
+            'publish/UnixConsoleEcho.dll'
         )
     }
 
