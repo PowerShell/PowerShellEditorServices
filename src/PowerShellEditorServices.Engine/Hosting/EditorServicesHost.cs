@@ -234,49 +234,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             _logger.LogInformation($"LSP NamedPipe: {config.InOutPipeName}\nLSP OutPipe: {config.OutPipeName}");
 
-            var logger = _factory.CreateLogger<PowerShellContextService>();
-            var powerShellContext = new PowerShellContextService(
-                logger,
-                _featureFlags.Contains("PSReadLine"));
-
-            // TODO: Bring this back
-            //EditorServicesPSHostUserInterface hostUserInterface =
-            //    _enableConsoleRepl
-            //        ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost)
-            //        : new ProtocolPSHostUserInterface(powerShellContext, messageSender, logger);
-            EditorServicesPSHostUserInterface hostUserInterface =
-                new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost);
-
-
-            EditorServicesPSHost psHost =
-                new EditorServicesPSHost(
-                    powerShellContext,
-                    _hostDetails,
-                    hostUserInterface,
-                    logger);
-
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
-            powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
-
-            powerShellContext.ImportCommandsModuleAsync(
-                Path.Combine(
-                    Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
-                    @"..\Commands"));
-
-            // TODO: This can be moved to the point after the $psEditor object
-            // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach (string module in this._additionalModules)
-            {
-                var command =
-                    new System.Management.Automation.PSCommand()
-                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                        .AddParameter("Name", module);
-
-                powerShellContext.ExecuteCommandAsync<System.Management.Automation.PSObject>(
-                    command,
-                    sendOutputToHost: false,
-                    sendErrorToHost: true);
-            }
+            var powerShellContext = GetFullyInitializedPowerShellContext(profilePaths);
 
             _serviceCollection
                 .AddSingleton<WorkspaceService>()
@@ -322,6 +280,55 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                 string.Format(
                     "Language service started, type = {0}, endpoint = {1}",
                     config.TransportType, config.Endpoint));
+        }
+
+        private PowerShellContextService GetFullyInitializedPowerShellContext(ProfilePaths profilePaths)
+        {
+            var logger = _factory.CreateLogger<PowerShellContextService>();
+            var powerShellContext = new PowerShellContextService(
+                logger,
+                _featureFlags.Contains("PSReadLine"));
+
+            // TODO: Bring this back
+            //EditorServicesPSHostUserInterface hostUserInterface =
+            //    _enableConsoleRepl
+            //        ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost)
+            //        : new ProtocolPSHostUserInterface(powerShellContext, messageSender, logger);
+            EditorServicesPSHostUserInterface hostUserInterface =
+                new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost);
+
+
+            EditorServicesPSHost psHost =
+                new EditorServicesPSHost(
+                    powerShellContext,
+                    _hostDetails,
+                    hostUserInterface,
+                    logger);
+
+            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
+            powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
+
+            powerShellContext.ImportCommandsModuleAsync(
+                Path.Combine(
+                    Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
+                    @"..\Commands"));
+
+            // TODO: This can be moved to the point after the $psEditor object
+            // gets initialized when that is done earlier than LanguageServer.Initialize
+            foreach (string module in this._additionalModules)
+            {
+                var command =
+                    new PSCommand()
+                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                        .AddParameter("Name", module);
+
+                powerShellContext.ExecuteCommandAsync<PSObject>(
+                    command,
+                    sendOutputToHost: false,
+                    sendErrorToHost: true);
+            }
+
+            return powerShellContext;
         }
 
         /// <summary>

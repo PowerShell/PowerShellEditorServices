@@ -160,7 +160,6 @@ function Start-PsesServer
     }
 
     $serverProcess = Start-Process @startProcParams
-    # $job = Start-Job -ScriptBlock ([scriptblock]::Create($startPsesCommand))
 
     $sessionPath = $editorServicesOptions.SessionDetailsPath
 

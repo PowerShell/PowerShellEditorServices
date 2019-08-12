@@ -31,9 +31,4 @@
     <PackageReference Include="UnixConsoleEcho" Version="0.1.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Services\PowerShellContext\Session\" />
-    <Folder Include="Services\PowerShellContext\Console\" />
-    <Folder Include="Services\PowerShellContext\Extensions\" />
-  </ItemGroup>
 </Project>
