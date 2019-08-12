@@ -98,7 +98,8 @@ Describe "Loading and running PowerShellEditorServices" {
 
     # This test MUST be first
     It "Starts and responds to an initialization request" {
-        $request = Send-LspInitializeRequest -Client $client
+        $startDir = New-Item -ItemType Directory TestDrive:\start
+        $request = Send-LspInitializeRequest -Client $client -RootPath ($startDir.FullName)
         $response = Get-LspResponse -Client $client -Id $request.Id #-WaitMillis 99999
         $response.Id | Should -BeExactly $request.Id
 
@@ -301,7 +302,6 @@ Get-Bar
             -Uri ([Uri]::new($filePath).AbsoluteUri) `
             -LineNumber 5 `
             -CharacterNumber 0
-
         $response = Get-LspResponse -Client $client -Id $request.Id
 
         $response.Result.Count | Should -BeExactly 2

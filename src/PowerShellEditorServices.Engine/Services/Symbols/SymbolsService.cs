@@ -118,10 +118,6 @@ namespace Microsoft.PowerShell.EditorServices
                 return null;
             }
 
-            int symbolOffset = referencedFiles[0].GetOffsetAtPosition(
-                foundSymbol.ScriptRegion.StartLineNumber,
-                foundSymbol.ScriptRegion.StartColumnNumber);
-
             // NOTE: we use to make sure aliases were loaded but took it out because we needed the pipeline thread.
 
             // We want to look for references first in referenced files, hence we use ordered dictionary
