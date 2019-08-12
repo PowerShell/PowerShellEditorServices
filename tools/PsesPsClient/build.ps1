@@ -19,6 +19,8 @@ $script:ModuleComponents = @{
     "bin/Debug/netstandard2.0/publish/Newtonsoft.Json.dll" = "Newtonsoft.Json.dll"
     "PsesPsClient.psm1" = "PsesPsClient.psm1"
     "PsesPsClient.psd1" = "PsesPsClient.psd1"
+    "bin/Debug/netstandard2.0/Microsoft.PowerShell.EditorServices.Protocol.dll" = "Microsoft.PowerShell.EditorServices.Protocol.dll"
+    "bin/Debug/netstandard2.0/Microsoft.PowerShell.EditorServices.dll" = "Microsoft.PowerShell.EditorServices.dll"
 }
 
 $binDir = "$PSScriptRoot/bin"

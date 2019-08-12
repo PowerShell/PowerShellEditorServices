@@ -10,9 +10,6 @@ if ($PSEdition -eq 'Desktop') {
     Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Desktop/System.Security.Principal.Windows.dll"
 }
 
-Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Microsoft.PowerShell.EditorServices.dll"
-Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Microsoft.PowerShell.EditorServices.Host.dll"
-Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Microsoft.PowerShell.EditorServices.Protocol.dll"
 Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Microsoft.PowerShell.EditorServices.Engine.dll"
 
 function Start-EditorServicesHost {
