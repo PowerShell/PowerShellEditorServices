@@ -682,7 +682,7 @@ function Get-LspResponse
 
         [Parameter()]
         [int]
-        $WaitMillis = 5000
+        $WaitMillis = 10000
     )
 
     $lspResponse = $null
