@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Extensions;
 using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
@@ -233,6 +234,56 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             _logger.LogInformation($"LSP NamedPipe: {config.InOutPipeName}\nLSP OutPipe: {config.OutPipeName}");
 
+            var powerShellContext = GetFullyInitializedPowerShellContext(profilePaths);
+
+            _serviceCollection
+                .AddSingleton<WorkspaceService>()
+                .AddSingleton<SymbolsService>()
+                .AddSingleton<ConfigurationService>()
+                .AddSingleton<PowerShellContextService>(powerShellContext)
+                .AddSingleton<EditorOperationsService>()
+                .AddSingleton<ExtensionService>(
+                    (provider) =>
+                    {
+                        var extensionService = new ExtensionService(
+                            provider.GetService<PowerShellContextService>(),
+                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>());
+                        extensionService.InitializeAsync(
+                            serviceProvider: provider,
+                            editorOperations: provider.GetService<EditorOperationsService>())
+                            .Wait();
+                        return extensionService;
+                    })
+                .AddSingleton<AnalysisService>(
+                    (provider) =>
+                    {
+                        return AnalysisService.Create(
+                            provider.GetService<ConfigurationService>(),
+                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
+                            _factory.CreateLogger<AnalysisService>());
+                    });
+
+            _languageServer = new OmnisharpLanguageServerBuilder(_serviceCollection)
+            {
+                NamedPipeName = config.InOutPipeName ?? config.InPipeName,
+                OutNamedPipeName = config.OutPipeName,
+                LoggerFactory = _factory,
+                MinimumLogLevel = LogLevel.Trace,
+            }
+            .BuildLanguageServer();
+
+            _logger.LogInformation("Starting language server");
+
+            Task.Run(_languageServer.StartAsync);
+
+            _logger.LogInformation(
+                string.Format(
+                    "Language service started, type = {0}, endpoint = {1}",
+                    config.TransportType, config.Endpoint));
+        }
+
+        private PowerShellContextService GetFullyInitializedPowerShellContext(ProfilePaths profilePaths)
+        {
             var logger = _factory.CreateLogger<PowerShellContextService>();
             var powerShellContext = new PowerShellContextService(
                 logger,
@@ -244,7 +295,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             //        ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost)
             //        : new ProtocolPSHostUserInterface(powerShellContext, messageSender, logger);
             EditorServicesPSHostUserInterface hostUserInterface =
-                (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost);
+                new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost);
 
 
             EditorServicesPSHost psHost =
@@ -267,51 +318,17 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             foreach (string module in this._additionalModules)
             {
                 var command =
-                    new System.Management.Automation.PSCommand()
+                    new PSCommand()
                         .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                         .AddParameter("Name", module);
 
-                powerShellContext.ExecuteCommandAsync<System.Management.Automation.PSObject>(
+                powerShellContext.ExecuteCommandAsync<PSObject>(
                     command,
                     sendOutputToHost: false,
                     sendErrorToHost: true);
             }
 
-            _serviceCollection
-                .AddSingleton<WorkspaceService>()
-                .AddSingleton<SymbolsService>()
-                .AddSingleton<ConfigurationService>()
-                .AddSingleton<PowerShellContextService>(powerShellContext)
-                .AddSingleton<AnalysisService>(
-                    (provider) => {
-                        return AnalysisService.Create(
-                            provider.GetService<ConfigurationService>(),
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                            _factory.CreateLogger<AnalysisService>());
-                    }
-                );
-
-            _languageServer = new OmnisharpLanguageServerBuilder(_serviceCollection)
-            {
-                NamedPipeName = config.InOutPipeName ?? config.InPipeName,
-                OutNamedPipeName = config.OutPipeName,
-                LoggerFactory = _factory,
-                MinimumLogLevel = LogLevel.Trace,
-            }
-            .BuildLanguageServer();
-
-            _logger.LogInformation("Starting language server");
-
-            Task.Run(_languageServer.StartAsync);
-            //Task.Factory.StartNew(() => _languageServer.StartAsync(),
-            //    CancellationToken.None,
-            //    TaskCreationOptions.LongRunning,
-            //    TaskScheduler.Default);
-
-            _logger.LogInformation(
-                string.Format(
-                    "Language service started, type = {0}, endpoint = {1}",
-                    config.TransportType, config.Endpoint));
+            return powerShellContext;
         }
 
         /// <summary>

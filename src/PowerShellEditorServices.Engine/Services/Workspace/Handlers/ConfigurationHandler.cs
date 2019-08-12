@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices
             {
                 return await Unit.Task;
             }
-            // TODO ADD THIS BACK IN
+
             bool oldLoadProfiles = _configurationService.CurrentSettings.EnableProfileLoading;
             bool oldScriptAnalysisEnabled =
                 _configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false;

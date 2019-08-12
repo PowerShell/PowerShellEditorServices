@@ -3,7 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Components;
+using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Collections.Generic;
 using System.Management.Automation;
@@ -21,6 +22,8 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         private Dictionary<string, EditorCommand> editorCommands =
             new Dictionary<string, EditorCommand>();
+
+        private readonly ILanguageServer _languageServer;
 
         #endregion
 
@@ -52,9 +55,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// PowerShellContext for loading and executing extension code.
         /// </summary>
         /// <param name="powerShellContext">A PowerShellContext used to execute extension code.</param>
-        public ExtensionService(PowerShellContextService powerShellContext)
+        public ExtensionService(PowerShellContextService powerShellContext, ILanguageServer languageServer)
         {
             this.PowerShellContext = powerShellContext;
+            _languageServer = languageServer;
         }
 
         #endregion
@@ -66,17 +70,21 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// implementation for future interaction with the host editor.
         /// </summary>
         /// <param name="editorOperations">An IEditorOperations implementation.</param>
-        /// <param name="componentRegistry">An IComponentRegistry instance which provides components in the session.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task InitializeAsync(
-            IEditorOperations editorOperations,
-            IComponentRegistry componentRegistry)
+            IServiceProvider serviceProvider,
+            IEditorOperations editorOperations)
         {
+            // Attach to ExtensionService events
+            this.CommandAdded += ExtensionService_ExtensionAddedAsync;
+            this.CommandUpdated += ExtensionService_ExtensionUpdatedAsync;
+            this.CommandRemoved += ExtensionService_ExtensionRemovedAsync;
+
             this.EditorObject =
                 new EditorObject(
+                    serviceProvider,
                     this,
-                    editorOperations,
-                    componentRegistry);
+                    editorOperations);
 
             // Register the editor object in the runspace
             PSCommand variableCommand = new PSCommand();
@@ -177,6 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             this.editorCommands.Values.CopyTo(commands,0);
             return commands;
         }
+
         #endregion
 
         #region Events
@@ -209,6 +218,34 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         private void OnCommandRemoved(EditorCommand command)
         {
             this.CommandRemoved?.Invoke(this, command);
+        }
+
+        private void ExtensionService_ExtensionAddedAsync(object sender, EditorCommand e)
+        {
+            _languageServer.SendNotification<ExtensionCommandAddedNotification>("powerShell/extensionCommandAdded",
+                new ExtensionCommandAddedNotification
+                {
+                    Name = e.Name,
+                    DisplayName = e.DisplayName
+                });
+        }
+
+        private void ExtensionService_ExtensionUpdatedAsync(object sender, EditorCommand e)
+        {
+            _languageServer.SendNotification<ExtensionCommandUpdatedNotification>("powerShell/extensionCommandUpdated",
+                new ExtensionCommandUpdatedNotification
+                {
+                    Name = e.Name,
+                });
+        }
+
+        private void ExtensionService_ExtensionRemovedAsync(object sender, EditorCommand e)
+        {
+            _languageServer.SendNotification<ExtensionCommandRemovedNotification>("powerShell/extensionCommandRemoved",
+                new ExtensionCommandRemovedNotification
+                {
+                    Name = e.Name,
+                });
         }
 
         #endregion

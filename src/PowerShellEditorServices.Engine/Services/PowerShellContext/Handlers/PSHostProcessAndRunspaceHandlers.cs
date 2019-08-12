@@ -1,19 +1,23 @@
 using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices;
 
 namespace PowerShellEditorServices.Engine.Services.Handlers
 {
     public class PSHostProcessAndRunspaceHandlers : IGetPSHostProcessesHandler, IGetRunspaceHandler
     {
         private readonly ILogger<GetVersionHandler> _logger;
+        private readonly PowerShellContextService _powerShellContextService;
 
-        public PSHostProcessAndRunspaceHandlers(ILoggerFactory factory)
+        public PSHostProcessAndRunspaceHandlers(ILoggerFactory factory, PowerShellContextService powerShellContextService)
         {
             _logger = factory.CreateLogger<GetVersionHandler>();
+            _powerShellContextService = powerShellContextService;
         }
 
         public Task<PSHostProcessResponse[]> Handle(GetPSHostProcesssesParams request, CancellationToken cancellationToken)
@@ -51,11 +55,12 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
             return Task.FromResult(psHostProcesses.ToArray());
         }
 
-        public Task<RunspaceResponse[]> Handle(GetRunspaceParams request, CancellationToken cancellationToken)
+        public async Task<RunspaceResponse[]> Handle(GetRunspaceParams request, CancellationToken cancellationToken)
         {
             IEnumerable<PSObject> runspaces = null;
 
-            if (request.ProcessId == null) {
+            if (request.ProcessId == null)
+            {
                 request.ProcessId = "current";
             }
 
@@ -64,8 +69,8 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
             if (int.TryParse(request.ProcessId, out int pid))
             {
                 // Create a remote runspace that we will invoke Get-Runspace in.
-                using(var rs = RunspaceFactory.CreateRunspace(new NamedPipeConnectionInfo(pid)))
-                using(var ps = PowerShell.Create())
+                using (var rs = RunspaceFactory.CreateRunspace(new NamedPipeConnectionInfo(pid)))
+                using (var ps = PowerShell.Create())
                 {
                     rs.Open();
                     ps.Runspace = rs;
@@ -75,11 +80,10 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
             }
             else
             {
-                // TODO: Bring back
-                // var psCommand = new PSCommand().AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace");
-                // var sb = new StringBuilder();
-                // // returns (not deserialized) Runspaces. For simpler code, we use PSObject and rely on dynamic later.
-                // runspaces = await editorSession.PowerShellContext.ExecuteCommandAsync<PSObject>(psCommand, sb);
+                var psCommand = new PSCommand().AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace");
+                var sb = new StringBuilder();
+                // returns (not deserialized) Runspaces. For simpler code, we use PSObject and rely on dynamic later.
+                runspaces = await _powerShellContextService.ExecuteCommandAsync<PSObject>(psCommand, sb);
             }
 
             var runspaceResponses = new List<RunspaceResponse>();
@@ -98,7 +102,7 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
                 }
             }
 
-            return Task.FromResult(runspaceResponses.ToArray());
+            return runspaceResponses.ToArray();
         }
     }
 }

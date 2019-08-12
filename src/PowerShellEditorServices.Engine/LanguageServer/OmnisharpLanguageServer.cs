@@ -14,6 +14,7 @@ using System.Security.AccessControl;
 using OmniSharp.Extensions.LanguageServer.Server;
 using PowerShellEditorServices.Engine.Services.Handlers;
 using Microsoft.PowerShell.EditorServices.TextDocument;
+using System.IO;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
 {
@@ -95,7 +96,26 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     .WithHandler<DocumentHighlightHandler>()
                     .WithHandler<PSHostProcessAndRunspaceHandlers>()
                     .WithHandler<CodeLensHandlers>()
-                    .WithHandler<CodeActionHandler>();
+                    .WithHandler<CodeActionHandler>()
+                    .WithHandler<InvokeExtensionCommandHandler>()
+                    .OnInitialize(
+                        async (languageServer, request) =>
+                        {
+                            var serviceProvider = languageServer.Services;
+                            var workspaceService = serviceProvider.GetService<WorkspaceService>();
+
+                            // Grab the workspace path from the parameters
+                            workspaceService.WorkspacePath = request.RootPath;
+
+                            // Set the working directory of the PowerShell session to the workspace path
+                            if (workspaceService.WorkspacePath != null
+                                && Directory.Exists(workspaceService.WorkspacePath))
+                            {
+                                await serviceProvider.GetService<PowerShellContextService>().SetWorkingDirectoryAsync(
+                                    workspaceService.WorkspacePath,
+                                    isPathAlreadyEscaped: false);
+                            }
+                        });
 
                     logger.LogInformation("Handlers added");
             });
