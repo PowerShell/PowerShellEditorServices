@@ -44,7 +44,7 @@ namespace PowerShellEditorServices.Test.E2E
         {
             _psesProcess = new Process();
 
-            _psesProcess.StartInfo.FileName = "/usr/local/bin/pwsh";
+            _psesProcess.StartInfo.FileName = Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh";
             _psesProcess.StartInfo.ArgumentList.Add("-NoLogo");
             _psesProcess.StartInfo.ArgumentList.Add("-NoProfile");
             _psesProcess.StartInfo.ArgumentList.Add("-EncodedCommand");

@@ -172,7 +172,7 @@ function Invoke-WithCreateDefaultHook {
     }
 }
 
-task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, PackageNuGet {
+task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestE2E, PackageNuGet {
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -368,12 +368,9 @@ task TestHost {
 }
 
 task TestE2E {
-    Set-Location .\test\PowerShellEditorServices.Test.Protocol\
+    Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
-    if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe test --logger trx -f $script:TestRuntime.Desktop (DotNetTestFilter) }
-    }
-
+    $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
     exec { & $script:dotnetExe test --logger trx -f $script:TestRuntime.Core (DotNetTestFilter) }
 }
 
