@@ -30,6 +30,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerShellEditorServices.VS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Engine", "src\PowerShellEditorServices.Engine\PowerShellEditorServices.Engine.csproj", "{29EEDF03-0990-45F4-846E-2616970D1FA2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Test.E2E", "test\PowerShellEditorServices.Test.E2E\PowerShellEditorServices.Test.E2E.csproj", "{2561F253-8F72-436A-BCC3-AA63AB82EDC0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -148,6 +150,18 @@ Global
 		{29EEDF03-0990-45F4-846E-2616970D1FA2}.Release|x64.Build.0 = Release|Any CPU
 		{29EEDF03-0990-45F4-846E-2616970D1FA2}.Release|x86.ActiveCfg = Release|Any CPU
 		{29EEDF03-0990-45F4-846E-2616970D1FA2}.Release|x86.Build.0 = Release|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Debug|x64.Build.0 = Debug|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Debug|x86.Build.0 = Debug|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Release|x64.ActiveCfg = Release|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Release|x64.Build.0 = Release|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Release|x86.ActiveCfg = Release|Any CPU
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -162,5 +176,6 @@ Global
 		{E3A5CF5D-6E41-44AC-AE0A-4C227E4BACD4} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 		{3B38E8DA-8BFF-4264-AF16-47929E6398A3} = {F594E7FD-1E72-4E51-A496-B019C2BA3180}
 		{29EEDF03-0990-45F4-846E-2616970D1FA2} = {F594E7FD-1E72-4E51-A496-B019C2BA3180}
+		{2561F253-8F72-436A-BCC3-AA63AB82EDC0} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 	EndGlobalSection
 EndGlobal
