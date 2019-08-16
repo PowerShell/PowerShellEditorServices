@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Host;
 using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
@@ -234,13 +235,15 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             _logger.LogInformation($"LSP NamedPipe: {config.InOutPipeName}\nLSP OutPipe: {config.OutPipeName}");
 
-            var powerShellContext = GetFullyInitializedPowerShellContext(profilePaths);
-
             _serviceCollection
                 .AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
                 .AddSingleton<ConfigurationService>()
-                .AddSingleton<PowerShellContextService>(powerShellContext)
+                .AddSingleton<PowerShellContextService>(
+                    (provider) =>
+                        GetFullyInitializedPowerShellContext(
+                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
+                            profilePaths))
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<ExtensionService>(
                     (provider) =>
@@ -263,14 +266,31 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                             _factory.CreateLogger<AnalysisService>());
                     });
 
-            _languageServer = new OmnisharpLanguageServerBuilder(_serviceCollection)
+            switch (config.TransportType)
             {
-                NamedPipeName = config.InOutPipeName ?? config.InPipeName,
-                OutNamedPipeName = config.OutPipeName,
-                LoggerFactory = _factory,
-                MinimumLogLevel = LogLevel.Trace,
+                case EditorServiceTransportType.NamedPipe:
+                    _languageServer = new OmnisharpLanguageServerBuilder(_serviceCollection)
+                    {
+                        NamedPipeName = config.InOutPipeName ?? config.InPipeName,
+                        OutNamedPipeName = config.OutPipeName,
+                        LoggerFactory = _factory,
+                        MinimumLogLevel = LogLevel.Trace,
+                    }
+                    .BuildLanguageServer();
+                    break;
+
+                case EditorServiceTransportType.Stdio:
+                    _languageServer = new OmnisharpLanguageServerBuilder(_serviceCollection)
+                    {
+                        Stdio = true,
+                        LoggerFactory = _factory,
+                        MinimumLogLevel = LogLevel.Trace,
+                    }
+                    .BuildLanguageServer();
+                    break;
+                default:
+                    break;
             }
-            .BuildLanguageServer();
 
             _logger.LogInformation("Starting language server");
 
@@ -282,21 +302,19 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     config.TransportType, config.Endpoint));
         }
 
-        private PowerShellContextService GetFullyInitializedPowerShellContext(ProfilePaths profilePaths)
+        private PowerShellContextService GetFullyInitializedPowerShellContext(
+            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
+            ProfilePaths profilePaths)
         {
             var logger = _factory.CreateLogger<PowerShellContextService>();
             var powerShellContext = new PowerShellContextService(
                 logger,
                 _featureFlags.Contains("PSReadLine"));
 
-            // TODO: Bring this back
-            //EditorServicesPSHostUserInterface hostUserInterface =
-            //    _enableConsoleRepl
-            //        ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost)
-            //        : new ProtocolPSHostUserInterface(powerShellContext, messageSender, logger);
             EditorServicesPSHostUserInterface hostUserInterface =
-                new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost);
-
+                _enableConsoleRepl
+                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost)
+                    : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
                 new EditorServicesPSHost(

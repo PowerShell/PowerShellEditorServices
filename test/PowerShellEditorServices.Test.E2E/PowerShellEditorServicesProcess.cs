@@ -59,8 +59,7 @@ namespace PowerShellEditorServices.Test.E2E
                 "-HostProfileId", s_hostProfileId,
                 "-HostVersion", s_hostVersion,
                 "-AdditionalModules", string.Join(',', s_additionalModules),
-                "-BundledModulesPath", s_bundledModulePath,
-                "-EnableConsoleRepl"
+                "-BundledModulesPath", s_bundledModulePath
             };
 
             var base64Str = System.Convert.ToBase64String(

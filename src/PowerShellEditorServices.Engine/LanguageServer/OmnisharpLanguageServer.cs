@@ -3,18 +3,19 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.IO;
 using System.IO.Pipes;
 using System.Reflection;
-using System.Threading.Tasks;
+using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Threading.Tasks;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using OS = OmniSharp.Extensions.LanguageServer.Server;
-using System.Security.AccessControl;
-using OmniSharp.Extensions.LanguageServer.Server;
-using PowerShellEditorServices.Engine.Services.Handlers;
 using Microsoft.PowerShell.EditorServices.TextDocument;
-using System.IO;
+using OmniSharp.Extensions.LanguageServer.Server;
+using OS = OmniSharp.Extensions.LanguageServer.Server;
+using PowerShellEditorServices.Engine.Services.Handlers;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
 {
@@ -22,6 +23,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine
     {
         public class Configuration
         {
+            public bool Stdio { get; set; }
+
             public string NamedPipeName { get; set; }
 
             public string OutNamedPipeName { get; set; }
@@ -58,24 +61,33 @@ namespace Microsoft.PowerShell.EditorServices.Engine
         public async Task StartAsync()
         {
             _languageServer = await OS.LanguageServer.From(options => {
-                NamedPipeServerStream namedPipe = CreateNamedPipe(
+
+                ILogger logger = options.LoggerFactory.CreateLogger("OptionsStartup");
+
+                if (_configuration.Stdio)
+                {
+                    options.WithInput(System.Console.OpenStandardInput());
+                    options.WithOutput(System.Console.OpenStandardOutput());
+                }
+                else
+                {
+                    NamedPipeServerStream namedPipe = CreateNamedPipe(
                     _configuration.NamedPipeName,
                     _configuration.OutNamedPipeName,
                     out NamedPipeServerStream outNamedPipe);
 
-                ILogger logger = options.LoggerFactory.CreateLogger("OptionsStartup");
+                    logger.LogInformation("Waiting for connection");
+                    namedPipe.WaitForConnection();
+                    if (outNamedPipe != null)
+                    {
+                        outNamedPipe.WaitForConnection();
+                    }
 
-                logger.LogInformation("Waiting for connection");
-                namedPipe.WaitForConnection();
-                if (outNamedPipe != null)
-                {
-                    outNamedPipe.WaitForConnection();
+                    logger.LogInformation("Connected");
+
+                    options.Input = namedPipe;
+                    options.Output = outNamedPipe ?? namedPipe;
                 }
-
-                logger.LogInformation("Connected");
-
-                options.Input = namedPipe;
-                options.Output = outNamedPipe ?? namedPipe;
 
                 options.LoggerFactory = _configuration.LoggerFactory;
                 options.MinimumLogLevel = _configuration.MinimumLogLevel;
