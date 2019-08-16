@@ -45,6 +45,11 @@ namespace PowerShellEditorServices.Test.E2E
             _psesProcess = new Process();
 
             _psesProcess.StartInfo.FileName = Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh";
+            _psesProcess.StartInfo.CreateNoWindow = true;
+            _psesProcess.StartInfo.UseShellExecute = false;
+            _psesProcess.StartInfo.RedirectStandardInput = true;
+            _psesProcess.StartInfo.RedirectStandardOutput = true;
+            _psesProcess.StartInfo.RedirectStandardError = true;
             _psesProcess.StartInfo.ArgumentList.Add("-NoLogo");
             _psesProcess.StartInfo.ArgumentList.Add("-NoProfile");
             _psesProcess.StartInfo.ArgumentList.Add("-EncodedCommand");
@@ -122,8 +127,7 @@ namespace PowerShellEditorServices.Test.E2E
 
         public override Task Stop()
         {
-            _psesProcess.Kill();
-            base.Stop();
+            if(!_psesProcess.HasExited) _psesProcess.Kill();
             return base.Stop();
         }
 
