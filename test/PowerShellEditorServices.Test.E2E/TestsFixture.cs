@@ -46,15 +46,8 @@ namespace PowerShellEditorServices.Test.E2E
         {
             var factory = new LoggerFactory();
 
-            //_psesProcess = new PowerShellEditorServicesProcess(factory);
-
             ProcessStartInfo processStartInfo = new ProcessStartInfo();
             processStartInfo.FileName = Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh";
-            //_psesProcess.StartInfo.CreateNoWindow = true;
-            //_psesProcess.StartInfo.UseShellExecute = false;
-            //_psesProcess.StartInfo.RedirectStandardInput = true;
-            //_psesProcess.StartInfo.RedirectStandardOutput = true;
-            //_psesProcess.StartInfo.RedirectStandardError = true;
             processStartInfo.ArgumentList.Add("-NoLogo");
             processStartInfo.ArgumentList.Add("-NoProfile");
             processStartInfo.ArgumentList.Add("-EncodedCommand");
@@ -73,7 +66,7 @@ namespace PowerShellEditorServices.Test.E2E
                 "-Stdio"
             };
 
-            var base64Str = System.Convert.ToBase64String(
+            var base64Str = Convert.ToBase64String(
                 System.Text.Encoding.Unicode.GetBytes(string.Join(' ', args)));
 
             processStartInfo.ArgumentList.Add(base64Str);

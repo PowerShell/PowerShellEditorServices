@@ -41,7 +41,7 @@ namespace PowerShellEditorServices.Test.E2E
             });
 
             // Give PSES a chance to finish diagnostics.
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
 
             return filePath;
         }
@@ -65,14 +65,21 @@ namespace PowerShellEditorServices.Test.E2E
             PowerShellVersionDetails details
                 = await LanguageClient.SendRequest<PowerShellVersionDetails>("powerShell/getVersion", new GetVersionParams());
 
-            Assert.Equal("Core", details.Edition);
+            if(Environment.GetEnvironmentVariable("PWSH_EXE_NAME") == "powershell")
+            {
+                Assert.Equal("Desktop", details.Edition);
+            }
+            else
+            {
+                Assert.Equal("Core", details.Edition);
+            }
         }
 
         [Fact]
         public async Task CanSendWorkspaceSymbolRequest()
         {
 
-            string scriptPath = NewTestFile(@"
+            NewTestFile(@"
 function CanSendWorkspaceSymbolRequest {
     Write-Host 'hello'
 }
