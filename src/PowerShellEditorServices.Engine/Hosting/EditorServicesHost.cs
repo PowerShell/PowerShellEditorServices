@@ -307,9 +307,12 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             ProfilePaths profilePaths)
         {
             var logger = _factory.CreateLogger<PowerShellContextService>();
+
+            // PSReadLine can only be used when -EnableConsoleRepl is specified otherwise
+            // issues arise when redirecting stdio.
             var powerShellContext = new PowerShellContextService(
                 logger,
-                _featureFlags.Contains("PSReadLine"));
+                _featureFlags.Contains("PSReadLine") && _enableConsoleRepl);
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 _enableConsoleRepl
