@@ -31,7 +31,7 @@ namespace PowerShellEditorServices.Test.E2E
             $"pses_test_logs_{Path.GetRandomFileName()}");
 
         const string s_logLevel = "Diagnostic";
-        readonly static string[] s_featureFlags = { "FeatureFlags" };
+        readonly static string[] s_featureFlags = { "PSReadLine" };
         const string s_hostName = "TestHost";
         const string s_hostProfileId = "TestHost";
         const string s_hostVersion = "1.0.0";
@@ -45,11 +45,11 @@ namespace PowerShellEditorServices.Test.E2E
             _psesProcess = new Process();
 
             _psesProcess.StartInfo.FileName = Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh";
-            _psesProcess.StartInfo.CreateNoWindow = true;
-            _psesProcess.StartInfo.UseShellExecute = false;
-            _psesProcess.StartInfo.RedirectStandardInput = true;
-            _psesProcess.StartInfo.RedirectStandardOutput = true;
-            _psesProcess.StartInfo.RedirectStandardError = true;
+            //_psesProcess.StartInfo.CreateNoWindow = true;
+            //_psesProcess.StartInfo.UseShellExecute = false;
+            //_psesProcess.StartInfo.RedirectStandardInput = true;
+            //_psesProcess.StartInfo.RedirectStandardOutput = true;
+            //_psesProcess.StartInfo.RedirectStandardError = true;
             _psesProcess.StartInfo.ArgumentList.Add("-NoLogo");
             _psesProcess.StartInfo.ArgumentList.Add("-NoProfile");
             _psesProcess.StartInfo.ArgumentList.Add("-EncodedCommand");
