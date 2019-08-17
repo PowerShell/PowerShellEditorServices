@@ -23,6 +23,19 @@ namespace PowerShellEditorServices.Test.E2E
         private readonly LanguageClient LanguageClient;
         private readonly List<Diagnostic> Diagnostics;
 
+        public LanguageServerProtocolMessageTests(TestsFixture data)
+        {
+            Diagnostics = new List<Diagnostic>();
+            LanguageClient = data.LanguageClient;
+            Diagnostics = data.Diagnostics;
+            Diagnostics.Clear();
+        }
+
+        public void Dispose()
+        {
+            Diagnostics.Clear();
+        }
+
         private string NewTestFile(string script, bool isPester = false)
         {
             string fileExt = isPester ? ".Tests.ps1" : ".ps1";
@@ -40,23 +53,23 @@ namespace PowerShellEditorServices.Test.E2E
                 }
             });
 
-            // Give PSES a chance to finish diagnostics.
-            Thread.Sleep(2000);
-
             return filePath;
         }
 
-        public LanguageServerProtocolMessageTests(TestsFixture data)
+        private async Task WaitForDiagnostics()
         {
-            Diagnostics = new List<Diagnostic>();
-            LanguageClient = data.LanguageClient;
-            Diagnostics = data.Diagnostics;
-            Diagnostics.Clear();
-        }
+            // Wait for PSSA to finish.
+            var i = 0;
+            while(Diagnostics.Count == 0)
+            {
+                if(i >= 10)
+                {
+                    throw new InvalidDataException("No diagnostics showed up after 20s.");
+                }
 
-        public void Dispose()
-        {
-            Diagnostics.Clear();
+                await Task.Delay(2000);
+                i++;
+            }
         }
 
         [Fact]
@@ -97,18 +110,20 @@ function CanSendWorkspaceSymbolRequest {
         }
 
         [Fact]
-        public void CanReceiveDiagnosticsFromFileOpen()
+        public async Task CanReceiveDiagnosticsFromFileOpen()
         {
             NewTestFile("$a = 4");
+            await WaitForDiagnostics();
 
             Diagnostic diagnostic = Assert.Single(Diagnostics);
             Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
         }
 
         [Fact]
-        public void CanReceiveDiagnosticsFromConfigurationChange()
+        public async Task CanReceiveDiagnosticsFromConfigurationChange()
         {
             NewTestFile("gci | % { $_ }");
+            await WaitForDiagnostics();
 
             // NewTestFile doesn't clear diagnostic notifications so we need to do that for this test.
             Diagnostics.Clear();
@@ -346,7 +361,7 @@ CanSendReferencesRequest
                 });
         }
 
-        [Fact(Skip = "Potential bug in csharp-language-server-protocol")]
+        [Fact(Skip = "Bug in Newtonsoft that csharp-language-server-protocol will workaround")]
         public async Task CanSendDocumentHighlightRequest()
         {
             string scriptPath = NewTestFile(@"
@@ -555,20 +570,19 @@ CanSendReferencesCodeLensRequest
             Assert.Equal("1 reference", codeLensResolveResult.Command.Title);
         }
 
-        [Fact(Skip = "Not sure why this test isn't working")]
+        [Fact(Skip = "Bug in Newtonsoft that csharp-language-server-protocol will workaround")]
         public async Task CanSendCodeActionRequest()
         {
             string filePath = NewTestFile("gci");
+            await WaitForDiagnostics();
 
             CommandOrCodeActionContainer commandOrCodeActions =
                 await LanguageClient.SendRequest<CommandOrCodeActionContainer>(
                     "textDocument/codeAction",
                     new CodeActionParams
                     {
-                        TextDocument = new TextDocumentIdentifier
-                        {
-                            Uri = new Uri(filePath)
-                        },
+                        TextDocument = new TextDocumentIdentifier(
+                            new Uri(filePath, UriKind.Absolute)),
                         Range = new Range
                         {
                             Start = new Position
@@ -584,7 +598,7 @@ CanSendReferencesCodeLensRequest
                         },
                         Context = new CodeActionContext
                         {
-                            Diagnostics = Diagnostics
+                            Diagnostics = new Container<Diagnostic>(Diagnostics)
                         }
                     });
 
