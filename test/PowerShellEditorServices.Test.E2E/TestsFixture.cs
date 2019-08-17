@@ -26,7 +26,6 @@ namespace PowerShellEditorServices.Test.E2E
             s_binDir,
             $"pses_test_sessiondetails_{Path.GetRandomFileName()}");
 
-
         private readonly static string s_logPath = Path.Combine(
             s_binDir,
             $"pses_test_logs_{Path.GetRandomFileName()}");
@@ -46,8 +45,10 @@ namespace PowerShellEditorServices.Test.E2E
         {
             var factory = new LoggerFactory();
 
-            ProcessStartInfo processStartInfo = new ProcessStartInfo();
-            processStartInfo.FileName = Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh";
+            ProcessStartInfo processStartInfo = new ProcessStartInfo
+            {
+                FileName = Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh"
+            };
             processStartInfo.ArgumentList.Add("-NoLogo");
             processStartInfo.ArgumentList.Add("-NoProfile");
             processStartInfo.ArgumentList.Add("-EncodedCommand");

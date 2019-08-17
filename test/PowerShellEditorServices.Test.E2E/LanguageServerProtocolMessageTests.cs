@@ -20,8 +20,8 @@ namespace PowerShellEditorServices.Test.E2E
         private readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-        public LanguageClient LanguageClient;
-        public readonly List<Diagnostic> Diagnostics;
+        private readonly LanguageClient LanguageClient;
+        private readonly List<Diagnostic> Diagnostics;
 
         private string NewTestFile(string script, bool isPester = false)
         {
@@ -368,7 +368,7 @@ Write-Host 'Goodbye'
                         {
                             Line = 3,
                             Character = 1
-                        },
+                        }
                     });
 
             Assert.Collection(documentHighlights,
@@ -588,8 +588,7 @@ CanSendReferencesCodeLensRequest
                         }
                     });
 
-            CommandOrCodeAction commandOrCodeAction = Assert.Single(
-                commandOrCodeActions,
+            Assert.Single(commandOrCodeActions,
                 command => command.Command.Name == "PowerShell.ApplyCodeActionEdits");
         }
     }

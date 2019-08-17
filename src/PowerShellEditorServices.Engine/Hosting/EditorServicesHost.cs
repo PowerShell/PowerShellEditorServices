@@ -288,8 +288,6 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     }
                     .BuildLanguageServer();
                     break;
-                default:
-                    break;
             }
 
             _logger.LogInformation("Starting language server");

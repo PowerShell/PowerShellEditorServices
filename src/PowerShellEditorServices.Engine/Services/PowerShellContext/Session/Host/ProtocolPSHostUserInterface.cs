@@ -77,6 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
             long sourceId,
             ProgressDetails progressDetails)
         {
+            // TODO: Send a new message.
         }
 
         protected override Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
