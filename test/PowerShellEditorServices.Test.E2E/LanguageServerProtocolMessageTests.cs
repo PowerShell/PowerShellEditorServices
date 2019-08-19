@@ -59,7 +59,7 @@ namespace PowerShellEditorServices.Test.E2E
         private async Task WaitForDiagnostics()
         {
             // Wait for PSSA to finish.
-            var i = 0;
+            int i = 0;
             while(Diagnostics.Count == 0)
             {
                 if(i >= 10)

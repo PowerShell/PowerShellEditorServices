@@ -67,7 +67,7 @@ namespace PowerShellEditorServices.Test.E2E
                 "-Stdio"
             };
 
-            var base64Str = Convert.ToBase64String(
+            string base64Str = Convert.ToBase64String(
                 System.Text.Encoding.Unicode.GetBytes(string.Join(' ', args)));
 
             processStartInfo.ArgumentList.Add(base64Str);
