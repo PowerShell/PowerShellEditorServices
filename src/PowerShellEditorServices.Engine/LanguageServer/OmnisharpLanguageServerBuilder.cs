@@ -10,6 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine
             Services = serviceCollection;
         }
 
+        public bool Stdio { get; set; }
+
         public string NamedPipeName { get; set; }
 
         public string OutNamedPipeName { get; set; }
@@ -28,7 +30,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                 MinimumLogLevel = MinimumLogLevel,
                 NamedPipeName = NamedPipeName,
                 OutNamedPipeName = OutNamedPipeName,
-                Services = Services
+                Services = Services,
+                Stdio = Stdio
             };
 
             return new OmnisharpLanguageServer(config);
