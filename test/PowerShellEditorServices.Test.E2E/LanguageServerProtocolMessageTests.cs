@@ -29,7 +29,7 @@ namespace PowerShellEditorServices.Test.E2E
             Diagnostics = new List<Diagnostic>();
             LanguageClient = data.LanguageClient;
             Diagnostics = data.Diagnostics;
-            PwshExe = data.PwshExe;
+            PwshExe = TestsFixture.PwshExe;
             Diagnostics.Clear();
         }
 
