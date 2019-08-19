@@ -14,6 +14,8 @@ namespace PowerShellEditorServices.Test.E2E
 {
     public class TestsFixture : IAsyncLifetime
     {
+        private readonly static string s_pwshExe =
+            Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh";
         private readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
@@ -40,6 +42,7 @@ namespace PowerShellEditorServices.Test.E2E
         private StdioServerProcess _psesProcess;
         public LanguageClient LanguageClient { get; private set; }
         public List<Diagnostic> Diagnostics { get; set; }
+        public string PwshExe => s_pwshExe;
 
         public async Task InitializeAsync()
         {
@@ -47,7 +50,7 @@ namespace PowerShellEditorServices.Test.E2E
 
             ProcessStartInfo processStartInfo = new ProcessStartInfo
             {
-                FileName = Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh"
+                FileName = s_pwshExe
             };
             processStartInfo.ArgumentList.Add("-NoLogo");
             processStartInfo.ArgumentList.Add("-NoProfile");

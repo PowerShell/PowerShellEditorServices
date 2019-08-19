@@ -22,12 +22,14 @@ namespace PowerShellEditorServices.Test.E2E
 
         private readonly LanguageClient LanguageClient;
         private readonly List<Diagnostic> Diagnostics;
+        private readonly string PwshExe;
 
         public LanguageServerProtocolMessageTests(TestsFixture data)
         {
             Diagnostics = new List<Diagnostic>();
             LanguageClient = data.LanguageClient;
             Diagnostics = data.Diagnostics;
+            PwshExe = data.PwshExe;
             Diagnostics.Clear();
         }
 
@@ -78,7 +80,7 @@ namespace PowerShellEditorServices.Test.E2E
             PowerShellVersionDetails details
                 = await LanguageClient.SendRequest<PowerShellVersionDetails>("powerShell/getVersion", new GetVersionParams());
 
-            if(Environment.GetEnvironmentVariable("PWSH_EXE_NAME") == "powershell")
+            if(PwshExe == "powershell")
             {
                 Assert.Equal("Desktop", details.Edition);
             }
@@ -361,7 +363,7 @@ CanSendReferencesRequest
                 });
         }
 
-        [Fact(Skip = "Bug in Newtonsoft that csharp-language-server-protocol will workaround")]
+        [Fact]
         public async Task CanSendDocumentHighlightRequest()
         {
             string scriptPath = NewTestFile(@"
@@ -381,7 +383,7 @@ Write-Host 'Goodbye'
                         },
                         Position = new Position
                         {
-                            Line = 3,
+                            Line = 4,
                             Character = 1
                         }
                     });
@@ -390,18 +392,18 @@ Write-Host 'Goodbye'
                 documentHighlight1 =>
                 {
                     Range range = documentHighlight1.Range;
-                    Assert.Equal(0, range.Start.Line);
+                    Assert.Equal(1, range.Start.Line);
                     Assert.Equal(0, range.Start.Character);
-                    Assert.Equal(0, range.End.Line);
+                    Assert.Equal(1, range.End.Line);
                     Assert.Equal(10, range.End.Character);
 
                 },
                 documentHighlight2 =>
                 {
                     Range range = documentHighlight2.Range;
-                    Assert.Equal(2, range.Start.Line);
+                    Assert.Equal(3, range.Start.Line);
                     Assert.Equal(0, range.Start.Character);
-                    Assert.Equal(2, range.End.Line);
+                    Assert.Equal(3, range.End.Line);
                     Assert.Equal(10, range.End.Character);
                 });
         }
@@ -410,7 +412,7 @@ Write-Host 'Goodbye'
         public async Task CanSendPowerShellGetPSHostProcessesRequest()
         {
             var process = new Process();
-            process.StartInfo.FileName = "pwsh";
+            process.StartInfo.FileName = PwshExe;
             process.StartInfo.ArgumentList.Add("-NoProfile");
             process.StartInfo.ArgumentList.Add("-NoLogo");
             process.StartInfo.ArgumentList.Add("-NoExit");
@@ -449,7 +451,7 @@ Write-Host 'Goodbye'
         public async Task CanSendPowerShellGetRunspaceRequest()
         {
             var process = new Process();
-            process.StartInfo.FileName = "pwsh";
+            process.StartInfo.FileName = PwshExe;
             process.StartInfo.ArgumentList.Add("-NoProfile");
             process.StartInfo.ArgumentList.Add("-NoLogo");
             process.StartInfo.ArgumentList.Add("-NoExit");
@@ -570,7 +572,7 @@ CanSendReferencesCodeLensRequest
             Assert.Equal("1 reference", codeLensResolveResult.Command.Title);
         }
 
-        [Fact(Skip = "Bug in Newtonsoft that csharp-language-server-protocol will workaround")]
+        [Fact]
         public async Task CanSendCodeActionRequest()
         {
             string filePath = NewTestFile("gci");
