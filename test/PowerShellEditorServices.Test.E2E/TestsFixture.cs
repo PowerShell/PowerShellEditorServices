@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Client;
 using OmniSharp.Extensions.LanguageServer.Client.Processes;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -82,6 +83,17 @@ namespace PowerShellEditorServices.Test.E2E
             DirectoryInfo testdir =
                 Directory.CreateDirectory(Path.Combine(s_binDir, Path.GetRandomFileName()));
             await LanguageClient.Initialize(testdir.FullName);
+
+            // Make sure Script Analysis is enabled because we'll need it in the tests.
+            LanguageClient.Workspace.DidChangeConfiguration(JObject.Parse(@"
+{
+    ""PowerShell"": {
+        ""ScriptAnalysis"": {
+            ""Enable"": true
+        }
+    }
+}
+"));
 
             Diagnostics = new List<Diagnostic>();
             LanguageClient.TextDocument.OnPublishDiagnostics((uri, diagnostics) =>

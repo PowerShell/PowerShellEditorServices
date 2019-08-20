@@ -607,5 +607,20 @@ CanSendReferencesCodeLensRequest
             Assert.Single(commandOrCodeActions,
                 command => command.Command.Name == "PowerShell.ApplyCodeActionEdits");
         }
+
+        [Fact]
+        public async Task CanSendCompletionRequest()
+        {
+            string filePath = NewTestFile("Write-H");
+
+            CompletionList completionItems = await LanguageClient.TextDocument.Completions(
+                filePath, line: 0, column: 7);
+
+            Assert.Collection(completionItems,
+                completionItem1 => {
+                    Assert.Equal("Write-Host", completionItem1.Label);
+                }
+            );
+        }
     }
 }
