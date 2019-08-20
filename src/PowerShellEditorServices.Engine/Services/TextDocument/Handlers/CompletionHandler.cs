@@ -47,11 +47,11 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
 
         public CompletionRegistrationOptions GetRegistrationOptions()
         {
-            return new CompletionRegistrationOptions()
+            return new CompletionRegistrationOptions
             {
-                DocumentSelector = new DocumentSelector(new DocumentFilter() { Pattern = "**/*.ps*1" }),
+                DocumentSelector = new DocumentSelector(new DocumentFilter { Pattern = "**/*.ps*1" }),
                 ResolveProvider = true,
-                TriggerCharacters = new string[] { ".", "-", ":", "\\" }
+                TriggerCharacters = new[] { ".", "-", ":", "\\" }
             };
         }
 
