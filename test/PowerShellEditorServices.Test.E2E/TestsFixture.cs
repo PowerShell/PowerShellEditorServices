@@ -28,7 +28,7 @@ namespace PowerShellEditorServices.Test.E2E
             $"pses_test_sessiondetails_{Path.GetRandomFileName()}");
 
         private readonly static string s_logPath = Path.Combine(
-            s_binDir,
+            Environment.GetEnvironmentVariable("BUILD_ARTIFACTSTAGINGDIRECTORY") ?? s_binDir,
             $"pses_test_logs_{Path.GetRandomFileName()}");
 
         const string s_logLevel = "Diagnostic";
