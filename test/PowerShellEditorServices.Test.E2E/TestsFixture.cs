@@ -83,6 +83,11 @@ namespace PowerShellEditorServices.Test.E2E
             DirectoryInfo testdir =
                 Directory.CreateDirectory(Path.Combine(s_binDir, Path.GetRandomFileName()));
 
+            LanguageClient.Window.OnLogMessage((message, messageType) =>
+            {
+                Console.WriteLine($"{messageType.ToString()}: {message}");
+            });
+
             await LanguageClient.Initialize(testdir.FullName);
 
             // Make sure Script Analysis is enabled because we'll need it in the tests.
