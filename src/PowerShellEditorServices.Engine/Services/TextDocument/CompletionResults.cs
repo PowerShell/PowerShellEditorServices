@@ -306,6 +306,7 @@ namespace Microsoft.PowerShell.EditorServices
                     return CompletionType.Type;
 
                 case CompletionResultType.Keyword:
+                case CompletionResultType.DynamicKeyword:
                     return CompletionType.Keyword;
 
                 case CompletionResultType.ProviderContainer:
