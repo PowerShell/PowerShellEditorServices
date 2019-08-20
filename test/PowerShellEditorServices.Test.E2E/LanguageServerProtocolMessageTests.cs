@@ -628,18 +628,21 @@ CanSendReferencesCodeLensRequest
         }
 
         [Fact]
-        public async Task CanSendCompletionRequest()
+        public async Task CanSendCompletionAndCompletionResolveRequest()
         {
             string filePath = NewTestFile("Write-H");
 
             CompletionList completionItems = await LanguageClient.TextDocument.Completions(
                 filePath, line: 0, column: 7);
 
-            Assert.Collection(completionItems,
-                completionItem1 => {
-                    Assert.Equal("Write-Host", completionItem1.Label);
-                }
-            );
+            CompletionItem completionItem = Assert.Single(completionItems,
+                completionItem1 => completionItem1.Label == "Write-Host");
+
+            CompletionItem updatedCompletionItem = await LanguageClient.SendRequest<CompletionItem>(
+                "completionItem/resolve",
+                completionItem);
+
+            Assert.Contains("Writes customized output to a host", updatedCompletionItem.Documentation.String);
         }
     }
 }

@@ -16,7 +16,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.TextDocument
 {
-    internal class CompletionHandler : ICompletionHandler
+    internal class CompletionHandler : ICompletionHandler, ICompletionResolveHandler
     {
         const int DefaultWaitTimeoutMilliseconds = 5000;
         private readonly CompletionItem[] s_emptyCompletionResult = new CompletionItem[0];
@@ -82,6 +82,31 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
             }
 
             return new CompletionList(completionItems);
+        }
+
+        public bool CanResolve(CompletionItem value)
+        {
+            return value.Kind == CompletionItemKind.Function;
+        }
+
+        public async Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
+        {
+            // Get the documentation for the function
+            CommandInfo commandInfo =
+                await CommandHelpers.GetCommandInfoAsync(
+                    request.Label,
+                    _powerShellContextService);
+
+            if (commandInfo != null)
+            {
+                request.Documentation =
+                    await CommandHelpers.GetCommandSynopsisAsync(
+                        commandInfo,
+                        _powerShellContextService);
+            }
+
+            // Send back the updated CompletionItem
+            return request;
         }
 
         public void SetCapability(CompletionCapability capability)
@@ -214,7 +239,7 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
                 }
             }
             else if ((completionDetails.CompletionType == CompletionType.Folder) &&
-                     (completionText.EndsWith("\"") || completionText.EndsWith("'")))
+                     (completionText.EndsWith("\"", StringComparison.OrdinalIgnoreCase) || completionText.EndsWith("'", StringComparison.OrdinalIgnoreCase)))
             {
                 // Insert a final "tab stop" as identified by $0 in the snippet provided for completion.
                 // For folder paths, we take the path returned by PowerShell e.g. 'C:\Program Files' and insert
