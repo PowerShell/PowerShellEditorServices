@@ -11,6 +11,7 @@ using OmniSharp.Extensions.LanguageServer.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using PowerShellEditorServices.Engine.Services.Handlers;
 using Xunit;
+using Xunit.Abstractions;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace PowerShellEditorServices.Test.E2E
@@ -20,17 +21,32 @@ namespace PowerShellEditorServices.Test.E2E
         private readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
+        private static bool s_registeredOnLogMessage;
+
         private readonly LanguageClient LanguageClient;
         private readonly List<Diagnostic> Diagnostics;
         private readonly string PwshExe;
+        private readonly ITestOutputHelper _output;
 
-        public LanguageServerProtocolMessageTests(TestsFixture data)
+        public LanguageServerProtocolMessageTests(ITestOutputHelper output, TestsFixture data)
         {
             Diagnostics = new List<Diagnostic>();
             LanguageClient = data.LanguageClient;
             Diagnostics = data.Diagnostics;
             PwshExe = TestsFixture.PwshExe;
             Diagnostics.Clear();
+
+            _output = output;
+
+            if (!s_registeredOnLogMessage)
+            {
+                LanguageClient.Window.OnLogMessage((message, messageType) =>
+                {
+                    _output.WriteLine($"{messageType.ToString()}: {message}");
+                });
+
+                s_registeredOnLogMessage = true;
+            }
         }
 
         public void Dispose()
@@ -54,6 +70,9 @@ namespace PowerShellEditorServices.Test.E2E
                     Uri = new Uri(filePath)
                 }
             });
+
+            // Give PSES a chance to run what it needs to run.
+            Thread.Sleep(1000);
 
             return filePath;
         }
@@ -606,6 +625,21 @@ CanSendReferencesCodeLensRequest
 
             Assert.Single(commandOrCodeActions,
                 command => command.Command.Name == "PowerShell.ApplyCodeActionEdits");
+        }
+
+        [Fact]
+        public async Task CanSendCompletionRequest()
+        {
+            string filePath = NewTestFile("Write-H");
+
+            CompletionList completionItems = await LanguageClient.TextDocument.Completions(
+                filePath, line: 0, column: 7);
+
+            Assert.Collection(completionItems,
+                completionItem1 => {
+                    Assert.Equal("Write-Host", completionItem1.Label);
+                }
+            );
         }
     }
 }

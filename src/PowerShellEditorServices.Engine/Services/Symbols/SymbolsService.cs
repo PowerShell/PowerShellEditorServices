@@ -21,8 +21,6 @@ namespace Microsoft.PowerShell.EditorServices
     {
         #region Private Fields
 
-        const int DefaultWaitTimeoutMilliseconds = 5000;
-
         private readonly ILogger _logger;
 
         private readonly IDocumentSymbolProvider[] _documentSymbolProviders;

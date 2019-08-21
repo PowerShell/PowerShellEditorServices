@@ -110,6 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     .WithHandler<CodeLensHandlers>()
                     .WithHandler<CodeActionHandler>()
                     .WithHandler<InvokeExtensionCommandHandler>()
+                    .WithHandler<CompletionHandler>()
                     .OnInitialize(
                         async (languageServer, request) =>
                         {

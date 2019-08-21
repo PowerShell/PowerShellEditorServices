@@ -5,8 +5,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Symbols
 {
@@ -17,11 +24,11 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
     {
         // TODO: When netstandard is upgraded to 2.0, see if
         //       Delegate.CreateDelegate can be used here instead
-        //private static readonly MethodInfo s_extentCloneWithNewOffset = typeof(PSObject).GetTypeInfo().Assembly
-        //    .GetType("System.Management.Automation.Language.InternalScriptPosition")
-        //    .GetMethod("CloneWithNewOffset", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_extentCloneWithNewOffset = typeof(PSObject).GetTypeInfo().Assembly
+           .GetType("System.Management.Automation.Language.InternalScriptPosition")
+           .GetMethod("CloneWithNewOffset", BindingFlags.Instance | BindingFlags.NonPublic);
 
-        //private static readonly SemaphoreSlim s_completionHandle = AsyncUtils.CreateSimpleLockingSemaphore();
+        private static readonly SemaphoreSlim s_completionHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
         // TODO: BRING THIS BACK
         /// <summary>
@@ -48,89 +55,88 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// A CommandCompletion instance that contains completions for the
         /// symbol at the given offset.
         /// </returns>
-        // static public async Task<CommandCompletion> GetCompletionsAsync(
-        //     Ast scriptAst,
-        //     Token[] currentTokens,
-        //     int fileOffset,
-        //     PowerShellContext powerShellContext,
-        //     ILogger logger,
-        //     CancellationToken cancellationToken)
-        // {
-        //     if (!s_completionHandle.Wait(0))
-        //     {
-        //         return null;
-        //     }
+        static public async Task<CommandCompletion> GetCompletionsAsync(
+            Ast scriptAst,
+            Token[] currentTokens,
+            int fileOffset,
+            PowerShellContextService powerShellContext,
+            ILogger logger,
+            CancellationToken cancellationToken)
+        {
+            if (!s_completionHandle.Wait(0))
+            {
+                return null;
+            }
 
-        //     try
-        //     {
-        //         IScriptPosition cursorPosition = (IScriptPosition)s_extentCloneWithNewOffset.Invoke(
-        //         scriptAst.Extent.StartScriptPosition,
-        //         new object[] { fileOffset });
+            try
+            {
+                IScriptPosition cursorPosition = (IScriptPosition)s_extentCloneWithNewOffset.Invoke(
+                scriptAst.Extent.StartScriptPosition,
+                new object[] { fileOffset });
 
-        //         logger.Write(
-        //             LogLevel.Verbose,
-        //             string.Format(
-        //                 "Getting completions at offset {0} (line: {1}, column: {2})",
-        //                 fileOffset,
-        //                 cursorPosition.LineNumber,
-        //                 cursorPosition.ColumnNumber));
+                logger.LogTrace(
+                    string.Format(
+                        "Getting completions at offset {0} (line: {1}, column: {2})",
+                        fileOffset,
+                        cursorPosition.LineNumber,
+                        cursorPosition.ColumnNumber));
 
-        //         if (!powerShellContext.IsAvailable)
-        //         {
-        //             return null;
-        //         }
+                if (!powerShellContext.IsAvailable)
+                {
+                    return null;
+                }
 
-        //         var stopwatch = new Stopwatch();
+                var stopwatch = new Stopwatch();
 
-        //         // If the current runspace is out of process we can use
-        //         // CommandCompletion.CompleteInput because PSReadLine won't be taking up the
-        //         // main runspace.
-        //         if (powerShellContext.IsCurrentRunspaceOutOfProcess())
-        //         {
-        //             using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandleAsync(cancellationToken))
-        //             using (PowerShell powerShell = PowerShell.Create())
-        //             {
-        //                 powerShell.Runspace = runspaceHandle.Runspace;
-        //                 stopwatch.Start();
-        //                 try
-        //                 {
-        //                     return CommandCompletion.CompleteInput(
-        //                         scriptAst,
-        //                         currentTokens,
-        //                         cursorPosition,
-        //                         options: null,
-        //                         powershell: powerShell);
-        //                 }
-        //                 finally
-        //                 {
-        //                     stopwatch.Stop();
-        //                     logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
-        //                 }
-        //             }
-        //         }
+                // If the current runspace is out of process we can use
+                // CommandCompletion.CompleteInput because PSReadLine won't be taking up the
+                // main runspace.
+                if (powerShellContext.IsCurrentRunspaceOutOfProcess())
+                {
+                    using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandleAsync(cancellationToken))
+                    using (System.Management.Automation.PowerShell powerShell = System.Management.Automation.PowerShell.Create())
+                    {
+                        powerShell.Runspace = runspaceHandle.Runspace;
+                        stopwatch.Start();
+                        try
+                        {
+                            return CommandCompletion.CompleteInput(
+                                scriptAst,
+                                currentTokens,
+                                cursorPosition,
+                                options: null,
+                                powershell: powerShell);
+                        }
+                        finally
+                        {
+                            stopwatch.Stop();
+                            logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
+                        }
+                    }
+                }
 
-        //         CommandCompletion commandCompletion = null;
-        //         await powerShellContext.InvokeOnPipelineThreadAsync(
-        //             pwsh =>
-        //             {
-        //                 stopwatch.Start();
-        //                 commandCompletion = CommandCompletion.CompleteInput(
-        //                     scriptAst,
-        //                     currentTokens,
-        //                     cursorPosition,
-        //                     options: null,
-        //                     powershell: pwsh);
-        //             });
-        //         stopwatch.Stop();
-        //         logger.Write(LogLevel.Verbose, $"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
+                CommandCompletion commandCompletion = null;
+                await powerShellContext.InvokeOnPipelineThreadAsync(
+                    pwsh =>
+                    {
+                        stopwatch.Start();
+                        commandCompletion = CommandCompletion.CompleteInput(
+                            scriptAst,
+                            currentTokens,
+                            cursorPosition,
+                            options: null,
+                            powershell: pwsh);
+                    });
+                stopwatch.Stop();
+                logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
 
-        //         return commandCompletion;
-        //     }
-        //     finally
-        //     {
-        //         s_completionHandle.Release();
-        //     }
-        // }
+                return commandCompletion;
+            }
+            finally
+            {
+                s_completionHandle.Release();
+            }
+        }
 
         /// <summary>
         /// Finds the symbol at a given file location
