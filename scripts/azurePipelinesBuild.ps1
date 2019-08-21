@@ -10,6 +10,9 @@ if ($IsWindows -or $PSVersionTable.PSVersion.Major -lt 6) {
     Import-Module -Name PackageManagement -MinimumVersion 1.1.7.0 -Force
 }
 
+# Update help needed for SignatureHelp LSP request.
+Update-Help -Scope CurrentUser -Force
+
 # Needed for build and docs gen.
 Install-Module InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser
 Install-Module PlatyPS -RequiredVersion 0.9.0 -Scope CurrentUser
