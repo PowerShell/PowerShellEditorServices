@@ -11,7 +11,7 @@ if ($IsWindows -or $PSVersionTable.PSVersion.Major -lt 6) {
 }
 
 # Update help needed for SignatureHelp LSP request.
-Update-Help -Force
+Update-Help -Force -ErrorAction SilentlyContinue
 
 # Needed for build and docs gen.
 Install-Module InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser
