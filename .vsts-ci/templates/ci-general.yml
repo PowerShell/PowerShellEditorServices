@@ -23,3 +23,4 @@ steps:
     inputs:
       ArtifactName: PowerShellEditorServices-CI
       PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    condition: succeededOrFailed()
