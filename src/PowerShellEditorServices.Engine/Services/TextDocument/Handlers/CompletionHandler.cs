@@ -89,6 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
             return value.Kind == CompletionItemKind.Function;
         }
 
+        // Handler for "completionItem/resolve". In VSCode this is fired when a completion item is highlighted in the completion list.
         public async Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
         {
             // Get the documentation for the function
@@ -238,8 +239,7 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
                     }
                 }
             }
-            else if ((completionDetails.CompletionType == CompletionType.Folder) &&
-                     (completionText.EndsWith("\"", StringComparison.OrdinalIgnoreCase) || completionText.EndsWith("'", StringComparison.OrdinalIgnoreCase)))
+            else if (completionDetails.CompletionType == CompletionType.Folder && EndsWithQuote(completionText))
             {
                 // Insert a final "tab stop" as identified by $0 in the snippet provided for completion.
                 // For folder paths, we take the path returned by PowerShell e.g. 'C:\Program Files' and insert
@@ -315,6 +315,17 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
                 default:
                     return CompletionItemKind.Text;
             }
+        }
+
+        private static bool EndsWithQuote(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return false;
+            }
+
+            char lastChar = text[text.Length - 1];
+            return lastChar == '"' || lastChar == '\'';
         }
     }
 }

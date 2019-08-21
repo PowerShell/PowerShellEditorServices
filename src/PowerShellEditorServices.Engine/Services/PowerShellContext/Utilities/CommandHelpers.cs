@@ -3,8 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Utility;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading.Tasks;
@@ -16,19 +15,21 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public static class CommandHelpers
     {
-        private static readonly HashSet<string> NounBlackList =
-            new HashSet<string>
-            {
-                "Module",
-                "Script",
-                "Package",
-                "PackageProvider",
-                "PackageSource",
-                "InstalledModule",
-                "InstalledScript",
-                "ScriptFileInfo",
-                "PSRepository"
-            };
+        private static readonly ConcurrentDictionary<string, bool> NounExclusionList =
+            new ConcurrentDictionary<string, bool>();
+
+        static CommandHelpers()
+        {
+            NounExclusionList.TryAdd("Module", true);
+            NounExclusionList.TryAdd("Script", true);
+            NounExclusionList.TryAdd("Package", true);
+            NounExclusionList.TryAdd("PackageProvider", true);
+            NounExclusionList.TryAdd("PackageSource", true);
+            NounExclusionList.TryAdd("InstalledModule", true);
+            NounExclusionList.TryAdd("InstalledScript", true);
+            NounExclusionList.TryAdd("ScriptFileInfo", true);
+            NounExclusionList.TryAdd("PSRepository", true);
+        }
 
         /// <summary>
         /// Gets the CommandInfo instance for a command with a particular name.
@@ -47,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices
             // load PackageManagement or PowerShellGet because they cause
             // a major slowdown in IntelliSense.
             var commandParts = commandName.Split('-');
-            if (commandParts.Length == 2 && NounBlackList.Contains(commandParts[1]))
+            if (commandParts.Length == 2 && NounExclusionList.ContainsKey(commandParts[1]))
             {
                 return null;
             }
