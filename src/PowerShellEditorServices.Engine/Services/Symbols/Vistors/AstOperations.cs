@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// A CommandCompletion instance that contains completions for the
         /// symbol at the given offset.
         /// </returns>
-        static public async Task<CommandCompletion> GetCompletionsAsync(
+        public static async Task<CommandCompletion> GetCompletionsAsync(
             Ast scriptAst,
             Token[] currentTokens,
             int fileOffset,
@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
         /// <param name="includeFunctionDefinitions">Includes full function definition ranges in the search.</param>
         /// <returns>SymbolReference of found symbol</returns>
-        static public SymbolReference FindSymbolAtPosition(
+        public static SymbolReference FindSymbolAtPosition(
             Ast scriptAst,
             int lineNumber,
             int columnNumber,
@@ -170,7 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// <param name="lineNumber">The line number of the cursor for the given script</param>
         /// <param name="columnNumber">The column number of the cursor for the given script</param>
         /// <returns>SymbolReference of found command</returns>
-        static public SymbolReference FindCommandAtPosition(Ast scriptAst, int lineNumber, int columnNumber)
+        public static SymbolReference FindCommandAtPosition(Ast scriptAst, int lineNumber, int columnNumber)
         {
             FindCommandVisitor commandVisitor = new FindCommandVisitor(lineNumber, columnNumber);
             scriptAst.Visit(commandVisitor);
@@ -186,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// <param name="CmdletToAliasDictionary">Dictionary maping cmdlets to aliases for finding alias references</param>
         /// <param name="AliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
         /// <returns></returns>
-        static public IEnumerable<SymbolReference> FindReferencesOfSymbol(
+        public static IEnumerable<SymbolReference> FindReferencesOfSymbol(
             Ast scriptAst,
             SymbolReference symbolReference,
             Dictionary<String, List<String>> CmdletToAliasDictionary,
@@ -212,7 +212,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// This should always be false and used for occurence requests</param>
         /// <returns>A collection of SymbolReference objects that are refrences to the symbolRefrence
         /// not including aliases</returns>
-        static public IEnumerable<SymbolReference> FindReferencesOfSymbol(
+        public static IEnumerable<SymbolReference> FindReferencesOfSymbol(
             ScriptBlockAst scriptAst,
             SymbolReference foundSymbol,
             bool needsAliases)
@@ -230,7 +230,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="symbolReference">The symbol that we are looking for the definition of</param>
         /// <returns>A SymbolReference of the definition of the symbolReference</returns>
-        static public SymbolReference FindDefinitionOfSymbol(
+        public static SymbolReference FindDefinitionOfSymbol(
             Ast scriptAst,
             SymbolReference symbolReference)
         {
@@ -248,7 +248,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="powerShellVersion">The PowerShell version the Ast was generated from</param>
         /// <returns>A collection of SymbolReference objects</returns>
-        static public IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst, Version powerShellVersion)
+        public static IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst, Version powerShellVersion)
         {
             IEnumerable<SymbolReference> symbolReferences = null;
 
@@ -275,7 +275,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// </summary>
         /// <param name="ast">The abstract syntax tree of the given script</param>
         /// <returns>true if the AST represts a *.psd1 file, otherwise false</returns>
-        static public bool IsPowerShellDataFileAst(Ast ast)
+        public static bool IsPowerShellDataFileAst(Ast ast)
         {
             // sometimes we don't have reliable access to the filename
             // so we employ heuristics to check if the contents are
@@ -330,7 +330,7 @@ namespace Microsoft.PowerShell.EditorServices.Symbols
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="psScriptRoot">Pre-calculated value of $PSScriptRoot</param>
         /// <returns></returns>
-        static public string[] FindDotSourcedIncludes(Ast scriptAst, string psScriptRoot)
+        public static string[] FindDotSourcedIncludes(Ast scriptAst, string psScriptRoot)
         {
             FindDotSourcedVisitor dotSourcedVisitor = new FindDotSourcedVisitor(psScriptRoot);
             scriptAst.Visit(dotSourcedVisitor);

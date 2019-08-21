@@ -62,6 +62,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine
         {
             _languageServer = await OS.LanguageServer.From(options => {
 
+                options.AddDefaultLoggingProvider();
+                options.LoggerFactory = _configuration.LoggerFactory;
                 ILogger logger = options.LoggerFactory.CreateLogger("OptionsStartup");
 
                 if (_configuration.Stdio)
@@ -89,10 +91,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     options.Output = outNamedPipe ?? namedPipe;
                 }
 
-                options.LoggerFactory = _configuration.LoggerFactory;
                 options.MinimumLogLevel = _configuration.MinimumLogLevel;
                 options.Services = _configuration.Services;
-
                 logger.LogInformation("Adding handlers");
 
                 options

@@ -243,8 +243,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// <returns>True if the CompletionResults instances have the same details.</returns>
         public override bool Equals(object obj)
         {
-            CompletionDetails otherDetails = obj as CompletionDetails;
-            if (otherDetails == null)
+            if (!(obj is CompletionDetails otherDetails))
             {
                 return false;
             }

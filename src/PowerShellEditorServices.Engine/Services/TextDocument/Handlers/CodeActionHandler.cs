@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
             _analysisService = analysisService;
             _registrationOptions = new CodeActionRegistrationOptions()
             {
-                DocumentSelector = new DocumentSelector(new DocumentFilter() { Pattern = "**/*.ps*1" }),
+                DocumentSelector = new DocumentSelector(new DocumentFilter() { Language = "powershell" }),
                 CodeActionKinds = s_supportedCodeActions
             };
         }
