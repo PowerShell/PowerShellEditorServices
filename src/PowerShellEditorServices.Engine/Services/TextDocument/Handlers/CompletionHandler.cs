@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
         {
             return new CompletionRegistrationOptions
             {
-                DocumentSelector = new DocumentSelector(new DocumentFilter { Pattern = "**/*.ps*1" }),
+                DocumentSelector = new DocumentSelector(new DocumentFilter { Language = "powershell" }),
                 ResolveProvider = true,
                 TriggerCharacters = new[] { ".", "-", ":", "\\" }
             };

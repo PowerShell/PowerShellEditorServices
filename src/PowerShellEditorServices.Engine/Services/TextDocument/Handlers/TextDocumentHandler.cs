@@ -24,7 +24,7 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
             new DocumentFilter()
             {
-                Pattern = "**/*.ps*1"
+                Language = "powershell"
             }
         );
 

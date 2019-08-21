@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.TextDocument
             _symbolsService = symbolService;
             _registrationOptions = new TextDocumentRegistrationOptions()
             {
-                DocumentSelector = new DocumentSelector(new DocumentFilter() { Pattern = "**/*.ps*1" } )
+                DocumentSelector = new DocumentSelector(new DocumentFilter() { Language = "powershell" } )
             };
             _logger.LogInformation("highlight handler loaded");
         }
