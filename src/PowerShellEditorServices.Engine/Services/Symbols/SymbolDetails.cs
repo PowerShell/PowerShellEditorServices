@@ -64,31 +64,25 @@ namespace Microsoft.PowerShell.EditorServices
                         if (commandInfo.CommandType == CommandTypes.Application)
                         {
                             symbolDetails.DisplayString = "(application) " + symbolReference.SymbolName;
+                            return symbolDetails;
                         }
-                        else
-                        {
-                            symbolDetails.DisplayString = "function " + symbolReference.SymbolName;
-                        }
-                    }
-                    else
-                    {
-                        // Command information can't be loaded.  This is likely due to
-                        // the symbol being a function that is defined in a file that
-                        // hasn't been loaded in the runspace yet.
-                        symbolDetails.DisplayString = "function " + symbolReference.SymbolName;
                     }
 
-                    break;
+                    symbolDetails.DisplayString = "function " + symbolReference.SymbolName;
+                    return symbolDetails;
+
                 case SymbolType.Parameter:
                     // TODO: Get parameter help
                     symbolDetails.DisplayString = "(parameter) " + symbolReference.SymbolName;
-                    break;
+                    return symbolDetails;
+
                 case SymbolType.Variable:
                     symbolDetails.DisplayString = symbolReference.SymbolName;
-                    break;
-            }
+                    return symbolDetails;
 
-            return symbolDetails;
+                default:
+                    return symbolDetails;
+            }
         }
 
         #endregion

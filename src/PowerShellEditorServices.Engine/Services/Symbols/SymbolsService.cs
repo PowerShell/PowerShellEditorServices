@@ -251,7 +251,6 @@ namespace Microsoft.PowerShell.EditorServices
 
             if (symbolReference == null)
             {
-                // TODO #21: Return Result<T>
                 return null;
             }
 
