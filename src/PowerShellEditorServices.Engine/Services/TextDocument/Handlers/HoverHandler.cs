@@ -12,7 +12,7 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
     public class HoverHandler : IHoverHandler
     {
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
-            new DocumentFilter()
+            new DocumentFilter
             {
                 Language = "powershell"
             }
@@ -39,7 +39,7 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
 
         public TextDocumentRegistrationOptions GetRegistrationOptions()
         {
-            return new TextDocumentRegistrationOptions()
+            return new TextDocumentRegistrationOptions
             {
                 DocumentSelector = _documentSelector,
             };
@@ -55,8 +55,7 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
                 await _symbolsService.FindSymbolDetailsAtLocationAsync(
                         scriptFile,
                         (int) request.Position.Line + 1,
-                        (int) request.Position.Character + 1,
-                        _powerShellContextService);
+                        (int) request.Position.Character + 1);
 
             List<MarkedString> symbolInfo = new List<MarkedString>();
             Range symbolRange = null;

@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices
         #region Private Fields
 
         private readonly ILogger _logger;
-
+        private readonly PowerShellContextService _powerShellContextService;
         private readonly IDocumentSymbolProvider[] _documentSymbolProviders;
 
         #endregion
@@ -36,9 +36,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
         public SymbolsService(
-            ILoggerFactory factory)
+            ILoggerFactory factory,
+            PowerShellContextService powerShellContextService)
         {
             _logger = factory.CreateLogger<SymbolsService>();
+            _powerShellContextService = powerShellContextService;
             _documentSymbolProviders = new IDocumentSymbolProvider[]
             {
                 new ScriptDocumentSymbolProvider(VersionUtils.PSVersion),
@@ -240,8 +242,7 @@ namespace Microsoft.PowerShell.EditorServices
         public async Task<SymbolDetails> FindSymbolDetailsAtLocationAsync(
             ScriptFile scriptFile,
             int lineNumber,
-            int columnNumber,
-            PowerShellContextService powerShellContext)
+            int columnNumber)
         {
             SymbolReference symbolReference =
                 AstOperations.FindSymbolAtPosition(
@@ -257,7 +258,7 @@ namespace Microsoft.PowerShell.EditorServices
             symbolReference.FilePath = scriptFile.FilePath;
             SymbolDetails symbolDetails = await SymbolDetails.CreateAsync(
                 symbolReference,
-                powerShellContext);
+                _powerShellContextService);
 
             return symbolDetails;
         }
