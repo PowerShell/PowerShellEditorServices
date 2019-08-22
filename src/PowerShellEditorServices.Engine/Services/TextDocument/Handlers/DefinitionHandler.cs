@@ -19,7 +19,7 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
     public class DefinitionHandler : IDefinitionHandler
     {
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
-            new DocumentFilter()
+            new DocumentFilter
             {
                 Language = "powershell"
             }
