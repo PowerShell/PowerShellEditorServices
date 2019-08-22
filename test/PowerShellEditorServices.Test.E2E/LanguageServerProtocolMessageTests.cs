@@ -1,4 +1,9 @@
-﻿using System;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -663,6 +668,29 @@ CanSendReferencesCodeLensRequest
                     Assert.Equal("markdown", str2.Language);
                     Assert.Equal("Writes customized output to a host.", str2.Value);
                 });
+        }
+
+        [Fact]
+        public async Task CanSendSignatureHelpRequest()
+        {
+            string filePath = NewTestFile("Get-Date ");
+
+            SignatureHelp signatureHelp = await LanguageClient.SendRequest<SignatureHelp>(
+                "textDocument/signatureHelp",
+                new SignatureHelpParams
+                {
+                    TextDocument = new TextDocumentIdentifier
+                    {
+                        Uri = new Uri(filePath)
+                    },
+                    Position = new Position
+                    {
+                        Line = 0,
+                        Character = 9
+                    }
+                });
+
+            Assert.Contains("Get-Date", signatureHelp.Signatures.First().Label);
         }
     }
 }
