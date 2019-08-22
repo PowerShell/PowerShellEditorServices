@@ -111,6 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     .WithHandler<CodeActionHandler>()
                     .WithHandler<InvokeExtensionCommandHandler>()
                     .WithHandler<CompletionHandler>()
+                    .WithHandler<HoverHandler>()
                     .OnInitialize(
                         async (languageServer, request) =>
                         {

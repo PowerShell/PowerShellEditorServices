@@ -644,5 +644,25 @@ CanSendReferencesCodeLensRequest
 
             Assert.Contains("Writes customized output to a host", updatedCompletionItem.Documentation.String);
         }
+
+        [Fact]
+        public async Task CanSendHoverRequest()
+        {
+            string filePath = NewTestFile("Write-Host");
+
+            Hover hover = await LanguageClient.TextDocument.Hover(filePath, line: 0, column: 1);
+
+            Assert.True(hover.Contents.HasMarkedStrings);
+            Assert.Collection(hover.Contents.MarkedStrings,
+                str1 =>
+                {
+                    Assert.Equal("function Write-Host", str1.Value);
+                },
+                str2 =>
+                {
+                    Assert.Equal("markdown", str2.Language);
+                    Assert.Equal("Writes customized output to a host.", str2.Value);
+                });
+        }
     }
 }
