@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Symbols;
 
@@ -22,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices
         #region Private Fields
 
         private readonly ILogger _logger;
-
+        private readonly PowerShellContextService _powerShellContextService;
         private readonly IDocumentSymbolProvider[] _documentSymbolProviders;
 
         #endregion
@@ -35,9 +36,11 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
         public SymbolsService(
-            ILoggerFactory factory)
+            ILoggerFactory factory,
+            PowerShellContextService powerShellContextService)
         {
             _logger = factory.CreateLogger<SymbolsService>();
+            _powerShellContextService = powerShellContextService;
             _documentSymbolProviders = new IDocumentSymbolProvider[]
             {
                 new ScriptDocumentSymbolProvider(VersionUtils.PSVersion),
@@ -200,6 +203,7 @@ namespace Microsoft.PowerShell.EditorServices
                 needsAliases: false).ToArray();
         }
 
+        /// <summary>
         /// Finds a function definition in the script given a file location
         /// </summary>
         /// <param name="scriptFile">The details and contents of a open script file</param>
@@ -226,6 +230,37 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             return symbolReference;
+        }
+
+        /// <summary>
+        /// Finds the details of the symbol at the given script file location.
+        /// </summary>
+        /// <param name="scriptFile">The ScriptFile in which the symbol can be located.</param>
+        /// <param name="lineNumber">The line number at which the symbol can be located.</param>
+        /// <param name="columnNumber">The column number at which the symbol can be located.</param>
+        /// <returns></returns>
+        public async Task<SymbolDetails> FindSymbolDetailsAtLocationAsync(
+            ScriptFile scriptFile,
+            int lineNumber,
+            int columnNumber)
+        {
+            SymbolReference symbolReference =
+                AstOperations.FindSymbolAtPosition(
+                    scriptFile.ScriptAst,
+                    lineNumber,
+                    columnNumber);
+
+            if (symbolReference == null)
+            {
+                return null;
+            }
+
+            symbolReference.FilePath = scriptFile.FilePath;
+            SymbolDetails symbolDetails = await SymbolDetails.CreateAsync(
+                symbolReference,
+                _powerShellContextService);
+
+            return symbolDetails;
         }
     }
 }
