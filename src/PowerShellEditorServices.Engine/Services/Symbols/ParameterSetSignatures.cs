@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Management.Automation;
 using Microsoft.PowerShell.EditorServices.Symbols;
@@ -31,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// </summary>
         public ScriptRegion ScriptRegion { get; internal set; }
         #endregion
-        
+
         /// <summary>
         /// Constructs an instance of a ParameterSetSignatures object
         /// </summary>
@@ -55,21 +56,23 @@ namespace Microsoft.PowerShell.EditorServices
     /// </summary>
     public class ParameterSetSignature
     {
-        private static HashSet<string> commonParameterNames =
-            new HashSet<string>
-            {
-                "Verbose",
-                "Debug",
-                "ErrorAction",
-                "WarningAction",
-                "InformationAction",
-                "ErrorVariable",
-                "WarningVariable",
-                "InformationVariable",
-                "OutVariable",
-                "OutBuffer",
-                "PipelineVariable",
-            };
+        private static readonly ConcurrentDictionary<string, bool> commonParameterNames =
+            new ConcurrentDictionary<string, bool>();
+
+        static ParameterSetSignature()
+        {
+            commonParameterNames.TryAdd("Verbose", true);
+            commonParameterNames.TryAdd("Debug", true);
+            commonParameterNames.TryAdd("ErrorAction", true);
+            commonParameterNames.TryAdd("WarningAction", true);
+            commonParameterNames.TryAdd("InformationAction", true);
+            commonParameterNames.TryAdd("ErrorVariable", true);
+            commonParameterNames.TryAdd("WarningVariable", true);
+            commonParameterNames.TryAdd("InformationVariable", true);
+            commonParameterNames.TryAdd("OutVariable", true);
+            commonParameterNames.TryAdd("OutBuffer", true);
+            commonParameterNames.TryAdd("PipelineVariable", true);
+        }
 
         #region Properties
         /// <summary>
@@ -92,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices
             List<ParameterInfo> parameterInfo = new List<ParameterInfo>();
             foreach (CommandParameterInfo commandParameterInfo in commandParamInfoSet.Parameters)
             {
-                if (!commonParameterNames.Contains(commandParameterInfo.Name))
+                if (!commonParameterNames.ContainsKey(commandParameterInfo.Name))
                 {
                     parameterInfo.Add(new ParameterInfo(commandParameterInfo));
                 }
@@ -123,7 +126,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the position of the parameter
         /// </summary>
         public int Position { get; internal set; }
-        
+
         /// <summary>
         /// Gets a boolean for whetheer or not the parameter is required
         /// </summary>
