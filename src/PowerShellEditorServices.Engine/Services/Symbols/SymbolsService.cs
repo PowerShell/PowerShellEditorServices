@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Management.Automation;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -261,6 +262,63 @@ namespace Microsoft.PowerShell.EditorServices
                 _powerShellContextService);
 
             return symbolDetails;
+        }
+
+        /// <summary>
+        /// Finds the parameter set hints of a specific command (determined by a given file location)
+        /// </summary>
+        /// <param name="file">The details and contents of a open script file</param>
+        /// <param name="lineNumber">The line number of the cursor for the given script</param>
+        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <returns>ParameterSetSignatures</returns>
+        public async Task<ParameterSetSignatures> FindParameterSetsInFileAsync(
+            ScriptFile file,
+            int lineNumber,
+            int columnNumber,
+            PowerShellContextService powerShellContext)
+        {
+            SymbolReference foundSymbol =
+                AstOperations.FindCommandAtPosition(
+                    file.ScriptAst,
+                    lineNumber,
+                    columnNumber);
+
+            if (foundSymbol == null)
+            {
+                return null;
+            }
+
+            CommandInfo commandInfo =
+                await CommandHelpers.GetCommandInfoAsync(
+                    foundSymbol.SymbolName,
+                    powerShellContext);
+
+            if (commandInfo == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                IEnumerable<CommandParameterSetInfo> commandParamSets = commandInfo.ParameterSets;
+                return new ParameterSetSignatures(commandParamSets, foundSymbol);
+            }
+            catch (RuntimeException e)
+            {
+                // A RuntimeException will be thrown when an invalid attribute is
+                // on a parameter binding block and then that command/script has
+                // its signatures resolved by typing it into a script.
+                _logger.LogException("RuntimeException encountered while accessing command parameter sets", e);
+
+                return null;
+            }
+            catch (InvalidOperationException)
+            {
+                // For some commands there are no paramsets (like applications).  Until
+                // the valid command types are better understood, catch this exception
+                // which gets raised when there are no ParameterSets for the command type.
+                return null;
+            }
         }
     }
 }
