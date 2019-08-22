@@ -115,6 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     .WithHandler<SignatureHelpHandler>()
                     .WithHandler<DefinitionHandler>()
                     .WithHandler<TemplateHandlers>()
+                    .WithHandler<GetCommentHelpHandler>()
                     .OnInitialize(
                         async (languageServer, request) =>
                         {

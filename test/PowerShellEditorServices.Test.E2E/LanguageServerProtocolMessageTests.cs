@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -749,6 +750,36 @@ CanSendDefinitionRequest
                 {
                     Assert.Equal("New PowerShell Manifest Module", template2.Title);
                 });
+        }
+
+        [Fact]
+        public async Task CanSendGetCommentHelpRequest()
+        {
+            string scriptPath = NewTestFile(@"
+function CanSendGetCommentHelpRequest {
+    param(
+        [string]
+        $myParam
+    )
+}
+");
+
+            CommentHelpRequestResult commentHelpRequestResult =
+                await LanguageClient.SendRequest<CommentHelpRequestResult>(
+                    "powerShell/getCommentHelp",
+                    new CommentHelpRequestParams
+                    {
+                        DocumentUri = new Uri(scriptPath).ToString(),
+                        BlockComment = false,
+                        TriggerPosition = new Position
+                        {
+                            Line = 0,
+                            Character = 0
+                        }
+                    });
+
+            Assert.NotEmpty(commentHelpRequestResult.Content);
+            Assert.Contains("myParam", commentHelpRequestResult.Content[7]);
         }
     }
 }
