@@ -31,11 +31,21 @@ namespace PowerShellEditorServices.Engine.Utility
             throw new NotImplementedException();
         }
 
-        public static Uri ToUri(string fileName)
+        public static Uri ToUri(string filePath)
         {
-            fileName = fileName.Replace(":", "%3A").Replace("\\", "/");
-            if (!fileName.StartsWith("/")) return new Uri($"file:///{fileName}");
-            return new Uri($"file://{fileName}");
+            if (filePath.StartsWith("untitled", StringComparison.OrdinalIgnoreCase) ||
+                filePath.StartsWith("inmemory", StringComparison.OrdinalIgnoreCase))
+            {
+                return new Uri(filePath);
+            }
+
+            filePath = filePath.Replace(":", "%3A").Replace("\\", "/");
+            if (!filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+            {
+                return new Uri($"file:///{filePath}");
+            }
+
+            return new Uri($"file://{filePath}");
         }
 
         public static string FromUri(Uri uri)

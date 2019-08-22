@@ -17,13 +17,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Engine;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
 {
     using System.Management.Automation;
-    using Microsoft.PowerShell.EditorServices.Engine;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -49,6 +49,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private readonly SemaphoreSlim resumeRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
+        private readonly OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer _languageServer;
         private bool isPSReadLineEnabled;
         private ILogger logger;
         private PowerShell powerShell;
@@ -145,11 +146,16 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="isPSReadLineEnabled">
         /// Indicates whether PSReadLine should be used if possible
         /// </param>
-        public PowerShellContextService(ILogger logger, bool isPSReadLineEnabled)
+        public PowerShellContextService(
+            ILogger logger,
+            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
+            bool isPSReadLineEnabled)
         {
-
+            _languageServer = languageServer;
             this.logger = logger;
             this.isPSReadLineEnabled = isPSReadLineEnabled;
+
+            ExecutionStatusChanged += PowerShellContext_ExecutionStatusChangedAsync;
         }
 
         /// <summary>
@@ -1718,6 +1724,18 @@ namespace Microsoft.PowerShell.EditorServices
                     executionStatus,
                     executionOptions,
                     hadErrors));
+        }
+
+        /// <summary>
+        /// Event hook on the PowerShell context to listen for changes in script execution status
+        /// </summary>
+        /// <param name="sender">the PowerShell context sending the execution event</param>
+        /// <param name="e">details of the execution status change</param>
+        private void PowerShellContext_ExecutionStatusChangedAsync(object sender, ExecutionStatusChangedEventArgs e)
+        {
+            _languageServer.SendNotification(
+                "powerShell/executionStatusChanged",
+                e);
         }
 
         #endregion
