@@ -692,5 +692,41 @@ CanSendReferencesCodeLensRequest
 
             Assert.Contains("Get-Date", signatureHelp.Signatures.First().Label);
         }
+
+        [Fact]
+        public async Task CanSendDefinitionRequest()
+        {
+            string scriptPath = NewTestFile(@"
+function CanSendDefinitionRequest {
+
+}
+
+CanSendDefinitionRequest
+");
+
+            LocationOrLocationLinks locationOrLocationLinks =
+                await LanguageClient.SendRequest<LocationOrLocationLinks>(
+                    "textDocument/definition",
+                    new DefinitionParams
+                    {
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(scriptPath)
+                        },
+                        Position = new Position
+                        {
+                            Line = 5,
+                            Character = 2
+                        }
+                    });
+
+            LocationOrLocationLink locationOrLocationLink =
+                    Assert.Single(locationOrLocationLinks);
+
+            Assert.Equal(1, locationOrLocationLink.Location.Range.Start.Line);
+            Assert.Equal(9, locationOrLocationLink.Location.Range.Start.Character);
+            Assert.Equal(1, locationOrLocationLink.Location.Range.End.Line);
+            Assert.Equal(33, locationOrLocationLink.Location.Range.End.Character);
+        }
     }
 }
