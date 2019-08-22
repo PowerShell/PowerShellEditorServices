@@ -310,6 +310,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             // issues arise when redirecting stdio.
             var powerShellContext = new PowerShellContextService(
                 logger,
+                languageServer,
                 _featureFlags.Contains("PSReadLine") && _enableConsoleRepl);
 
             EditorServicesPSHostUserInterface hostUserInterface =

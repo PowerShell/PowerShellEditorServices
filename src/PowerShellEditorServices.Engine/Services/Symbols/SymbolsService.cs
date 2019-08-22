@@ -6,12 +6,16 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Language;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Symbols;
+using PowerShellEditorServices.Engine.Utility;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -25,6 +29,7 @@ namespace Microsoft.PowerShell.EditorServices
 
         private readonly ILogger _logger;
         private readonly PowerShellContextService _powerShellContextService;
+        private readonly WorkspaceService _workspaceService;
         private readonly IDocumentSymbolProvider[] _documentSymbolProviders;
 
         #endregion
@@ -38,10 +43,12 @@ namespace Microsoft.PowerShell.EditorServices
         /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
         public SymbolsService(
             ILoggerFactory factory,
-            PowerShellContextService powerShellContextService)
+            PowerShellContextService powerShellContextService,
+            WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<SymbolsService>();
             _powerShellContextService = powerShellContextService;
+            _workspaceService = workspaceService;
             _documentSymbolProviders = new IDocumentSymbolProvider[]
             {
                 new ScriptDocumentSymbolProvider(VersionUtils.PSVersion),
@@ -319,6 +326,184 @@ namespace Microsoft.PowerShell.EditorServices
                 // which gets raised when there are no ParameterSets for the command type.
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Finds the definition of a symbol in the script file or any of the
+        /// files that it references.
+        /// </summary>
+        /// <param name="sourceFile">The initial script file to be searched for the symbol's definition.</param>
+        /// <param name="foundSymbol">The symbol for which a definition will be found.</param>
+        /// <returns>The resulting GetDefinitionResult for the symbol's definition.</returns>
+        public async Task<SymbolReference> GetDefinitionOfSymbolAsync(
+            ScriptFile sourceFile,
+            SymbolReference foundSymbol)
+        {
+            Validate.IsNotNull(nameof(sourceFile), sourceFile);
+            Validate.IsNotNull(nameof(foundSymbol), foundSymbol);
+
+            ScriptFile[] referencedFiles =
+                _workspaceService.ExpandScriptReferences(
+                    sourceFile);
+
+            var filesSearched = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // look through the referenced files until definition is found
+            // or there are no more file to look through
+            SymbolReference foundDefinition = null;
+            foreach (ScriptFile scriptFile in referencedFiles)
+            {
+                foundDefinition =
+                    AstOperations.FindDefinitionOfSymbol(
+                        scriptFile.ScriptAst,
+                        foundSymbol);
+
+                filesSearched.Add(scriptFile.FilePath);
+                if (foundDefinition != null)
+                {
+                    foundDefinition.FilePath = scriptFile.FilePath;
+                    break;
+                }
+
+                if (foundSymbol.SymbolType == SymbolType.Function)
+                {
+                    // Dot-sourcing is parsed as a "Function" Symbol.
+                    string dotSourcedPath = GetDotSourcedPath(foundSymbol, scriptFile);
+                    if (scriptFile.FilePath == dotSourcedPath)
+                    {
+                        foundDefinition = new SymbolReference(SymbolType.Function, foundSymbol.SymbolName, scriptFile.ScriptAst.Extent, scriptFile.FilePath);
+                        break;
+                    }
+                }
+            }
+
+            // if the definition the not found in referenced files
+            // look for it in all the files in the workspace
+            if (foundDefinition == null)
+            {
+                // Get a list of all powershell files in the workspace path
+                IEnumerable<string> allFiles = _workspaceService.EnumeratePSFiles();
+                foreach (string file in allFiles)
+                {
+                    if (filesSearched.Contains(file))
+                    {
+                        continue;
+                    }
+
+                    foundDefinition =
+                        AstOperations.FindDefinitionOfSymbol(
+                            Parser.ParseFile(file, out Token[] tokens, out ParseError[] parseErrors),
+                            foundSymbol);
+
+                    filesSearched.Add(file);
+                    if (foundDefinition != null)
+                    {
+                        foundDefinition.FilePath = file;
+                        break;
+                    }
+                }
+            }
+
+            // if definition is not found in file in the workspace
+            // look for it in the builtin commands
+            if (foundDefinition == null)
+            {
+                CommandInfo cmdInfo =
+                    await CommandHelpers.GetCommandInfoAsync(
+                        foundSymbol.SymbolName,
+                        _powerShellContextService);
+
+                foundDefinition =
+                    FindDeclarationForBuiltinCommand(
+                        cmdInfo,
+                        foundSymbol);
+            }
+
+            return foundDefinition;
+        }
+
+        /// <summary>
+        /// Gets a path from a dot-source symbol.
+        /// </summary>
+        /// <param name="symbol">The symbol representing the dot-source expression.</param>
+        /// <param name="scriptFile">The script file containing the symbol</param>
+        /// <returns></returns>
+        private string GetDotSourcedPath(SymbolReference symbol, ScriptFile scriptFile)
+        {
+            string cleanedUpSymbol = PathUtils.NormalizePathSeparators(symbol.SymbolName.Trim('\'', '"'));
+            string psScriptRoot = Path.GetDirectoryName(scriptFile.FilePath);
+            return _workspaceService.ResolveRelativeScriptPath(psScriptRoot,
+                Regex.Replace(cleanedUpSymbol, @"\$PSScriptRoot|\${PSScriptRoot}", psScriptRoot, RegexOptions.IgnoreCase));
+        }
+
+        private SymbolReference FindDeclarationForBuiltinCommand(
+            CommandInfo commandInfo,
+            SymbolReference foundSymbol)
+        {
+            if (commandInfo == null)
+            {
+                return null;
+            }
+
+            ScriptFile[] nestedModuleFiles =
+                GetBuiltinCommandScriptFiles(
+                    commandInfo.Module);
+
+            SymbolReference foundDefinition = null;
+            foreach (ScriptFile nestedModuleFile in nestedModuleFiles)
+            {
+                foundDefinition = AstOperations.FindDefinitionOfSymbol(
+                    nestedModuleFile.ScriptAst,
+                    foundSymbol);
+
+                if (foundDefinition != null)
+                {
+                    foundDefinition.FilePath = nestedModuleFile.FilePath;
+                    break;
+                }
+            }
+
+            return foundDefinition;
+        }
+
+        private ScriptFile[] GetBuiltinCommandScriptFiles(
+            PSModuleInfo moduleInfo)
+        {
+            if (moduleInfo == null)
+            {
+                return new ScriptFile[0];
+            }
+
+            string modPath = moduleInfo.Path;
+            List<ScriptFile> scriptFiles = new List<ScriptFile>();
+            ScriptFile newFile;
+
+            // find any files where the moduleInfo's path ends with ps1 or psm1
+            // and add it to allowed script files
+            if (modPath.EndsWith(@".ps1", StringComparison.OrdinalIgnoreCase) ||
+                modPath.EndsWith(@".psm1", StringComparison.OrdinalIgnoreCase))
+            {
+                newFile = _workspaceService.GetFile(modPath);
+                newFile.IsAnalysisEnabled = false;
+                scriptFiles.Add(newFile);
+            }
+
+            if (moduleInfo.NestedModules.Count > 0)
+            {
+                foreach (PSModuleInfo nestedInfo in moduleInfo.NestedModules)
+                {
+                    string nestedModPath = nestedInfo.Path;
+                    if (nestedModPath.EndsWith(@".ps1", StringComparison.OrdinalIgnoreCase) ||
+                        nestedModPath.EndsWith(@".psm1", StringComparison.OrdinalIgnoreCase))
+                    {
+                        newFile = _workspaceService.GetFile(nestedModPath);
+                        newFile.IsAnalysisEnabled = false;
+                        scriptFiles.Add(newFile);
+                    }
+                }
+            }
+
+            return scriptFiles.ToArray();
         }
     }
 }
