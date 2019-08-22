@@ -116,6 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     .WithHandler<DefinitionHandler>()
                     .WithHandler<TemplateHandlers>()
                     .WithHandler<GetCommentHelpHandler>()
+                    .WithHandler<EvaluateHandler>()
                     .OnInitialize(
                         async (languageServer, request) =>
                         {

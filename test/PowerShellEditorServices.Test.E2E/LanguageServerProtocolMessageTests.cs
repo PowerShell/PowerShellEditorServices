@@ -781,5 +781,21 @@ function CanSendGetCommentHelpRequest {
             Assert.NotEmpty(commentHelpRequestResult.Content);
             Assert.Contains("myParam", commentHelpRequestResult.Content[7]);
         }
+
+        [Fact]
+        public async Task CanSendEvaluateRequest()
+        {
+            EvaluateResponseBody evaluateResponseBody =
+                await LanguageClient.SendRequest<EvaluateResponseBody>(
+                    "evaluate",
+                    new EvaluateRequestArguments
+                    {
+                        Expression = "Get-ChildItem"
+                    });
+
+            // These always gets returned so this test really just makes sure we get _any_ response.
+            Assert.Equal("", evaluateResponseBody.Result);
+            Assert.Equal(0, evaluateResponseBody.VariablesReference);
+        }
     }
 }
