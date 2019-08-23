@@ -114,6 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     .WithHandler<HoverHandler>()
                     .WithHandler<SignatureHelpHandler>()
                     .WithHandler<DefinitionHandler>()
+                    .WithHandler<TemplateHandlers>()
                     .OnInitialize(
                         async (languageServer, request) =>
                         {

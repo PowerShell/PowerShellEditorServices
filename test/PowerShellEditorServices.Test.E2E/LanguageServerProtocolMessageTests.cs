@@ -728,5 +728,27 @@ CanSendDefinitionRequest
             Assert.Equal(1, locationOrLocationLink.Location.Range.End.Line);
             Assert.Equal(33, locationOrLocationLink.Location.Range.End.Character);
         }
+
+        [Fact]
+        public async Task CanSendGetProjectTemplatesRequest()
+        {
+            GetProjectTemplatesResponse getProjectTemplatesResponse =
+                await LanguageClient.SendRequest<GetProjectTemplatesResponse>(
+                    "powerShell/getProjectTemplates",
+                    new GetProjectTemplatesRequest
+                    {
+                        IncludeInstalledModules = true
+                    });
+
+            Assert.Collection(getProjectTemplatesResponse.Templates.OrderBy(t => t.Title),
+                template1 =>
+                {
+                    Assert.Equal("AddPSScriptAnalyzerSettings", template1.Title);
+                },
+                template2 =>
+                {
+                    Assert.Equal("New PowerShell Manifest Module", template2.Title);
+                });
+        }
     }
 }

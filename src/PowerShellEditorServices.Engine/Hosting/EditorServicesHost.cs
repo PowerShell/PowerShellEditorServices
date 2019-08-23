@@ -19,6 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Host;
+using Microsoft.PowerShell.EditorServices.Templates;
 using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
@@ -244,6 +245,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                         GetFullyInitializedPowerShellContext(
                             provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
                             profilePaths))
+                .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<ExtensionService>(
                     (provider) =>
