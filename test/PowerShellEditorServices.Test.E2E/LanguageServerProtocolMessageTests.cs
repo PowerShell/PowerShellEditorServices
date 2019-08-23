@@ -808,5 +808,20 @@ function CanSendGetCommentHelpRequest {
             // There should be at least 20 commands or so.
             Assert.True(pSCommandMessages.Count > 20);
         }
+
+        [Fact]
+        public async Task CanSendExpandAliasRequest()
+        {
+            ExpandAliasResult expandAliasResult =
+                await LanguageClient.SendRequest<ExpandAliasResult>(
+                    "powerShell/expandAlias",
+                    new ExpandAliasParams
+                    {
+                        Text = "gci"
+                    }
+                );
+
+            Assert.Equal("Get-ChildItem", expandAliasResult.Text);
+        }
     }
 }

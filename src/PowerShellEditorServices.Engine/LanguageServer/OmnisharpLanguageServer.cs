@@ -119,6 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
                     .WithHandler<EvaluateHandler>()
                     .WithHandler<GetCommandHandler>()
                     .WithHandler<ShowHelpHandler>()
+                    .WithHandler<ExpandAliasHandler>()
                     .OnInitialize(
                         async (languageServer, request) =>
                         {
