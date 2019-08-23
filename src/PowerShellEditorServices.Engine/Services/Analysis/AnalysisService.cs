@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices
     /// Provides a high-level service for performing semantic analysis
     /// of PowerShell scripts.
     /// </summary>
-    internal class AnalysisService : IDisposable
+    public class AnalysisService : IDisposable
     {
         #region Static fields
 
