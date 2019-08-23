@@ -102,8 +102,8 @@ namespace PowerShellEditorServices.Test.E2E
         [Fact]
         public async Task CanSendPowerShellGetVersionRequest()
         {
-            PowerShellVersionDetails details
-                = await LanguageClient.SendRequest<PowerShellVersionDetails>("powerShell/getVersion", new GetVersionParams());
+            PowerShellVersion details
+                = await LanguageClient.SendRequest<PowerShellVersion>("powerShell/getVersion", new GetVersionParams());
 
             if(PwshExe == "powershell")
             {
@@ -796,6 +796,17 @@ function CanSendGetCommentHelpRequest {
             // These always gets returned so this test really just makes sure we get _any_ response.
             Assert.Equal("", evaluateResponseBody.Result);
             Assert.Equal(0, evaluateResponseBody.VariablesReference);
+        }
+
+        [Fact]
+        public async Task CanSendGetCommandRequest()
+        {
+            List<PSCommandMessage> pSCommandMessages =
+                await LanguageClient.SendRequest<List<PSCommandMessage>>("powerShell/getCommand", new GetCommandParams());
+
+            Assert.NotEmpty(pSCommandMessages);
+            // There should be at least 20 commands or so.
+            Assert.True(pSCommandMessages.Count > 20);
         }
     }
 }

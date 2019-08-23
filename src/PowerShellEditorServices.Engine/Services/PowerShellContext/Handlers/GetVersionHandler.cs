@@ -15,7 +15,7 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
             _logger = factory.CreateLogger<GetVersionHandler>();
         }
 
-        public Task<PowerShellVersionDetails> Handle(GetVersionParams request, CancellationToken cancellationToken)
+        public Task<PowerShellVersion> Handle(GetVersionParams request, CancellationToken cancellationToken)
         {
             var architecture = PowerShellProcessArchitecture.Unknown;
             // This should be changed to using a .NET call sometime in the future... but it's just for logging purposes.
@@ -32,7 +32,8 @@ namespace PowerShellEditorServices.Engine.Services.Handlers
                 }
             }
 
-            return Task.FromResult(new PowerShellVersionDetails {
+            return Task.FromResult(new PowerShellVersion
+            {
                 Version = VersionUtils.PSVersion.ToString(),
                 Edition = VersionUtils.PSEdition,
                 DisplayVersion = VersionUtils.PSVersion.ToString(2),
