@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.PowerShell.EditorServices
