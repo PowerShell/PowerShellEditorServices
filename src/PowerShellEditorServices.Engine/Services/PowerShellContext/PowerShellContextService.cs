@@ -20,6 +20,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Engine;
 using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
+using PowerShellEditorServices.Engine.Services.Handlers;
 
 namespace Microsoft.PowerShell.EditorServices
 {
@@ -155,6 +156,7 @@ namespace Microsoft.PowerShell.EditorServices
             this.logger = logger;
             this.isPSReadLineEnabled = isPSReadLineEnabled;
 
+            RunspaceChanged += PowerShellContext_RunspaceChangedAsync;
             ExecutionStatusChanged += PowerShellContext_ExecutionStatusChangedAsync;
         }
 
@@ -1724,6 +1726,39 @@ namespace Microsoft.PowerShell.EditorServices
                     executionStatus,
                     executionOptions,
                     hadErrors));
+        }
+
+        private void PowerShellContext_RunspaceChangedAsync(object sender, RunspaceChangedEventArgs e)
+        {
+            _languageServer.SendNotification(
+                "powerShell/runspaceChanged",
+                new MinifiedRunspaceDetails(e.NewRunspace));
+        }
+
+
+        // TODO: Refactor this, RunspaceDetails, PowerShellVersion, and PowerShellVersionDetails
+        // It's crazy that this is 4 different types.
+        // P.S. MinifiedRunspaceDetails use to be called RunspaceDetails... as in, there were 2 DIFFERENT
+        // RunspaceDetails types in this codebase but I've changed it to be minified since the type is
+        // slightly simpler than the other RunspaceDetails.
+        public class MinifiedRunspaceDetails
+        {
+            public PowerShellVersion PowerShellVersion { get; set; }
+
+            public RunspaceLocation RunspaceType { get; set; }
+
+            public string ConnectionString { get; set; }
+
+            public MinifiedRunspaceDetails()
+            {
+            }
+
+            public MinifiedRunspaceDetails(RunspaceDetails eventArgs)
+            {
+                this.PowerShellVersion = new PowerShellVersion(eventArgs.PowerShellVersion);
+                this.RunspaceType = eventArgs.Location;
+                this.ConnectionString = eventArgs.ConnectionString;
+            }
         }
 
         /// <summary>
