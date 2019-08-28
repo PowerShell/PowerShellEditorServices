@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices.Symbols
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.Symbols
 {
     /// <summary>
     /// The visitor used to find all the symbols (function and class defs) in the AST.

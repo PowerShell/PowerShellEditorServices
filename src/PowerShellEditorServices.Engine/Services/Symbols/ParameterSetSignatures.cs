@@ -6,9 +6,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Management.Automation;
-using Microsoft.PowerShell.EditorServices.Symbols;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.Symbols
 {
     /// <summary>
     /// A class for containing the commandName, the command's
@@ -17,6 +17,7 @@ namespace Microsoft.PowerShell.EditorServices
     public class ParameterSetSignatures
     {
         #region Properties
+
         /// <summary>
         /// Gets the name of the command
         /// </summary>
@@ -31,6 +32,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// Gets the script extent of the command
         /// </summary>
         public ScriptRegion ScriptRegion { get; internal set; }
+
         #endregion
 
         /// <summary>

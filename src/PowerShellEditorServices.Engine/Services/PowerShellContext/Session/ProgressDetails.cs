@@ -5,7 +5,7 @@
 
 using System.Management.Automation;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides details about the progress of a particular activity.

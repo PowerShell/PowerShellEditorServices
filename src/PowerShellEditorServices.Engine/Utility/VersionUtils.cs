@@ -1,8 +1,13 @@
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Utility
 {
     /// <summary>
     /// General purpose common utilities to prevent reimplementation.

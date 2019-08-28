@@ -11,7 +11,7 @@ using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Reflection;
 
-namespace Microsoft.PowerShell.EditorServices.Console
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Contains the details of an input field shown from an

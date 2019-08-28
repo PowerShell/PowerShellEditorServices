@@ -1,13 +1,20 @@
-﻿using System.Collections.Generic;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices;
+using Microsoft.PowerShell.EditorServices.Engine.Services;
+using Microsoft.PowerShell.EditorServices.Engine.Services.Symbols;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
-namespace PowerShellEditorServices.Engine.Services.Handlers
+namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
     public class HoverHandler : IHoverHandler
     {

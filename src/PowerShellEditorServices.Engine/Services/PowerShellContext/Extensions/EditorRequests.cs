@@ -5,7 +5,7 @@
 
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     public class ExtensionCommandAddedNotification
     {

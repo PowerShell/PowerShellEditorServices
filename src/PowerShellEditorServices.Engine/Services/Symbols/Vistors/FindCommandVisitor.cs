@@ -6,7 +6,7 @@
 using System.Linq;
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices.Symbols
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.Symbols
 {
     /// <summary>
     /// The vistior used to find the commandAst of a specific location in an AST

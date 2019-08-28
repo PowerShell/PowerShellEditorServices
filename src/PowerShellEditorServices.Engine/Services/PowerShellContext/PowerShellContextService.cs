@@ -17,14 +17,15 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Engine;
-using Microsoft.PowerShell.EditorServices.Session;
 using Microsoft.PowerShell.EditorServices.Utility;
-using PowerShellEditorServices.Engine.Services.Handlers;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services
 {
     using System.Management.Automation;
+    using Microsoft.PowerShell.EditorServices.Engine.Handlers;
+    using Microsoft.PowerShell.EditorServices.Engine.Hosting;
+    using Microsoft.PowerShell.EditorServices.Engine.Logging;
+    using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.

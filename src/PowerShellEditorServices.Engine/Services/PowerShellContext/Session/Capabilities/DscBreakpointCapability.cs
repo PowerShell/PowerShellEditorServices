@@ -6,7 +6,7 @@
 //using System.Linq;
 //using System.Threading.Tasks;
 
-//namespace Microsoft.PowerShell.EditorServices.Session.Capabilities
+//namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 //{
 //    using Microsoft.Extensions.Logging;
 //    using Microsoft.PowerShell.EditorServices.Utility;

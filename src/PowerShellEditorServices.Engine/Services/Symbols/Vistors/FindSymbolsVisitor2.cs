@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.Symbols
 {
     // TODO: Restore this when we figure out how to support multiple
     //       PS versions in the new PSES-as-a-module world (issue #276)

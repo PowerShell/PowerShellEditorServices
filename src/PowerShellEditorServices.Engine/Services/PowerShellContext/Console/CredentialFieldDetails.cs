@@ -7,7 +7,7 @@ using System;
 using System.Management.Automation;
 using System.Security;
 
-namespace Microsoft.PowerShell.EditorServices.Console
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Contains the details of a PSCredential field shown

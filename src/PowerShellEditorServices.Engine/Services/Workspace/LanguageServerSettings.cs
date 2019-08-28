@@ -10,8 +10,9 @@ using System.IO;
 using System.Reflection;
 using System.Security;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Engine.Logging;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.Configuration
 {
     public class LanguageServerSettings
     {

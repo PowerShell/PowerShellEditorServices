@@ -15,9 +15,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Engine.Server;
+using Microsoft.PowerShell.EditorServices.Utility;
 using Serilog;
 
-namespace Microsoft.PowerShell.EditorServices.Engine
+namespace Microsoft.PowerShell.EditorServices.Engine.Hosting
 {
     public enum EditorServicesHostStatus
     {

@@ -5,16 +5,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Symbols;
+using Microsoft.PowerShell.EditorServices.Engine.Services;
+using Microsoft.PowerShell.EditorServices.Engine.Services.Symbols;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Engine.Utility;
+using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using PowerShellEditorServices.Engine.Utility;
 
-namespace Microsoft.PowerShell.EditorServices.CodeLenses
+namespace Microsoft.PowerShell.EditorServices.Engine.CodeLenses
 {
     /// <summary>
     /// Provides the "reference" code lens by extracting document symbols.
