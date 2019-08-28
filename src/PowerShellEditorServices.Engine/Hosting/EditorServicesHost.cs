@@ -6,20 +6,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Host;
-using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Extensions;
-using Microsoft.PowerShell.EditorServices.Host;
-using Microsoft.PowerShell.EditorServices.Templates;
+using Microsoft.PowerShell.EditorServices.Engine.Server;
 using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Engine
@@ -62,8 +57,6 @@ namespace Microsoft.PowerShell.EditorServices.Engine
     {
         #region Private Fields
 
-        private readonly IServiceCollection _serviceCollection;
-
         private readonly HostDetails _hostDetails;
 
         private readonly PSHost _internalHost;
@@ -74,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine
 
         private readonly string[] _additionalModules;
 
-        private ILanguageServer _languageServer;
+        private PsesLanguageServer _languageServer;
 
         private Microsoft.Extensions.Logging.ILogger _logger;
 
@@ -139,16 +132,15 @@ namespace Microsoft.PowerShell.EditorServices.Engine
             Validate.IsNotNull(nameof(hostDetails), hostDetails);
             Validate.IsNotNull(nameof(internalHost), internalHost);
 
-            _serviceCollection = new ServiceCollection();
             _hostDetails = hostDetails;
 
             //this._hostDetails = hostDetails;
-            this._enableConsoleRepl = enableConsoleRepl;
+            _enableConsoleRepl = enableConsoleRepl;
             //this.bundledModulesPath = bundledModulesPath;
-            this._additionalModules = additionalModules ?? Array.Empty<string>();
-            this._featureFlags = new HashSet<string>(featureFlags ?? Array.Empty<string>());
+            _additionalModules = additionalModules ?? Array.Empty<string>();
+            _featureFlags = new HashSet<string>(featureFlags ?? Array.Empty<string>());
             //this.serverCompletedTask = new TaskCompletionSource<bool>();
-            this._internalHost = internalHost;
+            _internalHost = internalHost;
 
 #if DEBUG
             if (waitForDebugger)
@@ -236,59 +228,33 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
             _logger.LogInformation($"LSP NamedPipe: {config.InOutPipeName}\nLSP OutPipe: {config.OutPipeName}");
 
-            _serviceCollection
-                .AddSingleton<WorkspaceService>()
-                .AddSingleton<SymbolsService>()
-                .AddSingleton<ConfigurationService>()
-                .AddSingleton<PowerShellContextService>(
-                    (provider) =>
-                        GetFullyInitializedPowerShellContext(
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                            profilePaths))
-                .AddSingleton<TemplateService>()
-                .AddSingleton<EditorOperationsService>()
-                .AddSingleton<ExtensionService>(
-                    (provider) =>
-                    {
-                        var extensionService = new ExtensionService(
-                            provider.GetService<PowerShellContextService>(),
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>());
-                        extensionService.InitializeAsync(
-                            serviceProvider: provider,
-                            editorOperations: provider.GetService<EditorOperationsService>())
-                            .Wait();
-                        return extensionService;
-                    })
-                .AddSingleton<AnalysisService>(
-                    (provider) =>
-                    {
-                        return AnalysisService.Create(
-                            provider.GetService<ConfigurationService>(),
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                            _factory.CreateLogger<AnalysisService>());
-                    });
+            
 
             switch (config.TransportType)
             {
                 case EditorServiceTransportType.NamedPipe:
-                    _languageServer = new OmnisharpLanguageServerBuilder(_serviceCollection)
-                    {
-                        NamedPipeName = config.InOutPipeName ?? config.InPipeName,
-                        OutNamedPipeName = config.OutPipeName,
-                        LoggerFactory = _factory,
-                        MinimumLogLevel = LogLevel.Trace,
-                    }
-                    .BuildLanguageServer();
+                    _languageServer = new NamedPipePsesLanguageServer(
+                        _factory,
+                        LogLevel.Trace,
+                        _enableConsoleRepl,
+                        _featureFlags,
+                        _hostDetails,
+                        _additionalModules,
+                        _internalHost,
+                        profilePaths,
+                        config.InOutPipeName ?? config.InPipeName,
+                        config.OutPipeName);
                     break;
 
                 case EditorServiceTransportType.Stdio:
-                    _languageServer = new OmnisharpLanguageServerBuilder(_serviceCollection)
-                    {
-                        Stdio = true,
-                        LoggerFactory = _factory,
-                        MinimumLogLevel = LogLevel.Trace,
-                    }
-                    .BuildLanguageServer();
+                    _languageServer = new StdioPsesLanguageServer(
+                        _factory,
+                        LogLevel.Trace,
+                        _featureFlags,
+                        _hostDetails,
+                        _additionalModules,
+                        _internalHost,
+                        profilePaths);
                     break;
             }
 
@@ -300,57 +266,6 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                 string.Format(
                     "Language service started, type = {0}, endpoint = {1}",
                     config.TransportType, config.Endpoint));
-        }
-
-        private PowerShellContextService GetFullyInitializedPowerShellContext(
-            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
-            ProfilePaths profilePaths)
-        {
-            var logger = _factory.CreateLogger<PowerShellContextService>();
-
-            // PSReadLine can only be used when -EnableConsoleRepl is specified otherwise
-            // issues arise when redirecting stdio.
-            var powerShellContext = new PowerShellContextService(
-                logger,
-                languageServer,
-                _featureFlags.Contains("PSReadLine") && _enableConsoleRepl);
-
-            EditorServicesPSHostUserInterface hostUserInterface =
-                _enableConsoleRepl
-                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost)
-                    : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
-
-            EditorServicesPSHost psHost =
-                new EditorServicesPSHost(
-                    powerShellContext,
-                    _hostDetails,
-                    hostUserInterface,
-                    logger);
-
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
-            powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
-
-            powerShellContext.ImportCommandsModuleAsync(
-                Path.Combine(
-                    Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
-                    @"..\Commands"));
-
-            // TODO: This can be moved to the point after the $psEditor object
-            // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach (string module in this._additionalModules)
-            {
-                var command =
-                    new PSCommand()
-                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                        .AddParameter("Name", module);
-
-                powerShellContext.ExecuteCommandAsync<PSObject>(
-                    command,
-                    sendOutputToHost: false,
-                    sendErrorToHost: true);
-            }
-
-            return powerShellContext;
         }
 
         /// <summary>
