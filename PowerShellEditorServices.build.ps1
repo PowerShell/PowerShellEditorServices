@@ -64,6 +64,8 @@ $script:RequiredBuildAssets = @{
             'publish/OmniSharp.Extensions.JsonRpc.dll',
             'publish/OmniSharp.Extensions.LanguageProtocol.dll',
             'publish/OmniSharp.Extensions.LanguageServer.dll',
+            'publish/OmniSharp.Extensions.DebugAdapter.dll',
+            'publish/OmniSharp.Extensions.DebugAdapter.Server.dll',
             'publish/runtimes/linux-64/native/libdisablekeyecho.so',
             'publish/runtimes/osx-64/native/libdisablekeyecho.dylib',
             'publish/Serilog.dll',
