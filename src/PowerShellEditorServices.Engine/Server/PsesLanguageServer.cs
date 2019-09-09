@@ -22,7 +22,9 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
 {
     internal abstract class PsesLanguageServer
     {
-        protected readonly ILoggerFactory _loggerFactory;
+        internal ILoggerFactory LoggerFactory { get; private set; }
+        internal ILanguageServer LanguageServer { get; private set; }
+
         private readonly LogLevel _minimumLogLevel;
         private readonly bool _enableConsoleRepl;
         private readonly HashSet<string> _featureFlags;
@@ -31,8 +33,6 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
         private readonly PSHost _internalHost;
         private readonly ProfilePaths _profilePaths;
         private readonly TaskCompletionSource<bool> _serverStart;
-
-        private ILanguageServer _languageServer;
 
         internal PsesLanguageServer(
             ILoggerFactory factory,
@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
             PSHost internalHost,
             ProfilePaths profilePaths)
         {
-            _loggerFactory = factory;
+            LoggerFactory = factory;
             _minimumLogLevel = minimumLogLevel;
             _enableConsoleRepl = enableConsoleRepl;
             _featureFlags = featureFlags;
@@ -57,10 +57,10 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
 
         public async Task StartAsync()
         {
-            _languageServer = await LanguageServer.From(options =>
+            LanguageServer = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options =>
             {
                 options.AddDefaultLoggingProvider();
-                options.LoggerFactory = _loggerFactory;
+                options.LoggerFactory = LoggerFactory;
                 ILogger logger = options.LoggerFactory.CreateLogger("OptionsStartup");
                 options.Services = new ServiceCollection()
                     .AddSingleton<WorkspaceService>()
@@ -155,14 +155,14 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
         public async Task WaitForShutdown()
         {
             await _serverStart.Task;
-            await _languageServer.WaitForExit;
+            await LanguageServer.WaitForExit;
         }
 
         private PowerShellContextService GetFullyInitializedPowerShellContext(
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
             ProfilePaths profilePaths)
         {
-            var logger = _loggerFactory.CreateLogger<PowerShellContextService>();
+            var logger = LoggerFactory.CreateLogger<PowerShellContextService>();
 
             // PSReadLine can only be used when -EnableConsoleRepl is specified otherwise
             // issues arise when redirecting stdio.

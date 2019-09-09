@@ -32,4 +32,8 @@
     <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="1.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\DebugAdapter\Handlers\" />
+    <Folder Include="Services\DebugAdapter\Debugging\" />
+  </ItemGroup>
 </Project>

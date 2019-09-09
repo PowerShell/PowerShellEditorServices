@@ -3,32 +3,24 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System.Collections.Generic;
+using System;
 using System.IO;
-using System.Management.Automation;
-using System.Management.Automation.Host;
-using System.Management.Automation.Runspaces;
-using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Engine.Handlers;
-using Microsoft.PowerShell.EditorServices.Engine.Hosting;
 using Microsoft.PowerShell.EditorServices.Engine.Services;
-using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Serialization;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Server
 {
-    internal class PsesDebugServer
+    internal class PsesDebugServer : IDisposable
     {
         protected readonly ILoggerFactory _loggerFactory;
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
-        private readonly TaskCompletionSource<bool> _serverStart;
-        
 
         private IJsonRpcServer _jsonRpcServer;
 
@@ -40,11 +32,9 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
             _loggerFactory = factory;
             _inputStream = inputStream;
             _outputStream = outputStream;
-            _serverStart = new TaskCompletionSource<bool>();
-
         }
 
-        public async Task StartAsync()
+        public async Task StartAsync(IServiceProvider languageServerServiceProvider)
         {
             _jsonRpcServer = await JsonRpcServer.From(options =>
             {
@@ -52,53 +42,39 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
                 options.Reciever = new DapReciever();
                 options.LoggerFactory = _loggerFactory;
                 ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
-                options.AddHandler<PowershellInitializeHandler>();
-                // options.Services = new ServiceCollection()
-                //     .AddSingleton<WorkspaceService>()
-                //     .AddSingleton<SymbolsService>()
-                //     .AddSingleton<ConfigurationService>()
-                //     .AddSingleton<PowerShellContextService>(
-                //         (provider) =>
-                //             GetFullyInitializedPowerShellContext(
-                //                 provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                //                 _profilePaths))
-                //     .AddSingleton<TemplateService>()
-                //     .AddSingleton<EditorOperationsService>()
-                //     .AddSingleton<ExtensionService>(
-                //         (provider) =>
-                //         {
-                //             var extensionService = new ExtensionService(
-                //                 provider.GetService<PowerShellContextService>(),
-                //                 provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>());
-                //             extensionService.InitializeAsync(
-                //                 serviceProvider: provider,
-                //                 editorOperations: provider.GetService<EditorOperationsService>())
-                //                 .Wait();
-                //             return extensionService;
-                //         })
-                //     .AddSingleton<AnalysisService>(
-                //         (provider) =>
-                //         {
-                //             return AnalysisService.Create(
-                //                 provider.GetService<ConfigurationService>(),
-                //                 provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                //                 options.LoggerFactory.CreateLogger<AnalysisService>());
-                //         });
-
+                options.Services = new ServiceCollection()
+                    .AddSingleton(languageServerServiceProvider.GetService<PowerShellContextService>())
+                    .AddSingleton<DebugService>()
+                    .AddSingleton<DebugStateService>();
+                
                 options
                     .WithInput(_inputStream)
                     .WithOutput(_outputStream);
 
                 logger.LogInformation("Adding handlers");
 
+                options
+                    .WithHandler<InitializeHandler>()
+                    .WithHandler<LaunchAndAttachHandler>();
+
                 logger.LogInformation("Handlers added");
             });
         }
 
-        public async Task WaitForShutdown()
+        public void Dispose()
         {
-            await _serverStart.Task;
-            //await _languageServer.;
+            _jsonRpcServer.Dispose();
         }
+
+        #region Events
+
+        public event EventHandler SessionEnded;
+
+        internal void OnSessionEnded()
+        {
+            SessionEnded?.Invoke(this, null);
+        }
+
+        #endregion
     }
 }

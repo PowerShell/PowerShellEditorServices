@@ -318,7 +318,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     Task.WhenAll(tasks)
                         .ContinueWith(async task => {
                             _logger.LogInformation("Starting debug server");
-                            await _debugServer.StartAsync();
+                            await _debugServer.StartAsync(_languageServer.LanguageServer.Services);
                             _logger.LogInformation(
                                 $"Debug service started, type = {config.TransportType}, endpoint = {config.Endpoint}");
                         });
@@ -327,6 +327,12 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                 default:
                     throw new NotSupportedException("not supported");
             }
+
+            _debugServer.SessionEnded += (sender, eventArgs) =>
+            {
+                _debugServer.Dispose();
+                StartDebugService(config, profilePaths, useExistingSession);
+            };
         }
 
         /// <summary>
