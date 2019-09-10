@@ -136,6 +136,11 @@ function New-EditorFile {
                         $preview = $true
                     }
 
+                    # Resolve full path before passing to editor
+                    if (!([System.IO.Path]::IsPathRooted($fileName))) {
+                        $fileName = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($fileName)
+                    }
+
                     $psEditor.Workspace.OpenFile($fileName, $preview)
                     $psEditor.GetEditorContext().CurrentFile.InsertText(($valueList | Out-String))
                 } else {

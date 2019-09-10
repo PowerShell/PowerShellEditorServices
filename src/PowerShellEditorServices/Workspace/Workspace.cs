@@ -29,6 +29,13 @@ namespace Microsoft.PowerShell.EditorServices
             "*.psd1"
         };
 
+        private static readonly string[] s_supportedUriSchemes = new[]
+        {
+            "file",
+            "untitled",
+            "inmemory"
+        };
+
         private ILogger logger;
         private Version powerShellVersion;
         private Dictionary<string, ScriptFile> workspaceFiles = new Dictionary<string, ScriptFile>();
@@ -144,15 +151,30 @@ namespace Microsoft.PowerShell.EditorServices
         {
             try
             {
+                if (filePath.Contains(":/") // Quick heuristic to determine if we might have a URI
+                    && !s_supportedUriSchemes.Contains(new Uri(filePath).Scheme))
+                {
+                    scriptFile = null;
+                    return false;
+                }
+            }
+            catch
+            {
+                // If something goes wrong trying to check for URIs, just proceed to normal logic
+            }
+
+            try
+            {
                 scriptFile = GetFile(filePath);
                 return true;
             }
             catch (Exception e) when (
-                e is IOException ||
-                e is SecurityException ||
+                e is NotSupportedException ||
                 e is FileNotFoundException ||
                 e is DirectoryNotFoundException ||
                 e is PathTooLongException ||
+                e is IOException ||
+                e is SecurityException ||
                 e is UnauthorizedAccessException)
             {
                 this.logger.WriteHandledException($"Failed to get file for {nameof(filePath)}: '{filePath}'", e);
@@ -345,6 +367,14 @@ namespace Microsoft.PowerShell.EditorServices
 
                     continue;
                 }
+                catch (Exception e)
+                {
+                    this.logger.WriteHandledException(
+                        $"Could not enumerate files in the path '{folderPath}' due to an exception",
+                        e);
+
+                    continue;
+                }
 
                 foundFiles.AddRange(psFiles);
             }
@@ -386,6 +416,15 @@ namespace Microsoft.PowerShell.EditorServices
 
                 return;
             }
+            catch (Exception e)
+            {
+                this.logger.WriteHandledException(
+                    $"Could not enumerate directories in the path '{folderPath}' due to an exception",
+                    e);
+
+                return;
+            }
+
 
             foreach (string subDir in subDirs)
             {
@@ -605,6 +644,105 @@ namespace Microsoft.PowerShell.EditorServices
             sb.Append(fileUri.Substring(12)); // The rest of the URI after the colon
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Converts a file system path into a DocumentUri required by Language Server Protocol.
+        /// </summary>
+        /// <remarks>
+        /// When sending a document path to a LSP client, the path must be provided as a
+        /// DocumentUri in order to features like the Problems window or peek definition
+        /// to be able to open the specified file.
+        /// </remarks>
+        /// <param name="path">
+        /// A file system path. Note: if the path is already a DocumentUri, it will be returned unmodified.
+        /// </param>
+        /// <returns>The file system path encoded as a DocumentUri.</returns>
+        public static string ConvertPathToDocumentUri(string path)
+        {
+            const string fileUriPrefix = "file:";
+            const string untitledUriPrefix = "untitled:";
+
+            // If path is already in document uri form, there is nothing to convert.
+            if (path.StartsWith(untitledUriPrefix, StringComparison.Ordinal) ||
+                path.StartsWith(fileUriPrefix, StringComparison.Ordinal))
+            {
+                return path;
+            }
+
+            string escapedPath = Uri.EscapeDataString(path);
+
+            // Max capacity of the StringBuilder will be the current escapedPath length
+            // plus extra chars for file:///.
+            var docUriStrBld = new StringBuilder(escapedPath.Length + fileUriPrefix.Length + 3);
+            docUriStrBld.Append(fileUriPrefix).Append("//");
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // VSCode file URIs on Windows need the drive letter to be lowercase. Search the
+                // original path for colon since a char search (no string culture involved) is
+                // faster than a string search.  If found, then lowercase the associated drive letter.
+                if (path.Contains(':'))
+                {
+                    // A valid, drive-letter based path converted to URI form needs to be prefixed
+                    // with a / to indicate the path is an absolute path.
+                    docUriStrBld.Append("/");
+                    int prefixLen = docUriStrBld.Length;
+
+                    docUriStrBld.Append(escapedPath);
+
+                    // Uri.EscapeDataString goes a bit far, encoding \ chars. Also, VSCode wants / instead of \.
+                    docUriStrBld.Replace("%5C", "/");
+
+                    // Find the first colon after the "file:///" prefix, skipping the first char after
+                    // the prefix since a Windows path cannot start with a colon. End the check at
+                    // less than docUriStrBld.Length - 2 since we need to look-ahead two characters.
+                    for (int i = prefixLen + 1; i < docUriStrBld.Length - 2; i++)
+                    {
+                        if ((docUriStrBld[i] == '%') && (docUriStrBld[i + 1] == '3') && (docUriStrBld[i + 2] == 'A'))
+                        {
+                            int driveLetterIndex = i - 1;
+                            char driveLetter = char.ToLowerInvariant(docUriStrBld[driveLetterIndex]);
+                            docUriStrBld.Replace(docUriStrBld[driveLetterIndex], driveLetter, driveLetterIndex, 1);
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    // This is a Windows path without a drive specifier, must be either a relative or UNC path.
+                    int prefixLen = docUriStrBld.Length;
+
+                    docUriStrBld.Append(escapedPath);
+
+                    // Uri.EscapeDataString goes a bit far, encoding \ chars. Also, VSCode wants / instead of \.
+                    docUriStrBld.Replace("%5C", "/");
+
+                    // The proper URI form for a UNC path is file://server/share.  In the case of a UNC
+                    // path, remove the path's leading // because the file:// prefix already provides it.
+                    if ((docUriStrBld.Length > prefixLen + 1) &&
+                        (docUriStrBld[prefixLen] == '/') &&
+                        (docUriStrBld[prefixLen + 1] == '/'))
+                    {
+                        docUriStrBld.Remove(prefixLen, 2);
+                    }
+                }
+            }
+            else
+            {
+                // On non-Windows systems, append the escapedPath and undo the over-aggressive
+                // escaping of / done by Uri.EscapeDataString.
+                docUriStrBld.Append(escapedPath).Replace("%2F", "/");
+            }
+
+            if (!Utils.IsNetCore)
+            {
+                // ' is not encoded by Uri.EscapeDataString in Windows PowerShell 5.x.
+                // This is apparently a difference between .NET Framework and .NET Core.
+                docUriStrBld.Replace("'", "%27");
+            }
+
+            return docUriStrBld.ToString();
         }
 
         #endregion

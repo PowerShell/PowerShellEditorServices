@@ -18,7 +18,6 @@ param(
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
-$script:IsCIBuild = $env:APPVEYOR -ne $null
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:TargetFrameworksParam = "/p:TargetFrameworks=\`"$(if (!$script:IsUnix) { "net452;" })netstandard1.6\`""
 $script:SaveModuleSupportsAllowPrerelease = (Get-Command Save-Module).Parameters.ContainsKey("AllowPrerelease")
@@ -33,7 +32,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
     Add-Type -Assembly System.IO.Compression.FileSystem
 }
 
-task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi, PackageNuGet {
+task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi {
 
     $requiredSdkVersion = "2.0.0"
 
@@ -114,14 +113,17 @@ task Clean {
     Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
 }
 
-task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
+task GetProductVersion -Before PackageModule, UploadArtifacts {
     [xml]$props = Get-Content .\PowerShellEditorServices.Common.props
 
     $script:BuildNumber = 9999
     $script:VersionSuffix = $props.Project.PropertyGroup.VersionSuffix
 
-    if ($env:APPVEYOR) {
-        $script:BuildNumber = $env:APPVEYOR_BUILD_NUMBER
+    if ($env:TF_BUILD) {
+        # SYSTEM_PHASENAME is the Job name.
+        # Job names can only include `_` but that's not a valid character for versions.
+        $jobname = $env:SYSTEM_PHASENAME -replace '_', ''
+        $script:BuildNumber = "$jobname-$env:BUILD_BUILDNUMBER"
     }
 
     if ($script:VersionSuffix -ne $null) {
@@ -155,12 +157,7 @@ task CreateBuildInfo -Before Build {
     $buildOrigin = "<development>"
 
     # Set build info fields on build platforms
-    if ($env:APPVEYOR)
-    {
-        $buildVersion = $env:APPVEYOR_BUILD_VERSION
-        $buildOrigin = if ($env:CI) { "AppVeyor CI" } else { "AppVeyor" }
-    }
-    elseif ($env:TF_BUILD)
+    if ($env:TF_BUILD)
     {
         $psd1Path = [System.IO.Path]::Combine($PSScriptRoot, "module", "PowerShellEditorServices", "PowerShellEditorServices.psd1")
         $buildVersion = (Import-PowerShellDataFile -LiteralPath $psd1Path).Version
@@ -207,25 +204,7 @@ task Build {
     Copy-Item $PSScriptRoot\src\PowerShellEditorServices\bin\$Configuration\netstandard1.6\publish\runtimes\linux-64\native\libdisablekeyecho.so -Destination $PSScriptRoot\src\PowerShellEditorServices.Host\bin\$Configuration\netstandard1.6
 }
 
-function UploadTestLogs {
-    if ($script:IsCIBuild) {
-        $testLogsPath =  "$PSScriptRoot/test/PowerShellEditorServices.Test.Host/bin/$Configuration/net452/logs"
-        $testLogsZipPath = "$PSScriptRoot/TestLogs.zip"
-
-        if (Test-Path $testLogsPath) {
-            [System.IO.Compression.ZipFile]::CreateFromDirectory(
-                $testLogsPath,
-                $testLogsZipPath)
-
-            Push-AppveyorArtifact $testLogsZipPath
-        }
-        else {
-            Write-Host "`n### WARNING: Test logs could not be found!`n" -ForegroundColor Yellow
-        }
-    }
-}
-
-function XunitTraitFilter {
+function DotNetTestFilter {
     # Reference https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
     if ($TestFilter) { "-trait $TestFilter" } else { "" }
 }
@@ -235,28 +214,19 @@ task Test TestServer,TestProtocol
 task TestServer -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
+    exec { & $script:dotnetExe xunit -xml $PSScriptRoot/PowerShellEditorServices.Test.Results.xml -configuration $Configuration -framework net452 -verbose -nobuild (DotNetTestFilter) }
 }
 
 task TestProtocol -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
+    exec { & $script:dotnetExe xunit -xml $PSScriptRoot/PowerShellEditorServices.Test.Protocol.Results.xml -configuration $Configuration -framework net452 -verbose -nobuild (DotNetTestFilter) }
 }
 
 task TestHost -If { !$script:IsUnix } {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
     exec { & $script:dotnetExe build -c $Configuration -f net452 }
-    exec { & $script:dotnetExe xunit -configuration $Configuration -framework net452 -verbose -nobuild (XunitTraitFilter) }
-}
-
-task CITest ?Test, {
-    # This task is used to ensure we have a chance to upload
-    # test logs as a CI artifact when the tests fail
-    if (error Test) {
-        UploadTestLogs
-        Write-Error "Failing build due to test failure."
-    }
+    exec { & $script:dotnetExe xunit -xml $PSScriptRoot/PowerShellEditorServices.Test.Host.Results.xml -configuration $Configuration -framework net452 -verbose -nobuild (DotNetTestFilter) }
 }
 
 task LayoutModule -After Build {
@@ -343,42 +313,59 @@ task RestorePsesModules -After Build {
     # Save each module in the modules.json file
     foreach ($moduleName in $moduleInfos.Keys)
     {
-        if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName))
+        $moduleInstallPath = (Join-Path -Path $subModulePath -ChildPath $moduleName)
+
+        if (-not (Test-Path -Path $moduleInstallPath))
         {
-            Write-Host "`tModule '${moduleName}' already detected. Skipping"
-            continue
+            Write-Host "`tInstalling module: ${moduleName}"
+
+            $moduleInstallDetails = $moduleInfos[$moduleName]
+
+            $splatParameters = @{
+               Name = $moduleName
+               MinimumVersion = $moduleInstallDetails.MinimumVersion
+               MaximumVersion = $moduleInstallDetails.MaximumVersion
+               Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
+               Path = $submodulePath
+            }
+
+            if ($script:SaveModuleSupportsAllowPrerelease)
+            {
+                $splatParameters += @{ AllowPrerelease = $moduleInstallDetails.AllowPrerelease }
+            }
+
+            Save-Module @splatParameters
         }
-
-        $moduleInstallDetails = $moduleInfos[$moduleName]
-
-        $splatParameters = @{
-           Name = $moduleName
-           MinimumVersion = $moduleInstallDetails.MinimumVersion
-           MaximumVersion = $moduleInstallDetails.MaximumVersion
-           Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
-           Path = $submodulePath
-        }
-
-        if ($script:SaveModuleSupportsAllowPrerelease)
+        else
         {
-            $splatParameters += @{ AllowPrerelease = $moduleInstallDetails.AllowPrerelease }
+            Write-Host "`tModule '${moduleName}' already detected."
         }
 
-        Write-Host "`tInstalling module: ${moduleName}"
+        # Version number subfolders aren't supported in PowerShell < 5.0
+        # If the module is located in a subfolder, move the module files up one level and remove the (empty) subfolder.
+        $moduleFolderChildItems = Get-ChildItem -Path $moduleInstallPath -Force
 
-        Save-Module @splatParameters
+        if ($moduleFolderChildItems.Count -eq 1 -and $moduleFolderChildItems[0].PSIsContainer)
+        {
+            Write-Host "`tMoving module '${moduleName}' out of subfolder."
+
+            $moduleSubfolder = $moduleFolderChildItems[0].FullName
+
+            Get-ChildItem -Path $moduleSubfolder -Recurse -Force | Move-Item -Destination $moduleInstallPath -Force
+
+            if ($null -ne (Get-ChildItem -Path $moduleSubfolder -Recurse -Force))
+            {
+                throw "Cannot remove folder $moduleSubfolder because it is not empty!"
+            }
+
+            Remove-Item -Path $moduleSubfolder
+        }
     }
     Write-Host "`n"
 }
 
 task BuildCmdletHelp {
     New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US -Force
-}
-
-task PackageNuGet {
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
 }
 
 task PackageModule {
@@ -389,14 +376,9 @@ task PackageModule {
         $false)
 }
 
-task UploadArtifacts -If ($script:IsCIBuild) {
-    if ($env:APPVEYOR) {
-        Push-AppveyorArtifact .\src\PowerShellEditorServices\bin\$Configuration\Microsoft.PowerShell.EditorServices.$($script:FullVersion).nupkg
-        Push-AppveyorArtifact .\src\PowerShellEditorServices.Protocol\bin\$Configuration\Microsoft.PowerShell.EditorServices.Protocol.$($script:FullVersion).nupkg
-        Push-AppveyorArtifact .\src\PowerShellEditorServices.Host\bin\$Configuration\Microsoft.PowerShell.EditorServices.Host.$($script:FullVersion).nupkg
-        Push-AppveyorArtifact .\PowerShellEditorServices-$($script:FullVersion).zip
-    }
+task UploadArtifacts -If ($null -ne $env:TF_BUILD) {
+    Copy-Item -Path .\PowerShellEditorServices-$($script:FullVersion).zip -Destination $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 }
 
 # The default task is to run the entire CI build
-task . GetProductVersion, Clean, Build, TestPowerShellApi, CITest, BuildCmdletHelp, PackageNuGet, PackageModule, UploadArtifacts
+task . GetProductVersion, Build, TestPowerShellApi, Test, BuildCmdletHelp, PackageModule, UploadArtifacts

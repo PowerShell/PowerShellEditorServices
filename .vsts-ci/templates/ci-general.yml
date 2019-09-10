@@ -1,0 +1,11 @@
+steps:
+  - pwsh: scripts/azurePipelinesBuild.ps1
+  - task: PublishTestResults@2
+    inputs:
+      testRunner: xUnit
+      testResultsFiles: '**/*.Results.xml'
+    condition: succeededOrFailed()
+  - task: PublishBuildArtifacts@1
+    inputs:
+      ArtifactName: PowerShellEditorServices
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'

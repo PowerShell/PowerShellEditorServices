@@ -16,8 +16,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Management.Automation.Runspaces;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -27,6 +28,8 @@ using DebugAdapterMessages = Microsoft.PowerShell.EditorServices.Protocol.DebugA
 
 namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 {
+    using System.Management.Automation;
+
     public class LanguageServer
     {
         private static CancellationTokenSource s_existingRequestCancellation;
@@ -40,6 +43,15 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
         private static readonly DocumentHighlight[] s_emptyHighlightResult = new DocumentHighlight[0];
 
         private static readonly SymbolInformation[] s_emptySymbolResult = new SymbolInformation[0];
+
+        // Since the NamedPipeConnectionInfo type is only available in 5.1+
+        // we have to use Activator to support older version of PS.
+        // This code only lives in the v1.X of the extension.
+        // The 2.x version of the code can be found here:
+        // https://github.com/PowerShell/PowerShellEditorServices/pull/881
+        private static readonly ConstructorInfo s_namedPipeConnectionInfoCtor = typeof(PSObject).GetTypeInfo().Assembly
+            .GetType("System.Management.Automation.Runspaces.NamedPipeConnectionInfo")
+            ?.GetConstructor(new [] { typeof(int) });
 
         private ILogger Logger;
         private bool profilesLoaded;
@@ -162,6 +174,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             this.messageHandlers.SetRequestHandler(GetPSHostProcessesRequest.Type, this.HandleGetPSHostProcessesRequest);
             this.messageHandlers.SetRequestHandler(CommentHelpRequest.Type, this.HandleCommentHelpRequest);
 
+            this.messageHandlers.SetRequestHandler(GetRunspaceRequest.Type, this.HandleGetRunspaceRequestAsync);
+
             // Initialize the extension service
             // TODO: This should be made awaited once Initialize is async!
             this.editorSession.ExtensionService.Initialize(
@@ -212,7 +226,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             editorSession.Workspace.WorkspacePath = initializeParams.RootPath;
 
             // Set the working directory of the PowerShell session to the workspace path
-            if (editorSession.Workspace.WorkspacePath != null)
+            if (editorSession.Workspace.WorkspacePath != null
+                && Directory.Exists(editorSession.Workspace.WorkspacePath))
             {
                 await editorSession.PowerShellContext.SetWorkingDirectory(
                     editorSession.Workspace.WorkspacePath,
@@ -1201,7 +1216,7 @@ function __Expand-Alias {
                 funcText = string.Join("\n", lines);
             }
 
-            ScriptFileMarker[] analysisResults = await this.editorSession.AnalysisService.GetSemanticMarkersAsync(
+            List<ScriptFileMarker> analysisResults = await this.editorSession.AnalysisService.GetSemanticMarkersAsync(
                 funcText,
                 AnalysisService.GetCommentHelpRuleSettings(
                     enable: true,
@@ -1229,6 +1244,67 @@ function __Expand-Alias {
             }
 
             await requestContext.SendResult(result);
+        }
+
+        private static Runspace GetRemoteRunspace(int pid)
+        {
+            var namedPipeConnectionInfoInstance = s_namedPipeConnectionInfoCtor.Invoke(new object[] { pid });
+            return RunspaceFactory.CreateRunspace(namedPipeConnectionInfoInstance as RunspaceConnectionInfo);
+        }
+
+        protected async Task HandleGetRunspaceRequestAsync(
+            string processId,
+            RequestContext<GetRunspaceResponse[]> requestContext)
+        {
+            IEnumerable<PSObject> runspaces = null;
+
+            if (this.editorSession.PowerShellContext.LocalPowerShellVersion.Version.Major >= 5)
+            {
+                if (processId == null) {
+                    processId = "current";
+                }
+
+                // If the processId is a valid int, we need to run Get-Runspace within that process
+                // otherwise just use the current runspace.
+                if (int.TryParse(processId, out int pid))
+                {
+
+                    // Create a remote runspace that we will invoke Get-Runspace in.
+                    using(Runspace rs = GetRemoteRunspace(pid))
+                    using(var ps = PowerShell.Create())
+                    {
+                        rs.Open();
+                        ps.Runspace = rs;
+                        // Returns deserialized Runspaces. For simpler code, we use PSObject and rely on dynamic later.
+                        runspaces = ps.AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace").Invoke<PSObject>();
+                    }
+                }
+                else
+                {
+                    var psCommand = new PSCommand().AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace");
+                    var sb = new StringBuilder();
+                    // returns (not deserialized) Runspaces. For simpler code, we use PSObject and rely on dynamic later.
+                    runspaces = await editorSession.PowerShellContext.ExecuteCommand<PSObject>(psCommand, sb);
+                }
+            }
+
+            var runspaceResponses = new List<GetRunspaceResponse>();
+
+            if (runspaces != null)
+            {
+                foreach (dynamic runspace in runspaces)
+                {
+                    runspaceResponses.Add(
+                        new GetRunspaceResponse
+                        {
+                            Id = runspace.Id,
+                            Name = runspace.Name,
+                            Availability = runspace.RunspaceAvailability.ToString()
+                        });
+                }
+            }
+
+            await requestContext.SendResult(runspaceResponses.ToArray());
         }
 
         private bool IsQueryMatch(string query, string symbolName)
@@ -1303,6 +1379,12 @@ function __Expand-Alias {
             DocumentFormattingParams formattingParams,
             RequestContext<TextEdit[]> requestContext)
         {
+            if (this.editorSession.AnalysisService == null)
+            {
+                await requestContext.SendError("Script analysis is not enabled in this session");
+                return;
+            }
+
             var result = await Format(
                 formattingParams.TextDocument.Uri,
                 formattingParams.options,
@@ -1322,6 +1404,12 @@ function __Expand-Alias {
             DocumentRangeFormattingParams formattingParams,
             RequestContext<TextEdit[]> requestContext)
         {
+            if (this.editorSession.AnalysisService == null)
+            {
+                await requestContext.SendError("Script analysis is not enabled in this session");
+                return;
+            }
+
             var result = await Format(
                 formattingParams.TextDocument.Uri,
                 formattingParams.Options,
@@ -1653,6 +1741,15 @@ function __Expand-Alias {
             catch (TaskCanceledException)
             {
                 // If the task is cancelled, exit directly
+                foreach (var script in filesToAnalyze)
+                {
+                    await PublishScriptDiagnostics(
+                        script,
+                        script.DiagnosticMarkers,
+                        correctionIndex,
+                        eventSender);
+                }
+
                 return;
             }
 
@@ -1666,7 +1763,7 @@ function __Expand-Alias {
             // Get the requested files
             foreach (ScriptFile scriptFile in filesToAnalyze)
             {
-                ScriptFileMarker[] semanticMarkers = null;
+                List<ScriptFileMarker> semanticMarkers = null;
                 if (isScriptAnalysisEnabled && editorSession.AnalysisService != null)
                 {
                     using (Logger.LogExecutionTime($"Script analysis of {scriptFile.FilePath} completed."))
@@ -1678,13 +1775,15 @@ function __Expand-Alias {
                 {
                     // Semantic markers aren't available if the AnalysisService
                     // isn't available
-                    semanticMarkers = new ScriptFileMarker[0];
+                    semanticMarkers = new List<ScriptFileMarker>();
                 }
+
+                scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
 
                 await PublishScriptDiagnostics(
                     scriptFile,
                     // Concat script analysis errors to any existing parse errors
-                    scriptFile.SyntaxMarkers.Concat(semanticMarkers).ToArray(),
+                    scriptFile.DiagnosticMarkers,
                     correctionIndex,
                     eventSender);
             }
@@ -1695,14 +1794,14 @@ function __Expand-Alias {
             // send empty diagnostic markers to clear any markers associated with the given file
             await PublishScriptDiagnostics(
                     scriptFile,
-                    new ScriptFileMarker[0],
+                    new List<ScriptFileMarker>(),
                     this.codeActionsPerFile,
                     eventContext);
         }
 
         private static async Task PublishScriptDiagnostics(
             ScriptFile scriptFile,
-            ScriptFileMarker[] markers,
+            List<ScriptFileMarker> markers,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             EventContext eventContext)
         {
@@ -1715,7 +1814,7 @@ function __Expand-Alias {
 
         private static async Task PublishScriptDiagnostics(
             ScriptFile scriptFile,
-            ScriptFileMarker[] markers,
+            List<ScriptFileMarker> markers,
             Dictionary<string, Dictionary<string, MarkerCorrection>> correctionIndex,
             Func<NotificationType<PublishDiagnosticsNotification, object>, PublishDiagnosticsNotification, Task> eventSender)
         {
@@ -1738,7 +1837,7 @@ function __Expand-Alias {
                 diagnostics.Add(markerDiagnostic);
             }
 
-            correctionIndex[scriptFile.ClientFilePath] = fileCorrections;
+            correctionIndex[scriptFile.DocumentUri] = fileCorrections;
 
             // Always send syntax and semantic errors.  We want to
             // make sure no out-of-date markers are being displayed.
@@ -1746,7 +1845,7 @@ function __Expand-Alias {
                 PublishDiagnosticsNotification.Type,
                 new PublishDiagnosticsNotification
                 {
-                    Uri = scriptFile.ClientFilePath,
+                    Uri = scriptFile.DocumentUri,
                     Diagnostics = diagnostics.ToArray()
                 });
         }
@@ -1836,6 +1935,8 @@ function __Expand-Alias {
         {
             string detailString = null;
             string documentationString = null;
+            string completionText = completionDetails.CompletionText;
+            InsertTextFormat insertTextFormat = InsertTextFormat.PlainText;
 
             if ((completionDetails.CompletionType == CompletionType.Variable) ||
                 (completionDetails.CompletionType == CompletionType.ParameterName))
@@ -1877,6 +1978,19 @@ function __Expand-Alias {
                     }
                 }
             }
+            else if ((completionDetails.CompletionType == CompletionType.Folder) &&
+                     (completionText.EndsWith("\"") || completionText.EndsWith("'")))
+            {
+                // Insert a final "tab stop" as identified by $0 in the snippet provided for completion.
+                // For folder paths, we take the path returned by PowerShell e.g. 'C:\Program Files' and insert
+                // the tab stop marker before the closing quote char e.g. 'C:\Program Files$0'.
+                // This causes the editing cursor to be placed *before* the final quote after completion,
+                // which makes subsequent path completions work. See this part of the LSP spec for details:
+                // https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
+                int len = completionDetails.CompletionText.Length;
+                completionText = completionDetails.CompletionText.Insert(len - 1, "$0");
+                insertTextFormat = InsertTextFormat.Snippet;
+            }
 
             // Force the client to maintain the sort order in which the
             // original completion results were returned. We just need to
@@ -1887,7 +2001,8 @@ function __Expand-Alias {
 
             return new CompletionItem
             {
-                InsertText = completionDetails.CompletionText,
+                InsertText = completionText,
+                InsertTextFormat = insertTextFormat,
                 Label = completionDetails.ListItemText,
                 Kind = MapCompletionKind(completionDetails.CompletionType),
                 Detail = detailString,
@@ -1896,7 +2011,7 @@ function __Expand-Alias {
                 FilterText = completionDetails.CompletionText,
                 TextEdit = new TextEdit
                 {
-                    NewText = completionDetails.CompletionText,
+                    NewText = completionText,
                     Range = new Range
                     {
                         Start = new Position

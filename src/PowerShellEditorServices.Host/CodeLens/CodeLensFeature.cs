@@ -126,7 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 codeLensResponse[i] = codeLensResults[i].ToProtocolCodeLens(
                     new CodeLensData
                     {
-                        Uri = codeLensResults[i].File.ClientFilePath,
+                        Uri = codeLensResults[i].File.DocumentUri,
                         ProviderId = codeLensResults[i].Provider.ProviderId
                     },
                     _jsonSerializer);

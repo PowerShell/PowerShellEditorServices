@@ -16,20 +16,20 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     {
         protected IMessageSender messageSender;
         protected ILogger logger;
-        private Dictionary<string, TView> viewIndex;
+        private readonly Dictionary<Guid, TView> viewIndex;
 
         public CustomViewFeatureBase(
             IMessageSender messageSender,
             ILogger logger)
         {
-            this.viewIndex = new Dictionary<string, TView>();
+            this.viewIndex = new Dictionary<Guid, TView>();
             this.messageSender = messageSender;
             this.logger = logger;
         }
 
         protected void AddView(TView view)
         {
-            this.viewIndex.Add(view.Title, view);
+            this.viewIndex.Add(view.Id, view);
         }
     }
 }
