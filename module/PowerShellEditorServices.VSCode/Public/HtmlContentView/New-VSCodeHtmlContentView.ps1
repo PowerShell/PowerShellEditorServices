@@ -41,7 +41,7 @@ function New-VSCodeHtmlContentView {
     )
 
     process {
-        if ($psEditor -is [Microsoft.PowerShell.EditorServices.Extensions.EditorObject]) {
+        if ($psEditor -is [Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext.EditorObject]) {
             $viewFeature = $psEditor.Components.Get([Microsoft.PowerShell.EditorServices.VSCode.CustomViews.IHtmlContentViews])
             $view = $viewFeature.CreateHtmlContentViewAsync($Title).Result
 
