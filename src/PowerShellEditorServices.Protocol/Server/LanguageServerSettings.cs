@@ -190,6 +190,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
         }
 
+        public bool AutoCorrectAliases { get; set; }
         public CodeFormattingPreset Preset { get; set; }
         public bool OpenBraceOnSameLine { get; set; }
         public bool NewLineAfterOpenBrace { get; set; }
@@ -249,16 +250,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private Hashtable GetCustomPSSASettingsHashtable(int tabSize, bool insertSpaces)
         {
-            return new Hashtable
-            {
-                {"IncludeRules", new string[] {
-                     "PSPlaceCloseBrace",
-                     "PSPlaceOpenBrace",
-                     "PSUseConsistentWhitespace",
-                     "PSUseConsistentIndentation",
-                     "PSAlignAssignmentStatement"
-                }},
-                {"Rules", new Hashtable {
+            var ruleConfigurations = new Hashtable {
                     {"PSPlaceOpenBrace", new Hashtable {
                         {"Enable", true},
                         {"OnSameLine", OpenBraceOnSameLine},
@@ -292,7 +284,25 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                     {"PSUseCorrectCasing", new Hashtable {
                         {"Enable", UseCorrectCasing}
                     }},
-                }}
+                };
+            if (AutoCorrectAliases)
+            {
+                ruleConfigurations.Add("PSAvoidUsingCmdletAliases", new Hashtable());
+            }
+
+            return new Hashtable
+            {
+                {"IncludeRules", new string[] {
+                     "PSPlaceCloseBrace",
+                     "PSPlaceOpenBrace",
+                     "PSUseConsistentWhitespace",
+                     "PSUseConsistentIndentation",
+                     "PSAlignAssignmentStatement",
+                     "PSAvoidUsingCmdletAliases",
+                }},
+                {
+                    "Rules", ruleConfigurations
+                },
             };
         }
     }
