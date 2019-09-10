@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
                     e is IOException)
                 {
                     // We catch this exception for when the DebugAdapter disconnects while still processing a message.
-                    logger.WriteException("Tried to write to the output stream but it was already closed & broken.", e);
+                    logger.WriteHandledException("Tried to write to the output stream but it was already closed & broken.", e);
                 }
             }
         }
