@@ -45,7 +45,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
                 options.Services = new ServiceCollection()
                     .AddSingleton(languageServerServiceProvider.GetService<PowerShellContextService>())
                     .AddSingleton<DebugService>()
-                    .AddSingleton<DebugStateService>();
+                    .AddSingleton<DebugStateService>()
+                    .AddSingleton<DebugEventHandlerService>();
                 
                 options
                     .WithInput(_inputStream)
@@ -55,7 +56,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
 
                 options
                     .WithHandler<InitializeHandler>()
-                    .WithHandler<LaunchAndAttachHandler>();
+                    .WithHandler<LaunchHandler>()
+                    .WithHandler<AttachHandler>();
 
                 logger.LogInformation("Handlers added");
             });

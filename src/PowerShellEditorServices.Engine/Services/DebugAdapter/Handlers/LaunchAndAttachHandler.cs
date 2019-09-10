@@ -1,16 +1,18 @@
-﻿using System;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Management.Automation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Engine.Logging;
 using Microsoft.PowerShell.EditorServices.Engine.Services;
-using Microsoft.PowerShell.EditorServices.Engine.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
-using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.Embedded.MediatR;
 using OmniSharp.Extensions.JsonRpc;
@@ -90,33 +92,34 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
         public string CustomPipeName { get; set; }
     }
 
-    public class LaunchAndAttachHandler : IPsesLaunchHandler, IPsesAttachHandler
+    public class LaunchHandler : IPsesLaunchHandler
     {
-        private static readonly Version s_minVersionForCustomPipeName = new Version(6, 2);
-
-        private readonly ILogger<LaunchAndAttachHandler> _logger;
+        private readonly ILogger<LaunchHandler> _logger;
         private readonly DebugService _debugService;
         private readonly PowerShellContextService _powerShellContextService;
         private readonly DebugStateService _debugStateService;
+        private readonly DebugEventHandlerService _debugEventHandlerService;
         private readonly IJsonRpcServer _jsonRpcServer;
 
-        public LaunchAndAttachHandler(
+        public LaunchHandler(
             ILoggerFactory factory,
             IJsonRpcServer jsonRpcServer,
             DebugService debugService,
             PowerShellContextService powerShellContextService,
-            DebugStateService debugStateService)
+            DebugStateService debugStateService,
+            DebugEventHandlerService debugEventHandlerService)
         {
-            _logger = factory.CreateLogger<LaunchAndAttachHandler>();
+            _logger = factory.CreateLogger<LaunchHandler>();
             _jsonRpcServer = jsonRpcServer;
             _debugService = debugService;
             _powerShellContextService = powerShellContextService;
             _debugStateService = debugStateService;
+            _debugEventHandlerService = debugEventHandlerService;
         }
 
         public async Task<Unit> Handle(PsesLaunchRequestArguments request, CancellationToken cancellationToken)
         {
-            RegisterEventHandlers();
+            _debugEventHandlerService.RegisterEventHandlers();
 
             // Determine whether or not the working directory should be set in the PowerShellContext.
             if ((_powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Local) &&
@@ -177,8 +180,6 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
             _debugStateService.Arguments = arguments;
             _debugStateService.IsUsingTempIntegratedConsole = request.CreateTemporaryIntegratedConsole;
 
-
-
             // TODO: Bring this back
             // If the current session is remote, map the script path to the remote
             // machine if necessary
@@ -201,12 +202,40 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 
             return Unit.Value;
         }
+    }
+
+    public class AttachHandler : IPsesAttachHandler
+    {
+        private static readonly Version s_minVersionForCustomPipeName = new Version(6, 2);
+
+        private readonly ILogger<AttachHandler> _logger;
+        private readonly DebugService _debugService;
+        private readonly PowerShellContextService _powerShellContextService;
+        private readonly DebugStateService _debugStateService;
+        private readonly DebugEventHandlerService _debugEventHandlerService;
+        private readonly IJsonRpcServer _jsonRpcServer;
+
+        public AttachHandler(
+            ILoggerFactory factory,
+            IJsonRpcServer jsonRpcServer,
+            DebugService debugService,
+            PowerShellContextService powerShellContextService,
+            DebugStateService debugStateService,
+            DebugEventHandlerService debugEventHandlerService)
+        {
+            _logger = factory.CreateLogger<AttachHandler>();
+            _jsonRpcServer = jsonRpcServer;
+            _debugService = debugService;
+            _powerShellContextService = powerShellContextService;
+            _debugStateService = debugStateService;
+            _debugEventHandlerService = debugEventHandlerService;
+        }
 
         public async Task<Unit> Handle(PsesAttachRequestArguments request, CancellationToken cancellationToken)
         {
             _debugStateService.IsAttachSession = true;
 
-            RegisterEventHandlers();
+            _debugEventHandlerService.RegisterEventHandlers();
 
             bool processIdIsSet = !string.IsNullOrEmpty(request.ProcessId) && request.ProcessId != "undefined";
             bool customPipeNameIsSet = !string.IsNullOrEmpty(request.CustomPipeName) && request.CustomPipeName != "undefined";
@@ -345,7 +374,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 
             _debugStateService.ExecutionCompleted = true;
 
-            UnregisterEventHandlers();
+            _debugEventHandlerService.UnregisterEventHandlers();
 
             if (_debugStateService.IsAttachSession)
             {
@@ -381,146 +410,5 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 
             _jsonRpcServer.SendNotification(EventNames.Terminated);
         }
-
-        private void RegisterEventHandlers()
-        {
-            _powerShellContextService.RunspaceChanged += PowerShellContext_RunspaceChangedAsync;
-            _debugService.BreakpointUpdated += DebugService_BreakpointUpdatedAsync;
-            _debugService.DebuggerStopped += DebugService_DebuggerStoppedAsync;
-            _powerShellContextService.DebuggerResumed += PowerShellContext_DebuggerResumedAsync;
-        }
-
-        private void UnregisterEventHandlers()
-        {
-            _powerShellContextService.RunspaceChanged -= PowerShellContext_RunspaceChangedAsync;
-            _debugService.BreakpointUpdated -= DebugService_BreakpointUpdatedAsync;
-            _debugService.DebuggerStopped -= DebugService_DebuggerStoppedAsync;
-            _powerShellContextService.DebuggerResumed -= PowerShellContext_DebuggerResumedAsync;
-        }
-
-        #region Event Handlers
-
-        private void DebugService_DebuggerStoppedAsync(object sender, DebuggerStoppedEventArgs e)
-        {
-            // Provide the reason for why the debugger has stopped script execution.
-            // See https://github.com/Microsoft/vscode/issues/3648
-            // The reason is displayed in the breakpoints viewlet.  Some recommended reasons are:
-            // "step", "breakpoint", "function breakpoint", "exception" and "pause".
-            // We don't support exception breakpoints and for "pause", we can't distinguish
-            // between stepping and the user pressing the pause/break button in the debug toolbar.
-            string debuggerStoppedReason = "step";
-            if (e.OriginalEvent.Breakpoints.Count > 0)
-            {
-                debuggerStoppedReason =
-                    e.OriginalEvent.Breakpoints[0] is CommandBreakpoint
-                        ? "function breakpoint"
-                        : "breakpoint";
-            }
-
-            _jsonRpcServer.SendNotification(EventNames.Stopped,
-                new StoppedEvent
-                {
-                    ThreadId = 1,
-                    Reason = debuggerStoppedReason
-                });
-        }
-
-        private void PowerShellContext_RunspaceChangedAsync(object sender, RunspaceChangedEventArgs e)
-        {
-            if (_debugStateService.WaitingForAttach &&
-                e.ChangeAction == RunspaceChangeAction.Enter &&
-                e.NewRunspace.Context == RunspaceContext.DebuggedRunspace)
-            {
-                // Send the InitializedEvent so that the debugger will continue
-                // sending configuration requests
-                _debugStateService.WaitingForAttach = false;
-                _jsonRpcServer.SendNotification(EventNames.Initialized);
-            }
-            else if (
-                e.ChangeAction == RunspaceChangeAction.Exit &&
-                (_powerShellContextService.IsDebuggerStopped))
-            {
-                // Exited the session while the debugger is stopped,
-                // send a ContinuedEvent so that the client changes the
-                // UI to appear to be running again
-                _jsonRpcServer.SendNotification(EventNames.Continued,
-                    new ContinuedEvent
-                    {
-                        ThreadId = 1,
-                        AllThreadsContinued = true
-                    });
-            }
-        }
-
-        private void PowerShellContext_DebuggerResumedAsync(object sender, DebuggerResumeAction e)
-        {
-            _jsonRpcServer.SendNotification(EventNames.Continued,
-                new ContinuedEvent
-                {
-                    AllThreadsContinued = true,
-                    ThreadId = 1
-                });
-        }
-
-        private void DebugService_BreakpointUpdatedAsync(object sender, BreakpointUpdatedEventArgs e)
-        {
-            string reason = "changed";
-
-            if (_debugStateService.SetBreakpointInProgress)
-            {
-                // Don't send breakpoint update notifications when setting
-                // breakpoints on behalf of the client.
-                return;
-            }
-
-            switch (e.UpdateType)
-            {
-                case BreakpointUpdateType.Set:
-                    reason = "new";
-                    break;
-
-                case BreakpointUpdateType.Removed:
-                    reason = "removed";
-                    break;
-            }
-
-            OmniSharp.Extensions.DebugAdapter.Protocol.Models.Breakpoint breakpoint;
-            if (e.Breakpoint is LineBreakpoint)
-            {
-                breakpoint = LspBreakpointUtils.CreateBreakpoint(BreakpointDetails.Create(e.Breakpoint));
-            }
-            else if (e.Breakpoint is CommandBreakpoint)
-            {
-                _logger.LogTrace("Function breakpoint updated event is not supported yet");
-                return;
-            }
-            else
-            {
-                _logger.LogError($"Unrecognized breakpoint type {e.Breakpoint.GetType().FullName}");
-                return;
-            }
-
-            breakpoint.Verified = e.UpdateType != BreakpointUpdateType.Disabled;
-
-            _jsonRpcServer.SendNotification(EventNames.Breakpoint,
-                new BreakpointEvent
-                {
-                    Reason = reason,
-                    Breakpoint = breakpoint
-                });
-        }
-
-        #endregion
-
-        #region Events
-
-        public event EventHandler SessionEnded;
-
-        protected virtual void OnSessionEnded()
-        {
-            SessionEnded?.Invoke(this, null);
-        }
-
-        #endregion
     }
 }
