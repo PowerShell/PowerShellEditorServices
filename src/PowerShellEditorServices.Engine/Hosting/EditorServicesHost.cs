@@ -280,6 +280,8 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     config.TransportType, config.Endpoint));
         }
 
+
+        private bool alreadySubscribedDebug;
         /// <summary>
         /// Starts the debug service with the specified config.
         /// </summary>
@@ -291,48 +293,55 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             ProfilePaths profilePaths,
             bool useExistingSession)
         {
-            //while (!System.Diagnostics.Debugger.IsAttached)
-            //{
-            //    System.Console.WriteLine($"{Process.GetCurrentProcess().Id}");
-            //    Thread.Sleep(2000);
-            //}
+            while (System.Diagnostics.Debugger.IsAttached)
+            {
+                System.Console.WriteLine($"{Process.GetCurrentProcess().Id}");
+                Thread.Sleep(2000);
+            }
 
-            //_logger.LogInformation($"Debug NamedPipe: {config.InOutPipeName}\nDebug OutPipe: {config.OutPipeName}");
+            _logger.LogInformation($"Debug NamedPipe: {config.InOutPipeName}\nDebug OutPipe: {config.OutPipeName}");
 
-            //switch (config.TransportType)
-            //{
-            //    case EditorServiceTransportType.NamedPipe:
-            //        NamedPipeServerStream inNamedPipe = CreateNamedPipe(
-            //            config.InOutPipeName ?? config.InPipeName,
-            //            config.OutPipeName,
-            //            out NamedPipeServerStream outNamedPipe);
+            switch (config.TransportType)
+            {
+                case EditorServiceTransportType.NamedPipe:
+                    NamedPipeServerStream inNamedPipe = CreateNamedPipe(
+                        config.InOutPipeName ?? config.InPipeName,
+                        config.OutPipeName,
+                        out NamedPipeServerStream outNamedPipe);
 
-            //        _debugServer = new PsesDebugServer(
-            //            _factory,
-            //            inNamedPipe,
-            //            outNamedPipe ?? inNamedPipe);
+                    _debugServer = new PsesDebugServer(
+                        _factory,
+                        inNamedPipe,
+                        outNamedPipe ?? inNamedPipe);
 
-            //        Task[] tasks = outNamedPipe != null
-            //            ? new[] { inNamedPipe.WaitForConnectionAsync(), outNamedPipe.WaitForConnectionAsync() }
-            //            : new[] { inNamedPipe.WaitForConnectionAsync() };
-            //        Task.WhenAll(tasks)
-            //            .ContinueWith(async task => {
-            //                _logger.LogInformation("Starting debug server");
-            //                await _debugServer.StartAsync(_languageServer.LanguageServer.Services);
-            //                _logger.LogInformation(
-            //                    $"Debug service started, type = {config.TransportType}, endpoint = {config.Endpoint}");
-            //            });
-            //        break;
+                    Task[] tasks = outNamedPipe != null
+                        ? new[] { inNamedPipe.WaitForConnectionAsync(), outNamedPipe.WaitForConnectionAsync() }
+                        : new[] { inNamedPipe.WaitForConnectionAsync() };
+                    Task.WhenAll(tasks)
+                        .ContinueWith(async task =>
+                        {
+                            _logger.LogInformation("Starting debug server");
+                            await _debugServer.StartAsync(_languageServer.LanguageServer.Services);
+                            _logger.LogInformation(
+                                $"Debug service started, type = {config.TransportType}, endpoint = {config.Endpoint}");
+                        });
 
-            //    default:
-            //        throw new NotSupportedException("not supported");
-            //}
+                    break;
 
-            //_debugServer.SessionEnded += (sender, eventArgs) =>
-            //{
-            //    _debugServer.Dispose();
-            //    StartDebugService(config, profilePaths, useExistingSession);
-            //};
+                default:
+                    throw new NotSupportedException("not supported");
+            }
+
+            if(!alreadySubscribedDebug)
+            {
+                alreadySubscribedDebug = true;
+                _debugServer.SessionEnded += (sender, eventArgs) =>
+                {
+                    _debugServer.Dispose();
+                    alreadySubscribedDebug = false;
+                    StartDebugService(config, profilePaths, useExistingSession);
+                };
+            }
         }
 
         /// <summary>

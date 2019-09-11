@@ -399,15 +399,6 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
             }
 
             _debugService.IsClientAttached = false;
-
-            //if (_disconnectRequestContext != null)
-            //{
-            //    // Respond to the disconnect request and stop the server
-            //    await _disconnectRequestContext.SendResultAsync(null);
-            //    Stop();
-            //    return;
-            //}
-
             _jsonRpcServer.SendNotification(EventNames.Terminated);
         }
     }

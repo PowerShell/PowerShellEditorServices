@@ -16,7 +16,7 @@ using OmniSharp.Extensions.LanguageServer.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Server
 {
-    internal class PsesDebugServer : IDisposable
+    public class PsesDebugServer : IDisposable
     {
         protected readonly ILoggerFactory _loggerFactory;
         private readonly Stream _inputStream;
@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
 
         private IJsonRpcServer _jsonRpcServer;
 
-        internal PsesDebugServer(
+        public PsesDebugServer(
             ILoggerFactory factory,
             Stream inputStream,
             Stream outputStream)
@@ -44,6 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
                 ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
                 options.Services = new ServiceCollection()
                     .AddSingleton(languageServerServiceProvider.GetService<PowerShellContextService>())
+                    .AddSingleton<PsesDebugServer>(this)
                     .AddSingleton<DebugService>()
                     .AddSingleton<DebugStateService>()
                     .AddSingleton<DebugEventHandlerService>();
@@ -57,7 +58,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
                 options
                     .WithHandler<InitializeHandler>()
                     .WithHandler<LaunchHandler>()
-                    .WithHandler<AttachHandler>();
+                    .WithHandler<AttachHandler>()
+                    .WithHandler<DisconnectHandler>();
 
                 logger.LogInformation("Handlers added");
             });
