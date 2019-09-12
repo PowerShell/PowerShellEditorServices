@@ -68,9 +68,15 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
                     .AddSingleton<ConfigurationService>()
                     .AddSingleton<PowerShellContextService>(
                         (provider) =>
-                            GetFullyInitializedPowerShellContext(
+                            PowerShellContextService.Create(
+                                LoggerFactory,
                                 provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                                _profilePaths))
+                                _profilePaths,
+                                _featureFlags,
+                                _enableConsoleRepl,
+                                _internalHost,
+                                _hostDetails,
+                                _additionalModules))
                     .AddSingleton<TemplateService>()
                     .AddSingleton<EditorOperationsService>()
                     .AddSingleton<ExtensionService>(
@@ -156,57 +162,6 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
         {
             await _serverStart.Task;
             await LanguageServer.WaitForExit;
-        }
-
-        private PowerShellContextService GetFullyInitializedPowerShellContext(
-            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
-            ProfilePaths profilePaths)
-        {
-            var logger = LoggerFactory.CreateLogger<PowerShellContextService>();
-
-            // PSReadLine can only be used when -EnableConsoleRepl is specified otherwise
-            // issues arise when redirecting stdio.
-            var powerShellContext = new PowerShellContextService(
-                logger,
-                languageServer,
-                _featureFlags.Contains("PSReadLine") && _enableConsoleRepl);
-
-            EditorServicesPSHostUserInterface hostUserInterface =
-                _enableConsoleRepl
-                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, _internalHost)
-                    : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
-
-            EditorServicesPSHost psHost =
-                new EditorServicesPSHost(
-                    powerShellContext,
-                    _hostDetails,
-                    hostUserInterface,
-                    logger);
-
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
-            powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
-
-            powerShellContext.ImportCommandsModuleAsync(
-                Path.Combine(
-                    Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location),
-                    @"..\Commands"));
-
-            // TODO: This can be moved to the point after the $psEditor object
-            // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach (string module in this._additionalModules)
-            {
-                var command =
-                    new PSCommand()
-                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                        .AddParameter("Name", module);
-
-                powerShellContext.ExecuteCommandAsync<PSObject>(
-                    command,
-                    sendOutputToHost: false,
-                    sendErrorToHost: true);
-            }
-
-            return powerShellContext;
         }
 
         protected abstract (Stream input, Stream output) GetInputOutputStreams();

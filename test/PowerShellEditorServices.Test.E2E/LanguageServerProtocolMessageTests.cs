@@ -21,7 +21,7 @@ using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace PowerShellEditorServices.Test.E2E
 {
-    public class LanguageServerProtocolMessageTests : IClassFixture<TestsFixture>, IDisposable
+    public class LanguageServerProtocolMessageTests : IClassFixture<LSPTestsFixture>, IDisposable
     {
         private readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -33,7 +33,7 @@ namespace PowerShellEditorServices.Test.E2E
         private readonly string PwshExe;
         private readonly ITestOutputHelper _output;
 
-        public LanguageServerProtocolMessageTests(ITestOutputHelper output, TestsFixture data)
+        public LanguageServerProtocolMessageTests(ITestOutputHelper output, LSPTestsFixture data)
         {
             Diagnostics = new List<Diagnostic>();
             LanguageClient = data.LanguageClient;

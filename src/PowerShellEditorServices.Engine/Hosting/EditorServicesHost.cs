@@ -16,8 +16,10 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Engine.Server;
+using Microsoft.PowerShell.EditorServices.Engine.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Serilog;
 
@@ -326,6 +328,36 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                                 $"Debug service started, type = {config.TransportType}, endpoint = {config.Endpoint}");
                         });
 
+                    break;
+
+                case EditorServiceTransportType.Stdio:
+                    _debugServer = new PsesDebugServer(
+                        _factory,
+                        Console.OpenStandardInput(),
+                        Console.OpenStandardOutput());
+
+                    Task.Run(async () =>
+                    {
+                        _logger.LogInformation("Starting debug server");
+
+                        IServiceProvider serviceProvider = useExistingSession
+                            ? _languageServer.LanguageServer.Services
+                            : new ServiceCollection().AddSingleton<PowerShellContextService>(
+                                (provider) => PowerShellContextService.Create(
+                                    _factory,
+                                    provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
+                                    profilePaths,
+                                    _featureFlags,
+                                    _enableConsoleRepl,
+                                    _internalHost,
+                                    _hostDetails,
+                                    _additionalModules))
+                                .BuildServiceProvider();
+
+                        await _debugServer.StartAsync(serviceProvider);
+                        _logger.LogInformation(
+                            $"Debug service started, type = {config.TransportType}, endpoint = {config.Endpoint}");
+                    });
                     break;
 
                 default:
