@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             // the log level is Diagnostic where JsonRpc message payloads are logged and vary
             // in size from 1K up to 225K chars.  When not logging message payloads, the typical
             // response log message size is under 256 chars.
-            var logStrBld = 
+            var logStrBld =
                 new StringBuilder(this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic ? 4096 : 256)
                    .Append("Writing ")
                    .Append(messageToWrite.MessageType)
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             if (this.logger.MinimumConfiguredLogLevel == LogLevel.Diagnostic)
             {
                 // Log the JSON representation of the message payload at the Diagnostic log level
-                string jsonPayload = 
+                string jsonPayload =
                     JsonConvert.SerializeObject(
                         messageObject,
                         Formatting.Indented,
@@ -104,10 +104,20 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol
             // message loop doesn't get blocked while waiting for I/O to complete.
             using (await this.writeLock.LockAsync())
             {
-                // Send the message
-                await this.outputStream.WriteAsync(headerBytes, 0, headerBytes.Length);
-                await this.outputStream.WriteAsync(messageBytes, 0, messageBytes.Length);
-                await this.outputStream.FlushAsync();
+                try
+                {
+                    // Send the message
+                    await this.outputStream.WriteAsync(headerBytes, 0, headerBytes.Length);
+                    await this.outputStream.WriteAsync(messageBytes, 0, messageBytes.Length);
+                    await this.outputStream.FlushAsync();
+                }
+                catch (Exception e) when (
+                    e is ObjectDisposedException ||
+                    e is IOException)
+                {
+                    // We catch this exception for when the DebugAdapter disconnects while still processing a message.
+                    logger.WriteHandledException("Tried to write to the output stream but it was already closed & broken.", e);
+                }
             }
         }
 
