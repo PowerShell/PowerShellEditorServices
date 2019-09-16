@@ -6,9 +6,9 @@
 using System.Diagnostics;
 using System.Management.Automation;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Symbols;
+using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.Symbols
 {
     /// <summary>
     /// Provides detailed information for a given symbol.

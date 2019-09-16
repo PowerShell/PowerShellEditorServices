@@ -1,14 +1,19 @@
-﻿using System;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices;
-using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
+using Microsoft.PowerShell.EditorServices.Engine.Services;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 
-namespace PowerShellEditorServices.Engine.Services.Handlers
+namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
     public class GetCommentHelpHandler : IGetCommentHelpHandler
     {

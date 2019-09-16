@@ -1,14 +1,20 @@
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using System.Collections.Generic;
-using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices;
+using Microsoft.PowerShell.EditorServices.Engine.Services;
 
-namespace PowerShellEditorServices.Engine.Services.Handlers
+namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
+    using System.Management.Automation;
+
     public class PSHostProcessAndRunspaceHandlers : IGetPSHostProcessesHandler, IGetRunspaceHandler
     {
         private readonly ILogger<GetVersionHandler> _logger;

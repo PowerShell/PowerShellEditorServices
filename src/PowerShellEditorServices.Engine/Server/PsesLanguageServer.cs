@@ -12,12 +12,11 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Extensions;
-using Microsoft.PowerShell.EditorServices.Host;
-using Microsoft.PowerShell.EditorServices.Templates;
-using Microsoft.PowerShell.EditorServices.TextDocument;
+using Microsoft.PowerShell.EditorServices.Engine.Handlers;
+using Microsoft.PowerShell.EditorServices.Engine.Hosting;
+using Microsoft.PowerShell.EditorServices.Engine.Services;
+using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
 using OmniSharp.Extensions.LanguageServer.Server;
-using PowerShellEditorServices.Engine.Services.Handlers;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Server
 {

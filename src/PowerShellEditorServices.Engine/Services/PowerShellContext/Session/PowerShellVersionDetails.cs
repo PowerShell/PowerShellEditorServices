@@ -8,7 +8,7 @@ using System;
 using System.Collections;
 using System.Management.Automation.Runspaces;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Defines the possible enumeration values for the PowerShell process architecture.

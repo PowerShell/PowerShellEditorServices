@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Utility;
 using UnixConsoleEcho;
 
-namespace Microsoft.PowerShell.EditorServices.Console
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     internal class UnixConsoleOperations : IConsoleOperations
     {

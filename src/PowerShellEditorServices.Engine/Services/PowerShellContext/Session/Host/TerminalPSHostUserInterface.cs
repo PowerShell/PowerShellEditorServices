@@ -3,16 +3,15 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Console;
+using System;
+using System.Management.Automation.Host;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
-    using System;
     using System.Management.Automation;
-    using System.Management.Automation.Host;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Provides an EditorServicesPSHostUserInterface implementation

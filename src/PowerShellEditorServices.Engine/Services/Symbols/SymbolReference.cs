@@ -3,11 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System;
 using System.Diagnostics;
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices.Symbols
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.Symbols
 {
     /// <summary>
     /// A class that holds the type, name, script extent, and source line of a symbol

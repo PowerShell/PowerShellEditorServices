@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation.Host;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Engine.Hosting;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Server
 {

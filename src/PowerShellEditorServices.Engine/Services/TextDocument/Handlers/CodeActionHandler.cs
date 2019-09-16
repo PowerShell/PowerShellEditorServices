@@ -1,18 +1,21 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Engine.Services;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 using Newtonsoft.Json.Linq;
-using OmniSharp.Extensions.JsonRpc.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
-using PowerShellEditorServices.Engine.Services.Handlers;
 
-namespace Microsoft.PowerShell.EditorServices.TextDocument
+namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
     internal class CodeActionHandler : ICodeActionHandler
     {

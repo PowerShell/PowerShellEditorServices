@@ -6,8 +6,9 @@
 using System;
 using System.Linq;
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices.Extensions
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides context for the host editor at the time of creation.

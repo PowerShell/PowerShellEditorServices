@@ -7,7 +7,7 @@ using OmniSharp.Extensions.Embedded.MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace Microsoft.PowerShell.EditorServices.Protocol.LanguageServer
+namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
     [Serial, Method("powerShell/getCommentHelp")]
     public interface IGetCommentHelpHandler : IJsonRpcRequestHandler<CommentHelpRequestParams, CommentHelpRequestResult> { }

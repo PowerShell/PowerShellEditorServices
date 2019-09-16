@@ -7,7 +7,7 @@ using System;
 using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides a handle to the runspace that is managed by

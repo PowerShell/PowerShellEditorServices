@@ -3,11 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace Microsoft.PowerShell.EditorServices.CodeLenses
+namespace Microsoft.PowerShell.EditorServices.Engine.CodeLenses
 {
     /// <summary>
     /// Specifies the contract for a Code Lens provider.

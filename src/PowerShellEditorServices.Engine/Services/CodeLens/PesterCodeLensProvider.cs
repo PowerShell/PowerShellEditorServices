@@ -4,13 +4,13 @@
 //
 
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Symbols;
+using Microsoft.PowerShell.EditorServices.Engine.Services.Symbols;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Engine.Utility;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace Microsoft.PowerShell.EditorServices.CodeLenses
+namespace Microsoft.PowerShell.EditorServices.Engine.CodeLenses
 {
     internal class PesterCodeLensProvider : ICodeLensProvider
     {

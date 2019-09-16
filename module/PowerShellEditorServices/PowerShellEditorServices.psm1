@@ -91,13 +91,13 @@ function Start-EditorServicesHost {
 
     $editorServicesHost = $null
     $hostDetails =
-        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Engine.HostDetails @(
+        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Engine.Hosting.HostDetails @(
             $HostName,
             $HostProfileId,
             (Microsoft.PowerShell.Utility\New-Object System.Version @($HostVersion)))
 
     $editorServicesHost =
-        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Engine.EditorServicesHost @(
+        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Engine.Hosting.EditorServicesHost @(
             $hostDetails,
             $BundledModulesPath,
             $EnableConsoleRepl.IsPresent,
@@ -108,7 +108,7 @@ function Start-EditorServicesHost {
 
     # Build the profile paths using the root paths of the current $profile variable
     $profilePaths =
-        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Engine.ProfilePaths @(
+        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Engine.Hosting.ProfilePaths @(
             $hostDetails.ProfileId,
             [System.IO.Path]::GetDirectoryName($profile.AllUsersAllHosts),
             [System.IO.Path]::GetDirectoryName($profile.CurrentUserAllHosts))
@@ -116,32 +116,32 @@ function Start-EditorServicesHost {
     $editorServicesHost.StartLogging($LogPath, $LogLevel);
 
     $languageServiceConfig =
-        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Engine.EditorServiceTransportConfig
+        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Engine.Hosting.EditorServiceTransportConfig
 
     $debugServiceConfig =
-        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Engine.EditorServiceTransportConfig
+        Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Engine.Hosting.EditorServiceTransportConfig
 
     switch ($PSCmdlet.ParameterSetName) {
         "Stdio" {
-            $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Engine.EditorServiceTransportType]::Stdio
-            $debugServiceConfig.TransportType    = [Microsoft.PowerShell.EditorServices.Engine.EditorServiceTransportType]::Stdio
+            $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Engine.Hosting.EditorServiceTransportType]::Stdio
+            $debugServiceConfig.TransportType    = [Microsoft.PowerShell.EditorServices.Engine.Hosting.EditorServiceTransportType]::Stdio
             break
         }
         "NamedPipe" {
-            $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Engine.EditorServiceTransportType]::NamedPipe
+            $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Engine.Hosting.EditorServiceTransportType]::NamedPipe
             $languageServiceConfig.InOutPipeName = "$LanguageServiceNamedPipe"
             if ($DebugServiceNamedPipe) {
-                $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Engine.EditorServiceTransportType]::NamedPipe
+                $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Engine.Hosting.EditorServiceTransportType]::NamedPipe
                 $debugServiceConfig.InOutPipeName = "$DebugServiceNamedPipe"
             }
             break
         }
         "NamedPipeSimplex" {
-            $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Engine.EditorServiceTransportType]::NamedPipe
+            $languageServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Engine.Hosting.EditorServiceTransportType]::NamedPipe
             $languageServiceConfig.InPipeName = $LanguageServiceInNamedPipe
             $languageServiceConfig.OutPipeName = $LanguageServiceOutNamedPipe
             if ($DebugServiceInNamedPipe -and $DebugServiceOutNamedPipe) {
-                $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Engine.EditorServiceTransportType]::NamedPipe
+                $debugServiceConfig.TransportType = [Microsoft.PowerShell.EditorServices.Engine.Hosting.EditorServiceTransportType]::NamedPipe
                 $debugServiceConfig.InPipeName = $DebugServiceInNamedPipe
                 $debugServiceConfig.OutPipeName = $DebugServiceOutNamedPipe
             }

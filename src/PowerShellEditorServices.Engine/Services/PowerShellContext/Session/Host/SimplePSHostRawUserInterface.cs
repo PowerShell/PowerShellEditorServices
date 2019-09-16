@@ -7,7 +7,7 @@ using System;
 using System.Management.Automation.Host;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides an simple implementation of the PSHostRawUserInterface class.

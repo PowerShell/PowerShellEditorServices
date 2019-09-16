@@ -9,12 +9,16 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Symbols;
+using Microsoft.PowerShell.EditorServices.Engine.Services;
+using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Engine.Services.Symbols;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
-namespace Microsoft.PowerShell.EditorServices.TextDocument
+namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
     internal class CompletionHandler : ICompletionHandler, ICompletionResolveHandler
     {

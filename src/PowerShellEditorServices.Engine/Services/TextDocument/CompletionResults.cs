@@ -10,7 +10,7 @@ using System.Management.Automation;
 using System.Text.RegularExpressions;
 using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument
 {
     /// <summary>
     /// Provides the results of a single code completion request.

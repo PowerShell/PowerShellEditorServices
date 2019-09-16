@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     [Flags]
     internal enum PromptNestFrameType

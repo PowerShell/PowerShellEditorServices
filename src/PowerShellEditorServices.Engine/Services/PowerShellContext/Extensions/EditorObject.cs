@@ -6,7 +6,7 @@
 using System;
 using System.Reflection;
 
-namespace Microsoft.PowerShell.EditorServices.Extensions
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides the entry point of the extensibility API, inserted into

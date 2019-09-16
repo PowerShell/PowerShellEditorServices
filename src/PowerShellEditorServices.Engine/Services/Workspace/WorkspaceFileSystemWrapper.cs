@@ -9,8 +9,9 @@ using System.IO;
 using System.Security;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Engine.Logging;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.Workspace
 {
 
     /// <summary>

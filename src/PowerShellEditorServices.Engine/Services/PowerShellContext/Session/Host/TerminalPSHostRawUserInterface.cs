@@ -4,13 +4,12 @@
 //
 
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Console;
 using System;
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Threading;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides an implementation of the PSHostRawUserInterface class

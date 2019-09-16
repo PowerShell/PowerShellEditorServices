@@ -4,7 +4,8 @@
 //
 
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Engine.Logging;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,7 +16,7 @@ using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Manages files that are accessed from a remote PowerShell session.

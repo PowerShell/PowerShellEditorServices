@@ -9,13 +9,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using System;
 using System.Management.Automation.Runspaces;
-using Microsoft.PowerShell.EditorServices.Console;
 
-namespace Microsoft.PowerShell.EditorServices.Session {
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
+{
     using System.Management.Automation;
     using Microsoft.Extensions.Logging;
 
-    internal class PSReadLinePromptContext : IPromptContext {
+    internal class PSReadLinePromptContext : IPromptContext
+    {
         private const string ReadLineScript = @"
             [System.Diagnostics.DebuggerHidden()]
             [System.Diagnostics.DebuggerStepThrough()]

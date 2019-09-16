@@ -12,8 +12,11 @@ using System.Text;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.PowerShell.EditorServices.Engine.Services.Workspace;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services
 {
     /// <summary>
     /// Manages a "workspace" of script files that are open for a particular

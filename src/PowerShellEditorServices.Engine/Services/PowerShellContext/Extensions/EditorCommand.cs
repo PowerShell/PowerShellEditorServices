@@ -5,7 +5,7 @@
 
 using System.Management.Automation;
 
-namespace Microsoft.PowerShell.EditorServices.Extensions
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides details about a command that has been registered

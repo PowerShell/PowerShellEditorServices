@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     using System.Management.Automation;
 

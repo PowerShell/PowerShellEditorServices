@@ -7,7 +7,7 @@ using System;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     internal class PSReadLineProxy
     {

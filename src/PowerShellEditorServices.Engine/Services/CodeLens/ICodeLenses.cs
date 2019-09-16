@@ -4,9 +4,10 @@
 //
 
 using System.Collections.Generic;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace Microsoft.PowerShell.EditorServices.CodeLenses
+namespace Microsoft.PowerShell.EditorServices.Engine.CodeLenses
 {
     /// <summary>
     /// Specifies the contract for an implementation of
