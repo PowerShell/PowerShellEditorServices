@@ -13,9 +13,10 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace Microsoft.PowerShell.EditorServices.Symbols
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.Symbols
 {
     /// <summary>
     /// Provides common operations for the syntax tree of a parsed script.

@@ -6,8 +6,9 @@
 using System;
 using System.IO;
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices.Extensions
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides context for a file that is open in the editor.

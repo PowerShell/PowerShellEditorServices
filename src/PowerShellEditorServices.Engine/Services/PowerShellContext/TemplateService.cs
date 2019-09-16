@@ -4,14 +4,15 @@
 //
 
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Engine.Handlers;
+using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
-using PowerShellEditorServices.Engine.Services.Handlers;
 using System;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Templates
+namespace Microsoft.PowerShell.EditorServices.Engine.Services
 {
     /// <summary>
     /// Provides a service for listing PowerShell project templates and creating

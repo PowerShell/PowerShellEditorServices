@@ -4,15 +4,13 @@
 //
 
 using System;
-using Microsoft.PowerShell.EditorServices.Console;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Security;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
-using Microsoft.PowerShell.EditorServices.Protocol.Messages;
 
-namespace Microsoft.PowerShell.EditorServices.Host
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     internal class ProtocolChoicePromptHandler : ConsoleChoicePromptHandler
     {

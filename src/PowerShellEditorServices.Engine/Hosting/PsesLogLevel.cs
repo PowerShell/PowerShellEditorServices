@@ -1,6 +1,11 @@
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.PowerShell.EditorServices.Engine
+namespace Microsoft.PowerShell.EditorServices.Engine.Hosting
 {
     public enum PsesLogLevel
     {

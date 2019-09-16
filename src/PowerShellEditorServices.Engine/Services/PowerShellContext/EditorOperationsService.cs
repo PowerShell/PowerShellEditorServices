@@ -3,13 +3,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Protocol.LanguageServer;
+using Microsoft.PowerShell.EditorServices.Engine.Handlers;
+using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
-using PowerShellEditorServices.Engine.Services.Handlers;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Extensions
+namespace Microsoft.PowerShell.EditorServices.Engine.Services
 {
     internal class EditorOperationsService : IEditorOperations
     {

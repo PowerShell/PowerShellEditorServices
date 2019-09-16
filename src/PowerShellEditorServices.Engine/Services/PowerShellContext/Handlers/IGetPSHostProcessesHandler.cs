@@ -1,7 +1,12 @@
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using OmniSharp.Extensions.Embedded.MediatR;
 using OmniSharp.Extensions.JsonRpc;
 
-namespace PowerShellEditorServices.Engine.Services.Handlers
+namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
     [Serial, Method("powerShell/getPSHostProcesses")]
     public interface IGetPSHostProcessesHandler : IJsonRpcRequestHandler<GetPSHostProcesssesParams, PSHostProcessResponse[]> { }

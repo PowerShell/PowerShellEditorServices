@@ -6,7 +6,7 @@
 using OmniSharp.Extensions.Embedded.MediatR;
 using OmniSharp.Extensions.JsonRpc;
 
-namespace PowerShellEditorServices.Engine.Services.Handlers
+namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
     [Serial, Method("powerShell/getProjectTemplates")]
     public interface IGetProjectTemplatesHandler : IJsonRpcRequestHandler<GetProjectTemplatesRequest, GetProjectTemplatesResponse> { }

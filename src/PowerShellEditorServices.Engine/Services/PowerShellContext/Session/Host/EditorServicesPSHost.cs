@@ -4,14 +4,13 @@
 //
 
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Engine;
-using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.PowerShell.EditorServices.Engine.Hosting;
 using System;
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides an implementation of the PSHost class for the

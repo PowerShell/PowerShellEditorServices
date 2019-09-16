@@ -8,8 +8,9 @@ using System;
 using System.Management.Automation.Runspaces;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Specifies the possible types of a runspace.

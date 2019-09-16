@@ -3,11 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System;
 using System.Management.Automation.Language;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument
 {
     /// <summary>
     /// Contains details about a specific region of text in script file.

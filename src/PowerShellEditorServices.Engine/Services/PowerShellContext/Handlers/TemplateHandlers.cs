@@ -7,10 +7,10 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices;
-using Microsoft.PowerShell.EditorServices.Templates;
+using Microsoft.PowerShell.EditorServices.Engine.Logging;
+using Microsoft.PowerShell.EditorServices.Engine.Services;
 
-namespace PowerShellEditorServices.Engine.Services.Handlers
+namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
     public class TemplateHandlers : IGetProjectTemplatesHandler, INewProjectFromTemplateHandler
     {

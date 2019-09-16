@@ -1,8 +1,13 @@
-﻿using OmniSharp.Extensions.Embedded.MediatR;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using OmniSharp.Extensions.Embedded.MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace PowerShellEditorServices.Engine.Services.Handlers
+namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
     [Serial, Method("powerShell/invokeExtensionCommand")]
     public interface IInvokeExtensionCommandHandler : IJsonRpcNotificationHandler<InvokeExtensionCommandParams> { }

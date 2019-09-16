@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-namespace Microsoft.PowerShell.EditorServices.CodeLenses
+namespace Microsoft.PowerShell.EditorServices.Engine.CodeLenses
 {
     /// <summary>
     /// Represents data expected back in an LSP CodeLens response.

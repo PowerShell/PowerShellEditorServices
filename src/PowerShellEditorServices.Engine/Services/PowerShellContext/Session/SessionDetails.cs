@@ -6,8 +6,9 @@
 using System;
 using System.Management.Automation;
 using System.Collections;
+using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides details about the current PowerShell session.

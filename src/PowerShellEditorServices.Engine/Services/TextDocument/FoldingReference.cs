@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument
 {
     /// <summary>
     /// A class that holds the information for a foldable region of text in a document

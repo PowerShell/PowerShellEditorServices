@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Microsoft.PowerShell.EditorServices.Engine
+namespace Microsoft.PowerShell.EditorServices.Engine.Hosting
 {
     /// <summary>
     /// Contains details about the current host application (most

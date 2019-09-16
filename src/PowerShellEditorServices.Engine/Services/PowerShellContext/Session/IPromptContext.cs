@@ -6,7 +6,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Session
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides methods for interacting with implementations of ReadLine.

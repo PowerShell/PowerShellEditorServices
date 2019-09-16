@@ -8,8 +8,9 @@ using System.Management.Automation;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument
 {
     /// <summary>
     /// Contains details for a code correction which can be applied from a ScriptFileMarker.

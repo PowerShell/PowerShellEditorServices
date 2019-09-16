@@ -4,8 +4,9 @@
 //
 
 using System.Collections.Generic;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices.Symbols
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.Symbols
 {
     /// <summary>
     /// Specifies the contract for a document symbols provider.

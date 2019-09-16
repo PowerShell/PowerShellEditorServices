@@ -4,13 +4,12 @@
 //
 
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Console;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Host
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     internal class ProtocolPSHostUserInterface : EditorServicesPSHostUserInterface
     {

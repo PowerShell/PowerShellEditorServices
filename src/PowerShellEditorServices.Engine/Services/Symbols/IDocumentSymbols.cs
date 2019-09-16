@@ -5,8 +5,9 @@
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices.Symbols
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.Symbols
 {
     /// <summary>
     /// Specifies the contract for an implementation of

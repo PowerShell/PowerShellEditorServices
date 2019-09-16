@@ -6,7 +6,7 @@
 using System;
 using System.Collections;
 
-namespace Microsoft.PowerShell.EditorServices.Console
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Contains the details of an colleciton input field shown

@@ -12,13 +12,12 @@ using System.Management.Automation.Host;
 using System.Linq;
 using System.Security;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Console;
 using System.Threading;
-using Microsoft.PowerShell.EditorServices.Session;
 using System.Globalization;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Engine.Logging;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides an implementation of the PSHostUserInterface class

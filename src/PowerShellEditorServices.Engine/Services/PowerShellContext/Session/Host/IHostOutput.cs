@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 {
     /// <summary>
     /// Provides a simplified interface for writing output to a

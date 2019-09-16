@@ -6,7 +6,7 @@
 using System.Management.Automation.Language;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Utility
 {
     internal static class IScriptExtentExtensions
     {

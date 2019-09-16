@@ -8,11 +8,11 @@ using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices;
+using Microsoft.PowerShell.EditorServices.Engine.Services;
 using OmniSharp.Extensions.Embedded.MediatR;
 using OmniSharp.Extensions.JsonRpc;
 
-namespace PowerShellEditorServices.Engine.Services.Handlers
+namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
     [Serial, Method("powerShell/getCommand")]
     public interface IGetCommandHandler : IJsonRpcRequestHandler<GetCommandParams, List<PSCommandMessage>> { }

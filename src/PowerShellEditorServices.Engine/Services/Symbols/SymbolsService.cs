@@ -14,10 +14,13 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Symbols;
-using PowerShellEditorServices.Engine.Utility;
+using Microsoft.PowerShell.EditorServices.Engine.Logging;
+using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Engine.Services.Symbols;
+using Microsoft.PowerShell.EditorServices.Engine.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace Microsoft.PowerShell.EditorServices
+namespace Microsoft.PowerShell.EditorServices.Engine.Services
 {
     /// <summary>
     /// Provides a high-level service for performing code completion and
