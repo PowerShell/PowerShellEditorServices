@@ -44,6 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
                 ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
                 options.Services = new ServiceCollection()
                     .AddSingleton(languageServerServiceProvider.GetService<PowerShellContextService>())
+                    .AddSingleton(languageServerServiceProvider.GetService<WorkspaceService>())
                     .AddSingleton<PsesDebugServer>(this)
                     .AddSingleton<DebugService>()
                     .AddSingleton<DebugStateService>()
@@ -59,7 +60,23 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
                     .WithHandler<InitializeHandler>()
                     .WithHandler<LaunchHandler>()
                     .WithHandler<AttachHandler>()
-                    .WithHandler<DisconnectHandler>();
+                    .WithHandler<DisconnectHandler>()
+                    .WithHandler<SetFunctionBreakpointsHandler>()
+                    .WithHandler<SetExceptionBreakpointsHandler>()
+                    .WithHandler<ConfigurationDoneHandler>()
+                    .WithHandler<ThreadsHandler>()
+                    .WithHandler<SetBreakpointsHandler>()
+                    .WithHandler<StackTraceHandler>()
+                    .WithHandler<ScopesHandler>()
+                    .WithHandler<VariablesHandler>()
+                    .WithHandler<ContinueHandler>()
+                    .WithHandler<NextHandler>()
+                    .WithHandler<PauseHandler>()
+                    .WithHandler<StepInHandler>()
+                    .WithHandler<StepOutHandler>()
+                    .WithHandler<SourceHandler>()
+                    .WithHandler<SetVariableHandler>()
+                    .WithHandler<DebugEvaluateHandler>();
 
                 logger.LogInformation("Handlers added");
             });

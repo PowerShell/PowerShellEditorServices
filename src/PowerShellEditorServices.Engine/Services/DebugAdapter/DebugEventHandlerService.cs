@@ -37,23 +37,32 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
 
         internal void RegisterEventHandlers()
         {
-            _powerShellContextService.RunspaceChanged += PowerShellContext_RunspaceChangedAsync;
-            _debugService.BreakpointUpdated += DebugService_BreakpointUpdatedAsync;
-            _debugService.DebuggerStopped += DebugService_DebuggerStoppedAsync;
-            _powerShellContextService.DebuggerResumed += PowerShellContext_DebuggerResumedAsync;
+            _powerShellContextService.RunspaceChanged += PowerShellContext_RunspaceChanged;
+            _debugService.BreakpointUpdated += DebugService_BreakpointUpdated;
+            _debugService.DebuggerStopped += DebugService_DebuggerStopped;
+            _powerShellContextService.DebuggerResumed += PowerShellContext_DebuggerResumed;
         }
 
         internal void UnregisterEventHandlers()
         {
-            _powerShellContextService.RunspaceChanged -= PowerShellContext_RunspaceChangedAsync;
-            _debugService.BreakpointUpdated -= DebugService_BreakpointUpdatedAsync;
-            _debugService.DebuggerStopped -= DebugService_DebuggerStoppedAsync;
-            _powerShellContextService.DebuggerResumed -= PowerShellContext_DebuggerResumedAsync;
+            _powerShellContextService.RunspaceChanged -= PowerShellContext_RunspaceChanged;
+            _debugService.BreakpointUpdated -= DebugService_BreakpointUpdated;
+            _debugService.DebuggerStopped -= DebugService_DebuggerStopped;
+            _powerShellContextService.DebuggerResumed -= PowerShellContext_DebuggerResumed;
         }
+
+        #region Public methods
+
+        internal void TriggerDebuggerStopped(DebuggerStoppedEventArgs e)
+        {
+            DebugService_DebuggerStopped(null, e);
+        }
+
+        #endregion
 
         #region Event Handlers
 
-        private void DebugService_DebuggerStoppedAsync(object sender, DebuggerStoppedEventArgs e)
+        private void DebugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
         {
             // Provide the reason for why the debugger has stopped script execution.
             // See https://github.com/Microsoft/vscode/issues/3648
@@ -78,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
                 });
         }
 
-        private void PowerShellContext_RunspaceChangedAsync(object sender, RunspaceChangedEventArgs e)
+        private void PowerShellContext_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
             if (_debugStateService.WaitingForAttach &&
                 e.ChangeAction == RunspaceChangeAction.Enter &&
@@ -105,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
             }
         }
 
-        private void PowerShellContext_DebuggerResumedAsync(object sender, DebuggerResumeAction e)
+        private void PowerShellContext_DebuggerResumed(object sender, DebuggerResumeAction e)
         {
             _jsonRpcServer.SendNotification(EventNames.Continued,
                 new ContinuedEvent
@@ -115,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
                 });
         }
 
-        private void DebugService_BreakpointUpdatedAsync(object sender, BreakpointUpdatedEventArgs e)
+        private void DebugService_BreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)
         {
             string reason = "changed";
 
@@ -140,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
             OmniSharp.Extensions.DebugAdapter.Protocol.Models.Breakpoint breakpoint;
             if (e.Breakpoint is LineBreakpoint)
             {
-                breakpoint = LspBreakpointUtils.CreateBreakpoint(BreakpointDetails.Create(e.Breakpoint));
+                breakpoint = LspDebugUtils.CreateBreakpoint(BreakpointDetails.Create(e.Breakpoint));
             }
             else if (e.Breakpoint is CommandBreakpoint)
             {

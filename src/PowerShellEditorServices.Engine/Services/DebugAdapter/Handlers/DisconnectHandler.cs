@@ -19,6 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
     {
         private readonly ILogger<DisconnectHandler> _logger;
         private readonly PowerShellContextService _powerShellContextService;
+        private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
         private readonly PsesDebugServer _psesDebugServer;
@@ -27,12 +28,14 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
             ILoggerFactory factory,
             PsesDebugServer psesDebugServer,
             PowerShellContextService powerShellContextService,
+            DebugService debugService,
             DebugStateService debugStateService,
             DebugEventHandlerService debugEventHandlerService)
         {
             _logger = factory.CreateLogger<DisconnectHandler>();
             _psesDebugServer = psesDebugServer;
             _powerShellContextService = powerShellContextService;
+            _debugService = debugService;
             _debugStateService = debugStateService;
             _debugEventHandlerService = debugEventHandlerService;
         }
@@ -66,6 +69,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
                         }
                     }
                 }
+
+                _debugService.IsClientAttached = false;
             }
 
             _logger.LogInformation("Debug adapter is shutting down...");
