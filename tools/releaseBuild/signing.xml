@@ -2,69 +2,69 @@
 <SignConfigXML>
  <job platform="" configuration="" dest="__OUTPATHROOT__\signed" jobname="PowerShell Editor Services" approvers="vigarg;gstolt">
     <!-- PowerShellEditorServices Script -->
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\PowerShellEditorServices.psd1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\PowerShellEditorServices.psd1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\PowerShellEditorServices.psd1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\PowerShellEditorServices.psm1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\PowerShellEditorServices.psm1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\PowerShellEditorServices.psm1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Start-EditorServices.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Start-EditorServices.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Start-EditorServices.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\PowerShellEditorServices.Commands.psd1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\PowerShellEditorServices.Commands.psd1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\PowerShellEditorServices.Commands.psd1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\PowerShellEditorServices.Commands.psm1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\PowerShellEditorServices.Commands.psm1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\PowerShellEditorServices.Commands.psm1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\PowerShellEditorServices.Commands.types.ps1xml" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\PowerShellEditorServices.Commands.types.ps1xml" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\PowerShellEditorServices.Commands.types.ps1xml" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\en-US\Strings.psd1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\en-US\Strings.psd1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\en-US\Strings.psd1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Private\BuiltInCommands.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Private\BuiltInCommands.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Private\BuiltInCommands.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\CmdletInterface.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\CmdletInterface.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\CmdletInterface.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\ConvertFrom-ScriptExtent.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\ConvertFrom-ScriptExtent.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\ConvertFrom-ScriptExtent.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\ConvertTo-ScriptExtent.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\ConvertTo-ScriptExtent.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\ConvertTo-ScriptExtent.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Find-Ast.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Find-Ast.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Find-Ast.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Get-Token.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Get-Token.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Get-Token.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Import-EditorCommand.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Import-EditorCommand.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Import-EditorCommand.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Join-ScriptExtent.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Join-ScriptExtent.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Join-ScriptExtent.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Out-CurrentFile.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Out-CurrentFile.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Out-CurrentFile.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Set-ScriptExtent.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Set-ScriptExtent.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Set-ScriptExtent.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Test-ScriptExtent.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Test-ScriptExtent.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\Commands\Public\Test-ScriptExtent.ps1" />
 
     <!-- PowerShellEditorServices Binary -->
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.dll" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.dll" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.dll" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.Host.dll" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.Host.dll" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.Host.dll" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.Protocol.dll" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.Protocol.dll" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices\bin\Microsoft.PowerShell.EditorServices.Protocol.dll" />
 
     <!-- PowerShellEditorServices.VSCode Script -->
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.psd1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.psd1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.psd1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.psm1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.psm1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.psm1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Close-VSCodeHtmlContentView.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Close-VSCodeHtmlContentView.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Close-VSCodeHtmlContentView.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\New-VSCodeHtmlContentView.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\New-VSCodeHtmlContentView.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\New-VSCodeHtmlContentView.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Set-VSCodeHtmlContentView.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Set-VSCodeHtmlContentView.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Set-VSCodeHtmlContentView.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Show-VSCodeHtmlContentView.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Show-VSCodeHtmlContentView.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Show-VSCodeHtmlContentView.ps1" />
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Write-VSCodeHtmlContentView.ps1" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Write-VSCodeHtmlContentView.ps1" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\Public\HtmlContentView\Write-VSCodeHtmlContentView.ps1" />
 
     <!-- PowerShellEditorServices.VSCode Binary -->
-    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\bin\Microsoft.PowerShell.EditorServices.VSCode.dll" signType="Authenticode"
+    <file src="__INPATHROOT__\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode\bin\Microsoft.PowerShell.EditorServices.VSCode.dll" signType="AuthenticodeFormer"
       dest="__OUTPATHROOT__\PowerShellEditorServices\PowerShellEditorServices.VSCode\bin\Microsoft.PowerShell.EditorServices.VSCode.dll" />
  </job>
 </SignConfigXML>
