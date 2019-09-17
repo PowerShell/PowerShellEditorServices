@@ -1,5 +1,39 @@
 # PowerShell Editor Services Release History
 
+## v2.0.0-preview.5
+### Tuesday, September 17, 2019
+
+- [PowerShellEditorServices #1023](https://github.com/PowerShell/PowerShellEditorServices/pull/1023) -
+  Update PSSA version.
+- [PowerShellEditorServices #1022](https://github.com/PowerShell/PowerShellEditorServices/pull/1022) -
+  Catch stream exceptions for some Debug Adapter stability..
+- [PowerShellEditorServices #1021](https://github.com/PowerShell/PowerShellEditorServices/pull/1021) -
+  Add AutoCorrectAliases setting (PR to be made in VS-Code repo as well) to add support for optionally correcting aliases as well (added in PSSA 1.18.2). (Thanks @bergmeister!)
+- 📁 🐛 [vscode-powershell #1994](https://github.com/PowerShell/PowerShellEditorServices/pull/1000) -
+  Fix crash when setBreakpoint from VSCode sends a git:/ URI....
+- [PowerShellEditorServices #975](https://github.com/PowerShell/PowerShellEditorServices/pull/975) -
+  Bump Serilog.Sinks.Async from 1.3.0 to 1.4.0. (Thanks @dependabot-preview[bot]!)
+- [PowerShellEditorServices #988](https://github.com/PowerShell/PowerShellEditorServices/pull/988) -
+  Testing removing consoleecho.
+- [PowerShellEditorServices #986](https://github.com/PowerShell/PowerShellEditorServices/pull/986) -
+  Bump Microsoft.NET.Test.Sdk from 16.1.1 to 16.2.0. (Thanks @dependabot-preview[bot]!)
+- [PowerShellEditorServices #986](https://github.com/PowerShell/PowerShellEditorServices) -
+  Merge pull request #985 from PowerShell/DocUpdates. (Thanks @SydneyhSmith!)
+- [PowerShellEditorServices #986](https://github.com/PowerShell/PowerShellEditorServices) -
+  Delete using_the_dotnet_api.md. (Thanks @SydneyhSmith!)
+- [PowerShellEditorServices #986](https://github.com/PowerShell/PowerShellEditorServices) -
+  Update README.md. (Thanks @SydneyhSmith!)
+- [PowerShellEditorServices #972](https://github.com/PowerShell/PowerShellEditorServices/pull/972) -
+  Bump Microsoft.NET.Test.Sdk from 16.1.0 to 16.1.1. (Thanks @dependabot-preview[bot]!)
+- [PowerShellEditorServices #981](https://github.com/PowerShell/PowerShellEditorServices/pull/981) -
+  Update NewtonSoft.Json dependency from 10.0.3 to 11.02 since PS 6.0 has been deprecated. (Thanks @bergmeister!)
+- 🐛 [vscode-powershell #2007](https://github.com/PowerShell/PowerShellEditorServices/pull/974) -
+  Defend against crash when no PSSA.
+- [PowerShellEditorServices #982](https://github.com/PowerShell/PowerShellEditorServices/pull/982) -
+  Mention lsp-powershell, an Emacs lsp-mode client that leverage PowerShellEditorServices. (Thanks @kiennq!)
+- 👷 [PowerShellEditorServices #978](https://github.com/PowerShell/PowerShellEditorServices/pull/977) -
+  Delete stale WebSocket code.
+
 ## v2.0.0-preview.2
 ### Wednesday, March 27, 2019
 
