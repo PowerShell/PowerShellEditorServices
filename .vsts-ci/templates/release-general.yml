@@ -1,0 +1,58 @@
+steps:
+- task: PkgESSetupBuild@10
+  displayName: 'Package ES - Setup Build'
+
+- task: DownloadBuildArtifacts@0
+  displayName: 'Download Build Artifacts'
+  inputs:
+    downloadType: specific
+
+- task: PowerShell@1
+  displayName: 'Unzip build'
+  inputs:
+    scriptType: inlineScript
+    inlineScript: |
+      New-Item -ItemType Directory $env:SYSTEM_ARTIFACTSDIRECTORY/release/out
+      $psesZip = Get-ChildItem $env:SYSTEM_ARTIFACTSDIRECTORY/PowerShellEditorServices*.zip
+      $psesZip | Expand-Archive -Path $env:SYSTEM_ARTIFACTSDIRECTORY/release/out
+      $psesZip | Remove-Item -Recurse -Force
+
+- task: PkgESCodeSign@10
+  displayName: 'CodeSign tools/releaseBuild/signing.xml'
+  inputs:
+    signConfigXml: tools/releaseBuild/signing.xml
+    inPathRoot: '$(System.ArtifactsDirectory)'
+    outPathRoot: '$(System.ArtifactsDirectory)\Signed'
+
+- task: PowerShell@1
+  displayName: 'Copy signed items into output'
+  inputs:
+    scriptType: inlineScript
+    inlineScript: |
+     $signed="$(System.ArtifactsDirectory)\Signed\PowerShellEditorServices\*"
+     $notSigned="$(System.ArtifactsDirectory)\release\out\PowerShellEditorServices"
+     Copy-Item $signed $notSigned -Recurse -Force
+
+- task: PowerShell@1
+  displayName: 'Create catalog files'
+  inputs:
+    scriptType: inlineScript
+    inlineScript: |
+     $dir = "$(System.ArtifactsDirectory)\release\out\PowerShellEditorServices\PowerShellEditorServices"
+     New-FileCatalog -CatalogFilePath "$(System.ArtifactsDirectory)\PowerShellEditorServices.cat" -Path $dir
+
+     $dir = "$(System.ArtifactsDirectory)\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode"
+     New-FileCatalog -CatalogFilePath "$(System.ArtifactsDirectory)\PowerShellEditorServices.VSCode.cat" -Path $dir
+
+- task: PkgESCodeSign@10
+  displayName: 'CodeSign tools/releaseBuild/FileCatalogSigning.xml'
+  inputs:
+    signConfigXml: tools/releaseBuild/FileCatalogSigning.xml
+    inPathRoot: '$(System.ArtifactsDirectory)'
+    outPathRoot: '$(System.ArtifactsDirectory)'
+
+- task: PowerShell@1
+  displayName: 'Upload artifacts'
+  inputs:
+    scriptType: inlineScript
+    inlineScript: 'Write-Host "##vso[artifact.upload containerfolder=PowerShellEditorServices;artifactname=PowerShellEditorServices]$(System.ArtifactsDirectory)\release\out\PowerShellEditorServices"'
