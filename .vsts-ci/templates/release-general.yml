@@ -1,8 +1,8 @@
 steps:
 - pwsh: |
-      Get-ChildItem -Path env:
-    displayName: Capture environment
-    condition: succeededOrFailed()
+    Get-ChildItem -Path env:
+  displayName: Capture environment
+  condition: succeededOrFailed()
 
 - task: PkgESSetupBuild@10
   displayName: 'Package ES - Setup Build'
