@@ -88,13 +88,13 @@ steps:
 - task: CredScan@2
   condition: succeededOrFailed()
 
-- task: BinSkim@3
-  condition: succeededOrFailed()
-  inputs:
-    InputType: 'Basic'
-    Function: 'analyze'
-    AnalyzeRecurse: true
-    AnalyzeTarget: '$(Build.ArtifactStagingDirectory)\Microsoft.PowerShell.GraphicalTools.dll;$(Build.ArtifactStagingDirectory)\OutGridView*.dll'
+# - task: BinSkim@3
+#   condition: succeededOrFailed()
+#   inputs:
+#     InputType: 'Basic'
+#     Function: 'analyze'
+#     AnalyzeRecurse: true
+#     AnalyzeTarget: '$(Build.ArtifactStagingDirectory)\release;$(Build.ArtifactStagingDirectory)\OutGridView*.dll'
 
 # Publish results as artifacts
 - task: PublishSecurityAnalysisLogs@3
@@ -113,7 +113,7 @@ steps:
     tsaEnvironment: 'PROD'
     codeBaseName: 'PowerShell_PowerShellEditorServices_20190917'
     uploadAPIScan: false
-    uploadBinSkim: true
+    uploadBinSkim: false
     uploadCredScan: true
     uploadFortifySCA: false
     uploadFxCop: false
