@@ -40,13 +40,7 @@ jobs:
     vmImage: 'vs2017-win2016'
   steps:
   - template: templates/ci-general.yml
-- job:
-  dependsOn: 'Build'
-  displayName: 'Sign release and package'
-  pool:
-    vmImage: 'vs2017-win2016'
-  steps:
-  - template: templates/release-general.yml
+
 - job: 'SignBuild'
   displayName: Signing Build
   dependsOn: 'ReleaseBuild'
