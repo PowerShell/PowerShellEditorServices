@@ -1,6 +1,13 @@
 steps:
+- pwsh: |
+      Get-ChildItem -Path env:
+    displayName: Capture environment
+    condition: succeededOrFailed()
+
 - task: PkgESSetupBuild@10
   displayName: 'Package ES - Setup Build'
+  inputs:
+    productName: PowerShellEditorServices
 
 - task: DownloadBuildArtifacts@0
   displayName: 'Download Build Artifacts'
@@ -8,21 +15,23 @@ steps:
     downloadType: specific
 
 - task: PowerShell@1
-  displayName: 'Unzip build'
+  displayName: 'Extract build zip'
   inputs:
     scriptType: inlineScript
     inlineScript: |
-      New-Item -ItemType Directory $env:SYSTEM_ARTIFACTSDIRECTORY/release/out
-      $psesZip = Get-ChildItem $env:SYSTEM_ARTIFACTSDIRECTORY/PowerShellEditorServices*.zip
-      $psesZip | Expand-Archive -Path $env:SYSTEM_ARTIFACTSDIRECTORY/release/out
+      New-Item -ItemType Directory $env:BUILD_ARTIFACTSTAGINGDIRECTORY/release/out
+      $psesZip = Get-ChildItem $env:BUILD_ARTIFACTSTAGINGDIRECTORY/PowerShellEditorServices*.zip
+      $psesZip | Expand-Archive -Path $env:BUILD_ARTIFACTSTAGINGDIRECTORY/release/out
       $psesZip | Remove-Item -Recurse -Force
 
 - task: PkgESCodeSign@10
-  displayName: 'CodeSign tools/releaseBuild/signing.xml'
-  inputs:
-    signConfigXml: tools/releaseBuild/signing.xml
-    inPathRoot: '$(System.ArtifactsDirectory)'
-    outPathRoot: '$(System.ArtifactsDirectory)\Signed'
+    displayName: 'CodeSign tools/releaseBuild/signing.xml'
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+    inputs:
+      signConfigXml: tools/releaseBuild/signing.xml
+      inPathRoot: '$(Build.ArtifactStagingDirectory)'
+      outPathRoot: '$(Build.ArtifactStagingDirectory)\Signed'
 
 - task: PowerShell@1
   displayName: 'Copy signed items into output'
@@ -50,6 +59,70 @@ steps:
     signConfigXml: tools/releaseBuild/FileCatalogSigning.xml
     inPathRoot: '$(System.ArtifactsDirectory)'
     outPathRoot: '$(System.ArtifactsDirectory)'
+
+- task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
+
+- task: AntiMalware@3
+inputs:
+    InputType: 'Basic'
+    ScanType: 'CustomScan'
+    FileDirPath: '$(Build.ArtifactStagingDirectory)'
+    EnableServices: false
+    SupportLogOnError: false
+    TreatSignatureUpdateFailureAs: 'Warning'
+    SignatureFreshness: 'UpToDate'
+    TreatStaleSignatureAs: 'Error'
+
+- task: PoliCheck@1
+condition: succeededOrFailed()
+inputs:
+    targetType: F
+    optionsFC: 0
+    optionsXS: 0
+    optionsPE: '1|2|3|4'
+    optionsHMENABLE: 0
+    optionsFTPATH: '$(Build.SourcesDirectory)\tools\terms\FileTypeSet.xml'
+    # toolVersion: 5.8.2.1
+
+- task: CredScan@2
+condition: succeededOrFailed()
+
+- task: BinSkim@3
+condition: succeededOrFailed()
+inputs:
+    InputType: 'Basic'
+    Function: 'analyze'
+    AnalyzeRecurse: true
+    AnalyzeTarget: '$(Build.ArtifactStagingDirectory)\Microsoft.PowerShell.GraphicalTools.dll;$(Build.ArtifactStagingDirectory)\OutGridView*.dll'
+
+# Publish results as artifacts
+- task: PublishSecurityAnalysisLogs@3
+condition: succeededOrFailed()
+inputs:
+    ArtifactName: 'CodeAnalysisLogs'
+    ArtifactType: 'Container'
+
+# Publish to TSA server
+- task: TSAUpload@1
+condition: succeededOrFailed()
+continueOnError: true
+inputs:
+    tsaVersion: 'TsaV2'
+    codebase: 'Existing'
+    tsaEnvironment: 'PROD'
+    codeBaseName: 'PowerShell_GraphicalTools_20190809'
+    uploadAPIScan: false
+    uploadBinSkim: true
+    uploadCredScan: true
+    uploadFortifySCA: false
+    uploadFxCop: false
+    uploadModernCop: false
+    uploadPoliCheck: true
+    uploadPREfast: false
+    uploadRoslyn: false
+    uploadTSLint: false
+    uploadAsync: true
 
 - task: PowerShell@1
   displayName: 'Upload artifacts'

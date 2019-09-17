@@ -34,7 +34,7 @@ trigger:
 
 jobs:
 
-- job: 'Build'
+- job: 'ReleaseBuild'
   displayName: 'Build release'
   pool:
     vmImage: 'vs2017-win2016'
@@ -45,5 +45,13 @@ jobs:
   displayName: 'Sign release and package'
   pool:
     vmImage: 'vs2017-win2016'
+  steps:
+  - template: templates/release-general.yml
+- job: 'SignBuild'
+  displayName: Signing Build
+  dependsOn: 'ReleaseBuild'
+  pool:
+    name: 'Package ES CodeHub Lab E'
+    demands: DotNetFramework
   steps:
   - template: templates/release-general.yml
