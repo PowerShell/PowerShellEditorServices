@@ -111,7 +111,7 @@ inputs:
     tsaVersion: 'TsaV2'
     codebase: 'Existing'
     tsaEnvironment: 'PROD'
-    codeBaseName: 'PowerShell_GraphicalTools_20190809'
+    codeBaseName: 'PowerShell_PowerShellEditorServices_20190917'
     uploadAPIScan: false
     uploadBinSkim: true
     uploadCredScan: true
