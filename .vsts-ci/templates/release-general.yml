@@ -25,13 +25,13 @@ steps:
       $psesZip | Remove-Item -Recurse -Force
 
 - task: PkgESCodeSign@10
-    displayName: 'CodeSign tools/releaseBuild/signing.xml'
-    env:
-      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-    inputs:
-      signConfigXml: tools/releaseBuild/signing.xml
-      inPathRoot: '$(Build.ArtifactStagingDirectory)'
-      outPathRoot: '$(Build.ArtifactStagingDirectory)\Signed'
+  displayName: 'CodeSign tools/releaseBuild/signing.xml'
+  env:
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+  inputs:
+    signConfigXml: tools/releaseBuild/signing.xml
+    inPathRoot: '$(Build.ArtifactStagingDirectory)'
+    outPathRoot: '$(Build.ArtifactStagingDirectory)\Signed'
 
 - task: PowerShell@1
   displayName: 'Copy signed items into output'
@@ -61,10 +61,10 @@ steps:
     outPathRoot: '$(System.ArtifactsDirectory)'
 
 - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
-    displayName: 'Component Detection'
+  displayName: 'Component Detection'
 
 - task: AntiMalware@3
-inputs:
+  inputs:
     InputType: 'Basic'
     ScanType: 'CustomScan'
     FileDirPath: '$(Build.ArtifactStagingDirectory)'
@@ -75,8 +75,8 @@ inputs:
     TreatStaleSignatureAs: 'Error'
 
 - task: PoliCheck@1
-condition: succeededOrFailed()
-inputs:
+  condition: succeededOrFailed()
+  inputs:
     targetType: F
     optionsFC: 0
     optionsXS: 0
@@ -86,11 +86,11 @@ inputs:
     # toolVersion: 5.8.2.1
 
 - task: CredScan@2
-condition: succeededOrFailed()
+  condition: succeededOrFailed()
 
 - task: BinSkim@3
-condition: succeededOrFailed()
-inputs:
+  condition: succeededOrFailed()
+  inputs:
     InputType: 'Basic'
     Function: 'analyze'
     AnalyzeRecurse: true
@@ -98,16 +98,16 @@ inputs:
 
 # Publish results as artifacts
 - task: PublishSecurityAnalysisLogs@3
-condition: succeededOrFailed()
-inputs:
+  condition: succeededOrFailed()
+  inputs:
     ArtifactName: 'CodeAnalysisLogs'
     ArtifactType: 'Container'
 
 # Publish to TSA server
 - task: TSAUpload@1
-condition: succeededOrFailed()
-continueOnError: true
-inputs:
+  condition: succeededOrFailed()
+  continueOnError: true
+  inputs:
     tsaVersion: 'TsaV2'
     codebase: 'Existing'
     tsaEnvironment: 'PROD'
