@@ -189,6 +189,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
             }
         }
 
+        public bool AutoCorrectAliases { get; set; }
         public CodeFormattingPreset Preset { get; set; }
         public bool OpenBraceOnSameLine { get; set; }
         public bool NewLineAfterOpenBrace { get; set; }
@@ -248,6 +249,44 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private Hashtable GetCustomPSSASettingsHashtable(int tabSize, bool insertSpaces)
         {
+            var ruleConfigurations = new Hashtable {
+                {"PSPlaceOpenBrace", new Hashtable {
+                    {"Enable", true},
+                    {"OnSameLine", OpenBraceOnSameLine},
+                    {"NewLineAfter", NewLineAfterOpenBrace},
+                    {"IgnoreOneLineBlock", IgnoreOneLineBlock}
+                }},
+                {"PSPlaceCloseBrace", new Hashtable {
+                    {"Enable", true},
+                    {"NewLineAfter", NewLineAfterCloseBrace},
+                    {"IgnoreOneLineBlock", IgnoreOneLineBlock}
+                }},
+                {"PSUseConsistentIndentation", new Hashtable {
+                    {"Enable", true},
+                    {"IndentationSize", tabSize},
+                    {"Kind", insertSpaces ? "space" : "tab"}
+                }},
+                {"PSUseConsistentWhitespace", new Hashtable {
+                    {"Enable", true},
+                    {"CheckOpenBrace", WhitespaceBeforeOpenBrace},
+                    {"CheckOpenParen", WhitespaceBeforeOpenParen},
+                    {"CheckOperator", WhitespaceAroundOperator},
+                    {"CheckSeparator", WhitespaceAfterSeparator}
+                }},
+                {"PSAlignAssignmentStatement", new Hashtable {
+                    {"Enable", true},
+                    {"CheckHashtable", AlignPropertyValuePairs}
+                }},
+                {"PSUseCorrectCasing", new Hashtable {
+                    {"Enable", UseCorrectCasing}
+                }},
+            };
+
+            if (AutoCorrectAliases)
+            {
+                ruleConfigurations.Add("PSAvoidUsingCmdletAliases", new Hashtable());
+            }
+
             return new Hashtable
             {
                 {"IncludeRules", new string[] {
@@ -255,43 +294,12 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                      "PSPlaceOpenBrace",
                      "PSUseConsistentWhitespace",
                      "PSUseConsistentIndentation",
-                     "PSAlignAssignmentStatement"
+                     "PSAlignAssignmentStatement",
+                     "PSAvoidUsingCmdletAliases",
                 }},
-                {"Rules", new Hashtable {
-                    {"PSPlaceOpenBrace", new Hashtable {
-                        {"Enable", true},
-                        {"OnSameLine", OpenBraceOnSameLine},
-                        {"NewLineAfter", NewLineAfterOpenBrace},
-                        {"IgnoreOneLineBlock", IgnoreOneLineBlock}
-                    }},
-                    {"PSPlaceCloseBrace", new Hashtable {
-                        {"Enable", true},
-                        {"NewLineAfter", NewLineAfterCloseBrace},
-                        {"IgnoreOneLineBlock", IgnoreOneLineBlock}
-                    }},
-                    {"PSUseConsistentIndentation", new Hashtable {
-                        {"Enable", true},
-                        {"IndentationSize", tabSize},
-                        {"PipelineIndentation", PipelineIndentationStyle },
-                        {"Kind", insertSpaces ? "space" : "tab"}
-                    }},
-                    {"PSUseConsistentWhitespace", new Hashtable {
-                        {"Enable", true},
-                        {"CheckOpenBrace", WhitespaceBeforeOpenBrace},
-                        {"CheckOpenParen", WhitespaceBeforeOpenParen},
-                        {"CheckOperator", WhitespaceAroundOperator},
-                        {"CheckSeparator", WhitespaceAfterSeparator},
-                        {"CheckInnerBrace", WhitespaceInsideBrace},
-                        {"CheckPipe", WhitespaceAroundPipe},
-                    }},
-                    {"PSAlignAssignmentStatement", new Hashtable {
-                        {"Enable", true},
-                        {"CheckHashtable", AlignPropertyValuePairs}
-                    }},
-                    {"PSUseCorrectCasing", new Hashtable {
-                        {"Enable", UseCorrectCasing}
-                    }},
-                }}
+                {
+                    "Rules", ruleConfigurations
+                },
             };
         }
     }
