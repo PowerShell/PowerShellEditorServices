@@ -19,7 +19,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
-    public class SetFunctionBreakpointsHandler : ISetFunctionBreakpointsHandler
+    internal class SetFunctionBreakpointsHandler : ISetFunctionBreakpointsHandler
     {
         private readonly ILogger _logger;
         private readonly DebugService _debugService;
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
         }
     }
 
-    public class SetExceptionBreakpointsHandler : ISetExceptionBreakpointsHandler
+    internal class SetExceptionBreakpointsHandler : ISetExceptionBreakpointsHandler
     {
         private readonly ILogger _logger;
         private readonly DebugService _debugService;
@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
         }
     }
 
-    public class SetBreakpointsHandler : ISetBreakpointsHandler
+    internal class SetBreakpointsHandler : ISetBreakpointsHandler
     {
         private readonly ILogger _logger;
         private readonly DebugService _debugService;

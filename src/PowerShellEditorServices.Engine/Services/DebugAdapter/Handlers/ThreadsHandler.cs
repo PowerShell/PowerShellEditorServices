@@ -10,7 +10,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
-    public class ThreadsHandler : IThreadsHandler
+    internal class ThreadsHandler : IThreadsHandler
     {
         public Task<ThreadsResponse> Handle(ThreadsArguments request, CancellationToken cancellationToken)
         {

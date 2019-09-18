@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
     /// Provides a high-level service for interacting with the
     /// PowerShell debugger in the runspace managed by a PowerShellContext.
     /// </summary>
-    public class DebugService
+    internal class DebugService
     {
         #region Fields
 
@@ -34,14 +34,14 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
 
         private readonly ILogger logger;
         private readonly PowerShellContextService powerShellContext;
-        //private RemoteFileManagerService remoteFileManager;
+        private RemoteFileManagerService remoteFileManager;
 
         // TODO: This needs to be managed per nested session
         private readonly Dictionary<string, List<Breakpoint>> breakpointsPerFile =
             new Dictionary<string, List<Breakpoint>>();
 
         private int nextVariableId;
-        private readonly string temporaryScriptListingPath;
+        private string temporaryScriptListingPath;
         private List<VariableDetailsBase> variables;
         private VariableContainerDetails globalScopeVariables;
         private VariableContainerDetails scriptScopeVariables;
@@ -98,12 +98,12 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
         /// The PowerShellContext to use for all debugging operations.
         /// </param>
         //// <param name = "remoteFileManager" >
-        //// A RemoteFileManager instance to use for accessing files in remote sessions.
+        //// A RemoteFileManagerService instance to use for accessing files in remote sessions.
         //// </param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public DebugService(
             PowerShellContextService powerShellContext,
-            //RemoteFileManager remoteFileManager,
+            RemoteFileManagerService remoteFileManager,
             ILoggerFactory factory)
         {
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
@@ -115,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
 
             this.powerShellContext.BreakpointUpdated += this.OnBreakpointUpdated;
 
-            //this.remoteFileManager = remoteFileManager;
+            this.remoteFileManager = remoteFileManager;
 
             this.invocationTypeScriptPositionProperty =
                 typeof(InvocationInfo)
@@ -148,16 +148,13 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
                     .GetCapability<DscBreakpointCapability>();
 
             string scriptPath = scriptFile.FilePath;
-            //TODO: BRING THIS BACK
             // Make sure we're using the remote script path
-            /*
             if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
                 this.remoteFileManager != null)
             {
                 if (!this.remoteFileManager.IsUnderRemoteTempPath(scriptPath))
                 {
-                    this.logger.Write(
-                        LogLevel.Verbose,
+                    this.logger.LogTrace(
                         $"Could not set breakpoints for local path '{scriptPath}' in a remote session.");
 
                     return resultBreakpointDetails.ToArray();
@@ -170,8 +167,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
 
                 scriptPath = mappedPath;
             }
-            else */
-            if (
+            else if (
                 this.temporaryScriptListingPath != null &&
                 this.temporaryScriptListingPath.Equals(scriptPath, StringComparison.CurrentCultureIgnoreCase))
             {
@@ -974,16 +970,15 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
                 {
                     this.stackFrameDetails[i].ScriptPath = scriptNameOverride;
                 }
-                // TODO: BRING THIS BACK
-                //else if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                //    this.remoteFileManager != null &&
-                //    !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
-                //{
-                //    this.stackFrameDetails[i].ScriptPath =
-                //        this.remoteFileManager.GetMappedPath(
-                //            stackFrameScriptPath,
-                //            this.powerShellContext.CurrentRunspace);
-                //}
+                else if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                    this.remoteFileManager != null &&
+                    !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
+                {
+                    this.stackFrameDetails[i].ScriptPath =
+                        this.remoteFileManager.GetMappedPath(
+                            stackFrameScriptPath,
+                            this.powerShellContext.CurrentRunspace);
+                }
             }
         }
 
@@ -1201,63 +1196,61 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
             bool noScriptName = false;
             string localScriptPath = e.InvocationInfo.ScriptName;
 
-            // TODO: BRING THIS BACK
             // If there's no ScriptName, get the "list" of the current source
-            //if (this.remoteFileManager != null && string.IsNullOrEmpty(localScriptPath))
-            //{
-            //    // Get the current script listing and create the buffer
-            //    PSCommand command = new PSCommand();
-            //    command.AddScript($"list 1 {int.MaxValue}");
+            if (this.remoteFileManager != null && string.IsNullOrEmpty(localScriptPath))
+            {
+                // Get the current script listing and create the buffer
+                PSCommand command = new PSCommand();
+                command.AddScript($"list 1 {int.MaxValue}");
 
-            //    IEnumerable<PSObject> scriptListingLines =
-            //        await this.powerShellContext.ExecuteCommandAsync<PSObject>(
-            //            command, false, false);
+                IEnumerable<PSObject> scriptListingLines =
+                    await this.powerShellContext.ExecuteCommandAsync<PSObject>(
+                        command, false, false);
 
-            //    if (scriptListingLines != null)
-            //    {
-            //        int linePrefixLength = 0;
+                if (scriptListingLines != null)
+                {
+                    int linePrefixLength = 0;
 
-            //        string scriptListing =
-            //            string.Join(
-            //                Environment.NewLine,
-            //                scriptListingLines
-            //                    .Select(o => this.TrimScriptListingLine(o, ref linePrefixLength))
-            //                    .Where(s => s != null));
+                    string scriptListing =
+                        string.Join(
+                            Environment.NewLine,
+                            scriptListingLines
+                                .Select(o => this.TrimScriptListingLine(o, ref linePrefixLength))
+                                .Where(s => s != null));
 
-            //        this.temporaryScriptListingPath =
-            //            this.remoteFileManager.CreateTemporaryFile(
-            //                $"[{this.powerShellContext.CurrentRunspace.SessionDetails.ComputerName}] {TemporaryScriptFileName}",
-            //                scriptListing,
-            //                this.powerShellContext.CurrentRunspace);
+                    this.temporaryScriptListingPath =
+                        this.remoteFileManager.CreateTemporaryFile(
+                            $"[{this.powerShellContext.CurrentRunspace.SessionDetails.ComputerName}] {TemporaryScriptFileName}",
+                            scriptListing,
+                            this.powerShellContext.CurrentRunspace);
 
-            //        localScriptPath =
-            //            this.temporaryScriptListingPath
-            //            ?? StackFrameDetails.NoFileScriptPath;
+                    localScriptPath =
+                        this.temporaryScriptListingPath
+                        ?? StackFrameDetails.NoFileScriptPath;
 
-            //        noScriptName = localScriptPath != null;
-            //    }
-            //    else
-            //    {
-            //        this.logger.LogWarning($"Could not load script context");
-            //    }
-            //}
+                    noScriptName = localScriptPath != null;
+                }
+                else
+                {
+                    this.logger.LogWarning($"Could not load script context");
+                }
+            }
 
             // Get call stack and variables.
             await this.FetchStackFramesAndVariablesAsync(
                 noScriptName ? localScriptPath : null);
 
-            // TODO: BRING THIS BACK
             // If this is a remote connection and the debugger stopped at a line
             // in a script file, get the file contents
-            //if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-            //    this.remoteFileManager != null &&
-            //    !noScriptName)
-            //{
-            //    localScriptPath =
-            //        await this.remoteFileManager.FetchRemoteFileAsync(
-            //            e.InvocationInfo.ScriptName,
-            //            this.powerShellContext.CurrentRunspace);
-            //}
+            if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                this.remoteFileManager != null &&
+                !noScriptName)
+            {
+                localScriptPath =
+                    await this.remoteFileManager.FetchRemoteFileAsync(
+                        e.InvocationInfo.ScriptName,
+                        this.powerShellContext.CurrentRunspace);
+            }
 
             if (this.stackFrameDetails.Length > 0)
             {
@@ -1305,25 +1298,24 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
             if (e.Breakpoint is LineBreakpoint lineBreakpoint)
             {
                 string scriptPath = lineBreakpoint.Script;
-                // TODO: BRING THIS BACK
-                //if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                //    this.remoteFileManager != null)
-                //{
-                //    string mappedPath =
-                //        this.remoteFileManager.GetMappedPath(
-                //            scriptPath,
-                //            this.powerShellContext.CurrentRunspace);
+                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
+                    this.remoteFileManager != null)
+                {
+                    string mappedPath =
+                        this.remoteFileManager.GetMappedPath(
+                            scriptPath,
+                            this.powerShellContext.CurrentRunspace);
 
-                //    if (mappedPath == null)
-                //    {
-                //        this.logger.LogError(
-                //            $"Could not map remote path '{scriptPath}' to a local path.");
+                    if (mappedPath == null)
+                    {
+                        this.logger.LogError(
+                            $"Could not map remote path '{scriptPath}' to a local path.");
 
-                //        return;
-                //    }
+                        return;
+                    }
 
-                //    scriptPath = mappedPath;
-                //}
+                    scriptPath = mappedPath;
+                }
 
                 // Normalize the script filename for proper indexing
                 string normalizedScriptName = scriptPath.ToLower();

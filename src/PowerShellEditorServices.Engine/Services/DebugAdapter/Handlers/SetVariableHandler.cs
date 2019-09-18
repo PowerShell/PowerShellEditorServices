@@ -16,7 +16,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
-    public class SetVariableHandler : ISetVariableHandler
+    internal class SetVariableHandler : ISetVariableHandler
     {
         private readonly ILogger _logger;
         private readonly DebugService _debugService;

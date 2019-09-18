@@ -12,7 +12,7 @@ using Microsoft.PowerShell.EditorServices.Engine.Services.DebugAdapter;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
-    public class DebugEvaluateHandler : IEvaluateHandler
+    internal class DebugEvaluateHandler : IEvaluateHandler
     {
         private readonly ILogger _logger;
         private readonly PowerShellContextService _powerShellContextService;

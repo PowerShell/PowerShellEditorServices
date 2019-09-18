@@ -45,6 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
                 options.Services = new ServiceCollection()
                     .AddSingleton(languageServerServiceProvider.GetService<PowerShellContextService>())
                     .AddSingleton(languageServerServiceProvider.GetService<WorkspaceService>())
+                    .AddSingleton(languageServerServiceProvider.GetService<RemoteFileManagerService>())
                     .AddSingleton<PsesDebugServer>(this)
                     .AddSingleton<DebugService>()
                     .AddSingleton<DebugStateService>()

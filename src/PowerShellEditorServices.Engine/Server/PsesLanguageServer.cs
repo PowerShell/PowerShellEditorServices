@@ -79,6 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
                                 _additionalModules))
                     .AddSingleton<TemplateService>()
                     .AddSingleton<EditorOperationsService>()
+                    .AddSingleton<RemoteFileManagerService>()
                     .AddSingleton<ExtensionService>(
                         (provider) =>
                         {

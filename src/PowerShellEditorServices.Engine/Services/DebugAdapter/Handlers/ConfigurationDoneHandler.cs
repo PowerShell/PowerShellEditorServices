@@ -15,7 +15,7 @@ using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
-    public class ConfigurationDoneHandler : IConfigurationDoneHandler
+    internal class ConfigurationDoneHandler : IConfigurationDoneHandler
     {
         private readonly ILogger _logger;
         private readonly IJsonRpcServer _jsonRpcServer;

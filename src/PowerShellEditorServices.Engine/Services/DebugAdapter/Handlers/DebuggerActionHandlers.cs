@@ -13,7 +13,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
-    public class ContinueHandler : IContinueHandler
+    internal class ContinueHandler : IContinueHandler
     {
         private readonly ILogger _logger;
         private readonly DebugService _debugService;
@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
         }
     }
 
-    public class NextHandler : INextHandler
+    internal class NextHandler : INextHandler
     {
         private readonly ILogger _logger;
         private readonly DebugService _debugService;
@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
         }
     }
 
-    public class PauseHandler : IPauseHandler
+    internal class PauseHandler : IPauseHandler
     {
         private readonly ILogger _logger;
         private readonly DebugService _debugService;
@@ -73,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
         }
     }
 
-    public class StepInHandler : IStepInHandler
+    internal class StepInHandler : IStepInHandler
     {
         private readonly ILogger _logger;
         private readonly DebugService _debugService;
@@ -93,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
         }
     }
 
-    public class StepOutHandler : IStepOutHandler
+    internal class StepOutHandler : IStepOutHandler
     {
         private readonly ILogger _logger;
         private readonly DebugService _debugService;

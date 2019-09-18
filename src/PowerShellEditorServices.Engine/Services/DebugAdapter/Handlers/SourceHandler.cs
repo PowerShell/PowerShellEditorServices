@@ -9,7 +9,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
-    public class SourceHandler : ISourceHandler
+    internal class SourceHandler : ISourceHandler
     {
         public Task<SourceResponse> Handle(SourceArguments request, CancellationToken cancellationToken)
         {

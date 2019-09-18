@@ -15,7 +15,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
-    public class DisconnectHandler : IDisconnectHandler
+    internal class DisconnectHandler : IDisconnectHandler
     {
         private readonly ILogger<DisconnectHandler> _logger;
         private readonly PowerShellContextService _powerShellContextService;

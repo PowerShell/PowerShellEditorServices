@@ -25,6 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
         private readonly WorkspaceService _workspaceService;
+        private readonly RemoteFileManagerService _remoteFileManagerService;
 
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
             new DocumentFilter()
@@ -37,11 +38,16 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 
         public TextDocumentSyncKind Change => TextDocumentSyncKind.Incremental;
 
-        public TextDocumentHandler(ILoggerFactory factory, AnalysisService analysisService, WorkspaceService workspaceService)
+        public TextDocumentHandler(
+            ILoggerFactory factory,
+            AnalysisService analysisService,
+            WorkspaceService workspaceService,
+            RemoteFileManagerService remoteFileManagerService)
         {
             _logger = factory.CreateLogger<TextDocumentHandler>();
             _analysisService = analysisService;
             _workspaceService = workspaceService;
+            _remoteFileManagerService = remoteFileManagerService;
         }
 
         public Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
@@ -117,21 +123,20 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
             return Unit.Task;
         }
 
-        public Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken token)
+        public async Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken token)
         {
             ScriptFile savedFile =
                 _workspaceService.GetFile(
                     notification.TextDocument.Uri.ToString());
-            // TODO bring back
-            // if (savedFile != null)
-            // {
-            //     if (this.editorSession.RemoteFileManager.IsUnderRemoteTempPath(savedFile.FilePath))
-            //     {
-            //         await this.editorSession.RemoteFileManager.SaveRemoteFileAsync(
-            //             savedFile.FilePath);
-            //     }
-            // }
-            return Unit.Task;
+
+            if (savedFile != null)
+            {
+                if (_remoteFileManagerService.IsUnderRemoteTempPath(savedFile.FilePath))
+                {
+                    await _remoteFileManagerService.SaveRemoteFileAsync(savedFile.FilePath);
+                }
+            }
+            return Unit.Value;
         }
 
         TextDocumentSaveRegistrationOptions IRegistration<TextDocumentSaveRegistrationOptions>.GetRegistrationOptions()

@@ -15,7 +15,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
-    public class ScopesHandler : IScopesHandler
+    internal class ScopesHandler : IScopesHandler
     {
         private readonly ILogger _logger;
         private readonly DebugService _debugService;

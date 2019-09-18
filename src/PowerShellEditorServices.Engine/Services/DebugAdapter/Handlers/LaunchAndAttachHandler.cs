@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
         public string CustomPipeName { get; set; }
     }
 
-    public class LaunchHandler : IPsesLaunchHandler
+    internal class LaunchHandler : IPsesLaunchHandler
     {
         private readonly ILogger<LaunchHandler> _logger;
         private readonly DebugService _debugService;
@@ -100,6 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
         private readonly IJsonRpcServer _jsonRpcServer;
+        private readonly RemoteFileManagerService _remoteFileManagerService;
 
         public LaunchHandler(
             ILoggerFactory factory,
@@ -107,7 +108,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
             DebugService debugService,
             PowerShellContextService powerShellContextService,
             DebugStateService debugStateService,
-            DebugEventHandlerService debugEventHandlerService)
+            DebugEventHandlerService debugEventHandlerService,
+            RemoteFileManagerService remoteFileManagerService)
         {
             _logger = factory.CreateLogger<LaunchHandler>();
             _jsonRpcServer = jsonRpcServer;
@@ -115,6 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
             _powerShellContextService = powerShellContextService;
             _debugStateService = debugStateService;
             _debugEventHandlerService = debugEventHandlerService;
+            _remoteFileManagerService = remoteFileManagerService;
         }
 
         public async Task<Unit> Handle(PsesLaunchRequestArguments request, CancellationToken cancellationToken)
@@ -183,14 +186,14 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
             // TODO: Bring this back
             // If the current session is remote, map the script path to the remote
             // machine if necessary
-            //if (_scriptToLaunch != null &&
-            //    _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
-            //{
-            //    _scriptToLaunch =
-            //        _editorSession.RemoteFileManager.GetMappedPath(
-            //            _scriptToLaunch,
-            //            _editorSession.PowerShellContext.CurrentRunspace);
-            //}
+            if (_debugStateService.ScriptToLaunch != null &&
+                _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
+            {
+                _debugStateService.ScriptToLaunch =
+                    _remoteFileManagerService.GetMappedPath(
+                        _debugStateService.ScriptToLaunch,
+                        _powerShellContextService.CurrentRunspace);
+            }
 
             // If no script is being launched, mark this as an interactive
             // debugging session
@@ -204,7 +207,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
         }
     }
 
-    public class AttachHandler : IPsesAttachHandler
+    internal class AttachHandler : IPsesAttachHandler
     {
         private static readonly Version s_minVersionForCustomPipeName = new Version(6, 2);
 

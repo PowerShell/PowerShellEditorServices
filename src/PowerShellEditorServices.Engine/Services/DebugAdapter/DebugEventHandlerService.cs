@@ -13,7 +13,7 @@ using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Services
 {
-    public class DebugEventHandlerService
+    internal class DebugEventHandlerService
     {
         private readonly ILogger<DebugEventHandlerService> _logger;
         private readonly PowerShellContextService _powerShellContextService;

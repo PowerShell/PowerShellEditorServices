@@ -5,7 +5,7 @@
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Services
 {
-    public class DebugStateService
+    internal class DebugStateService
     {
         internal bool NoDebug { get; set; }
 
