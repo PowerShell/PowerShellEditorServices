@@ -19,9 +19,9 @@ steps:
   inputs:
     scriptType: inlineScript
     inlineScript: |
-      $dest = New-Item -ItemType Directory $env:BUILD_ARTIFACTSTAGINGDIRECTORY/../release/out/PowerShellEditorServices
-      $psesZip = Get-ChildItem $env:BUILD_ARTIFACTSTAGINGDIRECTORY/PowerShellEditorServices*.zip
-      $psesZip | Expand-Archive -DestinationPath $dest -Force
+      $dest = New-Item -ItemType Directory $env:BUILD_ARTIFACTSTAGINGDIRECTORY/release/out/PowerShellEditorServices
+      $psesZip = Get-ChildItem $env:BUILD_ARTIFACTSTAGINGDIRECTORY/PowerShellEditorServices/PowerShellEditorServices*.zip -ErrorAction Stop
+      $psesZip | Expand-Archive -DestinationPath $dest -Force -Verbose
       $psesZip | Remove-Item -Recurse -Force
 
 - task: PkgESCodeSign@10
