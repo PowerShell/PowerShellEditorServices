@@ -55,6 +55,8 @@ steps:
 
 - task: PkgESCodeSign@10
   displayName: 'CodeSign tools/releaseBuild/FileCatalogSigning.xml'
+  env:
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
   inputs:
     signConfigXml: tools/releaseBuild/FileCatalogSigning.xml
     inPathRoot: '$(Build.ArtifactStagingDirectory)'
