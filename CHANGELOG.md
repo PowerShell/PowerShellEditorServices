@@ -1,5 +1,23 @@
 # PowerShell Editor Services Release History
 
+## v1.13.0
+### Monday, September 23, 2019
+
+- 🐛 [PowerShellEditorServices #1022](https://github.com/PowerShell/PowerShellEditorServices/pull/1022) -
+  Catch stream exceptions for some Debug Adapter stability.
+- 🔎 [PowerShellEditorServices #1021](https://github.com/PowerShell/PowerShellEditorServices/pull/1021) -
+  Add AutoCorrectAliases setting (PR to be made in VS-Code repo as well) to add support for optionally correcting aliases as well (added in PSSA 1.18.2). (Thanks @bergmeister!).
+- 🐛 [vscode-powershell #1994](https://github.com/PowerShell/PowerShellEditorServices/pull/1000) -
+  Fix crash when setBreakpoint from VSCode sends a git:/ URI.
+- 🧹 [PowerShellEditorServices #988](https://github.com/PowerShell/PowerShellEditorServices/pull/988) -
+  Remove consoleecho lib for PowerShell 7.
+- 📔 [PowerShellEditorServices #986](https://github.com/PowerShell/PowerShellEditorServices) -
+  Documentation updates. (Thanks @SydneyhSmith!)
+- ⚙️ [PowerShellEditorServices #981](https://github.com/PowerShell/PowerShellEditorServices/pull/981) -
+  Update NewtonSoft.Json dependency from 10.0.3 to 11.02 since PS 6.0 has been deprecated. (Thanks @bergmeister!)
+- 🐛 [vscode-powershell #2007](https://github.com/PowerShell/PowerShellEditorServices/pull/974) -
+  Defend against crash when no PSScriptAnalyzer is found.
+
 ## v1.12.2
 ### Friday, May 24, 2019
 
