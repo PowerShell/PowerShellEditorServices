@@ -1,7 +1,7 @@
 # PowerShell Editor Services Release History
 
 ## v2.0.0-preview.5
-### Wednesday, September 18, 2019
+### Monday, September 23, 2019
 
 - 🐛 [PowerShellEditorServices #1022](https://github.com/PowerShell/PowerShellEditorServices/pull/1022) -
   Catch stream exceptions for some Debug Adapter stability.
