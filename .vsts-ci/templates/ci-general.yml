@@ -7,5 +7,5 @@ steps:
     condition: succeededOrFailed()
   - task: PublishBuildArtifacts@1
     inputs:
-      ArtifactName: PowerShellEditorServices
+      ArtifactName: PowerShellEditorServices-CI
       PathtoPublish: '$(Build.ArtifactStagingDirectory)'

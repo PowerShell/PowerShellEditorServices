@@ -20,7 +20,7 @@ steps:
     scriptType: inlineScript
     inlineScript: |
       $dest = New-Item -ItemType Directory $env:BUILD_ARTIFACTSTAGINGDIRECTORY/release/out/PowerShellEditorServices
-      $psesZip = Get-ChildItem $env:BUILD_ARTIFACTSTAGINGDIRECTORY/PowerShellEditorServices/PowerShellEditorServices*.zip -ErrorAction Stop
+      $psesZip = Get-ChildItem $env:BUILD_ARTIFACTSTAGINGDIRECTORY/PowerShellEditorServices-CI/PowerShellEditorServices*.zip -ErrorAction Stop
       $psesZip | Expand-Archive -DestinationPath $dest -Force -Verbose
       $psesZip | Remove-Item -Recurse -Force
 
@@ -55,6 +55,8 @@ steps:
 
 - task: PkgESCodeSign@10
   displayName: 'CodeSign tools/releaseBuild/FileCatalogSigning.xml'
+  env:
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
   inputs:
     signConfigXml: tools/releaseBuild/FileCatalogSigning.xml
     inPathRoot: '$(Build.ArtifactStagingDirectory)'
