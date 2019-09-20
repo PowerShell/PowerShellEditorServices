@@ -1,4 +1,7 @@
 steps:
+  - pwsh: Write-Host "##vso[build.updatebuildnumber]$env:BUILD_SOURCEBRANCHNAME-$env:BUILD_SOURCEVERSION-$((get-date).ToString("yyyyMMddhhmmss"))"
+    displayName: Set Build Name for Non-PR
+    condition: ne(variables['Build.Reason'], 'PullRequest')
   - pwsh: scripts/azurePipelinesBuild.ps1
   - task: PublishTestResults@2
     inputs:
@@ -7,5 +10,5 @@ steps:
     condition: succeededOrFailed()
   - task: PublishBuildArtifacts@1
     inputs:
-      ArtifactName: PowerShellEditorServices
+      ArtifactName: PowerShellEditorServices-CI
       PathtoPublish: '$(Build.ArtifactStagingDirectory)'
