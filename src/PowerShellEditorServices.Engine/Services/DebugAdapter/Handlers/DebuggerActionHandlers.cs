@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Engine.Services;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
+using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
@@ -68,8 +69,15 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 
         public Task<PauseResponse> Handle(PauseArguments request, CancellationToken cancellationToken)
         {
-            _debugService.Break();
-            return Task.FromResult(new PauseResponse());
+            try
+            {
+                _debugService.Break();
+                return Task.FromResult(new PauseResponse());
+            }
+            catch(NotSupportedException e)
+            {
+                throw new RpcErrorException(0, e.Message);
+            }
         }
     }
 

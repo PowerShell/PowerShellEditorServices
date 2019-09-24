@@ -10,7 +10,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Engine.Logging;
 using Microsoft.PowerShell.EditorServices.Engine.Services;
 using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
@@ -255,7 +254,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
                 _logger.LogInformation(
                     $"Attach request aborted, received {request.ProcessId} for processId.");
 
-                throw new Exception("User aborted attach to PowerShell host process.");
+                throw new RpcErrorException(0, "User aborted attach to PowerShell host process.");
             }
 
             StringBuilder errorMessages = new StringBuilder();
@@ -264,11 +263,11 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
             {
                 if (runspaceVersion.Version.Major < 4)
                 {
-                    throw new Exception($"Remote sessions are only available with PowerShell 4 and higher (current session is {runspaceVersion.Version}).");
+                    throw new RpcErrorException(0, $"Remote sessions are only available with PowerShell 4 and higher (current session is {runspaceVersion.Version}).");
                 }
                 else if (_powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
                 {
-                    throw new Exception($"Cannot attach to a process in a remote session when already in a remote session.");
+                    throw new RpcErrorException(0, $"Cannot attach to a process in a remote session when already in a remote session.");
                 }
 
                 await _powerShellContextService.ExecuteScriptStringAsync(
@@ -277,7 +276,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 
                 if (errorMessages.Length > 0)
                 {
-                    throw new Exception($"Could not establish remote session to computer '{request.ComputerName}'");
+                    throw new RpcErrorException(0, $"Could not establish remote session to computer '{request.ComputerName}'");
                 }
 
                 _debugStateService.IsRemoteAttach = true;
@@ -287,7 +286,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
             {
                 if (runspaceVersion.Version.Major < 5)
                 {
-                    throw new Exception($"Attaching to a process is only available with PowerShell 5 and higher (current session is {runspaceVersion.Version}).");
+                    throw new RpcErrorException(0, $"Attaching to a process is only available with PowerShell 5 and higher (current session is {runspaceVersion.Version}).");
                 }
 
                 await _powerShellContextService.ExecuteScriptStringAsync(
@@ -296,14 +295,14 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 
                 if (errorMessages.Length > 0)
                 {
-                    throw new Exception($"Could not attach to process '{processId}'");
+                    throw new RpcErrorException(0, $"Could not attach to process '{processId}'");
                 }
             }
             else if (customPipeNameIsSet)
             {
                 if (runspaceVersion.Version < s_minVersionForCustomPipeName)
                 {
-                    throw new Exception($"Attaching to a process with CustomPipeName is only available with PowerShell 6.2 and higher (current session is {runspaceVersion.Version}).");
+                    throw new RpcErrorException(0, $"Attaching to a process with CustomPipeName is only available with PowerShell 6.2 and higher (current session is {runspaceVersion.Version}).");
                 }
 
                 await _powerShellContextService.ExecuteScriptStringAsync(
@@ -312,7 +311,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 
                 if (errorMessages.Length > 0)
                 {
-                    throw new Exception($"Could not attach to process with CustomPipeName: '{request.CustomPipeName}'");
+                    throw new RpcErrorException(0, $"Could not attach to process with CustomPipeName: '{request.CustomPipeName}'");
                 }
             }
             else if (request.ProcessId != "current")
@@ -320,7 +319,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
                 _logger.LogError(
                     $"Attach request failed, '{request.ProcessId}' is an invalid value for the processId.");
 
-                throw new Exception("A positive integer must be specified for the processId field.");
+                throw new RpcErrorException(0, "A positive integer must be specified for the processId field.");
             }
 
             // Clear any existing breakpoints before proceeding
@@ -343,7 +342,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
                     _logger.LogError(
                         $"Attach request failed, '{request.RunspaceId}' is an invalid value for the processId.");
 
-                    throw new Exception("A positive integer must be specified for the RunspaceId field.");
+                    throw new RpcErrorException(0, "A positive integer must be specified for the RunspaceId field.");
                 }
 
                 debugRunspaceCmd = $"\nDebug-Runspace -Id {runspaceId}";

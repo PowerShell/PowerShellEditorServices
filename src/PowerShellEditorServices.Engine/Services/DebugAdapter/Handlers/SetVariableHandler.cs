@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,7 @@ using Microsoft.PowerShell.EditorServices.Engine.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
+using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 {
@@ -31,8 +33,8 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
 
         public async Task<SetVariableResponse> Handle(SetVariableArguments request, CancellationToken cancellationToken)
         {
-            //try
-            //{
+            try
+            {
                 string updatedValue =
                     await _debugService.SetVariableAsync(
                         (int) request.VariablesReference,
@@ -44,23 +46,22 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Handlers
                     Value = updatedValue
                 };
 
-            // TODO: Bring back maybe if Omnisharp lib supports a SendErrorAsync equivalent.
-            //}
-            //catch (Exception ex) when (ex is ArgumentTransformationMetadataException ||
-            //                           ex is InvalidPowerShellExpressionException ||
-            //                           ex is SessionStateUnauthorizedAccessException)
-            //{
-            //    // Catch common, innocuous errors caused by the user supplying a value that can't be converted or the variable is not settable.
-            //    Logger.Write(LogLevel.Verbose, $"Failed to set variable: {ex.Message}");
-            //    await requestContext.SendErrorAsync(ex.Message);
-            //}
-            //catch (Exception ex)
-            //{
-            //    Logger.Write(LogLevel.Error, $"Unexpected error setting variable: {ex.Message}");
-            //    string msg =
-            //        $"Unexpected error: {ex.GetType().Name} - {ex.Message}  Please report this error to the PowerShellEditorServices project on GitHub.";
-            //    await requestContext.SendErrorAsync(msg);
-            //}
+            }
+                catch (Exception ex) when(ex is ArgumentTransformationMetadataException ||
+                                           ex is InvalidPowerShellExpressionException ||
+                                           ex is SessionStateUnauthorizedAccessException)
+            {
+                // Catch common, innocuous errors caused by the user supplying a value that can't be converted or the variable is not settable.
+                _logger.LogTrace($"Failed to set variable: {ex.Message}");
+                throw new RpcErrorException(0, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Unexpected error setting variable: {ex.Message}");
+                string msg =
+                    $"Unexpected error: {ex.GetType().Name} - {ex.Message}  Please report this error to the PowerShellEditorServices project on GitHub.";
+                throw new RpcErrorException(0, msg);
+            }
         }
     }
 }
