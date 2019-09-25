@@ -236,11 +236,12 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             EditorServiceTransportConfig config,
             ProfilePaths profilePaths)
         {
-            while (!System.Diagnostics.Debugger.IsAttached)
-            {
-                System.Console.WriteLine($"{Process.GetCurrentProcess().Id}");
-                Thread.Sleep(2000);
-            }
+            // Uncomment to debug language service
+            // while (!System.Diagnostics.Debugger.IsAttached)
+            // {
+            //     System.Console.WriteLine($"{Process.GetCurrentProcess().Id}");
+            //     Thread.Sleep(2000);
+            // }
 
             _logger.LogInformation($"LSP NamedPipe: {config.InOutPipeName}\nLSP OutPipe: {config.OutPipeName}");
 
