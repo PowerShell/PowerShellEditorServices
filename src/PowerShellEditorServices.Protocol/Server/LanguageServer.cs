@@ -2014,8 +2014,8 @@ function __Expand-Alias {
                 // Since we want to use a "tab stop" we need to escape a few things for Textmate to render properly.
                 var sb = new StringBuilder(completionDetails.CompletionText)
                     .Replace(@"\", @"\\")
-                    .Replace("}", "\\}")
-                    .Replace("$", "\\$");
+                    .Replace(@"}", @"\}")
+                    .Replace(@"$", @"\$");
                 completionText = sb.Insert(sb.Length - 1, "$0").ToString();
                 insertTextFormat = InsertTextFormat.Snippet;
             }
