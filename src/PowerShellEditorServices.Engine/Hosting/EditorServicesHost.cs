@@ -362,7 +362,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     break;
 
                 default:
-                    throw new NotSupportedException("not supported");
+                    throw new NotSupportedException($"The transport {config.TransportType} is not supported");
             }
 
             if(!alreadySubscribedDebug)

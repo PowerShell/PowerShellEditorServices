@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
             }
             else if (
                 e.ChangeAction == RunspaceChangeAction.Exit &&
-                (_powerShellContextService.IsDebuggerStopped))
+                _powerShellContextService.IsDebuggerStopped)
             {
                 // Exited the session while the debugger is stopped,
                 // send a ContinuedEvent so that the client changes the
