@@ -47,7 +47,7 @@ function Register-EditorCommand {
             $commandArgs += $Function
         }
 
-        $editorCommand = New-Object Microsoft.PowerShell.EditorServices.Extensions.EditorCommand -ArgumentList $commandArgs
+        $editorCommand = New-Object Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext.EditorCommand -ArgumentList $commandArgs
         if ($psEditor.RegisterCommand($editorCommand))
         {
             Write-Verbose "Registered new command '$Name'"

@@ -5,7 +5,7 @@
 
 Microsoft.PowerShell.Utility\Add-Type -Path "$PSScriptRoot/bin/Microsoft.PowerShell.EditorServices.VSCode.dll"
 
-if ($psEditor -is [Microsoft.PowerShell.EditorServices.Extensions.EditorObject]) {
+if ($psEditor -is [Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext.EditorObject]) {
     [Microsoft.PowerShell.EditorServices.VSCode.ComponentRegistration]::Register($psEditor.Components)
 }
 else {

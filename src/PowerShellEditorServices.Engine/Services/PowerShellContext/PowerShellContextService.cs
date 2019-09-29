@@ -161,6 +161,64 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services
             ExecutionStatusChanged += PowerShellContext_ExecutionStatusChangedAsync;
         }
 
+        public static PowerShellContextService Create(
+            ILoggerFactory factory,
+            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
+            ProfilePaths profilePaths,
+            HashSet<string> featureFlags,
+            bool enableConsoleRepl,
+            PSHost internalHost,
+            HostDetails hostDetails,
+            string[] additionalModules
+            )
+        {
+            var logger = factory.CreateLogger<PowerShellContextService>();
+
+            // PSReadLine can only be used when -EnableConsoleRepl is specified otherwise
+            // issues arise when redirecting stdio.
+            var powerShellContext = new PowerShellContextService(
+                logger,
+                languageServer,
+                featureFlags.Contains("PSReadLine") && enableConsoleRepl);
+
+            EditorServicesPSHostUserInterface hostUserInterface =
+                enableConsoleRepl
+                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, internalHost)
+                    : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
+
+            EditorServicesPSHost psHost =
+                new EditorServicesPSHost(
+                    powerShellContext,
+                    hostDetails,
+                    hostUserInterface,
+                    logger);
+
+            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
+            powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
+
+            powerShellContext.ImportCommandsModuleAsync(
+                Path.Combine(
+                    Path.GetDirectoryName(typeof(PowerShellContextService).GetTypeInfo().Assembly.Location),
+                    @"..\Commands"));
+
+            // TODO: This can be moved to the point after the $psEditor object
+            // gets initialized when that is done earlier than LanguageServer.Initialize
+            foreach (string module in additionalModules)
+            {
+                var command =
+                    new PSCommand()
+                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                        .AddParameter("Name", module);
+
+                powerShellContext.ExecuteCommandAsync<PSObject>(
+                    command,
+                    sendOutputToHost: false,
+                    sendErrorToHost: true);
+            }
+
+            return powerShellContext;
+        }
+
         /// <summary>
         ///
         /// </summary>
