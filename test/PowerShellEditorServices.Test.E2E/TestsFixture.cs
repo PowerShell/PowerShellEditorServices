@@ -13,9 +13,9 @@ using Xunit;
 
 namespace PowerShellEditorServices.Test.E2E
 {
-    public class TestsFixture : IAsyncLifetime
+    public abstract class TestsFixture : IAsyncLifetime
     {
-        private readonly static string s_binDir =
+        protected readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
         private readonly static string s_bundledModulePath = new FileInfo(Path.Combine(
@@ -38,11 +38,11 @@ namespace PowerShellEditorServices.Test.E2E
         const string s_hostVersion = "1.0.0";
         readonly static string[] s_additionalModules = { "PowerShellEditorServices.VSCode" };
 
-        private StdioServerProcess _psesProcess;
+        protected StdioServerProcess _psesProcess;
 
         public static string PwshExe { get; } = Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh";
-        public LanguageClient LanguageClient { get; private set; }
-        public List<Diagnostic> Diagnostics { get; set; }
+
+        public virtual bool IsDebugAdapterTests { get; set; }
 
         public async Task InitializeAsync()
         {
@@ -56,7 +56,8 @@ namespace PowerShellEditorServices.Test.E2E
             processStartInfo.ArgumentList.Add("-NoProfile");
             processStartInfo.ArgumentList.Add("-EncodedCommand");
 
-            string[] args = {
+            List<string> args = new List<string>
+            {
                 Path.Combine(s_bundledModulePath, "PowerShellEditorServices", "Start-EditorServices.ps1"),
                 "-LogPath", s_logPath,
                 "-LogLevel", s_logLevel,
@@ -70,6 +71,11 @@ namespace PowerShellEditorServices.Test.E2E
                 "-Stdio"
             };
 
+            if (IsDebugAdapterTests)
+            {
+                args.Add("-DebugServiceOnly");
+            }
+
             string base64Str = Convert.ToBase64String(
                 System.Text.Encoding.Unicode.GetBytes(string.Join(' ', args)));
 
@@ -78,36 +84,16 @@ namespace PowerShellEditorServices.Test.E2E
             _psesProcess = new StdioServerProcess(factory, processStartInfo);
             await _psesProcess.Start();
 
-            LanguageClient = new LanguageClient(factory, _psesProcess);
-
-            DirectoryInfo testdir =
-                Directory.CreateDirectory(Path.Combine(s_binDir, Path.GetRandomFileName()));
-
-            await LanguageClient.Initialize(testdir.FullName);
-
-            // Make sure Script Analysis is enabled because we'll need it in the tests.
-            LanguageClient.Workspace.DidChangeConfiguration(JObject.Parse(@"
-{
-    ""PowerShell"": {
-        ""ScriptAnalysis"": {
-            ""Enable"": true
-        }
-    }
-}
-"));
-
-            Diagnostics = new List<Diagnostic>();
-            LanguageClient.TextDocument.OnPublishDiagnostics((uri, diagnostics) =>
-            {
-                Diagnostics.AddRange(diagnostics);
-            });
+            await CustomInitializeAsync(factory, _psesProcess);
         }
 
-        public async Task DisposeAsync()
+        public virtual async Task DisposeAsync()
         {
-            await LanguageClient.Shutdown();
             await _psesProcess.Stop();
-            LanguageClient?.Dispose();
         }
+
+        public abstract Task CustomInitializeAsync(
+            ILoggerFactory factory,
+            StdioServerProcess process);
     }
 }

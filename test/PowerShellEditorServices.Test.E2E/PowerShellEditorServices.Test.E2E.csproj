@@ -10,7 +10,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.0.0-preview8.19405.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="OmniSharp.Extensions.LanguageClient" Version="0.13.2-*" />
+    <PackageReference Include="OmniSharp.Extensions.LanguageClient" Version="0.14.0-*" />
     <PackageReference Include="xunit" Version="2.4.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
   </ItemGroup>

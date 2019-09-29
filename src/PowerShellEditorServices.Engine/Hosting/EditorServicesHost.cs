@@ -6,15 +6,20 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO.Pipes;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Engine.Server;
+using Microsoft.PowerShell.EditorServices.Engine.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Serilog;
 
@@ -58,6 +63,15 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Hosting
     {
         #region Private Fields
 
+        // This int will be casted to a PipeOptions enum that only exists in .NET Core 2.1 and up which is why it's not available to us in .NET Standard.
+        private const int CurrentUserOnly = 0x20000000;
+
+        // In .NET Framework, NamedPipeServerStream has a constructor that takes in a PipeSecurity object. We will use reflection to call the constructor,
+        // since .NET Framework doesn't have the `CurrentUserOnly` PipeOption.
+        // doc: https://docs.microsoft.com/en-us/dotnet/api/system.io.pipes.namedpipeserverstream.-ctor?view=netframework-4.7.2#System_IO_Pipes_NamedPipeServerStream__ctor_System_String_System_IO_Pipes_PipeDirection_System_Int32_System_IO_Pipes_PipeTransmissionMode_System_IO_Pipes_PipeOptions_System_Int32_System_Int32_System_IO_Pipes_PipeSecurity_
+        private static readonly ConstructorInfo s_netFrameworkPipeServerConstructor =
+            typeof(NamedPipeServerStream).GetConstructor(new[] { typeof(string), typeof(PipeDirection), typeof(int), typeof(PipeTransmissionMode), typeof(PipeOptions), typeof(int), typeof(int), typeof(PipeSecurity) });
+
         private readonly HostDetails _hostDetails;
 
         private readonly PSHost _internalHost;
@@ -69,6 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Hosting
         private readonly string[] _additionalModules;
 
         private PsesLanguageServer _languageServer;
+        private PsesDebugServer _debugServer;
 
         private Microsoft.Extensions.Logging.ILogger _logger;
 
@@ -221,15 +236,14 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             EditorServiceTransportConfig config,
             ProfilePaths profilePaths)
         {
-            while (System.Diagnostics.Debugger.IsAttached)
-            {
-                System.Console.WriteLine($"{Process.GetCurrentProcess().Id}");
-                Thread.Sleep(2000);
-            }
+            // Uncomment to debug language service
+            // while (!System.Diagnostics.Debugger.IsAttached)
+            // {
+            //     System.Console.WriteLine($"{Process.GetCurrentProcess().Id}");
+            //     Thread.Sleep(2000);
+            // }
 
             _logger.LogInformation($"LSP NamedPipe: {config.InOutPipeName}\nLSP OutPipe: {config.OutPipeName}");
-
-            
 
             switch (config.TransportType)
             {
@@ -269,6 +283,8 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     config.TransportType, config.Endpoint));
         }
 
+
+        private bool alreadySubscribedDebug;
         /// <summary>
         /// Starts the debug service with the specified config.
         /// </summary>
@@ -280,17 +296,85 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             ProfilePaths profilePaths,
             bool useExistingSession)
         {
-            /*
-            this.debugServiceListener = CreateServiceListener(MessageProtocolType.DebugAdapter, config);
-            this.debugServiceListener.ClientConnect += OnDebugServiceClientConnect;
-            this.debugServiceListener.Start();
+            //while (System.Diagnostics.Debugger.IsAttached)
+            //{
+            //    System.Console.WriteLine($"{Process.GetCurrentProcess().Id}");
+            //    Thread.Sleep(2000);
+            //}
 
-            this.logger.Write(
-                LogLevel.Normal,
-                string.Format(
-                    "Debug service started, type = {0}, endpoint = {1}",
-                    config.TransportType, config.Endpoint));
-            */
+            _logger.LogInformation($"Debug NamedPipe: {config.InOutPipeName}\nDebug OutPipe: {config.OutPipeName}");
+
+            switch (config.TransportType)
+            {
+                case EditorServiceTransportType.NamedPipe:
+                    NamedPipeServerStream inNamedPipe = CreateNamedPipe(
+                        config.InOutPipeName ?? config.InPipeName,
+                        config.OutPipeName,
+                        out NamedPipeServerStream outNamedPipe);
+
+                    _debugServer = new PsesDebugServer(
+                        _factory,
+                        inNamedPipe,
+                        outNamedPipe ?? inNamedPipe);
+
+                    Task[] tasks = outNamedPipe != null
+                        ? new[] { inNamedPipe.WaitForConnectionAsync(), outNamedPipe.WaitForConnectionAsync() }
+                        : new[] { inNamedPipe.WaitForConnectionAsync() };
+                    Task.WhenAll(tasks)
+                        .ContinueWith(async task =>
+                        {
+                            _logger.LogInformation("Starting debug server");
+                            await _debugServer.StartAsync(_languageServer.LanguageServer.Services);
+                            _logger.LogInformation(
+                                $"Debug service started, type = {config.TransportType}, endpoint = {config.Endpoint}");
+                        });
+
+                    break;
+
+                case EditorServiceTransportType.Stdio:
+                    _debugServer = new PsesDebugServer(
+                        _factory,
+                        Console.OpenStandardInput(),
+                        Console.OpenStandardOutput());
+
+                    Task.Run(async () =>
+                    {
+                        _logger.LogInformation("Starting debug server");
+
+                        IServiceProvider serviceProvider = useExistingSession
+                            ? _languageServer.LanguageServer.Services
+                            : new ServiceCollection().AddSingleton<PowerShellContextService>(
+                                (provider) => PowerShellContextService.Create(
+                                    _factory,
+                                    provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
+                                    profilePaths,
+                                    _featureFlags,
+                                    _enableConsoleRepl,
+                                    _internalHost,
+                                    _hostDetails,
+                                    _additionalModules))
+                                .BuildServiceProvider();
+
+                        await _debugServer.StartAsync(serviceProvider);
+                        _logger.LogInformation(
+                            $"Debug service started, type = {config.TransportType}, endpoint = {config.Endpoint}");
+                    });
+                    break;
+
+                default:
+                    throw new NotSupportedException($"The transport {config.TransportType} is not supported");
+            }
+
+            if(!alreadySubscribedDebug)
+            {
+                alreadySubscribedDebug = true;
+                _debugServer.SessionEnded += (sender, eventArgs) =>
+                {
+                    _debugServer.Dispose();
+                    alreadySubscribedDebug = false;
+                    StartDebugService(config, profilePaths, useExistingSession);
+                };
+            }
         }
 
         /// <summary>
@@ -348,6 +432,81 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         {
             // Log the exception
             _logger.LogError($"FATAL UNHANDLED EXCEPTION: {e.ExceptionObject}");
+        }
+
+        private static NamedPipeServerStream CreateNamedPipe(
+            string inOutPipeName,
+            string outPipeName,
+            out NamedPipeServerStream outPipe)
+        {
+            // .NET Core implementation is simplest so try that first
+            if (VersionUtils.IsNetCore)
+            {
+                outPipe = outPipeName == null
+                    ? null
+                    : new NamedPipeServerStream(
+                        pipeName: outPipeName,
+                        direction: PipeDirection.Out,
+                        maxNumberOfServerInstances: 1,
+                        transmissionMode: PipeTransmissionMode.Byte,
+                        options: (PipeOptions)CurrentUserOnly);
+
+                return new NamedPipeServerStream(
+                    pipeName: inOutPipeName,
+                    direction: PipeDirection.InOut,
+                    maxNumberOfServerInstances: 1,
+                    transmissionMode: PipeTransmissionMode.Byte,
+                    options: PipeOptions.Asynchronous | (PipeOptions)CurrentUserOnly);
+            }
+
+            // Now deal with Windows PowerShell
+            // We need to use reflection to get a nice constructor
+
+            var pipeSecurity = new PipeSecurity();
+
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+
+            if (principal.IsInRole(WindowsBuiltInRole.Administrator))
+            {
+                // Allow the Administrators group full access to the pipe.
+                pipeSecurity.AddAccessRule(new PipeAccessRule(
+                    new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null).Translate(typeof(NTAccount)),
+                    PipeAccessRights.FullControl, AccessControlType.Allow));
+            }
+            else
+            {
+                // Allow the current user read/write access to the pipe.
+                pipeSecurity.AddAccessRule(new PipeAccessRule(
+                    WindowsIdentity.GetCurrent().User,
+                    PipeAccessRights.ReadWrite, AccessControlType.Allow));
+            }
+
+            outPipe = outPipeName == null
+                ? null
+                : (NamedPipeServerStream)s_netFrameworkPipeServerConstructor.Invoke(
+                    new object[] {
+                        outPipeName,
+                        PipeDirection.InOut,
+                        1, // maxNumberOfServerInstances
+                        PipeTransmissionMode.Byte,
+                        PipeOptions.Asynchronous,
+                        1024, // inBufferSize
+                        1024, // outBufferSize
+                        pipeSecurity
+                    });
+
+            return (NamedPipeServerStream)s_netFrameworkPipeServerConstructor.Invoke(
+                new object[] {
+                    inOutPipeName,
+                    PipeDirection.InOut,
+                    1, // maxNumberOfServerInstances
+                    PipeTransmissionMode.Byte,
+                    PipeOptions.Asynchronous,
+                    1024, // inBufferSize
+                    1024, // outBufferSize
+                    pipeSecurity
+                });
         }
 
         #endregion

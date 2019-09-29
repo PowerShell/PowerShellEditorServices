@@ -5,6 +5,7 @@
 
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Engine.Logging;
+using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
@@ -16,13 +17,13 @@ using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Engine.Services
 {
     /// <summary>
     /// Manages files that are accessed from a remote PowerShell session.
     /// Also manages the registration and handling of the 'psedit' function.
     /// </summary>
-    public class RemoteFileManager
+    internal class RemoteFileManagerService
     {
         #region Fields
 
@@ -236,23 +237,23 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
         #region Constructors
 
         /// <summary>
-        /// Creates a new instance of the RemoteFileManager class.
+        /// Creates a new instance of the RemoteFileManagerService class.
         /// </summary>
+        /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
         /// <param name="powerShellContext">
         /// The PowerShellContext to use for file loading operations.
         /// </param>
         /// <param name="editorOperations">
         /// The IEditorOperations instance to use for opening/closing files in the editor.
         /// </param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public RemoteFileManager(
+        public RemoteFileManagerService(
+            ILoggerFactory factory,
             PowerShellContextService powerShellContext,
-            IEditorOperations editorOperations,
-            ILogger logger)
+            EditorOperationsService editorOperations)
         {
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
-            this.logger = logger;
+            this.logger = factory.CreateLogger<RemoteFileManagerService>();
             this.powerShellContext = powerShellContext;
             this.powerShellContext.RunspaceChanged += HandleRunspaceChangedAsync;
 
@@ -701,7 +702,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
         private class RemotePathMappings
         {
             private RunspaceDetails runspaceDetails;
-            private RemoteFileManager remoteFileManager;
+            private RemoteFileManagerService remoteFileManager;
             private HashSet<string> openedPaths = new HashSet<string>();
             private Dictionary<string, string> pathMappings = new Dictionary<string, string>();
 
@@ -712,7 +713,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
 
             public RemotePathMappings(
                 RunspaceDetails runspaceDetails,
-                RemoteFileManager remoteFileManager)
+                RemoteFileManagerService remoteFileManager)
             {
                 this.runspaceDetails = runspaceDetails;
                 this.remoteFileManager = remoteFileManager;

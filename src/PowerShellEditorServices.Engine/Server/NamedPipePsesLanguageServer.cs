@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Server
                     _outNamedPipeName,
                     out NamedPipeServerStream outNamedPipe);
 
-            var logger = _loggerFactory.CreateLogger("NamedPipeConnection");
+            var logger = LoggerFactory.CreateLogger("NamedPipeConnection");
 
             logger.LogInformation("Waiting for connection");
             namedPipe.WaitForConnection();
