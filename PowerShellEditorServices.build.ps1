@@ -22,12 +22,12 @@ $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "C
 $script:TargetPlatform = "netstandard2.0"
 $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
-$script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
+$script:NugetApiUribuiBase = 'https://www.nuget.org/api/v2/package'
 $script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
 $script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSCode/bin/"
 $script:WindowsPowerShellFrameworkTarget = 'net461'
 $script:NetFrameworkPlatformId = 'win'
-$script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Host", "BuildInfo", "BuildInfo.cs")
+$script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Engine", "Hosting", "BuildInfo.cs")
 
 $script:PSCoreModulePath = $null
 
@@ -76,12 +76,13 @@ $script:RequiredBuildAssets = @{
         )
     }
 
-    $script:VSCodeModuleBinPath = @{
-        'PowerShellEditorServices.VSCode' = @(
-            'Microsoft.PowerShell.EditorServices.VSCode.dll',
-            'Microsoft.PowerShell.EditorServices.VSCode.pdb'
-        )
-    }
+    # TODO: Bring this back when PowerShellEditorServices.VSCode works
+    # $script:VSCodeModuleBinPath = @{
+    #     'PowerShellEditorServices.VSCode' = @(
+    #         'Microsoft.PowerShell.EditorServices.VSCode.dll',
+    #         'Microsoft.PowerShell.EditorServices.VSCode.pdb'
+    #     )
+    # }
 }
 
 <#
@@ -174,7 +175,7 @@ function Invoke-WithCreateDefaultHook {
     }
 }
 
-task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestE2E, PackageNuGet {
+task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestE2E {
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -247,13 +248,14 @@ task Clean {
     exec { & $script:dotnetExe clean }
     Remove-Item $PSScriptRoot\.tmp -Recurse -Force -ErrorAction Ignore
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
-    Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
+    # TODO: Bring this back when PowerShellEditorServices.VSCode works
+    # Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
     Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
 }
 
-task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
+task GetProductVersion -Before PackageModule, UploadArtifacts {
     [xml]$props = Get-Content .\PowerShellEditorServices.Common.props
 
     $script:BuildNumber = 9999
@@ -304,7 +306,7 @@ task CreateBuildInfo -Before Build {
     [string]$buildTime = [datetime]::Now.ToString("s", [System.Globalization.CultureInfo]::InvariantCulture)
 
     $buildInfoContents = @"
-namespace Microsoft.PowerShell.EditorServices.Host
+namespace Microsoft.PowerShell.EditorServices.Engine.Hosting
 {
     public static class BuildInfo
     {
@@ -319,10 +321,9 @@ namespace Microsoft.PowerShell.EditorServices.Host
 }
 
 task Build {
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:TargetPlatform }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Engine\PowerShellEditorServices.Engine.csproj -f $script:TargetPlatform }
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f $script:TargetPlatform }
-    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
+    # TODO: Bring this back when PowerShellEditorServices.VSCode works
+    # exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
 }
 
 function DotNetTestFilter {
@@ -480,12 +481,6 @@ task BuildCmdletHelp {
     New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US -Force
 }
 
-task PackageNuGet {
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
-}
-
 task PackageModule {
     [System.IO.Compression.ZipFile]::CreateFromDirectory(
         "$PSScriptRoot/module/",
@@ -499,4 +494,4 @@ task UploadArtifacts -If ($null -ne $env:TF_BUILD) {
 }
 
 # The default task is to run the entire CI build
-task . GetProductVersion, Clean, Build, Test, BuildCmdletHelp, PackageNuGet, PackageModule, UploadArtifacts
+task . GetProductVersion, Clean, Build, Test, BuildCmdletHelp, PackageModule, UploadArtifacts
