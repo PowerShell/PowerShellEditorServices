@@ -76,13 +76,12 @@ $script:RequiredBuildAssets = @{
         )
     }
 
-    # TODO: Bring this back when PowerShellEditorServices.VSCode works
-    # $script:VSCodeModuleBinPath = @{
-    #     'PowerShellEditorServices.VSCode' = @(
-    #         'Microsoft.PowerShell.EditorServices.VSCode.dll',
-    #         'Microsoft.PowerShell.EditorServices.VSCode.pdb'
-    #     )
-    # }
+    $script:VSCodeModuleBinPath = @{
+        'PowerShellEditorServices.VSCode' = @(
+            'Microsoft.PowerShell.EditorServices.VSCode.dll',
+            'Microsoft.PowerShell.EditorServices.VSCode.pdb'
+        )
+    }
 }
 
 <#
@@ -248,8 +247,7 @@ task Clean {
     exec { & $script:dotnetExe clean }
     Remove-Item $PSScriptRoot\.tmp -Recurse -Force -ErrorAction Ignore
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
-    # TODO: Bring this back when PowerShellEditorServices.VSCode works
-    # Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
+    Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
     Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
@@ -322,8 +320,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Hosting
 
 task Build {
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Engine\PowerShellEditorServices.Engine.csproj -f $script:TargetPlatform }
-    # TODO: Bring this back when PowerShellEditorServices.VSCode works
-    # exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
 }
 
 function DotNetTestFilter {

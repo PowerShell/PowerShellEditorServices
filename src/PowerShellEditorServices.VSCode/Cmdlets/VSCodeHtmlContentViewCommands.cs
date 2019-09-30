@@ -1,0 +1,211 @@
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System;
+using System.Management.Automation;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.VSCode.CustomViews;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+
+namespace Microsoft.PowerShell.EditorServices.VSCode
+{
+    ///
+    [Cmdlet(VerbsCommon.New,"VSCodeHtmlContentView")]
+    [OutputType(typeof(IHtmlContentView))]
+    public class NewVSCodeHtmlContentViewCommand : PSCmdlet
+    {
+        private HtmlContentViewsFeature _htmlContentViewsFeature;
+        private ILogger _logger;
+
+        ///
+        [Parameter(Mandatory = true, Position = 0)]
+        [ValidateNotNullOrEmpty()]
+        public string Title { get; set; }
+
+        ///
+        [Parameter(Mandatory = false, Position = 1)]
+        public ViewColumn? ShowInColumn { get; set; }
+
+        ///
+        protected override void BeginProcessing()
+        {
+        }
+
+        ///
+        protected override void ProcessRecord()
+        {
+            if (_htmlContentViewsFeature == null)
+            {
+                if(this.GetVariableValue("psEditor") is EditorObject psEditor)
+                {
+                    _logger = psEditor.Components.GetService<ILoggerFactory>().CreateLogger("PowerShellEditorServices.VSCode");
+
+                    _htmlContentViewsFeature = new HtmlContentViewsFeature(
+                        psEditor.Components.GetService<ILanguageServer>(),
+                        _logger);
+
+                    _logger.LogInformation("PowerShell Editor Services VS Code module loaded.");
+                }
+                else
+                {
+                    throw new Exception("unable to fetch psEditor value");
+                }
+            }
+
+            IHtmlContentView view = _htmlContentViewsFeature.CreateHtmlContentViewAsync(Title).Result;
+
+            if (ShowInColumn != null) {
+                view.Show(ShowInColumn.Value).Wait();
+            }
+
+            WriteObject(view);
+        }
+
+        ///
+        protected override void EndProcessing()
+        {
+        }
+    }
+
+    ///
+    [Cmdlet(VerbsCommon.Set,"VSCodeHtmlContentView")]
+    public class SetVSCodeHtmlContentViewCommand : PSCmdlet
+    {
+        ///
+        [Parameter(Mandatory = true, Position = 0)]
+        [Alias("View")]
+        [ValidateNotNull()]
+        public IHtmlContentView HtmlContentView { get; set; }
+
+        ///
+        [Parameter(Mandatory = true, Position = 1)]
+        [Alias("Content")]
+        [AllowEmptyString()]
+        public string HtmlBodyContent { get; set; }
+
+        ///
+        [Parameter(Mandatory = false, Position = 2)]
+        public string[] JavaScriptPaths { get; set; }
+
+        ///
+        [Parameter(Mandatory = false, Position = 3)]
+        public string[] StyleSheetPaths { get; set; }
+
+        ///
+        protected override void BeginProcessing()
+        {
+        }
+
+        ///
+        protected override void ProcessRecord()
+        {
+            var htmlContent = new HtmlContent();
+            htmlContent.BodyContent = HtmlBodyContent;
+            htmlContent.JavaScriptPaths = JavaScriptPaths;
+            htmlContent.StyleSheetPaths = StyleSheetPaths;
+            HtmlContentView.SetContentAsync(htmlContent).Wait();
+        }
+
+        ///
+        protected override void EndProcessing()
+        {
+        }
+    }
+
+    ///
+    [Cmdlet(VerbsCommon.Close,"VSCodeHtmlContentView")]
+    public class CloseVSCodeHtmlContentViewCommand : PSCmdlet
+    {
+        ///
+        [Parameter(Mandatory = true, Position = 0)]
+        [Alias("View")]
+        [ValidateNotNull()]
+        public IHtmlContentView HtmlContentView { get; set; }
+
+        ///
+        protected override void BeginProcessing()
+        {
+        }
+
+        ///
+        protected override void ProcessRecord()
+        {
+            HtmlContentView.Close().Wait();
+        }
+
+        ///
+        protected override void EndProcessing()
+        {
+        }
+    }
+
+    ///
+    [Cmdlet(VerbsCommon.Show,"VSCodeHtmlContentView")]
+    public class ShowVSCodeHtmlContentViewCommand : PSCmdlet
+    {
+        ///
+        [Parameter(Mandatory = true, Position = 0)]
+        [Alias("View")]
+        [ValidateNotNull()]
+        public IHtmlContentView HtmlContentView { get; set; }
+
+        ///
+        [Parameter(Mandatory = false, Position = 1)]
+        [Alias("Column")]
+        [ValidateNotNull()]
+        public ViewColumn ViewColumn { get; set; } = ViewColumn.One;
+
+        ///
+        protected override void BeginProcessing()
+        {
+        }
+
+        ///
+        protected override void ProcessRecord()
+        {
+            HtmlContentView.Show(ViewColumn).Wait();
+        }
+
+        ///
+        protected override void EndProcessing()
+        {
+        }
+    }
+
+    ///
+    [Cmdlet(VerbsCommunications.Write,"VSCodeHtmlContentView")]
+    public class WriteVSCodeHtmlContentViewCommand : PSCmdlet
+    {
+        ///
+        [Parameter(Mandatory = true, Position = 0)]
+        [Alias("View")]
+        [ValidateNotNull()]
+        public IHtmlContentView HtmlContentView { get; set; }
+
+        ///
+        [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 1)]
+        [Alias("Content")]
+        [ValidateNotNull()]
+        public string AppendedHtmlBodyContent { get; set; }
+
+        ///
+        protected override void BeginProcessing()
+        {
+        }
+
+        ///
+        protected override void ProcessRecord()
+        {
+            HtmlContentView.AppendContentAsync(AppendedHtmlBodyContent).Wait();
+        }
+
+        ///
+        protected override void EndProcessing()
+        {
+        }
+    }
+}

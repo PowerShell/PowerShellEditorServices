@@ -5,14 +5,14 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.Extensions.Logging;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
     internal abstract class CustomViewBase : ICustomView
     {
-        protected IMessageSender messageSender;
+        protected ILanguageServer languageServer;
         protected ILogger logger;
 
         public Guid Id { get; private set; }
@@ -24,50 +24,50 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public CustomViewBase(
             string viewTitle,
             CustomViewType viewType,
-            IMessageSender messageSender,
+            ILanguageServer languageServer,
             ILogger logger)
         {
             this.Id = Guid.NewGuid();
             this.Title = viewTitle;
             this.ViewType = viewType;
-            this.messageSender = messageSender;
+            this.languageServer = languageServer;
             this.logger = logger;
         }
 
-        internal Task CreateAsync()
+        internal async Task CreateAsync()
         {
-            return
-                this.messageSender.SendRequestAsync(
-                    NewCustomViewRequest.Type,
-                    new NewCustomViewRequest
-                    {
-                        Id = this.Id,
-                        Title = this.Title,
-                        ViewType = this.ViewType,
-                    }, true);
+            await languageServer.SendRequest(
+                "powerShell/newCustomView",
+                new NewCustomViewRequest
+                {
+                    Id = this.Id,
+                    Title = this.Title,
+                    ViewType = this.ViewType,
+                }
+            );
         }
 
-        public Task Show(ViewColumn viewColumn)
+        public async Task Show(ViewColumn viewColumn)
         {
-            return
-                this.messageSender.SendRequestAsync(
-                    ShowCustomViewRequest.Type,
-                    new ShowCustomViewRequest
-                    {
-                        Id = this.Id,
-                        ViewColumn = viewColumn
-                    }, true);
+            await languageServer.SendRequest(
+                "powerShell/showCustomView",
+                new ShowCustomViewRequest
+                {
+                    Id = this.Id,
+                    ViewColumn = viewColumn
+                }
+            );
         }
 
-        public Task Close()
+        public async Task Close()
         {
-            return
-                this.messageSender.SendRequestAsync(
-                    CloseCustomViewRequest.Type,
-                    new CloseCustomViewRequest
-                    {
-                        Id = this.Id,
-                    }, true);
+            await languageServer.SendRequest(
+                "powerShell/closeCustomView",
+                new CloseCustomViewRequest
+                {
+                    Id = this.Id,
+                }
+            );
         }
     }
 }

@@ -37,7 +37,7 @@ docs/metadata/
 *.zip
 
 # Generated build info file
-src/PowerShellEditorServices.Host/BuildInfo/BuildInfo.cs
+src/PowerShellEditorServices.Engine/Hosting/BuildInfo.cs
 
 # quickbuild.exe
 /VersionGeneratingLogs/
