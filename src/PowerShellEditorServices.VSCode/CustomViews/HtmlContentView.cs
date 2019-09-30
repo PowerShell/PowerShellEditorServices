@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public async Task SetContentAsync(string htmlBodyContent)
         {
             await languageServer.SendRequest(
-                "powerShell/setHtmlViewContent",
+                SetHtmlContentViewRequest.Method,
                 new SetHtmlContentViewRequest
                 {
                     Id = this.Id,
@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                 };
 
             await languageServer.SendRequest(
-                "powerShell/setHtmlViewContent",
+                SetHtmlContentViewRequest.Method,
                 new SetHtmlContentViewRequest
                 {
                     Id = this.Id,
@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public async Task AppendContentAsync(string appendedHtmlBodyContent)
         {
             await languageServer.SendRequest(
-                "powerShell/appendHtmlViewContent",
+                AppendHtmlContentViewRequest.Method,
                 new AppendHtmlContentViewRequest
                 {
                     Id = this.Id,

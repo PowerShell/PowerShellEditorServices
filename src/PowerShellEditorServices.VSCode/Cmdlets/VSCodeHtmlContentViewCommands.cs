@@ -22,6 +22,8 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
 
         private ILogger _logger;
 
+        private ViewColumn? _showInColumn;
+
         ///
         [Parameter(Mandatory = true, Position = 0)]
         [ValidateNotNullOrEmpty]
@@ -29,15 +31,14 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
 
         ///
         [Parameter(Position = 1)]
-        public ViewColumn? ShowInColumn { get; set; }
-
-        ///
-        protected override void BeginProcessing()
+        public ViewColumn ShowInColumn
         {
+            get => _showInColumn.GetValueOrDefault();
+            set => _showInColumn = value;
         }
 
         ///
-        protected override void ProcessRecord()
+        protected override void BeginProcessing()
         {
             if (_htmlContentViewsFeature == null)
             {
@@ -53,7 +54,14 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
                 }
                 else
                 {
-                    throw new Exception("unable to fetch psEditor value");
+                    WriteError(
+                        new ErrorRecord(
+                            new ItemNotFoundException("Cannot find a variable with the name 'psEditor'."),
+                            "PSEditorNotFound",
+                            ErrorCategory.ObjectNotFound,
+                            targetObject: null));
+
+                    return;
                 }
             }
 
@@ -61,16 +69,11 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
                 .GetAwaiter()
                 .GetResult();
 
-            if (ShowInColumn != null) {
-                view.Show(ShowInColumn.Value).GetAwaiter().GetResult();
+            if (_showInColumn != null) {
+                view.Show(_showInColumn.Value).GetAwaiter().GetResult();
             }
 
             WriteObject(view);
-        }
-
-        ///
-        protected override void EndProcessing()
-        {
         }
     }
 
@@ -101,21 +104,11 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void BeginProcessing()
         {
-        }
-
-        ///
-        protected override void ProcessRecord()
-        {
             var htmlContent = new HtmlContent();
             htmlContent.BodyContent = HtmlBodyContent;
             htmlContent.JavaScriptPaths = JavaScriptPaths;
             htmlContent.StyleSheetPaths = StyleSheetPaths;
             HtmlContentView.SetContentAsync(htmlContent).GetAwaiter().GetResult();
-        }
-
-        ///
-        protected override void EndProcessing()
-        {
         }
     }
 
@@ -132,17 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void BeginProcessing()
         {
-        }
-
-        ///
-        protected override void ProcessRecord()
-        {
             HtmlContentView.Close().GetAwaiter().GetResult();
-        }
-
-        ///
-        protected override void EndProcessing()
-        {
         }
     }
 
@@ -165,17 +148,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void BeginProcessing()
         {
-        }
-
-        ///
-        protected override void ProcessRecord()
-        {
             HtmlContentView.Show(ViewColumn).GetAwaiter().GetResult();
-        }
-
-        ///
-        protected override void EndProcessing()
-        {
         }
     }
 
@@ -196,19 +169,9 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         public string AppendedHtmlBodyContent { get; set; }
 
         ///
-        protected override void BeginProcessing()
-        {
-        }
-
-        ///
         protected override void ProcessRecord()
         {
             HtmlContentView.AppendContentAsync(AppendedHtmlBodyContent).GetAwaiter().GetResult();
-        }
-
-        ///
-        protected override void EndProcessing()
-        {
         }
     }
 }

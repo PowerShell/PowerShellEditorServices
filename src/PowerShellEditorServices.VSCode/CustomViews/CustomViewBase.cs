@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         internal async Task CreateAsync()
         {
             await languageServer.SendRequest(
-                "powerShell/newCustomView",
+                NewCustomViewRequest.Method,
                 new NewCustomViewRequest
                 {
                     Id = this.Id,
@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public async Task Show(ViewColumn viewColumn)
         {
             await languageServer.SendRequest(
-                "powerShell/showCustomView",
+                ShowCustomViewRequest.Method,
                 new ShowCustomViewRequest
                 {
                     Id = this.Id,
@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public async Task Close()
         {
             await languageServer.SendRequest(
-                "powerShell/closeCustomView",
+                CloseCustomViewRequest.Method,
                 new CloseCustomViewRequest
                 {
                     Id = this.Id,

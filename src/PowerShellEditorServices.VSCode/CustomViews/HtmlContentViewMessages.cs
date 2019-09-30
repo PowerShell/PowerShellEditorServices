@@ -13,6 +13,11 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     public class SetHtmlContentViewRequest
     {
         /// <summary>
+        /// The Language Server Protocol 'method'.
+        /// </summary>
+        public static string Method => "powerShell/setHtmlViewContent";
+
+        /// <summary>
         /// Gets or sets the Id of the view.
         /// </summary>
         public Guid Id { get; set; }
@@ -28,6 +33,11 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     /// </summary>
     public class AppendHtmlContentViewRequest
     {
+        /// <summary>
+        /// The Language Server Protocol 'method'.
+        /// </summary>
+        public static string Method => "powerShell/appendHtmlViewContent";
+
         /// <summary>
         /// Gets or sets the Id of the view.
         /// </summary>

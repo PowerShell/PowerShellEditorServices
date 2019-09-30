@@ -13,6 +13,11 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     public class NewCustomViewRequest
     {
         /// <summary>
+        /// The Language Server Protocol 'method'.
+        /// </summary>
+        public static string Method => "powerShell/newCustomView";
+
+        /// <summary>
         /// Gets or sets the Id of the view.
         /// </summary>
         public Guid Id { get; set; }
@@ -34,6 +39,11 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     public class ShowCustomViewRequest
     {
         /// <summary>
+        /// The Language Server Protocol 'method'.
+        /// </summary>
+        public static string Method => "powerShell/showCustomView";
+
+        /// <summary>
         /// Gets or sets the Id of the view.
         /// </summary>
         public Guid Id { get; set; }
@@ -49,6 +59,11 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     /// </summary>
     public class CloseCustomViewRequest
     {
+        /// <summary>
+        /// The Language Server Protocol 'method'.
+        /// </summary>
+        public static string Method => "powerShell/closeCustomView";
+
         /// <summary>
         /// Gets or sets the Id of the view.
         /// </summary>
