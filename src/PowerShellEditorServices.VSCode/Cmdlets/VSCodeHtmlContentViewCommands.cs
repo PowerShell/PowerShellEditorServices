@@ -70,7 +70,21 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
                 .GetResult();
 
             if (_showInColumn != null) {
-                view.Show(_showInColumn.Value).GetAwaiter().GetResult();
+                try
+                {
+                    view.Show(_showInColumn.Value).GetAwaiter().GetResult();
+                }
+                catch (Exception e)
+                {
+                    WriteError(
+                        new ErrorRecord(
+                            e,
+                            "HtmlContentViewCouldNotShow",
+                            ErrorCategory.OpenError,
+                            targetObject: null));
+
+                    return;
+                }
             }
 
             WriteObject(view);
@@ -108,7 +122,21 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
             htmlContent.BodyContent = HtmlBodyContent;
             htmlContent.JavaScriptPaths = JavaScriptPaths;
             htmlContent.StyleSheetPaths = StyleSheetPaths;
-            HtmlContentView.SetContentAsync(htmlContent).GetAwaiter().GetResult();
+            try
+            {
+                HtmlContentView.SetContentAsync(htmlContent).GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                WriteError(
+                    new ErrorRecord(
+                        e,
+                        "HtmlContentViewCouldNotSet",
+                        ErrorCategory.WriteError,
+                        targetObject: null));
+
+                return;
+            }
         }
     }
 
@@ -125,7 +153,21 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void BeginProcessing()
         {
-            HtmlContentView.Close().GetAwaiter().GetResult();
+            try
+            {
+                HtmlContentView.Close().GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                WriteError(
+                    new ErrorRecord(
+                        e,
+                        "HtmlContentViewCouldNotClose",
+                        ErrorCategory.CloseError,
+                        targetObject: null));
+
+                return;
+            }
         }
     }
 
@@ -148,7 +190,21 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void BeginProcessing()
         {
-            HtmlContentView.Show(ViewColumn).GetAwaiter().GetResult();
+            try
+            {
+                HtmlContentView.Show(ViewColumn).GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                WriteError(
+                    new ErrorRecord(
+                        e,
+                        "HtmlContentViewCouldNotShow",
+                        ErrorCategory.OpenError,
+                        targetObject: null));
+
+                return;
+            }
         }
     }
 
@@ -171,7 +227,21 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void ProcessRecord()
         {
-            HtmlContentView.AppendContentAsync(AppendedHtmlBodyContent).GetAwaiter().GetResult();
+            try
+            {
+                HtmlContentView.AppendContentAsync(AppendedHtmlBodyContent).GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                WriteError(
+                    new ErrorRecord(
+                        e,
+                        "HtmlContentViewCouldNotWrite",
+                        ErrorCategory.WriteError,
+                        targetObject: null));
+
+                return;
+            }
         }
     }
 }
