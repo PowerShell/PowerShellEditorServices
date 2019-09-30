@@ -22,7 +22,7 @@ $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "C
 $script:TargetPlatform = "netstandard2.0"
 $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
-$script:NugetApiUribuiBase = 'https://www.nuget.org/api/v2/package'
+$script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
 $script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
 $script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSCode/bin/"
 $script:WindowsPowerShellFrameworkTarget = 'net461'
