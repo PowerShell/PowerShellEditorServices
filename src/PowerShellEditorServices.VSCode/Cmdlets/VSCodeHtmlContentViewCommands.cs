@@ -19,15 +19,16 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
     public class NewVSCodeHtmlContentViewCommand : PSCmdlet
     {
         private HtmlContentViewsFeature _htmlContentViewsFeature;
+
         private ILogger _logger;
 
         ///
         [Parameter(Mandatory = true, Position = 0)]
-        [ValidateNotNullOrEmpty()]
+        [ValidateNotNullOrEmpty]
         public string Title { get; set; }
 
         ///
-        [Parameter(Mandatory = false, Position = 1)]
+        [Parameter(Position = 1)]
         public ViewColumn? ShowInColumn { get; set; }
 
         ///
@@ -40,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         {
             if (_htmlContentViewsFeature == null)
             {
-                if(this.GetVariableValue("psEditor") is EditorObject psEditor)
+                if (GetVariableValue("psEditor") is EditorObject psEditor)
                 {
                     _logger = psEditor.Components.GetService<ILoggerFactory>().CreateLogger("PowerShellEditorServices.VSCode");
 
@@ -56,10 +57,12 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
                 }
             }
 
-            IHtmlContentView view = _htmlContentViewsFeature.CreateHtmlContentViewAsync(Title).Result;
+            IHtmlContentView view = _htmlContentViewsFeature.CreateHtmlContentViewAsync(Title)
+                .GetAwaiter()
+                .GetResult();
 
             if (ShowInColumn != null) {
-                view.Show(ShowInColumn.Value).Wait();
+                view.Show(ShowInColumn.Value).GetAwaiter().GetResult();
             }
 
             WriteObject(view);
@@ -78,21 +81,21 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         [Parameter(Mandatory = true, Position = 0)]
         [Alias("View")]
-        [ValidateNotNull()]
+        [ValidateNotNull]
         public IHtmlContentView HtmlContentView { get; set; }
 
         ///
         [Parameter(Mandatory = true, Position = 1)]
         [Alias("Content")]
-        [AllowEmptyString()]
+        [AllowEmptyString]
         public string HtmlBodyContent { get; set; }
 
         ///
-        [Parameter(Mandatory = false, Position = 2)]
+        [Parameter(Position = 2)]
         public string[] JavaScriptPaths { get; set; }
 
         ///
-        [Parameter(Mandatory = false, Position = 3)]
+        [Parameter(Position = 3)]
         public string[] StyleSheetPaths { get; set; }
 
         ///
@@ -107,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
             htmlContent.BodyContent = HtmlBodyContent;
             htmlContent.JavaScriptPaths = JavaScriptPaths;
             htmlContent.StyleSheetPaths = StyleSheetPaths;
-            HtmlContentView.SetContentAsync(htmlContent).Wait();
+            HtmlContentView.SetContentAsync(htmlContent).GetAwaiter().GetResult();
         }
 
         ///
@@ -123,7 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         [Parameter(Mandatory = true, Position = 0)]
         [Alias("View")]
-        [ValidateNotNull()]
+        [ValidateNotNull]
         public IHtmlContentView HtmlContentView { get; set; }
 
         ///
@@ -134,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void ProcessRecord()
         {
-            HtmlContentView.Close().Wait();
+            HtmlContentView.Close().GetAwaiter().GetResult();
         }
 
         ///
@@ -150,13 +153,13 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         [Parameter(Mandatory = true, Position = 0)]
         [Alias("View")]
-        [ValidateNotNull()]
+        [ValidateNotNull]
         public IHtmlContentView HtmlContentView { get; set; }
 
         ///
-        [Parameter(Mandatory = false, Position = 1)]
+        [Parameter(Position = 1)]
         [Alias("Column")]
-        [ValidateNotNull()]
+        [ValidateNotNull]
         public ViewColumn ViewColumn { get; set; } = ViewColumn.One;
 
         ///
@@ -167,7 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void ProcessRecord()
         {
-            HtmlContentView.Show(ViewColumn).Wait();
+            HtmlContentView.Show(ViewColumn).GetAwaiter().GetResult();
         }
 
         ///
@@ -183,13 +186,13 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         [Parameter(Mandatory = true, Position = 0)]
         [Alias("View")]
-        [ValidateNotNull()]
+        [ValidateNotNull]
         public IHtmlContentView HtmlContentView { get; set; }
 
         ///
         [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 1)]
         [Alias("Content")]
-        [ValidateNotNull()]
+        [ValidateNotNull]
         public string AppendedHtmlBodyContent { get; set; }
 
         ///
@@ -200,7 +203,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void ProcessRecord()
         {
-            HtmlContentView.AppendContentAsync(AppendedHtmlBodyContent).Wait();
+            HtmlContentView.AppendContentAsync(AppendedHtmlBodyContent).GetAwaiter().GetResult();
         }
 
         ///

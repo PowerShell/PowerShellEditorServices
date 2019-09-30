@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
         /// <summary>
         /// Gets the components that are registered.
         /// </summary>
-        public IServiceProvider Components { get { return _serviceProvider; } }
+        public IServiceProvider Components => _serviceProvider;
 
         #endregion
 

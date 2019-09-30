@@ -14,6 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         where TView : ICustomView
     {
         protected ILanguageServer languageServer;
+
         protected ILogger logger;
         private readonly Dictionary<Guid, TView> viewIndex;
 

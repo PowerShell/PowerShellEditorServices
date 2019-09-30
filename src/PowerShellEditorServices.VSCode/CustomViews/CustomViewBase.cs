@@ -13,6 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     internal abstract class CustomViewBase : ICustomView
     {
         protected ILanguageServer languageServer;
+
         protected ILogger logger;
 
         public Guid Id { get; private set; }
