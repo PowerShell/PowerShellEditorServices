@@ -54,13 +54,12 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
                 }
                 else
                 {
-                    WriteError(
+                    ThrowTerminatingError(
                         new ErrorRecord(
-                            new ItemNotFoundException("Cannot find a variable with the name 'psEditor'."),
+                            new ItemNotFoundException("Cannot find the '$psEditor' variable."),
                             "PSEditorNotFound",
                             ErrorCategory.ObjectNotFound,
                             targetObject: null));
-
                     return;
                 }
             }
@@ -134,8 +133,6 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
                         "HtmlContentViewCouldNotSet",
                         ErrorCategory.WriteError,
                         targetObject: null));
-
-                return;
             }
         }
     }
@@ -165,8 +162,6 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
                         "HtmlContentViewCouldNotClose",
                         ErrorCategory.CloseError,
                         targetObject: null));
-
-                return;
             }
         }
     }
@@ -202,8 +197,6 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
                         "HtmlContentViewCouldNotShow",
                         ErrorCategory.OpenError,
                         targetObject: null));
-
-                return;
             }
         }
     }
@@ -239,8 +232,6 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
                         "HtmlContentViewCouldNotWrite",
                         ErrorCategory.WriteError,
                         targetObject: null));
-
-                return;
             }
         }
     }
