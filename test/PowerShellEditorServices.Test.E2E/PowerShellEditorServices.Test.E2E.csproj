@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\PowerShellEditorServices.Engine\PowerShellEditorServices.Engine.csproj" />
+    <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj" />
   </ItemGroup>
 
   <ItemGroup>
