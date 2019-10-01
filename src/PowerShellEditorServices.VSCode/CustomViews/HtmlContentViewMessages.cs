@@ -4,7 +4,6 @@
 //
 
 using System;
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
@@ -14,11 +13,9 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     public class SetHtmlContentViewRequest
     {
         /// <summary>
-        /// The RequestType for this request.
+        /// The Language Server Protocol 'method'.
         /// </summary>
-        public static readonly
-            RequestType<SetHtmlContentViewRequest, object, object, object> Type =
-            RequestType<SetHtmlContentViewRequest, object, object, object>.Create("powerShell/setHtmlViewContent");
+        public static string Method => "powerShell/setHtmlViewContent";
 
         /// <summary>
         /// Gets or sets the Id of the view.
@@ -37,11 +34,9 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     public class AppendHtmlContentViewRequest
     {
         /// <summary>
-        /// The RequestType for this request.
+        /// The Language Server Protocol 'method'.
         /// </summary>
-        public static readonly
-            RequestType<AppendHtmlContentViewRequest, object, object, object> Type =
-            RequestType<AppendHtmlContentViewRequest, object, object, object>.Create("powerShell/appendHtmlViewContent");
+        public static string Method => "powerShell/appendHtmlViewContent";
 
         /// <summary>
         /// Gets or sets the Id of the view.

@@ -15,9 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PowerShellEditorServices\PowerShellEditorServices.csproj" />
-    <ProjectReference Include="..\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj" />
-    <ProjectReference Include="..\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj" />
+    <ProjectReference Include="..\PowerShellEditorServices.Engine\PowerShellEditorServices.Engine.csproj" />
+    <PackageReference Include="PowerShellStandard.Library" Version="5.1.0">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
