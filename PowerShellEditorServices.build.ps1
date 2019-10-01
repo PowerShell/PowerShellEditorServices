@@ -27,7 +27,7 @@ $script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
 $script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSCode/bin/"
 $script:WindowsPowerShellFrameworkTarget = 'net461'
 $script:NetFrameworkPlatformId = 'win'
-$script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Engine", "Hosting", "BuildInfo.cs")
+$script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices", "Hosting", "BuildInfo.cs")
 
 $script:PSCoreModulePath = $null
 
@@ -50,7 +50,7 @@ Schema is:
 #>
 $script:RequiredBuildAssets = @{
     $script:ModuleBinPath = @{
-        'PowerShellEditorServices.Engine' = @(
+        'PowerShellEditorServices' = @(
             'publish/Microsoft.Extensions.DependencyInjection.Abstractions.dll',
             'publish/Microsoft.Extensions.DependencyInjection.dll',
             'publish/Microsoft.Extensions.FileSystemGlobbing.dll',
@@ -58,8 +58,8 @@ $script:RequiredBuildAssets = @{
             'publish/Microsoft.Extensions.Logging.dll',
             'publish/Microsoft.Extensions.Options.dll',
             'publish/Microsoft.Extensions.Primitives.dll',
-            'publish/Microsoft.PowerShell.EditorServices.Engine.dll',
-            'publish/Microsoft.PowerShell.EditorServices.Engine.pdb',
+            'publish/Microsoft.PowerShell.EditorServices.dll',
+            'publish/Microsoft.PowerShell.EditorServices.pdb',
             'publish/Newtonsoft.Json.dll',
             'publish/OmniSharp.Extensions.JsonRpc.dll',
             'publish/OmniSharp.Extensions.LanguageProtocol.dll',
@@ -304,7 +304,7 @@ task CreateBuildInfo -Before Build {
     [string]$buildTime = [datetime]::Now.ToString("s", [System.Globalization.CultureInfo]::InvariantCulture)
 
     $buildInfoContents = @"
-namespace Microsoft.PowerShell.EditorServices.Engine.Hosting
+namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     public static class BuildInfo
     {
@@ -319,7 +319,7 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Hosting
 }
 
 task Build {
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Engine\PowerShellEditorServices.Engine.csproj -f $script:TargetPlatform }
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:TargetPlatform }
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
 }
 

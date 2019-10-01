@@ -7,7 +7,7 @@ using System;
 using System.Management.Automation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.VSCode.CustomViews;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
