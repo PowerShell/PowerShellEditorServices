@@ -42,6 +42,11 @@ namespace Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext
         /// </summary>
         public EditorWindow Window { get; private set; }
 
+        /// <summary>
+        /// Gets the components that are registered.
+        /// </summary>
+        public IServiceProvider Components => _serviceProvider;
+
         #endregion
 
         /// <summary>

@@ -9,7 +9,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'PowerShellEditorServices.VSCode.psm1'
+RootModule = "$PSScriptRoot/bin/Microsoft.PowerShell.EditorServices.VSCode.dll"
 
 # Version number of this module.
 ModuleVersion = '0.2.0'
@@ -69,14 +69,14 @@ Description = 'Provides added functionality to PowerShell Editor Services for th
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @('New-VSCodeHtmlContentView',
-                      'Show-VSCodeHtmlContentView',
-                      'Close-VSCodeHtmlContentView',
-                      'Set-VSCodeHtmlContentView',
-                      'Write-VSCodeHtmlContentView')
+FunctionsToExport = @()
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = @()
+CmdletsToExport = @('New-VSCodeHtmlContentView',
+                    'Show-VSCodeHtmlContentView',
+                    'Close-VSCodeHtmlContentView',
+                    'Set-VSCodeHtmlContentView',
+                    'Write-VSCodeHtmlContentView')
 
 # Variables to export from this module
 VariablesToExport = '*'
