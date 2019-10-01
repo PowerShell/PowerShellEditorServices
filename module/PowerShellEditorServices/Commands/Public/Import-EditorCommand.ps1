@@ -7,7 +7,7 @@ function Import-EditorCommand {
     <#
     .EXTERNALHELP ..\PowerShellEditorServices.Commands-help.xml
     #>
-    [OutputType([Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext.EditorCommand])]
+    [OutputType([Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommand])]
     [CmdletBinding(DefaultParameterSetName='ByCommand')]
     param(
         [Parameter(Position=0,
@@ -75,7 +75,7 @@ function Import-EditorCommand {
                 $commands = $Command | Get-Command -ErrorAction SilentlyContinue
             }
         }
-        $attributeType = [Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext.EditorCommandAttribute]
+        $attributeType = [Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommandAttribute]
         foreach ($aCommand in $commands) {
             # Get the attribute from our command to get name info.
             $details = $aCommand.ScriptBlock.Attributes | Where-Object TypeId -eq $attributeType
@@ -99,7 +99,7 @@ function Import-EditorCommand {
                 }
                 # Check for a context parameter.
                 $contextParameter = $aCommand.Parameters.Values |
-                    Where-Object ParameterType -eq ([Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext.EditorContext])
+                    Where-Object ParameterType -eq ([Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorContext])
 
                 # If one is found then add a named argument. Otherwise call the command directly.
                 if ($contextParameter) {
@@ -109,7 +109,7 @@ function Import-EditorCommand {
                     $scriptBlock = [scriptblock]::Create($aCommand.Name)
                 }
 
-                $editorCommand = New-Object Microsoft.PowerShell.EditorServices.Engine.Services.PowerShellContext.EditorCommand @(
+                $editorCommand = New-Object Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommand @(
                     <# commandName:    #> $details.Name,
                     <# displayName:    #> $details.DisplayName,
                     <# suppressOutput: #> $details.SuppressOutput,

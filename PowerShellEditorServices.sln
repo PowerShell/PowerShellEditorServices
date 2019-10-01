@@ -22,7 +22,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerShellEditorServices.Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerShellEditorServices.VSCode", "src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj", "{3B38E8DA-8BFF-4264-AF16-47929E6398A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Engine", "src\PowerShellEditorServices.Engine\PowerShellEditorServices.Engine.csproj", "{29EEDF03-0990-45F4-846E-2616970D1FA2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices", "src\PowerShellEditorServices\PowerShellEditorServices.csproj", "{29EEDF03-0990-45F4-846E-2616970D1FA2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Test.E2E", "test\PowerShellEditorServices.Test.E2E\PowerShellEditorServices.Test.E2E.csproj", "{2561F253-8F72-436A-BCC3-AA63AB82EDC0}"
 EndProject

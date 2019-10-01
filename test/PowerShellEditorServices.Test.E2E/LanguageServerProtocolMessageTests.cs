@@ -11,7 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Engine.Handlers;
+using Microsoft.PowerShell.EditorServices.Handlers;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
