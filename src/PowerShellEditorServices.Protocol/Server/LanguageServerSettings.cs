@@ -264,6 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                 {"PSUseConsistentIndentation", new Hashtable {
                     {"Enable", true},
                     {"IndentationSize", tabSize},
+                    {"PipelineIndentation", PipelineIndentationStyle },
                     {"Kind", insertSpaces ? "space" : "tab"}
                 }},
                 {"PSUseConsistentWhitespace", new Hashtable {
