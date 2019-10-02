@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly Stream _outputStream;
 
         private IJsonRpcServer _jsonRpcServer;
+        private PowerShellContextService _powerShellContextService;
 
         public PsesDebugServer(
             ILoggerFactory factory,
@@ -42,8 +43,14 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 options.Reciever = new DapReciever();
                 options.LoggerFactory = _loggerFactory;
                 ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
+
+                // We need to let the PowerShell Context Service know that we are in a debug session
+                // so that it doesn't send the powerShell/startDebugger message.
+                _powerShellContextService = languageServerServiceProvider.GetService<PowerShellContextService>();
+                _powerShellContextService.IsDebugServerActive = true;
+
                 options.Services = new ServiceCollection()
-                    .AddSingleton(languageServerServiceProvider.GetService<PowerShellContextService>())
+                    .AddSingleton(_powerShellContextService)
                     .AddSingleton(languageServerServiceProvider.GetService<WorkspaceService>())
                     .AddSingleton(languageServerServiceProvider.GetService<RemoteFileManagerService>())
                     .AddSingleton<PsesDebugServer>(this)
@@ -85,6 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         public void Dispose()
         {
+            _powerShellContextService.IsDebugServerActive = false;
             _jsonRpcServer.Dispose();
         }
 

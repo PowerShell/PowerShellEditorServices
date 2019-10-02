@@ -137,6 +137,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public string InitialWorkingDirectory { get; private set; }
 
+        internal bool IsDebugServerActive { get; set; }
+
+        internal DebuggerStopEventArgs CurrentDebuggerStopEventArgs { get; private set; }
+
         #endregion
 
         #region Constructors
@@ -2296,6 +2300,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void OnDebuggerStop(object sender, DebuggerStopEventArgs e)
         {
+            // We maintain the current stop event args so that we can use it in the DebugServer to fire the "stopped" event
+            // when the DebugServer is fully started.
+            CurrentDebuggerStopEventArgs = e;
+
+            if (!IsDebugServerActive)
+            {
+                _languageServer.SendNotification("powerShell/startDebugger");
+            }
+
             if (CurrentRunspace.Context == RunspaceContext.Original)
             {
                 StartCommandLoopOnRunspaceAvailable();
@@ -2361,6 +2374,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     e.ResumeAction = localDebuggerStoppedTask.GetAwaiter().GetResult();
                     this.logger.LogTrace("Received debugger resume action " + e.ResumeAction.ToString());
 
+                    // Since we are no longer at a breakpoint, we set this to null.
+                    CurrentDebuggerStopEventArgs = null;
+
                     // Notify listeners that the debugger has resumed
                     this.DebuggerResumed?.Invoke(this, e.ResumeAction);
 
@@ -2398,6 +2414,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         this.PromptNest,
                         this.CurrentRunspace.Runspace))
                     {
+                        // Since we are no longer at a breakpoint, we set this to null.
+                        CurrentDebuggerStopEventArgs = null;
+
                         if (this.CurrentRunspace.Context == RunspaceContext.DebuggedRunspace)
                         {
                             // Notify listeners that the debugger has resumed
@@ -2436,8 +2455,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void ConfigureRunspaceCapabilities(RunspaceDetails runspaceDetails)
         {
-            // TODO: Bring this back
-            //DscBreakpointCapability.CheckForCapability(this.CurrentRunspace, this, this.logger);
+            DscBreakpointCapability.CheckForCapability(this.CurrentRunspace, this, this.logger);
         }
 
         private void PushRunspace(RunspaceDetails newRunspaceDetails)

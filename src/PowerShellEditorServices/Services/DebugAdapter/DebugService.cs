@@ -1191,7 +1191,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public event EventHandler<DebuggerStoppedEventArgs> DebuggerStopped;
 
-        private async void OnDebuggerStopAsync(object sender, DebuggerStopEventArgs e)
+        internal async void OnDebuggerStopAsync(object sender, DebuggerStopEventArgs e)
         {
             bool noScriptName = false;
             string localScriptPath = e.InvocationInfo.ScriptName;
