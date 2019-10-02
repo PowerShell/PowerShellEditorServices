@@ -13,7 +13,7 @@
     <DocumentationFile>bin\$(TargetFramework)\$(Configuration)\Microsoft.PowerShell.EditorServices.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.6.0" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.0" PrivateAssets="All" />
     <PackageReference Include="UnixConsoleEcho" Version="0.1.0" />
     <PackageReference Include="Serilog" Version="2.8.0" />
