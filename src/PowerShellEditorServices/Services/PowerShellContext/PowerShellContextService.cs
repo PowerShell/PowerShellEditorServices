@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         static PowerShellContextService()
         {
             // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection
-            if (!VersionUtils.IsNetCore)
+            if (!VersionUtils.IsNetCore || VersionUtils.IsPS7)
             {
                 MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
                 Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
