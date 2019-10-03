@@ -198,6 +198,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             }
         }
 
+        public bool AutoCorrectAliases { get; set; }
         public CodeFormattingPreset Preset { get; set; }
         public bool OpenBraceOnSameLine { get; set; }
         public bool NewLineAfterOpenBrace { get; set; }
@@ -257,50 +258,62 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 
         private Hashtable GetCustomPSSASettingsHashtable(int tabSize, bool insertSpaces)
         {
-            return new Hashtable
+            var ruleConfigurations = new Hashtable
             {
-                {"IncludeRules", new string[] {
-                     "PSPlaceCloseBrace",
-                     "PSPlaceOpenBrace",
-                     "PSUseConsistentWhitespace",
-                     "PSUseConsistentIndentation",
-                     "PSAlignAssignmentStatement"
+                { "PSPlaceOpenBrace", new Hashtable {
+                    { "Enable", true },
+                    { "OnSameLine", OpenBraceOnSameLine },
+                    { "NewLineAfter", NewLineAfterOpenBrace },
+                    { "IgnoreOneLineBlock", IgnoreOneLineBlock }
                 }},
-                {"Rules", new Hashtable {
-                    {"PSPlaceOpenBrace", new Hashtable {
-                        {"Enable", true},
-                        {"OnSameLine", OpenBraceOnSameLine},
-                        {"NewLineAfter", NewLineAfterOpenBrace},
-                        {"IgnoreOneLineBlock", IgnoreOneLineBlock}
-                    }},
-                    {"PSPlaceCloseBrace", new Hashtable {
-                        {"Enable", true},
-                        {"NewLineAfter", NewLineAfterCloseBrace},
-                        {"IgnoreOneLineBlock", IgnoreOneLineBlock}
-                    }},
-                    {"PSUseConsistentIndentation", new Hashtable {
-                        {"Enable", true},
-                        {"IndentationSize", tabSize},
-                        {"PipelineIndentation", PipelineIndentationStyle },
-                        {"Kind", insertSpaces ? "space" : "tab"}
-                    }},
-                    {"PSUseConsistentWhitespace", new Hashtable {
-                        {"Enable", true},
-                        {"CheckOpenBrace", WhitespaceBeforeOpenBrace},
-                        {"CheckOpenParen", WhitespaceBeforeOpenParen},
-                        {"CheckOperator", WhitespaceAroundOperator},
-                        {"CheckSeparator", WhitespaceAfterSeparator},
-                        {"CheckInnerBrace", WhitespaceInsideBrace},
-                        {"CheckPipe", WhitespaceAroundPipe},
-                    }},
-                    {"PSAlignAssignmentStatement", new Hashtable {
-                        {"Enable", true},
-                        {"CheckHashtable", AlignPropertyValuePairs}
-                    }},
-                    {"PSUseCorrectCasing", new Hashtable {
-                        {"Enable", UseCorrectCasing}
-                    }},
-                }}
+                { "PSPlaceCloseBrace", new Hashtable {
+                    { "Enable", true },
+                    { "NewLineAfter", NewLineAfterCloseBrace },
+                    { "IgnoreOneLineBlock", IgnoreOneLineBlock }
+                }},
+                { "PSUseConsistentIndentation", new Hashtable {
+                    { "Enable", true },
+                    { "IndentationSize", tabSize },
+                    { "PipelineIndentation", PipelineIndentationStyle },
+                    { "Kind", insertSpaces ? "space" : "tab" }
+                }},
+                { "PSUseConsistentWhitespace", new Hashtable {
+                    { "Enable", true },
+                    { "CheckOpenBrace", WhitespaceBeforeOpenBrace },
+                    { "CheckOpenParen", WhitespaceBeforeOpenParen },
+                    { "CheckOperator", WhitespaceAroundOperator },
+                    { "CheckSeparator", WhitespaceAfterSeparator },
+                    { "CheckInnerBrace", WhitespaceInsideBrace },
+                    { "CheckPipe", WhitespaceAroundPipe },
+                }},
+                { "PSAlignAssignmentStatement", new Hashtable {
+                    { "Enable", true },
+                    { "CheckHashtable", AlignPropertyValuePairs }
+                }},
+                { "PSUseCorrectCasing", new Hashtable {
+                    { "Enable", UseCorrectCasing }
+                }},
+            };
+
+            if (AutoCorrectAliases)
+            {
+                // Empty hashtable required to activate the rule,
+                // since PSAvoidUsingCmdletAliases inherits from IScriptRule and not ConfigurableRule
+                ruleConfigurations.Add("PSAvoidUsingCmdletAliases", new Hashtable());
+            }
+
+            return new Hashtable()
+            {
+                { "IncludeRules", new string[] {
+                        "PSPlaceCloseBrace",
+                        "PSPlaceOpenBrace",
+                        "PSUseConsistentWhitespace",
+                        "PSUseConsistentIndentation",
+                        "PSAlignAssignmentStatement"
+                }},
+                {
+                    "Rules", ruleConfigurations
+                }
             };
         }
     }
