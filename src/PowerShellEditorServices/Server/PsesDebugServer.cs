@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly Stream _outputStream;
 
         private IJsonRpcServer _jsonRpcServer;
+
         private PowerShellContextService _powerShellContextService;
 
         public PsesDebugServer(
