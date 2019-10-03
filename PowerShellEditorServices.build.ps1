@@ -34,7 +34,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
 
 task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi {
 
-    $requiredSdkVersion = "2.0.0"
+    $requiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -52,10 +52,8 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
 
     # Make sure the dotnet we found is the right version
     if ($dotnetExePath) {
-        # dotnet --version can return a semver that System.Version can't handle
-        # e.g.: 2.1.300-preview-01. The replace operator is used to remove any build suffix.
-        $version = (& $dotnetExePath --version) -replace '[+-].*$',''
-        if ([version]$version -ge [version]$requiredSdkVersion) {
+        # dotnet --version can write to stderr, which causes builds to abort, therefore use --list-sdks instead
+        if ((& $dotnetExePath --list-sdks | ForEach-Object { $_.Split()[0] } ) -contains $requiredSdkVersion) {
             $script:dotnetExe = $dotnetExePath
         }
         else {
