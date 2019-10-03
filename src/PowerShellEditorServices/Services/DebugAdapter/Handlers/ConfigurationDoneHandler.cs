@@ -73,9 +73,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 if (_debugService.IsDebuggerStopped)
                 {
-                    // If this is an interactive session and there's a pending breakpoint,
-                    // send that information along to the debugger client
-                    _debugEventHandlerService.TriggerDebuggerStopped(_debugService.CurrentDebuggerStoppedEventArgs);
+                    if (_debugService.CurrentDebuggerStoppedEventArgs != null)
+                    {
+                        // If this is an interactive session and there's a pending breakpoint,
+                        // send that information along to the debugger client
+                        _debugEventHandlerService.TriggerDebuggerStopped(_debugService.CurrentDebuggerStoppedEventArgs);
+                    }
+                    else
+                    {
+                        // If this is an interactive session and there's a pending breakpoint that has not been propagated through
+                        // the debug service, fire the debug service's OnDebuggerStop event.
+                        _debugService.OnDebuggerStopAsync(null, _powerShellContextService.CurrentDebuggerStopEventArgs);
+                    }
                 }
             }
 
