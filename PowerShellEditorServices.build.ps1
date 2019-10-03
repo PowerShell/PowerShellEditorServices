@@ -22,13 +22,12 @@ $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "C
 $script:TargetPlatform = "netstandard2.0"
 $script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
-$script:MinimumPesterVersion = '4.7'
 $script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
 $script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
 $script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSCode/bin/"
 $script:WindowsPowerShellFrameworkTarget = 'net461'
 $script:NetFrameworkPlatformId = 'win'
-$script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Host", "BuildInfo", "BuildInfo.cs")
+$script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices", "Hosting", "BuildInfo.cs")
 
 $script:PSCoreModulePath = $null
 
@@ -52,27 +51,28 @@ Schema is:
 $script:RequiredBuildAssets = @{
     $script:ModuleBinPath = @{
         'PowerShellEditorServices' = @(
-            'publish/Serilog.dll',
-            'publish/Serilog.Sinks.Async.dll',
-            'publish/Serilog.Sinks.Console.dll',
-            'publish/Serilog.Sinks.File.dll',
+            'publish/Microsoft.Extensions.DependencyInjection.Abstractions.dll',
+            'publish/Microsoft.Extensions.DependencyInjection.dll',
             'publish/Microsoft.Extensions.FileSystemGlobbing.dll',
-            'Microsoft.PowerShell.EditorServices.dll',
-            'Microsoft.PowerShell.EditorServices.pdb'
-        )
-
-        'PowerShellEditorServices.Host' = @(
-            'publish/UnixConsoleEcho.dll',
-            'publish/runtimes/osx-64/native/libdisablekeyecho.dylib',
-            'publish/runtimes/linux-64/native/libdisablekeyecho.so',
+            'publish/Microsoft.Extensions.Logging.Abstractions.dll',
+            'publish/Microsoft.Extensions.Logging.dll',
+            'publish/Microsoft.Extensions.Options.dll',
+            'publish/Microsoft.Extensions.Primitives.dll',
+            'publish/Microsoft.PowerShell.EditorServices.dll',
+            'publish/Microsoft.PowerShell.EditorServices.pdb',
             'publish/Newtonsoft.Json.dll',
-            'Microsoft.PowerShell.EditorServices.Host.dll',
-            'Microsoft.PowerShell.EditorServices.Host.pdb'
-        )
-
-        'PowerShellEditorServices.Protocol' = @(
-            'Microsoft.PowerShell.EditorServices.Protocol.dll',
-            'Microsoft.PowerShell.EditorServices.Protocol.pdb'
+            'publish/OmniSharp.Extensions.JsonRpc.dll',
+            'publish/OmniSharp.Extensions.LanguageProtocol.dll',
+            'publish/OmniSharp.Extensions.LanguageServer.dll',
+            'publish/OmniSharp.Extensions.DebugAdapter.dll',
+            'publish/OmniSharp.Extensions.DebugAdapter.Server.dll',
+            'publish/runtimes/linux-64/native/libdisablekeyecho.so',
+            'publish/runtimes/osx-64/native/libdisablekeyecho.dylib',
+            'publish/Serilog.dll',
+            'publish/Serilog.Extensions.Logging.dll',
+            'publish/Serilog.Sinks.File.dll',
+            'publish/System.Reactive.dll',
+            'publish/UnixConsoleEcho.dll'
         )
     }
 
@@ -101,12 +101,6 @@ $script:RequiredNugetBinaries = @{
         @{ PackageName = 'System.Security.Principal.Windows'; PackageVersion = '4.5.0'; TargetRuntime = 'net461' },
         @{ PackageName = 'System.Security.AccessControl';     PackageVersion = '4.5.0'; TargetRuntime = 'net461' },
         @{ PackageName = 'System.IO.Pipes.AccessControl';     PackageVersion = '4.5.1'; TargetRuntime = 'net461' }
-    )
-
-    '6.0' = @(
-        @{ PackageName = 'System.Security.Principal.Windows'; PackageVersion = '4.5.0'; TargetRuntime = 'netcoreapp2.0' },
-        @{ PackageName = 'System.Security.AccessControl';     PackageVersion = '4.5.0'; TargetRuntime = 'netcoreapp2.0' },
-        @{ PackageName = 'System.IO.Pipes.AccessControl';     PackageVersion = '4.5.1'; TargetRuntime = 'netstandard2.0' }
     )
 }
 
@@ -180,7 +174,7 @@ function Invoke-WithCreateDefaultHook {
     }
 }
 
-task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, PackageNuGet {
+task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestE2E {
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -259,7 +253,7 @@ task Clean {
     Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
 }
 
-task GetProductVersion -Before PackageNuGet, PackageModule, UploadArtifacts {
+task GetProductVersion -Before PackageModule, UploadArtifacts {
     [xml]$props = Get-Content .\PowerShellEditorServices.Common.props
 
     $script:BuildNumber = 9999
@@ -310,7 +304,7 @@ task CreateBuildInfo -Before Build {
     [string]$buildTime = [datetime]::Now.ToString("s", [System.Globalization.CultureInfo]::InvariantCulture)
 
     $buildInfoContents = @"
-namespace Microsoft.PowerShell.EditorServices.Host
+namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     public static class BuildInfo
     {
@@ -326,13 +320,7 @@ namespace Microsoft.PowerShell.EditorServices.Host
 
 task Build {
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:TargetPlatform }
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj -f $script:TargetPlatform }
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
-}
-
-task BuildPsesClientModule SetupDotNet,{
-    Write-Verbose 'Building PsesPsClient testing module'
-    & $PSScriptRoot/tools/PsesPsClient/build.ps1 -DotnetExe $script:dotnetExe
 }
 
 function DotNetTestFilter {
@@ -340,7 +328,8 @@ function DotNetTestFilter {
     if ($TestFilter) { @("--filter",$TestFilter) } else { "" }
 }
 
-task Test TestServer,TestProtocol,TestPester
+# task Test TestServer,TestProtocol,TestE2E
+task Test TestE2E
 
 task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
@@ -378,26 +367,11 @@ task TestHost {
     exec { & $script:dotnetExe test -f $script:TestRuntime.Core (DotNetTestFilter) }
 }
 
-task TestPester Build,BuildPsesClientModule,EnsurePesterInstalled,{
-    $testParams = @{}
-    if ($env:TF_BUILD)
-    {
-        $testParams += @{
-            OutputFormat = 'NUnitXml'
-            OutputFile = 'TestResults.xml'
-        }
-    }
-    $result = Invoke-Pester "$PSScriptRoot/test/Pester/" @testParams -PassThru
+task TestE2E {
+    Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
-    if ($result.FailedCount -gt 0)
-    {
-        throw "$($result.FailedCount) tests failed."
-    }
-}
-
-task EnsurePesterInstalled -If (-not (Get-Module Pester -ListAvailable | Where-Object Version -ge $script:MinimumPesterVersion)) {
-    Write-Warning "Required Pester version not found, installing Pester to current user scope"
-    Install-Module -Scope CurrentUser Pester -Force -SkipPublisherCheck
+    $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
+    exec { & $script:dotnetExe test --logger trx -f $script:TestRuntime.Core (DotNetTestFilter) }
 }
 
 task LayoutModule -After Build {
@@ -502,12 +476,7 @@ task RestorePsesModules -After Build {
 
 task BuildCmdletHelp {
     New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US -Force
-}
-
-task PackageNuGet {
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices\PowerShellEditorServices.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj $script:TargetFrameworksParam }
-    exec { & $script:dotnetExe pack -c $Configuration --version-suffix $script:VersionSuffix .\src\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj $script:TargetFrameworksParam }
+    New-ExternalHelp -Path $PSScriptRoot\module\PowerShellEditorServices.VSCode\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices.VSCode\en-US -Force
 }
 
 task PackageModule {
@@ -523,4 +492,4 @@ task UploadArtifacts -If ($null -ne $env:TF_BUILD) {
 }
 
 # The default task is to run the entire CI build
-task . GetProductVersion, Clean, Build, Test, BuildCmdletHelp, PackageNuGet, PackageModule, UploadArtifacts
+task . GetProductVersion, Clean, Build, Test, BuildCmdletHelp, PackageModule, UploadArtifacts

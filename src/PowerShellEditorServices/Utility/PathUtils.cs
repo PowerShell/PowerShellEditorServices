@@ -1,20 +1,15 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
-    /// <summary>
-    /// Utility to help handling paths across different platforms.
-    /// </summary>
-    /// <remarks>
-    /// Some constants were copied from the internal System.Management.Automation.StringLiterals class.
-    /// </remarks>
-    internal static class PathUtils
+    internal class PathUtils
     {
         /// <summary>
         /// The default path separator used by the base implementation of the providers.
@@ -35,6 +30,42 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </summary>
         internal static readonly char AlternatePathSeparator = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? '/' : '\\';
         internal static readonly string AlternatePathSeparatorString = AlternatePathSeparator.ToString();
+
+        public string WildcardUnescapePath(string path)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Uri ToUri(string filePath)
+        {
+            if (filePath.StartsWith("untitled", StringComparison.OrdinalIgnoreCase) ||
+                filePath.StartsWith("inmemory", StringComparison.OrdinalIgnoreCase))
+            {
+                return new Uri(filePath);
+            }
+
+            filePath = filePath.Replace(":", "%3A").Replace("\\", "/");
+            if (!filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+            {
+                return new Uri($"file:///{filePath}");
+            }
+
+            return new Uri($"file://{filePath}");
+        }
+
+        public static string FromUri(Uri uri)
+        {
+            if (uri.Segments.Length > 1)
+            {
+                // On windows of the Uri contains %3a local path
+                // doesn't come out as a proper windows path
+                if (uri.Segments[1].IndexOf("%3a", StringComparison.OrdinalIgnoreCase) > -1)
+                {
+                    return FromUri(new Uri(uri.AbsoluteUri.Replace("%3a", ":").Replace("%3A", ":")));
+                }
+            }
+            return uri.LocalPath;
+        }
 
         /// <summary>
         /// Converts all alternate path separators to the current platform's main path separators.

@@ -30,7 +30,7 @@ The Import-EditorCommand function will search the specified module for functions
 
 Alternatively, you can specify command info objects (like those from the Get-Command cmdlet) to be processed directly.
 
-To tag a command as an editor command, attach the attribute 'Microsoft.PowerShell.EditorServices.Extensions.EditorCommandAttribute' to the function like you would with 'CmdletBindingAttribute'.  The attribute accepts the named parameters 'Name', 'DisplayName', and 'SuppressOutput'.
+To tag a command as an editor command, attach the attribute 'Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommandAttribute' to the function like you would with 'CmdletBindingAttribute'.  The attribute accepts the named parameters 'Name', 'DisplayName', and 'SuppressOutput'.
 
 ## EXAMPLES
 
@@ -55,7 +55,7 @@ Registers all editor commands that contain "Editor" in the name and return all s
 ```powershell
 function Invoke-MyEditorCommand {
     [CmdletBinding()]
-    [Microsoft.PowerShell.EditorServices.Extensions.EditorCommand(DisplayName='My Command', SuppressOutput)]
+    [Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommand(DisplayName='My Command', SuppressOutput)]
     param()
     end {
         ConvertTo-ScriptExtent -Offset 0 | Set-ScriptExtent -Text 'My Command!'
@@ -145,7 +145,7 @@ You can pass commands to register as editor commands.
 
 ## OUTPUTS
 
-### Microsoft.PowerShell.EditorServices.Extensions.EditorCommand
+### Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommand
 
 If the "PassThru" parameter is specified editor commands that were successfully registered
 will be returned.  This function does not output to the pipeline otherwise.

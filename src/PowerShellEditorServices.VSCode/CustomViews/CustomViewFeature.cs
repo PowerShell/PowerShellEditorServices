@@ -5,25 +5,25 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.Extensions.Logging;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
     internal abstract class CustomViewFeatureBase<TView>
         where TView : ICustomView
     {
-        protected IMessageSender messageSender;
+        protected ILanguageServer languageServer;
+
         protected ILogger logger;
         private readonly Dictionary<Guid, TView> viewIndex;
 
         public CustomViewFeatureBase(
-            IMessageSender messageSender,
+            ILanguageServer languageServer,
             ILogger logger)
         {
             this.viewIndex = new Dictionary<Guid, TView>();
-            this.messageSender = messageSender;
+            this.languageServer = languageServer;
             this.logger = logger;
         }
 

@@ -37,7 +37,7 @@ docs/metadata/
 *.zip
 
 # Generated build info file
-src/PowerShellEditorServices.Host/BuildInfo/BuildInfo.cs
+src/PowerShellEditorServices/Hosting/BuildInfo.cs
 
 # quickbuild.exe
 /VersionGeneratingLogs/
@@ -67,6 +67,7 @@ PowerShellEditorServices.sln.ide/storage.ide
 
 # Don't include PlatyPS generated MAML
 module/PowerShellEditorServices/Commands/en-US/*-help.xml
+module/PowerShellEditorServices.VSCode/en-US/*-help.xml
 
 # Don't include Third Party Notices in module folder
 module/PowerShellEditorServices/Third\ Party\ Notices.txt
