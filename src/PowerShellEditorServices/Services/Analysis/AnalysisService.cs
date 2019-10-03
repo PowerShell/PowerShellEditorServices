@@ -868,7 +868,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
 
-            var uriBuilder = new UriBuilder()
+            var uriBuilder = new UriBuilder
             {
                 Scheme = Uri.UriSchemeFile,
                 Path = scriptFile.FilePath,

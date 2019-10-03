@@ -61,8 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             {
                 if (sym.SymbolType == SymbolType.Function)
                 {
-                    //acc.Add(new CodeLens(this, scriptFile, sym.ScriptRegion));
-                    acc.Add(new CodeLens()
+                    acc.Add(new CodeLens
                     {
                         Data = JToken.FromObject(new
                         {
@@ -122,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 referenceLocations = acc.ToArray();
             }
 
-            return new CodeLens()
+            return new CodeLens
             {
                 Data = codeLens.Data,
                 Range = codeLens.Range,

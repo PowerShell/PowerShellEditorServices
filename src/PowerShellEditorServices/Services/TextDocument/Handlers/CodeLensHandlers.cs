@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     public class CodeLensHandlers : ICodeLensHandler, ICodeLensResolveHandler
     {
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
-            new DocumentFilter()
+            new DocumentFilter
             {
                 Language = "powershell"
             }
@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         CodeLensRegistrationOptions IRegistration<CodeLensRegistrationOptions>.GetRegistrationOptions()
         {
-            return new CodeLensRegistrationOptions()
+            return new CodeLensRegistrationOptions
             {
                 DocumentSelector = _documentSelector,
                 ResolveProvider = true
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public TextDocumentRegistrationOptions GetRegistrationOptions()
         {
-            return new TextDocumentRegistrationOptions()
+            return new TextDocumentRegistrationOptions
             {
                 DocumentSelector = _documentSelector,
             };

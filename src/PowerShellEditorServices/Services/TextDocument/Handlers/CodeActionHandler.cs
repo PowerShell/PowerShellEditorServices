@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _logger = factory.CreateLogger<TextDocumentHandler>();
             _analysisService = analysisService;
-            _registrationOptions = new CodeActionRegistrationOptions()
+            _registrationOptions = new CodeActionRegistrationOptions
             {
                 DocumentSelector = new DocumentSelector(new DocumentFilter() { Language = "powershell" }),
                 CodeActionKinds = s_supportedCodeActions

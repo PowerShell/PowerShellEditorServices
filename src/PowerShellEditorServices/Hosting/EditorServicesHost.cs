@@ -236,13 +236,6 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             EditorServiceTransportConfig config,
             ProfilePaths profilePaths)
         {
-            // Uncomment to debug language service
-            // while (!System.Diagnostics.Debugger.IsAttached)
-            // {
-            //     System.Console.WriteLine($"{Process.GetCurrentProcess().Id}");
-            //     Thread.Sleep(2000);
-            // }
-
             _logger.LogInformation($"LSP NamedPipe: {config.InOutPipeName}\nLSP OutPipe: {config.OutPipeName}");
 
             switch (config.TransportType)
@@ -296,12 +289,6 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             ProfilePaths profilePaths,
             bool useExistingSession)
         {
-            //while (System.Diagnostics.Debugger.IsAttached)
-            //{
-            //    System.Console.WriteLine($"{Process.GetCurrentProcess().Id}");
-            //    Thread.Sleep(2000);
-            //}
-
             _logger.LogInformation($"Debug NamedPipe: {config.InOutPipeName}\nDebug OutPipe: {config.OutPipeName}");
 
             switch (config.TransportType)

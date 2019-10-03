@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     public class DocumentSymbolHandler : IDocumentSymbolHandler
     {
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
-            new DocumentFilter()
+            new DocumentFilter
             {
                 Language = "powershell"
             }
@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public TextDocumentRegistrationOptions GetRegistrationOptions()
         {
-            return new TextDocumentRegistrationOptions()
+            return new TextDocumentRegistrationOptions
             {
                 DocumentSelector = _documentSelector,
             };

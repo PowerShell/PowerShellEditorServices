@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 request.Options.InsertSpaces);
 
 
-            // TODO raise an error event in case format returns null;
+            // TODO raise an error event in case format returns null
             string formattedScript;
             Range editRange;
             var extent = scriptFile.ScriptAst.Extent;
