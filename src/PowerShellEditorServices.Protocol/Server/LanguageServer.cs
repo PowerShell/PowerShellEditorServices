@@ -2010,8 +2010,13 @@ function __Expand-Alias {
                 // This causes the editing cursor to be placed *before* the final quote after completion,
                 // which makes subsequent path completions work. See this part of the LSP spec for details:
                 // https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
-                int len = completionDetails.CompletionText.Length;
-                completionText = completionDetails.CompletionText.Insert(len - 1, "$0");
+
+                // Since we want to use a "tab stop" we need to escape a few things for Textmate to render properly.
+                var sb = new StringBuilder(completionDetails.CompletionText)
+                    .Replace(@"\", @"\\")
+                    .Replace(@"}", @"\}")
+                    .Replace(@"$", @"\$");
+                completionText = sb.Insert(sb.Length - 1, "$0").ToString();
                 insertTextFormat = InsertTextFormat.Snippet;
             }
 
