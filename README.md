@@ -10,7 +10,7 @@ PowerShell Editor Services is a PowerShell module that provides common
 functionality needed to enable a consistent and robust PowerShell development
 experience in almost any editor or integrated development environment (IDE).
 
-## PowerShell Language Server Protocol clients using PowerShell Editor Services
+## PowerShell [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) clients using PowerShell Editor Services
 
 The functionality in PowerShell Editor Services is already available in the following editor extensions:
 
@@ -28,6 +28,76 @@ The functionality in PowerShell Editor Services is already available in the foll
 - The Debugging Service simplifies interaction with the PowerShell debugger (breakpoints, variables, call stack, etc)
 - The [$psEditor API](http://powershell.github.io/PowerShellEditorServices/guide/extensions.html) enables scripting of the host editor
 - A full, terminal-based Integrated Console experience for interactive development and debugging
+
+## Usage
+
+Looking to integrate PowerShell Editor Services into your [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) compliant editor or client? We support two ways of connecting.
+
+### Named Pipes/Unix Domain Sockets (recommended)
+
+If you're looking for the more feature-rich experience,
+Named Pipes are the way to go.
+They give you all the benefit of the Lanaguge Server Protocol with extra capabilities that you can take advantage of:
+
+- The PowerShell Integrated Console
+- Debugging using the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
+
+The typical command to start PowerShell Editor Services using named pipes is as follows:
+
+```powershell
+pwsh -NoLogo -NoProfile -Command "$PSES_BUNDLE_PATH/PowerShellEditorServices/Start-EditorServices.ps1 -BundledModulesPath $PSES_BUNDLE_PATH -LogPath $SESSION_TEMP_PATH/logs.log -SessionDetailsPath $SESSION_TEMP_PATH/session.json -FeatureFlags @() -AdditionalModules @() -HostName 'My Client' -HostProfileId 'myclient' -HostVersion 1.0.0 -LogLevel Normal"
+```
+
+> NOTE: In the example above,
+>
+> - `$PSES_BUNDLE_PATH` is the root of the PowerShellEditorServices.zip downloaded from the GitHub releases.
+> - `$SESSION_TEMP_PATH` is the folder path that you'll use for this specific editor session.
+
+The `session.json` will contain the paths of the Named Pipes that you will connect to.
+There will be one you immediately connect to for Language Server Protocol messages,
+and one you connect to when you launch the debugger for Debug Adapter Protocol messages.
+
+The Visual Studio Code, Vim, and IntelliJ extensions currently use Named Pipes.
+
+#### PowerShell Integrated Console
+
+![image](https://user-images.githubusercontent.com/2644648/66245084-6985da80-e6c0-11e9-9c7b-4c8476190df5.png)
+
+If you want to take advantage of the PowerShell Integrated Console which automatically shares state with the editor-side,
+you must include the `-EnableConsoleRepl` switch when called `Start-EditorServices.ps1`.
+
+This is typically used if your client has the ability to create arbirary terminals in the editor like below:
+
+![integrated console in vscode](https://user-images.githubusercontent.com/2644648/66245018-04ca8000-e6c0-11e9-808c-b86144149444.png)
+
+The Visual Studio Code, Vim, and IntelliJ extensions currently use the PowerShell Integrated Console.
+
+#### Debugging
+
+If you want to take advantage of debugging,
+your client must support the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/).
+Your client should use the path to the debug named pipe found in the `session.json` file talked about above.
+
+Currently only the Visual Studio Code extension supports debugging.
+
+### Stdio
+
+Stdio is a simpler and more universal mechanism when it comes to the Language Server Protocol and is what we recommend if your editor/client doesn't need to support the PowerShell Integrated Console or debugging.
+
+The typical command to start PowerShell Editor Services using stdio is as follows:
+
+```powershell
+pwsh -NoLogo -NoProfile -Command "$PSES_BUNDLE_PATH/PowerShellEditorServices/Start-EditorServices.ps1 -BundledModulesPath $PSES_BUNDLE_PATH -LogPath $SESSION_TEMP_PATH/logs.log -SessionDetailsPath $SESSION_TEMP_PATH/session.json -FeatureFlags @() -AdditionalModules @() -HostName 'My Client' -HostProfileId 'myclient' -HostVersion 1.0.0 -Stdio -LogLevel Normal"
+```
+
+> NOTE: In the example above,
+>
+> - `$PSES_BUNDLE_PATH` is the root of the PowerShellEditorServices.zip downloaded from the GitHub releases.
+> - `$SESSION_TEMP_PATH` is the folder path that you'll use for this specific editor session.
+
+The important flag is the `-Stdio` flag which enables this communication protocol.
+
+Currently, the Emacs extension uses Stdio.
 
 ## Development
 
