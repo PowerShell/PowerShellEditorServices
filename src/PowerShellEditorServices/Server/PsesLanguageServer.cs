@@ -17,6 +17,7 @@ using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using OmniSharp.Extensions.LanguageServer.Server;
+using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
@@ -59,10 +60,14 @@ namespace Microsoft.PowerShell.EditorServices.Server
         {
             LanguageServer = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options =>
             {
-                options.AddDefaultLoggingProvider();
-                options.LoggerFactory = LoggerFactory;
-                ILogger logger = options.LoggerFactory.CreateLogger("OptionsStartup");
+                Microsoft.Extensions.Logging.ILogger logger = LoggerFactory.CreateLogger("OptionsStartup");
                 options.Services = new ServiceCollection()
+                    // I'M OK DOING THIS IF IT'S DOCUMENTED IN csharp-language-server-protocol
+                    .AddLogging(builder => {
+                        builder
+                            .AddSerilog(Log.Logger)
+                            .SetMinimumLevel(LogLevel.Trace);
+                    })
                     .AddSingleton<WorkspaceService>()
                     .AddSingleton<SymbolsService>()
                     .AddSingleton<ConfigurationService>()
@@ -107,7 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithInput(input)
                     .WithOutput(output);
 
-                options.MinimumLogLevel = _minimumLogLevel;
+                options.WithMinimumLogLevel(_minimumLogLevel);
 
                 logger.LogInformation("Adding handlers");
 
@@ -157,6 +162,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
                 logger.LogInformation("Handlers added");
             });
+
+            // I REALLY SHOULDN'T NEED TO DO THIS
+            LanguageServer.Services.GetService<ILoggerFactory>().AddProvider(new LanguageServerLoggerProvider((LanguageServer) LanguageServer));
         }
 
         public async Task WaitForShutdown()
