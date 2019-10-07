@@ -14,20 +14,20 @@ experience in almost any editor or integrated development environment (IDE).
 
 The functionality in PowerShell Editor Services is already available in the following editor extensions:
 
-  - [The VSCode PowerShell extension](https://github.com/PowerShell/vscode-powershell), also available in Azure Data Studio
-  - [coc-powershell](https://github.com/yatli/coc-powershell), a vim/neovim PowerShell plugin
-  - [The IntelliJ PowerShell plugin](https://github.com/ant-druha/intellij-powershell)
-  - [lsp-powershell](https://github.com/kiennq/lsp-powershell), an Emacs PowerShell plugin
+- [The VSCode PowerShell extension](https://github.com/PowerShell/vscode-powershell), also available in Azure Data Studio
+- [coc-powershell](https://github.com/yatli/coc-powershell), a vim/neovim PowerShell plugin
+- [The IntelliJ PowerShell plugin](https://github.com/ant-druha/intellij-powershell)
+- [lsp-powershell](https://github.com/kiennq/lsp-powershell), an Emacs PowerShell plugin
 
 ## Features
 
-  - The Language Service provides common editor features for the PowerShell language:
-    - Code navigation actions (find references, go to definition)
-    - Statement completions (IntelliSense)
-    - Real-time semantic analysis of scripts using PowerShell Script Analyzer
-  - The Debugging Service simplifies interaction with the PowerShell debugger (breakpoints, variables, call stack, etc)
-  - The [$psEditor API](http://powershell.github.io/PowerShellEditorServices/guide/extensions.html) enables scripting of the host editor
-  - A full, terminal-based Integrated Console experience for interactive development and debugging
+- The Language Service provides common editor features for the PowerShell language:
+  - Code navigation actions (find references, go to definition)
+  - Statement completions (IntelliSense)
+  - Real-time semantic analysis of scripts using PowerShell Script Analyzer
+- The Debugging Service simplifies interaction with the PowerShell debugger (breakpoints, variables, call stack, etc)
+- The [$psEditor API](http://powershell.github.io/PowerShellEditorServices/guide/extensions.html) enables scripting of the host editor
+- A full, terminal-based Integrated Console experience for interactive development and debugging
 
 ## Usage
 
@@ -39,8 +39,8 @@ If you're looking for the more feature-rich experience,
 Named Pipes are the way to go.
 They give you all the benefit of the Lanaguge Server Protocol with extra capabilities that you can take advantage of:
 
-  - The PowerShell Integrated Console
-  - Debugging using the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
+- The PowerShell Integrated Console
+- Debugging using the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
 
 The typical command to start PowerShell Editor Services using named pipes is as follows:
 
@@ -50,8 +50,8 @@ pwsh -NoLogo -NoProfile -Command "$PSES_BUNDLE_PATH/PowerShellEditorServices/Sta
 
 > NOTE: In the example above,
 >
->   - `$PSES_BUNDLE_PATH` is the root of the PowerShellEditorServices.zip downloaded from the GitHub releases.
->   - `$SESSION_TEMP_PATH` is the folder path that you'll use for this specific editor session.
+> - `$PSES_BUNDLE_PATH` is the root of the PowerShellEditorServices.zip downloaded from the GitHub releases.
+> - `$SESSION_TEMP_PATH` is the folder path that you'll use for this specific editor session.
 
 Once the command is run,
 PowerShell Editor Services will wait until the client connects to the Named Pipe.
@@ -108,6 +108,16 @@ pwsh -NoLogo -NoProfile -Command "$PSES_BUNDLE_PATH/PowerShellEditorServices/Sta
 The important flag is the `-Stdio` flag which enables this communication protocol.
 
 Currently, the Emacs extension uses Stdio.
+
+### API Usage
+
+Please note that we only consider the following as stable APIs that can be relied on:
+
+- Language server protocol connection
+- Debug adapter protocol connection
+- Start up mechanism
+
+The types of PowerShell Editor Services can change at any moment and should not be linked against in production environment.
 
 ## Development
 
