@@ -331,16 +331,14 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
 
                         IServiceProvider serviceProvider = useExistingSession
                             ? _languageServer.LanguageServer.Services
-                            : new ServiceCollection().AddSingleton<PowerShellContextService>(
-                                (provider) => PowerShellContextService.Create(
-                                    _factory,
-                                    provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
+                            : new ServiceCollection()
+                                .AddPsesLanguageServices(
                                     profilePaths,
                                     _featureFlags,
                                     _enableConsoleRepl,
                                     _internalHost,
                                     _hostDetails,
-                                    _additionalModules))
+                                    _additionalModules)
                                 .BuildServiceProvider();
 
                         await _debugServer.StartAsync(serviceProvider);

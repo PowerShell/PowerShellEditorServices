@@ -51,13 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 _powerShellContextService.IsDebugServerActive = true;
 
                 options.Services = new ServiceCollection()
-                    .AddSingleton(_powerShellContextService)
-                    .AddSingleton(languageServerServiceProvider.GetService<WorkspaceService>())
-                    .AddSingleton(languageServerServiceProvider.GetService<RemoteFileManagerService>())
-                    .AddSingleton<PsesDebugServer>(this)
-                    .AddSingleton<DebugService>()
-                    .AddSingleton<DebugStateService>()
-                    .AddSingleton<DebugEventHandlerService>();
+                    .AddPsesDebugServices(languageServerServiceProvider, this);
 
                 options
                     .WithInput(_inputStream)
