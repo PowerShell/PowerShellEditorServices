@@ -66,7 +66,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
         public static IServiceCollection AddPsesDebugServices (
             this IServiceCollection collection,
             IServiceProvider languageServiceProvider,
-            PsesDebugServer psesDebugServer
+            PsesDebugServer psesDebugServer,
+            bool useExistingSession
         )
         {
             return collection.AddSingleton(languageServiceProvider.GetService<PowerShellContextService>())
@@ -74,7 +75,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
                 .AddSingleton<PsesDebugServer>(psesDebugServer)
                 .AddSingleton<DebugService>()
-                .AddSingleton<DebugStateService>()
+                .AddSingleton<DebugStateService>(new DebugStateService
+                {
+                     OwnsEditorSession = !useExistingSession
+                })
                 .AddSingleton<DebugEventHandlerService>();
         }
     }

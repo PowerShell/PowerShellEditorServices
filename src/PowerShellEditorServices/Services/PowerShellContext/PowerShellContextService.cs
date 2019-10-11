@@ -1793,7 +1793,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void PowerShellContext_RunspaceChangedAsync(object sender, RunspaceChangedEventArgs e)
         {
-            _languageServer.SendNotification(
+            _languageServer?.SendNotification(
                 "powerShell/runspaceChanged",
                 new MinifiedRunspaceDetails(e.NewRunspace));
         }
@@ -1831,7 +1831,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="e">details of the execution status change</param>
         private void PowerShellContext_ExecutionStatusChangedAsync(object sender, ExecutionStatusChangedEventArgs e)
         {
-            _languageServer.SendNotification(
+            _languageServer?.SendNotification(
                 "powerShell/executionStatusChanged",
                 e);
         }

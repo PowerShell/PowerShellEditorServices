@@ -21,6 +21,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
@@ -292,6 +293,25 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         {
             _logger.LogInformation($"Debug NamedPipe: {config.InOutPipeName}\nDebug OutPipe: {config.OutPipeName}");
 
+            IServiceProvider serviceProvider = null;
+            if (!useExistingSession)
+            {
+                serviceProvider = new ServiceCollection()
+                    .AddLogging(builder => builder
+                        .ClearProviders()
+                        .AddSerilog()
+                        .SetMinimumLevel(LogLevel.Trace))
+                    .AddSingleton<ILanguageServer>(provider => null)
+                    .AddPsesLanguageServices(
+                        profilePaths,
+                        _featureFlags,
+                        _enableConsoleRepl,
+                        _internalHost,
+                        _hostDetails,
+                        _additionalModules)
+                    .BuildServiceProvider();
+            }
+
             switch (config.TransportType)
             {
                 case EditorServiceTransportType.NamedPipe:
@@ -312,7 +332,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                         .ContinueWith(async task =>
                         {
                             _logger.LogInformation("Starting debug server");
-                            await _debugServer.StartAsync(_languageServer.LanguageServer.Services);
+                            await _debugServer.StartAsync(serviceProvider ?? _languageServer.LanguageServer.Services, useExistingSession);
                             _logger.LogInformation(
                                 $"Debug service started, type = {config.TransportType}, endpoint = {config.Endpoint}");
                         });
@@ -325,23 +345,11 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                         Console.OpenStandardInput(),
                         Console.OpenStandardOutput());
 
+                    _logger.LogInformation("Starting debug server");
                     Task.Run(async () =>
                     {
-                        _logger.LogInformation("Starting debug server");
 
-                        IServiceProvider serviceProvider = useExistingSession
-                            ? _languageServer.LanguageServer.Services
-                            : new ServiceCollection()
-                                .AddPsesLanguageServices(
-                                    profilePaths,
-                                    _featureFlags,
-                                    _enableConsoleRepl,
-                                    _internalHost,
-                                    _hostDetails,
-                                    _additionalModules)
-                                .BuildServiceProvider();
-
-                        await _debugServer.StartAsync(serviceProvider);
+                        await _debugServer.StartAsync(serviceProvider ?? _languageServer.LanguageServer.Services, useExistingSession);
                         _logger.LogInformation(
                             $"Debug service started, type = {config.TransportType}, endpoint = {config.Endpoint}");
                     });
@@ -351,7 +359,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     throw new NotSupportedException($"The transport {config.TransportType} is not supported");
             }
 
-            if(!alreadySubscribedDebug)
+            if(!alreadySubscribedDebug && useExistingSession)
             {
                 alreadySubscribedDebug = true;
                 _debugServer.SessionEnded += (sender, eventArgs) =>
@@ -377,7 +385,12 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         public void WaitForCompletion()
         {
             // TODO: We need a way to know when to complete this task!
-            _languageServer.WaitForShutdown().Wait();
+            if (_languageServer != null)
+            {
+                _languageServer.WaitForShutdown().Wait();
+                return;
+            }
+            _debugServer.WaitForShutdown().Wait();
         }
 
         #endregion
