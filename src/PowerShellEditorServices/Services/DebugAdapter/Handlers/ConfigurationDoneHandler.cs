@@ -52,11 +52,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // If this is a debug-only session, we need to start
                 // the command loop manually
                 _powerShellContextService.ConsoleReader.StartCommandLoop();
-                await Task.Delay(10000);
-                while (_powerShellContextService.SessionState != PowerShellContextState.Ready)
-                {
-                    await Task.Delay(2000);
-                }
             }
 
             if (!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))

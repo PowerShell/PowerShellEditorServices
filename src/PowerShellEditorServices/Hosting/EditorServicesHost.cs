@@ -359,6 +359,11 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     throw new NotSupportedException($"The transport {config.TransportType} is not supported");
             }
 
+            // If the instance of PSES is being used for debugging only, then we don't want to allow automatic restarting
+            // because the user can simply spin up a new PSES if they need to.
+            // This design decision was done since this "debug-only PSES" is used in the "Temporary Integrated Console debugging"
+            // feature which does not want PSES to be restarted so that the user can see the output of the last debug
+            // session.
             if(!alreadySubscribedDebug && useExistingSession)
             {
                 alreadySubscribedDebug = true;
