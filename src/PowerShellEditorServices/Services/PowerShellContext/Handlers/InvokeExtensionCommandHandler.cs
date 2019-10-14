@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
-using OmniSharp.Extensions.Embedded.MediatR;
+using MediatR;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {

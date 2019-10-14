@@ -4,7 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
-using OmniSharp.Extensions.Embedded.MediatR;
+using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
