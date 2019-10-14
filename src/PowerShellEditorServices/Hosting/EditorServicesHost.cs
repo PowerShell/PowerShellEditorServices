@@ -285,16 +285,16 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         /// </summary>
         /// <param name="config">The config that contains information on the communication protocol that will be used.</param>
         /// <param name="profilePaths">The profiles that will be loaded in the session.</param>
-        /// <param name="useExistingSession">Determines if we will reuse the session that we have.</param>
+        /// <param name="useTempSession">Determines if we will make a new session typically used for temporary console debugging.</param>
         public void StartDebugService(
             EditorServiceTransportConfig config,
             ProfilePaths profilePaths,
-            bool useExistingSession)
+            bool useTempSession)
         {
             _logger.LogInformation($"Debug NamedPipe: {config.InOutPipeName}\nDebug OutPipe: {config.OutPipeName}");
 
             IServiceProvider serviceProvider = null;
-            if (!useExistingSession)
+            if (useTempSession)
             {
                 serviceProvider = new ServiceCollection()
                     .AddLogging(builder => builder
@@ -332,7 +332,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                         .ContinueWith(async task =>
                         {
                             _logger.LogInformation("Starting debug server");
-                            await _debugServer.StartAsync(serviceProvider ?? _languageServer.LanguageServer.Services, useExistingSession);
+                            await _debugServer.StartAsync(serviceProvider ?? _languageServer.LanguageServer.Services, useTempSession);
                             _logger.LogInformation(
                                 $"Debug service started, type = {config.TransportType}, endpoint = {config.Endpoint}");
                         });
@@ -349,7 +349,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                     Task.Run(async () =>
                     {
 
-                        await _debugServer.StartAsync(serviceProvider ?? _languageServer.LanguageServer.Services, useExistingSession);
+                        await _debugServer.StartAsync(serviceProvider ?? _languageServer.LanguageServer.Services, useTempSession);
                         _logger.LogInformation(
                             $"Debug service started, type = {config.TransportType}, endpoint = {config.Endpoint}");
                     });
@@ -364,14 +364,14 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             // This design decision was done since this "debug-only PSES" is used in the "Temporary Integrated Console debugging"
             // feature which does not want PSES to be restarted so that the user can see the output of the last debug
             // session.
-            if(!alreadySubscribedDebug && useExistingSession)
+            if(!alreadySubscribedDebug && !useTempSession)
             {
                 alreadySubscribedDebug = true;
                 _debugServer.SessionEnded += (sender, eventArgs) =>
                 {
                     _debugServer.Dispose();
                     alreadySubscribedDebug = false;
-                    StartDebugService(config, profilePaths, useExistingSession);
+                    StartDebugService(config, profilePaths, useTempSession);
                 };
             }
         }
@@ -389,12 +389,19 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
         /// </summary>
         public void WaitForCompletion()
         {
-            // TODO: We need a way to know when to complete this task!
+            // If _languageServer is not null, then we are either using:
+            // Stdio - that only uses a LanguageServer so we return when that has shutdown.
+            // NamedPipes - that uses both LanguageServer and DebugServer, but LanguageServer
+            //              is the core of PowerShell Editor Services and if that shuts down,
+            //              we want the whole process to shutdown.
             if (_languageServer != null)
             {
                 _languageServer.WaitForShutdown().Wait();
                 return;
             }
+
+            // If there is no LanguageServer, then we must be running with the DebugServiceOnly switch
+            // (used in Temporary console debugging) and we need to wait for the DebugServer to shutdown.
             _debugServer.WaitForShutdown().Wait();
         }
 

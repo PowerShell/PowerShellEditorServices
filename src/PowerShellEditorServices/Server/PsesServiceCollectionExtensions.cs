@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -13,7 +13,7 @@ using Microsoft.PowerShell.EditorServices.Services;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
-    internal static class PsesServiceCollection
+    internal static class PsesServiceCollectionExtensions
     {
         public static IServiceCollection AddPsesLanguageServices (
             this IServiceCollection collection,
@@ -67,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             this IServiceCollection collection,
             IServiceProvider languageServiceProvider,
             PsesDebugServer psesDebugServer,
-            bool useExistingSession
+            bool useTempSession
         )
         {
             return collection.AddSingleton(languageServiceProvider.GetService<PowerShellContextService>())
@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<DebugService>()
                 .AddSingleton<DebugStateService>(new DebugStateService
                 {
-                     OwnsEditorSession = !useExistingSession
+                     OwnsEditorSession = useTempSession
                 })
                 .AddSingleton<DebugEventHandlerService>();
         }
