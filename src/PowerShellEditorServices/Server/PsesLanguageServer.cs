@@ -59,7 +59,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
         {
             LanguageServer = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options =>
             {
-                var logger = LoggerFactory.CreateLogger("OptionsStartup");
                 (Stream input, Stream output) = GetInputOutputStreams();
 
                 options
