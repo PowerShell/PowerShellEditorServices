@@ -189,6 +189,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             Log.Logger = new LoggerConfiguration().Enrich.FromLogContext()
                             .WriteTo.File(logFilePath)
+                            .MinimumLevel.Verbose()
                             .CreateLogger();
             _factory = new LoggerFactory().AddSerilog(Log.Logger);
             _logger = _factory.CreateLogger<EditorServicesHost>();

@@ -15,8 +15,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using OmniSharp.Extensions.LanguageServer.Server;
+using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
@@ -59,59 +59,53 @@ namespace Microsoft.PowerShell.EditorServices.Server
         {
             LanguageServer = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options =>
             {
-                options.AddDefaultLoggingProvider();
-                options.LoggerFactory = LoggerFactory;
-                ILogger logger = options.LoggerFactory.CreateLogger("OptionsStartup");
-                options.Services = new ServiceCollection()
-                    .AddSingleton<WorkspaceService>()
-                    .AddSingleton<SymbolsService>()
-                    .AddSingleton<ConfigurationService>()
-                    .AddSingleton<PowerShellContextService>(
-                        (provider) =>
-                            PowerShellContextService.Create(
-                                LoggerFactory,
-                                provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                                _profilePaths,
-                                _featureFlags,
-                                _enableConsoleRepl,
-                                _internalHost,
-                                _hostDetails,
-                                _additionalModules))
-                    .AddSingleton<TemplateService>()
-                    .AddSingleton<EditorOperationsService>()
-                    .AddSingleton<RemoteFileManagerService>()
-                    .AddSingleton<ExtensionService>(
-                        (provider) =>
-                        {
-                            var extensionService = new ExtensionService(
-                                provider.GetService<PowerShellContextService>(),
-                                provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>());
-                            extensionService.InitializeAsync(
-                                serviceProvider: provider,
-                                editorOperations: provider.GetService<EditorOperationsService>())
-                                .Wait();
-                            return extensionService;
-                        })
-                    .AddSingleton<AnalysisService>(
-                        (provider) =>
-                        {
-                            return AnalysisService.Create(
-                                provider.GetService<ConfigurationService>(),
-                                provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                                options.LoggerFactory.CreateLogger<AnalysisService>());
-                        });
-
                 (Stream input, Stream output) = GetInputOutputStreams();
 
                 options
                     .WithInput(input)
-                    .WithOutput(output);
-
-                options.MinimumLogLevel = _minimumLogLevel;
-
-                logger.LogInformation("Adding handlers");
-
-                options
+                    .WithOutput(output)
+                    .WithServices(serviceCollection => serviceCollection
+                        .AddSingleton<WorkspaceService>()
+                        .AddSingleton<SymbolsService>()
+                        .AddSingleton<ConfigurationService>()
+                        .AddSingleton<PowerShellContextService>(
+                            (provider) =>
+                                PowerShellContextService.Create(
+                                    provider.GetService<ILoggerFactory>(),
+                                    provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
+                                    _profilePaths,
+                                    _featureFlags,
+                                    _enableConsoleRepl,
+                                    _internalHost,
+                                    _hostDetails,
+                                    _additionalModules))
+                        .AddSingleton<TemplateService>()
+                        .AddSingleton<EditorOperationsService>()
+                        .AddSingleton<RemoteFileManagerService>()
+                        .AddSingleton<ExtensionService>(
+                            (provider) =>
+                            {
+                                var extensionService = new ExtensionService(
+                                    provider.GetService<PowerShellContextService>(),
+                                    provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>());
+                                extensionService.InitializeAsync(
+                                    serviceProvider: provider,
+                                    editorOperations: provider.GetService<EditorOperationsService>())
+                                    .Wait();
+                                return extensionService;
+                            })
+                        .AddSingleton<AnalysisService>(
+                            (provider) =>
+                            {
+                                return AnalysisService.Create(
+                                    provider.GetService<ConfigurationService>(),
+                                    provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
+                                    provider.GetService<ILoggerFactory>().CreateLogger<AnalysisService>());
+                            }))
+                    .ConfigureLogging(builder => builder
+                        .AddSerilog(Log.Logger)
+                        .SetMinimumLevel(LogLevel.Trace))
+                    .AddDefaultLoggingProvider()
                     .WithHandler<WorkspaceSymbolsHandler>()
                     .WithHandler<TextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()
@@ -154,8 +148,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                     isPathAlreadyEscaped: false);
                             }
                         });
-
-                logger.LogInformation("Handlers added");
             });
         }
 
