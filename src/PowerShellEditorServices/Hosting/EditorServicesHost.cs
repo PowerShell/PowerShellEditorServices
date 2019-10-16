@@ -396,13 +396,13 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
             //              we want the whole process to shutdown.
             if (_languageServer != null)
             {
-                _languageServer.WaitForShutdown().Wait();
+                _languageServer.WaitForShutdown().GetAwaiter().GetResult();
                 return;
             }
 
             // If there is no LanguageServer, then we must be running with the DebugServiceOnly switch
             // (used in Temporary console debugging) and we need to wait for the DebugServer to shutdown.
-            _debugServer.WaitForShutdown().Wait();
+            _debugServer.WaitForShutdown().GetAwaiter().GetResult();
         }
 
         #endregion

@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         private PowerShellContextService _powerShellContextService;
 
-        private readonly TaskCompletionSource<bool> _serverRunning;
+        private readonly TaskCompletionSource<bool> _serverStopped;
 
         public PsesDebugServer(
             ILoggerFactory factory,
@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             _loggerFactory = factory;
             _inputStream = inputStream;
             _outputStream = outputStream;
-            _serverRunning = new TaskCompletionSource<bool>();
+            _serverStopped = new TaskCompletionSource<bool>();
         }
 
         public async Task StartAsync(IServiceProvider languageServerServiceProvider, bool useTempSession)
@@ -97,12 +97,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
         {
             _powerShellContextService.IsDebugServerActive = false;
             _jsonRpcServer.Dispose();
-            _serverRunning.SetResult(true);
+            _serverStopped.SetResult(true);
         }
 
         public async Task WaitForShutdown()
         {
-            await _serverRunning.Task;
+            await _serverStopped.Task;
         }
 
         #region Events

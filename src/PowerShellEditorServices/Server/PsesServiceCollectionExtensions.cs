@@ -63,12 +63,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     });
         }
 
-        public static IServiceCollection AddPsesDebugServices (
+        public static IServiceCollection AddPsesDebugServices(
             this IServiceCollection collection,
             IServiceProvider languageServiceProvider,
             PsesDebugServer psesDebugServer,
-            bool useTempSession
-        )
+            bool useTempSession)
         {
             return collection.AddSingleton(languageServiceProvider.GetService<PowerShellContextService>())
                 .AddSingleton(languageServiceProvider.GetService<WorkspaceService>())
