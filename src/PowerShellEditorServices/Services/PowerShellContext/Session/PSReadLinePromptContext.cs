@@ -68,13 +68,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             _consoleReadLine = new ConsoleReadLine(powerShellContext);
             _readLineProxy = readLineProxy;
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return;
-            }
 
             _readLineProxy.OverrideReadKey(
-                intercept => ConsoleProxy.UnixReadKey(
+                intercept => ConsoleProxy.SafeReadKey(
                     intercept,
                     _readLineCancellationSource.Token));
         }

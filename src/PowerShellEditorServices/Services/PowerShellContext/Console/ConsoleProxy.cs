@@ -163,10 +163,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             s_consoleProxy.GetCursorTopAsync(cancellationToken);
 
         /// <summary>
-        /// On Unix platforms this method is sent to PSReadLine as a work around for issues
-        /// with the System.Console implementation for that platform. Functionally it is the
-        /// same as System.Console.ReadKey, with the exception that it will not lock the
-        /// standard input stream.
+        /// This method is sent to PSReadLine as a workaround for issues with the System.Console
+        /// implementation. Functionally it is the same as System.Console.ReadKey,
+        /// with the exception that it will not lock the standard input stream.
         /// </summary>
         /// <param name="intercept">
         /// Determines whether to display the pressed key in the console window.
@@ -181,11 +180,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// in a bitwise combination of ConsoleModifiers values, whether one or more Shift, Alt,
         /// or Ctrl modifier keys was pressed simultaneously with the console key.
         /// </returns>
-        internal static ConsoleKeyInfo UnixReadKey(bool intercept, CancellationToken cancellationToken)
+        internal static ConsoleKeyInfo SafeReadKey(bool intercept, CancellationToken cancellationToken)
         {
             try
             {
-                return ((UnixConsoleOperations)s_consoleProxy).ReadKey(intercept, cancellationToken);
+                return s_consoleProxy.ReadKey(intercept, cancellationToken);
             }
             catch (OperationCanceledException)
             {
