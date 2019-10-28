@@ -20,14 +20,19 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static bool IsNetCore { get; } = RuntimeInformation.FrameworkDescription.StartsWith(".NET Core", StringComparison.Ordinal);
 
         /// <summary>
-        /// Get's the Version of PowerShell being used.
+        /// Gets the Version of PowerShell being used.
         /// </summary>
         public static Version PSVersion { get; } = PowerShellReflectionUtils.PSVersion;
 
         /// <summary>
-        /// Get's the Edition of PowerShell being used.
+        /// Gets the Edition of PowerShell being used.
         /// </summary>
         public static string PSEdition { get; } = PowerShellReflectionUtils.PSEdition;
+
+        /// <summary>
+        /// Gets the string of the PSVersion including prerelease tags if it applies.
+        /// </summary>
+        public static string PSVersionString { get; } = PowerShellReflectionUtils.PSVersionString;
 
         /// <summary>
         /// True if we are running in Windows PowerShell, false otherwise.
@@ -49,8 +54,16 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     {
 
         private static readonly Type s_psVersionInfoType = typeof(System.Management.Automation.Runspaces.Runspace).Assembly.GetType("System.Management.Automation.PSVersionInfo");
+
+        // This property is a Version type in PowerShell. It's existed since 5.1, but it was only made public in 6.2.
         private static readonly PropertyInfo s_psVersionProperty = s_psVersionInfoType
             .GetProperty("PSVersion", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
+
+        // This property is a SemanticVersion in PowerShell that contains the prerelease tag as well.
+        // It was added in 6.2 so we can't depend on it for anything before.
+        private static readonly PropertyInfo s_psCurrentVersionProperty = s_psVersionInfoType
+            .GetProperty("PSCurrentVersion", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
+
         private static readonly PropertyInfo s_psEditionProperty = s_psVersionInfoType
             .GetProperty("PSEdition", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
 
@@ -64,5 +77,12 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// Get's the Edition of PowerShell being used.
         /// </summary>
         public static string PSEdition { get; } = s_psEditionProperty.GetValue(null) as string;
+
+        /// <summary>
+        /// Gets the stringified version of PowerShell including prerelease tags if it applies.
+        /// </summary>
+        public static string PSVersionString { get; } = s_psCurrentVersionProperty != null
+            ? s_psCurrentVersionProperty.GetValue(null).ToString()
+            : s_psVersionProperty.GetValue(null).ToString();
     }
 }

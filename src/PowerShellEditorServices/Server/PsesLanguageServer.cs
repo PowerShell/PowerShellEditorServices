@@ -74,8 +74,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             _additionalModules))
                     .ConfigureLogging(builder => builder
                         .AddSerilog(Log.Logger)
+                        .AddLanguageServer(LogLevel.Trace)
                         .SetMinimumLevel(LogLevel.Trace))
-                    .AddDefaultLoggingProvider()
                     .WithHandler<WorkspaceSymbolsHandler>()
                     .WithHandler<TextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()

@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _workspaceService = workspaceService;
             _documentSymbolProviders = new IDocumentSymbolProvider[]
             {
-                new ScriptDocumentSymbolProvider(VersionUtils.PSVersion),
+                new ScriptDocumentSymbolProvider(),
                 new PsdDocumentSymbolProvider(),
                 new PesterDocumentSymbolProvider()
             };

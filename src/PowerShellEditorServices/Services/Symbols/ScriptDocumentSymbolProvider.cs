@@ -17,18 +17,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// </summary>
     public class ScriptDocumentSymbolProvider : IDocumentSymbolProvider
     {
-        private Version powerShellVersion;
-
-        /// <summary>
-        /// Creates an instance of the ScriptDocumentSymbolProvider to
-        /// target the specified PowerShell version.
-        /// </summary>
-        /// <param name="powerShellVersion">The target PowerShell version.</param>
-        public ScriptDocumentSymbolProvider(Version powerShellVersion)
-        {
-            this.powerShellVersion = powerShellVersion;
-        }
-
         IEnumerable<SymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
@@ -37,10 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 (scriptFile.FilePath.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase) ||
                     scriptFile.FilePath.EndsWith(".psm1", StringComparison.OrdinalIgnoreCase)))
             {
-                return
-                    FindSymbolsInDocument(
-                        scriptFile.ScriptAst,
-                        this.powerShellVersion);
+                return FindSymbolsInDocument(scriptFile.ScriptAst);
             }
 
             return Enumerable.Empty<SymbolReference>();
@@ -52,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="powerShellVersion">The PowerShell version the Ast was generated from</param>
         /// <returns>A collection of SymbolReference objects</returns>
-        static public IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst, Version powerShellVersion)
+        static public IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst)
         {
             IEnumerable<SymbolReference> symbolReferences = null;
 
