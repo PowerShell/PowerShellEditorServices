@@ -45,8 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             _workspaceService = workspaceService;
             _symbolsService = symbolsService;
             // TODO: Pull this from components
-            _symbolProvider = new ScriptDocumentSymbolProvider(
-                VersionUtils.PSVersion);
+            _symbolProvider = new ScriptDocumentSymbolProvider();
         }
 
         /// <summary>

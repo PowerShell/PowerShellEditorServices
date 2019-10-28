@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             return Task.FromResult(new PowerShellVersion
             {
-                Version = VersionUtils.PSVersion.ToString(),
+                Version = VersionUtils.PSVersionString,
                 Edition = VersionUtils.PSEdition,
                 DisplayVersion = VersionUtils.PSVersion.ToString(2),
                 Architecture = architecture.ToString()
