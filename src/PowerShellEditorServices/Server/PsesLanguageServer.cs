@@ -65,43 +65,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithInput(input)
                     .WithOutput(output)
                     .WithServices(serviceCollection => serviceCollection
-                        .AddSingleton<WorkspaceService>()
-                        .AddSingleton<SymbolsService>()
-                        .AddSingleton<ConfigurationService>()
-                        .AddSingleton<PowerShellContextService>(
-                            (provider) =>
-                                PowerShellContextService.Create(
-                                    provider.GetService<ILoggerFactory>(),
-                                    provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                                    _profilePaths,
-                                    _featureFlags,
-                                    _enableConsoleRepl,
-                                    _internalHost,
-                                    _hostDetails,
-                                    _additionalModules))
-                        .AddSingleton<TemplateService>()
-                        .AddSingleton<EditorOperationsService>()
-                        .AddSingleton<RemoteFileManagerService>()
-                        .AddSingleton<ExtensionService>(
-                            (provider) =>
-                            {
-                                var extensionService = new ExtensionService(
-                                    provider.GetService<PowerShellContextService>(),
-                                    provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>());
-                                extensionService.InitializeAsync(
-                                    serviceProvider: provider,
-                                    editorOperations: provider.GetService<EditorOperationsService>())
-                                    .Wait();
-                                return extensionService;
-                            })
-                        .AddSingleton<AnalysisService>(
-                            (provider) =>
-                            {
-                                return AnalysisService.Create(
-                                    provider.GetService<ConfigurationService>(),
-                                    provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                                    provider.GetService<ILoggerFactory>().CreateLogger<AnalysisService>());
-                            }))
+                        .AddPsesLanguageServices(
+                            _profilePaths,
+                            _featureFlags,
+                            _enableConsoleRepl,
+                            _internalHost,
+                            _hostDetails,
+                            _additionalModules))
                     .ConfigureLogging(builder => builder
                         .AddSerilog(Log.Logger)
                         .SetMinimumLevel(LogLevel.Trace))

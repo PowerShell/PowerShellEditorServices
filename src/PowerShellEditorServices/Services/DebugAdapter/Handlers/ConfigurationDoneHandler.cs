@@ -43,9 +43,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        public Task<ConfigurationDoneResponse> Handle(ConfigurationDoneArguments request, CancellationToken cancellationToken)
+        public async Task<ConfigurationDoneResponse> Handle(ConfigurationDoneArguments request, CancellationToken cancellationToken)
         {
             _debugService.IsClientAttached = true;
+
+            if (_debugStateService.OwnsEditorSession)
+            {
+                // If this is a debug-only session, we need to start
+                // the command loop manually
+                _powerShellContextService.ConsoleReader.StartCommandLoop();
+            }
 
             if (!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))
             {
@@ -63,14 +70,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (_debugStateService.IsInteractiveDebugSession)
             {
-                if (_debugStateService.OwnsEditorSession)
-                {
-                    // If this is a debug-only session, we need to start
-                    // the command loop manually
-                    // TODO: Bring this back
-                    //_editorSession.HostInput.StartCommandLoop();
-                }
-
                 if (_debugService.IsDebuggerStopped)
                 {
                     if (_debugService.CurrentDebuggerStoppedEventArgs != null)
@@ -88,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
             }
 
-            return Task.FromResult(new ConfigurationDoneResponse());
+            return new ConfigurationDoneResponse();
         }
 
         private async Task LaunchScriptAsync(string scriptToLaunch)
