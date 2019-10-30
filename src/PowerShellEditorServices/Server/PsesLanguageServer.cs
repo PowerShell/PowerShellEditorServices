@@ -27,6 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         private readonly LogLevel _minimumLogLevel;
         private readonly bool _enableConsoleRepl;
+        private readonly bool _useLegacyReadLine;
         private readonly HashSet<string> _featureFlags;
         private readonly HostDetails _hostDetails;
         private readonly string[] _additionalModules;
@@ -38,6 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             ILoggerFactory factory,
             LogLevel minimumLogLevel,
             bool enableConsoleRepl,
+            bool useLegacyReadLine,
             HashSet<string> featureFlags,
             HostDetails hostDetails,
             string[] additionalModules,
@@ -47,6 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             LoggerFactory = factory;
             _minimumLogLevel = minimumLogLevel;
             _enableConsoleRepl = enableConsoleRepl;
+            _useLegacyReadLine = useLegacyReadLine;
             _featureFlags = featureFlags;
             _hostDetails = hostDetails;
             _additionalModules = additionalModules;
@@ -69,6 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             _profilePaths,
                             _featureFlags,
                             _enableConsoleRepl,
+                            _useLegacyReadLine,
                             _internalHost,
                             _hostDetails,
                             _additionalModules))

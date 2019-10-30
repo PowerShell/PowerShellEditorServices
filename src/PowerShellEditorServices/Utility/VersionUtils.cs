@@ -48,6 +48,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// True if we are running in PowerShell 7, false otherwise.
         /// </summary>
         public static bool IsPS7 { get; } = PSVersion.Major == 7;
+
+        /// <summary>
+        /// True if we are running in on Windows, false otherwise.
+        /// </summary>
+        public static bool IsWindows { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
     }
 
     internal static class PowerShellReflectionUtils

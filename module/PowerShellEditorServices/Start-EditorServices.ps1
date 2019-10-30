@@ -58,6 +58,9 @@ param(
     $EnableConsoleRepl,
 
     [switch]
+    $UseLegacyReadLine,
+
+    [switch]
     $DebugServiceOnly,
 
     [string[]]
@@ -363,6 +366,7 @@ try {
                                         -DebugServiceInNamedPipe $DebugServiceInPipeName `
                                         -DebugServiceOutNamedPipe $DebugServiceOutPipeName `
                                         -BundledModulesPath $BundledModulesPath `
+                                        -UseLegacyReadLine:$UseLegacyReadLine.IsPresent `
                                         -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
                                         -DebugServiceOnly:$DebugServiceOnly.IsPresent `
                                         -WaitForDebugger:$WaitForDebugger.IsPresent `
@@ -389,6 +393,7 @@ try {
                                         -LanguageServiceNamedPipe $LanguageServicePipeName `
                                         -DebugServiceNamedPipe $DebugServicePipeName `
                                         -BundledModulesPath $BundledModulesPath `
+                                        -UseLegacyReadLine:$UseLegacyReadLine.IsPresent `
                                         -EnableConsoleRepl:$EnableConsoleRepl.IsPresent `
                                         -DebugServiceOnly:$DebugServiceOnly.IsPresent `
                                         -WaitForDebugger:$WaitForDebugger.IsPresent `

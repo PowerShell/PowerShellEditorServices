@@ -76,6 +76,9 @@ function Start-EditorServicesHost {
         $EnableConsoleRepl,
 
         [switch]
+        $UseLegacyReadLine,
+
+        [switch]
         $DebugServiceOnly,
 
         [string[]]
@@ -101,6 +104,7 @@ function Start-EditorServicesHost {
             $hostDetails,
             $BundledModulesPath,
             $EnableConsoleRepl.IsPresent,
+            $UseLegacyReadLine.IsPresent,
             $WaitForDebugger.IsPresent,
             $AdditionalModules,
             $FeatureFlags,
