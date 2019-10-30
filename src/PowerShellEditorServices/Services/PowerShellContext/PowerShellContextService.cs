@@ -184,8 +184,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // We also want it if we are either:
             // * On Windows on any version OR
             // * On Linux or macOS on any version greater than or equal to 7
-            var shouldUsePSReadLine = enableConsoleRepl && !useLegacyReadLine
-                && (VersionUtils.IsWindows || (!VersionUtils.IsWindows && !VersionUtils.IsPS6));
+            bool shouldUsePSReadLine = enableConsoleRepl && !useLegacyReadLine
+                && (VersionUtils.IsWindows || !VersionUtils.IsPS6);
 
             var powerShellContext = new PowerShellContextService(
                 logger,

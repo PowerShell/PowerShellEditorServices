@@ -25,8 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 minimumLogLevel,
                 // Stdio server can't support an integrated console so we pass in false for
                 // enableConsoleRepl and useLegacyReadLine.
-                false,
-                false,
+                enableConsoleRepl: false,
+                useLegacyReadLine: false,
                 featureFlags,
                 hostDetails,
                 additionalModules,
