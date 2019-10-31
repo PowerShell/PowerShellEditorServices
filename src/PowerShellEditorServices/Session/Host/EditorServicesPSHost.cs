@@ -109,9 +109,14 @@ namespace Microsoft.PowerShell.EditorServices
             public ConsoleColor ErrorAccentColor
             {
                 get
-                { return _hostUserInterface.ErrorAccentColor; }
+                {
+                    return _hostUserInterface.ErrorAccentColor;
+                }
+
                 set
-                { _hostUserInterface.ErrorAccentColor = value; }
+                {
+                    _hostUserInterface.ErrorAccentColor = value;
+                }
             }
 
             /// <summary>
