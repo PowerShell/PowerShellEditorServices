@@ -1,5 +1,42 @@
 # PowerShell Editor Services Release History
 
+## v2.0.0-preview.6
+### Friday, November 1, 2019
+
+#### Special Note
+In this release of the preview extension,
+we've merged significant architectural work into PowerShell Editor Services.
+After several months of work, PSES now uses the Omnisharp LSP library
+to handle Language Server Protocol interaction instead of rolling its own,
+allowing PSES to concentrate on being a good PowerShell backend.
+We hope you'll see increased performance and stability in this release.
+As always, [please let us know if you find any issues](https://github.com/PowerShell/PowerShellEditorServices/issues/new).
+
+- 🐛 [PowerShellEditorServices #1080](https://github.com/PowerShell/PowerShellEditorServices/pull/1080) -
+  Remove extra newline in GetComment feature.
+- 🐛 [PowerShellEditorServices #1079](https://github.com/PowerShell/PowerShellEditorServices/pull/1079) -
+  Fix duplicate diagnostics caused by DidChange handler.
+- 🔧 [PowerShellEditorServices #1076](https://github.com/PowerShell/PowerShellEditorServices/pull/1076) -
+  Graduate PSReadLine feature and add UseLegacyReadLine.
+- ⚙️ [PowerShellEditorServices #1075](https://github.com/PowerShell/PowerShellEditorServices/pull/1075) -
+  Lock OmniSharp dependencies to v0.14.0. (Thanks @mholo65!)
+- 📟 [PowerShellEditorServices #1064](https://github.com/PowerShell/PowerShellEditorServices/pull/1064) -
+  Add support for terminal error color settings in PS7.
+- 🐛 [PowerShellEditorServices #1073](https://github.com/PowerShell/PowerShellEditorServices/pull/1073) -
+  Fix prerelease version discovery and fix omnisharp change.
+- 🐛 [PowerShellEditorServices #1065](https://github.com/PowerShell/PowerShellEditorServices/pull/1065) -
+  Fix TEMP debugging.
+- 🐛 [vscode-powershell #1753](https://github.com/PowerShell/PowerShellEditorServices/pull/1072) -
+  Override PSRL ReadKey on Windows as well.
+- 💭 [PowerShellEditorServices #1066](https://github.com/PowerShell/PowerShellEditorServices/pull/1066) -
+  Rework Omnisharp logging integration to make logging to files work again.
+- 👷 [PowerShellEditorServices #1055](https://github.com/PowerShell/PowerShellEditorServices/pull/1055) -
+  Update .Net Core SDK from 2.1.801 to 2.1.802 (latest patch). (Thanks @bergmeister!)
+- 🚂 [PowerShellEditorServices #1056](https://github.com/PowerShell/PowerShellEditorServices/pull/1056) -
+  Re-architect PowerShell Editor Services to use the Omnisharp LSP platform.
+- 🐛 [vscode-powershell #2116](https://github.com/PowerShell/PowerShellEditorServices/pull/1044) -
+  Fix UNC intellisense backslash.
+
 ## v2.0.0-preview.5
 ### Monday, September 23, 2019
 
