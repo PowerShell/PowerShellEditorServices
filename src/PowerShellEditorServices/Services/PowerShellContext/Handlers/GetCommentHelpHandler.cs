@@ -97,7 +97,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // Trim trailing newline from help text.
-            result.Content = helpLines.GetRange(0, helpLines.Count - 1).ToArray();
+            if (string.IsNullOrEmpty(helpLines[helpLines.Count - 1]))
+            {
+                result.Content = helpLines.GetRange(0, helpLines.Count - 1).ToArray();
+            }
 
             return result;
         }
