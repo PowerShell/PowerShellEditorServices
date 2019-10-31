@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic;
 
 namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 {
@@ -120,23 +121,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             }
         }
 
-        internal static ScriptFileMarker FromDiagnosticRecord(PSObject psObject)
+        internal static ScriptFileMarker FromDiagnosticRecord(DiagnosticRecord diagnosticRecord)
         {
-            Validate.IsNotNull("psObject", psObject);
+            Validate.IsNotNull("diagnosticRecord", diagnosticRecord);
             MarkerCorrection correction = null;
-
-            // make sure psobject is of type DiagnosticRecord
-            if (!psObject.TypeNames.Contains(
-                    "Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord",
-                    StringComparer.OrdinalIgnoreCase))
-            {
-                throw new ArgumentException("Input PSObject must of DiagnosticRecord type.");
-            }
-
-            // casting psobject to dynamic allows us to access
-            // the diagnostic record's properties directly i.e. <instance>.<propertyName>
-            // without having to go through PSObject's Members property.
-            var diagnosticRecord = psObject as dynamic;
 
             if (diagnosticRecord.SuggestedCorrections != null)
             {

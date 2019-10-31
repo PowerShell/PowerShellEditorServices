@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -6,8 +6,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Management.Automation.Runspaces;
-using System.Management.Automation;
 using System.Collections.Generic;
 using System.Text;
 using System.Collections;
@@ -17,6 +15,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System.Threading;
 using System.Collections.Concurrent;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.Windows.PowerShell.ScriptAnalyzer.Hosting;
+using Microsoft.Windows.PowerShell.ScriptAnalyzer;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -24,9 +25,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// Provides a high-level service for performing semantic analysis
     /// of PowerShell scripts.
     /// </summary>
-    public class AnalysisService : IDisposable
+    public class AnalysisService
     {
-        #region Static fields
+        #region Fields
 
         /// <summary>
         /// Defines the list of Script Analyzer rules to include by default if
@@ -50,181 +51,52 @@ namespace Microsoft.PowerShell.EditorServices.Services
             "PSPossibleIncorrectUsageOfRedirectionOperator"
         };
 
-        /// <summary>
-        /// An empty diagnostic result to return when a script fails analysis.
-        /// </summary>
-        private static readonly PSObject[] s_emptyDiagnosticResult = new PSObject[0];
-
-        private static readonly string[] s_emptyGetRuleResult = new string[0];
-
-        private static CancellationTokenSource s_existingRequestCancellation;
-
-        /// <summary>
-        /// The indentation to add when the logger lists errors.
-        /// </summary>
-        private static readonly string s_indentJoin = Environment.NewLine + "    ";
-
-        #endregion // Static fields
-
-        #region Private Fields
-
-        /// <summary>
-        /// Maximum number of runspaces we allow to be in use for script analysis.
-        /// </summary>
-        private const int NumRunspaces = 1;
-
-        /// <summary>
-        /// Name of the PSScriptAnalyzer module, to be used for PowerShell module interactions.
-        /// </summary>
-        private const string PSSA_MODULE_NAME = "PSScriptAnalyzer";
-
-        /// <summary>
-        /// Provides logging.
-        /// </summary>
-        private ILogger _logger;
-
-        /// <summary>
-        /// Runspace pool to generate runspaces for script analysis and handle
-        /// ansynchronous analysis requests.
-        /// </summary>
-        private RunspacePool _analysisRunspacePool;
-
-        /// <summary>
-        /// Info object describing the PSScriptAnalyzer module that has been loaded in
-        /// to provide analysis services.
-        /// </summary>
-        private PSModuleInfo _pssaModuleInfo;
-
+        private readonly ILogger _logger;
+        private readonly HostedAnalyzer _analyzer;
+        private readonly Settings _analyzerSettings;
         private readonly ILanguageServer _languageServer;
-
         private readonly ConfigurationService _configurationService;
-
         private readonly ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)> _mostRecentCorrectionsByFile;
 
-        #endregion // Private Fields
+        private CancellationTokenSource _existingRequestCancellation;
+        private readonly SemaphoreSlim _existingRequestCancellationLock;
+
+        #endregion
 
         #region Properties
 
         /// <summary>
         /// Set of PSScriptAnalyzer rules used for analysis.
         /// </summary>
-        public string[] ActiveRules { get; set; }
+        public string[] ActiveRules => s_includedRules;
 
         /// <summary>
         /// Gets or sets the path to a settings file (.psd1)
         /// containing PSScriptAnalyzer settings.
         /// </summary>
-        public string SettingsPath { get; set; }
+        public string SettingsPath { get; internal set; }
 
         #endregion
 
         #region Constructors
 
-        /// <summary>
-        /// Construct a new AnalysisService object.
-        /// </summary>
-        /// <param name="analysisRunspacePool">
-        /// The runspace pool with PSScriptAnalyzer module loaded that will handle
-        /// analysis tasks.
-        /// </param>
-        /// <param name="pssaSettingsPath">
-        /// The path to the PSScriptAnalyzer settings file to handle analysis settings.
-        /// </param>
-        /// <param name="activeRules">An array of rules to be used for analysis.</param>
-        /// <param name="logger">Maintains logs for the analysis service.</param>
-        /// <param name="pssaModuleInfo">
-        /// Optional module info of the loaded PSScriptAnalyzer module. If not provided,
-        /// the analysis service will populate it, but it can be given here to save time.
-        /// </param>
-        private AnalysisService(
-            RunspacePool analysisRunspacePool,
-            string pssaSettingsPath,
-            IEnumerable<string> activeRules,
-            ILanguageServer languageServer,
-            ConfigurationService configurationService,
-            ILogger logger,
-            PSModuleInfo pssaModuleInfo = null)
+        public AnalysisService(ConfigurationService configurationService, ILanguageServer languageServer, ILoggerFactory factory)
         {
-            _analysisRunspacePool = analysisRunspacePool;
-            SettingsPath = pssaSettingsPath;
-            ActiveRules = activeRules.ToArray();
-            _languageServer = languageServer;
+            SettingsPath = configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
+            _logger = factory.CreateLogger<AnalysisService>();
+            _analyzer = new HostedAnalyzer();
+            // TODO: use our rules
+            _analyzerSettings = _analyzer.CreateSettings("PSGallery");
             _configurationService = configurationService;
-            _logger = logger;
-            _pssaModuleInfo = pssaModuleInfo;
+            _languageServer = languageServer;
             _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)>();
+            _existingRequestCancellation = new CancellationTokenSource();
+            _existingRequestCancellationLock = AsyncUtils.CreateSimpleLockingSemaphore();
         }
 
-        #endregion // constructors
+        #endregion
 
         #region Public Methods
-
-        /// <summary>
-        /// Factory method for producing AnalysisService instances. Handles loading of the PSScriptAnalyzer module
-        /// and runspace pool instantiation before creating the service instance.
-        /// </summary>
-        /// <param name="settingsPath">Path to the PSSA settings file to be used for this service instance.</param>
-        /// <param name="logger">EditorServices logger for logging information.</param>
-        /// <returns>
-        /// A new analysis service instance with a freshly imported PSScriptAnalyzer module and runspace pool.
-        /// Returns null if problems occur. This method should never throw.
-        /// </returns>
-        public static AnalysisService Create(ConfigurationService configurationService, ILanguageServer languageServer, ILogger logger)
-        {
-            string settingsPath = configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
-            try
-            {
-                RunspacePool analysisRunspacePool;
-                PSModuleInfo pssaModuleInfo;
-                try
-                {
-                    // Try and load a PSScriptAnalyzer module with the required version
-                    // by looking on the script path. Deep down, this internally runs Get-Module -ListAvailable,
-                    // so we'll use this to check whether such a module exists
-                    analysisRunspacePool = CreatePssaRunspacePool(out pssaModuleInfo);
-
-                }
-                catch (Exception e)
-                {
-                    throw new AnalysisServiceLoadException("PSScriptAnalyzer runspace pool could not be created", e);
-                }
-
-                if (analysisRunspacePool == null)
-                {
-                    throw new AnalysisServiceLoadException("PSScriptAnalyzer runspace pool failed to be created");
-                }
-
-                // Having more than one runspace doesn't block code formatting if one
-                // runspace is occupied for diagnostics
-                analysisRunspacePool.SetMaxRunspaces(NumRunspaces);
-                analysisRunspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
-                analysisRunspacePool.Open();
-
-                var analysisService = new AnalysisService(
-                    analysisRunspacePool,
-                    settingsPath,
-                    s_includedRules,
-                    languageServer,
-                    configurationService,
-                    logger,
-                    pssaModuleInfo);
-
-                // Log what features are available in PSSA here
-                analysisService.LogAvailablePssaFeatures();
-
-                return analysisService;
-            }
-            catch (AnalysisServiceLoadException e)
-            {
-                logger.LogWarning("PSScriptAnalyzer cannot be imported, AnalysisService will be disabled", e);
-                return null;
-            }
-            catch (Exception e)
-            {
-                logger.LogWarning("AnalysisService could not be started due to an unexpected exception", e);
-                return null;
-            }
-        }
 
         /// <summary>
         /// Get PSScriptAnalyzer settings hashtable for PSProvideCommentHelp rule.
@@ -250,50 +122,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ruleSettings.Add("VSCodeSnippetCorrection", vscodeSnippetCorrection);
             ruleSettings.Add("Placement", placement);
             settings.Add("PSProvideCommentHelp", ruleSettings);
-            return GetPSSASettingsHashtable(settings);
-        }
 
-        /// <summary>
-        /// Construct a PSScriptAnalyzer settings hashtable
-        /// </summary>
-        /// <param name="ruleSettingsMap">A settings hashtable</param>
-        /// <returns></returns>
-        public static Hashtable GetPSSASettingsHashtable(IDictionary<string, Hashtable> ruleSettingsMap)
-        {
             var hashtable = new Hashtable();
             var ruleSettingsHashtable = new Hashtable();
 
-            hashtable["IncludeRules"] = ruleSettingsMap.Keys.ToArray<object>();
+            hashtable["IncludeRules"] = settings.Keys.ToArray<object>();
             hashtable["Rules"] = ruleSettingsHashtable;
 
-            foreach (var kvp in ruleSettingsMap)
+            foreach (var kvp in settings)
             {
                 ruleSettingsHashtable.Add(kvp.Key, kvp.Value);
             }
 
             return hashtable;
-        }
-
-        /// <summary>
-        /// Perform semantic analysis on the given ScriptFile and returns
-        /// an array of ScriptFileMarkers.
-        /// </summary>
-        /// <param name="file">The ScriptFile which will be analyzed for semantic markers.</param>
-        /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
-        public async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(ScriptFile file)
-        {
-            return await GetSemanticMarkersAsync<string>(file, ActiveRules, SettingsPath);
-        }
-
-        /// <summary>
-        /// Perform semantic analysis on the given ScriptFile with the given settings.
-        /// </summary>
-        /// <param name="file">The ScriptFile to be analyzed.</param>
-        /// <param name="settings">ScriptAnalyzer settings</param>
-        /// <returns></returns>
-        public async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(ScriptFile file, Hashtable settings)
-        {
-            return await GetSemanticMarkersAsync<Hashtable>(file, null, settings);
         }
 
         /// <summary>
@@ -306,28 +147,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
            string scriptContent,
            Hashtable settings)
         {
-            return await GetSemanticMarkersAsync<Hashtable>(scriptContent, null, settings);
-        }
+            AnalyzerResult analyzerResult = await _analyzer.AnalyzeAsync(
+                    scriptContent,
+                    _analyzer.CreateSettings(settings));
 
-        /// <summary>
-        /// Returns a list of builtin-in PSScriptAnalyzer rules
-        /// </summary>
-        public IEnumerable<string> GetPSScriptAnalyzerRules()
-        {
-            PowerShellResult getRuleResult = InvokePowerShell("Get-ScriptAnalyzerRule");
-            if (getRuleResult == null)
-            {
-                _logger.LogWarning("Get-ScriptAnalyzerRule returned null result");
-                return s_emptyGetRuleResult;
-            }
-
-            var ruleNames = new List<string>();
-            foreach (var rule in getRuleResult.Output)
-            {
-                ruleNames.Add((string)rule.Members["RuleName"].Value);
-            }
-
-            return ruleNames;
+            return analyzerResult.Result.Select(ScriptFileMarker.FromDiagnosticRecord).ToList();
         }
 
         /// <summary>
@@ -349,369 +173,30 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            var argsDict = new Dictionary<string, object> {
-                    {"ScriptDefinition", scriptDefinition},
-                    {"Settings", settings}
-            };
-            if (rangeList != null)
-            {
-                argsDict.Add("Range", rangeList);
-            }
-
-            PowerShellResult result = await InvokePowerShellAsync("Invoke-Formatter", argsDict);
-
-            if (result == null)
-            {
-                _logger.LogError("Formatter returned null result");
-                return null;
-            }
-
-            if (result.HasErrors)
-            {
-                var errorBuilder = new StringBuilder().Append(s_indentJoin);
-                foreach (ErrorRecord err in result.Errors)
-                {
-                    errorBuilder.Append(err).Append(s_indentJoin);
-                }
-                _logger.LogWarning($"Errors found while formatting file: {errorBuilder}");
-                return null;
-            }
-
-            foreach (PSObject resultObj in result.Output)
-            {
-                string formatResult = resultObj?.BaseObject as string;
-                if (formatResult != null)
-                {
-                    return formatResult;
-                }
-            }
-
-            return null;
+            // TODO: support rangeList
+            return await _analyzer.FormatAsync(scriptDefinition, _analyzer.CreateSettings(settings));
         }
 
-        #endregion // public methods
-
-        #region Private Methods
-
-        private async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync<TSettings>(
-            ScriptFile file,
-            string[] rules,
-            TSettings settings) where TSettings : class
+        public async Task RunScriptDiagnosticsAsync(
+            ScriptFile[] filesToAnalyze,
+            CancellationToken token)
         {
-            if (file.IsAnalysisEnabled)
-            {
-                return await GetSemanticMarkersAsync<TSettings>(
-                    file.Contents,
-                    rules,
-                    settings);
-            }
-            else
-            {
-                // Return an empty marker list
-                return new List<ScriptFileMarker>();
-            }
-        }
+            // This token will be cancelled (typically via LSP cancellation) if the token passed in is cancelled or if
+            // multiple requests come in (the last one wins).
+            CancellationToken ct;
 
-        private async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync<TSettings>(
-            string scriptContent,
-            string[] rules,
-            TSettings settings) where TSettings : class
-        {
-            if ((typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
-                && (rules != null || settings != null))
-            {
-                var scriptFileMarkers = await GetDiagnosticRecordsAsync(scriptContent, rules, settings);
-                return scriptFileMarkers.Select(ScriptFileMarker.FromDiagnosticRecord).ToList();
-            }
-            else
-            {
-                // Return an empty marker list
-                return new List<ScriptFileMarker>();
-            }
-        }
-
-        /// <summary>
-        /// Log the features available from the PSScriptAnalyzer module that has been imported
-        /// for use with the AnalysisService.
-        /// </summary>
-        private void LogAvailablePssaFeatures()
-        {
-            // Save ourselves some work here
-            if (!_logger.IsEnabled(LogLevel.Debug))
-            {
-                return;
-            }
-
-            // If we already know the module that was imported, save some work
-            if (_pssaModuleInfo == null)
-            {
-                PowerShellResult getModuleResult = InvokePowerShell(
-                    "Get-Module",
-                    new Dictionary<string, object>{ {"Name", PSSA_MODULE_NAME} });
-
-                if (getModuleResult == null)
-                {
-                    throw new AnalysisServiceLoadException("Get-Module call to find PSScriptAnalyzer module failed");
-                }
-
-                _pssaModuleInfo = getModuleResult.Output
-                    .Select(m => m.BaseObject)
-                    .OfType<PSModuleInfo>()
-                    .FirstOrDefault();
-            }
-
-            if (_pssaModuleInfo == null)
-            {
-                throw new AnalysisServiceLoadException("Unable to find loaded PSScriptAnalyzer module for logging");
-            }
-
-            var sb = new StringBuilder();
-            sb.AppendLine("PSScriptAnalyzer successfully imported:");
-
-            // Log version
-            sb.Append("    Version: ");
-            sb.AppendLine(_pssaModuleInfo.Version.ToString());
-
-            // Log exported cmdlets
-            sb.AppendLine("    Exported Cmdlets:");
-            foreach (string cmdletName in _pssaModuleInfo.ExportedCmdlets.Keys.OrderBy(name => name))
-            {
-                sb.Append("    ");
-                sb.AppendLine(cmdletName);
-            }
-
-            // Log available rules
-            sb.AppendLine("    Available Rules:");
-            foreach (string ruleName in GetPSScriptAnalyzerRules())
-            {
-                sb.Append("        ");
-                sb.AppendLine(ruleName);
-            }
-
-            _logger.LogDebug(sb.ToString());
-        }
-
-        private async Task<PSObject[]> GetDiagnosticRecordsAsync<TSettings>(
-             string scriptContent,
-             string[] rules,
-             TSettings settings) where TSettings : class
-        {
-            var diagnosticRecords = s_emptyDiagnosticResult;
-
-            // When a new, empty file is created there are by definition no issues.
-            // Furthermore, if you call Invoke-ScriptAnalyzer with an empty ScriptDefinition
-            // it will generate a ParameterBindingValidationException.
-            if (string.IsNullOrEmpty(scriptContent))
-            {
-                return diagnosticRecords;
-            }
-
-            if (typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
-            {
-                //Use a settings file if one is provided, otherwise use the default rule list.
-                string settingParameter;
-                object settingArgument;
-                if (settings != null)
-                {
-                    settingParameter = "Settings";
-                    settingArgument = settings;
-                }
-                else
-                {
-                    settingParameter = "IncludeRule";
-                    settingArgument = rules;
-                }
-
-                PowerShellResult result = await InvokePowerShellAsync(
-                    "Invoke-ScriptAnalyzer",
-                    new Dictionary<string, object>
-                    {
-                        { "ScriptDefinition", scriptContent },
-                        { settingParameter, settingArgument },
-                        // We ignore ParseErrors from PSSA because we already send them when we parse the file.
-                        { "Severity", new [] { ScriptFileMarkerLevel.Error, ScriptFileMarkerLevel.Information, ScriptFileMarkerLevel.Warning }}
-                    });
-
-                diagnosticRecords = result?.Output;
-            }
-
-            _logger.LogDebug(String.Format("Found {0} violations", diagnosticRecords.Count()));
-
-            return diagnosticRecords;
-        }
-
-        private PowerShellResult InvokePowerShell(string command, IDictionary<string, object> paramArgMap = null)
-        {
-            using (var powerShell = System.Management.Automation.PowerShell.Create())
-            {
-                powerShell.RunspacePool = _analysisRunspacePool;
-                powerShell.AddCommand(command);
-                if (paramArgMap != null)
-                {
-                    foreach (KeyValuePair<string, object> kvp in paramArgMap)
-                    {
-                        powerShell.AddParameter(kvp.Key, kvp.Value);
-                    }
-                }
-
-                PowerShellResult result = null;
-                try
-                {
-                    PSObject[] output = powerShell.Invoke().ToArray();
-                    ErrorRecord[] errors = powerShell.Streams.Error.ToArray();
-                    result = new PowerShellResult(output, errors, powerShell.HadErrors);
-                }
-                catch (CommandNotFoundException ex)
-                {
-                    // This exception is possible if the module path loaded
-                    // is wrong even though PSScriptAnalyzer is available as a module
-                    _logger.LogError(ex.Message);
-                }
-                catch (CmdletInvocationException ex)
-                {
-                    // We do not want to crash EditorServices for exceptions caused by cmdlet invocation.
-                    // Two main reasons that cause the exception are:
-                    // * PSCmdlet.WriteOutput being called from another thread than Begin/Process
-                    // * CompositionContainer.ComposeParts complaining that "...Only one batch can be composed at a time"
-                    _logger.LogError(ex.Message);
-                }
-
-                return result;
-            }
-        }
-
-        private async Task<PowerShellResult> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap = null)
-        {
-            var task = Task.Run(() =>
-            {
-                return InvokePowerShell(command, paramArgMap);
-            });
-
-            return await task;
-        }
-
-        /// <summary>
-        /// Create a new runspace pool around a PSScriptAnalyzer module for asynchronous script analysis tasks.
-        /// This looks for the latest version of PSScriptAnalyzer on the path and loads that.
-        /// </summary>
-        /// <returns>A runspace pool with PSScriptAnalyzer loaded for running script analysis tasks.</returns>
-        private static RunspacePool CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo)
-        {
-            using (var ps = System.Management.Automation.PowerShell.Create())
-            {
-                // Run `Get-Module -ListAvailable -Name "PSScriptAnalyzer"`
-                ps.AddCommand("Get-Module")
-                    .AddParameter("ListAvailable")
-                    .AddParameter("Name", PSSA_MODULE_NAME);
-
-                try
-                {
-                    // Get the latest version of PSScriptAnalyzer we can find
-                    pssaModuleInfo = ps.Invoke()?
-                        .Select(psObj => psObj.BaseObject)
-                        .OfType<PSModuleInfo>()
-                        .OrderByDescending(moduleInfo => moduleInfo.Version)
-                        .FirstOrDefault();
-                }
-                catch (Exception e)
-                {
-                    throw new AnalysisServiceLoadException("Unable to find PSScriptAnalyzer module on the module path", e);
-                }
-
-                if (pssaModuleInfo == null)
-                {
-                    throw new AnalysisServiceLoadException("Unable to find PSScriptAnalyzer module on the module path");
-                }
-
-                // Create a base session state with PSScriptAnalyzer loaded
-                InitialSessionState sessionState;
-                if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1") {
-                    sessionState = InitialSessionState.CreateDefault();
-                } else {
-                    sessionState = InitialSessionState.CreateDefault2();
-                }
-                sessionState.ImportPSModule(new [] { pssaModuleInfo.ModuleBase });
-
-                // RunspacePool takes care of queuing commands for us so we do not
-                // need to worry about executing concurrent commands
-                return RunspaceFactory.CreateRunspacePool(sessionState);
-            }
-        }
-
-        #endregion //private methods
-
-        #region IDisposable Support
-
-        private bool _disposedValue = false; // To detect redundant calls
-
-        /// <summary>
-        /// Dispose of this object.
-        /// </summary>
-        /// <param name="disposing">True if the method is called by the Dispose method, false if called by the finalizer.</param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposedValue)
-            {
-                if (disposing)
-                {
-                    _analysisRunspacePool.Dispose();
-                    _analysisRunspacePool = null;
-                }
-
-                _disposedValue = true;
-            }
-        }
-
-        /// <summary>
-        /// Clean up all internal resources and dispose of the analysis service.
-        /// </summary>
-        public void Dispose()
-        {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Wraps the result of an execution of PowerShell to send back through
-        /// asynchronous calls.
-        /// </summary>
-        private class PowerShellResult
-        {
-            public PowerShellResult(
-                PSObject[] output,
-                ErrorRecord[] errors,
-                bool hasErrors)
-            {
-                Output = output;
-                Errors = errors;
-                HasErrors = hasErrors;
-            }
-
-            public PSObject[] Output { get; }
-
-            public ErrorRecord[] Errors { get; }
-
-            public bool HasErrors { get; }
-        }
-
-        internal async Task RunScriptDiagnosticsAsync(
-            ScriptFile[] filesToAnalyze)
-        {
             // If there's an existing task, attempt to cancel it
             try
             {
-                if (s_existingRequestCancellation != null)
-                {
-                    // Try to cancel the request
-                    s_existingRequestCancellation.Cancel();
+                await _existingRequestCancellationLock.WaitAsync();
+                // Try to cancel the request
+                _existingRequestCancellation.Cancel();
 
-                    // If cancellation didn't throw an exception,
-                    // clean up the existing token
-                    s_existingRequestCancellation.Dispose();
-                    s_existingRequestCancellation = null;
-                }
+                // If cancellation didn't throw an exception,
+                // clean up the existing token
+                _existingRequestCancellation.Dispose();
+                _existingRequestCancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+                ct = _existingRequestCancellation.Token;
             }
             catch (Exception e)
             {
@@ -725,93 +210,110 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 cancelTask.SetCanceled();
                 return;
             }
+            finally
+            {
+                _existingRequestCancellationLock.Release();
+            }
 
-            // If filesToAnalzye is empty, nothing to do so return early.
+            // If filesToAnalyze is empty, nothing to do so return early.
             if (filesToAnalyze.Length == 0)
             {
                 return;
             }
 
-            // Create a fresh cancellation token and then start the task.
-            // We create this on a different TaskScheduler so that we
-            // don't block the main message loop thread.
-            // TODO: Is there a better way to do this?
-            s_existingRequestCancellation = new CancellationTokenSource();
-            await Task.Factory.StartNew(
-                () =>
-                    DelayThenInvokeDiagnosticsAsync(
-                        750,
-                        filesToAnalyze,
-                        _configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false,
-                        s_existingRequestCancellation.Token),
-                CancellationToken.None,
-                TaskCreationOptions.None,
-                TaskScheduler.Default);
-        }
-
-        private async Task DelayThenInvokeDiagnosticsAsync(
-            int delayMilliseconds,
-            ScriptFile[] filesToAnalyze,
-            bool isScriptAnalysisEnabled,
-            CancellationToken cancellationToken)
-        {
-            // First of all, wait for the desired delay period before
-            // analyzing the provided list of files
             try
             {
-                await Task.Delay(delayMilliseconds, cancellationToken);
+                // Wait for the desired delay period before analyzing the provided list of files.
+                await Task.Delay(750, ct);
+
+                foreach (ScriptFile file in filesToAnalyze)
+                {
+                    AnalyzerResult analyzerResult = await _analyzer.AnalyzeAsync(
+                        file.ScriptAst,
+                        file.ScriptTokens,
+                        _analyzerSettings,
+                        file.FilePath);
+
+                    if (!ct.CanBeCanceled || ct.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    IEnumerable<ScriptFileMarker> scriptFileMarkers = analyzerResult.Result.Select(ScriptFileMarker.FromDiagnosticRecord);
+                    file.DiagnosticMarkers.AddRange(scriptFileMarkers);
+                }
             }
             catch (TaskCanceledException)
             {
-                // If the task is cancelled, exit directly
-                foreach (var script in filesToAnalyze)
-                {
-                    PublishScriptDiagnostics(
-                        script,
-                        script.DiagnosticMarkers);
-                }
-
-                return;
+                // If a cancellation was requested, then publish what we have.
             }
 
-            // If we've made it past the delay period then we don't care
-            // about the cancellation token anymore.  This could happen
-            // when the user stops typing for long enough that the delay
-            // period ends but then starts typing while analysis is going
-            // on.  It makes sense to send back the results from the first
-            // delay period while the second one is ticking away.
-
-            // Get the requested files
-            foreach (ScriptFile scriptFile in filesToAnalyze)
+            foreach (var file in filesToAnalyze)
             {
-                List<ScriptFileMarker> semanticMarkers = null;
-                if (isScriptAnalysisEnabled)
-                {
-                    semanticMarkers = await GetSemanticMarkersAsync(scriptFile);
-                }
-                else
-                {
-                    // Semantic markers aren't available if the AnalysisService
-                    // isn't available
-                    semanticMarkers = new List<ScriptFileMarker>();
-                }
-
-                scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
-
                 PublishScriptDiagnostics(
-                    scriptFile,
-                    // Concat script analysis errors to any existing parse errors
-                    scriptFile.DiagnosticMarkers);
+                    file,
+                    file.DiagnosticMarkers);
             }
         }
 
-        internal void ClearMarkers(ScriptFile scriptFile)
+        public void ClearMarkers(ScriptFile scriptFile)
         {
-            // send empty diagnostic markers to clear any markers associated with the given file
+            // send empty diagnostic markers to clear any markers associated with the given file.
             PublishScriptDiagnostics(
                     scriptFile,
                     new List<ScriptFileMarker>());
         }
+
+        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(string documentUri)
+        {
+            if (!_mostRecentCorrectionsByFile.TryGetValue(documentUri, out (SemaphoreSlim fileLock, Dictionary<string, MarkerCorrection> corrections) fileCorrectionsEntry))
+            {
+                return null;
+            }
+
+            await fileCorrectionsEntry.fileLock.WaitAsync();
+            // We must copy the dictionary for thread safety
+            var corrections = new Dictionary<string, MarkerCorrection>(fileCorrectionsEntry.corrections.Count);
+            try
+            {
+                foreach (KeyValuePair<string, MarkerCorrection> correction in fileCorrectionsEntry.corrections)
+                {
+                    corrections.Add(correction.Key, correction.Value);
+                }
+
+                return corrections;
+            }
+            finally
+            {
+                fileCorrectionsEntry.fileLock.Release();
+            }
+        }
+
+        internal static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
+        {
+            OmniSharp.Extensions.LanguageServer.Protocol.Models.Position start = diagnostic.Range.Start;
+            OmniSharp.Extensions.LanguageServer.Protocol.Models.Position end = diagnostic.Range.End;
+
+            var sb = new StringBuilder(256)
+            .Append(diagnostic.Source ?? "?")
+            .Append("_")
+            .Append(diagnostic.Code.IsString ? diagnostic.Code.String : diagnostic.Code.Long.ToString())
+            .Append("_")
+            .Append(diagnostic.Severity?.ToString() ?? "?")
+            .Append("_")
+            .Append(start.Line)
+            .Append(":")
+            .Append(start.Character)
+            .Append("-")
+            .Append(end.Line)
+            .Append(":")
+            .Append(end.Character);
+
+            var id = sb.ToString();
+            return id;
+        }
+
+        #endregion
 
         private void PublishScriptDiagnostics(
             ScriptFile scriptFile,
@@ -877,57 +379,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             });
         }
 
-        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(string documentUri)
-        {
-            if (!_mostRecentCorrectionsByFile.TryGetValue(documentUri, out (SemaphoreSlim fileLock, Dictionary<string, MarkerCorrection> corrections) fileCorrectionsEntry))
-            {
-                return null;
-            }
-
-            await fileCorrectionsEntry.fileLock.WaitAsync();
-            // We must copy the dictionary for thread safety
-            var corrections = new Dictionary<string, MarkerCorrection>(fileCorrectionsEntry.corrections.Count);
-            try
-            {
-                foreach (KeyValuePair<string, MarkerCorrection> correction in fileCorrectionsEntry.corrections)
-                {
-                    corrections.Add(correction.Key, correction.Value);
-                }
-
-                return corrections;
-            }
-            finally
-            {
-                fileCorrectionsEntry.fileLock.Release();
-            }
-        }
-
-        // Generate a unique id that is used as a key to look up the associated code action (code fix) when
-        // we receive and process the textDocument/codeAction message.
-        internal static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
-        {
-            Position start = diagnostic.Range.Start;
-            Position end = diagnostic.Range.End;
-
-            var sb = new StringBuilder(256)
-            .Append(diagnostic.Source ?? "?")
-            .Append("_")
-            .Append(diagnostic.Code.IsString ? diagnostic.Code.String : diagnostic.Code.Long.ToString())
-            .Append("_")
-            .Append(diagnostic.Severity?.ToString() ?? "?")
-            .Append("_")
-            .Append(start.Line)
-            .Append(":")
-            .Append(start.Character)
-            .Append("-")
-            .Append(end.Line)
-            .Append(":")
-            .Append(end.Character);
-
-            var id = sb.ToString();
-            return id;
-        }
-
         private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
         {
             return new Diagnostic
@@ -936,14 +387,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 Message = scriptFileMarker.Message,
                 Code = scriptFileMarker.RuleName,
                 Source = scriptFileMarker.Source,
-                Range = new Range
+                Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range
                 {
-                    Start = new Position
+                    Start = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position
                     {
                         Line = scriptFileMarker.ScriptRegion.StartLineNumber - 1,
                         Character = scriptFileMarker.ScriptRegion.StartColumnNumber - 1
                     },
-                    End = new Position
+                    End = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position
                     {
                         Line = scriptFileMarker.ScriptRegion.EndLineNumber - 1,
                         Character = scriptFileMarker.ScriptRegion.EndColumnNumber - 1
@@ -968,31 +419,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 default:
                     return DiagnosticSeverity.Error;
             }
-        }
-    }
-
-    /// <summary>
-    /// Class to catch known failure modes for starting the AnalysisService.
-    /// </summary>
-    public class AnalysisServiceLoadException : Exception
-    {
-        /// <summary>
-        /// Instantiate an AnalysisService error based on a simple message.
-        /// </summary>
-        /// <param name="message">The message to display to the user detailing the error.</param>
-        public AnalysisServiceLoadException(string message)
-            : base(message)
-        {
-        }
-
-        /// <summary>
-        /// Instantiate an AnalysisService error based on another error that occurred internally.
-        /// </summary>
-        /// <param name="message">The message to display to the user detailing the error.</param>
-        /// <param name="innerException">The inner exception that occurred to trigger this error.</param>
-        public AnalysisServiceLoadException(string message, Exception innerException)
-            : base(message, innerException)
-        {
         }
     }
 }

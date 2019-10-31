@@ -55,14 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             .Wait();
                         return extensionService;
                     })
-                .AddSingleton<AnalysisService>(
-                    (provider) =>
-                    {
-                        return AnalysisService.Create(
-                            provider.GetService<ConfigurationService>(),
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                            provider.GetService<ILoggerFactory>().CreateLogger<AnalysisService>());
-                    });
+                .AddSingleton<AnalysisService>();
         }
 
         public static IServiceCollection AddPsesDebugServices(
