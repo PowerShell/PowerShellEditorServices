@@ -4,7 +4,6 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -52,23 +51,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
         {
-            List<ScriptFile> changedFiles = new List<ScriptFile>();
+            ScriptFile changedFile = _workspaceService.GetFile(notification.TextDocument.Uri.ToString());
 
             // A text change notification can batch multiple change requests
             foreach (TextDocumentContentChangeEvent textChange in notification.ContentChanges)
             {
-                ScriptFile changedFile = _workspaceService.GetFile(notification.TextDocument.Uri.ToString());
-
                 changedFile.ApplyChange(
                     GetFileChangeDetails(
                         textChange.Range,
                         textChange.Text));
-
-                changedFiles.Add(changedFile);
             }
 
             // TODO: Get all recently edited files in the workspace
-            _analysisService.RunScriptDiagnosticsAsync(changedFiles.ToArray());
+            _analysisService.RunScriptDiagnosticsAsync(new ScriptFile[] { changedFile });
             return Unit.Task;
         }
 
