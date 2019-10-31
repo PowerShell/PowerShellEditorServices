@@ -79,7 +79,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     vscodeSnippetCorrection: true,
                     placement: helpLocation));
 
-            string helpText = analysisResults?[0]?.Correction?.Edits[0].Text;
+            if (analysisResults == null || analysisResults.Count == 0)
+            {
+                return result;
+            }
+
+            string helpText = analysisResults[0]?.Correction?.Edits[0].Text;
 
             if (helpText == null)
             {
@@ -92,16 +97,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
             {
                 // we need to trim the leading `{` and newline when helpLocation=="begin"
+                helpLines.RemoveAt(helpLines.Count - 1);
+
                 // we also need to trim the leading newline when helpLocation=="end"
-                helpLines = helpLines.GetRange(1, helpLines.Count - 1);
+                helpLines.RemoveAt(0);
             }
 
             // Trim trailing newline from help text.
             if (string.IsNullOrEmpty(helpLines[helpLines.Count - 1]))
             {
-                result.Content = helpLines.GetRange(0, helpLines.Count - 1).ToArray();
+                helpLines.RemoveAt(helpLines.Count - 1);
             }
 
+            result.Content = helpLines.ToArray();
             return result;
         }
     }
