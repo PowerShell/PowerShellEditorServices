@@ -320,6 +320,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     Set-Content -LiteralPath $script:BuildInfoPath -Value $buildInfoContents -Force
 }
 
+task SetupHelpForTests -Before Test {
+    if (-not (Get-Help Write-Host).Examples) {
+        Update-Help -Module Microsoft.PowerShell.Utility -Force -Scope CurrentUser
+    }
+}
+
 task Build {
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:TargetPlatform }
     exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
