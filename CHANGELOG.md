@@ -1,5 +1,51 @@
 # PowerShell Editor Services Release History
 
+## v2.0.0-preview.6
+### Thursday, October 31, 2019
+
+- [PowerShellEditorServices #1080](https://github.com/PowerShell/PowerShellEditorServices/pull/1080) -
+  Remove extra newline in GetComment feature.
+- [PowerShellEditorServices #1079](https://github.com/PowerShell/PowerShellEditorServices/pull/1079) -
+  Fix duplicate diagnostics caused by DidChange handler.
+- [PowerShellEditorServices #1076](https://github.com/PowerShell/PowerShellEditorServices/pull/1076) -
+  Graduate PSReadLine feature and add UseLegacyReadLine.
+- [PowerShellEditorServices #1075](https://github.com/PowerShell/PowerShellEditorServices/pull/1075) -
+  Lock OmniSharp dependencies to v0.14.0. (Thanks @mholo65!)
+- [PowerShellEditorServices #1064](https://github.com/PowerShell/PowerShellEditorServices/pull/1064) -
+  New colors supported by PS7.
+- [PowerShellEditorServices #1062](https://github.com/PowerShell/PowerShellEditorServices/pull/1062) -
+  Bump Serilog.Extensions.Logging from 2.0.4 to 3.0.1. (Thanks @dependabot-preview[bot]!)
+- [PowerShellEditorServices #1073](https://github.com/PowerShell/PowerShellEditorServices/pull/1073) -
+  Fix prerelease version discovery and fix omnisharp change.
+- [PowerShellEditorServices #1070](https://github.com/PowerShell/PowerShellEditorServices/pull/1070) -
+  Bump Serilog.Sinks.File from 4.0.0 to 4.1.0. (Thanks @dependabot-preview[bot]!)
+- [PowerShellEditorServices #1065](https://github.com/PowerShell/PowerShellEditorServices/pull/1065) -
+  Fix TEMP debugging.
+- 🐛 [vscode-powershell #1753](https://github.com/PowerShell/PowerShellEditorServices/pull/1072) -
+  Override PSRL ReadKey on Windows as well.
+- [PowerShellEditorServices #1068](https://github.com/PowerShell/PowerShellEditorServices/pull/1068) -
+  Forwardport 1044 fixing UNC path completions.
+- [PowerShellEditorServices #1066](https://github.com/PowerShell/PowerShellEditorServices/pull/1066) -
+  Rework log builder to support logging to files.
+- [PowerShellEditorServices #1061](https://github.com/PowerShell/PowerShellEditorServices/pull/1061) -
+  Bump Microsoft.Extensions.FileSystemGlobbing from 2.2.0 to 3.0.0. (Thanks @dependabot-preview[bot]!)
+- [PowerShellEditorServices #1060](https://github.com/PowerShell/PowerShellEditorServices/pull/1060) -
+  Bump System.Security.Principal.Windows from 4.5.1 to 4.6.0. (Thanks @dependabot-preview[bot]!)
+- [PowerShellEditorServices #1063](https://github.com/PowerShell/PowerShellEditorServices/pull/1063) -
+  Bump Microsoft.Extensions.Logging from 3.0.0-preview8.19405.4 to 3.0.0. (Thanks @dependabot-preview[bot]!)
+- [PowerShellEditorServices #1055](https://github.com/PowerShell/PowerShellEditorServices/pull/1055) -
+  Update .Net Core SDK from 2.1.801 to 2.1.802 (latest patch). (Thanks @bergmeister!)
+- [PowerShellEditorServices #1056](https://github.com/PowerShell/PowerShellEditorServices/pull/1056) -
+  Move the Omnisharp work into master.
+- 🐛 [vscode-powershell #2116](https://github.com/PowerShell/PowerShellEditorServices/pull/1044) -
+  Fix UNC intellisense backslash.
+- [PowerShellEditorServices #1042](https://github.com/PowerShell/PowerShellEditorServices/pull/1042) -
+  Bump Microsoft.NET.Test.Sdk from 16.2.0 to 16.3.0. (Thanks @dependabot-preview[bot]!)
+- [PowerShellEditorServices #1041](https://github.com/PowerShell/PowerShellEditorServices/pull/1041) -
+  Bump Microsoft.Extensions.FileSystemGlobbing from 2.2.0 to 3.0.0. (Thanks @dependabot-preview[bot]!)
+- [PowerShellEditorServices #1040](https://github.com/PowerShell/PowerShellEditorServices/pull/1040) -
+  Bump Microsoft.CSharp from 4.5.0 to 4.6.0. (Thanks @dependabot-preview[bot]!)
+
 ## v2.0.0-preview.5
 ### Monday, September 23, 2019
 
