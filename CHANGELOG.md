@@ -1,7 +1,7 @@
 # PowerShell Editor Services Release History
 
 ## v2.0.0-preview.6
-### Thursday, October 31, 2019
+### Friday, November 1, 2019
 
 #### Special Note
 In this release of the preview extension,
