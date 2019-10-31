@@ -28,6 +28,10 @@ As always, [please let us know if you find any issues](https://github.com/PowerS
   Fix TEMP debugging.
 - 🐛 [vscode-powershell #1753](https://github.com/PowerShell/PowerShellEditorServices/pull/1072) -
   Override PSRL ReadKey on Windows as well.
+- 💭 [PowerShellEditorServices #1066](https://github.com/PowerShell/PowerShellEditorServices/pull/1066) -
+  Rework Omnisharp logging integration to make logging to files work again.
+- 👷 [PowerShellEditorServices #1055](https://github.com/PowerShell/PowerShellEditorServices/pull/1055) -
+  Update .Net Core SDK from 2.1.801 to 2.1.802 (latest patch). (Thanks @bergmeister!)
 - 🚂 [PowerShellEditorServices #1056](https://github.com/PowerShell/PowerShellEditorServices/pull/1056) -
   Re-architect PowerShell Editor Services to use the Omnisharp LSP platform.
 - 🐛 [vscode-powershell #2116](https://github.com/PowerShell/PowerShellEditorServices/pull/1044) -
