@@ -35,7 +35,6 @@ if ($PSVersionTable.PSEdition -ne "Core") {
 task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi {
 
     $minRequiredSdkVersion = "2.0.0"
-    $maxRequiredSdkVersion = "3.0.0"
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -56,6 +55,9 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
         # dotnet --version can return a semver that System.Version can't handle
         # e.g.: 2.1.300-preview-01. The replace operator is used to remove any build suffix.
         $version = [version]((& $dotnetExePath --version) -replace '[+-].*$','')
+        $maxRequiredSdkVersion = [version]::Parse("3.0.0")
+
+        # $minRequiredSdkVersion <= version < $maxRequiredSdkVersion
         if ($version -ge [version]$minRequiredSdkVersion -and $version -lt $maxRequiredSdkVersion) {
             $script:dotnetExe = $dotnetExePath
         }
