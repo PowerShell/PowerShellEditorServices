@@ -10,7 +10,7 @@ After several months of work, PSES now uses the Omnisharp LSP library
 to handle Language Server Protocol interaction instead of rolling its own,
 allowing PSES to concentrate on being a good PowerShell backend.
 We hope you'll see increased performance and stability in this release.
-As always, [please let us know if you find any issues](https://github.com/PowerShell/vscode-powershell/issues/new/choose).
+As always, [please let us know if you find any issues](https://github.com/PowerShell/PowerShellEditorServices/issues/new).
 
 - 🐛 [PowerShellEditorServices #1080](https://github.com/PowerShell/PowerShellEditorServices/pull/1080) -
   Remove extra newline in GetComment feature.
