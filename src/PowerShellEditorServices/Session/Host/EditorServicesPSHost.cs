@@ -93,9 +93,14 @@ namespace Microsoft.PowerShell.EditorServices
             public ConsoleColor FormatAccentColor
             {
                 get
-                { return _hostUserInterface.FormatAccentColor; }
+                {
+                    return _hostUserInterface.FormatAccentColor;
+                }
+
                 set
-                { _hostUserInterface.FormatAccentColor = value; }
+                {
+                    _hostUserInterface.FormatAccentColor = value;
+                }
             }
 
             /// <summary>
