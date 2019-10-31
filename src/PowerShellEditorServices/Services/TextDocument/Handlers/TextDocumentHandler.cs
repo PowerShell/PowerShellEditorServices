@@ -53,25 +53,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
         {
-            Dictionary<string, ScriptFile> changedFiles = new Dictionary<string, ScriptFile>();
+            ScriptFile changedFile = _workspaceService.GetFile(notification.TextDocument.Uri.ToString());
 
             // A text change notification can batch multiple change requests
             foreach (TextDocumentContentChangeEvent textChange in notification.ContentChanges)
             {
-                ScriptFile changedFile = _workspaceService.GetFile(notification.TextDocument.Uri.ToString());
-
                 changedFile.ApplyChange(
                     GetFileChangeDetails(
                         textChange.Range,
                         textChange.Text));
-
-                // Sometimes the client sends multiple changes to the same file, if so,
-                // grab the last one to run diagnostics on.
-                changedFiles[changedFile.Id] = changedFile;
             }
 
             // TODO: Get all recently edited files in the workspace
-            _analysisService.RunScriptDiagnosticsAsync(changedFiles.Values.ToArray());
+            _analysisService.RunScriptDiagnosticsAsync(new ScriptFile[] { changedFile });
             return Unit.Task;
         }
 
