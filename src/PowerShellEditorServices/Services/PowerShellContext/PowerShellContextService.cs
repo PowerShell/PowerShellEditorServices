@@ -171,6 +171,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ProfilePaths profilePaths,
             HashSet<string> featureFlags,
             bool enableConsoleRepl,
+            bool useLegacyReadLine,
             PSHost internalHost,
             HostDetails hostDetails,
             string[] additionalModules
@@ -178,12 +179,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             var logger = factory.CreateLogger<PowerShellContextService>();
 
-            // PSReadLine can only be used when -EnableConsoleRepl is specified otherwise
-            // issues arise when redirecting stdio.
+            // We should only use PSReadLine if we specificied that we want a console repl
+            // and we have not explicitly said to use the legacy ReadLine.
+            // We also want it if we are either:
+            // * On Windows on any version OR
+            // * On Linux or macOS on any version greater than or equal to 7
+            bool shouldUsePSReadLine = enableConsoleRepl && !useLegacyReadLine
+                && (VersionUtils.IsWindows || !VersionUtils.IsPS6);
+
             var powerShellContext = new PowerShellContextService(
                 logger,
                 languageServer,
-                featureFlags.Contains("PSReadLine") && enableConsoleRepl);
+                shouldUsePSReadLine);
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 enableConsoleRepl

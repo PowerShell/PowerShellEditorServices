@@ -79,6 +79,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly bool _enableConsoleRepl;
 
+        private readonly bool _useLegacyReadLine;
+
         private readonly HashSet<string> _featureFlags;
 
         private readonly string[] _additionalModules;
@@ -113,6 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             HostDetails hostDetails,
             string bundledModulesPath,
             bool enableConsoleRepl,
+            bool useLegacyReadLine,
             bool waitForDebugger,
             string[] additionalModules,
             string[] featureFlags)
@@ -120,6 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 hostDetails,
                 bundledModulesPath,
                 enableConsoleRepl,
+                useLegacyReadLine,
                 waitForDebugger,
                 additionalModules,
                 featureFlags,
@@ -141,6 +145,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             HostDetails hostDetails,
             string bundledModulesPath,
             bool enableConsoleRepl,
+            bool useLegacyReadLine,
             bool waitForDebugger,
             string[] additionalModules,
             string[] featureFlags,
@@ -151,12 +156,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             _hostDetails = hostDetails;
 
-            //this._hostDetails = hostDetails;
             _enableConsoleRepl = enableConsoleRepl;
-            //this.bundledModulesPath = bundledModulesPath;
+            _useLegacyReadLine = useLegacyReadLine;
             _additionalModules = additionalModules ?? Array.Empty<string>();
             _featureFlags = new HashSet<string>(featureFlags ?? Array.Empty<string>());
-            //this.serverCompletedTask = new TaskCompletionSource<bool>();
             _internalHost = internalHost;
 
 #if DEBUG
@@ -247,6 +250,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                         _factory,
                         LogLevel.Trace,
                         _enableConsoleRepl,
+                        _useLegacyReadLine,
                         _featureFlags,
                         _hostDetails,
                         _additionalModules,
@@ -306,6 +310,7 @@ PowerShell Editor Services Host v{fileVersionInfo.FileVersion} starting (PID {Pr
                         profilePaths,
                         _featureFlags,
                         _enableConsoleRepl,
+                        _useLegacyReadLine,
                         _internalHost,
                         _hostDetails,
                         _additionalModules)

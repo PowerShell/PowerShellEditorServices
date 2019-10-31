@@ -20,6 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             ProfilePaths profilePaths,
             HashSet<string> featureFlags,
             bool enableConsoleRepl,
+            bool useLegacyReadLine,
             PSHost internalHost,
             HostDetails hostDetails,
             string[] additionalModules)
@@ -35,6 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             profilePaths,
                             featureFlags,
                             enableConsoleRepl,
+                            useLegacyReadLine,
                             internalHost,
                             hostDetails,
                             additionalModules))

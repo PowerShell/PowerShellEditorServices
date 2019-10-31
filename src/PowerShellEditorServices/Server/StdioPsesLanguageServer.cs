@@ -23,8 +23,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
             ProfilePaths profilePaths) : base(
                 factory,
                 minimumLogLevel,
-                // Stdio server can't support an integrated console so we pass in false.
-                false,
+                // Stdio server can't support an integrated console so we pass in false for
+                // enableConsoleRepl and useLegacyReadLine.
+                enableConsoleRepl: false,
+                useLegacyReadLine: false,
                 featureFlags,
                 hostDetails,
                 additionalModules,
