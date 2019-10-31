@@ -34,7 +34,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
 
 task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestPowerShellApi {
 
-    $requiredSdkVersion = "2.0.0"
+    $minRequiredSdkVersion = "2.0.0"
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -54,8 +54,11 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
     if ($dotnetExePath) {
         # dotnet --version can return a semver that System.Version can't handle
         # e.g.: 2.1.300-preview-01. The replace operator is used to remove any build suffix.
-        $version = (& $dotnetExePath --version) -replace '[+-].*$',''
-        if ([version]$version -ge [version]$requiredSdkVersion) {
+        $version = [version]((& $dotnetExePath --version) -replace '[+-].*$','')
+        $maxRequiredSdkVersion = [version]::Parse("3.0.0")
+
+        # $minRequiredSdkVersion <= version < $maxRequiredSdkVersion
+        if ($version -ge [version]$minRequiredSdkVersion -and $version -lt $maxRequiredSdkVersion) {
             $script:dotnetExe = $dotnetExePath
         }
         else {
@@ -70,7 +73,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
 
     if ($script:dotnetExe -eq $null) {
 
-        Write-Host "`n### Installing .NET CLI $requiredSdkVersion...`n" -ForegroundColor Green
+        Write-Host "`n### Installing .NET CLI $minRequiredSdkVersion...`n" -ForegroundColor Green
 
         # The install script is platform-specific
         $installScriptExt = if ($script:IsUnix) { "sh" } else { "ps1" }
@@ -81,10 +84,10 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestP
         $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
         if (!$script:IsUnix) {
-            & $installScriptPath -Version $requiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
+            & $installScriptPath -Version $minRequiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
         }
         else {
-            & /bin/bash $installScriptPath -Version $requiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
+            & /bin/bash $installScriptPath -Version $minRequiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
             $env:PATH = $dotnetExeDir + [System.IO.Path]::PathSeparator + $env:PATH
         }
 
