@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
@@ -80,23 +79,37 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     vscodeSnippetCorrection: true,
                     placement: helpLocation));
 
-            string helpText = analysisResults?.FirstOrDefault()?.Correction?.Edits[0].Text;
+            if (analysisResults == null || analysisResults.Count == 0)
+            {
+                return result;
+            }
+
+            string helpText = analysisResults[0]?.Correction?.Edits[0].Text;
 
             if (helpText == null)
             {
                 return result;
             }
 
-            result.Content = ScriptFile.GetLinesInternal(helpText).ToArray();
+            List<string> helpLines = ScriptFile.GetLinesInternal(helpText);
 
             if (helpLocation != null &&
                 !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
             {
                 // we need to trim the leading `{` and newline when helpLocation=="begin"
+                helpLines.RemoveAt(helpLines.Count - 1);
+
                 // we also need to trim the leading newline when helpLocation=="end"
-                result.Content = result.Content.Skip(1).ToArray();
+                helpLines.RemoveAt(0);
             }
 
+            // Trim trailing newline from help text.
+            if (string.IsNullOrEmpty(helpLines[helpLines.Count - 1]))
+            {
+                helpLines.RemoveAt(helpLines.Count - 1);
+            }
+
+            result.Content = helpLines.ToArray();
             return result;
         }
     }
