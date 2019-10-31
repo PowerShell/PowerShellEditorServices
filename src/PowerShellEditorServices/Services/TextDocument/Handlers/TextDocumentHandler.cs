@@ -16,6 +16,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
+using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -52,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
         {
-            List<ScriptFile> changedFiles = new List<ScriptFile>();
+            Dictionary<string, ScriptFile> changedFiles = new Dictionary<string, ScriptFile>();
 
             // A text change notification can batch multiple change requests
             foreach (TextDocumentContentChangeEvent textChange in notification.ContentChanges)
@@ -64,11 +65,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         textChange.Range,
                         textChange.Text));
 
-                changedFiles.Add(changedFile);
+                // Sometimes the client sends multiple changes to the same file, if so,
+                // grab the last one to run diagnostics on.
+                changedFiles[changedFile.Id] = changedFile;
             }
 
             // TODO: Get all recently edited files in the workspace
-            _analysisService.RunScriptDiagnosticsAsync(changedFiles.ToArray());
+            _analysisService.RunScriptDiagnosticsAsync(changedFiles.Values.ToArray());
             return Unit.Task;
         }
 

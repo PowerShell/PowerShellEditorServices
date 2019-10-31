@@ -146,6 +146,43 @@ function CanSendWorkspaceSymbolRequest {
         }
 
         [Fact]
+        public async Task CanReceiveDiagnosticsFromFileChanged()
+        {
+            string filePath = NewTestFile("$a = 4");
+            await WaitForDiagnostics();
+            Diagnostics.Clear();
+
+            LanguageClient.SendNotification("textDocument/didChange", new DidChangeTextDocumentParams
+            {
+                // Include several content changes to test against duplicate Diagnostics showing up.
+                ContentChanges = new Container<TextDocumentContentChangeEvent>(new []
+                {
+                    new TextDocumentContentChangeEvent
+                    {
+                        Text = "$a = 5"
+                    },
+                    new TextDocumentContentChangeEvent
+                    {
+                        Text = "$a = 6"
+                    },
+                    new TextDocumentContentChangeEvent
+                    {
+                        Text = "$a = 7"
+                    }
+                }),
+                TextDocument = new VersionedTextDocumentIdentifier
+                {
+                    Version = 4,
+                    Uri = new Uri(filePath)
+                }
+            });
+
+            await WaitForDiagnostics();
+            Diagnostic diagnostic = Assert.Single(Diagnostics);
+            Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
+        }
+
+        [Fact]
         public async Task CanReceiveDiagnosticsFromConfigurationChange()
         {
             NewTestFile("gci | % { $_ }");
