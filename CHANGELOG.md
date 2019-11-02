@@ -1,5 +1,13 @@
 # PowerShell Editor Services Release History
 
+## v1.13.1
+### Saturday, November 02, 2019
+
+- [PowerShellEditorServices #1077](https://github.com/PowerShell/PowerShellEditorServices/pull/1077) -
+  New colors supported by PS7 (#1064).
+- 🐛 [vscode-powershell #2116](https://github.com/PowerShell/PowerShellEditorServices/pull/1044) -
+  Fix UNC intellisense backslash.
+
 ## v1.13.0
 ### Monday, September 23, 2019
 
