@@ -453,19 +453,19 @@ Write-Host 'Goodbye'
                 documentHighlight1 =>
                 {
                     Range range = documentHighlight1.Range;
-                    Assert.Equal(0, range.Start.Line);
-                    Assert.Equal(0, range.Start.Character);
-                    Assert.Equal(0, range.End.Line);
-                    Assert.Equal(10, range.End.Character);
+                    Assert.Equal(1, range.Start.Line);
+                    Assert.Equal(1, range.Start.Character);
+                    Assert.Equal(1, range.End.Line);
+                    Assert.Equal(11, range.End.Character);
 
                 },
                 documentHighlight2 =>
                 {
                     Range range = documentHighlight2.Range;
-                    Assert.Equal(2, range.Start.Line);
-                    Assert.Equal(0, range.Start.Character);
-                    Assert.Equal(2, range.End.Line);
-                    Assert.Equal(10, range.End.Character);
+                    Assert.Equal(3, range.Start.Line);
+                    Assert.Equal(1, range.Start.Character);
+                    Assert.Equal(3, range.End.Line);
+                    Assert.Equal(11, range.End.Character);
                 });
         }
 
