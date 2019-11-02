@@ -1,6 +1,6 @@
 {
     "PSScriptAnalyzer":{
-        "MinimumVersion":"1.18.2",
+        "MinimumVersion":"1.18.3",
         "MaximumVersion":"1.99",
         "AllowPrerelease":false
     },
