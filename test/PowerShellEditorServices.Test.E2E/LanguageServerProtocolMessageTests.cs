@@ -444,7 +444,7 @@ Write-Host 'Goodbye'
                         },
                         Position = new Position
                         {
-                            Line = 4,
+                            Line = 3,
                             Character = 1
                         }
                     });
