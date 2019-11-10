@@ -1838,9 +1838,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="e">details of the execution status change</param>
         private void PowerShellContext_ExecutionStatusChangedAsync(object sender, ExecutionStatusChangedEventArgs e)
         {
-            _languageServer?.SendNotification(
-                "powerShell/executionStatusChanged",
-                e);
+            // The cancelling of the prompt (PSReadLine) causes an ExecutionStatus.Aborted to be sent after every
+            // actual execution (ExecutionStatus.Running) on the pipeline. We ignore that event since it's counterintuitive to
+            // the goal of this method which is to send updates when the pipeline is actually running something.
+            if (!e?.ExecutionOptions?.IsReadLine ?? true)
+            {
+                _languageServer?.SendNotification(
+                    "powerShell/executionStatusChanged",
+                    e);
+            }
         }
 
         #endregion
