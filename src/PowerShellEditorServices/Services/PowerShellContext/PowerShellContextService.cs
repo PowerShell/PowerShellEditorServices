@@ -1841,7 +1841,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // The cancelling of the prompt (PSReadLine) causes an ExecutionStatus.Aborted to be sent after every
             // actual execution (ExecutionStatus.Running) on the pipeline. We ignore that event since it's counterintuitive to
             // the goal of this method which is to send updates when the pipeline is actually running something.
-            if (!e?.ExecutionOptions?.IsReadLine ?? true)
+            var options = e?.ExecutionOptions;
+            if (options == null || !options.IsReadLine)
             {
                 _languageServer?.SendNotification(
                     "powerShell/executionStatusChanged",
