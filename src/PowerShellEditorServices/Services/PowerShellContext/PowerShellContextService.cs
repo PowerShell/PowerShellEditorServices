@@ -2324,6 +2324,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 _languageServer.SendNotification("powerShell/startDebugger");
             }
 
+            // We've hit a breakpoint so go to a new line so that the prompt can be rendered.
+            this.WriteOutput("", includeNewLine: true);
+
             if (CurrentRunspace.Context == RunspaceContext.Original)
             {
                 StartCommandLoopOnRunspaceAvailable();
