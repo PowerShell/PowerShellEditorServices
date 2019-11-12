@@ -2317,7 +2317,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // We've hit a breakpoint so go to a new line so that the prompt can be rendered.
-            this.WriteOutput("", true);
+            this.WriteOutput("", includeNewLine: true);
 
             if (CurrentRunspace.Context == RunspaceContext.Original)
             {
