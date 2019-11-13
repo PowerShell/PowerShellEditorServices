@@ -188,7 +188,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
             catch (OperationCanceledException)
             {
-                return default(ConsoleKeyInfo);
+                return new ConsoleKeyInfo(
+                    keyChar: ' ',
+                    ConsoleKey.DownArrow,
+                    shift: false,
+                    alt: false,
+                    control: false);
             }
         }
     }
