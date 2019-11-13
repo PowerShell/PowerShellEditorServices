@@ -690,6 +690,9 @@ namespace Microsoft.PowerShell.EditorServices
 
         internal static ConsoleColor BackgroundColor { get; set; }
 
+        internal ConsoleColor FormatAccentColor { get; set; } = ConsoleColor.Green;
+        internal ConsoleColor ErrorAccentColor { get; set; } = ConsoleColor.Cyan;
+
         internal ConsoleColor ErrorForegroundColor { get; set; } = ConsoleColor.Red;
         internal ConsoleColor ErrorBackgroundColor { get; set; } = BackgroundColor;
 

@@ -88,6 +88,38 @@ namespace Microsoft.PowerShell.EditorServices
             }
 
             /// <summary>
+            /// The Accent Color for Formatting
+            /// </summary>
+            public ConsoleColor FormatAccentColor
+            {
+                get
+                {
+                    return _hostUserInterface.FormatAccentColor;
+                }
+
+                set
+                {
+                    _hostUserInterface.FormatAccentColor = value;
+                }
+            }
+
+            /// <summary>
+            /// The Accent Color for Error
+            /// </summary>
+            public ConsoleColor ErrorAccentColor
+            {
+                get
+                {
+                    return _hostUserInterface.ErrorAccentColor;
+                }
+
+                set
+                {
+                    _hostUserInterface.ErrorAccentColor = value;
+                }
+            }
+
+            /// <summary>
             /// The ForegroundColor for Error
             /// </summary>
             public ConsoleColor ErrorForegroundColor

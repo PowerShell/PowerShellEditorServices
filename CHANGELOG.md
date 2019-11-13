@@ -1,5 +1,17 @@
 # PowerShell Editor Services Release History
 
+## v1.13.1
+### Friday, November 1, 2019
+
+- 📟 [PowerShellEditorServices #1077](https://github.com/PowerShell/PowerShellEditorServices/pull/1077) -
+  Support new console color configuration in PowerShell 7.
+- 🐛 [vscode-powershell #2116](https://github.com/PowerShell/PowerShellEditorServices/pull/1044) -
+  Fix UNC intellisense backslash.
+- 🐛 [vscode-powershell #2214](https://github.com/PowerShell/PowerShellEditorServices/pull/1050) -
+  Fix issue where PipelineIndentationStyle setting is ignored. (Thanks @bergmeister!)
+- ⚙️ [PowerShellEditorServices #1052](https://github.com/PowerShell/PowerShellEditorServices/pull/1052) -
+  Update minimum PSSA version to 1.18.3. (Thanks @bergmeister!)
+
 ## v1.13.0
 ### Monday, September 23, 2019
 
