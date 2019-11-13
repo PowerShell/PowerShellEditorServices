@@ -20,15 +20,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         IEnumerable<SymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
-            if (scriptFile != null &&
-                scriptFile.FilePath != null &&
-                (scriptFile.FilePath.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase) ||
-                    scriptFile.FilePath.EndsWith(".psm1", StringComparison.OrdinalIgnoreCase)))
-            {
-                return FindSymbolsInDocument(scriptFile.ScriptAst);
-            }
-
-            return Enumerable.Empty<SymbolReference>();
+            // If we have an AST, then we know it's a PowerShell file
+            // so lets try to find symbols in the document.
+            return scriptFile?.ScriptAst != null
+                ? FindSymbolsInDocument(scriptFile.ScriptAst)
+                : Enumerable.Empty<SymbolReference>();
         }
 
         /// <summary>

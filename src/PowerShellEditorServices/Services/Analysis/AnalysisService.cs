@@ -867,19 +867,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 fileLock.Release();
             }
 
-
-            var uriBuilder = new UriBuilder
-            {
-                Scheme = Uri.UriSchemeFile,
-                Path = scriptFile.FilePath,
-                Host = string.Empty,
-            };
-
             // Always send syntax and semantic errors.  We want to
             // make sure no out-of-date markers are being displayed.
             _languageServer.Document.PublishDiagnostics(new PublishDiagnosticsParams()
             {
-                Uri = uriBuilder.Uri,
+                Uri = new Uri(scriptFile.DocumentUri),
                 Diagnostics = new Container<Diagnostic>(diagnostics),
             });
         }
