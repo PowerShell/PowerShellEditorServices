@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             var workspaceService = serviceProvider.GetService<WorkspaceService>();
 
                             // Grab the workspace path from the parameters
-                            workspaceService.WorkspacePath = request.RootUri.LocalPath;
+                            workspaceService.WorkspacePath = request.RootUri?.LocalPath;
 
                             // Set the working directory of the PowerShell session to the workspace path
                             if (workspaceService.WorkspacePath != null
