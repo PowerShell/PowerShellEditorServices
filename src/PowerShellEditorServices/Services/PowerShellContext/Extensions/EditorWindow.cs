@@ -17,6 +17,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         #endregion
 
+        #region Public Properties
+
+        /// <summary>
+        /// Gets the terminal interface for the editor API.
+        /// </summary>
+        public EditorTerminal Terminal { get; private set; }
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
@@ -26,6 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         internal EditorWindow(IEditorOperations editorOperations)
         {
             this.editorOperations = editorOperations;
+            this.Terminal = new EditorTerminal(editorOperations);
         }
 
         #endregion
