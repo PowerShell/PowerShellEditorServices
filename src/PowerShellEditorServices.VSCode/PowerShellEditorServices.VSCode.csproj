@@ -6,6 +6,7 @@
     <Description>Provides added functionality to PowerShell Editor Services for the Visual Studio Code editor.</Description>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.VSCode</AssemblyName>
+    <Configurations>Debug;Release;CoreCLR</Configurations>
   </PropertyGroup>
 
   <!-- Fail the release build if there are missing public API documentation comments -->
