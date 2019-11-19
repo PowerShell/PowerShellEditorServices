@@ -124,5 +124,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="timeout">If non-null, a timeout in milliseconds for how long the message should remain visible.</param>
         /// <returns>A Task that can be tracked for completion.</returns>
         Task SetStatusBarMessageAsync(string message, int? timeout);
+
+        /// <summary>
+        /// Triggers to the editor to clear the terminal.
+        /// </summary>
+        void ClearTerminal();
     }
 }
