@@ -3,10 +3,12 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
+Microsoft.PowerShell.Management\Get-Item function:Clear-Host | Microsoft.PowerShell.Management\Set-Item function:__clearhost
+
 function Clear-Host {
     [Alias('cls')]
     param()
 
-    [System.Console]::Clear()
+    __clearhost
     $psEditor.Window.Terminal.Clear()
 }

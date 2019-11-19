@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     {
         #region Private Fields
 
-        private IEditorOperations editorOperations;
+        private readonly IEditorOperations editorOperations;
 
         #endregion
 
