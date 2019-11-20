@@ -1,12 +1,19 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿using System;
+using System.Management.Automation.Host;
+using System.Runtime.CompilerServices;
 
-using System;
+[assembly: InternalsVisibleTo("Microsoft.PowerShell.EditorServices.Hosting")]
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
+    internal static class EditorServicesLoading
+    {
+        internal static void LoadEditorServicesForHost()
+        {
+            // No op that forces loading this assembly
+        }
+    }
+
     /// <summary>
     /// Contains details about the current host application (most
     /// likely the editor which is using the host process).
@@ -46,18 +53,28 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// Gets the name of the host.
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; }
 
         /// <summary>
         /// Gets the profile ID of the host, used to determine the
         /// host-specific profile path.
         /// </summary>
-        public string ProfileId { get; private set; }
+        public string ProfileId { get; }
 
         /// <summary>
         /// Gets the version of the host.
         /// </summary>
-        public Version Version { get; private set; }
+        public Version Version { get; }
+
+        public string CurrentUserProfilePath { get; }
+
+        public string AllUsersProfilePath { get; }
+
+        public bool ConsoleReplEnabled { get; }
+
+        public bool UsesLegacyReadLine { get; }
+
+        public PSHost PSHost { get; }
 
         #endregion
 
@@ -80,11 +97,21 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public HostDetails(
             string name,
             string profileId,
-            Version version)
+            Version version,
+            PSHost psHost,
+            string allUsersProfilePath,
+            string currentUsersProfilePath,
+            bool consoleReplEnabled,
+            bool usesLegacyReadLine)
         {
-            this.Name = name ?? DefaultHostName;
-            this.ProfileId = profileId ?? DefaultHostProfileId;
-            this.Version = version ?? DefaultHostVersion;
+            Name = name ?? DefaultHostName;
+            ProfileId = profileId ?? DefaultHostProfileId;
+            Version = version ?? DefaultHostVersion;
+            PSHost = psHost;
+            AllUsersProfilePath = allUsersProfilePath;
+            CurrentUserProfilePath = currentUsersProfilePath;
+            ConsoleReplEnabled = consoleReplEnabled;
+            UsesLegacyReadLine = usesLegacyReadLine;
         }
 
         #endregion

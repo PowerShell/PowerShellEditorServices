@@ -1,6 +1,7 @@
 ﻿using PowerShellEditorServices.Hosting;
 using System;
 using System.Collections.Generic;
+using System.Management.Automation.Host;
 using System.Text;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
@@ -14,29 +15,29 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
     public class EditorServicesConfig
     {
-        private ProfilePaths _profilePaths;
-
         public EditorServicesConfig(
-            HostDetails hostDetails,
+            HostInfo hostInfo,
+            PSHost psHost,
             string sessionDetailsPath,
             string bundledModulePath,
             string logPath)
         {
-            HostDetails = hostDetails;
+            HostInfo = hostInfo;
+            PSHost = psHost;
             SessionDetailsPath = sessionDetailsPath;
             BundledModulePath = bundledModulePath;
             LogPath = logPath;
         }
 
-        public HostDetails HostDetails { get; }
+        public HostInfo HostInfo { get; }
+
+        public PSHost PSHost { get; }
 
         public string SessionDetailsPath { get; }
 
         public string BundledModulePath { get; }
 
         public string LogPath { get; }
-
-        public ProfilePaths ProfilePaths { get; set; } = null;
 
         public IReadOnlyList<string> AdditionalModules { get; set; } = null;
 
@@ -46,10 +47,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public PsesLogLevel LogLevel { get; set; } = PsesLogLevel.Normal;
 
-        public bool WaitForDebugger { get; set; } = false;
-
         public ITransportConfig LanguageServiceTransport { get; set; } = null;
 
         public ITransportConfig DebugServiceTransport { get; set; } = null;
+
+        public ProfilePathConfig ProfilePaths { get; set; } = null;
     }
 }

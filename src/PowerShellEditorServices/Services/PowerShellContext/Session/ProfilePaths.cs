@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Microsoft.PowerShell.EditorServices.Hosting
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 {
     /// <summary>
     /// Provides profile path resolution behavior relative to the name

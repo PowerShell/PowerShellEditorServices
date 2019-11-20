@@ -1,4 +1,7 @@
-﻿using Microsoft.PowerShell.EditorServices.Hosting;
+﻿using Microsoft.PowerShell.EditorServices;
+using Microsoft.PowerShell.EditorServices.Hosting;
+using Microsoft.PowerShell.EditorServices.Server;
+using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -7,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace PowerShellEditorServices.Hosting
 {
-    public class EditorServicesLoader : IDisposable
+    public sealed class EditorServicesLoader : IDisposable
     {
         private const int Net461Version = 394254;
 
@@ -15,12 +18,7 @@ namespace PowerShellEditorServices.Hosting
 
         public static EditorServicesLoader Create(EditorServicesConfig hostConfig, string dependencyPath = null)
         {
-            // TODO: Check host config transport configs
-
-            if (hostConfig.ProfilePaths == null)
-            {
-                hostConfig.ProfilePaths = GetProfilePaths(hostConfig.HostDetails.ProfileId);
-            }
+            // TODO: Register assembly resolve event
 
             return new EditorServicesLoader(hostConfig);
         }
@@ -34,24 +32,18 @@ namespace PowerShellEditorServices.Hosting
 
         public async Task LoadAndRunEditorServicesAsync()
         {
+            // Method with no implementation that forces the PSES assembly to load, triggering an AssemblyResolve event
+            EditorServicesLoading.LoadEditorServicesForHost();
+
+            using (var editorServicesRunner = EditorServicesRunner.Create(_hostConfig))
+            {
+                await editorServicesRunner.RunUntilShutdown().ConfigureAwait(false);
+            }
         }
 
         public void Dispose()
         {
-        }
-
-        private static ProfilePaths GetProfilePaths(string profileId)
-        {
-            Collection<string> profileLocations = null;
-            using (var pwsh = PowerShell.Create())
-            {
-                profileLocations = pwsh.AddScript("$profile.AllUsersAllHosts,$profile.CurrentUserAllHosts").Invoke<string>();
-            }
-
-            return new ProfilePaths(
-                profileId,
-                baseAllUsersPath: Path.GetDirectoryName(profileLocations[0]),
-                baseCurrentUserPath: Path.GetDirectoryName(profileLocations[1]));
+            // TODO: Deregister assembly event
         }
     }
 }

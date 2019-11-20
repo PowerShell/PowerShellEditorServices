@@ -4,15 +4,19 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Management.Automation.Host;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Serialization;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Server;
+using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
@@ -21,6 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         protected readonly ILoggerFactory _loggerFactory;
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
+        private readonly bool _useTempSession;
 
         private IJsonRpcServer _jsonRpcServer;
 
@@ -28,29 +33,68 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         private readonly TaskCompletionSource<bool> _serverStopped;
 
-        public PsesDebugServer(
+        public static PsesDebugServer CreateWithLanguageServerServices(
+            ILoggerFactory loggerFactory,
+            Stream inputStream,
+            Stream outputStream,
+            IServiceProvider languageServerServiceProvider)
+        {
+            return new PsesDebugServer(loggerFactory, inputStream, outputStream, languageServerServiceProvider, useTempSession: false);
+        }
+
+        public static PsesDebugServer CreateForTempSession(
+            ILoggerFactory loggerFactory,
+            LogLevel minimumLogLevel,
+            Stream inputStream,
+            Stream outputStream,
+            IReadOnlyCollection<string> featureFlags,
+            HostDetails hostDetails,
+            IReadOnlyList<string> additionalModules)
+        {
+            var serviceProvider = new ServiceCollection()
+                .AddLogging(builder => builder
+                    .ClearProviders()
+                    .AddSerilog()
+                    .SetMinimumLevel(LogLevel.Trace))
+                .AddSingleton<ILanguageServer>(provider => null)
+                .AddPsesLanguageServices(
+                    new HashSet<string>(featureFlags, StringComparer.OrdinalIgnoreCase),
+                    hostDetails,
+                    additionalModules)
+                .BuildServiceProvider();
+
+            return new PsesDebugServer(loggerFactory, inputStream, outputStream, serviceProvider, useTempSession: true);
+        }
+
+        private PsesDebugServer(
             ILoggerFactory factory,
             Stream inputStream,
-            Stream outputStream)
+            Stream outputStream,
+            IServiceProvider serviceProvider,
+            bool useTempSession)
         {
             _loggerFactory = factory;
             _inputStream = inputStream;
             _outputStream = outputStream;
+            ServiceProvider = serviceProvider;
+            _useTempSession = useTempSession;
             _serverStopped = new TaskCompletionSource<bool>();
         }
 
-        public async Task StartAsync(IServiceProvider languageServerServiceProvider, bool useTempSession)
+        internal IServiceProvider ServiceProvider { get; }
+
+        public async Task StartAsync()
         {
             _jsonRpcServer = await JsonRpcServer.From(options =>
             {
                 options.Serializer = new DapProtocolSerializer();
                 options.Reciever = new DapReciever();
                 options.LoggerFactory = _loggerFactory;
-                ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
+                Extensions.Logging.ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
 
                 // We need to let the PowerShell Context Service know that we are in a debug session
                 // so that it doesn't send the powerShell/startDebugger message.
-                _powerShellContextService = languageServerServiceProvider.GetService<PowerShellContextService>();
+                _powerShellContextService = ServiceProvider.GetService<PowerShellContextService>();
                 _powerShellContextService.IsDebugServerActive = true;
 
                 // Needed to make sure PSReadLine's static properties are initialized in the pipeline thread.
@@ -59,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .Wait();
 
                 options.Services = new ServiceCollection()
-                    .AddPsesDebugServices(languageServerServiceProvider, this, useTempSession);
+                    .AddPsesDebugServices(ServiceProvider, this, _useTempSession);
 
                 options
                     .WithInput(_inputStream)

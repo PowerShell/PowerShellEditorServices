@@ -107,13 +107,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 }
             }
 
-            var hostDetails = new HostDetails(HostName, HostProfileId, HostVersion);
-            var editorServicesConfig = new EditorServicesConfig(hostDetails, SessionDetailsPath, BundledModulePath, LogPath)
+            var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
+            var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, BundledModulePath, LogPath)
             {
                 FeatureFlags = FeatureFlags,
                 LogLevel = LogLevel,
                 ConsoleRepl = GetReplKind(),
-                WaitForDebugger = WaitForDebugger,
                 AdditionalModules = AdditionalModules,
                 LanguageServiceTransport = GetLanguageServiceTransport(),
                 DebugServiceTransport = GetDebugServiceTransport(),

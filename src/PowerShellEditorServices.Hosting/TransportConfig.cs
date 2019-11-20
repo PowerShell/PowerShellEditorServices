@@ -5,6 +5,7 @@ using System.IO.Pipes;
 #if !CoreCLR
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Threading.Tasks;
 #endif
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
@@ -17,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
     public interface ITransportConfig
     {
-        (Stream inStream, Stream outStream) CreateInOutStreams();
+        Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync();
 
         TransportType TransportType { get; }
 
@@ -32,9 +33,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public string Endpoint => "<stdio>";
 
-        public (Stream inStream, Stream outStream) CreateInOutStreams()
+        public Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync()
         {
-            return (Console.OpenStandardInput(), Console.OpenStandardOutput());
+            return Task.FromResult((Console.OpenStandardInput(), Console.OpenStandardOutput()));
         }
 
         public void Validate()
@@ -42,62 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         }
     }
 
-    public abstract class NamedPipeTransportConfig : ITransportConfig
-    {
-        private const int PipeBufferSize = 1024;
-
-        public TransportType TransportType => TransportType.NamedPipe;
-
-        public abstract string Endpoint { get; }
-
-        public abstract (Stream inStream, Stream outStream) CreateInOutStreams();
-        public abstract void Validate();
-
-        protected NamedPipeServerStream CreateNamedPipe(string pipeName, PipeDirection pipeDirection, PipeOptions extraPipeOptions = PipeOptions.None)
-        {
-#if CoreCLR
-            return new NamedPipeServerStream(
-                pipeName: pipeName,
-                direction: pipeDirection,
-                maxNumberOfServerInstances: 1,
-                transmissionMode: PipeTransmissionMode.Byte,
-                options: PipeOptions.CurrentUserOnly | extraPipeOptions);
-#else
-
-            var pipeSecurity = new PipeSecurity();
-
-            WindowsIdentity identity = WindowsIdentity.GetCurrent();
-            WindowsPrincipal principal = new WindowsPrincipal(identity);
-
-            if (principal.IsInRole(WindowsBuiltInRole.Administrator))
-            {
-                // Allow the Administrators group full access to the pipe.
-                pipeSecurity.AddAccessRule(new PipeAccessRule(
-                    new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, domainSid: null).Translate(typeof(NTAccount)),
-                    PipeAccessRights.FullControl, AccessControlType.Allow));
-            }
-            else
-            {
-                // Allow the current user read/write access to the pipe.
-                pipeSecurity.AddAccessRule(new PipeAccessRule(
-                    WindowsIdentity.GetCurrent().User,
-                    PipeAccessRights.ReadWrite, AccessControlType.Allow));
-            }
-
-            return new NamedPipeServerStream(
-                pipeName,
-                pipeDirection,
-                maxNumberOfServerInstances: 1,
-                PipeTransmissionMode.Byte,
-                PipeOptions.Asynchronous | extraPipeOptions,
-                inBufferSize: PipeBufferSize,
-                outBufferSize: PipeBufferSize,
-                pipeSecurity);
-#endif
-        }
-    }
-
-    public class DuplexNamedPipeTransportConfig : NamedPipeTransportConfig
+    public class DuplexNamedPipeTransportConfig : ITransportConfig
     {
         private readonly string _pipeName;
 
@@ -105,25 +51,24 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             _pipeName = pipeName;
         }
-        public override string Endpoint => $"InOut pipe: {_pipeName}";
 
-        public override (Stream inStream, Stream outStream) CreateInOutStreams()
+        public string Endpoint => $"InOut pipe: {_pipeName}";
+
+        public TransportType TransportType => TransportType.NamedPipe;
+
+        public async Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync()
         {
-            var extraPipeOptions = PipeOptions.None;
-#if CoreCLR
-            extraPipeOptions |= PipeOptions.Asynchronous;
-#endif
-
-            NamedPipeServerStream namedPipe = CreateNamedPipe(_pipeName, PipeDirection.InOut, extraPipeOptions);
+            NamedPipeServerStream namedPipe = NamedPipeUtils.CreateNamedPipe(_pipeName, PipeDirection.InOut);
+            await namedPipe.WaitForConnectionAsync().ConfigureAwait(false);
             return (namedPipe, namedPipe);
         }
 
-        public override void Validate()
+        public void Validate()
         {
         }
     }
 
-    public class SimplexNamedPipeTransportConfig : NamedPipeTransportConfig
+    public class SimplexNamedPipeTransportConfig : ITransportConfig
     {
         private readonly string _inPipeName;
         private readonly string _outPipeName;
@@ -134,21 +79,24 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _outPipeName = outPipeName;
         }
 
-        public override string Endpoint => $"In pipe: {_inPipeName} Out pipe: {_outPipeName}";
+        public string Endpoint => $"In pipe: {_inPipeName} Out pipe: {_outPipeName}";
 
-        public override (Stream inStream, Stream outStream) CreateInOutStreams()
+        public TransportType TransportType => TransportType.NamedPipe;
+
+        public async Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync()
         {
-            var extraInPipeOptions = PipeOptions.None;
-#if CoreCLR
-            extraInPipeOptions |= PipeOptions.Asynchronous;
-#endif
-            NamedPipeServerStream inPipe = CreateNamedPipe(_inPipeName, PipeDirection.InOut, extraInPipeOptions);
-            NamedPipeServerStream outPipe = CreateNamedPipe(_outPipeName, PipeDirection.Out);
+            NamedPipeServerStream inPipe = NamedPipeUtils.CreateNamedPipe(_inPipeName, PipeDirection.InOut);
+            Task inPipeConnected = inPipe.WaitForConnectionAsync();
+
+            NamedPipeServerStream outPipe = NamedPipeUtils.CreateNamedPipe(_outPipeName, PipeDirection.Out);
+            Task outPipeConnected = outPipe.WaitForConnectionAsync();
+
+            await Task.WhenAll(inPipeConnected, outPipeConnected).ConfigureAwait(false);
 
             return (inPipe, outPipe);
         }
 
-        public override void Validate()
+        public void Validate()
         {
         }
     }

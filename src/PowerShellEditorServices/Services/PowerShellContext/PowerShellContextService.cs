@@ -168,14 +168,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public static PowerShellContextService Create(
             ILoggerFactory factory,
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
-            ProfilePaths profilePaths,
             HashSet<string> featureFlags,
-            bool enableConsoleRepl,
-            bool useLegacyReadLine,
-            PSHost internalHost,
             HostDetails hostDetails,
-            string[] additionalModules
-            )
+            IReadOnlyList<string> additionalModules)
         {
             var logger = factory.CreateLogger<PowerShellContextService>();
 
@@ -184,7 +179,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // We also want it if we are either:
             // * On Windows on any version OR
             // * On Linux or macOS on any version greater than or equal to 7
-            bool shouldUsePSReadLine = enableConsoleRepl && !useLegacyReadLine
+            bool shouldUsePSReadLine = hostDetails.ConsoleReplEnabled
+                && !hostDetails.UsesLegacyReadLine
                 && (VersionUtils.IsWindows || !VersionUtils.IsPS6);
 
             var powerShellContext = new PowerShellContextService(
@@ -193,8 +189,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 shouldUsePSReadLine);
 
             EditorServicesPSHostUserInterface hostUserInterface =
-                enableConsoleRepl
-                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, internalHost)
+                hostDetails.ConsoleReplEnabled
+                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, hostDetails.PSHost)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
@@ -205,6 +201,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     logger);
 
             Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
+            var profilePaths = new ProfilePaths(hostDetails.ProfileId, hostDetails.AllUsersProfilePath, hostDetails.CurrentUserProfilePath);
             powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
 
             powerShellContext.ImportCommandsModuleAsync(
