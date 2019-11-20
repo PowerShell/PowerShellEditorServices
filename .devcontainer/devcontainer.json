@@ -7,7 +7,7 @@
 
 	"extensions": [
         "ms-vscode.csharp",
-        "ms-vscode.powershell",
+        "ms-vscode.powershell-preview",
         "davidanson.vscode-markdownlint",
         "editorconfig.editorconfig"
 	]
