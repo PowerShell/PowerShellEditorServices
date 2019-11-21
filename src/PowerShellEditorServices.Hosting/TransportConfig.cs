@@ -1,12 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.IO.Pipes;
-
-#if !CoreCLR
-using System.Security.AccessControl;
-using System.Security.Principal;
 using System.Threading.Tasks;
-#endif
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {

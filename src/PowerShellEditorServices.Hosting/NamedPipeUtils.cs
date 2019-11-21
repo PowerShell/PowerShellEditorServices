@@ -11,7 +11,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     internal static class NamedPipeUtils
     {
+#if !CoreCLR
         private const int PipeBufferSize = 1024;
+#endif
 
         internal static NamedPipeServerStream CreateNamedPipe(
             string pipeName,

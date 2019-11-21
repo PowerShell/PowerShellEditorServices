@@ -8,25 +8,24 @@
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices</AssemblyName>
     <LangVersion>Latest</LangVersion>
-    <Configurations>Debug;Release;CoreCLR</Configurations>
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <LangVersion>latest</LangVersion>
     <CheckForOverflowUnderflow></CheckForOverflowUnderflow>
-    <DocumentationFile></DocumentationFile>
-    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='CoreCLR|AnyCPU'">
-    <LangVersion>latest</LangVersion>
-    <CheckForOverflowUnderflow />
-    <DocumentationFile />
-    <DocumentationFile />
-  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Microsoft.PowerShell.EditorServices.Hosting</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.6.0" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="3.0.1" />

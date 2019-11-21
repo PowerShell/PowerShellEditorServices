@@ -2,8 +2,6 @@
 using System.Management.Automation.Host;
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Microsoft.PowerShell.EditorServices.Hosting")]
-
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     internal static class EditorServicesLoading
@@ -44,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// The default host details in a HostDetails object.
         /// </summary>
-        public static readonly HostDetails Default = new HostDetails(null, null, null);
+        public static readonly HostDetails Default = new HostDetails(null, null, null, null, null, null, false, false);
 
         #endregion
 

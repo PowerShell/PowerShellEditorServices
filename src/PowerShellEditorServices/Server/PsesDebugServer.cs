@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Management.Automation.Host;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -20,7 +19,7 @@ using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
-    public class PsesDebugServer : IDisposable
+    internal class PsesDebugServer : IDisposable
     {
         protected readonly ILoggerFactory _loggerFactory;
         private readonly Stream _inputStream;

@@ -1,11 +1,5 @@
-﻿using Microsoft.PowerShell.EditorServices;
-using Microsoft.PowerShell.EditorServices.Hosting;
-using Microsoft.PowerShell.EditorServices.Server;
-using Serilog;
+﻿using Microsoft.PowerShell.EditorServices.Hosting;
 using System;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Management.Automation;
 using System.Threading.Tasks;
 
 namespace PowerShellEditorServices.Hosting

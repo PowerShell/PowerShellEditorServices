@@ -1,16 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Server;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
-using Microsoft.Win32;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Management.Automation;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace PowerShellEditorServices.Hosting

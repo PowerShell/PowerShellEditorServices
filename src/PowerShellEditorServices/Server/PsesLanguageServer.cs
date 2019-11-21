@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Management.Automation.Host;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -32,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly HostDetails _hostDetails;
         private readonly TaskCompletionSource<bool> _serverStart;
 
-        internal PsesLanguageServer(
+        public PsesLanguageServer(
             ILoggerFactory factory,
             LogLevel minimumLogLevel,
             Stream inputStream,
