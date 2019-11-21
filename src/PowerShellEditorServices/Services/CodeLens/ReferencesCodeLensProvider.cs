@@ -106,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 var acc = new List<Location>();
                 foreach (SymbolReference foundReference in referencesResult)
                 {
-                    if (!NotReferenceDefinition(foundSymbol, foundReference))
+                    if (IsReferenceDefinition(foundSymbol, foundReference))
                     {
                         continue;
                     }
@@ -144,12 +144,13 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <param name="definition">The symbol definition that may be referenced.</param>
         /// <param name="reference">The reference symbol to check.</param>
         /// <returns>True if the reference is not a reference to the definition, false otherwise.</returns>
-        private static bool NotReferenceDefinition(
+        private static bool IsReferenceDefinition(
             SymbolReference definition,
             SymbolReference reference)
         {
             return
-                definition.ScriptRegion.StartLineNumber != reference.ScriptRegion.StartLineNumber
+                definition.FilePath != reference.FilePath
+                || definition.ScriptRegion.StartLineNumber != reference.ScriptRegion.StartLineNumber
                 || definition.SymbolType != reference.SymbolType
                 || !string.Equals(definition.SymbolName, reference.SymbolName, StringComparison.OrdinalIgnoreCase);
         }
