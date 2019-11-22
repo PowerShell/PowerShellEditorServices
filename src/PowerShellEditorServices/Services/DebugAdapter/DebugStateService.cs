@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 {
     internal class DebugStateService
     {
-        private SemaphoreSlim _setBreakpointInProgressHandle = AsyncUtils.CreateSimpleLockingSemaphore();
+        private readonly SemaphoreSlim _setBreakpointInProgressHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
         internal bool NoDebug { get; set; }
 
@@ -43,7 +43,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal async Task WaitForSetBreakpointHandleAsync()
         {
-            await _setBreakpointInProgressHandle.WaitAsync();
+            await _setBreakpointInProgressHandle.WaitAsync()
+                .ConfigureAwait(continueOnCapturedContext: false);
         }
     }
 }
