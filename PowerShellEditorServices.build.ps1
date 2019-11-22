@@ -19,149 +19,70 @@ param(
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
-$script:TargetPlatform = "netstandard2.0"
-$script:TargetFrameworksParam = "/p:TargetFrameworks=`"$script:TargetPlatform`""
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
-$script:NugetApiUriBase = 'https://www.nuget.org/api/v2/package'
-$script:ModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices/bin/"
-$script:VSCodeModuleBinPath = "$PSScriptRoot/module/PowerShellEditorServices.VSCode/bin/"
-$script:WindowsPowerShellFrameworkTarget = 'net461'
-$script:NetFrameworkPlatformId = 'win'
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices", "Hosting", "BuildInfo.cs")
 
-$script:PSCoreModulePath = $null
+$script:CoreRuntime = 'netcoreapp2.1'
+$script:DeskRuntime = 'net461'
+$script:NetStdRuntime = 'netstandard2.0'
 
-$script:TestRuntime = @{
-    'Core'    = 'netcoreapp2.1'
-    'Desktop' = 'net461'
-}
+$script:HostOutput = "PowerShellEditorServices.Hosting/bin/$Configuration/"
+$script:PsesOutput = "PowerShellEditorServices/bin/$Configuration/"
+$script:VSCodeOutput = "PowerShellEditorServices.VSCode/bin/$Configuration/"
 
-<#
-Declarative specification of binary assets produced
-in the build that need to be binplaced in the module.
-Schema is:
-{
-    <Output Path>: {
-        <Project Name>: [
-            <FilePath From Project Build Folder>
-        ]
-    }
-}
-#>
-$script:RequiredBuildAssets = @{
-    $script:ModuleBinPath = @{
-        'PowerShellEditorServices' = @(
-            'publish/Microsoft.Extensions.DependencyInjection.Abstractions.dll',
-            'publish/Microsoft.Extensions.DependencyInjection.dll',
-            'publish/Microsoft.Extensions.FileSystemGlobbing.dll',
-            'publish/Microsoft.Extensions.Logging.Abstractions.dll',
-            'publish/Microsoft.Extensions.Logging.dll',
-            'publish/Microsoft.Extensions.Options.dll',
-            'publish/Microsoft.Extensions.Primitives.dll',
-            'publish/Microsoft.PowerShell.EditorServices.dll',
-            'publish/Microsoft.PowerShell.EditorServices.pdb',
-            'publish/Newtonsoft.Json.dll',
-            'publish/OmniSharp.Extensions.JsonRpc.dll',
-            'publish/OmniSharp.Extensions.LanguageProtocol.dll',
-            'publish/OmniSharp.Extensions.LanguageServer.dll',
-            'publish/OmniSharp.Extensions.DebugAdapter.dll',
-            'publish/OmniSharp.Extensions.DebugAdapter.Server.dll',
-            'publish/MediatR.dll',
-            'publish/MediatR.Extensions.Microsoft.DependencyInjection.dll',
-            'publish/runtimes/linux-64/native/libdisablekeyecho.so',
-            'publish/runtimes/osx-64/native/libdisablekeyecho.dylib',
-            'publish/Serilog.dll',
-            'publish/Serilog.Extensions.Logging.dll',
-            'publish/Serilog.Sinks.File.dll',
-            'publish/System.Reactive.dll',
-            'publish/UnixConsoleEcho.dll'
-        )
-    }
-
-    $script:VSCodeModuleBinPath = @{
-        'PowerShellEditorServices.VSCode' = @(
-            'Microsoft.PowerShell.EditorServices.VSCode.dll',
-            'Microsoft.PowerShell.EditorServices.VSCode.pdb'
-        )
-    }
-}
-
-<#
-Declares the binary shims we need to make the netstandard DLLs hook into .NET Framework.
-Schema is:
-{
-    <Destination Bin Directory>: [{
-        'PackageName': <Package Name>,
-        'PackageVersion': <Package Version>,
-        'TargetRuntime': <Target .NET Runtime>,
-        'DllName'?: <Name of DLL to extract>
-    }]
-}
-#>
-$script:RequiredNugetBinaries = @{
-    'Desktop' = @(
-        @{ PackageName = 'System.Security.Principal.Windows'; PackageVersion = '4.5.0'; TargetRuntime = 'net461' },
-        @{ PackageName = 'System.Security.AccessControl';     PackageVersion = '4.5.0'; TargetRuntime = 'net461' },
-        @{ PackageName = 'System.IO.Pipes.AccessControl';     PackageVersion = '4.5.1'; TargetRuntime = 'net461' }
+$script:PsesModuleLayout = @{
+    'PowerShellEditorServices.psd1' = "$script:ModuleAssetDir/PowerShellEditorServices.psd1"
+    'Core' = @(
+        "$script:HostOutput/$script:CoreRuntime/Microsoft.PowerShell.EditorServices.Hosting.dll"
     )
+    'Desktop' = @(
+        "$script:HostOutput/$script:DesktopRuntime/Microsoft.PowerShell.EditorServices.Hosting.dll"
+        "$script:HostOutput/$script:DesktopRuntime/System.IO.Pipes.AccessControl.dll"
+        "$script:HostOutput/$script:DesktopRuntime/System.Security.AccessControl.dll"
+        "$script:HostOutput/$script:DesktopRuntime/System.Security.Principal.Windows.dll"
+    )
+    'Dependencies' = @(
+        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.PowerShell.EditorServices.dll"
+        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.PowerShell.EditorServices.pdb",
+
+        "$script:PsesOutput/$script:NetStdRuntime/runtimes/linux-64/native/libdisablekeyecho.so",
+        "$script:PsesOutput/$script:NetStdRuntime/runtimes/osx-64/native/libdisablekeyecho.dylib",
+        "$script:PsesOutput/$script:NetStdRuntime/UnixConsoleEcho.dll"
+
+        "$script:PsesOutput/$script:NetStdRuntime/OmniSharp.Extensions.JsonRpc.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/OmniSharp.Extensions.LanguageProtocol.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/OmniSharp.Extensions.LanguageServer.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/OmniSharp.Extensions.DebugAdapter.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/OmniSharp.Extensions.DebugAdapter.Server.dll",
+
+        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.DependencyInjection.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.FileSystemGlobbing.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.Logging.Abstractions.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.Logging.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.Options.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.Primitives.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/MediatR.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/MediatR.Extensions.Microsoft.DependencyInjection.dll",
+
+        "$script:PsesOutput/$script:NetStdRuntime/Newtonsoft.Json.dll",
+
+        "$script:PsesOutput/$script:NetStdRuntime/Serilog.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/Serilog.Extensions.Logging.dll",
+        "$script:PsesOutput/$script:NetStdRuntime/Serilog.Sinks.File.dll",
+
+        "$script:PsesOutput/$script:NetStdRuntime/System.Reactive.dll"
+    )
+}
+
+$script:PsesVSCodeModuleLayout = @{
+    'Microsoft.PowerShell.EditorServices.VSCode.dll' = "$script:VSCodeOutput/$script:NetStdRuntime/Microsoft.PowerShell.EditorServices.VSCode.dll"
+    'Microsoft.PowerShell.EditorServices.VSCode.pdb' = "$script:VSCodeOutput/$script:NetStdRuntime/Microsoft.PowerShell.EditorServices.VSCode.pdb"
 }
 
 if (Get-Command git -ErrorAction SilentlyContinue) {
     # ignore changes to this file
     git update-index --assume-unchanged "$PSScriptRoot/src/PowerShellEditorServices.Host/BuildInfo/BuildInfo.cs"
-}
-
-if ($PSVersionTable.PSEdition -ne "Core") {
-    Add-Type -Assembly System.IO.Compression.FileSystem
-}
-
-function Restore-NugetAsmForRuntime {
-    param(
-        [ValidateNotNull()][string]$PackageName,
-        [ValidateNotNull()][string]$PackageVersion,
-        [string]$DllName,
-        [string]$DestinationPath,
-        [string]$TargetPlatform = $script:NetFrameworkPlatformId,
-        [string]$TargetRuntime = $script:WindowsPowerShellFrameworkTarget
-    )
-
-    $tmpDir = Join-Path $PSScriptRoot '.tmp'
-    if (-not (Test-Path $tmpDir)) {
-        New-Item -ItemType Directory -Path $tmpDir
-    }
-
-    if (-not $DllName) {
-        $DllName = "$PackageName.dll"
-    }
-
-    if ($DestinationPath -eq $null) {
-        $DestinationPath = Join-Path $tmpDir $DllName
-    } elseif (Test-Path $DestinationPath -PathType Container) {
-        $DestinationPath = Join-Path $DestinationPath $DllName
-    }
-
-    $packageDirPath = Join-Path $tmpDir "$PackageName.$PackageVersion"
-    if (-not (Test-Path $packageDirPath)) {
-        $guid = New-Guid
-        $tmpNupkgPath = Join-Path $tmpDir "$guid.zip"
-        if (Test-Path $tmpNupkgPath) {
-            Remove-Item -Force $tmpNupkgPath
-        }
-
-        try {
-            $packageUri = "$script:NugetApiUriBase/$PackageName/$PackageVersion"
-            Invoke-WebRequest -Uri $packageUri -OutFile $tmpNupkgPath
-            Expand-Archive -Path $tmpNupkgPath -DestinationPath $packageDirPath
-        } finally {
-            Remove-Item -Force $tmpNupkgPath -ErrorAction SilentlyContinue
-        }
-    }
-
-    $internalPath = [System.IO.Path]::Combine($packageDirPath, 'runtimes', $TargetPlatform, 'lib', $TargetRuntime, $DllName)
-
-    Copy-Item -Path $internalPath -Destination $DestinationPath -Force
-
-    return $DestinationPath
 }
 
 function Invoke-WithCreateDefaultHook {
