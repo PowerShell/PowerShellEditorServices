@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CommandBreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
             if (!_debugStateService.NoDebug)
             {
-                _debugStateService.SetBreakpointInProgress = true;
+                await _debugStateService.WaitForSetBreakpointHandleAsync();
 
                 try
                 {
@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
                 finally
                 {
-                    _debugStateService.SetBreakpointInProgress = false;
+                    _debugStateService.ReleaseSetBreakpointHandle();
                 }
             }
 
@@ -196,7 +196,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             BreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
             if (!_debugStateService.NoDebug)
             {
-                _debugStateService.SetBreakpointInProgress = true;
+                await _debugStateService.WaitForSetBreakpointHandleAsync();
 
                 try
                 {
@@ -212,7 +212,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
                 finally
                 {
-                    _debugStateService.SetBreakpointInProgress = false;
+                    _debugStateService.ReleaseSetBreakpointHandle();
                 }
             }
 

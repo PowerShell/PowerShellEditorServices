@@ -3,10 +3,16 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
+
 namespace Microsoft.PowerShell.EditorServices.Services
 {
     internal class DebugStateService
     {
+        private SemaphoreSlim _setBreakpointInProgressHandle = AsyncUtils.CreateSimpleLockingSemaphore();
+
         internal bool NoDebug { get; set; }
 
         internal string Arguments { get; set; }
@@ -25,8 +31,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal bool IsInteractiveDebugSession { get; set; }
 
-        internal bool SetBreakpointInProgress { get; set; }
+        // If the CurrentCount is equal to zero, then we have some thread using the handle.
+        internal bool IsSetBreakpointInProgress => _setBreakpointInProgressHandle.CurrentCount == 0;
 
         internal bool IsUsingTempIntegratedConsole { get; set; }
+
+        internal void ReleaseSetBreakpointHandle()
+        {
+            _setBreakpointInProgressHandle.Release();
+        }
+
+        internal async Task WaitForSetBreakpointHandleAsync()
+        {
+            await _setBreakpointInProgressHandle.WaitAsync();
+        }
     }
 }
