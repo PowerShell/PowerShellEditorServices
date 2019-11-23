@@ -26,9 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly LogLevel _minimumLogLevel;
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
-        private readonly HashSet<string> _featureFlags;
-        private readonly IReadOnlyList<string> _additionalModules;
-        private readonly HostDetails _hostDetails;
+        private readonly HostStartupInfo _hostDetails;
         private readonly TaskCompletionSource<bool> _serverStart;
 
         public PsesLanguageServer(
@@ -36,17 +34,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
             LogLevel minimumLogLevel,
             Stream inputStream,
             Stream outputStream,
-            IReadOnlyCollection<string> featureFlags,
-            HostDetails hostDetails,
-            IReadOnlyList<string> additionalModules)
+            HostStartupInfo hostDetails)
         {
             LoggerFactory = factory;
             _minimumLogLevel = minimumLogLevel;
             _inputStream = inputStream;
             _outputStream = outputStream;
-            _featureFlags = new HashSet<string>(featureFlags, StringComparer.OrdinalIgnoreCase);
             _hostDetails = hostDetails;
-            _additionalModules = additionalModules;
             _serverStart = new TaskCompletionSource<bool>();
         }
 
@@ -58,10 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithInput(_inputStream)
                     .WithOutput(_outputStream)
                     .WithServices(serviceCollection => serviceCollection
-                        .AddPsesLanguageServices(
-                            _featureFlags,
-                            _hostDetails,
-                            _additionalModules))
+                        .AddPsesLanguageServices(_hostDetails))
                     .ConfigureLogging(builder => builder
                         .AddSerilog(Log.Logger)
                         .AddLanguageServer(LogLevel.Trace)

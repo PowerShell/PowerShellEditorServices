@@ -1,6 +1,12 @@
 ﻿using Microsoft.PowerShell.EditorServices.Hosting;
 using System;
+using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
+
+#if CoreCLR
+using System.Runtime.Loader;
+#endif
 
 namespace PowerShellEditorServices.Hosting
 {
@@ -8,11 +14,23 @@ namespace PowerShellEditorServices.Hosting
     {
         private const int Net461Version = 394254;
 
-        private static readonly string s_dependencyPath = null;
+        private static readonly string s_psesDependencyDirPath = Path.GetFullPath(
+            Path.Combine(
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                "..",
+                "Common"));
+
+#if CoreCLR
+        private static readonly AssemblyLoadContext s_coreAsmLoadContext = new PsesLoadContext(s_psesDependencyDirPath);
+#endif
 
         public static EditorServicesLoader Create(EditorServicesConfig hostConfig, string dependencyPath = null)
         {
-            // TODO: Register assembly resolve event
+#if CoreCLR
+            AssemblyLoadContext.Default.Resolving += DefaultLoadContext_OnAssemblyResolve;
+#else
+            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_OnAssemblyResolve;
+#endif
 
             return new EditorServicesLoader(hostConfig);
         }
@@ -39,5 +57,37 @@ namespace PowerShellEditorServices.Hosting
         {
             // TODO: Deregister assembly event
         }
+
+#if CoreCLR
+        private static Assembly DefaultLoadContext_OnAssemblyResolve(AssemblyLoadContext defaultLoadContext, AssemblyName asmName)
+        {
+            Console.WriteLine($".NET Core resolving {asmName}");
+
+            if (!string.Equals(asmName.Name, "Microsoft.PowerShell.EditorServices", StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");
+
+            return s_coreAsmLoadContext.LoadFromAssemblyPath(asmPath);
+        }
+#endif
+
+#if !CoreCLR
+        private static Assembly CurrentDomain_OnAssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            Console.WriteLine($".NET FX resolving {args.Name}");
+
+            var asmName = new AssemblyName(args.Name);
+
+            string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");
+            
+            return File.Exists(asmPath)
+                ? Assembly.LoadFrom(asmPath)
+                : null;
+        }
+#endif
+
     }
 }

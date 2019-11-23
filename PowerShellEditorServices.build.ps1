@@ -22,63 +22,16 @@ $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "C
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices", "Hosting", "BuildInfo.cs")
 
-$script:CoreRuntime = 'netcoreapp2.1'
-$script:DeskRuntime = 'net461'
-$script:NetStdRuntime = 'netstandard2.0'
-
-$script:HostOutput = "PowerShellEditorServices.Hosting/bin/$Configuration/"
-$script:PsesOutput = "PowerShellEditorServices/bin/$Configuration/"
-$script:VSCodeOutput = "PowerShellEditorServices.VSCode/bin/$Configuration/"
-
-$script:PsesModuleLayout = @{
-    'PowerShellEditorServices.psd1' = "$script:ModuleAssetDir/PowerShellEditorServices.psd1"
-    'Core' = @(
-        "$script:HostOutput/$script:CoreRuntime/Microsoft.PowerShell.EditorServices.Hosting.dll"
-    )
-    'Desktop' = @(
-        "$script:HostOutput/$script:DesktopRuntime/Microsoft.PowerShell.EditorServices.Hosting.dll"
-        "$script:HostOutput/$script:DesktopRuntime/System.IO.Pipes.AccessControl.dll"
-        "$script:HostOutput/$script:DesktopRuntime/System.Security.AccessControl.dll"
-        "$script:HostOutput/$script:DesktopRuntime/System.Security.Principal.Windows.dll"
-    )
-    'Dependencies' = @(
-        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.PowerShell.EditorServices.dll"
-        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.PowerShell.EditorServices.pdb",
-
-        "$script:PsesOutput/$script:NetStdRuntime/runtimes/linux-64/native/libdisablekeyecho.so",
-        "$script:PsesOutput/$script:NetStdRuntime/runtimes/osx-64/native/libdisablekeyecho.dylib",
-        "$script:PsesOutput/$script:NetStdRuntime/UnixConsoleEcho.dll"
-
-        "$script:PsesOutput/$script:NetStdRuntime/OmniSharp.Extensions.JsonRpc.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/OmniSharp.Extensions.LanguageProtocol.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/OmniSharp.Extensions.LanguageServer.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/OmniSharp.Extensions.DebugAdapter.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/OmniSharp.Extensions.DebugAdapter.Server.dll",
-
-        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.DependencyInjection.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.FileSystemGlobbing.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.Logging.Abstractions.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.Logging.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.Options.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/Microsoft.Extensions.Primitives.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/MediatR.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/MediatR.Extensions.Microsoft.DependencyInjection.dll",
-
-        "$script:PsesOutput/$script:NetStdRuntime/Newtonsoft.Json.dll",
-
-        "$script:PsesOutput/$script:NetStdRuntime/Serilog.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/Serilog.Extensions.Logging.dll",
-        "$script:PsesOutput/$script:NetStdRuntime/Serilog.Sinks.File.dll",
-
-        "$script:PsesOutput/$script:NetStdRuntime/System.Reactive.dll"
-    )
+$script:NetRuntime = @{
+    Core = 'netcoreapp2.1'
+    Desktop = 'net461'
+    Standard = 'netstandard2.0'
 }
 
-$script:PsesVSCodeModuleLayout = @{
-    'Microsoft.PowerShell.EditorServices.VSCode.dll' = "$script:VSCodeOutput/$script:NetStdRuntime/Microsoft.PowerShell.EditorServices.VSCode.dll"
-    'Microsoft.PowerShell.EditorServices.VSCode.pdb' = "$script:VSCodeOutput/$script:NetStdRuntime/Microsoft.PowerShell.EditorServices.VSCode.pdb"
-}
+$script:HostCoreOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.Core)/publish"
+$script:HostDeskOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.Desktop)/publish"
+$script:PsesOutput = "$PSScriptRoot/src/PowerShellEditorServices/bin/$Configuration/$($script:NetRuntime.Standard)/publish"
+$script:VSCodeOutput = "$PSScriptRoot/src/PowerShellEditorServices.VSCode/bin/$Configuration/$($script:NetRuntime.Standard)/publish"
 
 if (Get-Command git -ErrorAction SilentlyContinue) {
     # ignore changes to this file
@@ -248,8 +201,13 @@ task SetupHelpForTests -Before Test {
 }
 
 task Build {
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:TargetPlatform }
-    exec { & $script:dotnetExe build -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj $script:TargetFrameworksParam }
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Core }
+    if (-not $script:IsUnix)
+    {
+        exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
+    }
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
 }
 
 function DotNetTestFilter {
@@ -264,11 +222,11 @@ task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe test --logger trx -f $script:TestRuntime.Desktop (DotNetTestFilter) }
+        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
     }
 
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test --logger trx -f $script:TestRuntime.Core (DotNetTestFilter) }
+        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Core (DotNetTestFilter) }
     }
 }
 
@@ -276,11 +234,11 @@ task TestProtocol {
     Set-Location .\test\PowerShellEditorServices.Test.Protocol\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe test --logger trx -f $script:TestRuntime.Desktop (DotNetTestFilter) }
+        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
     }
 
     Invoke-WithCreateDefaultHook {
-        exec { & $script:dotnetExe test --logger trx -f $script:TestRuntime.Core (DotNetTestFilter) }
+        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Core (DotNetTestFilter) }
     }
 }
 
@@ -288,56 +246,62 @@ task TestHost {
     Set-Location .\test\PowerShellEditorServices.Test.Host\
 
     if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe build -f $script:TestRuntime.Desktop }
-        exec { & $script:dotnetExe test -f $script:TestRuntime.Desktop (DotNetTestFilter) }
+        exec { & $script:dotnetExe build -f $script:NetRuntime.Desktop }
+        exec { & $script:dotnetExe test -f $script:NetRuntime.Desktop (DotNetTestFilter) }
     }
 
-    exec { & $script:dotnetExe build -c $Configuration -f $script:TestRuntime.Core }
-    exec { & $script:dotnetExe test -f $script:TestRuntime.Core (DotNetTestFilter) }
+    exec { & $script:dotnetExe build -c $Configuration -f $script:NetRuntime.Core }
+    exec { & $script:dotnetExe test -f $script:NetRuntime.Core (DotNetTestFilter) }
 }
 
 task TestE2E {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
-    exec { & $script:dotnetExe test --logger trx -f $script:TestRuntime.Core (DotNetTestFilter) }
+    exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Core (DotNetTestFilter) }
 }
 
 task LayoutModule -After Build {
+    $psesOutputPath = "$PSScriptRoot/module/PowerShellEditorServices"
+    $psesBinOutputPath = "$PSScriptRoot/module/PowerShellEditorServices/bin"
+    $psesDepsPath = "$psesBinOutputPath/Common"
+    $psesCoreHostPath = "$psesBinOutputPath/Core"
+    $psesDeskHostPath = "$psesBinOutputPath/Desktop"
+
+    foreach ($dir in $psesDepsPath,$psesCoreHostPath,$psesDeskHostPath)
+    {
+        New-Item -Force -Path $dir -ItemType Directory
+    }
+
     # Copy Third Party Notices.txt to module folder
-    Copy-Item -Force -Path "$PSScriptRoot\Third Party Notices.txt" -Destination $PSScriptRoot\module\PowerShellEditorServices
+    Copy-Item -Force -Path "$PSScriptRoot\Third Party Notices.txt" -Destination $psesOutputPath
 
-    # Lay out the PowerShellEditorServices module's binaries
-    # For each binplace destination
-    foreach ($destDir in $script:RequiredBuildAssets.Keys) {
-        # Create the destination dir
-        $null = New-Item -Force $destDir -Type Directory
-
-        # For each PSES subproject
-        foreach ($projectName in $script:RequiredBuildAssets[$destDir].Keys) {
-            # Get the project build dir path
-            $basePath = [System.IO.Path]::Combine($PSScriptRoot, 'src', $projectName, 'bin', $Configuration, $script:TargetPlatform)
-
-            # For each asset in the subproject
-            foreach ($bin in $script:RequiredBuildAssets[$destDir][$projectName]) {
-                # Get the asset path
-                $binPath = Join-Path $basePath $bin
-
-                # Binplace the asset
-                Copy-Item -Force -Verbose $binPath $destDir
-            }
+    $psesDlls = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($psesComponent in Get-ChildItem $script:PsesOutput)
+    {
+        if ($psesComponent.Extension -eq '.dll')
+        {
+            [void]$psesDlls.Add($psesComponent.Name)
+            Copy-Item -Path $psesComponent.FullName -Destination $psesDepsPath
         }
     }
 
-    # Get and place the shim bins for net461
-    foreach ($binDestinationDir in $script:RequiredNugetBinaries.Keys) {
-        $binDestPath = Join-Path $script:ModuleBinPath $binDestinationDir
-        if (-not (Test-Path $binDestPath)) {
-            New-Item -Path $binDestPath -ItemType Directory
+    foreach ($hostComponent in Get-ChildItem $script:HostCoreOutput)
+    {
+        if (-not $psesDlls.Contains($hostComponent.Name))
+        {
+            Copy-Item -Path $hostComponent.FullName -Destination $psesCoreHostPath
         }
+    }
 
-        foreach ($packageDetails in $script:RequiredNugetBinaries[$binDestinationDir]) {
-            Restore-NugetAsmForRuntime -DestinationPath $binDestPath @packageDetails
+    if (-not $script:IsUnix)
+    {
+        foreach ($hostComponent in Get-ChildItem $script:HostDeskOutput)
+        {
+            if (-not $psesDlls.Contains($hostComponent.Name))
+            {
+                Copy-Item -Path $hostComponent.FullName -Destination $psesDeskHostPath
+            }
         }
     }
 }

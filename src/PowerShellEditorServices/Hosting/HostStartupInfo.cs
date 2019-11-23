@@ -1,22 +1,14 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Management.Automation.Host;
-using System.Runtime.CompilerServices;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
-    internal static class EditorServicesLoading
-    {
-        internal static void LoadEditorServicesForHost()
-        {
-            // No op that forces loading this assembly
-        }
-    }
-
     /// <summary>
     /// Contains details about the current host application (most
     /// likely the editor which is using the host process).
     /// </summary>
-    public class HostDetails
+    public class HostStartupInfo
     {
         #region Constants
 
@@ -38,11 +30,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// to indicate a lack of version.
         /// </summary>
         public static readonly Version DefaultHostVersion = new Version("0.0.0");
-
-        /// <summary>
-        /// The default host details in a HostDetails object.
-        /// </summary>
-        public static readonly HostDetails Default = new HostDetails(null, null, null, null, null, null, false, false);
 
         #endregion
 
@@ -68,11 +55,19 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public string AllUsersProfilePath { get; }
 
+        public IReadOnlyList<string> FeatureFlags { get; }
+
+        public IReadOnlyList<string> AdditionalModules { get; }
+
         public bool ConsoleReplEnabled { get; }
 
         public bool UsesLegacyReadLine { get; }
 
         public PSHost PSHost { get; }
+
+        public string LogPath { get; }
+
+        public int LogLevel { get; }
 
         #endregion
 
@@ -92,13 +87,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// will be used.
         /// </param>
         /// <param name="version">The host application's version.</param>
-        public HostDetails(
+        public HostStartupInfo(
             string name,
             string profileId,
             Version version,
             PSHost psHost,
             string allUsersProfilePath,
             string currentUsersProfilePath,
+            IReadOnlyList<string> featureFlags,
+            IReadOnlyList<string> additionalModules,
+            string logPath,
+            int logLevel,
             bool consoleReplEnabled,
             bool usesLegacyReadLine)
         {
@@ -108,6 +107,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             PSHost = psHost;
             AllUsersProfilePath = allUsersProfilePath;
             CurrentUserProfilePath = currentUsersProfilePath;
+            FeatureFlags = featureFlags ?? Array.Empty<string>();
+            AdditionalModules = additionalModules ?? Array.Empty<string>();
+            LogPath = logPath;
+            LogLevel = logLevel;
             ConsoleReplEnabled = consoleReplEnabled;
             UsesLegacyReadLine = usesLegacyReadLine;
         }

@@ -3,10 +3,10 @@ namespace PowerShellEditorServices.Hosting
 {
     public enum PsesLogLevel
     {
-        Diagnostic,
-        Verbose,
-        Normal,
-        Warning,
-        Error,
+        Diagnostic = 0,
+        Verbose = 1,
+        Normal = 2,
+        Warning = 3,
+        Error = 4,
     }
 }

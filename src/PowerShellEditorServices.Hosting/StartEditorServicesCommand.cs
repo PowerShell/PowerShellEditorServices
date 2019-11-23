@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </summary>
         [Parameter]
         [ValidateNotNullOrEmpty]
-        public string BundledModulePath { get; set; }
+        public string BundledModulesPath { get; set; }
 
         [Parameter]
         [ValidateNotNullOrEmpty]
@@ -90,37 +90,58 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         protected override void EndProcessing()
         {
-            using (var pwsh = SMA.PowerShell.Create())
+            if (WaitForDebugger || true)
             {
-                bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
-                    .AddParameter("Name", "PSReadLine")
-                    .Invoke()
-                    .Any();
-
-                if (hasPSReadLine)
+                while (!System.Diagnostics.Debugger.IsAttached)
                 {
-                    pwsh.Commands.Clear();
-
-                    pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Remove-Module", typeof(RemoveModuleCommand)))
-                        .AddParameter("Name", "PSReadLine")
-                        .AddParameter("ErrorAction", "SilentlyContinue");
+                    System.Console.WriteLine($"PID: {System.Diagnostics.Process.GetCurrentProcess().Id}");
+                    System.Threading.Thread.Sleep(500);
                 }
             }
 
-            var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
-            var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, BundledModulePath, LogPath)
+            try
             {
-                FeatureFlags = FeatureFlags,
-                LogLevel = LogLevel,
-                ConsoleRepl = GetReplKind(),
-                AdditionalModules = AdditionalModules,
-                LanguageServiceTransport = GetLanguageServiceTransport(),
-                DebugServiceTransport = GetDebugServiceTransport(),
-            };
+                using (var pwsh = SMA.PowerShell.Create())
+                {
+                    bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
+                        .AddParameter("Name", "PSReadLine")
+                        .Invoke()
+                        .Any();
 
-            using (var psesLoader = EditorServicesLoader.Create(editorServicesConfig))
+                    if (hasPSReadLine)
+                    {
+                        pwsh.Commands.Clear();
+
+                        pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Remove-Module", typeof(RemoveModuleCommand)))
+                            .AddParameter("Name", "PSReadLine")
+                            .AddParameter("ErrorAction", "SilentlyContinue");
+                    }
+                }
+
+                var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
+                var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, BundledModulesPath, LogPath)
+                {
+                    FeatureFlags = FeatureFlags,
+                    LogLevel = LogLevel,
+                    ConsoleRepl = GetReplKind(),
+                    AdditionalModules = AdditionalModules,
+                    LanguageServiceTransport = GetLanguageServiceTransport(),
+                    DebugServiceTransport = GetDebugServiceTransport(),
+                };
+
+                using (var psesLoader = EditorServicesLoader.Create(editorServicesConfig))
+                {
+                    psesLoader.LoadAndRunEditorServicesAsync().Wait();
+                }
+            }
+            catch (Exception e)
             {
-                psesLoader.LoadAndRunEditorServicesAsync().Wait();
+                WriteError(new ErrorRecord(e, "PsesLoadError", ErrorCategory.NotSpecified, null));
+
+                // Give the user a chance to read the message
+                Console.ReadKey();
+
+                throw;
             }
         }
 

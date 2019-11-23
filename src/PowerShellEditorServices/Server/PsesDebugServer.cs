@@ -46,9 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             LogLevel minimumLogLevel,
             Stream inputStream,
             Stream outputStream,
-            IReadOnlyCollection<string> featureFlags,
-            HostDetails hostDetails,
-            IReadOnlyList<string> additionalModules)
+            HostStartupInfo hostDetails)
         {
             var serviceProvider = new ServiceCollection()
                 .AddLogging(builder => builder
@@ -56,10 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .AddSerilog()
                     .SetMinimumLevel(LogLevel.Trace))
                 .AddSingleton<ILanguageServer>(provider => null)
-                .AddPsesLanguageServices(
-                    new HashSet<string>(featureFlags, StringComparer.OrdinalIgnoreCase),
-                    hostDetails,
-                    additionalModules)
+                .AddPsesLanguageServices(hostDetails)
                 .BuildServiceProvider();
 
             return new PsesDebugServer(loggerFactory, inputStream, outputStream, serviceProvider, useTempSession: true);

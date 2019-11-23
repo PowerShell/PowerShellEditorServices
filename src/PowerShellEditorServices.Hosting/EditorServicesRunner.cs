@@ -1,7 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Hosting;
+﻿using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Server;
-using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -14,28 +12,19 @@ namespace PowerShellEditorServices.Hosting
     {
         public static EditorServicesRunner Create(EditorServicesConfig config)
         {
-            Log.Logger = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .WriteTo.File(config.LogPath)
-                .MinimumLevel.Verbose()
-                .CreateLogger();
-
-            return new EditorServicesRunner(new LoggerFactory().AddSerilog(Log.Logger), config);
+            return new EditorServicesRunner(config);
         }
-
-        private readonly ILoggerFactory _loggerFactory;
-
-        private readonly Microsoft.Extensions.Logging.ILogger _logger;
 
         private readonly EditorServicesConfig _config;
 
+        private readonly EditorServicesServerFactory _serverFactory;
+
         private bool _alreadySubscribedDebug;
 
-        private EditorServicesRunner(ILoggerFactory loggerFactory, EditorServicesConfig config)
+        private EditorServicesRunner(EditorServicesConfig config)
         {
-            _loggerFactory = loggerFactory;
-            _logger = _loggerFactory.CreateLogger<EditorServicesRunner>();
             _config = config;
+            _serverFactory = EditorServicesServerFactory.Create(_config.LogPath, (int)_config.LogLevel);
             _alreadySubscribedDebug = false;
         }
 
@@ -51,30 +40,32 @@ namespace PowerShellEditorServices.Hosting
 
             ProfilePathConfig profilePaths = GetProfilePaths(_config.ProfilePaths);
 
-            var hostDetails = new HostDetails(
+            var hostStartupInfo = new HostStartupInfo(
                 _config.HostInfo.Name,
                 _config.HostInfo.ProfileId,
                 _config.HostInfo.Version,
                 _config.PSHost,
                 profilePaths.AllUsersProfilePath,
                 profilePaths.CurrentUserProfilePath,
+                _config.FeatureFlags,
+                _config.AdditionalModules,
+                _config.LogPath,
+                (int)_config.LogLevel,
                 consoleReplEnabled: _config.ConsoleRepl != ConsoleReplKind.None,
                 usesLegacyReadLine: _config.ConsoleRepl == ConsoleReplKind.LegacyReadLine);
 
-            LogLevel minimumLogLevel = ConvertToExtensionLogLevel(_config.LogLevel);
-
             if (isTempDebugSession)
             {
-                await RunTempDebugSession(hostDetails, minimumLogLevel).ConfigureAwait(false);
+                await RunTempDebugSession(hostStartupInfo).ConfigureAwait(false);
                 return;
             }
 
-            PsesLanguageServer languageServer = await CreateLanguageServer(hostDetails, minimumLogLevel).ConfigureAwait(false);
+            PsesLanguageServer languageServer = await CreateLanguageServer(hostStartupInfo).ConfigureAwait(false);
 
             Task<PsesDebugServer> debugServerCreation = null;
             if (creatingDebugServer)
             {
-                debugServerCreation = CreateDebugServerWithLanguageServer(languageServer.LanguageServer.Services);
+                debugServerCreation = CreateDebugServerWithLanguageServer(languageServer);
             }
 
             languageServer.StartAsync();
@@ -90,21 +81,14 @@ namespace PowerShellEditorServices.Hosting
 
         public void Dispose()
         {
-            _loggerFactory.Dispose();
         }
 
-        private async Task RunTempDebugSession(HostDetails hostDetails, LogLevel minimumLogLevel)
+        private async Task RunTempDebugSession(HostStartupInfo hostDetails)
         {
-            PsesDebugServer debugServer = await CreateDebugServerForTempSession(hostDetails, minimumLogLevel).ConfigureAwait(false);
+            PsesDebugServer debugServer = await CreateDebugServerForTempSession(hostDetails).ConfigureAwait(false);
             await debugServer.StartAsync().ConfigureAwait(false);
             await debugServer.WaitForShutdown().ConfigureAwait(false);
             return;
-        }
-
-        private Task StartDebugServer(IServiceProvider serviceProvider)
-        {
-            Task<PsesDebugServer> debugServerCreation = CreateDebugServerWithLanguageServer(serviceProvider);
-            return StartDebugServer(debugServerCreation);
         }
 
         private async Task StartDebugServer(Task<PsesDebugServer> debugServerCreation)
@@ -119,32 +103,38 @@ namespace PowerShellEditorServices.Hosting
             return;
         }
 
-        private async Task<PsesLanguageServer> CreateLanguageServer(HostDetails hostDetails, LogLevel minimumLogLevel)
+        private Task RestartDebugServer(PsesDebugServer debugServer)
+        {
+            Task<PsesDebugServer> debugServerCreation = RecreateDebugServer(debugServer);
+            return StartDebugServer(debugServerCreation);
+        }
+
+        private async Task<PsesLanguageServer> CreateLanguageServer(HostStartupInfo hostDetails)
         {
             (Stream inStream, Stream outStream) = await _config.LanguageServiceTransport.ConnectStreamsAsync().ConfigureAwait(false);
 
-            return new PsesLanguageServer(
-                _loggerFactory,
-                minimumLogLevel,
-                inStream,
-                outStream,
-                _config.FeatureFlags ?? Array.Empty<string>(),
-                hostDetails,
-                _config.AdditionalModules ?? Array.Empty<string>());
+            return _serverFactory.CreateLanguageServer(inStream, outStream, hostDetails);
         }
 
-        private async Task<PsesDebugServer> CreateDebugServerWithLanguageServer(IServiceProvider languageServerServiceProvider)
+        private async Task<PsesDebugServer> CreateDebugServerWithLanguageServer(PsesLanguageServer languageServer)
         {
             (Stream inStream, Stream outStream) = await _config.DebugServiceTransport.ConnectStreamsAsync().ConfigureAwait(false);
 
-            return PsesDebugServer.CreateWithLanguageServerServices(_loggerFactory, inStream, outStream, languageServerServiceProvider);
+            return _serverFactory.CreateDebugServerWithLanguageServer(inStream, outStream, languageServer);
         }
 
-        private async Task<PsesDebugServer> CreateDebugServerForTempSession(HostDetails hostDetails, LogLevel minimumLogLevel)
+        private async Task<PsesDebugServer> RecreateDebugServer(PsesDebugServer debugServer)
         {
             (Stream inStream, Stream outStream) = await _config.DebugServiceTransport.ConnectStreamsAsync().ConfigureAwait(false);
 
-            return PsesDebugServer.CreateForTempSession(_loggerFactory, minimumLogLevel, inStream, outStream, _config.FeatureFlags, hostDetails, _config.AdditionalModules);
+            return _serverFactory.RecreateDebugServer(inStream, outStream, debugServer);
+        }
+
+        private async Task<PsesDebugServer> CreateDebugServerForTempSession(HostStartupInfo hostDetails)
+        {
+            (Stream inStream, Stream outStream) = await _config.DebugServiceTransport.ConnectStreamsAsync().ConfigureAwait(false);
+
+            return _serverFactory.CreateDebugServerForTempSession(inStream, outStream, hostDetails);
         }
 
         private ProfilePathConfig GetProfilePaths(ProfilePathConfig profilePathConfig)
@@ -183,37 +173,12 @@ namespace PowerShellEditorServices.Hosting
         private void DebugServer_OnSessionEnded(object sender, EventArgs args)
         {
             var oldServer = (PsesDebugServer)sender;
-            IServiceProvider serviceProvider = oldServer.ServiceProvider;
             oldServer.Dispose();
             _alreadySubscribedDebug = false;
             Task.Run(() =>
             {
-                StartDebugServer(serviceProvider);
+                RestartDebugServer(oldServer);
             });
-        }
-
-        private static LogLevel ConvertToExtensionLogLevel(PsesLogLevel logLevel)
-        {
-            switch (logLevel)
-            {
-                case PsesLogLevel.Diagnostic:
-                    return LogLevel.Trace;
-
-                case PsesLogLevel.Verbose:
-                    return LogLevel.Debug;
-
-                case PsesLogLevel.Normal:
-                    return LogLevel.Information;
-
-                case PsesLogLevel.Warning:
-                    return LogLevel.Warning;
-
-                case PsesLogLevel.Error:
-                    return LogLevel.Error;
-
-                default:
-                    return LogLevel.Information;
-            }
         }
     }
 }

@@ -168,9 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public static PowerShellContextService Create(
             ILoggerFactory factory,
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
-            HashSet<string> featureFlags,
-            HostDetails hostDetails,
-            IReadOnlyList<string> additionalModules)
+            HostStartupInfo hostDetails)
         {
             var logger = factory.CreateLogger<PowerShellContextService>();
 
@@ -211,7 +209,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach (string module in additionalModules)
+            foreach (string module in hostDetails.AdditionalModules)
             {
                 var command =
                     new PSCommand()
@@ -238,7 +236,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="logger">An ILogger implementation to use for this instance.</param>
         /// <returns></returns>
         public static Runspace CreateRunspace(
-            HostDetails hostDetails,
+            HostStartupInfo hostDetails,
             PowerShellContextService powerShellContext,
             EditorServicesPSHostUserInterface hostUserInterface,
             ILogger logger)
