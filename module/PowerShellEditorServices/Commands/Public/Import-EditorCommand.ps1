@@ -59,7 +59,7 @@ function Import-EditorCommand {
         }
         $flags = [Reflection.BindingFlags]'Instance, NonPublic'
         $extensionService = $psEditor.GetType().
-                                      GetField('extensionService', $flags).
+                                      GetField('_extensionService', $flags).
                                       GetValue($psEditor)
 
         $editorCommands = $extensionService.GetType().
