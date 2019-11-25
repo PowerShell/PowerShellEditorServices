@@ -57,14 +57,11 @@ function Import-EditorCommand {
                 return $moduleInfo.ExportedFunctions.Values
             }
         }
-        $flags = [Reflection.BindingFlags]'Instance, NonPublic'
-        $extensionService = $psEditor.GetType().
-                                      GetField('_extensionService', $flags).
-                                      GetValue($psEditor)
+        $editorCommands = @{}
 
-        $editorCommands = $extensionService.GetType().
-                                            GetField('editorCommands', $flags).
-                                            GetValue($extensionService)
+        foreach ($existingCommand in $psEditor.GetCommands()) {
+            $editorCommands[$existingCommand.Name] = $existingCommand
+        }
     }
     process {
         switch ($PSCmdlet.ParameterSetName) {
