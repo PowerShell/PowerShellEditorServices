@@ -128,7 +128,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             string reason = "changed";
 
-            if (_debugStateService.SetBreakpointInProgress)
+            if (_debugStateService.IsSetBreakpointInProgress)
             {
                 // Don't send breakpoint update notifications when setting
                 // breakpoints on behalf of the client.
