@@ -37,22 +37,7 @@ namespace PowerShellEditorServices.Hosting
             // TODO: Validate config here
 
             // Set up information required to instantiate servers
-
-            ProfilePathConfig profilePaths = GetProfilePaths(_config.ProfilePaths);
-
-            var hostStartupInfo = new HostStartupInfo(
-                _config.HostInfo.Name,
-                _config.HostInfo.ProfileId,
-                _config.HostInfo.Version,
-                _config.PSHost,
-                profilePaths.AllUsersProfilePath,
-                profilePaths.CurrentUserProfilePath,
-                _config.FeatureFlags,
-                _config.AdditionalModules,
-                _config.LogPath,
-                (int)_config.LogLevel,
-                consoleReplEnabled: _config.ConsoleRepl != ConsoleReplKind.None,
-                usesLegacyReadLine: _config.ConsoleRepl == ConsoleReplKind.LegacyReadLine);
+            HostStartupInfo hostStartupInfo = CreateHostStartupInfo();
 
             if (isTempDebugSession)
             {
@@ -137,17 +122,27 @@ namespace PowerShellEditorServices.Hosting
             return _serverFactory.CreateDebugServerForTempSession(inStream, outStream, hostDetails);
         }
 
-        private ProfilePathConfig GetProfilePaths(ProfilePathConfig profilePathConfig)
+        private HostStartupInfo CreateHostStartupInfo()
         {
-            string allUsersPath = null;
-            string currentUserPath = null;
+            (string allUsersProfilePath, string currentUserProfilePath) = GetProfilePaths(_config.ProfilePaths?.AllUsersProfilePath, _config.ProfilePaths?.CurrentUserProfilePath);
 
-            if (profilePathConfig != null)
-            {
-                allUsersPath = profilePathConfig.AllUsersProfilePath;
-                currentUserPath = profilePathConfig.CurrentUserProfilePath;
-            }
+            return new HostStartupInfo(
+                _config.HostInfo.Name,
+                _config.HostInfo.ProfileId,
+                _config.HostInfo.Version,
+                _config.PSHost,
+                allUsersProfilePath,
+                currentUserProfilePath,
+                _config.FeatureFlags,
+                _config.AdditionalModules,
+                _config.LogPath,
+                (int)_config.LogLevel,
+                consoleReplEnabled: _config.ConsoleRepl != ConsoleReplKind.None,
+                usesLegacyReadLine: _config.ConsoleRepl == ConsoleReplKind.LegacyReadLine);
+        }
 
+        private (string allUsersPath, string currentUserPath) GetProfilePaths(string allUsersPath, string currentUserPath)
+        {
             if (allUsersPath == null || currentUserPath == null)
             {
                 using (var pwsh = PowerShell.Create())
@@ -167,7 +162,7 @@ namespace PowerShellEditorServices.Hosting
                 }
             }
 
-            return new ProfilePathConfig(allUsersPath, currentUserPath);
+            return (allUsersPath, currentUserPath);
         }
 
         private void DebugServer_OnSessionEnded(object sender, EventArgs args)

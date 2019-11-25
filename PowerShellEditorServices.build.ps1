@@ -279,6 +279,11 @@ task LayoutModule -After Build {
     $psesDlls = [System.Collections.Generic.HashSet[string]]::new()
     foreach ($psesComponent in Get-ChildItem $script:PsesOutput)
     {
+        if ($psesComponent.Name -eq 'System.Management.Automation.dll')
+        {
+            continue
+        }
+
         if ($psesComponent.Extension -eq '.dll')
         {
             [void]$psesDlls.Add($psesComponent.Name)
