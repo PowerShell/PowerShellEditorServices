@@ -194,8 +194,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     // On first iteration psCommand will be null, every subsequent
                     // iteration will need to start a new statement.
-                    psCommand?.AddStatement();
-                    (psCommand ??= new PSCommand())
+                    if (psCommand == null)
+                    {
+                        psCommand = new PSCommand();
+                    }
+                    else
+                    {
+                        psCommand.AddStatement();
+                    }
+
+                    psCommand
                         .AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint")
                         .AddParameter("Script", escapedScriptPath)
                         .AddParameter("Line", breakpoint.LineNumber);
