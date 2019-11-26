@@ -25,25 +25,31 @@ namespace PowerShellEditorServices.Hosting
 #endif
 
         public static EditorServicesLoader Create(
+            HostLogger logger,
             EditorServicesConfig hostConfig,
             ISessionFileWriter sessionFileWriter,
             string dependencyPath = null)
         {
 #if CoreCLR
+            logger.Log(PsesLogLevel.Verbose, "Adding AssemblyResolve event handler for new AssemblyLoadContext dependency loading");
             AssemblyLoadContext.Default.Resolving += DefaultLoadContext_OnAssemblyResolve;
 #else
+            logger.Log(PsesLogLevel.Verbose, "Adding AssemblyResolve event handler for dependency loading");
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_OnAssemblyResolve;
 #endif
 
-            return new EditorServicesLoader(hostConfig, sessionFileWriter);
+            return new EditorServicesLoader(logger, hostConfig, sessionFileWriter);
         }
 
         private readonly EditorServicesConfig _hostConfig;
 
         private readonly ISessionFileWriter _sessionFileWriter;
 
-        public EditorServicesLoader(EditorServicesConfig hostConfig, ISessionFileWriter sessionFileWriter)
+        private readonly HostLogger _logger;
+
+        public EditorServicesLoader(HostLogger logger, EditorServicesConfig hostConfig, ISessionFileWriter sessionFileWriter)
         {
+            _logger = logger;
             _hostConfig = hostConfig;
             _sessionFileWriter = sessionFileWriter;
         }
@@ -51,9 +57,11 @@ namespace PowerShellEditorServices.Hosting
         public async Task LoadAndRunEditorServicesAsync()
         {
             // Method with no implementation that forces the PSES assembly to load, triggering an AssemblyResolve event
+            _logger.Log(PsesLogLevel.Verbose, "Loading PSES assemblies");
             EditorServicesLoading.LoadEditorServicesForHost();
 
-            using (var editorServicesRunner = EditorServicesRunner.Create(_hostConfig, _sessionFileWriter))
+            _logger.Log(PsesLogLevel.Verbose, "Starting EditorServices");
+            using (var editorServicesRunner = EditorServicesRunner.Create(_logger, _hostConfig, _sessionFileWriter))
             {
                 await editorServicesRunner.RunUntilShutdown().ConfigureAwait(false);
             }
@@ -67,8 +75,6 @@ namespace PowerShellEditorServices.Hosting
 #if CoreCLR
         private static Assembly DefaultLoadContext_OnAssemblyResolve(AssemblyLoadContext defaultLoadContext, AssemblyName asmName)
         {
-            //Console.WriteLine($".NET Core resolving {asmName}");
-
             if (!string.Equals(asmName.Name, "Microsoft.PowerShell.EditorServices", StringComparison.Ordinal))
             {
                 return null;
@@ -83,8 +89,6 @@ namespace PowerShellEditorServices.Hosting
 #if !CoreCLR
         private static Assembly CurrentDomain_OnAssemblyResolve(object sender, ResolveEventArgs args)
         {
-            Console.WriteLine($".NET FX resolving {args.Name}");
-
             var asmName = new AssemblyName(args.Name);
 
             string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");

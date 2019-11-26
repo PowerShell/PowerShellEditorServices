@@ -18,15 +18,20 @@ namespace PowerShellEditorServices.Hosting
 
     internal class SessionFileWriter : ISessionFileWriter
     {
+        private HostLogger _logger;
+
         private readonly string _sessionFilePath;
 
-        public SessionFileWriter(string sessionFilePath)
+        public SessionFileWriter(HostLogger logger, string sessionFilePath)
         {
+            _logger = logger;
             _sessionFilePath = sessionFilePath;
         }
 
         public void WriteSessionFailure(string reason, object details)
         {
+            _logger.Log(PsesLogLevel.Diagnostic, "Writing session failure");
+
             var sessionObject = new Dictionary<string, object>
             {
                 { "status", "failed" },
@@ -43,6 +48,8 @@ namespace PowerShellEditorServices.Hosting
 
         public void WriteSessionStarted(ITransportConfig languageServiceTransport, ITransportConfig debugAdapterTransport)
         {
+            _logger.Log(PsesLogLevel.Diagnostic, "Writing session started");
+
             var sessionObject = new Dictionary<string, object>
             {
                 { "status", "started" },
@@ -81,18 +88,22 @@ namespace PowerShellEditorServices.Hosting
 
         private void WriteSessionObject(Dictionary<string, object> sessionObject)
         {
+            string content = null;
             using (var pwsh = PowerShell.Create(RunspaceMode.NewRunspace))
             {
-                pwsh.AddCommand("ConvertTo-Json")
+                content = pwsh.AddCommand("ConvertTo-Json")
                         .AddParameter("InputObject", sessionObject)
                         .AddParameter("Depth", 10)
                         .AddParameter("Compress")
-                    .AddCommand("Out-File")
-                        .AddParameter("FilePath", _sessionFilePath)
+                    .AddCommand("Set-Content")
+                        .AddParameter("Path", _sessionFilePath)
                         .AddParameter("Encoding", "utf8")
                         .AddParameter("Force")
-                    .Invoke();
+                        .AddParameter("PassThru")
+                    .Invoke<string>()[0];
             }
+
+            _logger.Log(PsesLogLevel.Verbose, $"Session file written to {_sessionFilePath} with content:\n{content}");
         }
     }
 }

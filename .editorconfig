@@ -21,3 +21,6 @@ trim_trailing_whitespace = true
 
 [*.{ps1xml,props,xml,yaml}]
 indent_size = 2
+
+# CA1303: Do not pass literals as localized parameters
+dotnet_diagnostic.CA1303.severity = none
