@@ -189,12 +189,24 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     await this.ClearBreakpointsInFileAsync(scriptFile);
                 }
 
+                PSCommand psCommand = null;
                 foreach (BreakpointDetails breakpoint in breakpoints)
                 {
-                    PSCommand psCommand = new PSCommand();
-                    psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint");
-                    psCommand.AddParameter("Script", escapedScriptPath);
-                    psCommand.AddParameter("Line", breakpoint.LineNumber);
+                    // On first iteration psCommand will be null, every subsequent
+                    // iteration will need to start a new statement.
+                    if (psCommand == null)
+                    {
+                        psCommand = new PSCommand();
+                    }
+                    else
+                    {
+                        psCommand.AddStatement();
+                    }
+
+                    psCommand
+                        .AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint")
+                        .AddParameter("Script", escapedScriptPath)
+                        .AddParameter("Line", breakpoint.LineNumber);
 
                     // Check if the user has specified the column number for the breakpoint.
                     if (breakpoint.ColumnNumber.HasValue && breakpoint.ColumnNumber.Value > 0)
@@ -222,7 +234,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                         psCommand.AddParameter("Action", actionScriptBlock);
                     }
+                }
 
+                // If no PSCommand was created then there are no breakpoints to set.
+                if (psCommand != null)
+                {
                     IEnumerable<Breakpoint> configuredBreakpoints =
                         await this.powerShellContext.ExecuteCommandAsync<Breakpoint>(psCommand);
 
