@@ -24,7 +24,10 @@ namespace PowerShellEditorServices.Hosting
         private static readonly AssemblyLoadContext s_coreAsmLoadContext = new PsesLoadContext(s_psesDependencyDirPath);
 #endif
 
-        public static EditorServicesLoader Create(EditorServicesConfig hostConfig, string dependencyPath = null)
+        public static EditorServicesLoader Create(
+            EditorServicesConfig hostConfig,
+            ISessionFileWriter sessionFileWriter,
+            string dependencyPath = null)
         {
 #if CoreCLR
             AssemblyLoadContext.Default.Resolving += DefaultLoadContext_OnAssemblyResolve;
@@ -32,14 +35,17 @@ namespace PowerShellEditorServices.Hosting
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_OnAssemblyResolve;
 #endif
 
-            return new EditorServicesLoader(hostConfig);
+            return new EditorServicesLoader(hostConfig, sessionFileWriter);
         }
 
         private readonly EditorServicesConfig _hostConfig;
 
-        public EditorServicesLoader(EditorServicesConfig hostConfig)
+        private readonly ISessionFileWriter _sessionFileWriter;
+
+        public EditorServicesLoader(EditorServicesConfig hostConfig, ISessionFileWriter sessionFileWriter)
         {
             _hostConfig = hostConfig;
+            _sessionFileWriter = sessionFileWriter;
         }
 
         public async Task LoadAndRunEditorServicesAsync()
@@ -47,7 +53,7 @@ namespace PowerShellEditorServices.Hosting
             // Method with no implementation that forces the PSES assembly to load, triggering an AssemblyResolve event
             EditorServicesLoading.LoadEditorServicesForHost();
 
-            using (var editorServicesRunner = EditorServicesRunner.Create(_hostConfig))
+            using (var editorServicesRunner = EditorServicesRunner.Create(_hostConfig, _sessionFileWriter))
             {
                 await editorServicesRunner.RunUntilShutdown().ConfigureAwait(false);
             }

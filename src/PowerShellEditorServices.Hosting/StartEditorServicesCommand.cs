@@ -88,16 +88,26 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         [Parameter]
         public SwitchParameter WaitForDebugger { get; set; }
 
-        protected override void EndProcessing()
+        [Parameter]
+        public SwitchParameter SplitInOutPipes { get; set; }
+
+        protected override void BeginProcessing()
         {
+#if DEBUG
             if (WaitForDebugger || true)
             {
                 while (!System.Diagnostics.Debugger.IsAttached)
                 {
-                    System.Console.WriteLine($"PID: {System.Diagnostics.Process.GetCurrentProcess().Id}");
+                    Console.WriteLine($"PID: {System.Diagnostics.Process.GetCurrentProcess().Id}");
                     System.Threading.Thread.Sleep(500);
                 }
             }
+#endif
+        }
+
+        protected override void EndProcessing()
+        {
+            var sessionFileWriter = new SessionFileWriter(SessionDetailsPath);
 
             try
             {
@@ -129,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     DebugServiceTransport = GetDebugServiceTransport(),
                 };
 
-                using (var psesLoader = EditorServicesLoader.Create(editorServicesConfig))
+                using (var psesLoader = EditorServicesLoader.Create(editorServicesConfig, sessionFileWriter))
                 {
                     psesLoader.LoadAndRunEditorServicesAsync().Wait();
                 }
@@ -172,12 +182,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 return new StdioTransportConfig();
             }
 
-            if (LanguageServicePipeName != null)
+            if (LanguageServiceInPipeName != null && LanguageServiceOutPipeName != null)
             {
-                return new DuplexNamedPipeTransportConfig(LanguageServicePipeName);
+                return SimplexNamedPipeTransportConfig.Create(LanguageServiceInPipeName, LanguageServiceOutPipeName);
             }
 
-            return new SimplexNamedPipeTransportConfig(LanguageServiceInPipeName, LanguageServiceOutPipeName);
+            if (SplitInOutPipes)
+            {
+                return SimplexNamedPipeTransportConfig.Create(LanguageServicePipeName);
+            }
+
+            return DuplexNamedPipeTransportConfig.Create(LanguageServicePipeName);
         }
 
         private ITransportConfig GetDebugServiceTransport()
@@ -189,12 +204,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     : null;
             }
 
-            if (DebugServicePipeName != null)
+            if (DebugServiceInPipeName != null && DebugServiceOutPipeName != null)
             {
-                return new DuplexNamedPipeTransportConfig(DebugServicePipeName);
+                return SimplexNamedPipeTransportConfig.Create(DebugServiceInPipeName, DebugServiceOutPipeName);
             }
 
-            return new SimplexNamedPipeTransportConfig(DebugServiceInPipeName, DebugServiceOutPipeName);
+            if (SplitInOutPipes)
+            {
+                return SimplexNamedPipeTransportConfig.Create(DebugServicePipeName);
+            }
+
+            return DuplexNamedPipeTransportConfig.Create(DebugServicePipeName);
         }
     }
 }

@@ -10,25 +10,41 @@ namespace PowerShellEditorServices.Hosting
 {
     internal class EditorServicesRunner : IDisposable
     {
-        public static EditorServicesRunner Create(EditorServicesConfig config)
+        public static EditorServicesRunner Create(EditorServicesConfig config, ISessionFileWriter sessionFileWriter)
         {
-            return new EditorServicesRunner(config);
+            return new EditorServicesRunner(config, sessionFileWriter);
         }
 
         private readonly EditorServicesConfig _config;
+
+        private readonly ISessionFileWriter _sessionFileWriter;
 
         private readonly EditorServicesServerFactory _serverFactory;
 
         private bool _alreadySubscribedDebug;
 
-        private EditorServicesRunner(EditorServicesConfig config)
+        private EditorServicesRunner(EditorServicesConfig config, ISessionFileWriter sessionFileWriter)
         {
             _config = config;
+            _sessionFileWriter = sessionFileWriter;
             _serverFactory = EditorServicesServerFactory.Create(_config.LogPath, (int)_config.LogLevel);
             _alreadySubscribedDebug = false;
         }
 
         public async Task RunUntilShutdown()
+        {
+            Task runAndAwaitShutdown = CreateEditorServicesAndRunUntilShutdown();
+
+            _sessionFileWriter.WriteSessionStarted(_config.LanguageServiceTransport, _config.DebugServiceTransport);
+
+            await runAndAwaitShutdown.ConfigureAwait(false);
+        }
+
+        public void Dispose()
+        {
+        }
+
+        private async Task CreateEditorServicesAndRunUntilShutdown()
         {
             bool creatingLanguageServer = _config.LanguageServiceTransport != null;
             bool creatingDebugServer = _config.DebugServiceTransport != null;
@@ -61,11 +77,6 @@ namespace PowerShellEditorServices.Hosting
             }
 
             await languageServer.WaitForShutdown().ConfigureAwait(false);
-            return;
-        }
-
-        public void Dispose()
-        {
         }
 
         private async Task RunTempDebugSession(HostStartupInfo hostDetails)
