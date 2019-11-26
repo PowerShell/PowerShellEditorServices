@@ -12,3 +12,7 @@ function Clear-Host {
     __clearhost
     $psEditor.Window.Terminal.Clear()
 }
+
+if (!$IsMacOS -or $IsLinux) {
+    Set-Alias -Name clear -Value Clear-Host
+}
