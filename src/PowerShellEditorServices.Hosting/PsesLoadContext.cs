@@ -20,11 +20,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             if (File.Exists(asmPath))
             {
-                Console.WriteLine($"Loading {assemblyName} in PSES load context");
+                //Console.WriteLine($"Loading {assemblyName} in PSES load context");
                 return LoadFromAssemblyPath(asmPath);
             }
 
-            Console.WriteLine($"Failed to load {assemblyName} in PSES load context");
+            //Console.WriteLine($"Failed to load {assemblyName} in PSES load context");
             return null;
         }
     }

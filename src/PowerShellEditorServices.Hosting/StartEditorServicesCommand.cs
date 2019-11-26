@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         protected override void BeginProcessing()
         {
 #if DEBUG
-            if (WaitForDebugger || true)
+            if (WaitForDebugger)
             {
                 while (!System.Diagnostics.Debugger.IsAttached)
                 {

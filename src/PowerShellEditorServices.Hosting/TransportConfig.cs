@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         private DuplexNamedPipeTransportConfig(string pipeName)
         {
             _pipeName = pipeName;
-            SessionFileEntries = new Dictionary<string, object>{ { "PipeName", pipeName } };
+            SessionFileEntries = new Dictionary<string, object>{ { "PipeName", NamedPipeUtils.GetNamedPipePath(pipeName) } };
         }
 
         public string Endpoint => $"InOut pipe: {_pipeName}";
@@ -102,8 +102,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             SessionFileEntries = new Dictionary<string, object>
             {
-                { "ReadPipeName", inPipeName },
-                { "WritePipeName", outPipeName },
+                { "ReadPipeName", NamedPipeUtils.GetNamedPipePath(inPipeName) },
+                { "WritePipeName", NamedPipeUtils.GetNamedPipePath(outPipeName) },
             };
         }
 

@@ -67,7 +67,7 @@ namespace PowerShellEditorServices.Hosting
 #if CoreCLR
         private static Assembly DefaultLoadContext_OnAssemblyResolve(AssemblyLoadContext defaultLoadContext, AssemblyName asmName)
         {
-            Console.WriteLine($".NET Core resolving {asmName}");
+            //Console.WriteLine($".NET Core resolving {asmName}");
 
             if (!string.Equals(asmName.Name, "Microsoft.PowerShell.EditorServices", StringComparison.Ordinal))
             {
