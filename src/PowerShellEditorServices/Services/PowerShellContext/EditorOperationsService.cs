@@ -179,5 +179,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 Timeout = timeout
             });
         }
+
+        public void ClearTerminal()
+        {
+            _languageServer.SendNotification("editor/clearTerminal");
+        }
     }
 }
