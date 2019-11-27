@@ -262,13 +262,15 @@ task TestE2E {
 }
 
 task LayoutModule -After Build {
-    $psesOutputPath = "$PSScriptRoot/module/PowerShellEditorServices"
+    $modulesDir = "$PSScriptRoot/module"
+    $psesVSCodeBinOutputPath = "$modulesDir/PowerShellEditorServices.VSCode/bin"
+    $psesOutputPath = "$modulesDir/PowerShellEditorServices"
     $psesBinOutputPath = "$PSScriptRoot/module/PowerShellEditorServices/bin"
     $psesDepsPath = "$psesBinOutputPath/Common"
     $psesCoreHostPath = "$psesBinOutputPath/Core"
     $psesDeskHostPath = "$psesBinOutputPath/Desktop"
 
-    foreach ($dir in $psesDepsPath,$psesCoreHostPath,$psesDeskHostPath)
+    foreach ($dir in $psesDepsPath,$psesCoreHostPath,$psesDeskHostPath,$psesVSCodeBinOutputPath)
     {
         New-Item -Force -Path $dir -ItemType Directory
     }
@@ -276,7 +278,7 @@ task LayoutModule -After Build {
     # Copy Third Party Notices.txt to module folder
     Copy-Item -Force -Path "$PSScriptRoot\Third Party Notices.txt" -Destination $psesOutputPath
 
-    $psesDlls = [System.Collections.Generic.HashSet[string]]::new()
+    $includedDlls = [System.Collections.Generic.HashSet[string]]::new()
     foreach ($psesComponent in Get-ChildItem $script:PsesOutput)
     {
         if ($psesComponent.Name -eq 'System.Management.Automation.dll')
@@ -284,16 +286,16 @@ task LayoutModule -After Build {
             continue
         }
 
-        if ($psesComponent.Extension -eq '.dll')
+        if ($psesComponent.Extension)
         {
-            [void]$psesDlls.Add($psesComponent.Name)
+            [void]$includedDlls.Add($psesComponent.Name)
             Copy-Item -Path $psesComponent.FullName -Destination $psesDepsPath
         }
     }
 
     foreach ($hostComponent in Get-ChildItem $script:HostCoreOutput)
     {
-        if (-not $psesDlls.Contains($hostComponent.Name))
+        if (-not $includedDlls.Contains($hostComponent.Name))
         {
             Copy-Item -Path $hostComponent.FullName -Destination $psesCoreHostPath
         }
@@ -303,10 +305,18 @@ task LayoutModule -After Build {
     {
         foreach ($hostComponent in Get-ChildItem $script:HostDeskOutput)
         {
-            if (-not $psesDlls.Contains($hostComponent.Name))
+            if (-not $includedDlls.Contains($hostComponent.Name))
             {
                 Copy-Item -Path $hostComponent.FullName -Destination $psesDeskHostPath
             }
+        }
+    }
+
+    foreach ($vscodeComponent in Get-ChildItem $script:VSCodeOutput)
+    {
+        if (-not $includedDlls.Contains($vscodeComponent.Name))
+        {
+            Copy-Item -Path $vscodeComponent.FullName -Destination $psesVSCodeBinOutputPath
         }
     }
 }

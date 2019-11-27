@@ -34,6 +34,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     public class PowerShellContextService : IDisposable, IHostSupportsInteractiveSession
     {
+        private static readonly string s_commandsModulePath = Path.GetFullPath(
+            Path.Combine(
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                "../../Commands/PowerShellEditorServices.Commands.psd1"));
+
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
 
         static PowerShellContextService()
@@ -202,10 +207,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var profilePaths = new ProfilePaths(hostDetails.ProfileId, hostDetails.AllUsersProfilePath, hostDetails.CurrentUserProfilePath);
             powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
 
-            powerShellContext.ImportCommandsModuleAsync(
-                Path.Combine(
-                    Path.GetDirectoryName(typeof(PowerShellContextService).GetTypeInfo().Assembly.Location),
-                    @"..\Commands"));
+            powerShellContext.ImportCommandsModuleAsync();
 
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
@@ -418,19 +420,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Imports the PowerShellEditorServices.Commands module into
         /// the runspace.  This method will be moved somewhere else soon.
         /// </summary>
-        /// <param name="moduleBasePath"></param>
         /// <returns></returns>
-        public Task ImportCommandsModuleAsync(string moduleBasePath)
+        public Task ImportCommandsModuleAsync()
         {
-            PSCommand importCommand = new PSCommand();
-            importCommand
+            PSCommand importCommand = new PSCommand()
                 .AddCommand("Import-Module")
-                .AddArgument(
-                    Path.Combine(
-                        moduleBasePath,
-                        "PowerShellEditorServices.Commands.psd1"));
+                .AddArgument(s_commandsModulePath);
 
-            return this.ExecuteCommandAsync<PSObject>(importCommand, false, false);
+            return this.ExecuteCommandAsync<PSObject>(importCommand, sendOutputToHost: false, sendErrorToHost: false);
         }
 
         private static bool CheckIfRunspaceNeedsEventHandlers(RunspaceDetails runspaceDetails)

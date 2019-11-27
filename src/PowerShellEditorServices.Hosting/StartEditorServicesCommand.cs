@@ -5,8 +5,10 @@
 
 using Microsoft.PowerShell.Commands;
 using System;
+using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Reflection;
 using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
@@ -236,8 +238,21 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         private EditorServicesConfig CreateConfigObject()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Creating host configuration");
+
+            string bundledModulesPath = BundledModulesPath;
+            if (!Path.IsPathRooted(bundledModulesPath))
+            {
+                // For compatibility, the bundled modules path is relative to the PSES bin directory
+                // Ideally it should be one level up, the PSES module root
+                bundledModulesPath = Path.GetFullPath(
+                    Path.Combine(
+                        Assembly.GetExecutingAssembly().Location,
+                        "..",
+                        bundledModulesPath));
+            }
+
             var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
-            var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, BundledModulesPath, LogPath)
+            var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, bundledModulesPath, LogPath)
             {
                 FeatureFlags = FeatureFlags,
                 LogLevel = LogLevel,
