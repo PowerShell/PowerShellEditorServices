@@ -4,7 +4,9 @@
 //
 
 using System.Collections.Generic;
+using System.IO;
 using System.Management.Automation;
+using System.Text;
 using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
@@ -35,7 +37,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// </summary>
     public class SessionFileWriter : ISessionFileWriter
     {
-        private HostLogger _logger;
+        // Use BOM-less UTF-8 for session file
+        private static readonly Encoding s_sessionFileEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+
+        private readonly HostLogger _logger;
 
         private readonly string _sessionFilePath;
 
@@ -128,15 +133,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             using (var pwsh = SMA.PowerShell.Create(RunspaceMode.NewRunspace))
             {
                 content = pwsh.AddCommand("ConvertTo-Json")
-                        .AddParameter("InputObject", sessionObject)
-                        .AddParameter("Depth", 10)
-                        .AddParameter("Compress")
-                    .AddCommand("Set-Content")
-                        .AddParameter("Path", _sessionFilePath)
-                        .AddParameter("Encoding", "utf8")
-                        .AddParameter("Force")
-                        .AddParameter("PassThru")
+                    .AddParameter("InputObject", sessionObject)
+                    .AddParameter("Depth", 10)
+                    .AddParameter("Compress")
                     .Invoke<string>()[0];
+
+                File.WriteAllText(_sessionFilePath, content, s_sessionFileEncoding);
             }
 
             _logger.Log(PsesLogLevel.Verbose, $"Session file written to {_sessionFilePath} with content:\n{content}");
