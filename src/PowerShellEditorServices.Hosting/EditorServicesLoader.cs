@@ -124,6 +124,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             CheckNetFxVersion();
 #endif
 
+            CheckLanguageMode();
+
             // Add the bundled modules to the PSModulePath
             UpdatePSModulePath();
 
@@ -167,6 +169,21 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
         }
 #endif
+
+        /// <summary>
+        /// PSES currently does not work in Constrained Language Mode, because PSReadLine script invocations won't work in it.
+        /// Ideally we can find a better way so that PSES will work in CLM.
+        /// </summary>
+        private void CheckLanguageMode()
+        {
+            using (var pwsh = SMA.PowerShell.Create())
+            {
+                if (pwsh.Runspace.SessionStateProxy.LanguageMode != SMA.PSLanguageMode.FullLanguage)
+                {
+                    throw new InvalidOperationException("Cannot start PowerShell Editor Services in Constrained Language Mode");
+                }
+            }
+        }
 
         private void UpdatePSModulePath()
         {
