@@ -17,10 +17,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// </summary>
     internal class PsesLoadContext : AssemblyLoadContext
     {
+        private readonly HostLogger _logger;
+
         private readonly string _dependencyDirPath;
 
-        public PsesLoadContext(string dependencyDirPath)
+        public PsesLoadContext(HostLogger logger, string dependencyDirPath)
         {
+            _logger = logger;
             _dependencyDirPath = dependencyDirPath;
         }
 
@@ -30,6 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             if (File.Exists(asmPath))
             {
+                _logger.Log(PsesLogLevel.Diagnostic, $"Loading assembly '{assemblyName}' in isolated load context");
                 return LoadFromAssemblyPath(asmPath);
             }
 

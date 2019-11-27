@@ -32,10 +32,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 "..",
                 "Common"));
 
-#if CoreCLR
-        private static readonly AssemblyLoadContext s_coreAsmLoadContext = new PsesLoadContext(s_psesDependencyDirPath);
-#endif
-
         /// <summary>
         /// Create a new Editor Services loader.
         /// </summary>
@@ -51,12 +47,46 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
 #if CoreCLR
             // In .NET Core, we add an event here to redirect dependency loading to the new AssemblyLoadContext we load PSES' dependencies into
+
             logger.Log(PsesLogLevel.Verbose, "Adding AssemblyResolve event handler for new AssemblyLoadContext dependency loading");
-            AssemblyLoadContext.Default.Resolving += DefaultLoadContext_OnAssemblyResolve;
+
+            var psesLoadContext = new PsesLoadContext(logger, s_psesDependencyDirPath);
+
+            AssemblyLoadContext.Default.Resolving += (AssemblyLoadContext defaultLoadContext, AssemblyName asmName) =>
+            {
+                logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {asmName}");
+
+                // We only want the Editor Services DLL; the new ALC will lazily load its dependencies automatically
+                if (!string.Equals(asmName.Name, "Microsoft.PowerShell.EditorServices", StringComparison.Ordinal))
+                {
+                    return null;
+                }
+
+                string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");
+
+                logger.Log(PsesLogLevel.Verbose, "Loading PSES DLL using new assembly load context");
+
+                return psesLoadContext.LoadFromAssemblyPath(asmPath);
+            };
 #else
             // In .NET Framework we add an event here to redirect dependency loading in the current AppDomain for PSES' dependencies
             logger.Log(PsesLogLevel.Verbose, "Adding AssemblyResolve event handler for dependency loading");
-            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_OnAssemblyResolve;
+            AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
+            {
+                logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {args.Name}");
+
+                var asmName = new AssemblyName(args.Name);
+
+                string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");
+                
+                if (!File.Exists(asmPath))
+                {
+                    return null;
+                }
+
+                logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES dependency dir into LoadFrom context");
+                return Assembly.LoadFrom(asmPath);
+            };
 #endif
 
             return new EditorServicesLoader(logger, hostConfig, sessionFileWriter, loggersToUnsubscribe);
@@ -110,11 +140,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public void Dispose()
         {
-#if CoreCLR
-            AssemblyLoadContext.Default.Resolving -= DefaultLoadContext_OnAssemblyResolve;
-#else
-            AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomain_OnAssemblyResolve;
-#endif
+            // TODO: Remove assembly resolve events
+            //       This is not high priority, since the PSES process shouldn't be reused
         }
 
         private void UpdatePSModulePath()
@@ -200,34 +227,5 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             return RuntimeInformation.OSArchitecture.ToString();
         }
-
-#if CoreCLR
-        private static Assembly DefaultLoadContext_OnAssemblyResolve(AssemblyLoadContext defaultLoadContext, AssemblyName asmName)
-        {
-            // We only want the Editor Services DLL; the new ALC will lazily load its dependencies automatically
-            if (!string.Equals(asmName.Name, "Microsoft.PowerShell.EditorServices", StringComparison.Ordinal))
-            {
-                return null;
-            }
-
-            string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");
-
-            return s_coreAsmLoadContext.LoadFromAssemblyPath(asmPath);
-        }
-#endif
-
-#if !CoreCLR
-        private static Assembly CurrentDomain_OnAssemblyResolve(object sender, ResolveEventArgs args)
-        {
-            var asmName = new AssemblyName(args.Name);
-
-            string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");
-            
-            return File.Exists(asmPath)
-                ? Assembly.LoadFrom(asmPath)
-                : null;
-        }
-#endif
-
     }
 }
