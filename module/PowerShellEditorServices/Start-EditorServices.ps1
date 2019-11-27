@@ -108,3 +108,5 @@ param(
     $DebugServiceOutPipeName = $null
 )
 
+Import-Module -Name "$PSScriptRoot/PowerShellEditorServices.psd1"
+Start-EditorServices @PSBoundParameters
