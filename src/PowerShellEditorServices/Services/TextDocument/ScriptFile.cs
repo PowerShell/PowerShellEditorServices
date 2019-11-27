@@ -9,8 +9,10 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 {
@@ -100,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Gets the list of syntax markers found by parsing this
         /// file's contents.
         /// </summary>
-        public List<ScriptFileMarker> DiagnosticMarkers
+        public List<Diagnostic> DiagnosticMarkers
         {
             get;
             private set;
@@ -656,7 +658,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // Translate parse errors into syntax markers
             this.DiagnosticMarkers =
                 parseErrors
-                    .Select(ScriptFileMarker.FromParseError)
+                    .Select(DiagnosticCreationHelper.FromParseError)
                     .ToList();
 
             // Untitled files have no directory

@@ -18,6 +18,8 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.Windows.PowerShell.ScriptAnalyzer.Hosting;
 using Microsoft.Windows.PowerShell.ScriptAnalyzer;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.PowerShell.EditorServices.Services.Analysis;
+using Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -99,42 +101,31 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #region Public Methods
 
         /// <summary>
-        /// Get PSScriptAnalyzer settings hashtable for PSProvideCommentHelp rule.
+        /// Get PSScriptAnalyzer settings for PSProvideCommentHelp rule.
         /// </summary>
         /// <param name="enable">Enable the rule.</param>
         /// <param name="exportedOnly">Analyze only exported functions/cmdlets.</param>
         /// <param name="blockComment">Use block comment or line comment.</param>
         /// <param name="vscodeSnippetCorrection">Return a vscode snipped correction should be returned.</param>
         /// <param name="placement">Place comment help at the given location relative to the function definition.</param>
-        /// <returns>A PSScriptAnalyzer settings hashtable.</returns>
-        public static Hashtable GetCommentHelpRuleSettings(
+        /// <returns>A PSScriptAnalyzer settings.</returns>
+        public Settings GetCommentHelpRuleSettings(
             bool enable,
             bool exportedOnly,
             bool blockComment,
             bool vscodeSnippetCorrection,
             string placement)
         {
-            var settings = new Dictionary<string, Hashtable>();
-            var ruleSettings = new Hashtable();
-            ruleSettings.Add("Enable", enable);
-            ruleSettings.Add("ExportedOnly", exportedOnly);
-            ruleSettings.Add("BlockComment", blockComment);
-            ruleSettings.Add("VSCodeSnippetCorrection", vscodeSnippetCorrection);
-            ruleSettings.Add("Placement", placement);
-            settings.Add("PSProvideCommentHelp", ruleSettings);
+            var pssaSettings = _analyzer.CreateSettings();
+            pssaSettings.AddRuleArgument("PSProvideCommentHelp", new Dictionary<string, object>{
+                { "Enable", enable },
+                { "ExportedOnly", exportedOnly },
+                { "BlockComment", blockComment },
+                { "VSCodeSnippetCorrection", vscodeSnippetCorrection },
+                { "Placement", placement }
+            });
 
-            var hashtable = new Hashtable();
-            var ruleSettingsHashtable = new Hashtable();
-
-            hashtable["IncludeRules"] = settings.Keys.ToArray<object>();
-            hashtable["Rules"] = ruleSettingsHashtable;
-
-            foreach (var kvp in settings)
-            {
-                ruleSettingsHashtable.Add(kvp.Key, kvp.Value);
-            }
-
-            return hashtable;
+            return pssaSettings;
         }
 
         /// <summary>
@@ -143,15 +134,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="scriptContent">The script content to be analyzed.</param>
         /// <param name="settings">ScriptAnalyzer settings</param>
         /// <returns></returns>
-        public async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(
+        public async Task<List<Diagnostic>> GetSemanticMarkersAsync(
            string scriptContent,
-           Hashtable settings)
+           Settings settings)
         {
             AnalyzerResult analyzerResult = await _analyzer.AnalyzeAsync(
                     scriptContent,
-                    _analyzer.CreateSettings(settings));
+                    settings);
 
-            return analyzerResult.Result.Select(ScriptFileMarker.FromDiagnosticRecord).ToList();
+            return analyzerResult.Result.Select(DiagnosticCreationHelper.FromDiagnosticRecord).ToList();
         }
 
         /// <summary>
@@ -228,6 +219,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 foreach (ScriptFile file in filesToAnalyze)
                 {
+                    if (!ct.CanBeCanceled || ct.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     AnalyzerResult analyzerResult = await _analyzer.AnalyzeAsync(
                         file.ScriptAst,
                         file.ScriptTokens,
@@ -239,8 +235,77 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         break;
                     }
 
-                    IEnumerable<ScriptFileMarker> scriptFileMarkers = analyzerResult.Result.Select(ScriptFileMarker.FromDiagnosticRecord);
-                    file.DiagnosticMarkers.AddRange(scriptFileMarkers);
+                    // Create the entry for this file if it does not already exist
+                    SemaphoreSlim fileLock;
+                    Dictionary<string, MarkerCorrection> fileCorrections;
+                    bool newEntryNeeded = false;
+                    if (_mostRecentCorrectionsByFile.TryGetValue(file.DocumentUri, out (SemaphoreSlim, Dictionary<string, MarkerCorrection>) fileCorrectionsEntry))
+                    {
+                        fileLock = fileCorrectionsEntry.Item1;
+                        fileCorrections = fileCorrectionsEntry.Item2;
+                    }
+                    else
+                    {
+                        fileLock = AsyncUtils.CreateSimpleLockingSemaphore();
+                        fileCorrections = new Dictionary<string, MarkerCorrection>();
+                        newEntryNeeded = true;
+                    }
+
+                    await fileLock.WaitAsync();
+                    try
+                    {
+                        if (newEntryNeeded)
+                        {
+                            // If we create a new entry, we should do it after acquiring the lock we just created
+                            // to ensure a competing thread can never acquire it first and read invalid information from it
+                            _mostRecentCorrectionsByFile[file.DocumentUri] = (fileLock, fileCorrections);
+                        }
+                        else
+                        {
+                            // Otherwise we need to clear the stale corrections
+                            fileCorrections.Clear();
+                        }
+
+                        foreach (DiagnosticRecord diagnosticRecord in analyzerResult.Result)
+                        {
+                            var diagnostic = DiagnosticCreationHelper.FromDiagnosticRecord(diagnosticRecord);
+                            file.DiagnosticMarkers.Add(diagnostic);
+
+                            // Does the marker contain a correction?
+                            //Diagnostic markerDiagnostic = GetDiagnosticFromMarker(marker);
+                            if (diagnosticRecord.SuggestedCorrections != null)
+                            {
+                                var editRegions = new List<ScriptRegion>();
+                                string correctionMessage = null;
+                                foreach (dynamic suggestedCorrection in diagnosticRecord.SuggestedCorrections)
+                                {
+                                    editRegions.Add(
+                                        new ScriptRegion(
+                                            diagnosticRecord.ScriptPath,
+                                            suggestedCorrection.Text,
+                                            startLineNumber: suggestedCorrection.StartLineNumber,
+                                            startColumnNumber: suggestedCorrection.StartColumnNumber,
+                                            endLineNumber: suggestedCorrection.EndLineNumber,
+                                            endColumnNumber: suggestedCorrection.EndColumnNumber,
+                                            startOffset: -1,
+                                            endOffset: -1));
+
+                                    correctionMessage = suggestedCorrection.Description;
+                                }
+
+                                string diagnosticId = GetUniqueIdFromDiagnostic(diagnostic);
+                                fileCorrections[diagnosticId] = new MarkerCorrection
+                                {
+                                    Name = correctionMessage == null ? diagnosticRecord.Message : correctionMessage,
+                                    Edits = editRegions.ToArray()
+                                };
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        fileLock.Release();
+                    }
                 }
             }
             catch (TaskCanceledException)
@@ -256,13 +321,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        public void ClearMarkers(ScriptFile scriptFile)
-        {
-            // send empty diagnostic markers to clear any markers associated with the given file.
-            PublishScriptDiagnostics(
-                    scriptFile,
-                    new List<ScriptFileMarker>());
-        }
+        // send empty diagnostic markers to clear any markers associated with the given file.
+        public void ClearMarkers(ScriptFile scriptFile) => PublishScriptDiagnostics(scriptFile, new List<Diagnostic>());
 
         public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(string documentUri)
         {
@@ -313,63 +373,34 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return id;
         }
 
+        /// <summary>
+        /// Uses the PSScriptAnalyzer rule 'PSProvideCommentHelp' to get the comment-based help for a function string passed in.
+        /// </summary>
+        /// <param name="funcText">The string representation of the function we will get help for.</param>
+        /// <param name="blockComment">Use block comment or line comment.</param>
+        /// <param name="placement">Place comment help at the given location relative to the function definition.</param>
+        /// <returns>A PSScriptAnalyzer settings.</returns>
+        internal async Task<string> GetCommentHelpCorrectionTextAsync(string funcText, bool blockComment, string placement)
+        {
+            Settings commentHelpSettings = GetCommentHelpRuleSettings(
+                enable: true,
+                exportedOnly: false,
+                blockComment: blockComment,
+                vscodeSnippetCorrection: true,
+                placement: placement);
+
+            AnalyzerResult analyzerResult = await _analyzer.AnalyzeAsync(funcText, commentHelpSettings);
+            return analyzerResult.Result
+                .Single(record => record.RuleName == "PSProvideCommentHelp")
+                .SuggestedCorrections.Single().Text;
+        }
+
         #endregion
 
         private void PublishScriptDiagnostics(
             ScriptFile scriptFile,
-            List<ScriptFileMarker> markers)
+            List<Diagnostic> diagnostics)
         {
-            var diagnostics = new List<Diagnostic>();
-
-            // Create the entry for this file if it does not already exist
-            SemaphoreSlim fileLock;
-            Dictionary<string, MarkerCorrection> fileCorrections;
-            bool newEntryNeeded = false;
-            if (_mostRecentCorrectionsByFile.TryGetValue(scriptFile.DocumentUri, out (SemaphoreSlim, Dictionary<string, MarkerCorrection>) fileCorrectionsEntry))
-            {
-                fileLock = fileCorrectionsEntry.Item1;
-                fileCorrections = fileCorrectionsEntry.Item2;
-            }
-            else
-            {
-                fileLock = new SemaphoreSlim(initialCount: 1, maxCount: 1);
-                fileCorrections = new Dictionary<string, MarkerCorrection>();
-                newEntryNeeded = true;
-            }
-
-            fileLock.Wait();
-            try
-            {
-                if (newEntryNeeded)
-                {
-                    // If we create a new entry, we should do it after acquiring the lock we just created
-                    // to ensure a competing thread can never acquire it first and read invalid information from it
-                    _mostRecentCorrectionsByFile[scriptFile.DocumentUri] = (fileLock, fileCorrections);
-                }
-                else
-                {
-                    // Otherwise we need to clear the stale corrections
-                    fileCorrections.Clear();
-                }
-
-                foreach (ScriptFileMarker marker in markers)
-                {
-                    // Does the marker contain a correction?
-                    Diagnostic markerDiagnostic = GetDiagnosticFromMarker(marker);
-                    if (marker.Correction != null)
-                    {
-                        string diagnosticId = GetUniqueIdFromDiagnostic(markerDiagnostic);
-                        fileCorrections[diagnosticId] = marker.Correction;
-                    }
-
-                    diagnostics.Add(markerDiagnostic);
-                }
-            }
-            finally
-            {
-                fileLock.Release();
-            }
-
             // Always send syntax and semantic errors.  We want to
             // make sure no out-of-date markers are being displayed.
             _languageServer.Document.PublishDiagnostics(new PublishDiagnosticsParams()
@@ -377,48 +408,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 Uri = new Uri(scriptFile.DocumentUri),
                 Diagnostics = new Container<Diagnostic>(diagnostics),
             });
-        }
-
-        private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
-        {
-            return new Diagnostic
-            {
-                Severity = MapDiagnosticSeverity(scriptFileMarker.Level),
-                Message = scriptFileMarker.Message,
-                Code = scriptFileMarker.RuleName,
-                Source = scriptFileMarker.Source,
-                Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range
-                {
-                    Start = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position
-                    {
-                        Line = scriptFileMarker.ScriptRegion.StartLineNumber - 1,
-                        Character = scriptFileMarker.ScriptRegion.StartColumnNumber - 1
-                    },
-                    End = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position
-                    {
-                        Line = scriptFileMarker.ScriptRegion.EndLineNumber - 1,
-                        Character = scriptFileMarker.ScriptRegion.EndColumnNumber - 1
-                    }
-                }
-            };
-        }
-
-        private static DiagnosticSeverity MapDiagnosticSeverity(ScriptFileMarkerLevel markerLevel)
-        {
-            switch (markerLevel)
-            {
-                case ScriptFileMarkerLevel.Error:
-                    return DiagnosticSeverity.Error;
-
-                case ScriptFileMarkerLevel.Warning:
-                    return DiagnosticSeverity.Warning;
-
-                case ScriptFileMarkerLevel.Information:
-                    return DiagnosticSeverity.Information;
-
-                default:
-                    return DiagnosticSeverity.Error;
-            }
         }
     }
 }

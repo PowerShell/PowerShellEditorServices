@@ -70,22 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 funcText = string.Join("\n", lines);
             }
 
-            List<ScriptFileMarker> analysisResults = await _analysisService.GetSemanticMarkersAsync(
-                funcText,
-                AnalysisService.GetCommentHelpRuleSettings(
-                    enable: true,
-                    exportedOnly: false,
-                    blockComment: request.BlockComment,
-                    vscodeSnippetCorrection: true,
-                    placement: helpLocation));
-
-            if (analysisResults == null || analysisResults.Count == 0)
-            {
-                return result;
-            }
-
-            string helpText = analysisResults[0]?.Correction?.Edits[0].Text;
-
+            string helpText = await _analysisService.GetCommentHelpCorrectionTextAsync(funcText, request.BlockComment, helpLocation);
             if (helpText == null)
             {
                 return result;
