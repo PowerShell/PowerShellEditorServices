@@ -9,6 +9,11 @@ using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 
+#if !CoreCLR
+using System.Security.Principal;
+using System.Security.AccessControl;
+#endif
+
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>

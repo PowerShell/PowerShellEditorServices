@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _logger = logger;
             _config = config;
             _sessionFileWriter = sessionFileWriter;
-            _serverFactory = EditorServicesServerFactory.Create(_config.LogPath, (int)_config.LogLevel);
+            _serverFactory = EditorServicesServerFactory.Create(_config.LogPath, (int)_config.LogLevel, logger);
             _alreadySubscribedDebug = false;
         }
 

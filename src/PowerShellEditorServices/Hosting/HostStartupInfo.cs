@@ -8,7 +8,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// Contains details about the host as well as any other information
     /// needed by Editor Services at startup time.
     /// </summary>
-    internal class HostStartupInfo
+    public class HostStartupInfo
     {
         #region Constants
 
