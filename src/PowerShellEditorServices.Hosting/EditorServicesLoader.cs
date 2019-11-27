@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using SMA = System.Management.Automation;
 using System.Runtime.InteropServices;
+using Microsoft.Win32;
 
 #if CoreCLR
 using System.Runtime.Loader;
@@ -119,6 +120,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns></returns>
         public async Task LoadAndRunEditorServicesAsync()
         {
+#if !CoreCLR
+            CheckNetFxVersion();
+#endif
+
             // Add the bundled modules to the PSModulePath
             UpdatePSModulePath();
 
@@ -143,6 +148,25 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // TODO: Remove assembly resolve events
             //       This is not high priority, since the PSES process shouldn't be reused
         }
+
+#if !CoreCLR
+        private void CheckNetFxVersion()
+        {
+            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Net Framework Setup\NDP\v4\Full"))
+            {
+                object netFxValue = key?.GetValue("Release");
+                if (netFxValue == null || !(netFxValue is int netFxVersion))
+                {
+                    return;
+                }
+
+                if (netFxVersion < Net461Version)
+                {
+                    _logger.Log(PsesLogLevel.Warning, $".NET Framework version {netFxVersion} lower than .NET 4.6.1. This runtime is not supported and you may experience errors. Please update your .NET runtime version.");
+                }
+            }
+        }
+#endif
 
         private void UpdatePSModulePath()
         {

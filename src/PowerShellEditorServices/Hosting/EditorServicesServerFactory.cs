@@ -3,7 +3,6 @@ using Microsoft.PowerShell.EditorServices.Server;
 using PowerShellEditorServices.Logging;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
