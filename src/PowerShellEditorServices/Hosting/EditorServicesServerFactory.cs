@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Server;
+using PowerShellEditorServices.Logging;
 using Serilog;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -21,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="logPath">The path of the log file to use.</param>
         /// <param name="minimumLogLevel">The minimum log level to use.</param>
         /// <returns></returns>
-        public static EditorServicesServerFactory Create(string logPath, int minimumLogLevel)
+        public static EditorServicesServerFactory Create(string logPath, int minimumLogLevel, IObservable<(int logLevel, string message)> hostLogger)
         {
             Log.Logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
@@ -30,6 +32,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 .CreateLogger();
 
             ILoggerFactory loggerFactory = new LoggerFactory().AddSerilog(Log.Logger);
+
+            // Hook up logging from the host so that its recorded in the log file
+            hostLogger.Subscribe(new HostLoggerAdapter(loggerFactory));
 
             return new EditorServicesServerFactory(loggerFactory, (LogLevel)minimumLogLevel);
         }
