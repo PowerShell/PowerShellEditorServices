@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 #if CoreCLR
 using System.Runtime.Loader;
@@ -43,7 +44,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public static EditorServicesLoader Create(
             HostLogger logger,
             EditorServicesConfig hostConfig,
-            ISessionFileWriter sessionFileWriter)
+            ISessionFileWriter sessionFileWriter,
+            IReadOnlyCollection<IDisposable> loggersToUnsubscribe = null)
         {
 #if CoreCLR
             // In .NET Core, we add an event here to redirect dependency loading to the new AssemblyLoadContext we load PSES' dependencies into
@@ -55,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_OnAssemblyResolve;
 #endif
 
-            return new EditorServicesLoader(logger, hostConfig, sessionFileWriter);
+            return new EditorServicesLoader(logger, hostConfig, sessionFileWriter, loggersToUnsubscribe);
         }
 
         private readonly EditorServicesConfig _hostConfig;
@@ -64,11 +66,18 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly HostLogger _logger;
 
-        private EditorServicesLoader(HostLogger logger, EditorServicesConfig hostConfig, ISessionFileWriter sessionFileWriter)
+        private readonly IReadOnlyCollection<IDisposable> _loggersToUnsubscribe;
+
+        private EditorServicesLoader(
+            HostLogger logger,
+            EditorServicesConfig hostConfig,
+            ISessionFileWriter sessionFileWriter,
+            IReadOnlyCollection<IDisposable> loggersToUnsubscribe)
         {
             _logger = logger;
             _hostConfig = hostConfig;
             _sessionFileWriter = sessionFileWriter;
+            _loggersToUnsubscribe = loggersToUnsubscribe;
         }
 
         /// <summary>
@@ -83,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             EditorServicesLoading.LoadEditorServicesForHost();
 
             _logger.Log(PsesLogLevel.Verbose, "Starting EditorServices");
-            using (var editorServicesRunner = EditorServicesRunner.Create(_logger, _hostConfig, _sessionFileWriter))
+            using (var editorServicesRunner = EditorServicesRunner.Create(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe))
             {
                 // The trigger method for Editor Services
                 // We will wait here until Editor Services shuts down

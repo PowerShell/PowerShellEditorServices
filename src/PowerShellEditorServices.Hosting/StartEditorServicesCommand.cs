@@ -19,6 +19,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     {
         private HostLogger _logger;
 
+        private IDisposable _hostLoggerSubscription;
+
         /// <summary>
         /// The name of the EditorServices host to report
         /// </summary>
@@ -171,7 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             // Set up logging now for use throughout startup
             _logger = new HostLogger(LogLevel);
-            _logger.Subscribe(new PSHostLogger(Host.UI));
+            _hostLoggerSubscription = _logger.Subscribe(new PSHostLogger(Host.UI));
             _logger.Log(PsesLogLevel.Diagnostic, "Logger created");
         }
 
@@ -191,7 +193,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 var sessionFileWriter = new SessionFileWriter(_logger, SessionDetailsPath);
                 _logger.Log(PsesLogLevel.Diagnostic, "Session file writer created");
 
-                using (var psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter))
+                using (var psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter, loggersToUnsubscribe: new[] { _hostLoggerSubscription }))
                 {
                     _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
                     psesLoader.LoadAndRunEditorServicesAsync().Wait();

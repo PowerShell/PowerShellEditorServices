@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Server;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
@@ -25,9 +26,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="config">The startup configuration to use.</param>
         /// <param name="sessionFileWriter">The session file writer to use.</param>
         /// <returns></returns>
-        public static EditorServicesRunner Create(HostLogger logger, EditorServicesConfig config, ISessionFileWriter sessionFileWriter)
+        public static EditorServicesRunner Create(
+            HostLogger logger,
+            EditorServicesConfig config,
+            ISessionFileWriter sessionFileWriter,
+            IReadOnlyCollection<IDisposable> loggersToUnsubscribe)
         {
-            return new EditorServicesRunner(logger, config, sessionFileWriter);
+            return new EditorServicesRunner(logger, config, sessionFileWriter, loggersToUnsubscribe);
         }
 
         private readonly HostLogger _logger;
@@ -38,15 +43,22 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly EditorServicesServerFactory _serverFactory;
 
+        private readonly IReadOnlyCollection<IDisposable> _loggersToUnsubscribe;
+
         private bool _alreadySubscribedDebug;
 
-        private EditorServicesRunner(HostLogger logger, EditorServicesConfig config, ISessionFileWriter sessionFileWriter)
+        private EditorServicesRunner(
+            HostLogger logger,
+            EditorServicesConfig config,
+            ISessionFileWriter sessionFileWriter,
+            IReadOnlyCollection<IDisposable> loggersToUnsubscribe)
         {
             _logger = logger;
             _config = config;
             _sessionFileWriter = sessionFileWriter;
             _serverFactory = EditorServicesServerFactory.Create(_config.LogPath, (int)_config.LogLevel, logger);
             _alreadySubscribedDebug = false;
+            _loggersToUnsubscribe = loggersToUnsubscribe;
         }
 
         /// <summary>
@@ -113,6 +125,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             if (creatingDebugServer)
             {
                 StartDebugServer(debugServerCreation);
+            }
+
+            foreach (IDisposable loggerToUnsubscribe in _loggersToUnsubscribe)
+            {
+                loggerToUnsubscribe.Dispose();
             }
 
             await languageServer.WaitForShutdown().ConfigureAwait(false);
