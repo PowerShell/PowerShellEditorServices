@@ -112,9 +112,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             //  - Possibly start the debug server
             //  - Wait for the LSP server to finish
 
-            _logger.Log(PsesLogLevel.Verbose, "Kicking off server, deregistering host logger and awaiting server shutdown");
-
             // Unsubscribe the host logger here so that the integrated console is not polluted with input after the first prompt
+            _logger.Log(PsesLogLevel.Verbose, "Starting server, deregistering host logger and registering shutdown listener");
             foreach (IDisposable loggerToUnsubscribe in _loggersToUnsubscribe)
             {
                 loggerToUnsubscribe.Dispose();
@@ -139,6 +138,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
 
             await languageServer.WaitForShutdown().ConfigureAwait(false);
+
+            // Resubscribe host logger to log shutdown events to the console
+            _logger.Subscribe(new PSHostLogger(_config.PSHost.UI));
         }
 
         private async Task RunTempDebugSession(HostStartupInfo hostDetails)
