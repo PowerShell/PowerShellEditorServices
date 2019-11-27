@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Management.Automation.Host;
 using System.Runtime.CompilerServices;
@@ -59,14 +60,24 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         }
 
         /// <summary>
-        /// Empty implementation for subscribers to unsubscribe from logging output.
-        /// Since this logger will stop being called soon after startup,
-        /// we don't really need to implement unsubscription logic (which can be a bit complicated).
+        /// Simple unsubscriber that allows subscribers to remove themselves from the observer list later.
         /// </summary>
-        private struct Unsubscriber : IDisposable
+        private class Unsubscriber : IDisposable
         {
+            private readonly ConcurrentDictionary<IObserver<(PsesLogLevel, string)>, bool> _subscribedObservers;
+
+            private readonly IObserver<(PsesLogLevel, string)> _thisSubscriber;
+
+
+            public Unsubscriber(ConcurrentDictionary<IObserver<(PsesLogLevel, string)>, bool> subscribedObservers, IObserver<(PsesLogLevel, string)> thisSubscriber)
+            {
+                _subscribedObservers = subscribedObservers;
+                _thisSubscriber = thisSubscriber;
+            }
+
             public void Dispose()
             {
+                _subscribedObservers.TryRemove(_thisSubscriber, out bool _);
             }
         }
 
@@ -74,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly ConcurrentQueue<(PsesLogLevel logLevel, string message)> _logMessages;
 
-        private readonly ConcurrentBag<IObserver<(PsesLogLevel logLevel, string message)>> _observers;
+        private readonly ConcurrentDictionary<IObserver<(PsesLogLevel logLevel, string message)>, bool> _observers;
 
         /// <summary>
         /// Construct a new logger in the host.
@@ -84,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             _minimumLogLevel = minimumLogLevel;
             _logMessages = new ConcurrentQueue<(PsesLogLevel logLevel, string message)>();
-            _observers = new ConcurrentBag<IObserver<(PsesLogLevel logLevel, string message)>>();
+            _observers = new ConcurrentDictionary<IObserver<(PsesLogLevel logLevel, string message)>, bool>();
         }
 
         /// <summary>
@@ -99,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 throw new ArgumentNullException(nameof(observer));
             }
 
-            _observers.Add(observer);
+            _observers[observer] = true;
 
             // Catch up a late subscriber to messages already logged
             foreach ((PsesLogLevel logLevel, string message) entry in _logMessages)
@@ -107,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 observer.OnNext(entry);
             }
 
-            return new Unsubscriber();
+            return new Unsubscriber(_observers, observer);
         }
 
         /// <summary>
@@ -142,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _logMessages.Enqueue((logLevel, message));
 
             // Send this log to all observers
-            foreach (IObserver<(PsesLogLevel logLevel, string message)> observer in _observers)
+            foreach (IObserver<(PsesLogLevel logLevel, string message)> observer in _observers.Keys)
             {
                 observer.OnNext((logLevel, message));
             }

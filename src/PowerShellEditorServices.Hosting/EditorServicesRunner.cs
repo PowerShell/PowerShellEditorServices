@@ -112,6 +112,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             //  - Possibly start the debug server
             //  - Wait for the LSP server to finish
 
+            _logger.Log(PsesLogLevel.Verbose, "Kicking off server, deregistering host logger and awaiting server shutdown");
+
+            // Unsubscribe the host logger here so that the integrated console is not polluted with input after the first prompt
+            foreach (IDisposable loggerToUnsubscribe in _loggersToUnsubscribe)
+            {
+                loggerToUnsubscribe.Dispose();
+            }
+
+            // Write the integrated console banner
+            _config.PSHost.UI.WriteLine("\n=== PowerShell Integrated Console ===");
+
             PsesLanguageServer languageServer = await CreateLanguageServer(hostStartupInfo).ConfigureAwait(false);
 
             Task<PsesDebugServer> debugServerCreation = null;
@@ -125,11 +136,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             if (creatingDebugServer)
             {
                 StartDebugServer(debugServerCreation);
-            }
-
-            foreach (IDisposable loggerToUnsubscribe in _loggersToUnsubscribe)
-            {
-                loggerToUnsubscribe.Dispose();
             }
 
             await languageServer.WaitForShutdown().ConfigureAwait(false);
