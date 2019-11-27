@@ -17,6 +17,9 @@ using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
+    /// <summary>
+    /// Server runner class for handling LSP messages for Editor Services.
+    /// </summary>
     internal class PsesLanguageServer
     {
         internal ILoggerFactory LoggerFactory { get; private set; }
@@ -29,21 +32,31 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly HostStartupInfo _hostDetails;
         private readonly TaskCompletionSource<bool> _serverStart;
 
+        /// <summary>
+        /// Create a new language server instance.
+        /// </summary>
+        /// <param name="factory">Factory to create loggers with.</param>
+        /// <param name="inputStream">Protocol transport input stream.</param>
+        /// <param name="outputStream">Protocol transport output stream.</param>
+        /// <param name="hostDetails">Host configuration to instantiate the server and services with.</param>
         public PsesLanguageServer(
             ILoggerFactory factory,
-            LogLevel minimumLogLevel,
             Stream inputStream,
             Stream outputStream,
             HostStartupInfo hostDetails)
         {
             LoggerFactory = factory;
-            _minimumLogLevel = minimumLogLevel;
+            _minimumLogLevel = (LogLevel)hostDetails.LogLevel;
             _inputStream = inputStream;
             _outputStream = outputStream;
             _hostDetails = hostDetails;
             _serverStart = new TaskCompletionSource<bool>();
         }
 
+        /// <summary>
+        /// Start the server listening for input.
+        /// </summary>
+        /// <returns>A task that completes when the server is ready and listening.</returns>
         public async Task StartAsync()
         {
             LanguageServer = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options =>
@@ -103,8 +116,14 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             }
                         });
             });
+
+            _serverStart.SetResult(true);
         }
 
+        /// <summary>
+        /// Get a task that completes when the server is shut down.
+        /// </summary>
+        /// <returns>A task that completes when the server is shut down.</returns>
         public async Task WaitForShutdown()
         {
             await _serverStart.Task;

@@ -1,12 +1,18 @@
-﻿using System;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Runtime.CompilerServices;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
+    /// <summary>
+    /// User-facing log level for editor services configuration.
+    /// </summary>
     public enum PsesLogLevel
     {
         Diagnostic = 0,
@@ -16,10 +22,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         Error = 4,
     }
 
+    /// <summary>
+    /// A logging front-end for host startup allowing handover to the backend
+    /// and decoupling from the host's particular logging sink.
+    /// </summary>
     public class HostLogger :
         IObservable<(PsesLogLevel logLevel, string message)>,
         IObservable<(int logLevel, string message)>
     {
+        /// <summary>
+        /// A simple translation struct to convert PsesLogLevel to an int for backend passthrough.
+        /// </summary>
         private struct LogObserver : IObserver<(PsesLogLevel logLevel, string message)>
         {
             private readonly IObserver<(int logLevel, string message)> _observer;
@@ -45,6 +58,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
         }
 
+        /// <summary>
+        /// Empty implementation for subscribers to unsubscribe from logging output.
+        /// Since this logger will stop being called soon after startup,
+        /// we don't really need to implement unsubscription logic (which can be a bit complicated).
+        /// </summary>
         private struct Unsubscriber : IDisposable
         {
             public void Dispose()
@@ -58,6 +76,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly ConcurrentBag<IObserver<(PsesLogLevel logLevel, string message)>> _observers;
 
+        /// <summary>
+        /// Construct a new logger in the host.
+        /// </summary>
+        /// <param name="minimumLogLevel">The minimum log level to log.</param>
         public HostLogger(PsesLogLevel minimumLogLevel)
         {
             _minimumLogLevel = minimumLogLevel;
@@ -65,6 +87,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _observers = new ConcurrentBag<IObserver<(PsesLogLevel logLevel, string message)>>();
         }
 
+        /// <summary>
+        /// Subscribe a new log sink.
+        /// </summary>
+        /// <param name="observer">The log sink to subscribe.</param>
+        /// <returns>A disposable unsubscribe object.</returns>
         public IDisposable Subscribe(IObserver<(PsesLogLevel logLevel, string message)> observer)
         {
             if (observer == null)
@@ -74,6 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             _observers.Add(observer);
 
+            // Catch up a late subscriber to messages already logged
             foreach ((PsesLogLevel logLevel, string message) entry in _logMessages)
             {
                 observer.OnNext(entry);
@@ -82,6 +110,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return new Unsubscriber();
         }
 
+        /// <summary>
+        /// Subscribe a new log sink.
+        /// </summary>
+        /// <param name="observer">The log sink to subscribe.</param>
+        /// <returns>A disposable unsubscribe object.</returns>
         public IDisposable Subscribe(IObserver<(int logLevel, string message)> observer)
         {
             if (observer == null)
@@ -92,20 +125,37 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return Subscribe(new LogObserver(observer));
         }
 
+        /// <summary>
+        /// Log a message to log sinks.
+        /// </summary>
+        /// <param name="logLevel">The log severity level of message to log.</param>
+        /// <param name="message">The message to log.</param>
         public void Log(PsesLogLevel logLevel, string message)
         {
+            // Do nothing if the severity is lower than the minimum
             if (logLevel < _minimumLogLevel)
             {
                 return;
             }
 
+            // Remember this for later subscriptions
             _logMessages.Enqueue((logLevel, message));
+
+            // Send this log to all observers
             foreach (IObserver<(PsesLogLevel logLevel, string message)> observer in _observers)
             {
                 observer.OnNext((logLevel, message));
             }
         }
 
+        /// <summary>
+        /// Convenience method for logging exceptions.
+        /// </summary>
+        /// <param name="message">The human-directed message to accompany the exception.</param>
+        /// <param name="exception">The actual execption to log.</param>
+        /// <param name="callerName">The name of the calling method.</param>
+        /// <param name="callerSourceFile">The name of the file where this is logged.</param>
+        /// <param name="callerLineNumber">The line in the file where this is logged.</param>
         public void LogException(
             string message,
             Exception exception,
@@ -118,10 +168,23 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
     }
 
+    /// <summary>
+    /// A log sink to direct log messages back to the PowerShell host.
+    /// </summary>
+    /// <remarks>
+    /// Note that calling this through the cmdlet causes an error,
+    /// so instead we log directly to the host.
+    /// Since it's likely that the process will end when PSES shuts down,
+    /// there's no good reason to need objects rather than writing directly to the host.
+    /// </remarks>
     internal class PSHostLogger : IObserver<(PsesLogLevel logLevel, string message)>
     {
         private readonly PSHostUserInterface _ui;
 
+        /// <summary>
+        /// Create a new PowerShell host logger.
+        /// </summary>
+        /// <param name="ui">The PowerShell host user interface object to log output to.</param>
         public PSHostLogger(PSHostUserInterface ui)
         {
             _ui = ui;

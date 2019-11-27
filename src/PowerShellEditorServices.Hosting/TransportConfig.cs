@@ -1,4 +1,9 @@
-﻿using System;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
@@ -6,29 +11,38 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
-    public enum TransportType
-    {
-        Stdio,
-        NamedPipe,
-    }
-
+    /// <summary>
+    /// Configuration specifying an editor services protocol transport stream configuration.
+    /// </summary>
     public interface ITransportConfig
     {
+        /// <summary>
+        /// Create, connect and return the configured transport streams.
+        /// </summary>
+        /// <returns>The connected transport streams. inStream and outStream may be the same stream for duplex streams.</returns>
         Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync();
 
-        TransportType TransportType { get; }
-
+        /// <summary>
+        /// The name of the transport endpoint for logging.
+        /// </summary>
         string Endpoint { get; }
 
+        /// <summary>
+        /// The name of the transport to record in the session file.
+        /// </summary>
         string SessionFileTransportName { get; }
 
+        /// <summary>
+        /// Extra entries to record in the session file.
+        /// </summary>
         IReadOnlyDictionary<string, object> SessionFileEntries { get; }
     }
 
+    /// <summary>
+    /// Configuration for the standard input/output transport.
+    /// </summary>
     public class StdioTransportConfig : ITransportConfig
     {
-        public TransportType TransportType => TransportType.Stdio;
-
         public string Endpoint => "<stdio>";
 
         public string SessionFileTransportName => "Stdio";
@@ -41,11 +55,32 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         }
     }
 
+    /// <summary>
+    /// Configuration for a full duplex named pipe.
+    /// </summary>
     public class DuplexNamedPipeTransportConfig : ITransportConfig
     {
+        /// <summary>
+        /// Create a duplex named pipe transport config with an automatically generated pipe name.
+        /// </summary>
+        /// <returns>A new duplex named pipe transport configuration.</returns>
+        public static DuplexNamedPipeTransportConfig Create()
+        {
+            return new DuplexNamedPipeTransportConfig(NamedPipeUtils.GenerateValidNamedPipeName());
+        }
+
+        /// <summary>
+        /// Create a duplex named pipe transport config with the given pipe name.
+        /// </summary>
+        /// <returns>A new duplex named pipe transport configuration.</returns>
         public static DuplexNamedPipeTransportConfig Create(string pipeName)
         {
-            return new DuplexNamedPipeTransportConfig(pipeName ?? NamedPipeUtils.GenerateValidNamedPipeName());
+            if (pipeName == null)
+            {
+                return DuplexNamedPipeTransportConfig.Create();
+            }
+
+            return new DuplexNamedPipeTransportConfig(pipeName);
         }
 
         private readonly string _pipeName;
@@ -57,8 +92,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         }
 
         public string Endpoint => $"InOut pipe: {_pipeName}";
-
-        public TransportType TransportType => TransportType.NamedPipe;
 
         public string SessionFileTransportName => "NamedPipe";
 
@@ -72,21 +105,47 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         }
     }
 
+    /// <summary>
+    /// Configuration for two simplex named pipes.
+    /// </summary>
     public class SimplexNamedPipeTransportConfig : ITransportConfig
     {
+        private static readonly IReadOnlyList<string> s_pipeNamePrefixes = new[]
+        {
+            "in",
+            "out",
+        };
+
+        /// <summary>
+        /// Create a pair of simplex named pipes using generated names.
+        /// </summary>
+        /// <returns>A new simplex named pipe transport config.</returns>
+        public static SimplexNamedPipeTransportConfig Create()
+        {
+            return SimplexNamedPipeTransportConfig.Create(NamedPipeUtils.GenerateValidNamedPipeName(s_pipeNamePrefixes));
+        }
+
+        /// <summary>
+        /// Create a pair of simplex named pipes using the given name as a base.
+        /// </summary>
+        /// <returns>A new simplex named pipe transport config.</returns>
         public static SimplexNamedPipeTransportConfig Create(string pipeNameBase)
         {
             if (pipeNameBase == null)
             {
-                pipeNameBase = NamedPipeUtils.GenerateValidNamedPipeName();
+                return SimplexNamedPipeTransportConfig.Create();
             }
 
-            string inPipeName = $"in_{pipeNameBase}";
-            string outPipeName = $"out_{pipeNameBase}";
+            string inPipeName = $"{s_pipeNamePrefixes[0]}_{pipeNameBase}";
+            string outPipeName = $"{s_pipeNamePrefixes[1]}_{pipeNameBase}";
 
             return SimplexNamedPipeTransportConfig.Create(inPipeName, outPipeName);
         }
 
+        /// <summary>
+        /// Create a pair of simplex named pipes using the given names.
+        /// </summary>
+        /// <returns>A new simplex named pipe transport config.</returns>
         public static SimplexNamedPipeTransportConfig Create(string inPipeName, string outPipeName)
         {
             return new SimplexNamedPipeTransportConfig(inPipeName, outPipeName);
@@ -108,8 +167,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         }
 
         public string Endpoint => $"In pipe: {_inPipeName} Out pipe: {_outPipeName}";
-
-        public TransportType TransportType => TransportType.NamedPipe;
 
         public string SessionFileTransportName => "NamedPipeSimplex";
 

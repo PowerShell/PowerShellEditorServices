@@ -1,5 +1,9 @@
-﻿using Microsoft.PowerShell.Commands;
-using PowerShellEditorServices.Hosting;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using Microsoft.PowerShell.Commands;
 using System;
 using System.Linq;
 using System.Management.Automation;
@@ -7,6 +11,9 @@ using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
+    /// <summary>
+    /// The Start-EditorServices command, the conventional entrypoint for PowerShell Editor Services.
+    /// </summary>
     [Cmdlet(VerbsLifecycle.Start, "EditorServices", DefaultParameterSetName = "NamedPipe")]
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
@@ -33,28 +40,56 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         [ValidateNotNullOrEmpty]
         public Version HostVersion { get; set; }
 
+        /// <summary>
+        /// Path to the session file to create on startup or startup failure.
+        /// </summary>
         [Parameter(Mandatory = true)]
         [ValidateNotNullOrEmpty]
         public string SessionDetailsPath { get; set; }
 
+        /// <summary>
+        /// The name of the named pipe to use for the LSP transport.
+        /// If left unset and named pipes are used as transport, a new name will be generated.
+        /// </summary>
         [Parameter(ParameterSetName = "NamedPipe")]
         public string LanguageServicePipeName { get; set; }
 
+        /// <summary>
+        /// The name of the named pipe to use for the debug adapter transport.
+        /// If left unset and named pipes are used as a transport, a new name will be generated.
+        /// </summary>
         [Parameter(ParameterSetName = "NamedPipe")]
         public string DebugServicePipeName { get; set; }
 
+        /// <summary>
+        /// The name of the input named pipe to use for the LSP transport.
+        /// </summary>
         [Parameter(ParameterSetName = "NamedPipeSimplex")]
         public string LanguageServiceInPipeName { get; set; }
 
+        /// <summary>
+        /// The name of the output named pipe to use for the LSP transport.
+        /// </summary>
         [Parameter(ParameterSetName = "NamedPipeSimplex")]
         public string LanguageServiceOutPipeName { get; set; }
 
+        /// <summary>
+        /// The name of the input pipe to use for the debug adapter transport.
+        /// </summary>
         [Parameter(ParameterSetName = "NamedPipeSimplex")]
         public string DebugServiceInPipeName { get; set; }
 
+        /// <summary>
+        /// The name of the output pipe to use for the debug adapter transport.
+        /// </summary>
         [Parameter(ParameterSetName = "NamedPipeSimplex")]
         public string DebugServiceOutPipeName { get; set; }
 
+        /// <summary>
+        /// If set, uses standard input/output as the LSP transport.
+        /// When <see cref="DebugServiceOnly"/> is set with this, standard input/output
+        /// is used as the debug adapter transport.
+        /// </summary>
         [Parameter(ParameterSetName = "Stdio")]
         public SwitchParameter Stdio { get; set; }
 
@@ -65,31 +100,59 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         [ValidateNotNullOrEmpty]
         public string BundledModulesPath { get; set; }
 
+        /// <summary>
+        /// The absolute path to the where the editor services log file should be created and logged to.
+        /// </summary>
         [Parameter]
         [ValidateNotNullOrEmpty]
         public string LogPath { get; set; }
 
+        /// <summary>
+        /// The minimum log level that should be emitted.
+        /// </summary>
         [Parameter]
         public PsesLogLevel LogLevel { get; set; }
 
+        /// <summary>
+        /// Paths to additional PowerShell modules to be imported at startup.
+        /// </summary>
         [Parameter]
         public string[] AdditionalModules { get; set; }
 
+        /// <summary>
+        /// Any feature flags to enable in EditorServices.
+        /// </summary>
         [Parameter]
         public string[] FeatureFlags { get; set; }
 
+        /// <summary>
+        /// When set, enables the integrated console.
+        /// </summary>
         [Parameter]
         public SwitchParameter EnableConsoleRepl { get; set; }
 
+        /// <summary>
+        /// When set and the console is enabled, the legacy lightweight
+        /// readline implementation will be used instead of PSReadLine.
+        /// </summary>
         [Parameter]
         public SwitchParameter UseLegacyReadLine { get; set; }
 
+        /// <summary>
+        /// When set, do not enable LSP service, only the debug adapter.
+        /// </summary>
         [Parameter]
         public SwitchParameter DebugServiceOnly { get; set; }
 
+        /// <summary>
+        /// When set with a debug build, startup will wait for a debugger to attach.
+        /// </summary>
         [Parameter]
         public SwitchParameter WaitForDebugger { get; set; }
 
+        /// <summary>
+        /// When set, will generate two simplex named pipes using a single named pipe name.
+        /// </summary>
         [Parameter]
         public SwitchParameter SplitInOutPipes { get; set; }
 
@@ -101,14 +164,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 while (!System.Diagnostics.Debugger.IsAttached)
                 {
                     Console.WriteLine($"PID: {System.Diagnostics.Process.GetCurrentProcess().Id}");
-                    System.Threading.Thread.Sleep(500);
+                    System.Threading.Thread.Sleep(1000);
                 }
             }
 #endif
 
+            // Set up logging now for use throughout startup
             _logger = new HostLogger(LogLevel);
             _logger.Subscribe(new PSHostLogger(Host.UI));
-
             _logger.Log(PsesLogLevel.Diagnostic, "Logger created");
         }
 
@@ -116,47 +179,21 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Beginning EndProcessing block");
 
-            var sessionFileWriter = new SessionFileWriter(_logger, SessionDetailsPath);
-
-            _logger.Log(PsesLogLevel.Diagnostic, "Session file writer created");
-
             try
             {
-                _logger.Log(PsesLogLevel.Verbose, "Removing PSReadLine");
-                using (var pwsh = SMA.PowerShell.Create())
-                {
-                    bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
-                        .AddParameter("Name", "PSReadLine")
-                        .Invoke()
-                        .Any();
+                // First try to remove PSReadLine to decomplicate startup
+                // If PSReadLine is enabled, it will be re-imported later
+                RemovePSReadLineForStartup();
 
-                    if (hasPSReadLine)
-                    {
-                        pwsh.Commands.Clear();
+                // Create the configuration from parameters
+                EditorServicesConfig editorServicesConfig = CreateConfigObject();
 
-                        pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Remove-Module", typeof(RemoveModuleCommand)))
-                            .AddParameter("Name", "PSReadLine")
-                            .AddParameter("ErrorAction", "SilentlyContinue");
+                var sessionFileWriter = new SessionFileWriter(_logger, SessionDetailsPath);
+                _logger.Log(PsesLogLevel.Diagnostic, "Session file writer created");
 
-                        _logger.Log(PsesLogLevel.Verbose, "Removed PSReadLine");
-                    }
-                }
-
-                _logger.Log(PsesLogLevel.Diagnostic, "Creating host configuration");
-                var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
-                var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, BundledModulesPath, LogPath)
-                {
-                    FeatureFlags = FeatureFlags,
-                    LogLevel = LogLevel,
-                    ConsoleRepl = GetReplKind(),
-                    AdditionalModules = AdditionalModules,
-                    LanguageServiceTransport = GetLanguageServiceTransport(),
-                    DebugServiceTransport = GetDebugServiceTransport(),
-                };
-
-                _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
                 using (var psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter))
                 {
+                    _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
                     psesLoader.LoadAndRunEditorServicesAsync().Wait();
                 }
             }
@@ -167,8 +204,48 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 // Give the user a chance to read the message
                 Console.ReadKey();
 
-                throw;
+                ThrowTerminatingError(new ErrorRecord(e, "PowerShellEditorServicesError", ErrorCategory.NotSpecified, this));
             }
+        }
+
+        private void RemovePSReadLineForStartup()
+        {
+            _logger.Log(PsesLogLevel.Verbose, "Removing PSReadLine");
+            using (var pwsh = SMA.PowerShell.Create())
+            {
+                bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
+                    .AddParameter("Name", "PSReadLine")
+                    .Invoke()
+                    .Any();
+
+                if (hasPSReadLine)
+                {
+                    pwsh.Commands.Clear();
+
+                    pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Remove-Module", typeof(RemoveModuleCommand)))
+                        .AddParameter("Name", "PSReadLine")
+                        .AddParameter("ErrorAction", "SilentlyContinue");
+
+                    _logger.Log(PsesLogLevel.Verbose, "Removed PSReadLine");
+                }
+            }
+        }
+
+        private EditorServicesConfig CreateConfigObject()
+        {
+            _logger.Log(PsesLogLevel.Diagnostic, "Creating host configuration");
+            var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
+            var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, BundledModulesPath, LogPath)
+            {
+                FeatureFlags = FeatureFlags,
+                LogLevel = LogLevel,
+                ConsoleRepl = GetReplKind(),
+                AdditionalModules = AdditionalModules,
+                LanguageServiceTransport = GetLanguageServiceTransport(),
+                DebugServiceTransport = GetDebugServiceTransport(),
+            };
+
+            return editorServicesConfig;
         }
 
         private ConsoleReplKind GetReplKind()

@@ -19,6 +19,9 @@ using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
+    /// <summary>
+    /// Server for hosting debug sessions.
+    /// </summary>
     internal class PsesDebugServer : IDisposable
     {
         protected readonly ILoggerFactory _loggerFactory;
@@ -32,6 +35,14 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         private readonly TaskCompletionSource<bool> _serverStopped;
 
+        /// <summary>
+        /// Create a debug server using existing services from a language server instance.
+        /// </summary>
+        /// <param name="loggerFactory">Factory to instantiate loggers with.</param>
+        /// <param name="inputStream">Protocol transport input stream.</param>
+        /// <param name="outputStream">Protocol transport output stream.</param>
+        /// <param name="languageServerServiceProvider">Service provider from the language server to use.</param>
+        /// <returns></returns>
         public static PsesDebugServer CreateWithLanguageServerServices(
             ILoggerFactory loggerFactory,
             Stream inputStream,
@@ -41,9 +52,16 @@ namespace Microsoft.PowerShell.EditorServices.Server
             return new PsesDebugServer(loggerFactory, inputStream, outputStream, languageServerServiceProvider, useTempSession: false);
         }
 
+        /// <summary>
+        /// Create a debug server instantiating services from a host configuration.
+        /// </summary>
+        /// <param name="loggerFactory">Factory to create loggers with.</param>
+        /// <param name="inputStream">Protocol transport input stream.</param>
+        /// <param name="outputStream">Protocol transport output stream.</param>
+        /// <param name="hostDetails">The host configuration to create services with.</param>
+        /// <returns></returns>
         public static PsesDebugServer CreateForTempSession(
             ILoggerFactory loggerFactory,
-            LogLevel minimumLogLevel,
             Stream inputStream,
             Stream outputStream,
             HostStartupInfo hostDetails)
@@ -77,6 +95,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         internal IServiceProvider ServiceProvider { get; }
 
+        /// <summary>
+        /// Start the debug server listening.
+        /// </summary>
+        /// <returns>A task that completes when the server is ready.</returns>
         public async Task StartAsync()
         {
             _jsonRpcServer = await JsonRpcServer.From(options =>

@@ -5,10 +5,10 @@ using System.Management.Automation.Host;
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>
-    /// Contains details about the current host application (most
-    /// likely the editor which is using the host process).
+    /// Contains details about the host as well as any other information
+    /// needed by Editor Services at startup time.
     /// </summary>
-    public class HostStartupInfo
+    internal class HostStartupInfo
     {
         #region Constants
 
@@ -51,22 +51,50 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </summary>
         public Version Version { get; }
 
+        /// <summary>
+        /// The path to the single user PowerShell profile.
+        /// </summary>
         public string CurrentUserProfilePath { get; }
 
+        /// <summary>
+        /// The path to the shared PowerShell profile.
+        /// </summary>
         public string AllUsersProfilePath { get; }
 
+        /// <summary>
+        /// Any feature flags enabled at startup.
+        /// </summary>
         public IReadOnlyList<string> FeatureFlags { get; }
 
+        /// <summary>
+        /// Names or paths of any additional modules to import on startup.
+        /// </summary>
         public IReadOnlyList<string> AdditionalModules { get; }
 
+        /// <summary>
+        /// True if the integrated console is to be enabled.
+        /// </summary>
         public bool ConsoleReplEnabled { get; }
 
+        /// <summary>
+        /// If true, the legacy PSES readline implementation will be used. Otherwise PSReadLine will be used.
+        /// If the console REPL is not enabled, this setting will be ignored.
+        /// </summary>
         public bool UsesLegacyReadLine { get; }
 
+        /// <summary>
+        /// The PowerShell host to use with Editor Services.
+        /// </summary>
         public PSHost PSHost { get; }
 
+        /// <summary>
+        /// The path of the log file Editor Services should log to.
+        /// </summary>
         public string LogPath { get; }
 
+        /// <summary>
+        /// The minimum log level of log events to be logged.
+        /// </summary>
         public int LogLevel { get; }
 
         #endregion
@@ -87,6 +115,15 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// will be used.
         /// </param>
         /// <param name="version">The host application's version.</param>
+        /// <param name="psHost">The PowerShell host to use.</param>
+        /// <param name="allUsersProfilePath">The path to the shared profile.</param>
+        /// <param name="currentUsersProfilePath">The path to the user specific profile.</param>
+        /// <param name="featureFlags">Flags of features to enable.</param>
+        /// <param name="additionalModules">Names or paths of additional modules to import.</param>
+        /// <param name="logPath">The path to log to.</param>
+        /// <param name="logLevel">The minimum log event level.</param>
+        /// <param name="consoleReplEnabled">Enable console if true.</param>
+        /// <param name="usesLegacyReadLine">Use PSReadLine if false, otherwise use the legacy readline implementation.</param>
         public HostStartupInfo(
             string name,
             string profileId,

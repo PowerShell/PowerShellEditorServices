@@ -1,15 +1,30 @@
-﻿using Microsoft.PowerShell.EditorServices.Hosting;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using Microsoft.PowerShell.EditorServices.Server;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Management.Automation;
 using System.Threading.Tasks;
+using SMA = System.Management.Automation;
 
-namespace PowerShellEditorServices.Hosting
+namespace Microsoft.PowerShell.EditorServices.Hosting
 {
+    /// <summary>
+    /// Class to manage the startup of PowerShell Editor Services.
+    /// This should be called by <see cref="EditorServicesLoader"/> only after Editor Services has been loaded.
+    /// </summary>
     internal class EditorServicesRunner : IDisposable
     {
+        /// <summary>
+        /// Create a new Editor Services runner.
+        /// </summary>
+        /// <param name="logger">The host logger to log through.</param>
+        /// <param name="config">The startup configuration to use.</param>
+        /// <param name="sessionFileWriter">The session file writer to use.</param>
+        /// <returns></returns>
         public static EditorServicesRunner Create(HostLogger logger, EditorServicesConfig config, ISessionFileWriter sessionFileWriter)
         {
             return new EditorServicesRunner(logger, config, sessionFileWriter);
@@ -34,13 +49,20 @@ namespace PowerShellEditorServices.Hosting
             _alreadySubscribedDebug = false;
         }
 
+        /// <summary>
+        /// Start and run Editor Services and then wait for shutdown.
+        /// </summary>
+        /// <returns>A task that ends when Editor Services shuts down.</returns>
         public async Task RunUntilShutdown()
         {
+            // Start Editor Services
             Task runAndAwaitShutdown = CreateEditorServicesAndRunUntilShutdown();
 
+            // Now write the session file
             _logger.Log(PsesLogLevel.Diagnostic, "Writing session file");
             _sessionFileWriter.WriteSessionStarted(_config.LanguageServiceTransport, _config.DebugServiceTransport);
 
+            // Finally, wait for Editor Services to shut down
             await runAndAwaitShutdown.ConfigureAwait(false);
         }
 
@@ -48,6 +70,10 @@ namespace PowerShellEditorServices.Hosting
         {
         }
 
+        /// <summary>
+        /// Master method for instantiating, running and waiting for the LSP and debug servers at the heart of Editor Services.
+        /// </summary>
+        /// <returns>A task that ends when Editor Services shuts down.</returns>
         private async Task CreateEditorServicesAndRunUntilShutdown()
         {
             bool creatingLanguageServer = _config.LanguageServiceTransport != null;
@@ -59,11 +85,20 @@ namespace PowerShellEditorServices.Hosting
             // Set up information required to instantiate servers
             HostStartupInfo hostStartupInfo = CreateHostStartupInfo();
 
+            // If we just want a temp debug session, run that and do nothing else
             if (isTempDebugSession)
             {
                 await RunTempDebugSession(hostStartupInfo).ConfigureAwait(false);
                 return;
             }
+
+            // We want LSP and maybe debugging
+            // To do that we:
+            //  - Create the LSP server
+            //  - Possibly kick off the debug server creation
+            //  - Start the LSP server
+            //  - Possibly start the debug server
+            //  - Wait for the LSP server to finish
 
             PsesLanguageServer languageServer = await CreateLanguageServer(hostStartupInfo).ConfigureAwait(false);
 
@@ -97,12 +132,16 @@ namespace PowerShellEditorServices.Hosting
         private async Task StartDebugServer(Task<PsesDebugServer> debugServerCreation)
         {
             PsesDebugServer debugServer = await debugServerCreation.ConfigureAwait(false);
+
+            // When the debug server shuts down, we want it to automatically restart
+            // To do this, we set an event to allow it to create a new debug server as its session ends
             if (!_alreadySubscribedDebug)
             {
                 _logger.Log(PsesLogLevel.Diagnostic, "Subscribing debug server for session ended event");
                 _alreadySubscribedDebug = true;
                 debugServer.SessionEnded += DebugServer_OnSessionEnded;
             }
+
             _logger.Log(PsesLogLevel.Diagnostic, "Starting debug server");
             debugServer.StartAsync();
             return;
@@ -176,7 +215,7 @@ namespace PowerShellEditorServices.Hosting
 
             if (allUsersPath == null || currentUserPath == null)
             {
-                using (var pwsh = PowerShell.Create())
+                using (var pwsh = SMA.PowerShell.Create())
                 {
                     _logger.Log(PsesLogLevel.Diagnostic, "Querying PowerShell for profile paths");
                     Collection<string> profiles = pwsh.AddScript("$profile.AllUsersAllHosts,$profile.CurrentUserAllHosts")
