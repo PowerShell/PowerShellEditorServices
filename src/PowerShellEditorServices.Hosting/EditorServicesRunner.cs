@@ -92,8 +92,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             bool creatingDebugServer = _config.DebugServiceTransport != null;
             bool isTempDebugSession = creatingDebugServer && !creatingLanguageServer;
 
-            // TODO: Validate config here
-
             // Set up information required to instantiate servers
             HostStartupInfo hostStartupInfo = CreateHostStartupInfo();
 

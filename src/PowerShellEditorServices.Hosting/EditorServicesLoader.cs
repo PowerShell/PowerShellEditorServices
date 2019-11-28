@@ -121,9 +121,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public async Task LoadAndRunEditorServicesAsync()
         {
 #if !CoreCLR
+            // Make sure the .NET Framework version supports .NET Standard 2.0
             CheckNetFxVersion();
 #endif
 
+            // Ensure the language mode allows us to run
             CheckLanguageMode();
 
             // Add the bundled modules to the PSModulePath
@@ -131,6 +133,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             // Log important host information here
             LogHostInformation();
+
+            // Check to see if the configuration we have is valid
+            ValidateConfiguration();
 
             // Method with no implementation that forces the PSES assembly to load, triggering an AssemblyResolve event
             _logger.Log(PsesLogLevel.Verbose, "Loading PSES assemblies");
@@ -267,6 +272,29 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
 
             return RuntimeInformation.OSArchitecture.ToString();
+        }
+
+        private void ValidateConfiguration()
+        {
+            bool lspUsesStdio = _hostConfig.LanguageServiceTransport is StdioTransportConfig;
+            bool debugUsesStdio = _hostConfig.DebugServiceTransport is StdioTransportConfig;
+
+            // Ensure LSP and Debug are not both Stdio
+            if (lspUsesStdio && debugUsesStdio)
+            {
+                throw new ArgumentException("LSP and Debug transports cannot both use Stdio");
+            }
+
+            if (_hostConfig.ConsoleRepl != ConsoleReplKind.None
+                && (lspUsesStdio || debugUsesStdio))
+            {
+                throw new ArgumentException("Cannot use the REPL with a Stdio protocol transport");
+            }
+
+            if (_hostConfig.PSHost == null)
+            {
+                throw new ArgumentNullException(nameof(_hostConfig.PSHost));
+            }
         }
     }
 }
