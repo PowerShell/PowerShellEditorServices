@@ -206,6 +206,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 _logger.LogException("Exception encountered starting EditorServices", e);
 
                 // Give the user a chance to read the message
+                Host.UI.WriteLine("\n== Press any key to close terminal ==");
                 Console.ReadKey();
 
                 ThrowTerminatingError(new ErrorRecord(e, "PowerShellEditorServicesError", ErrorCategory.NotSpecified, this));
