@@ -159,6 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 #if !CoreCLR
         private void CheckNetFxVersion()
         {
+            _logger.Log(PsesLogLevel.Diagnostic, "Checking that .NET Framework version is at least 4.6.1");
             using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Net Framework Setup\NDP\v4\Full"))
             {
                 object netFxValue = key?.GetValue("Release");
@@ -181,6 +182,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </summary>
         private void CheckLanguageMode()
         {
+            _logger.Log(PsesLogLevel.Diagnostic, "Checking that PSES is running in FullLanguage mode");
             using (var pwsh = SMA.PowerShell.Create())
             {
                 if (pwsh.Runspace.SessionStateProxy.LanguageMode != SMA.PSLanguageMode.FullLanguage)
@@ -207,6 +209,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private void LogHostInformation()
         {
+            _logger.Log(PsesLogLevel.Diagnostic, "Logging host information");
             _logger.Log(PsesLogLevel.Verbose, $@"
 == Host Startup Configuration Details ==
  - Host name:                 {_hostConfig.HostInfo.Name}
@@ -276,6 +279,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private void ValidateConfiguration()
         {
+            _logger.Log(PsesLogLevel.Diagnostic, "Validating configuration");
+
             bool lspUsesStdio = _hostConfig.LanguageServiceTransport is StdioTransportConfig;
             bool debugUsesStdio = _hostConfig.DebugServiceTransport is StdioTransportConfig;
 
