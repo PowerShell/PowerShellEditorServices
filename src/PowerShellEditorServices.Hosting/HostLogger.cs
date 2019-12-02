@@ -3,11 +3,15 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Serilog;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Management.Automation.Host;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
@@ -234,6 +238,94 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     _ui.WriteErrorLine(value.message);
                     return;
             }
+        }
+    }
+
+    internal class StreamLogger : IObserver<(PsesLogLevel logLevel, string message)>, IDisposable
+    {
+        public static StreamLogger CreateWithNewFile(string path)
+        {
+            return new StreamLogger(
+                new StreamWriter(
+                    new FileStream(
+                        path,
+                        FileMode.Create,
+                        FileAccess.Write,
+                        FileShare.Read,
+                        bufferSize: 4096,
+                        FileOptions.Asynchronous | FileOptions.SequentialScan)));
+        }
+
+        private readonly StreamWriter _fileWriter;
+
+        // This cannot be a bool
+        // See https://stackoverflow.com/q/6164751
+        private int _hasCompleted;
+
+        private IDisposable _unsubscriber;
+
+        public StreamLogger(StreamWriter streamWriter)
+        {
+            _hasCompleted = 0;
+            _fileWriter = streamWriter;
+        }
+
+        public void OnCompleted()
+        {
+            // Ensure we only complete once
+            if (Interlocked.Exchange(ref _hasCompleted, 1) != 0)
+            {
+                return;
+            }
+
+            _unsubscriber.Dispose();
+            _fileWriter.Flush();
+            _fileWriter.Close();
+            _fileWriter.Dispose();
+        }
+
+        public void OnError(Exception error)
+        {
+            OnNext((PsesLogLevel.Error, $"Error occurred while logging: {error}"));
+        }
+
+        public void OnNext((PsesLogLevel logLevel, string message) value)
+        {
+            string message = null;
+            switch (value.logLevel)
+            {
+                case PsesLogLevel.Diagnostic:
+                    message = $"[DEBUG]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Verbose:
+                    message = $"[VERBOSE]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Normal:
+                    message = $"[INFO]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Warning:
+                    message = $"[WARN]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Error:
+                    message = $"[ERROR]: {value.message}";
+                    break;
+            };
+
+            _fileWriter.WriteLineAsync(message);
+        }
+
+        public void AddUnsubscriber(IDisposable unsubscriber)
+        {
+            _unsubscriber = unsubscriber;
+        }
+
+        public void Dispose()
+        {
+            OnCompleted();
         }
     }
 }

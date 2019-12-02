@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
@@ -17,23 +18,23 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// </summary>
     internal class PsesLoadContext : AssemblyLoadContext
     {
-        private readonly HostLogger _logger;
-
         private readonly string _dependencyDirPath;
 
-        public PsesLoadContext(HostLogger logger, string dependencyDirPath)
+        public PsesLoadContext(string dependencyDirPath)
         {
-            _logger = logger;
             _dependencyDirPath = dependencyDirPath;
         }
 
         protected override Assembly Load(AssemblyName assemblyName)
         {
+            // Since this class is responsible for loading any DLLs in .NET Core,
+            // we must restrict the code in here to only use core types,
+            // otherwise we may depend on assembly that we are trying to load and cause a StackOverflowException
+
             string asmPath = Path.Combine(_dependencyDirPath, $"{assemblyName.Name}.dll");
 
             if (File.Exists(asmPath))
             {
-                _logger.Log(PsesLogLevel.Diagnostic, $"Loading assembly '{assemblyName}' in isolated load context");
                 return LoadFromAssemblyPath(asmPath);
             }
 

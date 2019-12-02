@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 .MinimumLevel.Verbose()
                 .CreateLogger();
 
-            ILoggerFactory loggerFactory = new LoggerFactory().AddSerilog(Log.Logger);
+            ILoggerFactory loggerFactory = new LoggerFactory().AddSerilog();
 
             // Hook up logging from the host so that its recorded in the log file
             hostLogger.Subscribe(new HostLoggerAdapter(loggerFactory));

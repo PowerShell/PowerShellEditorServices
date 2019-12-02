@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.Commands;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
@@ -19,9 +20,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     [Cmdlet(VerbsLifecycle.Start, "EditorServices", DefaultParameterSetName = "NamedPipe")]
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
+        private readonly List<IDisposable> _disposableResources;
+
+        private readonly List<IDisposable> _loggerUnsubscribers;
+        
         private HostLogger _logger;
 
-        private IDisposable _hostLoggerSubscription;
+        public StartEditorServicesCommand()
+        {
+            _disposableResources = new List<IDisposable>();
+            _loggerUnsubscribers = new List<IDisposable>();
+        }
 
         /// <summary>
         /// The name of the EditorServices host to report
@@ -174,9 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 #endif
 
             // Set up logging now for use throughout startup
-            _logger = new HostLogger(LogLevel);
-            _hostLoggerSubscription = _logger.Subscribe(new PSHostLogger(Host.UI));
-            _logger.Log(PsesLogLevel.Diagnostic, "Logger created");
+            StartLogging();
         }
 
         protected override void EndProcessing()
@@ -195,7 +202,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 var sessionFileWriter = new SessionFileWriter(_logger, SessionDetailsPath);
                 _logger.Log(PsesLogLevel.Diagnostic, "Session file writer created");
 
-                using (var psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter, loggersToUnsubscribe: new[] { _hostLoggerSubscription }))
+                using (var psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter, _loggerUnsubscribers))
                 {
                     _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
                     psesLoader.LoadAndRunEditorServicesAsync().Wait();
@@ -211,6 +218,47 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
                 ThrowTerminatingError(new ErrorRecord(e, "PowerShellEditorServicesError", ErrorCategory.NotSpecified, this));
             }
+            finally
+            {
+                foreach (IDisposable disposableResource in _disposableResources)
+                {
+                    disposableResource.Dispose();
+                }
+            }
+        }
+
+        private void StartLogging()
+        {
+            _logger = new HostLogger(LogLevel);
+
+            // We need to not write log messages to Stdio
+            // if it's being used as a protocol transport
+            if (!Stdio)
+            {
+                var hostLogger = new PSHostLogger(Host.UI);
+                _loggerUnsubscribers.Add(_logger.Subscribe(hostLogger));
+            }
+
+            string logPath = Path.Combine(GetLogDirPath(), "StartEditorServices.log");
+            var fileLogger = StreamLogger.CreateWithNewFile(logPath);
+            _disposableResources.Add(fileLogger);
+            IDisposable fileLoggerUnsubscriber = _logger.Subscribe(fileLogger);
+            fileLogger.AddUnsubscriber(fileLoggerUnsubscriber);
+            _loggerUnsubscribers.Add(fileLoggerUnsubscriber);
+
+            _logger.Log(PsesLogLevel.Diagnostic, "Logging started");
+        }
+
+        private string GetLogDirPath()
+        {
+            if (!string.IsNullOrEmpty(LogPath))
+            {
+                return Path.GetDirectoryName(LogPath);
+            }
+
+            return Path.GetDirectoryName(
+                Path.GetDirectoryName(
+                    Assembly.GetExecutingAssembly().Location));
         }
 
         private void RemovePSReadLineForStartup()

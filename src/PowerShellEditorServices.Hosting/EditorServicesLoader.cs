@@ -51,7 +51,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             logger.Log(PsesLogLevel.Verbose, "Adding AssemblyResolve event handler for new AssemblyLoadContext dependency loading");
 
-            var psesLoadContext = new PsesLoadContext(logger, s_psesDependencyDirPath);
+            var psesLoadContext = new PsesLoadContext(s_psesDependencyDirPath);
+
+            AppDomain.CurrentDomain.AssemblyLoad += (object sender, AssemblyLoadEventArgs args) =>
+            {
+                logger.Log(
+                    PsesLogLevel.Diagnostic,
+                    $"Assembly {args.LoadedAssembly.GetName()} loaded into load context '{AssemblyLoadContext.GetLoadContext(args.LoadedAssembly)}'");
+            };
 
             AssemblyLoadContext.Default.Resolving += (AssemblyLoadContext defaultLoadContext, AssemblyName asmName) =>
             {
@@ -72,6 +79,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 #else
             // In .NET Framework we add an event here to redirect dependency loading in the current AppDomain for PSES' dependencies
             logger.Log(PsesLogLevel.Verbose, "Adding AssemblyResolve event handler for dependency loading");
+
+            AppDomain.CurrentDomain.AssemblyLoad += (object sender, AssemblyLoadEventArgs args) =>
+            {
+                logger.Log(
+                    PsesLogLevel.Diagnostic,
+                    $"Assembly {args.LoadedAssembly.GetName()} loaded");
+            };
+
             AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
             {
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {args.Name}");
@@ -220,8 +235,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
  - REPL setting:              {_hostConfig.ConsoleRepl}
  - Session details path:      {_hostConfig.SessionDetailsPath}
  - Bundled modules path:      {_hostConfig.BundledModulePath}
- - Additional modules:        {_hostConfig.AdditionalModules}
- - Feature flags:             {_hostConfig.FeatureFlags}
+ - Additional modules:        {(_hostConfig.AdditionalModules == null ? "<null>" : string.Join(", ", _hostConfig.AdditionalModules))}
+ - Feature flags:             {(_hostConfig.FeatureFlags == null ? "<null>" : string.Join(", ", _hostConfig.FeatureFlags))}
 
  - Log path:                  {_hostConfig.LogPath}
  - Minimum log level:         {_hostConfig.LogLevel}
