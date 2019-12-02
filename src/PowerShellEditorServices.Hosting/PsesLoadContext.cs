@@ -23,6 +23,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public PsesLoadContext(string dependencyDirPath)
         {
             _dependencyDirPath = dependencyDirPath;
+
+            TrySetName("PsesLoadContext");
         }
 
         protected override Assembly Load(AssemblyName assemblyName)
@@ -39,6 +41,26 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
 
             return null;
+        }
+
+        private void TrySetName(string name)
+        {
+            try
+            {
+                // This field only exists in .NET Core 3+, but helps logging
+                FieldInfo nameBackingField = typeof(AssemblyLoadContext).GetField(
+                    "_name",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (nameBackingField != null)
+                {
+                    nameBackingField.SetValue(this, name);
+                }
+            }
+            catch
+            {
+                // Do nothing -- we did our best
+            }
         }
     }
 }

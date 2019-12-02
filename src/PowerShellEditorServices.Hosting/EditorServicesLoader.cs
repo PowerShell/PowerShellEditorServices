@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             {
                 logger.Log(
                     PsesLogLevel.Diagnostic,
-                    $"Assembly {args.LoadedAssembly.GetName()} loaded into load context '{AssemblyLoadContext.GetLoadContext(args.LoadedAssembly)}'");
+                    $"Loaded into load context {AssemblyLoadContext.GetLoadContext(args.LoadedAssembly)}: {args.LoadedAssembly}");
             };
 
             AssemblyLoadContext.Default.Resolving += (AssemblyLoadContext defaultLoadContext, AssemblyName asmName) =>
@@ -84,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             {
                 logger.Log(
                     PsesLogLevel.Diagnostic,
-                    $"Assembly {args.LoadedAssembly.GetName()} loaded");
+                    $"Loaded {args.LoadedAssembly.GetName()}");
             };
 
             AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
