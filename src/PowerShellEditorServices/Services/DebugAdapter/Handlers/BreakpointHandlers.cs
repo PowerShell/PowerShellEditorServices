@@ -145,10 +145,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // When you set a breakpoint in the right pane of a Git diff window on a PS1 file,
             // the Source.Path comes through as Untitled-X. That's why we check for IsUntitledPath.
-            if (!ScriptFile.IsUntitledPath(request.Source.Path) &&
-                !_workspaceService.TryGetFile(
-                    request.Source.Path,
-                    out scriptFile))
+            if (!_workspaceService.TryGetFile(request.Source.Path, out scriptFile) &&
+                !ScriptFile.IsUntitledPath(request.Source.Path))
             {
                 string message = _debugStateService.NoDebug ? string.Empty : "Source file could not be accessed, breakpoint not set.";
                 var srcBreakpoints = request.Breakpoints
@@ -164,7 +162,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // Verify source file is a PowerShell script file.
             string fileExtension = Path.GetExtension(scriptFile?.FilePath ?? "")?.ToLower();
-            if (string.IsNullOrEmpty(fileExtension) || ((fileExtension != ".ps1") && (fileExtension != ".psm1")))
+            bool isUntitledPath = ScriptFile.IsUntitledPath(request.Source.Path);
+            if ((!isUntitledPath && fileExtension != ".ps1" && fileExtension != ".psm1") ||
+                (!VersionUtils.IsPS7OrGreater && isUntitledPath))
             {
                 _logger.LogWarning(
                     $"Attempted to set breakpoints on a non-PowerShell file: {request.Source.Path}");

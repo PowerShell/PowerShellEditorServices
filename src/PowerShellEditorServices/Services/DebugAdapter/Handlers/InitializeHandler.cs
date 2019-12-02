@@ -15,19 +15,22 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     {
         private readonly ILogger<InitializeHandler> _logger;
         private readonly DebugService _debugService;
+        private readonly BreakpointService _breakpointService;
 
         public InitializeHandler(
             ILoggerFactory factory,
-            DebugService debugService)
+            DebugService debugService,
+            BreakpointService breakpointService)
         {
             _logger = factory.CreateLogger<InitializeHandler>();
             _debugService = debugService;
+            _breakpointService = breakpointService;
         }
 
         public async Task<InitializeResponse> Handle(InitializeRequestArguments request, CancellationToken cancellationToken)
         {
             // Clear any existing breakpoints before proceeding
-            await _debugService.ClearAllBreakpointsAsync().ConfigureAwait(false);
+            await _breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(false);
 
             // Now send the Initialize response to continue setup
             return new InitializeResponse

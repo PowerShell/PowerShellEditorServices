@@ -64,6 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
                 .AddSingleton<PsesDebugServer>(psesDebugServer)
                 .AddSingleton<DebugService>()
+                .AddSingleton<BreakpointService>()
                 .AddSingleton<DebugStateService>(new DebugStateService
                 {
                      OwnsEditorSession = useTempSession

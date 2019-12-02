@@ -31,12 +31,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
         private const string TemporaryScriptFileName = "Script Listing.ps1";
+        private readonly BreakpointDetails[] s_emptyBreakpointDetailsArray = new BreakpointDetails[0];
 
         private readonly ILogger logger;
         private readonly PowerShellContextService powerShellContext;
+        private readonly BreakpointService _breakpointService;
         private RemoteFileManagerService remoteFileManager;
 
         // TODO: This needs to be managed per nested session
+        // TODO: Move to BreakpointService
         private readonly Dictionary<string, List<Breakpoint>> breakpointsPerFile =
             new Dictionary<string, List<Breakpoint>>();
 
@@ -104,12 +107,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public DebugService(
             PowerShellContextService powerShellContext,
             RemoteFileManagerService remoteFileManager,
+            BreakpointService breakpointService,
             ILoggerFactory factory)
         {
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
             this.logger = factory.CreateLogger<DebugService>();
             this.powerShellContext = powerShellContext;
+            _breakpointService = breakpointService;
             this.powerShellContext.DebuggerStop += this.OnDebuggerStopAsync;
             this.powerShellContext.DebuggerResumed += this.OnDebuggerResumed;
 
@@ -140,8 +145,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             BreakpointDetails[] breakpoints,
             bool clearExisting = true)
         {
-            var resultBreakpointDetails = new List<BreakpointDetails>();
-
             var dscBreakpoints =
                 this.powerShellContext
                     .CurrentRunspace
@@ -157,7 +160,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     this.logger.LogTrace(
                         $"Could not set breakpoints for local path '{scriptPath}' in a remote session.");
 
-                    return resultBreakpointDetails.ToArray();
+                    return s_emptyBreakpointDetailsArray;
                 }
 
                 string mappedPath =
@@ -174,7 +177,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.logger.LogTrace(
                     $"Could not set breakpoint on temporary script listing path '{scriptPath}'.");
 
-                return resultBreakpointDetails.ToArray();
+                return s_emptyBreakpointDetailsArray;
             }
 
             // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
@@ -189,75 +192,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     await this.ClearBreakpointsInFileAsync(scriptFile).ConfigureAwait(false);
                 }
 
-                PSCommand psCommand = null;
-                foreach (BreakpointDetails breakpoint in breakpoints)
-                {
-                    // On first iteration psCommand will be null, every subsequent
-                    // iteration will need to start a new statement.
-                    if (psCommand == null)
-                    {
-                        psCommand = new PSCommand();
-                    }
-                    else
-                    {
-                        psCommand.AddStatement();
-                    }
-
-                    psCommand
-                        .AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint")
-                        .AddParameter("Script", escapedScriptPath)
-                        .AddParameter("Line", breakpoint.LineNumber);
-
-                    // Check if the user has specified the column number for the breakpoint.
-                    if (breakpoint.ColumnNumber.HasValue && breakpoint.ColumnNumber.Value > 0)
-                    {
-                        // It bums me out that PowerShell will silently ignore a breakpoint
-                        // where either the line or the column is invalid.  I'd rather have an
-                        // error or warning message I could relay back to the client.
-                        psCommand.AddParameter("Column", breakpoint.ColumnNumber.Value);
-                    }
-
-                    // Check if this is a "conditional" line breakpoint.
-                    if (!String.IsNullOrWhiteSpace(breakpoint.Condition) ||
-                        !String.IsNullOrWhiteSpace(breakpoint.HitCondition))
-                    {
-                        ScriptBlock actionScriptBlock =
-                            GetBreakpointActionScriptBlock(breakpoint);
-
-                        // If there was a problem with the condition string,
-                        // move onto the next breakpoint.
-                        if (actionScriptBlock == null)
-                        {
-                            resultBreakpointDetails.Add(breakpoint);
-                            continue;
-                        }
-
-                        psCommand.AddParameter("Action", actionScriptBlock);
-                    }
-                }
-
-                // If no PSCommand was created then there are no breakpoints to set.
-                if (psCommand != null)
-                {
-                    IEnumerable<Breakpoint> configuredBreakpoints =
-                        await this.powerShellContext.ExecuteCommandAsync<Breakpoint>(psCommand).ConfigureAwait(false);
-
-                    // The order in which the breakpoints are returned is significant to the
-                    // VSCode client and should match the order in which they are passed in.
-                    resultBreakpointDetails.AddRange(
-                        configuredBreakpoints.Select(BreakpointDetails.Create));
-                }
-            }
-            else
-            {
-                resultBreakpointDetails =
-                    await dscBreakpoints.SetLineBreakpointsAsync(
-                        powerShellContext,
-                        escapedScriptPath,
-                        breakpoints).ConfigureAwait(false);
+                return await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false);
             }
 
-            return resultBreakpointDetails.ToArray();
+            return await dscBreakpoints.SetLineBreakpointsAsync(
+                this.powerShellContext,
+                escapedScriptPath,
+                breakpoints);
         }
 
         /// <summary>
@@ -270,49 +211,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
             CommandBreakpointDetails[] breakpoints,
             bool clearExisting = true)
         {
-            var resultBreakpointDetails = new List<CommandBreakpointDetails>();
+            CommandBreakpointDetails[] resultBreakpointDetails = null;
 
             if (clearExisting)
             {
-                await this.ClearCommandBreakpointsAsync().ConfigureAwait(false);
+                // Flatten dictionary values into one list and remove them all.
+                await _breakpointService.RemoveBreakpoints(this.breakpointsPerFile.Values.SelectMany( i => i ).Where( i => i is CommandBreakpoint)).ConfigureAwait(false);
             }
 
             if (breakpoints.Length > 0)
             {
-                foreach (CommandBreakpointDetails breakpoint in breakpoints)
-                {
-                    PSCommand psCommand = new PSCommand();
-                    psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint");
-                    psCommand.AddParameter("Command", breakpoint.Name);
-
-                    // Check if this is a "conditional" command breakpoint.
-                    if (!String.IsNullOrWhiteSpace(breakpoint.Condition) ||
-                        !String.IsNullOrWhiteSpace(breakpoint.HitCondition))
-                    {
-                        ScriptBlock actionScriptBlock = GetBreakpointActionScriptBlock(breakpoint);
-
-                        // If there was a problem with the condition string,
-                        // move onto the next breakpoint.
-                        if (actionScriptBlock == null)
-                        {
-                            resultBreakpointDetails.Add(breakpoint);
-                            continue;
-                        }
-
-                        psCommand.AddParameter("Action", actionScriptBlock);
-                    }
-
-                    IEnumerable<Breakpoint> configuredBreakpoints =
-                        await this.powerShellContext.ExecuteCommandAsync<Breakpoint>(psCommand).ConfigureAwait(false);
-
-                    // The order in which the breakpoints are returned is significant to the
-                    // VSCode client and should match the order in which they are passed in.
-                    resultBreakpointDetails.AddRange(
-                        configuredBreakpoints.Select(CommandBreakpointDetails.Create));
-                }
+                resultBreakpointDetails = (await _breakpointService.SetCommandBreakpoints(breakpoints).ConfigureAwait(false)).ToArray();
             }
 
-            return resultBreakpointDetails.ToArray();
+            return resultBreakpointDetails ?? new CommandBreakpointDetails[0];
         }
 
         /// <summary>
@@ -753,25 +665,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             };
         }
 
-        /// <summary>
-        /// Clears all breakpoints in the current session.
-        /// </summary>
-        public async Task ClearAllBreakpointsAsync()
-        {
-            try
-            {
-                PSCommand psCommand = new PSCommand();
-                psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
-                psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
-
-                await this.powerShellContext.ExecuteCommandAsync<object>(psCommand).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                logger.LogException("Caught exception while clearing breakpoints from session", e);
-            }
-        }
-
         #endregion
 
         #region Private Methods
@@ -783,26 +676,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 if (breakpoints.Count > 0)
                 {
-                    PSCommand psCommand = new PSCommand();
-                    psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
-                    psCommand.AddParameter("Id", breakpoints.Select(b => b.Id).ToArray());
-
-                    await this.powerShellContext.ExecuteCommandAsync<object>(psCommand).ConfigureAwait(false);
+                    await _breakpointService.RemoveBreakpoints(breakpoints).ConfigureAwait(false);
 
                     // Clear the existing breakpoints list for the file
                     breakpoints.Clear();
                 }
             }
-        }
-
-        private async Task ClearCommandBreakpointsAsync()
-        {
-            PSCommand psCommand = new PSCommand();
-            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
-            psCommand.AddParameter("Type", "Command");
-            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
-
-            await this.powerShellContext.ExecuteCommandAsync<object>(psCommand).ConfigureAwait(false);
         }
 
         private async Task FetchStackFramesAndVariablesAsync(string scriptNameOverride)
@@ -996,187 +875,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             this.powerShellContext.CurrentRunspace);
                 }
             }
-        }
-
-        /// <summary>
-        /// Inspects the condition, putting in the appropriate scriptblock template
-        /// "if (expression) { break }".  If errors are found in the condition, the
-        /// breakpoint passed in is updated to set Verified to false and an error
-        /// message is put into the breakpoint.Message property.
-        /// </summary>
-        /// <param name="breakpoint"></param>
-        /// <returns></returns>
-        private ScriptBlock GetBreakpointActionScriptBlock(
-            BreakpointDetailsBase breakpoint)
-        {
-            try
-            {
-                ScriptBlock actionScriptBlock;
-                int? hitCount = null;
-
-                // If HitCondition specified, parse and verify it.
-                if (!(String.IsNullOrWhiteSpace(breakpoint.HitCondition)))
-                {
-                    if (Int32.TryParse(breakpoint.HitCondition, out int parsedHitCount))
-                    {
-                        hitCount = parsedHitCount;
-                    }
-                    else
-                    {
-                        breakpoint.Verified = false;
-                        breakpoint.Message = $"The specified HitCount '{breakpoint.HitCondition}' is not valid. " +
-                                              "The HitCount must be an integer number.";
-                        return null;
-                    }
-                }
-
-                // Create an Action scriptblock based on condition and/or hit count passed in.
-                if (hitCount.HasValue && string.IsNullOrWhiteSpace(breakpoint.Condition))
-                {
-                    // In the HitCount only case, this is simple as we can just use the HitCount
-                    // property on the breakpoint object which is represented by $_.
-                    string action = $"if ($_.HitCount -eq {hitCount}) {{ break }}";
-                    actionScriptBlock = ScriptBlock.Create(action);
-                }
-                else if (!string.IsNullOrWhiteSpace(breakpoint.Condition))
-                {
-                    // Must be either condition only OR condition and hit count.
-                    actionScriptBlock = ScriptBlock.Create(breakpoint.Condition);
-
-                    // Check for simple, common errors that ScriptBlock parsing will not catch
-                    // e.g. $i == 3 and $i > 3
-                    if (!ValidateBreakpointConditionAst(actionScriptBlock.Ast, out string message))
-                    {
-                        breakpoint.Verified = false;
-                        breakpoint.Message = message;
-                        return null;
-                    }
-
-                    // Check for "advanced" condition syntax i.e. if the user has specified
-                    // a "break" or  "continue" statement anywhere in their scriptblock,
-                    // pass their scriptblock through to the Action parameter as-is.
-                    Ast breakOrContinueStatementAst =
-                        actionScriptBlock.Ast.Find(
-                            ast => (ast is BreakStatementAst || ast is ContinueStatementAst), true);
-
-                    // If this isn't advanced syntax then the conditions string should be a simple
-                    // expression that needs to be wrapped in a "if" test that conditionally executes
-                    // a break statement.
-                    if (breakOrContinueStatementAst == null)
-                    {
-                        string wrappedCondition;
-
-                        if (hitCount.HasValue)
-                        {
-                            string globalHitCountVarName =
-                                $"$global:{PsesGlobalVariableNamePrefix}BreakHitCounter_{breakpointHitCounter++}";
-
-                            wrappedCondition =
-                                $"if ({breakpoint.Condition}) {{ if (++{globalHitCountVarName} -eq {hitCount}) {{ break }} }}";
-                        }
-                        else
-                        {
-                            wrappedCondition = $"if ({breakpoint.Condition}) {{ break }}";
-                        }
-
-                        actionScriptBlock = ScriptBlock.Create(wrappedCondition);
-                    }
-                }
-                else
-                {
-                    // Shouldn't get here unless someone called this with no condition and no hit count.
-                    actionScriptBlock = ScriptBlock.Create("break");
-                    this.logger.LogWarning("No condition and no hit count specified by caller.");
-                }
-
-                return actionScriptBlock;
-            }
-            catch (ParseException ex)
-            {
-                // Failed to create conditional breakpoint likely because the user provided an
-                // invalid PowerShell expression. Let the user know why.
-                breakpoint.Verified = false;
-                breakpoint.Message = ExtractAndScrubParseExceptionMessage(ex, breakpoint.Condition);
-                return null;
-            }
-        }
-
-        private bool ValidateBreakpointConditionAst(Ast conditionAst, out string message)
-        {
-            message = string.Empty;
-
-            // We are only inspecting a few simple scenarios in the EndBlock only.
-            if (conditionAst is ScriptBlockAst scriptBlockAst &&
-                scriptBlockAst.BeginBlock == null &&
-                scriptBlockAst.ProcessBlock == null &&
-                scriptBlockAst.EndBlock != null &&
-                scriptBlockAst.EndBlock.Statements.Count == 1)
-            {
-                StatementAst statementAst = scriptBlockAst.EndBlock.Statements[0];
-                string condition = statementAst.Extent.Text;
-
-                if (statementAst is AssignmentStatementAst)
-                {
-                    message = FormatInvalidBreakpointConditionMessage(condition, "Use '-eq' instead of '=='.");
-                    return false;
-                }
-
-                if (statementAst is PipelineAst pipelineAst
-                    && pipelineAst.PipelineElements.Count == 1
-                    && pipelineAst.PipelineElements[0].Redirections.Count > 0)
-                {
-                    message = FormatInvalidBreakpointConditionMessage(condition, "Use '-gt' instead of '>'.");
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private string ExtractAndScrubParseExceptionMessage(ParseException parseException, string condition)
-        {
-            string[] messageLines = parseException.Message.Split('\n');
-
-            // Skip first line - it is a location indicator "At line:1 char: 4"
-            for (int i = 1; i < messageLines.Length; i++)
-            {
-                string line = messageLines[i];
-                if (line.StartsWith("+"))
-                {
-                    continue;
-                }
-
-                if (!string.IsNullOrWhiteSpace(line))
-                {
-                    // Note '==' and '>" do not generate parse errors
-                    if (line.Contains("'!='"))
-                    {
-                        line += " Use operator '-ne' instead of '!='.";
-                    }
-                    else if (line.Contains("'<'") && condition.Contains("<="))
-                    {
-                        line += " Use operator '-le' instead of '<='.";
-                    }
-                    else if (line.Contains("'<'"))
-                    {
-                        line += " Use operator '-lt' instead of '<'.";
-                    }
-                    else if (condition.Contains(">="))
-                    {
-                        line += " Use operator '-ge' instead of '>='.";
-                    }
-
-                    return FormatInvalidBreakpointConditionMessage(condition, line);
-                }
-            }
-
-            // If the message format isn't in a form we expect, just return the whole message.
-            return FormatInvalidBreakpointConditionMessage(condition, parseException.Message);
-        }
-
-        private string FormatInvalidBreakpointConditionMessage(string condition, string message)
-        {
-            return $"'{condition}' is not a valid PowerShell expression. {message}";
         }
 
         private string TrimScriptListingLine(PSObject scriptLineObj, ref int prefixLength)

@@ -212,6 +212,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private readonly ILogger<AttachHandler> _logger;
         private readonly DebugService _debugService;
+        private readonly BreakpointService _breakpointService;
         private readonly PowerShellContextService _powerShellContextService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
@@ -223,11 +224,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugService debugService,
             PowerShellContextService powerShellContextService,
             DebugStateService debugStateService,
+            BreakpointService breakpointService,
             DebugEventHandlerService debugEventHandlerService)
         {
             _logger = factory.CreateLogger<AttachHandler>();
             _jsonRpcServer = jsonRpcServer;
             _debugService = debugService;
+            _breakpointService = breakpointService;
             _powerShellContextService = powerShellContextService;
             _debugStateService = debugStateService;
             _debugEventHandlerService = debugEventHandlerService;
@@ -323,7 +326,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // Clear any existing breakpoints before proceeding
-            await _debugService.ClearAllBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
+            await _breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
 
             // Execute the Debug-Runspace command but don't await it because it
             // will block the debug adapter initialization process.  The
@@ -357,6 +360,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 .ExecuteScriptStringAsync(debugRunspaceCmd)
                 .ContinueWith(OnExecutionCompletedAsync);
 
+            _jsonRpcServer.SendNotification(EventNames.Initialized);
             return Unit.Value;
         }
 
