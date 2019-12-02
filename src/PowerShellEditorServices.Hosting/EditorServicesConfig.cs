@@ -109,33 +109,26 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// PowerShell profile locations for Editor Services to use for its profiles.
         /// If none are provided, these will be generated from the hosting PowerShell's profile paths.
         /// </summary>
-        public ProfilePathConfig ProfilePaths { get; set; } = null;
+        public ProfilePathConfig ProfilePaths { get; set; }
     }
 
     /// <summary>
     /// Configuration for Editor Services' PowerShell profile paths.
     /// </summary>
-    public class ProfilePathConfig
+    public struct ProfilePathConfig
     {
-        /// <summary>
-        /// Create a new profile path configuration.
-        /// </summary>
-        /// <param name="allUsersPath">The shared profile path.</param>
-        /// <param name="currentUserPath">The single user profile path.</param>
-        public ProfilePathConfig(string allUsersPath, string currentUserPath)
-        {
-            AllUsersProfilePath = allUsersPath;
-            CurrentUserProfilePath = currentUserPath;
-        }
-
         /// <summary>
         /// The path to the profile shared by all users.
         /// </summary>
-        public string AllUsersProfilePath { get; }
+        public string AllUsersAllHosts { get; set; }
+
+        public string AllUsersCurrentHost { get; set; }
 
         /// <summary>
         /// The path to the profile specific to the current user.
         /// </summary>
-        public string CurrentUserProfilePath { get; }
+        public string CurrentUserAllHosts { get; set; }
+
+        public string CurrentUserCurrentHost { get; set; }
     }
 }

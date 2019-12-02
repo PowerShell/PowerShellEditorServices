@@ -215,48 +215,31 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Creating startup info object");
 
-            (string allUsersProfilePath, string currentUserProfilePath) = GetProfilePaths(_config.ProfilePaths?.AllUsersProfilePath, _config.ProfilePaths?.CurrentUserProfilePath);
+            ProfilePathInfo profilePaths = null;
+            if (_config.ProfilePaths.AllUsersAllHosts != null
+                || _config.ProfilePaths.AllUsersCurrentHost != null
+                || _config.ProfilePaths.CurrentUserAllHosts != null
+                || _config.ProfilePaths.CurrentUserCurrentHost != null)
+            {
+                profilePaths = new ProfilePathInfo(
+                    _config.ProfilePaths.CurrentUserAllHosts,
+                    _config.ProfilePaths.CurrentUserCurrentHost,
+                    _config.ProfilePaths.AllUsersAllHosts,
+                    _config.ProfilePaths.AllUsersCurrentHost);
+            }
 
             return new HostStartupInfo(
                 _config.HostInfo.Name,
                 _config.HostInfo.ProfileId,
                 _config.HostInfo.Version,
                 _config.PSHost,
-                allUsersProfilePath,
-                currentUserProfilePath,
+                profilePaths,
                 _config.FeatureFlags,
                 _config.AdditionalModules,
                 _config.LogPath,
                 (int)_config.LogLevel,
                 consoleReplEnabled: _config.ConsoleRepl != ConsoleReplKind.None,
                 usesLegacyReadLine: _config.ConsoleRepl == ConsoleReplKind.LegacyReadLine);
-        }
-
-        private (string allUsersPath, string currentUserPath) GetProfilePaths(string allUsersPath, string currentUserPath)
-        {
-            _logger.Log(PsesLogLevel.Diagnostic, "Configuring profile paths");
-
-            if (allUsersPath == null || currentUserPath == null)
-            {
-                using (var pwsh = SMA.PowerShell.Create())
-                {
-                    _logger.Log(PsesLogLevel.Diagnostic, "Querying PowerShell for profile paths");
-                    Collection<string> profiles = pwsh.AddScript("$profile.AllUsersAllHosts,$profile.CurrentUserAllHosts")
-                        .Invoke<string>();
-
-                    if (allUsersPath == null)
-                    {
-                        allUsersPath = profiles[0];
-                    }
-
-                    if (currentUserPath == null)
-                    {
-                        currentUserPath = profiles[1];
-                    }
-                }
-            }
-
-            return (allUsersPath, currentUserPath);
         }
 
         private void DebugServer_OnSessionEnded(object sender, EventArgs args)

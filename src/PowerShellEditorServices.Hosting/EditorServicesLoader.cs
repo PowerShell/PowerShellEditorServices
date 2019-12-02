@@ -226,8 +226,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
  - Log path:                  {_hostConfig.LogPath}
  - Minimum log level:         {_hostConfig.LogLevel}
 
- - Configured current user profile path: {_hostConfig.ProfilePaths?.CurrentUserProfilePath ?? "<null>"}
- - Configured all users profile path:    {_hostConfig.ProfilePaths?.AllUsersProfilePath ?? "<null>"}");
+ - Profile paths:
+   + AllUsersAllHosts:       {_hostConfig.ProfilePaths.AllUsersAllHosts ?? "<null>"}
+   + AllUsersCurrentHost:    {_hostConfig.ProfilePaths.AllUsersCurrentHost ?? "<null>"}
+   + CurrentUserAllHosts:    {_hostConfig.ProfilePaths.CurrentUserAllHosts ?? "<null>"}
+   + CurrentUserCurrentHost: {_hostConfig.ProfilePaths.CurrentUserCurrentHost ?? "<null>"}
+");
 
             _logger.Log(PsesLogLevel.Verbose, $@"
 == Console Details ==

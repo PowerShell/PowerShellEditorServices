@@ -64,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private RunspaceDetails initialRunspace;
         private SessionDetails mostRecentSessionDetails;
 
-        private ProfilePaths profilePaths;
+        private ProfilePathInfo profilePaths;
 
         private IVersionSpecificOperations versionSpecificOperations;
 
@@ -204,8 +204,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     logger);
 
             Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
-            var profilePaths = new ProfilePaths(hostDetails.ProfileId, hostDetails.AllUsersProfilePath, hostDetails.CurrentUserProfilePath);
-            powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
+            powerShellContext.Initialize(hostDetails.ProfilePaths, initialRunspace, true, hostUserInterface);
 
             powerShellContext.ImportCommandsModuleAsync();
 
@@ -286,11 +285,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="initialRunspace">The initial runspace to use for this instance.</param>
         /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
         public void Initialize(
-            ProfilePaths profilePaths,
+            ProfilePathInfo profilePaths,
             Runspace initialRunspace,
             bool ownsInitialRunspace)
         {
-            this.Initialize(profilePaths, initialRunspace, ownsInitialRunspace, null);
+            this.Initialize(profilePaths, initialRunspace, ownsInitialRunspace, consoleHost: null);
         }
 
         /// <summary>
@@ -302,7 +301,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
         /// <param name="consoleHost">An IHostOutput implementation.  Optional.</param>
         public void Initialize(
-            ProfilePaths profilePaths,
+            ProfilePathInfo profilePaths,
             Runspace initialRunspace,
             bool ownsInitialRunspace,
             IHostOutput consoleHost)
@@ -330,7 +329,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     this.LocalPowerShellVersion,
                     RunspaceLocation.Local,
                     RunspaceContext.Original,
-                    null);
+                    connectionString: null);
             this.CurrentRunspace = this.initialRunspace;
 
             // Write out the PowerShell version for tracking purposes
@@ -366,7 +365,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Set the $profile variable in the runspace
             this.profilePaths = profilePaths;
-            if (this.profilePaths != null)
+            if (profilePaths != null)
             {
                 this.SetProfileVariableInCurrentRunspace(profilePaths);
             }
@@ -1140,7 +1139,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (this.profilePaths != null)
             {
                 // Load any of the profile paths that exist
-                foreach (var profilePath in this.profilePaths.GetLoadableProfilePaths())
+                foreach (var profilePath in GetLoadableProfilePaths(this.profilePaths))
                 {
                     PSCommand command = new PSCommand();
                     command.AddCommand(profilePath, false);
@@ -2208,7 +2207,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 });
         }
 
-        private void SetProfileVariableInCurrentRunspace(ProfilePaths profilePaths)
+        private void SetProfileVariableInCurrentRunspace(ProfilePathInfo profilePaths)
         {
             // Create the $profile variable
             PSObject profile = new PSObject(profilePaths.CurrentUserCurrentHost);
@@ -2264,6 +2263,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     // If the runspace closes or fails, pop the runspace
                     ((IHostSupportsInteractiveSession)this).PopRunspace();
                     break;
+            }
+        }
+
+        private static IEnumerable<string> GetLoadableProfilePaths(ProfilePathInfo profilePaths)
+        {
+            if (profilePaths == null)
+            {
+                yield break;
+            }
+
+            foreach (string path in new [] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
+            {
+                if (path != null && File.Exists(path))
+                {
+                    yield return path;
+                }
             }
         }
 

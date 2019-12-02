@@ -21,20 +21,20 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// The default host name for PowerShell Editor Services.  Used
         /// if no host name is specified by the host application.
         /// </summary>
-        public const string DefaultHostName = "PowerShell Editor Services Host";
+        private const string DefaultHostName = "PowerShell Editor Services Host";
 
         /// <summary>
         /// The default host ID for PowerShell Editor Services.  Used
         /// for the host-specific profile path if no host ID is specified.
         /// </summary>
-        public const string DefaultHostProfileId = "Microsoft.PowerShellEditorServices";
+        private const string DefaultHostProfileId = "Microsoft.PowerShellEditorServices";
 
         /// <summary>
         /// The default host version for PowerShell Editor Services.  If
         /// no version is specified by the host application, we use 0.0.0
         /// to indicate a lack of version.
         /// </summary>
-        public static readonly Version DefaultHostVersion = new Version("0.0.0");
+        private static readonly Version s_defaultHostVersion = new Version("0.0.0");
 
         #endregion
 
@@ -56,15 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </summary>
         public Version Version { get; }
 
-        /// <summary>
-        /// The path to the single user PowerShell profile.
-        /// </summary>
-        public string CurrentUserProfilePath { get; }
-
-        /// <summary>
-        /// The path to the shared PowerShell profile.
-        /// </summary>
-        public string AllUsersProfilePath { get; }
+        public ProfilePathInfo ProfilePaths { get; }
 
         /// <summary>
         /// Any feature flags enabled at startup.
@@ -134,8 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             string profileId,
             Version version,
             PSHost psHost,
-            string allUsersProfilePath,
-            string currentUsersProfilePath,
+            ProfilePathInfo profilePaths,
             IReadOnlyList<string> featureFlags,
             IReadOnlyList<string> additionalModules,
             string logPath,
@@ -145,10 +136,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             Name = name ?? DefaultHostName;
             ProfileId = profileId ?? DefaultHostProfileId;
-            Version = version ?? DefaultHostVersion;
+            Version = version ?? s_defaultHostVersion;
             PSHost = psHost;
-            AllUsersProfilePath = allUsersProfilePath;
-            CurrentUserProfilePath = currentUsersProfilePath;
+            ProfilePaths = profilePaths;
             FeatureFlags = featureFlags ?? Array.Empty<string>();
             AdditionalModules = additionalModules ?? Array.Empty<string>();
             LogPath = logPath;
@@ -158,5 +148,28 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         }
 
         #endregion
+    }
+
+    public class ProfilePathInfo
+    {
+        public ProfilePathInfo(
+            string currentUserAllHosts,
+            string currentUserCurrentHost,
+            string allUsersAllHosts,
+            string allUsersCurrentHost)
+        {
+            CurrentUserAllHosts = currentUserAllHosts;
+            CurrentUserCurrentHost = currentUserCurrentHost;
+            AllUsersAllHosts = allUsersAllHosts;
+            AllUsersCurrentHost = allUsersCurrentHost;
+        }
+
+        public string CurrentUserAllHosts { get; }
+
+        public string CurrentUserCurrentHost { get; }
+
+        public string AllUsersAllHosts { get; }
+
+        public string AllUsersCurrentHost { get; }
     }
 }

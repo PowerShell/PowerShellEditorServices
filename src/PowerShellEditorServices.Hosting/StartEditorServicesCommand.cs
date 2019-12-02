@@ -115,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// The minimum log level that should be emitted.
         /// </summary>
         [Parameter]
-        public PsesLogLevel LogLevel { get; set; }
+        public PsesLogLevel LogLevel { get; set; } = PsesLogLevel.Normal;
 
         /// <summary>
         /// Paths to additional PowerShell modules to be imported at startup.
@@ -252,6 +252,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                         bundledModulesPath));
             }
 
+            var profile = (PSObject)GetVariableValue("profile");
+
             var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
             var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, bundledModulesPath, LogPath)
             {
@@ -261,9 +263,32 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 AdditionalModules = AdditionalModules,
                 LanguageServiceTransport = GetLanguageServiceTransport(),
                 DebugServiceTransport = GetDebugServiceTransport(),
+                ProfilePaths = new ProfilePathConfig
+                {
+                    AllUsersAllHosts = GetProfilePathFromProfileObject(profile, ProfileUserKind.AllUsers, ProfileHostKind.AllHosts),
+                    AllUsersCurrentHost = GetProfilePathFromProfileObject(profile, ProfileUserKind.AllUsers, ProfileHostKind.CurrentHost),
+                    CurrentUserAllHosts = GetProfilePathFromProfileObject(profile, ProfileUserKind.CurrentUser, ProfileHostKind.AllHosts),
+                    CurrentUserCurrentHost = GetProfilePathFromProfileObject(profile, ProfileUserKind.CurrentUser, ProfileHostKind.CurrentHost),
+                },
             };
 
             return editorServicesConfig;
+        }
+
+        private string GetProfilePathFromProfileObject(PSObject profileObject, ProfileUserKind userKind, ProfileHostKind hostKind)
+        {
+            string profilePathName = $"{userKind}{hostKind}";
+
+            string pwshProfilePath = (string)profileObject.Properties[profilePathName].Value;
+
+            if (hostKind == ProfileHostKind.AllHosts)
+            {
+                return pwshProfilePath;
+            }
+
+            return Path.Combine(
+                Path.GetDirectoryName(pwshProfilePath),
+                $"{HostProfileId}_profile.ps1");
         }
 
         private ConsoleReplKind GetReplKind()
@@ -340,6 +365,18 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
 
             return DuplexNamedPipeTransportConfig.Create(DebugServicePipeName);
+        }
+
+        private enum ProfileHostKind
+        {
+            AllHosts,
+            CurrentHost,
+        }
+
+        private enum ProfileUserKind
+        {
+            AllUsers,
+            CurrentUser,
         }
     }
 }
