@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// so that the host assembly can construct the LSP and debug servers
     /// without taking logging or dependency injection dependencies directly.
     /// </summary>
-    internal class EditorServicesServerFactory
+    internal class EditorServicesServerFactory : IDisposable
     {
         /// <summary>
         /// Create a new Editor Services factory.
@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             Log.Logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .WriteTo.File(logPath)
+                .WriteTo.Async(config => config.File(logPath))
                 .MinimumLevel.Verbose()
                 .CreateLogger();
 
@@ -105,6 +105,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public PsesDebugServer CreateDebugServerForTempSession(Stream inputStream, Stream outputStream, HostStartupInfo hostStartupInfo)
         {
             return PsesDebugServer.CreateForTempSession(_loggerFactory, inputStream, outputStream, hostStartupInfo);
+        }
+
+        public void Dispose()
+        {
+            Log.CloseAndFlush();
+            _loggerFactory.Dispose();
         }
     }
 }

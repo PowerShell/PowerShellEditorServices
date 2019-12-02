@@ -80,6 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public void Dispose()
         {
+            _serverFactory.Dispose();
         }
 
         /// <summary>
