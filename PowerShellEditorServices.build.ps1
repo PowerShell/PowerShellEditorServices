@@ -278,10 +278,15 @@ task LayoutModule -After Build {
     # Copy Third Party Notices.txt to module folder
     Copy-Item -Force -Path "$PSScriptRoot\Third Party Notices.txt" -Destination $psesOutputPath
 
+    # Copy UnixConsoleEcho native libraries
+    Copy-Item -Path "$script:PsesOutput/runtimes/osx-64/native/*" -Destination $psesDepsPath
+    Copy-Item -Path "$script:PsesOutput/runtimes/linux-64/native/*" -Destination $psesDepsPath
+
     $includedDlls = [System.Collections.Generic.HashSet[string]]::new()
     foreach ($psesComponent in Get-ChildItem $script:PsesOutput)
     {
-        if ($psesComponent.Name -eq 'System.Management.Automation.dll')
+        if ($psesComponent.Name -eq 'System.Management.Automation.dll' -or
+            $psesComponent.Name -eq 'System.Runtime.InteropServices.RuntimeInformation.dll')
         {
             continue
         }
