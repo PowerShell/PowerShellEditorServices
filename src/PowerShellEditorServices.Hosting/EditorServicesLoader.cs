@@ -256,6 +256,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
  - PowerShell output encoding: {GetPSOutputEncoding()}
 ");
 
+            _logger.Log(PsesLogLevel.Verbose, $@"
+== PowerShell Details ==
+ - PowerShell version: {GetPowerShellVersion()}
+");
+
             LogOperatingSystemDetails();
         }
 
@@ -264,6 +269,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             using (var pwsh = SMA.PowerShell.Create())
             {
                 return pwsh.AddScript("$OutputEncoding.EncodingName").Invoke<string>()[0];
+            }
+        }
+
+        private string GetPowerShellVersion()
+        {
+            using (var pwsh = SMA.PowerShell.Create())
+            {
+                return pwsh.AddScript("$PSVersionTable.PSVersion").Invoke()[0].ToString();
             }
         }
 
