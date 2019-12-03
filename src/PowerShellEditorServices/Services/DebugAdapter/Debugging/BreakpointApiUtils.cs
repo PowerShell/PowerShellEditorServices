@@ -25,10 +25,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         private static readonly Lazy<Func<Debugger, Breakpoint, bool>> s_removeBreakpointLazy;
 
-        private static readonly Lazy<Func<string, int, int, ScriptBlock, LineBreakpoint>> s_newLineBreakpointLazy;
-
-        private static readonly Lazy<Func<string, WildcardPattern, string, ScriptBlock, CommandBreakpoint>> s_newCommandBreakpointLazy;
-
         #endregion
 
         #region Static Constructor
@@ -94,10 +90,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         private static Func<Debugger, List<Breakpoint>> GetBreakpointsDelegate => s_getBreakpointsLazy.Value;
 
         private static Func<Debugger, Breakpoint, bool> RemoveBreakpointDelegate => s_removeBreakpointLazy.Value;
-
-        private static Func<string, int, int, ScriptBlock, LineBreakpoint> CreateLineBreakpointDelegate => s_newLineBreakpointLazy.Value;
-
-        private static Func<string, WildcardPattern, string, ScriptBlock, CommandBreakpoint> CreateCommandBreakpointDelegate => s_newCommandBreakpointLazy.Value;
 
         #endregion
 

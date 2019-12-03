@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
@@ -22,9 +23,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private const string s_psesGlobalVariableNamePrefix = "__psEditorServices_";
         private readonly ILogger<BreakpointService> _logger;
         private readonly PowerShellContextService _powerShellContextService;
-
-        private readonly ConcurrentDictionary<string, List<Breakpoint>> _breakpointsPerFile =
-            new ConcurrentDictionary<string, List<Breakpoint>>();
 
         private static int breakpointHitCounter;
 
@@ -298,8 +296,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                         if (hitCount.HasValue)
                         {
+                            Interlocked.Increment(ref breakpointHitCounter);
+
                             string globalHitCountVarName =
-                                $"$global:{s_psesGlobalVariableNamePrefix}BreakHitCounter_{breakpointHitCounter++}";
+                                $"$global:{s_psesGlobalVariableNamePrefix}BreakHitCounter_{breakpointHitCounter}";
 
                             wrappedCondition =
                                 $"if ({breakpoint.Condition}) {{ if (++{globalHitCountVarName} -eq {hitCount}) {{ break }} }}";
@@ -404,7 +404,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return FormatInvalidBreakpointConditionMessage(condition, parseException.Message);
         }
 
-        private string FormatInvalidBreakpointConditionMessage(string condition, string message)
+        private static string FormatInvalidBreakpointConditionMessage(string condition, string message)
         {
             return $"'{condition}' is not a valid PowerShell expression. {message}";
         }
