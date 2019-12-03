@@ -10,10 +10,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using SMA = System.Management.Automation;
 using System.Runtime.InteropServices;
-using Microsoft.Win32;
 
 #if CoreCLR
 using System.Runtime.Loader;
+#else
+using Microsoft.Win32;
 #endif
 
 namespace Microsoft.PowerShell.EditorServices.Hosting

@@ -7,8 +7,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Server;
 using PowerShellEditorServices.Logging;
 using Serilog;
+using Serilog.Events;
 using System;
+using System.Diagnostics;
 using System.IO;
+
+#if DEBUG
+using Serilog.Debugging;
+#endif
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
@@ -32,8 +38,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             Log.Logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .WriteTo.Async(config => config.File(logPath))
-                .MinimumLevel.Verbose()
+                .MinimumLevel.Is((LogEventLevel)minimumLogLevel)
                 .CreateLogger();
+
+#if DEBUG
+            SelfLog.Enable(msg => Debug.WriteLine(msg));
+#endif
 
             ILoggerFactory loggerFactory = new LoggerFactory().AddSerilog();
 

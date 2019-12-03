@@ -17,6 +17,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>
     /// User-facing log level for editor services configuration.
+    /// The underlying values of this enum align to both Microsoft.Logging.Extensions.LogLevel
+    /// and Serilog.Events.LogEventLevel.
     /// </summary>
     public enum PsesLogLevel
     {

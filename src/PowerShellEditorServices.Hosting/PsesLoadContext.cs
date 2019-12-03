@@ -18,6 +18,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// </summary>
     internal class PsesLoadContext : AssemblyLoadContext
     {
+        private static readonly string s_psHome = Path.GetDirectoryName(
+            Assembly.GetEntryAssembly().Location);
+
         private readonly string _dependencyDirPath;
 
         public PsesLoadContext(string dependencyDirPath)
@@ -33,7 +36,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // we must restrict the code in here to only use core types,
             // otherwise we may depend on assembly that we are trying to load and cause a StackOverflowException
 
-            string asmPath = Path.Combine(_dependencyDirPath, $"{assemblyName.Name}.dll");
+            string psHomeAsmPath = Path.Join(s_psHome, $"{assemblyName.Name}.dll");
+
+            if (File.Exists(psHomeAsmPath))
+            {
+                return null;
+            }
+
+            string asmPath = Path.Join(_dependencyDirPath, $"{assemblyName.Name}.dll");
 
             if (File.Exists(asmPath))
             {
