@@ -11,6 +11,8 @@ using Serilog.Events;
 using System;
 using System.Diagnostics;
 using System.IO;
+using Microsoft.Extensions.DependencyInjection;
+using OmniSharp.Extensions.LanguageServer.Server;
 
 #if DEBUG
 using Serilog.Debugging;
@@ -88,9 +90,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="outputStream">The protocol transport output stream.</param>
         /// <param name="languageServer"></param>
         /// <returns>A new, unstarted debug server instance.</returns>
-        public PsesDebugServer CreateDebugServerWithLanguageServer(Stream inputStream, Stream outputStream, PsesLanguageServer languageServer)
+        public PsesDebugServer CreateDebugServerWithLanguageServer(Stream inputStream, Stream outputStream, PsesLanguageServer languageServer, bool usePSReadLine)
         {
-            return PsesDebugServer.CreateWithLanguageServerServices(_loggerFactory, inputStream, outputStream, languageServer.LanguageServer.Services);
+            return new PsesDebugServer(_loggerFactory, inputStream, outputStream, languageServer.LanguageServer.Services, useTempSession: false, usePSReadLine);
         }
 
         /// <summary>
@@ -100,9 +102,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="outputStream">The protocol transport output stream.</param>
         /// <param name="debugServer">The old debug server to recreate.</param>
         /// <returns></returns>
-        public PsesDebugServer RecreateDebugServer(Stream inputStream, Stream outputStream, PsesDebugServer debugServer)
+        public PsesDebugServer RecreateDebugServer(Stream inputStream, Stream outputStream, PsesDebugServer debugServer, bool usePSReadLine)
         {
-            return PsesDebugServer.CreateWithLanguageServerServices(_loggerFactory, inputStream, outputStream, debugServer.ServiceProvider);
+            return new PsesDebugServer(_loggerFactory, inputStream, outputStream, debugServer.ServiceProvider, useTempSession: false, usePSReadLine);
         }
 
         /// <summary>
@@ -114,7 +116,22 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns></returns>
         public PsesDebugServer CreateDebugServerForTempSession(Stream inputStream, Stream outputStream, HostStartupInfo hostStartupInfo)
         {
-            return PsesDebugServer.CreateForTempSession(_loggerFactory, inputStream, outputStream, hostStartupInfo);
+            var serviceProvider = new ServiceCollection()
+                .AddLogging(builder => builder
+                    .ClearProviders()
+                    .AddSerilog()
+                    .SetMinimumLevel(LogLevel.Trace))
+                .AddSingleton<ILanguageServer>(provider => null)
+                .AddPsesLanguageServices(hostStartupInfo)
+                .BuildServiceProvider();
+
+            return new PsesDebugServer(
+                _loggerFactory,
+                inputStream,
+                outputStream,
+                serviceProvider,
+                useTempSession: true,
+                usePSReadLine: hostStartupInfo.ConsoleReplEnabled && !hostStartupInfo.UsesLegacyReadLine);
         }
 
         public void Dispose()

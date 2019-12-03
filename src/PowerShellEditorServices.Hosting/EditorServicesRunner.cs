@@ -126,7 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             Task<PsesDebugServer> debugServerCreation = null;
             if (creatingDebugServer)
             {
-                debugServerCreation = CreateDebugServerWithLanguageServer(languageServer);
+                debugServerCreation = CreateDebugServerWithLanguageServer(languageServer, usePSReadLine: _config.ConsoleRepl == ConsoleReplKind.PSReadLine);
             }
 
             languageServer.StartAsync();
@@ -171,10 +171,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return;
         }
 
-        private Task RestartDebugServer(PsesDebugServer debugServer)
+        private Task RestartDebugServer(PsesDebugServer debugServer, bool usePSReadLine)
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Restarting debug server");
-            Task<PsesDebugServer> debugServerCreation = RecreateDebugServer(debugServer);
+            Task<PsesDebugServer> debugServerCreation = RecreateDebugServer(debugServer, usePSReadLine);
             return StartDebugServer(debugServerCreation);
         }
 
@@ -187,22 +187,22 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return _serverFactory.CreateLanguageServer(inStream, outStream, hostDetails);
         }
 
-        private async Task<PsesDebugServer> CreateDebugServerWithLanguageServer(PsesLanguageServer languageServer)
+        private async Task<PsesDebugServer> CreateDebugServerWithLanguageServer(PsesLanguageServer languageServer, bool usePSReadLine)
         {
             _logger.Log(PsesLogLevel.Verbose, $"Creating debug adapter transport with endpoint {_config.DebugServiceTransport.Endpoint}");
             (Stream inStream, Stream outStream) = await _config.DebugServiceTransport.ConnectStreamsAsync().ConfigureAwait(false);
 
             _logger.Log(PsesLogLevel.Diagnostic, "Creating debug adapter");
-            return _serverFactory.CreateDebugServerWithLanguageServer(inStream, outStream, languageServer);
+            return _serverFactory.CreateDebugServerWithLanguageServer(inStream, outStream, languageServer, usePSReadLine);
         }
 
-        private async Task<PsesDebugServer> RecreateDebugServer(PsesDebugServer debugServer)
+        private async Task<PsesDebugServer> RecreateDebugServer(PsesDebugServer debugServer, bool usePSReadLine)
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Recreating debug adapter transport");
             (Stream inStream, Stream outStream) = await _config.DebugServiceTransport.ConnectStreamsAsync().ConfigureAwait(false);
 
             _logger.Log(PsesLogLevel.Diagnostic, "Recreating debug adapter");
-            return _serverFactory.RecreateDebugServer(inStream, outStream, debugServer);
+            return _serverFactory.RecreateDebugServer(inStream, outStream, debugServer, usePSReadLine);
         }
 
         private async Task<PsesDebugServer> CreateDebugServerForTempSession(HostStartupInfo hostDetails)
@@ -251,7 +251,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _alreadySubscribedDebug = false;
             Task.Run(() =>
             {
-                RestartDebugServer(oldServer);
+                RestartDebugServer(oldServer, usePSReadLine: _config.ConsoleRepl == ConsoleReplKind.PSReadLine);
             });
         }
     }
