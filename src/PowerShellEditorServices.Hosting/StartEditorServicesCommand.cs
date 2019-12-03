@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         }
 
         /// <summary>
-        /// The name of the EditorServices host to report
+        /// The name of the EditorServices host to report.
         /// </summary>
         [Parameter(Mandatory = true)]
         [ValidateNotNullOrEmpty]
