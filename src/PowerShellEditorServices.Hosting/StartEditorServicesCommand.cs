@@ -264,7 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         private void RemovePSReadLineForStartup()
         {
             _logger.Log(PsesLogLevel.Verbose, "Removing PSReadLine");
-            using (var pwsh = SMA.PowerShell.Create())
+            using (var pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace))
             {
                 bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
                     .AddParameter("Name", "PSReadLine")

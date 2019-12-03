@@ -16,9 +16,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>No console REPL - there will be no interactive console available.</summary>
         None = 0,
         /// <summary>Use a REPL with the legacy readline implementation. This is generally used when PSReadLine is unavailable.</summary>
-        LegacyReadLine,
+        LegacyReadLine = 1,
         /// <summary>Use a REPL with the PSReadLine module for console interaction.</summary>
-        PSReadLine,
+        PSReadLine = 2,
     }
 
     /// <summary>

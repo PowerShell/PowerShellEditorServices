@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// no version is specified by the host application, we use 0.0.0
         /// to indicate a lack of version.
         /// </summary>
-        private static readonly Version s_defaultHostVersion = new Version("0.0.0");
+        private static readonly Version s_defaultHostVersion = new Version(0, 0, 0);
 
         #endregion
 
