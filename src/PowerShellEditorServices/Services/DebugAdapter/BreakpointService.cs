@@ -331,7 +331,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private bool ValidateBreakpointConditionAst(Ast conditionAst, out string message)
+        private static bool ValidateBreakpointConditionAst(Ast conditionAst, out string message)
         {
             message = string.Empty;
 
@@ -363,7 +363,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return true;
         }
 
-        private string ExtractAndScrubParseExceptionMessage(ParseException parseException, string condition)
+        private static string ExtractAndScrubParseExceptionMessage(ParseException parseException, string condition)
         {
             string[] messageLines = parseException.Message.Split('\n');
 
