@@ -312,23 +312,23 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             switch (value.logLevel)
             {
                 case PsesLogLevel.Diagnostic:
-                    message = $"[DEBUG]: {value.message}";
+                    message = $"[DBG]: {value.message}";
                     break;
 
                 case PsesLogLevel.Verbose:
-                    message = $"[VERBOSE]: {value.message}";
+                    message = $"[VRB]: {value.message}";
                     break;
 
                 case PsesLogLevel.Normal:
-                    message = $"[INFO]: {value.message}";
+                    message = $"[INF]: {value.message}";
                     break;
 
                 case PsesLogLevel.Warning:
-                    message = $"[WARN]: {value.message}";
+                    message = $"[WRN]: {value.message}";
                     break;
 
                 case PsesLogLevel.Error:
-                    message = $"[ERROR]: {value.message}";
+                    message = $"[ERR]: {value.message}";
                     break;
             };
 
