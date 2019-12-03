@@ -3,15 +3,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Serilog;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Management.Automation.Host;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
@@ -247,15 +245,15 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     {
         public static StreamLogger CreateWithNewFile(string path)
         {
-            return new StreamLogger(
-                new StreamWriter(
-                    new FileStream(
-                        path,
-                        FileMode.Create,
-                        FileAccess.Write,
-                        FileShare.Read,
-                        bufferSize: 4096,
-                        FileOptions.Asynchronous | FileOptions.SequentialScan)));
+            var fileStream = new FileStream(
+                path,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.Read,
+                bufferSize: 4096,
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
+
+            return new StreamLogger(new StreamWriter(fileStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true)));
         }
 
         private readonly StreamWriter _fileWriter;
@@ -269,6 +267,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public StreamLogger(StreamWriter streamWriter)
         {
             _hasCompleted = 0;
+            streamWriter.AutoFlush = true;
             _fileWriter = streamWriter;
         }
 
