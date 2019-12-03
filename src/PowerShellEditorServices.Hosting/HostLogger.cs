@@ -10,6 +10,7 @@ using System.Management.Automation.Host;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
@@ -251,12 +252,18 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 FileAccess.Write,
                 FileShare.Read,
                 bufferSize: 4096,
-                FileOptions.Asynchronous | FileOptions.SequentialScan);
+                FileOptions.SequentialScan);
 
             return new StreamLogger(new StreamWriter(fileStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true)));
         }
 
         private readonly StreamWriter _fileWriter;
+
+        private readonly BlockingCollection<string> _messageQueue;
+
+        private readonly CancellationTokenSource _cancellationSource;
+
+        private readonly Task _writerTask;
 
         // This cannot be a bool
         // See https://stackoverflow.com/q/6164751
@@ -266,9 +273,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public StreamLogger(StreamWriter streamWriter)
         {
-            _hasCompleted = 0;
             streamWriter.AutoFlush = true;
             _fileWriter = streamWriter;
+            _hasCompleted = 0;
+            _cancellationSource = new CancellationTokenSource();
+            _messageQueue = new BlockingCollection<string>();
+
+            // Start writer listening to queue
+            Task.Run(RunWriter);
         }
 
         public void OnCompleted()
@@ -278,6 +290,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             {
                 return;
             }
+
+            _cancellationSource.Cancel();
+
+            _writerTask.Wait();
 
             _unsubscriber.Dispose();
             _fileWriter.Flush();
@@ -316,7 +332,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     break;
             };
 
-            _fileWriter.WriteLineAsync(message);
+            _messageQueue.Add(message);
         }
 
         public void AddUnsubscriber(IDisposable unsubscriber)
@@ -327,6 +343,20 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public void Dispose()
         {
             OnCompleted();
+        }
+
+        private void RunWriter()
+        {
+            try
+            {
+                foreach (string logMessage in _messageQueue.GetConsumingEnumerable(_cancellationSource.Token))
+                {
+                    _fileWriter.WriteLine(logMessage);
+                }
+            }
+            catch (TaskCanceledException)
+            {
+            }
         }
     }
 }
