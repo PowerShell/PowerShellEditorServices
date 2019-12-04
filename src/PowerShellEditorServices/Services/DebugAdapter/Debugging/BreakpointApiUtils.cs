@@ -8,7 +8,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Management.Automation;
+using System.Management.Automation.Language;
 using System.Reflection;
+using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
@@ -17,6 +20,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     {
         #region Private Static Fields
 
+        private const string s_psesGlobalVariableNamePrefix = "__psEditorServices_";
+
         private static readonly Lazy<Func<Debugger, string, int, int, ScriptBlock, LineBreakpoint>> s_setLineBreakpointLazy;
 
         private static readonly Lazy<Func<Debugger, string, ScriptBlock, string, CommandBreakpoint>> s_setCommandBreakpointLazy;
@@ -24,6 +29,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         private static readonly Lazy<Func<Debugger, List<Breakpoint>>> s_getBreakpointsLazy;
 
         private static readonly Lazy<Func<Debugger, Breakpoint, bool>> s_removeBreakpointLazy;
+
+        private static int breakpointHitCounter;
 
         #endregion
 
@@ -101,11 +108,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             foreach (BreakpointDetailsBase breakpoint in breakpoints)
             {
+                ScriptBlock actionScriptBlock = null;
+                // Check if this is a "conditional" line breakpoint.
+                if (!string.IsNullOrWhiteSpace(breakpoint.Condition) ||
+                    !string.IsNullOrWhiteSpace(breakpoint.HitCondition))
+                {
+                    actionScriptBlock = GetBreakpointActionScriptBlock(breakpoint);
+                }
+
                 Breakpoint psBreakpoint;
                 switch (breakpoint)
                 {
                     case BreakpointDetails lineBreakpoint:
-                        psBreakpoint = SetLineBreakpointDelegate(debugger, lineBreakpoint.Source, lineBreakpoint.LineNumber, lineBreakpoint.ColumnNumber ?? 0, null);
+                        psBreakpoint = SetLineBreakpointDelegate(debugger, lineBreakpoint.Source, lineBreakpoint.LineNumber, lineBreakpoint.ColumnNumber ?? 0, actionScriptBlock);
                         break;
 
                     case CommandBreakpointDetails commandBreakpoint:
@@ -130,6 +145,188 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         public static bool RemoveBreakpoint(Debugger debugger, Breakpoint breakpoint)
         {
             return RemoveBreakpointDelegate(debugger, breakpoint);
+        }
+
+        /// <summary>
+        /// Inspects the condition, putting in the appropriate scriptblock template
+        /// "if (expression) { break }".  If errors are found in the condition, the
+        /// breakpoint passed in is updated to set Verified to false and an error
+        /// message is put into the breakpoint.Message property.
+        /// </summary>
+        /// <param name="breakpoint"></param>
+        /// <returns>ScriptBlock</returns>
+        public static ScriptBlock GetBreakpointActionScriptBlock(
+            BreakpointDetailsBase breakpoint)
+        {
+            try
+            {
+                ScriptBlock actionScriptBlock;
+                int? hitCount = null;
+
+                // If HitCondition specified, parse and verify it.
+                if (!(string.IsNullOrWhiteSpace(breakpoint.HitCondition)))
+                {
+                    if (int.TryParse(breakpoint.HitCondition, out int parsedHitCount))
+                    {
+                        hitCount = parsedHitCount;
+                    }
+                    else
+                    {
+                        breakpoint.Verified = false;
+                        breakpoint.Message = $"The specified HitCount '{breakpoint.HitCondition}' is not valid. " +
+                                              "The HitCount must be an integer number.";
+                        return null;
+                    }
+                }
+
+                // Create an Action scriptblock based on condition and/or hit count passed in.
+                if (hitCount.HasValue && string.IsNullOrWhiteSpace(breakpoint.Condition))
+                {
+                    // In the HitCount only case, this is simple as we can just use the HitCount
+                    // property on the breakpoint object which is represented by $_.
+                    string action = $"if ($_.HitCount -eq {hitCount}) {{ break }}";
+                    actionScriptBlock = ScriptBlock.Create(action);
+                }
+                else if (!string.IsNullOrWhiteSpace(breakpoint.Condition))
+                {
+                    // Must be either condition only OR condition and hit count.
+                    actionScriptBlock = ScriptBlock.Create(breakpoint.Condition);
+
+                    // Check for simple, common errors that ScriptBlock parsing will not catch
+                    // e.g. $i == 3 and $i > 3
+                    if (!ValidateBreakpointConditionAst(actionScriptBlock.Ast, out string message))
+                    {
+                        breakpoint.Verified = false;
+                        breakpoint.Message = message;
+                        return null;
+                    }
+
+                    // Check for "advanced" condition syntax i.e. if the user has specified
+                    // a "break" or  "continue" statement anywhere in their scriptblock,
+                    // pass their scriptblock through to the Action parameter as-is.
+                    Ast breakOrContinueStatementAst =
+                        actionScriptBlock.Ast.Find(
+                            ast => (ast is BreakStatementAst || ast is ContinueStatementAst), true);
+
+                    // If this isn't advanced syntax then the conditions string should be a simple
+                    // expression that needs to be wrapped in a "if" test that conditionally executes
+                    // a break statement.
+                    if (breakOrContinueStatementAst == null)
+                    {
+                        string wrappedCondition;
+
+                        if (hitCount.HasValue)
+                        {
+                            Interlocked.Increment(ref breakpointHitCounter);
+
+                            string globalHitCountVarName =
+                                $"$global:{s_psesGlobalVariableNamePrefix}BreakHitCounter_{breakpointHitCounter}";
+
+                            wrappedCondition =
+                                $"if ({breakpoint.Condition}) {{ if (++{globalHitCountVarName} -eq {hitCount}) {{ break }} }}";
+                        }
+                        else
+                        {
+                            wrappedCondition = $"if ({breakpoint.Condition}) {{ break }}";
+                        }
+
+                        actionScriptBlock = ScriptBlock.Create(wrappedCondition);
+                    }
+                }
+                else
+                {
+                    // Shouldn't get here unless someone called this with no condition and no hit count.
+                    actionScriptBlock = ScriptBlock.Create("break");
+                }
+
+                return actionScriptBlock;
+            }
+            catch (ParseException ex)
+            {
+                // Failed to create conditional breakpoint likely because the user provided an
+                // invalid PowerShell expression. Let the user know why.
+                breakpoint.Verified = false;
+                breakpoint.Message = ExtractAndScrubParseExceptionMessage(ex, breakpoint.Condition);
+                return null;
+            }
+        }
+
+        private static bool ValidateBreakpointConditionAst(Ast conditionAst, out string message)
+        {
+            message = string.Empty;
+
+            // We are only inspecting a few simple scenarios in the EndBlock only.
+            if (conditionAst is ScriptBlockAst scriptBlockAst &&
+                scriptBlockAst.BeginBlock == null &&
+                scriptBlockAst.ProcessBlock == null &&
+                scriptBlockAst.EndBlock != null &&
+                scriptBlockAst.EndBlock.Statements.Count == 1)
+            {
+                StatementAst statementAst = scriptBlockAst.EndBlock.Statements[0];
+                string condition = statementAst.Extent.Text;
+
+                if (statementAst is AssignmentStatementAst)
+                {
+                    message = FormatInvalidBreakpointConditionMessage(condition, "Use '-eq' instead of '=='.");
+                    return false;
+                }
+
+                if (statementAst is PipelineAst pipelineAst
+                    && pipelineAst.PipelineElements.Count == 1
+                    && pipelineAst.PipelineElements[0].Redirections.Count > 0)
+                {
+                    message = FormatInvalidBreakpointConditionMessage(condition, "Use '-gt' instead of '>'.");
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static string ExtractAndScrubParseExceptionMessage(ParseException parseException, string condition)
+        {
+            string[] messageLines = parseException.Message.Split('\n');
+
+            // Skip first line - it is a location indicator "At line:1 char: 4"
+            for (int i = 1; i < messageLines.Length; i++)
+            {
+                string line = messageLines[i];
+                if (line.StartsWith("+"))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    // Note '==' and '>" do not generate parse errors
+                    if (line.Contains("'!='"))
+                    {
+                        line += " Use operator '-ne' instead of '!='.";
+                    }
+                    else if (line.Contains("'<'") && condition.Contains("<="))
+                    {
+                        line += " Use operator '-le' instead of '<='.";
+                    }
+                    else if (line.Contains("'<'"))
+                    {
+                        line += " Use operator '-lt' instead of '<'.";
+                    }
+                    else if (condition.Contains(">="))
+                    {
+                        line += " Use operator '-ge' instead of '>='.";
+                    }
+
+                    return FormatInvalidBreakpointConditionMessage(condition, line);
+                }
+            }
+
+            // If the message format isn't in a form we expect, just return the whole message.
+            return FormatInvalidBreakpointConditionMessage(condition, parseException.Message);
+        }
+
+        private static string FormatInvalidBreakpointConditionMessage(string condition, string message)
+        {
+            return $"'{condition}' is not a valid PowerShell expression. {message}";
         }
 
         #endregion
