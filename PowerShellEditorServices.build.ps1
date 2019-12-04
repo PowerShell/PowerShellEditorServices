@@ -158,17 +158,17 @@ task CreateBuildInfo -Before Build {
     $buildVersion = "<development-build>"
     $buildOrigin = "<development>"
 
+    if ($propsBody.VersionSuffix)
+    {
+        $propsXml = [xml](Get-Content -Raw -LiteralPath "$PSScriptRoot/PowerShellEditorServices.Common.props")
+        $propsBody = $propsXml.Project.PropertyGroup
+        $buildVersion = $propsBody.VersionPrefix
+        $buildVersion += '-' + $propsBody.VersionSuffix
+    }
+
     # Set build info fields on build platforms
     if ($env:TF_BUILD)
     {
-        $psd1Path = [System.IO.Path]::Combine($PSScriptRoot, "module", "PowerShellEditorServices", "PowerShellEditorServices.psd1")
-        $propsXml = [xml](Get-Content -Raw -LiteralPath $psd1Path)
-        $propsBody = $propsXml.Project.PropertyGroup
-        $buildVersion = $propsBody.VersionPrefix
-        if ($propsBody.VersionSuffix)
-        {
-            $buildVersion += '-' + $propsBody.VersionSuffix
-        }
         $buildOrigin = "VSTS"
     }
 
