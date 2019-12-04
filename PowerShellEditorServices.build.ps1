@@ -162,7 +162,7 @@ task CreateBuildInfo -Before Build {
     if ($env:TF_BUILD)
     {
         $psd1Path = [System.IO.Path]::Combine($PSScriptRoot, "module", "PowerShellEditorServices", "PowerShellEditorServices.psd1")
-        $buildVersion = (Import-PowerShellDataFile -LiteralPath $psd1Path).Version
+        $buildVersion = (Test-ModuleManifest -Path $psd1Path).Version
         $buildOrigin = "VSTS"
     }
 
