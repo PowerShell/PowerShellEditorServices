@@ -162,7 +162,13 @@ task CreateBuildInfo -Before Build {
     if ($env:TF_BUILD)
     {
         $psd1Path = [System.IO.Path]::Combine($PSScriptRoot, "module", "PowerShellEditorServices", "PowerShellEditorServices.psd1")
-        $buildVersion = (Test-ModuleManifest -Path $psd1Path).Version
+        $propsXml = [xml](Get-Content -Raw -LiteralPath $psd1Path)
+        $propsBody = $propsXml.Project.PropertyGroup
+        $buildVersion = $propsBody.VersionPrefix
+        if ($propsBody.VersionSuffix)
+        {
+            $buildVersion += '-' + $propsBody.VersionSuffix
+        }
         $buildOrigin = "VSTS"
     }
 
