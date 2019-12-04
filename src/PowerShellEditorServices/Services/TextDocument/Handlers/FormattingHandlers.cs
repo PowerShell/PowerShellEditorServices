@@ -24,7 +24,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
-        private readonly ConfigurationService _configurationService;
         private readonly WorkspaceService _workspaceService;
         private DocumentFormattingCapability _capability;
 
@@ -32,7 +31,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _logger = factory.CreateLogger<DocumentFormattingHandler>();
             _analysisService = analysisService;
-            _configurationService = configurationService;
             _workspaceService = workspaceService;
         }
 
@@ -47,10 +45,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public async Task<TextEditContainer> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)
         {
             var scriptFile = _workspaceService.GetFile(request.TextDocument.Uri.ToString());
-            var pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
-                (int)request.Options.TabSize,
-                request.Options.InsertSpaces);
-
 
             // TODO raise an error event in case format returns null
             string formattedScript;
@@ -74,7 +68,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             formattedScript = await _analysisService.FormatAsync(
                 scriptFile.Contents,
-                pssaSettings,
+                (int)request.Options.TabSize,
+                request.Options.InsertSpaces,
                 null);
             formattedScript = formattedScript ?? scriptFile.Contents;
 
@@ -102,7 +97,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
-        private readonly ConfigurationService _configurationService;
         private readonly WorkspaceService _workspaceService;
         private DocumentRangeFormattingCapability _capability;
 
@@ -110,7 +104,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _logger = factory.CreateLogger<DocumentRangeFormattingHandler>();
             _analysisService = analysisService;
-            _configurationService = configurationService;
             _workspaceService = workspaceService;
         }
 
@@ -125,9 +118,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public async Task<TextEditContainer> Handle(DocumentRangeFormattingParams request, CancellationToken cancellationToken)
         {
             var scriptFile = _workspaceService.GetFile(request.TextDocument.Uri.ToString());
-            var pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
-                (int)request.Options.TabSize,
-                request.Options.InsertSpaces);
 
             // TODO raise an error event in case format returns null;
             string formattedScript;
@@ -150,16 +140,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             };
 
             Range range = request.Range;
-            var rangeList = range == null ? null : new int[] {
+            Windows.PowerShell.ScriptAnalyzer.Range pssaRange = new Windows.PowerShell.ScriptAnalyzer.Range(
                 (int)range.Start.Line + 1,
                 (int)range.Start.Character + 1,
                 (int)range.End.Line + 1,
-                (int)range.End.Character + 1};
+                (int)range.End.Character + 1);
 
             formattedScript = await _analysisService.FormatAsync(
                 scriptFile.Contents,
-                pssaSettings,
-                rangeList);
+                (int)request.Options.TabSize,
+                request.Options.InsertSpaces,
+                pssaRange);
             formattedScript = formattedScript ?? scriptFile.Contents;
 
             return new TextEditContainer(new TextEdit

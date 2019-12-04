@@ -11,6 +11,8 @@ using System.Reflection;
 using System.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.Windows.PowerShell.ScriptAnalyzer;
+using Microsoft.Windows.PowerShell.ScriptAnalyzer.Hosting;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 {
@@ -214,107 +216,88 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public bool AlignPropertyValuePairs { get; set; }
         public bool UseCorrectCasing { get; set; }
 
-
         /// <summary>
-        /// Get the settings hashtable that will be consumed by PSScriptAnalyzer.
+        /// Get the settings that will be consumed by PSScriptAnalyzer.
         /// </summary>
+        /// <param name="analyzer">The analyzer used to create the settings.</param>
         /// <param name="tabSize">The tab size in the number spaces.</param>
         /// <param name="insertSpaces">If true, insert spaces otherwise insert tabs for indentation.</param>
         /// <returns></returns>
-        public Hashtable GetPSSASettingsHashtable(
-            int tabSize,
-            bool insertSpaces)
+        public Settings GetFormatterSettings(HostedAnalyzer analyzer, int tabSize, bool insertSpaces)
         {
-            var settings = GetCustomPSSASettingsHashtable(tabSize, insertSpaces);
-            var ruleSettings = (Hashtable)(settings["Rules"]);
-            var closeBraceSettings = (Hashtable)ruleSettings["PSPlaceCloseBrace"];
-            var openBraceSettings = (Hashtable)ruleSettings["PSPlaceOpenBrace"];
+            bool openBraceOnSameLine, newLineAfterOpenBrace, newLineAfterCloseBrace;
             switch(Preset)
             {
                 case CodeFormattingPreset.Allman:
-                    openBraceSettings["OnSameLine"] = false;
-                    openBraceSettings["NewLineAfter"] = true;
-                    closeBraceSettings["NewLineAfter"] = true;
+                    openBraceOnSameLine = false;
+                    newLineAfterOpenBrace = true;
+                    newLineAfterCloseBrace = true;
                     break;
 
                 case CodeFormattingPreset.OTBS:
-                    openBraceSettings["OnSameLine"] = true;
-                    openBraceSettings["NewLineAfter"] = true;
-                    closeBraceSettings["NewLineAfter"] = false;
+                    openBraceOnSameLine = true;
+                    newLineAfterOpenBrace = true;
+                    newLineAfterCloseBrace = false;
                     break;
 
                 case CodeFormattingPreset.Stroustrup:
-                    openBraceSettings["OnSameLine"] = true;
-                    openBraceSettings["NewLineAfter"] = true;
-                    closeBraceSettings["NewLineAfter"] = true;
+                    openBraceOnSameLine = true;
+                    newLineAfterOpenBrace = true;
+                    newLineAfterCloseBrace = true;
                     break;
 
                 default:
+                    openBraceOnSameLine = OpenBraceOnSameLine;
+                    newLineAfterOpenBrace = NewLineAfterOpenBrace;
+                    newLineAfterCloseBrace = NewLineAfterCloseBrace;
                     break;
             }
 
+            Settings settings = analyzer.CreateSettings();
+            settings.AddRuleArgument("PSPlaceOpenBrace", new Dictionary<string, object>
+            {
+                { "Enable", true },
+                { "OnSameLine", openBraceOnSameLine },
+                { "NewLineAfter", newLineAfterOpenBrace },
+                { "IgnoreOneLineBlock", IgnoreOneLineBlock }
+            });
+
+            settings.AddRuleArgument("PSPlaceCloseBrace", new Dictionary<string, object>
+            {
+                { "Enable", true },
+                { "NewLineAfter", newLineAfterCloseBrace },
+                { "IgnoreOneLineBlock", IgnoreOneLineBlock }
+            });
+
+            settings.AddRuleArgument("PSUseConsistentIndentation", new Dictionary<string, object>
+            {
+                { "Enable", true },
+                { "IndentationSize", tabSize },
+                { "PipelineIndentation", PipelineIndentationStyle },
+                { "Kind", insertSpaces ? "space" : "tab" }
+            });
+
+            settings.AddRuleArgument("PSUseConsistentWhitespace", new Dictionary<string, object>
+            {
+                { "Enable", true },
+                { "CheckOpenBrace", WhitespaceBeforeOpenBrace },
+                { "CheckOpenParen", WhitespaceBeforeOpenParen },
+                { "CheckOperator", WhitespaceAroundOperator },
+                { "CheckSeparator", WhitespaceAfterSeparator },
+                { "CheckInnerBrace", WhitespaceInsideBrace },
+                { "CheckPipe", WhitespaceAroundPipe },
+            });
+
+            settings.AddRuleArgument("PSAlignAssignmentStatement", new Dictionary<string, object>
+            {
+                { "Enable", true },
+                { "CheckHashtable", AlignPropertyValuePairs }
+            });
+
+            settings.AddRuleArgument("PSUseCorrectCasing", "Enable", UseCorrectCasing);
+            settings.AddRuleArgument("PSAvoidUsingCmdletAliases", "Enable", AutoCorrectAliases);
+
             return settings;
-        }
-
-        private Hashtable GetCustomPSSASettingsHashtable(int tabSize, bool insertSpaces)
-        {
-            var ruleConfigurations = new Hashtable
-            {
-                { "PSPlaceOpenBrace", new Hashtable {
-                    { "Enable", true },
-                    { "OnSameLine", OpenBraceOnSameLine },
-                    { "NewLineAfter", NewLineAfterOpenBrace },
-                    { "IgnoreOneLineBlock", IgnoreOneLineBlock }
-                }},
-                { "PSPlaceCloseBrace", new Hashtable {
-                    { "Enable", true },
-                    { "NewLineAfter", NewLineAfterCloseBrace },
-                    { "IgnoreOneLineBlock", IgnoreOneLineBlock }
-                }},
-                { "PSUseConsistentIndentation", new Hashtable {
-                    { "Enable", true },
-                    { "IndentationSize", tabSize },
-                    { "PipelineIndentation", PipelineIndentationStyle },
-                    { "Kind", insertSpaces ? "space" : "tab" }
-                }},
-                { "PSUseConsistentWhitespace", new Hashtable {
-                    { "Enable", true },
-                    { "CheckOpenBrace", WhitespaceBeforeOpenBrace },
-                    { "CheckOpenParen", WhitespaceBeforeOpenParen },
-                    { "CheckOperator", WhitespaceAroundOperator },
-                    { "CheckSeparator", WhitespaceAfterSeparator },
-                    { "CheckInnerBrace", WhitespaceInsideBrace },
-                    { "CheckPipe", WhitespaceAroundPipe },
-                }},
-                { "PSAlignAssignmentStatement", new Hashtable {
-                    { "Enable", true },
-                    { "CheckHashtable", AlignPropertyValuePairs }
-                }},
-                { "PSUseCorrectCasing", new Hashtable {
-                    { "Enable", UseCorrectCasing }
-                }},
-            };
-
-            if (AutoCorrectAliases)
-            {
-                // Empty hashtable required to activate the rule,
-                // since PSAvoidUsingCmdletAliases inherits from IScriptRule and not ConfigurableRule
-                ruleConfigurations.Add("PSAvoidUsingCmdletAliases", new Hashtable());
-            }
-
-            return new Hashtable()
-            {
-                { "IncludeRules", new string[] {
-                        "PSPlaceCloseBrace",
-                        "PSPlaceOpenBrace",
-                        "PSUseConsistentWhitespace",
-                        "PSUseConsistentIndentation",
-                        "PSAlignAssignmentStatement"
-                }},
-                {
-                    "Rules", ruleConfigurations
-                }
-            };
         }
     }
 

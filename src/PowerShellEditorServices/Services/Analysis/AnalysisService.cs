@@ -87,8 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             SettingsPath = configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
             _logger = factory.CreateLogger<AnalysisService>();
             _analyzer = new HostedAnalyzer();
-            // TODO: use our rules
-            _analyzerSettings = _analyzer.CreateSettings("PSGallery");
+            _analyzerSettings = _analyzer.CreateSettings(s_includedRules);
             _configurationService = configurationService;
             _languageServer = languageServer;
             _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)>();
@@ -154,8 +153,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>The formatted script text.</returns>
         public async Task<string> FormatAsync(
             string scriptDefinition,
-            Hashtable settings,
-            int[] rangeList)
+            int tabSize,
+            bool insertSpaces,
+            Windows.PowerShell.ScriptAnalyzer.Range range)
         {
             // We cannot use Range type therefore this workaround of using -1 default value.
             // Invoke-Formatter throws a ParameterBinderValidationException if the ScriptDefinition is an empty string.
@@ -164,8 +164,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            // TODO: support rangeList
-            return await _analyzer.FormatAsync(scriptDefinition, _analyzer.CreateSettings(settings));
+            Settings settings = _configurationService.CurrentSettings.CodeFormatting.GetFormatterSettings(
+                _analyzer,
+                tabSize,
+                insertSpaces);
+
+            return range == null
+                ? await _analyzer.FormatAsync(scriptDefinition, settings)
+                : await _analyzer.FormatAsync(scriptDefinition, settings, range);
         }
 
         public async Task RunScriptDiagnosticsAsync(
