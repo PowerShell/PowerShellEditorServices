@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// A simple translation struct to convert PsesLogLevel to an int for backend passthrough.
         /// </summary>
-        private struct LogObserver : IObserver<(PsesLogLevel logLevel, string message)>
+        private class LogObserver : IObserver<(PsesLogLevel logLevel, string message)>
         {
             private readonly IObserver<(int logLevel, string message)> _observer;
 
@@ -90,6 +90,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly ConcurrentQueue<(PsesLogLevel logLevel, string message)> _logMessages;
 
+        // The bool value here is meaningless and ignored,
+        // the ConcurrentDictionary just provides a way to efficiently keep track of subscribers across threads
         private readonly ConcurrentDictionary<IObserver<(PsesLogLevel logLevel, string message)>, bool> _observers;
 
         /// <summary>

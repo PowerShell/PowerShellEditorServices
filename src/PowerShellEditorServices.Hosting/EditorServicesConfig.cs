@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// <summary>
     /// Configuration for editor services startup.
     /// </summary>
-    public class EditorServicesConfig
+    public sealed class EditorServicesConfig
     {
         /// <summary>
         /// Create a new editor services config object,

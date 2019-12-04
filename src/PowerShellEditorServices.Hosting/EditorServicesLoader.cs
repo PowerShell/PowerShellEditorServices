@@ -8,8 +8,9 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using SMA = System.Management.Automation;
 using System.Runtime.InteropServices;
+
+using SMA = System.Management.Automation;
 
 #if CoreCLR
 using System.Runtime.Loader;
