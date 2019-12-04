@@ -12,6 +12,13 @@ using System.Management.Automation;
 using System.Reflection;
 using SMA = System.Management.Automation;
 
+#if DEBUG
+using System.Diagnostics;
+using System.Threading;
+
+using Debugger = System.Diagnostics.Debugger;
+#endif
+
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>
@@ -174,10 +181,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 #if DEBUG
             if (WaitForDebugger)
             {
-                while (!System.Diagnostics.Debugger.IsAttached)
+                while (!Debugger.IsAttached)
                 {
-                    Console.WriteLine($"PID: {System.Diagnostics.Process.GetCurrentProcess().Id}");
-                    System.Threading.Thread.Sleep(1000);
+                    Console.WriteLine($"PID: {Process.GetCurrentProcess().Id}");
+                    Thread.Sleep(1000);
                 }
             }
 #endif
@@ -213,7 +220,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 _logger.LogException("Exception encountered starting EditorServices", e);
 
                 // Give the user a chance to read the message
-                Host.UI.WriteLine("\n== Press any key to close terminal ==");
+                if (!Stdio)
+                {
+                    Host.UI.WriteLine("\n== Press any key to close terminal ==");
+                }
+
                 Console.ReadKey();
 
                 ThrowTerminatingError(new ErrorRecord(e, "PowerShellEditorServicesError", ErrorCategory.NotSpecified, this));

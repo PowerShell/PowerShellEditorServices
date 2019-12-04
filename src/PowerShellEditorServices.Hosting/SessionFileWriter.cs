@@ -90,8 +90,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             var sessionObject = new Dictionary<string, object>
             {
                 { "status", "started" },
-                { "languageServiceTransport", languageServiceTransport.SessionFileTransportName },
-                { "debugServiceTransport", debugAdapterTransport.SessionFileTransportName },
             };
 
             if (languageServiceTransport != null)

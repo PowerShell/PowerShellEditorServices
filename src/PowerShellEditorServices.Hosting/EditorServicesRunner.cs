@@ -119,7 +119,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
 
             // Write the integrated console banner
-            _config.PSHost.UI.WriteLine("\n=== PowerShell Integrated Console ===");
+            if (_config.ConsoleRepl != ConsoleReplKind.None)
+            {
+                _config.PSHost.UI.WriteLine("\n=== PowerShell Integrated Console ===");
+            }
 
             PsesLanguageServer languageServer = await CreateLanguageServer(hostStartupInfo).ConfigureAwait(false);
 
