@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text;
-using System.Collections;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -27,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// Provides a high-level service for performing semantic analysis
     /// of PowerShell scripts.
     /// </summary>
-    public class AnalysisService
+    public class AnalysisService : IDisposable
     {
         #region Fields
 
@@ -68,11 +67,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #region Properties
 
         /// <summary>
-        /// Set of PSScriptAnalyzer rules used for analysis.
-        /// </summary>
-        public string[] ActiveRules => s_includedRules;
-
-        /// <summary>
         /// Gets or sets the path to a settings file (.psd1)
         /// containing PSScriptAnalyzer settings.
         /// </summary>
@@ -98,6 +92,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #endregion
 
         #region Public Methods
+
+        /// <summary>
+        /// Clean up resources.
+        /// </summary>
+        public void Dispose()
+        {
+            _existingRequestCancellation.Dispose();
+            _analyzer.Dispose();
+            _existingRequestCancellationLock.Dispose();
+        }
 
         /// <summary>
         /// Get PSScriptAnalyzer settings for PSProvideCommentHelp rule.
@@ -221,7 +225,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             try
             {
                 // Wait for the desired delay period before analyzing the provided list of files.
-                await Task.Delay(750, ct);
+                await Task.Delay(750, ct).ConfigureAwait(continueOnCapturedContext: false);
 
                 foreach (ScriptFile file in filesToAnalyze)
                 {
@@ -257,7 +261,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         newEntryNeeded = true;
                     }
 
-                    await fileLock.WaitAsync();
+                    await fileLock.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                     try
                     {
                         if (newEntryNeeded)
@@ -278,7 +282,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             file.DiagnosticMarkers.Add(diagnostic);
 
                             // Does the marker contain a correction?
-                            //Diagnostic markerDiagnostic = GetDiagnosticFromMarker(marker);
                             if (diagnosticRecord.SuggestedCorrections != null)
                             {
                                 var editRegions = new List<ScriptRegion>();
