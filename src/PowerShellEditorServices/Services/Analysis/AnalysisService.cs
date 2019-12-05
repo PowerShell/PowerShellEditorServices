@@ -170,8 +170,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 insertSpaces);
 
             return range == null
-                ? await _analyzer.FormatAsync(scriptDefinition, settings)
-                : await _analyzer.FormatAsync(scriptDefinition, settings, range);
+                ? await _analyzer.FormatAsync(_analyzer.Fix(scriptDefinition, settings), settings)
+                : await _analyzer.FormatAsync(_analyzer.Fix(scriptDefinition, settings), settings, range);
         }
 
         public async Task RunScriptDiagnosticsAsync(
