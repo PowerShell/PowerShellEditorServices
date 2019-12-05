@@ -189,7 +189,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // If there's an existing task, attempt to cancel it
             try
             {
-                await _existingRequestCancellationLock.WaitAsync();
+                await _existingRequestCancellationLock.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 // Try to cancel the request
                 _existingRequestCancellation.Cancel();
 
