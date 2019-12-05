@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             } while (tries < 10);
 
-            throw new Exception("Unable to create named pipe; no available names");
+            throw new IOException("Unable to create named pipe; no available names");
         }
 
         /// <summary>

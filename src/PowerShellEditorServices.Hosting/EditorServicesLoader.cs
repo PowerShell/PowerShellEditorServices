@@ -48,6 +48,16 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             ISessionFileWriter sessionFileWriter,
             IReadOnlyCollection<IDisposable> loggersToUnsubscribe = null)
         {
+            if (logger == null)
+            {
+                throw new ArgumentNullException(nameof(logger));
+            }
+
+            if (logger == null)
+            {
+                throw new ArgumentNullException(nameof(hostConfig));
+            }
+
 #if CoreCLR
             // In .NET Core, we add an event here to redirect dependency loading to the new AssemblyLoadContext we load PSES' dependencies into
 

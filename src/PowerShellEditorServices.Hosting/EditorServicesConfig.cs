@@ -118,17 +118,23 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     public struct ProfilePathConfig
     {
         /// <summary>
-        /// The path to the profile shared by all users.
+        /// The path to the profile shared by all users across all PowerShell hosts.
         /// </summary>
         public string AllUsersAllHosts { get; set; }
 
+        /// <summary>
+        /// The path to the profile shared by all users specific to this PSES host.
+        /// </summary>
         public string AllUsersCurrentHost { get; set; }
 
         /// <summary>
-        /// The path to the profile specific to the current user.
+        /// The path to the profile specific to the current user across all hosts.
         /// </summary>
         public string CurrentUserAllHosts { get; set; }
 
+        /// <summary>
+        /// The path to the profile specific to the current user and to this PSES host.
+        /// </summary>
         public string CurrentUserCurrentHost { get; set; }
     }
 }

@@ -27,6 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             _dependencyDirPath = dependencyDirPath;
 
+            // Try and set our name in .NET Core 3+ for logging niceness
             TrySetName("PsesLoadContext");
         }
 
