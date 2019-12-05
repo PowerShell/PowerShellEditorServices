@@ -10,6 +10,7 @@ using System.Linq.Expressions;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 
@@ -102,39 +103,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         #region Public Static Methods
 
-        public static IEnumerable<Breakpoint> SetBreakpoints(Debugger debugger, IEnumerable<BreakpointDetailsBase> breakpoints)
+        public static Breakpoint SetBreakpoint(Debugger debugger, BreakpointDetailsBase breakpoint)
         {
-            var psBreakpoints = new List<Breakpoint>(breakpoints.Count());
-
-            foreach (BreakpointDetailsBase breakpoint in breakpoints)
+            ScriptBlock actionScriptBlock = null;
+            string logMessage = breakpoint is BreakpointDetails bd ? bd.LogMessage : null;
+            // Check if this is a "conditional" line breakpoint.
+            if (!string.IsNullOrWhiteSpace(breakpoint.Condition) ||
+                !string.IsNullOrWhiteSpace(breakpoint.HitCondition) ||
+                !string.IsNullOrWhiteSpace(logMessage))
             {
-                ScriptBlock actionScriptBlock = null;
-                // Check if this is a "conditional" line breakpoint.
-                if (!string.IsNullOrWhiteSpace(breakpoint.Condition) ||
-                    !string.IsNullOrWhiteSpace(breakpoint.HitCondition))
-                {
-                    actionScriptBlock = GetBreakpointActionScriptBlock(breakpoint);
-                }
-
-                Breakpoint psBreakpoint;
-                switch (breakpoint)
-                {
-                    case BreakpointDetails lineBreakpoint:
-                        psBreakpoint = SetLineBreakpointDelegate(debugger, lineBreakpoint.Source, lineBreakpoint.LineNumber, lineBreakpoint.ColumnNumber ?? 0, actionScriptBlock);
-                        break;
-
-                    case CommandBreakpointDetails commandBreakpoint:
-                        psBreakpoint = SetCommandBreakpointDelegate(debugger, commandBreakpoint.Name, null, null);
-                        break;
-
-                    default:
-                        throw new NotImplementedException("Other breakpoints not supported yet");
-                }
-
-                psBreakpoints.Add(psBreakpoint);
+                actionScriptBlock = GetBreakpointActionScriptBlock(breakpoint.Condition, breakpoint.HitCondition, logMessage);
             }
 
-            return psBreakpoints;
+            switch (breakpoint)
+            {
+                case BreakpointDetails lineBreakpoint:
+                    return SetLineBreakpointDelegate(debugger, lineBreakpoint.Source, lineBreakpoint.LineNumber, lineBreakpoint.ColumnNumber ?? 0, actionScriptBlock);
+
+                case CommandBreakpointDetails commandBreakpoint:
+                    return SetCommandBreakpointDelegate(debugger, commandBreakpoint.Name, null, null);
+
+                default:
+                    throw new NotImplementedException("Other breakpoints not supported yet");
+            }
         }
 
         public static List<Breakpoint> GetBreakpoints(Debugger debugger)
@@ -145,6 +136,65 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         public static bool RemoveBreakpoint(Debugger debugger, Breakpoint breakpoint)
         {
             return RemoveBreakpointDelegate(debugger, breakpoint);
+        }
+
+        public static ScriptBlock GetBreakpointActionScriptBlock(string condition, string hitCondition, string logMessage)
+        {
+            StringBuilder builder = new StringBuilder(
+                string.IsNullOrEmpty(logMessage)
+                    ? "break"
+                    : $"Microsoft.PowerShell.Utility\\Write-Host '{logMessage}'");
+
+            // If HitCondition specified, parse and verify it.
+            if (!(string.IsNullOrWhiteSpace(hitCondition)))
+            {
+                if (!int.TryParse(hitCondition, out int parsedHitCount))
+                {
+                    throw new InvalidOperationException("Hit Count was not a valid integer.");
+                }
+
+                if(string.IsNullOrWhiteSpace(condition))
+                {
+                    // In the HitCount only case, this is simple as we can just use the HitCount
+                    // property on the breakpoint object which is represented by $_.
+                    builder.Insert(0, $"if ($_.HitCount -eq {parsedHitCount}) {{ ")
+                        .Append(" }}");
+                }
+
+                Interlocked.Increment(ref breakpointHitCounter);
+
+                string globalHitCountVarName =
+                    $"$global:{s_psesGlobalVariableNamePrefix}BreakHitCounter_{breakpointHitCounter}";
+
+                builder.Insert(0, $"if (++{globalHitCountVarName} -eq {parsedHitCount}) {{ ")
+                    .Append(" }}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(condition))
+            {
+                ScriptBlock parsed = ScriptBlock.Create(condition);
+
+                // Check for simple, common errors that ScriptBlock parsing will not catch
+                // e.g. $i == 3 and $i > 3
+                if (!ValidateBreakpointConditionAst(parsed.Ast, out string message))
+                {
+                    throw new InvalidOperationException(message);
+                }
+
+                // Check for "advanced" condition syntax i.e. if the user has specified
+                // a "break" or  "continue" statement anywhere in their scriptblock,
+                // pass their scriptblock through to the Action parameter as-is.
+                if (parsed.Ast.Find(ast =>
+                    (ast is BreakStatementAst || ast is ContinueStatementAst), true) != null)
+                {
+                    return parsed;
+                }
+
+                builder.Insert(0, $"if ({condition}) {{ ")
+                    .Append(" }}");
+            }
+
+            return ScriptBlock.Create(builder.ToString());
         }
 
         /// <summary>

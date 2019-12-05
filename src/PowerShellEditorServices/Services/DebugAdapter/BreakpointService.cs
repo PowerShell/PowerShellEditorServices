@@ -31,14 +31,25 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _powerShellContextService = powerShellContextService;
         }
 
-        public async Task<BreakpointDetails[]> SetBreakpointsAsync(string escapedScriptPath, IEnumerable<BreakpointDetails> breakpoints)
+        public async Task<IEnumerable<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IEnumerable<BreakpointDetails> breakpoints)
         {
             if (VersionUtils.IsPS7OrGreater)
             {
-                return BreakpointApiUtils.SetBreakpoints(
-                    _powerShellContextService.CurrentRunspace.Runspace.Debugger,
-                    breakpoints)
-                    .Select(BreakpointDetails.Create).ToArray();
+                foreach (BreakpointDetails breakpointDetails in breakpoints)
+                {
+                    try
+                    {
+                        BreakpointApiUtils.SetBreakpoint(_powerShellContextService.CurrentRunspace.Runspace.Debugger, breakpointDetails);
+
+                    }
+                    catch(InvalidOperationException e)
+                    {
+                        breakpointDetails.Message = e.Message;
+                        breakpointDetails.Verified = false;
+                    }
+                }
+
+                return breakpoints;
             }
 
             // Legacy behavior
@@ -46,6 +57,27 @@ namespace Microsoft.PowerShell.EditorServices.Services
             List<BreakpointDetails> configuredBreakpoints = new List<BreakpointDetails>();
             foreach (BreakpointDetails breakpoint in breakpoints)
             {
+                ScriptBlock actionScriptBlock = null;
+
+                // Check if this is a "conditional" line breakpoint.
+                if (!string.IsNullOrWhiteSpace(breakpoint.Condition) ||
+                    !string.IsNullOrWhiteSpace(breakpoint.HitCondition) ||
+                    !string.IsNullOrWhiteSpace(breakpoint.LogMessage))
+                {
+                    try
+                    {
+                        actionScriptBlock = BreakpointApiUtils.GetBreakpointActionScriptBlock(
+                            breakpoint.Condition,
+                            breakpoint.HitCondition,
+                            breakpoint.LogMessage);
+                    }
+                    catch (InvalidOperationException e)
+                    {
+                        breakpoint.Verified = false;
+                        breakpoint.Message = e.Message;
+                    }
+                }
+
                 // On first iteration psCommand will be null, every subsequent
                 // iteration will need to start a new statement.
                 if (psCommand == null)
@@ -71,21 +103,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     psCommand.AddParameter("Column", breakpoint.ColumnNumber.Value);
                 }
 
-                // Check if this is a "conditional" line breakpoint.
-                if (!string.IsNullOrWhiteSpace(breakpoint.Condition) ||
-                    !string.IsNullOrWhiteSpace(breakpoint.HitCondition))
+                if (actionScriptBlock != null)
                 {
-                    ScriptBlock actionScriptBlock =
-                        BreakpointApiUtils.GetBreakpointActionScriptBlock(breakpoint);
-
-                    // If there was a problem with the condition string,
-                    // move onto the next breakpoint.
-                    if (actionScriptBlock == null)
-                    {
-                        configuredBreakpoints.Add(breakpoint);
-                        continue;
-                    }
-
                     psCommand.AddParameter("Action", actionScriptBlock);
                 }
             }
@@ -99,17 +118,27 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     setBreakpoints.Select(BreakpointDetails.Create));
             }
 
-            return configuredBreakpoints.ToArray();
+            return configuredBreakpoints;
         }
 
         public async Task<IEnumerable<CommandBreakpointDetails>> SetCommandBreakpoints(IEnumerable<CommandBreakpointDetails> breakpoints)
         {
             if (VersionUtils.IsPS7OrGreater)
             {
-                return BreakpointApiUtils.SetBreakpoints(
-                    _powerShellContextService.CurrentRunspace.Runspace.Debugger,
-                    breakpoints)
-                    .Select(CommandBreakpointDetails.Create);
+                foreach (CommandBreakpointDetails commandBreakpointDetails in breakpoints)
+                {
+                    try
+                    {
+                        BreakpointApiUtils.SetBreakpoint(_powerShellContextService.CurrentRunspace.Runspace.Debugger, commandBreakpointDetails);
+                    }
+                    catch(InvalidOperationException e)
+                    {
+                        commandBreakpointDetails.Message = e.Message;
+                        commandBreakpointDetails.Verified = false;
+                    }
+                }
+
+                return breakpoints;
             }
 
             // Legacy behavior

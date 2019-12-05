@@ -36,6 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </summary>
         public int? ColumnNumber { get; private set; }
 
+        public string LogMessage { get; private set; }
+
         private BreakpointDetails()
         {
         }
@@ -55,7 +57,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             int line,
             int? column = null,
             string condition = null,
-            string hitCondition = null)
+            string hitCondition = null,
+            string logMessage = null)
         {
             Validate.IsNotNull("source", source);
 
@@ -66,7 +69,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 LineNumber = line,
                 ColumnNumber = column,
                 Condition = condition,
-                HitCondition = hitCondition
+                HitCondition = hitCondition,
+                LogMessage = logMessage
             };
         }
 
