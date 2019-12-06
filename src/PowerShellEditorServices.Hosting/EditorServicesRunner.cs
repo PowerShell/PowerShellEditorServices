@@ -153,7 +153,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             await debugServer.StartAsync().ConfigureAwait(false);
             _logger.Log(PsesLogLevel.Verbose, "Debug server started");
             await debugServer.WaitForShutdown().ConfigureAwait(false);
-            return;
         }
 
         private async Task StartDebugServer(Task<PsesDebugServer> debugServerCreation)

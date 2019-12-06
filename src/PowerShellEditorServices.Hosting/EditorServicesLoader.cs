@@ -45,15 +45,27 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public static EditorServicesLoader Create(
             HostLogger logger,
             EditorServicesConfig hostConfig,
+            ISessionFileWriter sessionFileWriter) => Create(logger, hostConfig, sessionFileWriter, null);
+
+        /// <summary>
+        /// Create a new Editor Services loader.
+        /// </summary>
+        /// <param name="logger">The host logger to use.</param>
+        /// <param name="hostConfig">The host configuration to start editor services with.</param>
+        /// <param name="sessionFileWriter">The session file writer to write the session file with.</param>
+        /// <returns></returns>
+        public static EditorServicesLoader Create(
+            HostLogger logger,
+            EditorServicesConfig hostConfig,
             ISessionFileWriter sessionFileWriter,
-            IReadOnlyCollection<IDisposable> loggersToUnsubscribe = null)
+            IReadOnlyCollection<IDisposable> loggersToUnsubscribe)
         {
             if (logger == null)
             {
                 throw new ArgumentNullException(nameof(logger));
             }
 
-            if (logger == null)
+            if (hostConfig == null)
             {
                 throw new ArgumentNullException(nameof(hostConfig));
             }

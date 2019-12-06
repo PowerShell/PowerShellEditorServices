@@ -210,6 +210,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public void OnCompleted()
         {
+            // No-op since there's nothing to close or dispose,
+            // we just stop writing to the host
         }
 
         public void OnError(Exception error)
@@ -239,6 +241,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
                 case PsesLogLevel.Error:
                     _ui.WriteErrorLine(value.message);
+                    return;
+
+                default:
+                    _ui.WriteLine(value.message);
                     return;
             }
         }
@@ -282,7 +288,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _messageQueue = new BlockingCollection<string>();
 
             // Start writer listening to queue
-            Task.Run(RunWriter);
+            _writerTask = Task.Run(RunWriter);
         }
 
         public void OnCompleted()
