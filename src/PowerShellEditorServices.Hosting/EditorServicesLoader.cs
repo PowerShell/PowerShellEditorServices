@@ -182,8 +182,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             ValidateConfiguration();
 
             // Method with no implementation that forces the PSES assembly to load, triggering an AssemblyResolve event
-            _logger.Log(PsesLogLevel.Verbose, "Loading PSES assemblies");
-            EditorServicesLoading.LoadEditorServicesForHost();
+            _logger.Log(PsesLogLevel.Verbose, "Loading PowerShell Editor Services");
+            LoadEditorServices();
 
             _logger.Log(PsesLogLevel.Verbose, "Starting EditorServices");
             using (var editorServicesRunner = new EditorServicesRunner(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe))
@@ -198,6 +198,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             // TODO: Remove assembly resolve events
             //       This is not high priority, since the PSES process shouldn't be reused
+        }
+
+        private void LoadEditorServices()
+        {
+            EditorServicesLoading.LoadEditorServicesForHost();
         }
 
 #if !CoreCLR
