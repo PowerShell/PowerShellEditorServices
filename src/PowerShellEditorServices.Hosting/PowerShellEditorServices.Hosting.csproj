@@ -33,7 +33,7 @@
     <PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0" PrivateAssets="all" Private="false" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
 
-    <Compile Remove="PsesLoadContext.cs" />
+    <Compile Remove="Internal/PsesLoadContext.cs" />
   </ItemGroup>
 
 </Project>

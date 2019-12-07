@@ -11,6 +11,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Reflection;
 using SMA = System.Management.Automation;
+using Microsoft.PowerShell.EditorServices.Hosting;
 
 #if DEBUG
 using System.Diagnostics;
@@ -19,7 +20,7 @@ using System.Threading;
 using Debugger = System.Diagnostics.Debugger;
 #endif
 
-namespace Microsoft.PowerShell.EditorServices.Hosting
+namespace Microsoft.PowerShell.EditorServices.Commands
 {
     /// <summary>
     /// The Start-EditorServices command, the conventional entrypoint for PowerShell Editor Services.
@@ -30,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         private readonly List<IDisposable> _disposableResources;
 
         private readonly List<IDisposable> _loggerUnsubscribers;
-        
+
         private HostLogger _logger;
 
         public StartEditorServicesCommand()
