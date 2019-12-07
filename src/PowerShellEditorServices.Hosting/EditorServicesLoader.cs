@@ -165,19 +165,18 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns></returns>
         public async Task LoadAndRunEditorServicesAsync()
         {
+            // Log important host information here
+            LogHostInformation();
+
 #if !CoreCLR
             // Make sure the .NET Framework version supports .NET Standard 2.0
             CheckNetFxVersion();
 #endif
-
             // Ensure the language mode allows us to run
             CheckLanguageMode();
 
             // Add the bundled modules to the PSModulePath
             UpdatePSModulePath();
-
-            // Log important host information here
-            LogHostInformation();
 
             // Check to see if the configuration we have is valid
             ValidateConfiguration();
@@ -212,6 +211,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 {
                     return;
                 }
+
+                _logger.Log(PsesLogLevel.Verbose, $".NET registry version: {netFxVersion}");
 
                 if (netFxVersion < Net461Version)
                 {
@@ -285,10 +286,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
  - PowerShell output encoding: {GetPSOutputEncoding()}
 ");
 
-            _logger.Log(PsesLogLevel.Verbose, $@"
-== PowerShell Details ==
- - PowerShell version: {GetPowerShellVersion()}
-");
+            LogPowerShellDetails();
 
             LogOperatingSystemDetails();
         }
@@ -301,11 +299,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
         }
 
-        private string GetPowerShellVersion()
+        private void LogPowerShellDetails()
         {
-            using (var pwsh = SMA.PowerShell.Create())
+            using (var pwsh = SMA.PowerShell.Create(SMA.RunspaceMode.CurrentRunspace))
             {
-                return pwsh.AddScript("$PSVersionTable.PSVersion").Invoke()[0].ToString();
+                string psVersion = pwsh.AddScript("$PSVersionTable.PSVersion").Invoke()[0].ToString();
+
+                _logger.Log(PsesLogLevel.Verbose, $@"
+== PowerShell Details ==
+- PowerShell version: {psVersion}
+- Language mode:      {pwsh.Runspace.SessionStateProxy.LanguageMode}
+");
             }
         }
 
