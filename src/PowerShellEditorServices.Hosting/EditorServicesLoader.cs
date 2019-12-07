@@ -124,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 var asmName = new AssemblyName(args.Name);
 
                 string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");
-                
+
                 if (!File.Exists(asmPath))
                 {
                     return null;
@@ -261,6 +261,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         private void LogHostInformation()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Logging host information");
+
+            _logger.Log(PsesLogLevel.Verbose, $@"
+== Build Details ==
+- Editor Services version: {BuildInfo.BuildVersion}
+- Build origin:            {BuildInfo.BuildOrigin}
+- Build time:              {BuildInfo.BuildTime}
+");
+
             _logger.Log(PsesLogLevel.Verbose, $@"
 == Host Startup Configuration Details ==
  - Host name:                 {_hostConfig.HostInfo.Name}

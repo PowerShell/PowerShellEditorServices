@@ -20,7 +20,7 @@ param(
 
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
-$script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices", "Hosting", "BuildInfo.cs")
+$script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
 
 $script:NetRuntime = @{
     Core = 'netcoreapp2.1'
@@ -190,8 +190,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     public static class BuildInfo
     {
-        public const string BuildVersion = "$buildVersion";
-        public const string BuildOrigin = "$buildOrigin";
+        public static readonly string BuildVersion = "$buildVersion";
+        public static readonly string BuildOrigin = "$buildOrigin";
         public static readonly System.DateTime? BuildTime = System.DateTime.Parse("$buildTime");
     }
 }
