@@ -35,7 +35,7 @@ $script:VSCodeOutput = "$PSScriptRoot/src/PowerShellEditorServices.VSCode/bin/$C
 
 if (Get-Command git -ErrorAction SilentlyContinue) {
     # ignore changes to this file
-    git update-index --assume-unchanged "$PSScriptRoot/src/PowerShellEditorServices.Host/BuildInfo/BuildInfo.cs"
+    git update-index --assume-unchanged "$PSScriptRoot/src/PowerShellEditorServices.Hosting/BuildInfo.cs"
 }
 
 function Invoke-WithCreateDefaultHook {
