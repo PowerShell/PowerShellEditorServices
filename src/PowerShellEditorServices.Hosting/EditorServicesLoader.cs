@@ -117,14 +117,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 };
             }
 
+            // Unlike in .NET Core, we need to be look for all dependencies in .NET Framework, not just PSES.dll
             AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
             {
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {args.Name}");
 
                 var asmName = new AssemblyName(args.Name);
-
                 string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");
-
                 if (!File.Exists(asmPath))
                 {
                     return null;
