@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
@@ -127,6 +128,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="sessionObject">The dictionary representing the session file.</param>
         private void WriteSessionObject(Dictionary<string, object> sessionObject)
         {
+            string psModulePath = Environment.GetEnvironmentVariable("PSModulePath");
             string content = null;
             using (var pwsh = SMA.PowerShell.Create(RunspaceMode.NewRunspace))
             {
@@ -135,6 +137,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     .AddParameter("Depth", 10)
                     .AddParameter("Compress")
                     .Invoke<string>()[0];
+
+                // Runspace creation has a bug where it resets the PSModulePath,
+                // which we must correct for
+                Environment.SetEnvironmentVariable("PSModulePath", psModulePath);
 
                 File.WriteAllText(_sessionFilePath, content, s_sessionFileEncoding);
             }
