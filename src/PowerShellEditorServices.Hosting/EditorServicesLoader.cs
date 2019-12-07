@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public static EditorServicesLoader Create(
             HostLogger logger,
             EditorServicesConfig hostConfig,
-            ISessionFileWriter sessionFileWriter) => Create(logger, hostConfig, sessionFileWriter, null);
+            ISessionFileWriter sessionFileWriter) => Create(logger, hostConfig, sessionFileWriter, loggersToUnsubscribe: null);
 
         /// <summary>
         /// Create a new Editor Services loader.

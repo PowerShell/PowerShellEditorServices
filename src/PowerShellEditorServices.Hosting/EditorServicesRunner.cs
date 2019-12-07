@@ -99,9 +99,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
                 // Unsubscribe the host logger here so that the integrated console is not polluted with input after the first prompt
                 _logger.Log(PsesLogLevel.Verbose, "Starting server, deregistering host logger and registering shutdown listener");
-                foreach (IDisposable loggerToUnsubscribe in _loggersToUnsubscribe)
+                if (_loggersToUnsubscribe != null)
                 {
-                    loggerToUnsubscribe.Dispose();
+                    foreach (IDisposable loggerToUnsubscribe in _loggersToUnsubscribe)
+                    {
+                        loggerToUnsubscribe.Dispose();
+                    }
                 }
 
                 WriteStartupBanner();
