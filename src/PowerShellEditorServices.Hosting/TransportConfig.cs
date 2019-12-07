@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// The name of the transport endpoint for logging.
         /// </summary>
-        string Endpoint { get; }
+        string EndpointDetails { get; }
 
         /// <summary>
         /// The name of the transport to record in the session file.
@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// </summary>
     public class StdioTransportConfig : ITransportConfig
     {
-        public string Endpoint => "<stdio>";
+        public string EndpointDetails => "<stdio>";
 
         public string SessionFileTransportName => "Stdio";
 
@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             SessionFileEntries = new Dictionary<string, object>{ { "PipeName", NamedPipeUtils.GetNamedPipePath(pipeName) } };
         }
 
-        public string Endpoint => $"InOut pipe: {_pipeName}";
+        public string EndpointDetails => $"InOut pipe: {_pipeName}";
 
         public string SessionFileTransportName => "NamedPipe";
 
@@ -110,11 +110,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// </summary>
     public class SimplexNamedPipeTransportConfig : ITransportConfig
     {
-        private static readonly IReadOnlyList<string> s_pipeNamePrefixes = new[]
-        {
-            "in",
-            "out",
-        };
+        private const string InPipePrefix = "in";
+        private const string OutPipePrefix = "out";
 
         /// <summary>
         /// Create a pair of simplex named pipes using generated names.
@@ -122,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns>A new simplex named pipe transport config.</returns>
         public static SimplexNamedPipeTransportConfig Create()
         {
-            return SimplexNamedPipeTransportConfig.Create(NamedPipeUtils.GenerateValidNamedPipeName(s_pipeNamePrefixes));
+            return SimplexNamedPipeTransportConfig.Create(NamedPipeUtils.GenerateValidNamedPipeName(new[] { InPipePrefix, OutPipePrefix }));
         }
 
         /// <summary>
@@ -136,8 +133,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 return SimplexNamedPipeTransportConfig.Create();
             }
 
-            string inPipeName = $"{s_pipeNamePrefixes[0]}_{pipeNameBase}";
-            string outPipeName = $"{s_pipeNamePrefixes[1]}_{pipeNameBase}";
+            string inPipeName = $"{InPipePrefix}_{pipeNameBase}";
+            string outPipeName = $"{OutPipePrefix}_{pipeNameBase}";
 
             return SimplexNamedPipeTransportConfig.Create(inPipeName, outPipeName);
         }
@@ -166,7 +163,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             };
         }
 
-        public string Endpoint => $"In pipe: {_inPipeName} Out pipe: {_outPipeName}";
+        public string EndpointDetails => $"In pipe: {_inPipeName} Out pipe: {_outPipeName}";
 
         public string SessionFileTransportName => "NamedPipeSimplex";
 

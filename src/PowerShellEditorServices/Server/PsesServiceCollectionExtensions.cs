@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
     {
         public static IServiceCollection AddPsesLanguageServices(
             this IServiceCollection collection,
-            HostStartupInfo hostDetails)
+            HostStartupInfo hostStartupInfo)
         {
             return collection.AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         PowerShellContextService.Create(
                             provider.GetService<ILoggerFactory>(),
                             provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                            hostDetails))
+                            hostStartupInfo))
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()

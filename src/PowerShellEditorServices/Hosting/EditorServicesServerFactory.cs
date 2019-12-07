@@ -73,14 +73,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </summary>
         /// <param name="inputStream">The protocol transport input stream.</param>
         /// <param name="outputStream">The protocol transport output stream.</param>
-        /// <param name="hostDetails">The host details configuration for Editor Services instantation.</param>
+        /// <param name="hostStartupInfo">The host details configuration for Editor Services instantation.</param>
         /// <returns>A new, unstarted language server instance.</returns>
         public PsesLanguageServer CreateLanguageServer(
             Stream inputStream,
             Stream outputStream,
-            HostStartupInfo hostDetails)
+            HostStartupInfo hostStartupInfo)
         {
-            return new PsesLanguageServer(_loggerFactory, inputStream, outputStream, hostDetails);
+            return new PsesLanguageServer(_loggerFactory, inputStream, outputStream, hostStartupInfo);
         }
 
         /// <summary>

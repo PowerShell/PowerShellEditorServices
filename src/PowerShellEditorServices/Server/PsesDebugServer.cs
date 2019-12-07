@@ -21,6 +21,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
     /// </summary>
     internal class PsesDebugServer : IDisposable
     {
+        private static bool s_hasRunPsrlStaticCtor = false;
+
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
         private readonly bool _useTempSession;
@@ -70,8 +72,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 _powerShellContextService.IsDebugServerActive = true;
 
                 // Needed to make sure PSReadLine's static properties are initialized in the pipeline thread.
-                if (_usePSReadLine)
+                if (!s_hasRunPsrlStaticCtor && _usePSReadLine)
                 {
+                    s_hasRunPsrlStaticCtor = true;
                     _powerShellContextService
                         .ExecuteScriptStringAsync("[System.Runtime.CompilerServices.RuntimeHelpers]::RunClassConstructor([Microsoft.PowerShell.PSConsoleReadLine].TypeHandle)")
                         .Wait();

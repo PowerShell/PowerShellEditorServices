@@ -219,13 +219,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             {
                 _logger.LogException("Exception encountered starting EditorServices", e);
 
-                // Give the user a chance to read the message
+                // Give the user a chance to read the message if they have a console
                 if (!Stdio)
                 {
                     Host.UI.WriteLine("\n== Press any key to close terminal ==");
+                    Console.ReadKey();
                 }
-
-                Console.ReadKey();
 
                 ThrowTerminatingError(new ErrorRecord(e, "PowerShellEditorServicesError", ErrorCategory.NotSpecified, this));
             }

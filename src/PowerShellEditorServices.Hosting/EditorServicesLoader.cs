@@ -77,12 +77,15 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             var psesLoadContext = new PsesLoadContext(s_psesDependencyDirPath);
 
-            AppDomain.CurrentDomain.AssemblyLoad += (object sender, AssemblyLoadEventArgs args) =>
+            if (hostConfig.LogLevel == PsesLogLevel.Diagnostic)
             {
-                logger.Log(
-                    PsesLogLevel.Diagnostic,
-                    $"Loaded into load context {AssemblyLoadContext.GetLoadContext(args.LoadedAssembly)}: {args.LoadedAssembly}");
-            };
+                AppDomain.CurrentDomain.AssemblyLoad += (object sender, AssemblyLoadEventArgs args) =>
+                {
+                    logger.Log(
+                        PsesLogLevel.Diagnostic,
+                        $"Loaded into load context {AssemblyLoadContext.GetLoadContext(args.LoadedAssembly)}: {args.LoadedAssembly}");
+                };
+            }
 
             AssemblyLoadContext.Default.Resolving += (AssemblyLoadContext defaultLoadContext, AssemblyName asmName) =>
             {
@@ -104,12 +107,15 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // In .NET Framework we add an event here to redirect dependency loading in the current AppDomain for PSES' dependencies
             logger.Log(PsesLogLevel.Verbose, "Adding AssemblyResolve event handler for dependency loading");
 
-            AppDomain.CurrentDomain.AssemblyLoad += (object sender, AssemblyLoadEventArgs args) =>
+            if (hostConfig.LogLevel == PsesLogLevel.Diagnostic)
             {
-                logger.Log(
-                    PsesLogLevel.Diagnostic,
-                    $"Loaded {args.LoadedAssembly.GetName()}");
-            };
+                AppDomain.CurrentDomain.AssemblyLoad += (object sender, AssemblyLoadEventArgs args) =>
+                {
+                    logger.Log(
+                        PsesLogLevel.Diagnostic,
+                        $"Loaded {args.LoadedAssembly.GetName()}");
+                };
+            }
 
             AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
             {
@@ -181,7 +187,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             EditorServicesLoading.LoadEditorServicesForHost();
 
             _logger.Log(PsesLogLevel.Verbose, "Starting EditorServices");
-            using (var editorServicesRunner = EditorServicesRunner.Create(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe))
+            using (var editorServicesRunner = new EditorServicesRunner(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe))
             {
                 // The trigger method for Editor Services
                 // We will wait here until Editor Services shuts down

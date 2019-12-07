@@ -173,7 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public static PowerShellContextService Create(
             ILoggerFactory factory,
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
-            HostStartupInfo hostDetails)
+            HostStartupInfo hostStartupInfo)
         {
             var logger = factory.CreateLogger<PowerShellContextService>();
 
@@ -182,8 +182,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // We also want it if we are either:
             // * On Windows on any version OR
             // * On Linux or macOS on any version greater than or equal to 7
-            bool shouldUsePSReadLine = hostDetails.ConsoleReplEnabled
-                && !hostDetails.UsesLegacyReadLine
+            bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
+                && !hostStartupInfo.UsesLegacyReadLine
                 && (VersionUtils.IsWindows || !VersionUtils.IsPS6);
 
             var powerShellContext = new PowerShellContextService(
@@ -192,25 +192,25 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 shouldUsePSReadLine);
 
             EditorServicesPSHostUserInterface hostUserInterface =
-                hostDetails.ConsoleReplEnabled
-                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, hostDetails.PSHost)
+                hostStartupInfo.ConsoleReplEnabled
+                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, hostStartupInfo.PSHost)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
                 new EditorServicesPSHost(
                     powerShellContext,
-                    hostDetails,
+                    hostStartupInfo,
                     hostUserInterface,
                     logger);
 
             Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
-            powerShellContext.Initialize(hostDetails.ProfilePaths, initialRunspace, true, hostUserInterface);
+            powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
 
             powerShellContext.ImportCommandsModuleAsync();
 
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach (string module in hostDetails.AdditionalModules)
+            foreach (string module in hostStartupInfo.AdditionalModules)
             {
                 var command =
                     new PSCommand()

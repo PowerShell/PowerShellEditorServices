@@ -36,18 +36,18 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <param name="factory">Factory to create loggers with.</param>
         /// <param name="inputStream">Protocol transport input stream.</param>
         /// <param name="outputStream">Protocol transport output stream.</param>
-        /// <param name="hostDetails">Host configuration to instantiate the server and services with.</param>
+        /// <param name="hostStartupInfo">Host configuration to instantiate the server and services with.</param>
         public PsesLanguageServer(
             ILoggerFactory factory,
             Stream inputStream,
             Stream outputStream,
-            HostStartupInfo hostDetails)
+            HostStartupInfo hostStartupInfo)
         {
             LoggerFactory = factory;
-            _minimumLogLevel = (LogLevel)hostDetails.LogLevel;
+            _minimumLogLevel = (LogLevel)hostStartupInfo.LogLevel;
             _inputStream = inputStream;
             _outputStream = outputStream;
-            _hostDetails = hostDetails;
+            _hostDetails = hostStartupInfo;
             _serverStart = new TaskCompletionSource<bool>();
         }
 
@@ -66,8 +66,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .AddPsesLanguageServices(_hostDetails))
                     .ConfigureLogging(builder => builder
                         .AddSerilog(Log.Logger)
-                        .AddLanguageServer(LogLevel.Trace)
-                        .SetMinimumLevel(LogLevel.Trace))
+                        .AddLanguageServer(_minimumLogLevel)
+                        .SetMinimumLevel(_minimumLogLevel))
                     .WithHandler<WorkspaceSymbolsHandler>()
                     .WithHandler<TextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()
