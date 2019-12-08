@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 this._consoleReplStarted = true;
             }
 
-            // If there is a new settings file path, restart the analyzer with the new settigs.
+            // If there is a new settings file path, restart the analyzer with the new settings.
             bool settingsPathChanged = false;
             string newSettingsPath = _configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
             if (!string.Equals(oldScriptAnalysisSettingsPath, newSettingsPath, StringComparison.OrdinalIgnoreCase))
