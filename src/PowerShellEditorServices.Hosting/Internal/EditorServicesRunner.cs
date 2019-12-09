@@ -156,7 +156,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             _logger.Log(PsesLogLevel.Diagnostic, "Starting debug server");
             debugServer.StartAsync();
-            return;
         }
 
         private Task RestartDebugServerAsync(PsesDebugServer debugServer, bool usePSReadLine)

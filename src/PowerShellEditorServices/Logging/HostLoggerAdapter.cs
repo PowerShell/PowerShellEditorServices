@@ -23,6 +23,7 @@ namespace PowerShellEditorServices.Logging
 
         public void OnCompleted()
         {
+            // Nothing to do; we simply don't send more log messages
         }
 
         public void OnError(Exception error)
