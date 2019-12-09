@@ -253,7 +253,7 @@ __/\\\\\\\\\\\\\_______/\\\\\\\\\\\____/\\\\\\\\\\\________/\\\\\\\\\_
 
 
 
-                  ====== PowerShell Integrated Console =======
+                  ====== PowerShell Integrated Console ======
 
 ");
         }
