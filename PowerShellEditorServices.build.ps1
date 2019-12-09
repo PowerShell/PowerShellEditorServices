@@ -213,6 +213,8 @@ task Build {
     {
         exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
     }
+    
+    # Build PowerShellEditorServices.VSCode module
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
 }
 
