@@ -92,6 +92,9 @@ function Start-EditorServicesHost {
         $WaitForDebugger
     )
 
+    # Make sure PSScriptAnalyzer dlls are loaded.
+    Import-Module PSScriptAnalyzer
+
     $editorServicesHost = $null
     $hostDetails =
         Microsoft.PowerShell.Utility\New-Object Microsoft.PowerShell.EditorServices.Hosting.HostDetails @(

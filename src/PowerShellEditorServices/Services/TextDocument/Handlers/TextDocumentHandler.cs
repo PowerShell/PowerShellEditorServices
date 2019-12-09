@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // TODO: Get all recently edited files in the workspace
-            _analysisService.RunScriptDiagnosticsAsync(new ScriptFile[] { changedFile });
+            _analysisService.RunScriptDiagnosticsAsync(new ScriptFile[] { changedFile }, token);
             return Unit.Task;
         }
 
@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     notification.TextDocument.Text);
 
             // TODO: Get all recently edited files in the workspace
-            _analysisService.RunScriptDiagnosticsAsync(new ScriptFile[] { openedFile });
+            _analysisService.RunScriptDiagnosticsAsync(new ScriptFile[] { openedFile }, token);
 
             _logger.LogTrace("Finished opening document.");
             return Unit.Task;
