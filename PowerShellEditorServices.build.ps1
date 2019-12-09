@@ -213,7 +213,7 @@ task Build {
     {
         exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
     }
-    
+
     # Build PowerShellEditorServices.VSCode module
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
 }
@@ -290,7 +290,12 @@ task LayoutModule -After Build {
     Copy-Item -Path "$script:PsesOutput/runtimes/osx-64/native/*" -Destination $psesDepsPath
     Copy-Item -Path "$script:PsesOutput/runtimes/linux-64/native/*" -Destination $psesDepsPath
 
+    # Assemble PSES module
+
     $includedDlls = [System.Collections.Generic.HashSet[string]]::new()
+    [void]$includedDlls.Add('System.Management.Automation.dll')
+
+    # PSES/bin/Common
     foreach ($psesComponent in Get-ChildItem $script:PsesOutput)
     {
         if ($psesComponent.Name -eq 'System.Management.Automation.dll' -or
@@ -306,6 +311,7 @@ task LayoutModule -After Build {
         }
     }
 
+    # PSES/bin/Core
     foreach ($hostComponent in Get-ChildItem $script:HostCoreOutput)
     {
         if (-not $includedDlls.Contains($hostComponent.Name))
@@ -314,6 +320,7 @@ task LayoutModule -After Build {
         }
     }
 
+    # PSES/bin/Desktop
     if (-not $script:IsUnix)
     {
         foreach ($hostComponent in Get-ChildItem $script:HostDeskOutput)
@@ -324,6 +331,8 @@ task LayoutModule -After Build {
             }
         }
     }
+
+    # Assemble the PowerShellEditorServices.VSCode module
 
     foreach ($vscodeComponent in Get-ChildItem $script:VSCodeOutput)
     {
