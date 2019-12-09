@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -82,6 +82,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _logger = factory.CreateLogger<AnalysisService>();
             _analyzer = new HostedAnalyzer();
             _analyzerSettings = _analyzer.CreateSettings(s_includedRules);
+            _analyzerSettings.Severities.AddRange(new [] {
+                RuleSeverity.Error.ToString(),
+                RuleSeverity.Information.ToString(),
+                RuleSeverity.Information.ToString()
+            });
             _configurationService = configurationService;
             _languageServer = languageServer;
             _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)>();
@@ -175,7 +180,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             return range == null
                 ? await _analyzer.FormatAsync(_analyzer.Fix(scriptDefinition, settings), settings)
-                : await _analyzer.FormatAsync(_analyzer.Fix(scriptDefinition, settings), settings, range);
+                : await _analyzer.FormatAsync(_analyzer.Fix(scriptDefinition, range, settings), settings, range);
         }
 
         public async Task RunScriptDiagnosticsAsync(

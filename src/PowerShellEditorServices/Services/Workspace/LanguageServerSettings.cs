@@ -254,48 +254,44 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             }
 
             Settings settings = analyzer.CreateSettings();
-            settings.AddRuleArgument("PSPlaceOpenBrace", new Dictionary<string, object>
-            {
-                { "Enable", true },
-                { "OnSameLine", openBraceOnSameLine },
-                { "NewLineAfter", newLineAfterOpenBrace },
-                { "IgnoreOneLineBlock", IgnoreOneLineBlock }
-            });
-
-            settings.AddRuleArgument("PSPlaceCloseBrace", new Dictionary<string, object>
-            {
-                { "Enable", true },
-                { "NewLineAfter", newLineAfterCloseBrace },
-                { "IgnoreOneLineBlock", IgnoreOneLineBlock }
-            });
-
-            settings.AddRuleArgument("PSUseConsistentIndentation", new Dictionary<string, object>
-            {
-                { "Enable", true },
-                { "IndentationSize", tabSize },
-                { "PipelineIndentation", PipelineIndentationStyle },
-                { "Kind", insertSpaces ? "space" : "tab" }
-            });
-
-            settings.AddRuleArgument("PSUseConsistentWhitespace", new Dictionary<string, object>
-            {
-                { "Enable", true },
-                { "CheckOpenBrace", WhitespaceBeforeOpenBrace },
-                { "CheckOpenParen", WhitespaceBeforeOpenParen },
-                { "CheckOperator", WhitespaceAroundOperator },
-                { "CheckSeparator", WhitespaceAfterSeparator },
-                { "CheckInnerBrace", WhitespaceInsideBrace },
-                { "CheckPipe", WhitespaceAroundPipe },
-            });
-
-            settings.AddRuleArgument("PSAlignAssignmentStatement", new Dictionary<string, object>
-            {
-                { "Enable", true },
-                { "CheckHashtable", AlignPropertyValuePairs }
-            });
-
-            settings.AddRuleArgument("PSUseCorrectCasing", "Enable", UseCorrectCasing);
-            settings.AddRuleArgument("PSAvoidUsingCmdletAliases", "Enable", AutoCorrectAliases);
+            settings
+                .AddRuleArgument("PSPlaceOpenBrace", new Dictionary<string, object>
+                {
+                    { "Enable", true },
+                    { "OnSameLine", openBraceOnSameLine },
+                    { "NewLineAfter", newLineAfterOpenBrace },
+                    { "IgnoreOneLineBlock", IgnoreOneLineBlock }
+                })
+                .AddRuleArgument("PSPlaceCloseBrace", new Dictionary<string, object>
+                {
+                    { "Enable", true },
+                    { "NewLineAfter", newLineAfterCloseBrace },
+                    { "IgnoreOneLineBlock", IgnoreOneLineBlock }
+                })
+                .AddRuleArgument("PSUseConsistentIndentation", new Dictionary<string, object>
+                {
+                    { "Enable", true },
+                    { "IndentationSize", tabSize },
+                    { "PipelineIndentation", PipelineIndentationStyle },
+                    { "Kind", insertSpaces ? "space" : "tab" }
+                })
+                .AddRuleArgument("PSUseConsistentWhitespace", new Dictionary<string, object>
+                {
+                    { "Enable", true },
+                    { "CheckOpenBrace", WhitespaceBeforeOpenBrace },
+                    { "CheckOpenParen", WhitespaceBeforeOpenParen },
+                    { "CheckOperator", WhitespaceAroundOperator },
+                    { "CheckSeparator", WhitespaceAfterSeparator },
+                    { "CheckInnerBrace", WhitespaceInsideBrace },
+                    { "CheckPipe", WhitespaceAroundPipe },
+                })
+                .AddRuleArgument("PSAlignAssignmentStatement", new Dictionary<string, object>
+                {
+                    { "Enable", true },
+                    { "CheckHashtable", AlignPropertyValuePairs }
+                })
+                .AddRuleArgument("PSUseCorrectCasing", "Enable", UseCorrectCasing)
+                .AddRuleArgument("PSAvoidUsingCmdletAliases", "Enable", AutoCorrectAliases);
 
             return settings;
         }
