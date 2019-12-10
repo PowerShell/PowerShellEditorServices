@@ -58,16 +58,17 @@ namespace PowerShellEditorServices.Test.E2E
 
             List<string> args = new List<string>
             {
-                Path.Combine(s_bundledModulePath, "PowerShellEditorServices", "Start-EditorServices.ps1"),
-                "-LogPath", s_logPath,
+                "&",
+                SingleQuoteEscape(Path.Combine(s_bundledModulePath, "PowerShellEditorServices", "Start-EditorServices.ps1")),
+                "-LogPath", SingleQuoteEscape(s_logPath),
                 "-LogLevel", s_logLevel,
-                "-SessionDetailsPath", s_sessionDetailsPath,
+                "-SessionDetailsPath", SingleQuoteEscape(s_sessionDetailsPath),
                 "-FeatureFlags", string.Join(',', s_featureFlags),
                 "-HostName", s_hostName,
                 "-HostProfileId", s_hostProfileId,
                 "-HostVersion", s_hostVersion,
                 "-AdditionalModules", string.Join(',', s_additionalModules),
-                "-BundledModulesPath", s_bundledModulePath,
+                "-BundledModulesPath", SingleQuoteEscape(s_bundledModulePath),
                 "-Stdio"
             };
 
@@ -95,5 +96,10 @@ namespace PowerShellEditorServices.Test.E2E
         public abstract Task CustomInitializeAsync(
             ILoggerFactory factory,
             StdioServerProcess process);
+
+        private static string SingleQuoteEscape(string str)
+        {
+            return $"'{str.Replace("'", "''")}'";
+        }
     }
 }

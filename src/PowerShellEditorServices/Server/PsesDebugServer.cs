@@ -16,50 +16,72 @@ using OmniSharp.Extensions.LanguageServer.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
-    public class PsesDebugServer : IDisposable
+    /// <summary>
+    /// Server for hosting debug sessions.
+    /// </summary>
+    internal class PsesDebugServer : IDisposable
     {
-        protected readonly ILoggerFactory _loggerFactory;
+        private static bool s_hasRunPsrlStaticCtor = false;
+
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
+        private readonly bool _useTempSession;
+        private readonly bool _usePSReadLine;
+        private readonly TaskCompletionSource<bool> _serverStopped;
 
         private IJsonRpcServer _jsonRpcServer;
-
         private PowerShellContextService _powerShellContextService;
 
-        private readonly TaskCompletionSource<bool> _serverStopped;
+        protected readonly ILoggerFactory _loggerFactory;
 
         public PsesDebugServer(
             ILoggerFactory factory,
             Stream inputStream,
-            Stream outputStream)
+            Stream outputStream,
+            IServiceProvider serviceProvider,
+            bool useTempSession,
+            bool usePSReadLine)
         {
             _loggerFactory = factory;
             _inputStream = inputStream;
             _outputStream = outputStream;
+            ServiceProvider = serviceProvider;
+            _useTempSession = useTempSession;
             _serverStopped = new TaskCompletionSource<bool>();
+            _usePSReadLine = usePSReadLine;
         }
 
-        public async Task StartAsync(IServiceProvider languageServerServiceProvider, bool useTempSession)
+        internal IServiceProvider ServiceProvider { get; }
+
+        /// <summary>
+        /// Start the debug server listening.
+        /// </summary>
+        /// <returns>A task that completes when the server is ready.</returns>
+        public async Task StartAsync()
         {
             _jsonRpcServer = await JsonRpcServer.From(options =>
             {
                 options.Serializer = new DapProtocolSerializer();
                 options.Reciever = new DapReciever();
                 options.LoggerFactory = _loggerFactory;
-                ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
+                Extensions.Logging.ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
 
                 // We need to let the PowerShell Context Service know that we are in a debug session
                 // so that it doesn't send the powerShell/startDebugger message.
-                _powerShellContextService = languageServerServiceProvider.GetService<PowerShellContextService>();
+                _powerShellContextService = ServiceProvider.GetService<PowerShellContextService>();
                 _powerShellContextService.IsDebugServerActive = true;
 
                 // Needed to make sure PSReadLine's static properties are initialized in the pipeline thread.
-                _powerShellContextService
-                    .ExecuteScriptStringAsync("[System.Runtime.CompilerServices.RuntimeHelpers]::RunClassConstructor([Microsoft.PowerShell.PSConsoleReadLine].TypeHandle)")
-                    .Wait();
+                if (!s_hasRunPsrlStaticCtor && _usePSReadLine)
+                {
+                    s_hasRunPsrlStaticCtor = true;
+                    _powerShellContextService
+                        .ExecuteScriptStringAsync("[System.Runtime.CompilerServices.RuntimeHelpers]::RunClassConstructor([Microsoft.PowerShell.PSConsoleReadLine].TypeHandle)")
+                        .Wait();
+                }
 
                 options.Services = new ServiceCollection()
-                    .AddPsesDebugServices(languageServerServiceProvider, this, useTempSession);
+                    .AddPsesDebugServices(ServiceProvider, this, _useTempSession);
 
                 options
                     .WithInput(_inputStream)

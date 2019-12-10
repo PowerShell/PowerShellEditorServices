@@ -3,12 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System.Collections.Generic;
 using System.IO;
-using System.Management.Automation;
-using System.Management.Automation.Host;
-using System.Management.Automation.Runspaces;
-using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -20,66 +15,59 @@ using Serilog;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
-    internal abstract class PsesLanguageServer
+    /// <summary>
+    /// Server runner class for handling LSP messages for Editor Services.
+    /// </summary>
+    internal class PsesLanguageServer
     {
         internal ILoggerFactory LoggerFactory { get; private set; }
+
         internal ILanguageServer LanguageServer { get; private set; }
 
         private readonly LogLevel _minimumLogLevel;
-        private readonly bool _enableConsoleRepl;
-        private readonly bool _useLegacyReadLine;
-        private readonly HashSet<string> _featureFlags;
-        private readonly HostDetails _hostDetails;
-        private readonly string[] _additionalModules;
-        private readonly PSHost _internalHost;
-        private readonly ProfilePaths _profilePaths;
+        private readonly Stream _inputStream;
+        private readonly Stream _outputStream;
+        private readonly HostStartupInfo _hostDetails;
         private readonly TaskCompletionSource<bool> _serverStart;
 
-        internal PsesLanguageServer(
+        /// <summary>
+        /// Create a new language server instance.
+        /// </summary>
+        /// <param name="factory">Factory to create loggers with.</param>
+        /// <param name="inputStream">Protocol transport input stream.</param>
+        /// <param name="outputStream">Protocol transport output stream.</param>
+        /// <param name="hostStartupInfo">Host configuration to instantiate the server and services with.</param>
+        public PsesLanguageServer(
             ILoggerFactory factory,
-            LogLevel minimumLogLevel,
-            bool enableConsoleRepl,
-            bool useLegacyReadLine,
-            HashSet<string> featureFlags,
-            HostDetails hostDetails,
-            string[] additionalModules,
-            PSHost internalHost,
-            ProfilePaths profilePaths)
+            Stream inputStream,
+            Stream outputStream,
+            HostStartupInfo hostStartupInfo)
         {
             LoggerFactory = factory;
-            _minimumLogLevel = minimumLogLevel;
-            _enableConsoleRepl = enableConsoleRepl;
-            _useLegacyReadLine = useLegacyReadLine;
-            _featureFlags = featureFlags;
-            _hostDetails = hostDetails;
-            _additionalModules = additionalModules;
-            _internalHost = internalHost;
-            _profilePaths = profilePaths;
+            _minimumLogLevel = (LogLevel)hostStartupInfo.LogLevel;
+            _inputStream = inputStream;
+            _outputStream = outputStream;
+            _hostDetails = hostStartupInfo;
             _serverStart = new TaskCompletionSource<bool>();
         }
 
+        /// <summary>
+        /// Start the server listening for input.
+        /// </summary>
+        /// <returns>A task that completes when the server is ready and listening.</returns>
         public async Task StartAsync()
         {
             LanguageServer = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options =>
             {
-                (Stream input, Stream output) = GetInputOutputStreams();
-
                 options
-                    .WithInput(input)
-                    .WithOutput(output)
+                    .WithInput(_inputStream)
+                    .WithOutput(_outputStream)
                     .WithServices(serviceCollection => serviceCollection
-                        .AddPsesLanguageServices(
-                            _profilePaths,
-                            _featureFlags,
-                            _enableConsoleRepl,
-                            _useLegacyReadLine,
-                            _internalHost,
-                            _hostDetails,
-                            _additionalModules))
+                        .AddPsesLanguageServices(_hostDetails))
                     .ConfigureLogging(builder => builder
                         .AddSerilog(Log.Logger)
-                        .AddLanguageServer(LogLevel.Trace)
-                        .SetMinimumLevel(LogLevel.Trace))
+                        .AddLanguageServer(_minimumLogLevel)
+                        .SetMinimumLevel(_minimumLogLevel))
                     .WithHandler<WorkspaceSymbolsHandler>()
                     .WithHandler<TextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()
@@ -126,14 +114,18 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             }
                         });
             });
+
+            _serverStart.SetResult(true);
         }
 
+        /// <summary>
+        /// Get a task that completes when the server is shut down.
+        /// </summary>
+        /// <returns>A task that completes when the server is shut down.</returns>
         public async Task WaitForShutdown()
         {
             await _serverStart.Task;
             await LanguageServer.WaitForExit;
         }
-
-        protected abstract (Stream input, Stream output) GetInputOutputStreams();
     }
 }

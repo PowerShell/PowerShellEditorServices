@@ -34,6 +34,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     public class PowerShellContextService : IDisposable, IHostSupportsInteractiveSession
     {
+        private static readonly string s_commandsModulePath = Path.GetFullPath(
+            Path.Combine(
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                "../../Commands/PowerShellEditorServices.Commands.psd1"));
+
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
 
         static PowerShellContextService()
@@ -59,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private RunspaceDetails initialRunspace;
         private SessionDetails mostRecentSessionDetails;
 
-        private ProfilePaths profilePaths;
+        private ProfilePathInfo profilePaths;
 
         private IVersionSpecificOperations versionSpecificOperations;
 
@@ -168,14 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public static PowerShellContextService Create(
             ILoggerFactory factory,
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
-            ProfilePaths profilePaths,
-            HashSet<string> featureFlags,
-            bool enableConsoleRepl,
-            bool useLegacyReadLine,
-            PSHost internalHost,
-            HostDetails hostDetails,
-            string[] additionalModules
-            )
+            HostStartupInfo hostStartupInfo)
         {
             var logger = factory.CreateLogger<PowerShellContextService>();
 
@@ -184,7 +182,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // We also want it if we are either:
             // * On Windows on any version OR
             // * On Linux or macOS on any version greater than or equal to 7
-            bool shouldUsePSReadLine = enableConsoleRepl && !useLegacyReadLine
+            bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
+                && !hostStartupInfo.UsesLegacyReadLine
                 && (VersionUtils.IsWindows || !VersionUtils.IsPS6);
 
             var powerShellContext = new PowerShellContextService(
@@ -193,28 +192,25 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 shouldUsePSReadLine);
 
             EditorServicesPSHostUserInterface hostUserInterface =
-                enableConsoleRepl
-                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, internalHost)
+                hostStartupInfo.ConsoleReplEnabled
+                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, hostStartupInfo.PSHost)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
                 new EditorServicesPSHost(
                     powerShellContext,
-                    hostDetails,
+                    hostStartupInfo,
                     hostUserInterface,
                     logger);
 
             Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
-            powerShellContext.Initialize(profilePaths, initialRunspace, true, hostUserInterface);
+            powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
 
-            powerShellContext.ImportCommandsModuleAsync(
-                Path.Combine(
-                    Path.GetDirectoryName(typeof(PowerShellContextService).GetTypeInfo().Assembly.Location),
-                    @"..\Commands"));
+            powerShellContext.ImportCommandsModuleAsync();
 
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach (string module in additionalModules)
+            foreach (string module in hostStartupInfo.AdditionalModules)
             {
                 var command =
                     new PSCommand()
@@ -241,7 +237,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="logger">An ILogger implementation to use for this instance.</param>
         /// <returns></returns>
         public static Runspace CreateRunspace(
-            HostDetails hostDetails,
+            HostStartupInfo hostDetails,
             PowerShellContextService powerShellContext,
             EditorServicesPSHostUserInterface hostUserInterface,
             ILogger logger)
@@ -289,11 +285,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="initialRunspace">The initial runspace to use for this instance.</param>
         /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
         public void Initialize(
-            ProfilePaths profilePaths,
+            ProfilePathInfo profilePaths,
             Runspace initialRunspace,
             bool ownsInitialRunspace)
         {
-            this.Initialize(profilePaths, initialRunspace, ownsInitialRunspace, null);
+            this.Initialize(profilePaths, initialRunspace, ownsInitialRunspace, consoleHost: null);
         }
 
         /// <summary>
@@ -305,7 +301,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
         /// <param name="consoleHost">An IHostOutput implementation.  Optional.</param>
         public void Initialize(
-            ProfilePaths profilePaths,
+            ProfilePathInfo profilePaths,
             Runspace initialRunspace,
             bool ownsInitialRunspace,
             IHostOutput consoleHost)
@@ -333,7 +329,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     this.LocalPowerShellVersion,
                     RunspaceLocation.Local,
                     RunspaceContext.Original,
-                    null);
+                    connectionString: null);
             this.CurrentRunspace = this.initialRunspace;
 
             // Write out the PowerShell version for tracking purposes
@@ -369,7 +365,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Set the $profile variable in the runspace
             this.profilePaths = profilePaths;
-            if (this.profilePaths != null)
+            if (profilePaths != null)
             {
                 this.SetProfileVariableInCurrentRunspace(profilePaths);
             }
@@ -423,19 +419,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Imports the PowerShellEditorServices.Commands module into
         /// the runspace.  This method will be moved somewhere else soon.
         /// </summary>
-        /// <param name="moduleBasePath"></param>
         /// <returns></returns>
-        public Task ImportCommandsModuleAsync(string moduleBasePath)
+        public Task ImportCommandsModuleAsync()
         {
-            PSCommand importCommand = new PSCommand();
-            importCommand
+            PSCommand importCommand = new PSCommand()
                 .AddCommand("Import-Module")
-                .AddArgument(
-                    Path.Combine(
-                        moduleBasePath,
-                        "PowerShellEditorServices.Commands.psd1"));
+                .AddArgument(s_commandsModulePath);
 
-            return this.ExecuteCommandAsync<PSObject>(importCommand, false, false);
+            return this.ExecuteCommandAsync<PSObject>(importCommand, sendOutputToHost: false, sendErrorToHost: false);
         }
 
         private static bool CheckIfRunspaceNeedsEventHandlers(RunspaceDetails runspaceDetails)
@@ -1148,7 +1139,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (this.profilePaths != null)
             {
                 // Load any of the profile paths that exist
-                foreach (var profilePath in this.profilePaths.GetLoadableProfilePaths())
+                foreach (var profilePath in GetLoadableProfilePaths(this.profilePaths))
                 {
                     PSCommand command = new PSCommand();
                     command.AddCommand(profilePath, false);
@@ -2216,7 +2207,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 });
         }
 
-        private void SetProfileVariableInCurrentRunspace(ProfilePaths profilePaths)
+        private void SetProfileVariableInCurrentRunspace(ProfilePathInfo profilePaths)
         {
             // Create the $profile variable
             PSObject profile = new PSObject(profilePaths.CurrentUserCurrentHost);
@@ -2272,6 +2263,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     // If the runspace closes or fails, pop the runspace
                     ((IHostSupportsInteractiveSession)this).PopRunspace();
                     break;
+            }
+        }
+
+        private static IEnumerable<string> GetLoadableProfilePaths(ProfilePathInfo profilePaths)
+        {
+            if (profilePaths == null)
+            {
+                yield break;
+            }
+
+            foreach (string path in new [] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
+            {
+                if (path != null && File.Exists(path))
+                {
+                    yield return path;
+                }
             }
         }
 

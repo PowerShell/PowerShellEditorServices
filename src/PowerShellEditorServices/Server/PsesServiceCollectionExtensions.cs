@@ -15,15 +15,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
 {
     internal static class PsesServiceCollectionExtensions
     {
-        public static IServiceCollection AddPsesLanguageServices (
+        public static IServiceCollection AddPsesLanguageServices(
             this IServiceCollection collection,
-            ProfilePaths profilePaths,
-            HashSet<string> featureFlags,
-            bool enableConsoleRepl,
-            bool useLegacyReadLine,
-            PSHost internalHost,
-            HostDetails hostDetails,
-            string[] additionalModules)
+            HostStartupInfo hostStartupInfo)
         {
             return collection.AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
@@ -33,13 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         PowerShellContextService.Create(
                             provider.GetService<ILoggerFactory>(),
                             provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
-                            profilePaths,
-                            featureFlags,
-                            enableConsoleRepl,
-                            useLegacyReadLine,
-                            internalHost,
-                            hostDetails,
-                            additionalModules))
+                            hostStartupInfo))
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()

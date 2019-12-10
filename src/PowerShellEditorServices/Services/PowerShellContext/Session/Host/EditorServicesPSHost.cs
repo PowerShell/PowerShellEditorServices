@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         #region Private Fields
 
         private ILogger Logger;
-        private HostDetails hostDetails;
+        private HostStartupInfo hostDetails;
         private Guid instanceId = Guid.NewGuid();
         private EditorServicesPSHostUserInterface hostUserInterface;
         private IHostSupportsInteractiveSession hostSupportsInteractiveSession;
@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="logger">An ILogger implementation to use for this host.</param>
         public EditorServicesPSHost(
             PowerShellContextService powerShellContext,
-            HostDetails hostDetails,
+            HostStartupInfo hostDetails,
             EditorServicesPSHostUserInterface hostUserInterface,
             ILogger logger)
         {
