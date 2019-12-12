@@ -18,6 +18,7 @@ using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using System.Collections.Concurrent;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -37,11 +38,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly PowerShellContextService powerShellContext;
         private readonly BreakpointService _breakpointService;
         private RemoteFileManagerService remoteFileManager;
-
-        // TODO: This needs to be managed per nested session
-        // TODO: Move to BreakpointService
-        private readonly Dictionary<string, List<Breakpoint>> breakpointsPerFile =
-            new Dictionary<string, List<Breakpoint>>();
 
         private int nextVariableId;
         private string temporaryScriptListingPath;
@@ -192,7 +188,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     await this.ClearBreakpointsInFileAsync(scriptFile).ConfigureAwait(false);
                 }
 
-                return await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false);
+                return (await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false)).ToArray();
             }
 
             return await dscBreakpoints.SetLineBreakpointsAsync(
@@ -216,7 +212,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (clearExisting)
             {
                 // Flatten dictionary values into one list and remove them all.
-                await _breakpointService.RemoveBreakpointsAsync(this.breakpointsPerFile.Values.SelectMany( i => i ).Where( i => i is CommandBreakpoint)).ConfigureAwait(false);
+                await _breakpointService.RemoveBreakpointsAsync(_breakpointService.GetBreakpoints().Where( i => i is CommandBreakpoint)).ConfigureAwait(false);
             }
 
             if (breakpoints.Length > 0)
@@ -672,16 +668,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private async Task ClearBreakpointsInFileAsync(ScriptFile scriptFile)
         {
             // Get the list of breakpoints for this file
-            if (this.breakpointsPerFile.TryGetValue(scriptFile.Id, out List<Breakpoint> breakpoints))
-            {
-                if (breakpoints.Count > 0)
-                {
-                    await _breakpointService.RemoveBreakpointsAsync(breakpoints).ConfigureAwait(false);
+            // if (_breakpointService.BreakpointsPerFile.TryGetValue(scriptFile.Id, out HashSet<Breakpoint> breakpoints))
+            // {
+                // if (breakpoints.Count > 0)
+                // {
+                    await _breakpointService.RemoveBreakpointsAsync(_breakpointService.GetBreakpoints()
+                        .Where(bp => bp is LineBreakpoint lbp && string.Equals(lbp.Script, scriptFile.FilePath))).ConfigureAwait(false);
 
                     // Clear the existing breakpoints list for the file
-                    breakpoints.Clear();
-                }
-            }
+                    // breakpoints.Clear();
+                // }
+            // }
         }
 
         private async Task FetchStackFramesAndVariablesAsync(string scriptNameOverride)
@@ -1035,10 +1032,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 string normalizedScriptName = scriptPath.ToLower();
 
                 // Get the list of breakpoints for this file
-                if (!this.breakpointsPerFile.TryGetValue(normalizedScriptName, out List<Breakpoint> breakpoints))
+                if (!_breakpointService.BreakpointsPerFile.TryGetValue(normalizedScriptName, out HashSet<Breakpoint> breakpoints))
                 {
-                    breakpoints = new List<Breakpoint>();
-                    this.breakpointsPerFile.Add(
+                    breakpoints = new HashSet<Breakpoint>();
+                    _breakpointService.BreakpointsPerFile.Add(
                         normalizedScriptName,
                         breakpoints);
                 }

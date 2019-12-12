@@ -22,13 +22,30 @@ namespace Microsoft.PowerShell.EditorServices.Services
     {
         private readonly ILogger<BreakpointService> _logger;
         private readonly PowerShellContextService _powerShellContextService;
+        private readonly DebugStateService _debugStateService;
+
+        // TODO: This needs to be managed per nested session
+        internal readonly Dictionary<string, HashSet<Breakpoint>> BreakpointsPerFile =
+            new Dictionary<string, HashSet<Breakpoint>>();
+
+        internal readonly HashSet<Breakpoint> CommandBreakpoints =
+            new HashSet<Breakpoint>();
 
         public BreakpointService(
             ILoggerFactory factory,
-            PowerShellContextService powerShellContextService)
+            PowerShellContextService powerShellContextService,
+            DebugStateService debugStateService)
         {
             _logger = factory.CreateLogger<BreakpointService>();
             _powerShellContextService = powerShellContextService;
+            _debugStateService = debugStateService;
+        }
+
+        public List<Breakpoint> GetBreakpoints()
+        {
+            return BreakpointApiUtils.GetBreakpoints(
+                _powerShellContextService.CurrentRunspace.Runspace.Debugger,
+                _debugStateService.RunspaceId);
         }
 
         public async Task<IEnumerable<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IEnumerable<BreakpointDetails> breakpoints)
@@ -39,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     try
                     {
-                        BreakpointApiUtils.SetBreakpoint(_powerShellContextService.CurrentRunspace.Runspace.Debugger, breakpointDetails);
+                        BreakpointApiUtils.SetBreakpoint(_powerShellContextService.CurrentRunspace.Runspace.Debugger, breakpointDetails, _debugStateService.RunspaceId);
 
                     }
                     catch(InvalidOperationException e)
@@ -129,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     try
                     {
-                        BreakpointApiUtils.SetBreakpoint(_powerShellContextService.CurrentRunspace.Runspace.Debugger, commandBreakpointDetails);
+                        BreakpointApiUtils.SetBreakpoint(_powerShellContextService.CurrentRunspace.Runspace.Debugger, commandBreakpointDetails, _debugStateService.RunspaceId);
                     }
                     catch(InvalidOperationException e)
                     {
@@ -195,18 +212,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Clears all breakpoints in the current session.
         /// </summary>
-        public async Task RemoveAllBreakpointsAsync()
+        public async Task RemoveAllBreakpointsAsync(string scriptPath = null)
         {
             try
             {
                 if (VersionUtils.IsPS7OrGreater)
                 {
                     foreach (Breakpoint breakpoint in BreakpointApiUtils.GetBreakpoints(
-                            _powerShellContextService.CurrentRunspace.Runspace.Debugger))
-                    {
-                        BreakpointApiUtils.RemoveBreakpoint(
                             _powerShellContextService.CurrentRunspace.Runspace.Debugger,
-                            breakpoint);
+                            _debugStateService.RunspaceId))
+                    {
+                        if (scriptPath == null || scriptPath == breakpoint.Script)
+                        {
+                            BreakpointApiUtils.RemoveBreakpoint(
+                                _powerShellContextService.CurrentRunspace.Runspace.Debugger,
+                                breakpoint,
+                                _debugStateService.RunspaceId);
+                        }
                     }
 
                     return;
@@ -234,7 +256,21 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     BreakpointApiUtils.RemoveBreakpoint(
                         _powerShellContextService.CurrentRunspace.Runspace.Debugger,
-                        breakpoint);
+                        breakpoint,
+                        _debugStateService.RunspaceId);
+
+                    switch (breakpoint)
+                    {
+                        case CommandBreakpoint commandBreakpoint:
+                            CommandBreakpoints.Remove(commandBreakpoint);
+                            break;
+                        case LineBreakpoint lineBreakpoint:
+                            if (BreakpointsPerFile.TryGetValue(lineBreakpoint.Script, out HashSet<Breakpoint> bps))
+                            {
+                                bps.Remove(lineBreakpoint);
+                            }
+                            break;
+                    }
                 }
 
                 return;

@@ -23,13 +23,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         private const string s_psesGlobalVariableNamePrefix = "__psEditorServices_";
 
-        private static readonly Lazy<Func<Debugger, string, int, int, ScriptBlock, LineBreakpoint>> s_setLineBreakpointLazy;
+        private static readonly Lazy<Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint>> s_setLineBreakpointLazy;
 
-        private static readonly Lazy<Func<Debugger, string, ScriptBlock, string, CommandBreakpoint>> s_setCommandBreakpointLazy;
+        private static readonly Lazy<Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint>> s_setCommandBreakpointLazy;
 
-        private static readonly Lazy<Func<Debugger, List<Breakpoint>>> s_getBreakpointsLazy;
+        private static readonly Lazy<Func<Debugger, int?, List<Breakpoint>>> s_getBreakpointsLazy;
 
-        private static readonly Lazy<Func<Debugger, Breakpoint, bool>> s_removeBreakpointLazy;
+        private static readonly Lazy<Action<Debugger, IEnumerable<Breakpoint>, int?>> s_setBreakpointsLazy;
+
+        private static readonly Lazy<Func<Debugger, Breakpoint, int?, bool>> s_removeBreakpointLazy;
 
         private static int breakpointHitCounter;
 
@@ -46,42 +48,52 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 return;
             }
 
-            s_setLineBreakpointLazy = new Lazy<Func<Debugger, string, int, int, ScriptBlock, LineBreakpoint>>(() =>
+            s_setLineBreakpointLazy = new Lazy<Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint>>(() =>
             {
                 MethodInfo setLineBreakpointMethod = typeof(Debugger).GetMethod("SetLineBreakpoint", BindingFlags.Public | BindingFlags.Instance);
 
-                return (Func<Debugger, string, int, int, ScriptBlock, LineBreakpoint>)Delegate.CreateDelegate(
-                    typeof(Func<Debugger, string, int, int, ScriptBlock, LineBreakpoint>),
+                return (Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint>)Delegate.CreateDelegate(
+                    typeof(Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint>),
                     firstArgument: null,
                     setLineBreakpointMethod);
             });
 
-            s_setCommandBreakpointLazy = new Lazy<Func<Debugger, string, ScriptBlock, string, CommandBreakpoint>>(() =>
+            s_setCommandBreakpointLazy = new Lazy<Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint>>(() =>
             {
                 MethodInfo setCommandBreakpointMethod = typeof(Debugger).GetMethod("SetCommandBreakpoint", BindingFlags.Public | BindingFlags.Instance);
 
-                return (Func<Debugger, string, ScriptBlock, string, CommandBreakpoint>)Delegate.CreateDelegate(
-                    typeof(Func<Debugger, string, ScriptBlock, string, CommandBreakpoint>),
+                return (Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint>)Delegate.CreateDelegate(
+                    typeof(Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint>),
                     firstArgument: null,
                     setCommandBreakpointMethod);
             });
 
-            s_getBreakpointsLazy = new Lazy<Func<Debugger, List<Breakpoint>>>(() =>
+            s_getBreakpointsLazy = new Lazy<Func<Debugger, int?, List<Breakpoint>>>(() =>
             {
                 MethodInfo removeBreakpointMethod = typeof(Debugger).GetMethod("GetBreakpoints", BindingFlags.Public | BindingFlags.Instance);
 
-                return (Func<Debugger, List<Breakpoint>>)Delegate.CreateDelegate(
-                    typeof(Func<Debugger, List<Breakpoint>>),
+                return (Func<Debugger, int?, List<Breakpoint>>)Delegate.CreateDelegate(
+                    typeof(Func<Debugger, int?, List<Breakpoint>>),
                     firstArgument: null,
                     removeBreakpointMethod);
             });
 
-            s_removeBreakpointLazy = new Lazy<Func<Debugger, Breakpoint, bool>>(() =>
+            s_setBreakpointsLazy = new Lazy<Action<Debugger, IEnumerable<Breakpoint>, int?>>(() =>
+            {
+                MethodInfo removeBreakpointMethod = typeof(Debugger).GetMethod("SetBreakpoints", BindingFlags.Public | BindingFlags.Instance);
+
+                return (Action<Debugger, IEnumerable<Breakpoint>, int?>)Action.CreateDelegate(
+                    typeof(Action<Debugger, IEnumerable<Breakpoint>, int?>),
+                    firstArgument: null,
+                    removeBreakpointMethod);
+            });
+
+            s_removeBreakpointLazy = new Lazy<Func<Debugger, Breakpoint, int?, bool>>(() =>
             {
                 MethodInfo removeBreakpointMethod = typeof(Debugger).GetMethod("RemoveBreakpoint", BindingFlags.Public | BindingFlags.Instance);
 
-                return (Func<Debugger, Breakpoint, bool>)Delegate.CreateDelegate(
-                    typeof(Func<Debugger, Breakpoint, bool>),
+                return (Func<Debugger, Breakpoint, int?, bool>)Delegate.CreateDelegate(
+                    typeof(Func<Debugger, Breakpoint, int?, bool>),
                     firstArgument: null,
                     removeBreakpointMethod);
             });
@@ -91,19 +103,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         #region Public Static Properties
 
-        private static Func<Debugger, string, int, int, ScriptBlock, LineBreakpoint> SetLineBreakpointDelegate => s_setLineBreakpointLazy.Value;
+        private static Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint> SetLineBreakpointDelegate => s_setLineBreakpointLazy.Value;
 
-        private static Func<Debugger, string, ScriptBlock, string, CommandBreakpoint> SetCommandBreakpointDelegate => s_setCommandBreakpointLazy.Value;
+        private static Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint> SetCommandBreakpointDelegate => s_setCommandBreakpointLazy.Value;
 
-        private static Func<Debugger, List<Breakpoint>> GetBreakpointsDelegate => s_getBreakpointsLazy.Value;
+        private static Func<Debugger, int?, List<Breakpoint>> GetBreakpointsDelegate => s_getBreakpointsLazy.Value;
 
-        private static Func<Debugger, Breakpoint, bool> RemoveBreakpointDelegate => s_removeBreakpointLazy.Value;
+        private static Action<Debugger, IEnumerable<Breakpoint>, int?> SetBreakpointsDelegate => s_setBreakpointsLazy.Value;
+
+        private static Func<Debugger, Breakpoint, int?, bool> RemoveBreakpointDelegate => s_removeBreakpointLazy.Value;
 
         #endregion
 
         #region Public Static Methods
 
-        public static Breakpoint SetBreakpoint(Debugger debugger, BreakpointDetailsBase breakpoint)
+        public static Breakpoint SetBreakpoint(Debugger debugger, BreakpointDetailsBase breakpoint, int? runspaceId = null)
         {
             ScriptBlock actionScriptBlock = null;
             string logMessage = breakpoint is BreakpointDetails bd ? bd.LogMessage : null;
@@ -118,24 +132,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             switch (breakpoint)
             {
                 case BreakpointDetails lineBreakpoint:
-                    return SetLineBreakpointDelegate(debugger, lineBreakpoint.Source, lineBreakpoint.LineNumber, lineBreakpoint.ColumnNumber ?? 0, actionScriptBlock);
+                    return SetLineBreakpointDelegate(debugger, lineBreakpoint.Source, lineBreakpoint.LineNumber, lineBreakpoint.ColumnNumber ?? 0, actionScriptBlock, runspaceId);
 
                 case CommandBreakpointDetails commandBreakpoint:
-                    return SetCommandBreakpointDelegate(debugger, commandBreakpoint.Name, null, null);
+                    return SetCommandBreakpointDelegate(debugger, commandBreakpoint.Name, null, null, runspaceId);
 
                 default:
                     throw new NotImplementedException("Other breakpoints not supported yet");
             }
         }
 
-        public static List<Breakpoint> GetBreakpoints(Debugger debugger)
+        public static List<Breakpoint> GetBreakpoints(Debugger debugger, int? runspaceId = null)
         {
-            return GetBreakpointsDelegate(debugger);
+            return GetBreakpointsDelegate(debugger, runspaceId);
         }
 
-        public static bool RemoveBreakpoint(Debugger debugger, Breakpoint breakpoint)
+        public static bool RemoveBreakpoint(Debugger debugger, Breakpoint breakpoint, int? runspaceId = null)
         {
-            return RemoveBreakpointDelegate(debugger, breakpoint);
+            return RemoveBreakpointDelegate(debugger, breakpoint, runspaceId);
         }
 
         public static ScriptBlock GetBreakpointActionScriptBlock(string condition, string hitCondition, string logMessage)

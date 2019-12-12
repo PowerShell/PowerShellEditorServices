@@ -325,9 +325,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 throw new RpcErrorException(0, "A positive integer must be specified for the processId field.");
             }
 
-            // Clear any existing breakpoints before proceeding
-            await _breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
-
             // Execute the Debug-Runspace command but don't await it because it
             // will block the debug adapter initialization process.  The
             // InitializedEvent will be sent as soon as the RunspaceChanged
@@ -336,6 +333,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             string debugRunspaceCmd;
             if (request.RunspaceName != null)
             {
+                var ids = await _powerShellContextService.ExecuteScriptStringAsync($"Get-Runspace -Name {request.RunspaceName} | % Id");
+                foreach (var id in ids)
+                {
+                    _debugStateService.RunspaceId = (int?) id;
+                    break;
+                }
                 debugRunspaceCmd = $"\nDebug-Runspace -Name '{request.RunspaceName}'";
             }
             else if (request.RunspaceId != null)
@@ -348,12 +351,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     throw new RpcErrorException(0, "A positive integer must be specified for the RunspaceId field.");
                 }
 
+                _debugStateService.RunspaceId =  runspaceId;
+
                 debugRunspaceCmd = $"\nDebug-Runspace -Id {runspaceId}";
             }
             else
             {
+                _debugStateService.RunspaceId =  1;
+
                 debugRunspaceCmd = "\nDebug-Runspace -Id 1";
             }
+
+            // Clear any existing breakpoints before proceeding
+            await _breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
 
             _debugStateService.WaitingForAttach = true;
             Task nonAwaitedTask = _powerShellContextService
