@@ -38,7 +38,7 @@
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
     <PackageReference Include="System.IO.Pipes.AccessControl" Version="4.5.1" />
     <PackageReference Include="System.Security.Principal" Version="4.3.0" />
-    <PackageReference Include="System.Security.Principal.Windows" Version="4.6.0" />
+    <PackageReference Include="System.Security.Principal.Windows" Version="4.7.0" />
     <PackageReference Include="UnixConsoleEcho" Version="0.1.0" />
     <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.14.0" />
   </ItemGroup>
