@@ -26,7 +26,7 @@
 - 👮‍ 🐛 [vscode-powershell #2288](https://github.com/PowerShell/PowerShellEditorServices/pull/1094) -
   Use RootUri.LocalPath for workspace path.
 - 🐛 👮‍ [PowerShellEditorServices #1101](https://github.com/PowerShell/PowerShellEditorServices/pull/1101) -
-  Add PSAvoidAssignmentToAutomaticVariable to the default set of PSSA rules. (Thanks @bergmeister!)
+  Add `PSAvoidAssignmentToAutomaticVariable` to the default set of PSSA rules. (Thanks @bergmeister!)
 - 👮‍ 🔗 🐛 [vscode-powershell #2290](https://github.com/PowerShell/PowerShellEditorServices/pull/1098) -
   Fix diagnostics not showing in untitled files and now also show CodeLens.
 - 🔍 🐛 [vscode-powershell #1850](https://github.com/PowerShell/PowerShellEditorServices/pull/1097) -

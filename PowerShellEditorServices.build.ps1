@@ -287,8 +287,8 @@ task LayoutModule -After Build {
     Copy-Item -Force -Path "$PSScriptRoot\Third Party Notices.txt" -Destination $psesOutputPath
 
     # Copy UnixConsoleEcho native libraries
-    Copy-Item -Path "$script:PsesOutput/runtimes/osx-64/native/*" -Destination $psesDepsPath
-    Copy-Item -Path "$script:PsesOutput/runtimes/linux-64/native/*" -Destination $psesDepsPath
+    Copy-Item -Path "$script:PsesOutput/runtimes/osx-64/native/*" -Destination $psesDepsPath -Force
+    Copy-Item -Path "$script:PsesOutput/runtimes/linux-64/native/*" -Destination $psesDepsPath -Force
 
     # Assemble PSES module
 
@@ -307,7 +307,7 @@ task LayoutModule -After Build {
         if ($psesComponent.Extension)
         {
             [void]$includedDlls.Add($psesComponent.Name)
-            Copy-Item -Path $psesComponent.FullName -Destination $psesDepsPath
+            Copy-Item -Path $psesComponent.FullName -Destination $psesDepsPath -Force
         }
     }
 
@@ -316,7 +316,7 @@ task LayoutModule -After Build {
     {
         if (-not $includedDlls.Contains($hostComponent.Name))
         {
-            Copy-Item -Path $hostComponent.FullName -Destination $psesCoreHostPath
+            Copy-Item -Path $hostComponent.FullName -Destination $psesCoreHostPath -Force
         }
     }
 
@@ -327,7 +327,7 @@ task LayoutModule -After Build {
         {
             if (-not $includedDlls.Contains($hostComponent.Name))
             {
-                Copy-Item -Path $hostComponent.FullName -Destination $psesDeskHostPath
+                Copy-Item -Path $hostComponent.FullName -Destination $psesDeskHostPath -Force
             }
         }
     }
@@ -338,7 +338,7 @@ task LayoutModule -After Build {
     {
         if (-not $includedDlls.Contains($vscodeComponent.Name))
         {
-            Copy-Item -Path $vscodeComponent.FullName -Destination $psesVSCodeBinOutputPath
+            Copy-Item -Path $vscodeComponent.FullName -Destination $psesVSCodeBinOutputPath -Force
         }
     }
 }
@@ -418,7 +418,7 @@ task PackageModule {
 }
 
 task UploadArtifacts -If ($null -ne $env:TF_BUILD) {
-    Copy-Item -Path .\PowerShellEditorServices-$($script:FullVersion).zip -Destination $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+    Copy-Item -Path .\PowerShellEditorServices-$($script:FullVersion).zip -Destination $env:BUILD_ARTIFACTSTAGINGDIRECTORY -Force
 }
 
 # The default task is to run the entire CI build
