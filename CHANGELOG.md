@@ -1,5 +1,13 @@
 # PowerShell Editor Services Release History
 
+## 1.13.2
+### Thursday, December 12, 2019
+
+- 🐛 👮‍ [PowerShellEditorServices #1102](https://github.com/PowerShell/PowerShellEditorServices/pull/1102) -
+  Add `PSAvoidAssignmentToAutomaticVariable` to the default set of PSSA rules. (Thanks @bergmeister!)
+- 🐛 👮‍ [vscode-PowerShell #2214](https://github.com/PowerShell/PowerShellEditorServices/pull/1050) -
+  Fix `PipelineIndentationStyle` configuration issue. (Thanks @bergmeister!)
+
 ## v1.13.1
 ### Friday, November 1, 2019
 
