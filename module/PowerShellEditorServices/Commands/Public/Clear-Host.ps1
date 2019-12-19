@@ -14,5 +14,5 @@ function Clear-Host {
 }
 
 if (!$IsMacOS -or $IsLinux) {
-    Set-Alias -Name clear -Value Clear-Host -Option AllScope
+    Microsoft.PowerShell.Utility\Set-Alias -Name clear -Value Clear-Host -Option AllScope
 }
