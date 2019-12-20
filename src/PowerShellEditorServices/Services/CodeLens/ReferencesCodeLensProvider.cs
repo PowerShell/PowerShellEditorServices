@@ -139,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         }
 
         /// <summary>
-        /// Check whether a SymbolReference is not a reference to another defined symbol.
+        /// Check whether a SymbolReference is the actual definition of that symbol.
         /// </summary>
         /// <param name="definition">The symbol definition that may be referenced.</param>
         /// <param name="reference">The reference symbol to check.</param>
@@ -148,11 +148,15 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             SymbolReference definition,
             SymbolReference reference)
         {
+            // First check if we are in the same file as the definition. if we are...
+            // check if it's on the same line number.
+
+            // TODO: Do we care about two symbol definitions of the same name?
+            // if we do, how could we possibly know that a reference in one file is a reference
+            // of a particular symbol definition?
             return
-                definition.FilePath != reference.FilePath
-                || definition.ScriptRegion.StartLineNumber != reference.ScriptRegion.StartLineNumber
-                || definition.SymbolType != reference.SymbolType
-                || !string.Equals(definition.SymbolName, reference.SymbolName, StringComparison.OrdinalIgnoreCase);
+                definition.FilePath == reference.FilePath &&
+                definition.ScriptRegion.StartLineNumber == reference.ScriptRegion.StartLineNumber;
         }
 
         /// <summary>
