@@ -177,6 +177,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         [Parameter]
         public SwitchParameter SplitInOutPipes { get; set; }
 
+        /// <summary>
+        /// The banner/logo to display when the Integrated Console is first started.
+        /// </summary>
+        [Parameter]
+        public string StartupBanner { get; set; }
+
         protected override void BeginProcessing()
         {
 #if DEBUG
@@ -330,6 +336,11 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                     CurrentUserCurrentHost = GetProfilePathFromProfileObject(profile, ProfileUserKind.CurrentUser, ProfileHostKind.CurrentHost),
                 },
             };
+
+            if (StartupBanner != null)
+            {
+                editorServicesConfig.StartupBanner = StartupBanner;
+            }
 
             return editorServicesConfig;
         }
