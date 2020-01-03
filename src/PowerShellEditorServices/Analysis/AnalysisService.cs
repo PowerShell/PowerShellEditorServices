@@ -31,6 +31,7 @@ namespace Microsoft.PowerShell.EditorServices
         /// no settings file is specified.
         /// </summary>
         private static readonly string[] s_includedRules = {
+            "PSAvoidAssignmentToAutomaticVariable",
             "PSUseToExportFieldsInManifest",
             "PSMisleadingBacktick",
             "PSAvoidUsingCmdletAliases",
