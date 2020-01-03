@@ -301,7 +301,7 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         "PSUseConsistentWhitespace",
                         "PSUseConsistentIndentation",
                         "PSAlignAssignmentStatement",
-                        "PSAvoidUsingCmdletAliases"
+                        "PSAvoidUsingCmdletAliases",
                 }},
                 {
                     "Rules", ruleConfigurations
