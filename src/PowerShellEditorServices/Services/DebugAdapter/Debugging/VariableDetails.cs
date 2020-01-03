@@ -194,9 +194,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 else
                 {
                     string valueToString = value.SafeToString();
-                    if (valueToString.Equals(objType.ToString()))
+                    if (valueToString == null || valueToString.Equals(objType.ToString()))
                     {
-                        // If the ToString() matches the type name, then display the type
+                        // If the ToString() matches the type name or is null, then display the type
                         // name in PowerShell format.
                         string shortTypeName = objType.Name;
 

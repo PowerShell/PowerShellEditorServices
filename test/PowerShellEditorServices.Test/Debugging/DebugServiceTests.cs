@@ -816,6 +816,34 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         }
 
         [Fact]
+        public async Task DebufferVariableNullStringDisplaysCorrectly()
+        {
+            await this.debugService.SetLineBreakpointsAsync(
+                this.variableScriptFile,
+                new[] { BreakpointDetails.Create("", 18) });
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptStringAsync(
+                    this.variableScriptFile.FilePath);
+
+            await this.AssertDebuggerStopped(this.variableScriptFile.FilePath);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            var nullStringVar = variables.FirstOrDefault(v => v.Name == "$nullString");
+            Assert.NotNull(nullStringVar);
+            Assert.True("[NullString]".Equals(nullStringVar.ValueString));
+            Assert.True(nullStringVar.IsExpandable);
+
+            // Abort execution of the script
+            this.powerShellContext.AbortExecution();
+        }
+
+        [Fact]
         public async Task DebuggerVariablePSObjectDisplaysCorrectly()
         {
             await this.debugService.SetLineBreakpointsAsync(
