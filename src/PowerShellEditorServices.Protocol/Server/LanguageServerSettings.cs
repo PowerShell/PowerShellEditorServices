@@ -300,7 +300,8 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
                         "PSPlaceOpenBrace",
                         "PSUseConsistentWhitespace",
                         "PSUseConsistentIndentation",
-                        "PSAlignAssignmentStatement"
+                        "PSAlignAssignmentStatement",
+                        "PSAvoidUsingCmdletAliases"
                 }},
                 {
                     "Rules", ruleConfigurations
