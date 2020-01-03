@@ -249,58 +249,62 @@ namespace Microsoft.PowerShell.EditorServices.Protocol.Server
 
         private Hashtable GetCustomPSSASettingsHashtable(int tabSize, bool insertSpaces)
         {
-            var ruleConfigurations = new Hashtable {
-                {"PSPlaceOpenBrace", new Hashtable {
-                    {"Enable", true},
-                    {"OnSameLine", OpenBraceOnSameLine},
-                    {"NewLineAfter", NewLineAfterOpenBrace},
-                    {"IgnoreOneLineBlock", IgnoreOneLineBlock}
+            var ruleConfigurations = new Hashtable
+            {
+                { "PSPlaceOpenBrace", new Hashtable {
+                    { "Enable", true },
+                    { "OnSameLine", OpenBraceOnSameLine },
+                    { "NewLineAfter", NewLineAfterOpenBrace },
+                    { "IgnoreOneLineBlock", IgnoreOneLineBlock }
                 }},
-                {"PSPlaceCloseBrace", new Hashtable {
-                    {"Enable", true},
-                    {"NewLineAfter", NewLineAfterCloseBrace},
-                    {"IgnoreOneLineBlock", IgnoreOneLineBlock}
+                { "PSPlaceCloseBrace", new Hashtable {
+                    { "Enable", true },
+                    { "NewLineAfter", NewLineAfterCloseBrace },
+                    { "IgnoreOneLineBlock", IgnoreOneLineBlock }
                 }},
-                {"PSUseConsistentIndentation", new Hashtable {
-                    {"Enable", true},
-                    {"IndentationSize", tabSize},
-                    {"PipelineIndentation", PipelineIndentationStyle },
-                    {"Kind", insertSpaces ? "space" : "tab"}
+                { "PSUseConsistentIndentation", new Hashtable {
+                    { "Enable", true },
+                    { "IndentationSize", tabSize },
+                    { "PipelineIndentation", PipelineIndentationStyle },
+                    { "Kind", insertSpaces ? "space" : "tab" }
                 }},
-                {"PSUseConsistentWhitespace", new Hashtable {
-                    {"Enable", true},
-                    {"CheckOpenBrace", WhitespaceBeforeOpenBrace},
-                    {"CheckOpenParen", WhitespaceBeforeOpenParen},
-                    {"CheckOperator", WhitespaceAroundOperator},
-                    {"CheckSeparator", WhitespaceAfterSeparator}
+                { "PSUseConsistentWhitespace", new Hashtable {
+                    { "Enable", true },
+                    { "CheckOpenBrace", WhitespaceBeforeOpenBrace },
+                    { "CheckOpenParen", WhitespaceBeforeOpenParen },
+                    { "CheckOperator", WhitespaceAroundOperator },
+                    { "CheckSeparator", WhitespaceAfterSeparator },
+                    { "CheckInnerBrace", WhitespaceInsideBrace },
+                    { "CheckPipe", WhitespaceAroundPipe },
                 }},
-                {"PSAlignAssignmentStatement", new Hashtable {
-                    {"Enable", true},
-                    {"CheckHashtable", AlignPropertyValuePairs}
+                { "PSAlignAssignmentStatement", new Hashtable {
+                    { "Enable", true },
+                    { "CheckHashtable", AlignPropertyValuePairs }
                 }},
-                {"PSUseCorrectCasing", new Hashtable {
-                    {"Enable", UseCorrectCasing}
+                { "PSUseCorrectCasing", new Hashtable {
+                    { "Enable", UseCorrectCasing }
                 }},
             };
 
             if (AutoCorrectAliases)
             {
+                // Empty hashtable required to activate the rule,
+                // since PSAvoidUsingCmdletAliases inherits from IScriptRule and not ConfigurableRule
                 ruleConfigurations.Add("PSAvoidUsingCmdletAliases", new Hashtable());
             }
 
-            return new Hashtable
+            return new Hashtable()
             {
-                {"IncludeRules", new string[] {
-                     "PSPlaceCloseBrace",
-                     "PSPlaceOpenBrace",
-                     "PSUseConsistentWhitespace",
-                     "PSUseConsistentIndentation",
-                     "PSAlignAssignmentStatement",
-                     "PSAvoidUsingCmdletAliases",
+                { "IncludeRules", new string[] {
+                        "PSPlaceCloseBrace",
+                        "PSPlaceOpenBrace",
+                        "PSUseConsistentWhitespace",
+                        "PSUseConsistentIndentation",
+                        "PSAlignAssignmentStatement"
                 }},
                 {
                     "Rules", ruleConfigurations
-                },
+                }
             };
         }
     }
