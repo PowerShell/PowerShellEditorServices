@@ -90,15 +90,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return symbolName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        // private static string GetFileUri(string filePath)
-        // {
-        //     // If the file isn't untitled, return a URI-style path
-        //     return
-        //         !filePath.StartsWith("untitled") && !filePath.StartsWith("inmemory")
-        //             ? new Uri("file://" + filePath).AbsoluteUri
-        //             : filePath;
-        // }
-
         private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
         {
             return new Range
