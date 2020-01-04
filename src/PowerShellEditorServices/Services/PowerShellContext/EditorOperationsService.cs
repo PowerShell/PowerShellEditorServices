@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public EditorContext ConvertClientEditorContext(
             ClientEditorContext clientContext)
         {
-            ScriptFile scriptFile = _workspaceService.CreateScriptFileFromFileBuffer(
+            ScriptFile scriptFile = _workspaceService.GetFileBuffer(
                 clientContext.CurrentFilePath,
                 clientContext.CurrentFileContent);
 

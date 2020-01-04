@@ -53,6 +53,16 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// True if we are running in on Windows, false otherwise.
         /// </summary>
         public static bool IsWindows { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+        /// <summary>
+        /// True if we are running in on macOS, false otherwise.
+        /// </summary>
+        public static bool IsMacOS { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
+        /// <summary>
+        /// True if we are running in on Linux, false otherwise.
+        /// </summary>
+        public static bool IsLinux { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
     }
 
     internal static class PowerShellReflectionUtils

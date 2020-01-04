@@ -54,9 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<Hover> Handle(HoverParams request, CancellationToken cancellationToken)
         {
-            ScriptFile scriptFile =
-                _workspaceService.GetFile(
-                    request.TextDocument.Uri.ToString());
+            ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             SymbolDetails symbolDetails =
                 await _symbolsService.FindSymbolDetailsAtLocationAsync(

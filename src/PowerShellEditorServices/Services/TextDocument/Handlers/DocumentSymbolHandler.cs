@@ -60,9 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<SymbolInformationOrDocumentSymbolContainer> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
         {
-            ScriptFile scriptFile =
-                _workspaceService.GetFile(
-                    request.TextDocument.Uri.ToString());
+            ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             IEnumerable<SymbolReference> foundSymbols =
                 this.ProvideDocumentSymbols(scriptFile);

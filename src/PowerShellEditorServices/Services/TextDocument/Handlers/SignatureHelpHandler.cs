@@ -58,9 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<SignatureHelp> Handle(SignatureHelpParams request, CancellationToken cancellationToken)
         {
-            ScriptFile scriptFile =
-                _workspaceService.GetFile(
-                    request.TextDocument.Uri.ToString());
+            ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             ParameterSetSignatures parameterSets =
                 await _symbolsService.FindParameterSetsInFileAsync(

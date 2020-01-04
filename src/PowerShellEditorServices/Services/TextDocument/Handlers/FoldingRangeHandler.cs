@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // Perhaps a better option would be to parse the contents of the document as a string
             // as opposed to reading a file but the scenario of "no backing file" probably doesn't
             // warrant the extra effort.
-            if (!_workspaceService.TryGetFile(request.TextDocument.Uri.ToString(), out ScriptFile scriptFile)) { return null; }
+            if (!_workspaceService.TryGetFile(request.TextDocument.Uri, out ScriptFile scriptFile)) { return null; }
 
             var result = new List<FoldingRange>();
 

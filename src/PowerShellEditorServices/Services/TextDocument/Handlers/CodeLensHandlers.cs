@@ -61,8 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<CodeLensContainer> Handle(CodeLensParams request, CancellationToken cancellationToken)
         {
-            ScriptFile scriptFile = _workspaceService.GetFile(
-                request.TextDocument.Uri.ToString());
+            ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             CodeLens[] codeLensResults = ProvideCodeLenses(scriptFile);
 
