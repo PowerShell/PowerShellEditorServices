@@ -256,7 +256,17 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 _loggerUnsubscribers.Add(_logger.Subscribe(hostLogger));
             }
 
-            string logPath = Path.Combine(GetLogDirPath(), "StartEditorServices.log");
+            string logDirPath = GetLogDirPath();
+            string logPath = Path.Combine(logDirPath, "StartEditorServices.log");
+
+            // Temp debugging sessions may try to reuse this same path,
+            // so we ensure they have a unique path
+            if (File.Exists(logPath))
+            {
+                int randomInt = new Random().Next();
+                logPath = Path.Combine(logDirPath, $"StartEditorServices-temp{randomInt.ToString("X")}.log");
+            }
+
             var fileLogger = StreamLogger.CreateWithNewFile(logPath);
             _disposableResources.Add(fileLogger);
             IDisposable fileLoggerUnsubscriber = _logger.Subscribe(fileLogger);
