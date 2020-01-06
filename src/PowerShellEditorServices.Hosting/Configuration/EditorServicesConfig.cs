@@ -110,6 +110,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// If none are provided, these will be generated from the hosting PowerShell's profile paths.
         /// </summary>
         public ProfilePathConfig ProfilePaths { get; set; }
+
+        public string StartupBanner { get; set; } = @"
+
+                  =====> PowerShell Integrated Console <=====
+
+";
     }
 
     /// <summary>
