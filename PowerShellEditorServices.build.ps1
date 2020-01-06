@@ -118,15 +118,26 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestE
     Write-Host "`n### Using dotnet v$(& $script:dotnetExe --version) at path $script:dotnetExe`n" -ForegroundColor Green
 }
 
-task Clean {
-    exec { & $script:dotnetExe restore }
-    exec { & $script:dotnetExe clean }
+task BinClean {
     Remove-Item $PSScriptRoot\.tmp -Recurse -Force -ErrorAction Ignore
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
+}
+
+task Clean BinClean,{
+    exec { & $script:dotnetExe restore }
+    exec { & $script:dotnetExe clean }
     Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
+
+    # Remove bundled component modules
+    $moduleJsonPath = "$PSScriptRoot\modules.json"
+    if (Test-Item $moduleJsonPath) {
+        Get-Content -Raw $moduleJsonPath |
+            ConvertFrom-Json |
+            ForEach-Object { Remove-Item -Recurse "$PSScriptRoot/module/$($_.Name)" -Path -ErrorAction Ignore }
+    }
 }
 
 task GetProductVersion -Before PackageModule, UploadArtifacts {
@@ -206,7 +217,7 @@ task SetupHelpForTests -Before Test {
     }
 }
 
-task Build {
+task Build BinClean,{
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Core }
     if (-not $script:IsUnix)
