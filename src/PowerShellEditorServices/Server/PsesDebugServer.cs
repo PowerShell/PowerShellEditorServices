@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <returns>A task that completes when the server is ready.</returns>
         public async Task StartAsync()
         {
-            _jsonRpcServer = await JsonRpcServer.From(async options =>
+            _jsonRpcServer = await JsonRpcServer.From(options =>
             {
                 options.Serializer = new DapProtocolSerializer();
                 options.Reciever = new DapReciever();
@@ -78,8 +78,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 // Needed to make sure PSReadLine's static properties are initialized in the pipeline thread.
                 if (_usePSReadLine && Interlocked.Exchange(ref s_hasRunPsrlStaticCtor, 1) == 0)
                 {
-                    await _powerShellContextService
-                        .ExecuteScriptStringAsync("[System.Runtime.CompilerServices.RuntimeHelpers]::RunClassConstructor([Microsoft.PowerShell.PSConsoleReadLine].TypeHandle)");
+                    // This must be run synchronously to ensure debugging works
+                    _powerShellContextService
+                        .ExecuteScriptStringAsync("[System.Runtime.CompilerServices.RuntimeHelpers]::RunClassConstructor([Microsoft.PowerShell.PSConsoleReadLine].TypeHandle)")
+                        .Wait();
                 }
 
                 options.Services = new ServiceCollection()
