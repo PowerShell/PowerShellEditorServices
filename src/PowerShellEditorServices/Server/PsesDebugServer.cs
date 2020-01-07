@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,7 +22,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
     /// </summary>
     internal class PsesDebugServer : IDisposable
     {
-        private static bool s_hasRunPsrlStaticCtor = false;
+        /// <summary>
+        /// This is a bool but must be an int, since Interlocked.Exchange can't handle a bool
+        /// </summary>
+        private static int s_hasRunPsrlStaticCtor = 0;
 
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
@@ -59,12 +63,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <returns>A task that completes when the server is ready.</returns>
         public async Task StartAsync()
         {
-            _jsonRpcServer = await JsonRpcServer.From(options =>
+            _jsonRpcServer = await JsonRpcServer.From(async options =>
             {
                 options.Serializer = new DapProtocolSerializer();
                 options.Reciever = new DapReciever();
                 options.LoggerFactory = _loggerFactory;
-                Extensions.Logging.ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
+                ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
 
                 // We need to let the PowerShell Context Service know that we are in a debug session
                 // so that it doesn't send the powerShell/startDebugger message.
@@ -72,12 +76,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 _powerShellContextService.IsDebugServerActive = true;
 
                 // Needed to make sure PSReadLine's static properties are initialized in the pipeline thread.
-                if (!s_hasRunPsrlStaticCtor && _usePSReadLine)
+                if (_usePSReadLine && Interlocked.Exchange(ref s_hasRunPsrlStaticCtor, 1) == 0)
                 {
-                    s_hasRunPsrlStaticCtor = true;
-                    _powerShellContextService
-                        .ExecuteScriptStringAsync("[System.Runtime.CompilerServices.RuntimeHelpers]::RunClassConstructor([Microsoft.PowerShell.PSConsoleReadLine].TypeHandle)")
-                        .Wait();
+                    await _powerShellContextService
+                        .ExecuteScriptStringAsync("[System.Runtime.CompilerServices.RuntimeHelpers]::RunClassConstructor([Microsoft.PowerShell.PSConsoleReadLine].TypeHandle)");
                 }
 
                 options.Services = new ServiceCollection()
