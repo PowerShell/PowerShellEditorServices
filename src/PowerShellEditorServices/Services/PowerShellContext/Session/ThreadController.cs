@@ -78,9 +78,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// A task object representing the asynchronous operation. The Result property will return
         /// the retrieved pipeline execution request.
         /// </returns>
-        internal async Task<IPipelineExecutionRequest> TakeExecutionRequestAsync()
+        internal Task<IPipelineExecutionRequest> TakeExecutionRequestAsync()
         {
-            return await PipelineRequestQueue.DequeueAsync();
+            return PipelineRequestQueue.DequeueAsync();
         }
 
         /// <summary>

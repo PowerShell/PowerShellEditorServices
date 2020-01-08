@@ -2356,18 +2356,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     PowerShellExecutionResult.Stopped,
                     null));
 
-                // Get the session details and push the current
-                // runspace if the session has changed
-                SessionDetails sessionDetails = null;
-                try
-                {
-                    sessionDetails = this.GetSessionDetailsInDebugger();
-                }
-                catch (InvalidOperationException)
-                {
-                    this.logger.LogTrace(
-                        "Attempting to get session details failed, most likely due to a running pipeline that is attempting to stop.");
-                }
+            // Get the session details and push the current
+            // runspace if the session has changed
+            SessionDetails sessionDetails = null;
+            try
+            {
+                sessionDetails = this.GetSessionDetailsInDebugger();
+            }
+            catch (InvalidOperationException)
+            {
+                this.logger.LogTrace(
+                    "Attempting to get session details failed, most likely due to a running pipeline that is attempting to stop.");
+            }
 
             if (!localThreadController.FrameExitTask.Task.IsCompleted)
             {

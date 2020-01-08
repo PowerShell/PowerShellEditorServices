@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         {
             Task<T> requestTask;
 
-            using (await queueLock.LockAsync(cancellationToken))
+            using (await queueLock.LockAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (this.itemQueue.Count > 0)
                 {
@@ -171,7 +171,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             // Wait for the request task to complete outside of the lock
-            return await requestTask;
+            return await requestTask.ConfigureAwait(false);
         }
 
         /// <summary>
