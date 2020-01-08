@@ -84,6 +84,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .Wait();
                 }
 
+                // We must also set a thread SynchronizationContext for the pipeline thread so that WinForms doesn't derail it
+                // TODO: For some reason this doesn't stop the blocking on first invocation, and moving it to the startup of PowerShellContext causes initialization to not respond
+                // TODO: Create a custom synchronization context that explicitly handles WinForms
+                _powerShellContextService.ExecuteScriptStringAsync("[System.Threading.SynchronizationContext]::SetSynchronizationContext([System.Threading.SynchronizationContext]::new())");
+
                 options.Services = new ServiceCollection()
                     .AddPsesDebugServices(ServiceProvider, this, _useTempSession);
 
