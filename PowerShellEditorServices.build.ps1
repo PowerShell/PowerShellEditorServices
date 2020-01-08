@@ -133,7 +133,7 @@ task Clean BinClean,{
 
     # Remove bundled component modules
     $moduleJsonPath = "$PSScriptRoot\modules.json"
-    if (Test-Item $moduleJsonPath) {
+    if (Test-Path $moduleJsonPath) {
         Get-Content -Raw $moduleJsonPath |
             ConvertFrom-Json |
             ForEach-Object { Remove-Item -Recurse "$PSScriptRoot/module/$($_.Name)" -Path -ErrorAction Ignore }
