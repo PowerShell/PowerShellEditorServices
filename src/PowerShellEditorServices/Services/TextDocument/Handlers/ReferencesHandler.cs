@@ -48,9 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
         {
-            ScriptFile scriptFile =
-                _workspaceService.GetFile(
-                    request.TextDocument.Uri.ToString());
+            ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             SymbolReference foundSymbol =
                 _symbolsService.FindSymbolAtLocation(

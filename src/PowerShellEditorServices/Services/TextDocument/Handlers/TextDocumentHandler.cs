@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
         {
-            ScriptFile changedFile = _workspaceService.GetFile(notification.TextDocument.Uri.ToString());
+            ScriptFile changedFile = _workspaceService.GetFile(notification.TextDocument.Uri);
 
             // A text change notification can batch multiple change requests
             foreach (TextDocumentContentChangeEvent textChange in notification.ContentChanges)
@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             ScriptFile openedFile =
                 _workspaceService.GetFileBuffer(
-                    notification.TextDocument.Uri.ToString(),
+                    notification.TextDocument.Uri,
                     notification.TextDocument.Text);
 
             // TODO: Get all recently edited files in the workspace
@@ -106,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public Task<Unit> Handle(DidCloseTextDocumentParams notification, CancellationToken token)
         {
             // Find and close the file in the current session
-            var fileToClose = _workspaceService.GetFile(notification.TextDocument.Uri.ToString());
+            var fileToClose = _workspaceService.GetFile(notification.TextDocument.Uri);
 
             if (fileToClose != null)
             {
@@ -120,9 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken token)
         {
-            ScriptFile savedFile =
-                _workspaceService.GetFile(
-                    notification.TextDocument.Uri.ToString());
+            ScriptFile savedFile = _workspaceService.GetFile(notification.TextDocument.Uri);
 
             if (savedFile != null)
             {

@@ -46,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<TextEditContainer> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)
         {
-            var scriptFile = _workspaceService.GetFile(request.TextDocument.Uri.ToString());
+            var scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
             var pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
                 (int)request.Options.TabSize,
                 request.Options.InsertSpaces);
@@ -124,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<TextEditContainer> Handle(DocumentRangeFormattingParams request, CancellationToken cancellationToken)
         {
-            var scriptFile = _workspaceService.GetFile(request.TextDocument.Uri.ToString());
+            var scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
             var pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
                 (int)request.Options.TabSize,
                 request.Options.InsertSpaces);

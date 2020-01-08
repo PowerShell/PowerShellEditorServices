@@ -96,33 +96,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #region Public Methods
 
         /// <summary>
-        /// Creates a new ScriptFile instance which is identified by the given file
-        /// path and initially contains the given buffer contents.
+        /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
+        /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
+        /// <see cref="WorkspaceService.TryGetFile(string, out ScriptFile)"/> instead.</para>
         /// </summary>
-        /// <param name="filePath">The file path for which a buffer will be retrieved.</param>
-        /// <param name="initialBuffer">The initial buffer contents if there is not an existing ScriptFile for this path.</param>
-        /// <returns>A ScriptFile instance for the specified path.</returns>
-        public ScriptFile CreateScriptFileFromFileBuffer(string filePath, string initialBuffer)
-        {
-            Validate.IsNotNullOrEmptyString("filePath", filePath);
-
-            // Resolve the full file path
-            string resolvedFilePath = this.ResolveFilePath(filePath);
-            string keyName = resolvedFilePath.ToLower();
-
-            ScriptFile scriptFile =
-                new ScriptFile(
-                    resolvedFilePath,
-                    filePath,
-                    initialBuffer,
-                    powerShellVersion);
-
-            workspaceFiles[keyName] = scriptFile;
-
-            logger.LogDebug("Opened file as in-memory buffer: " + resolvedFilePath);
-
-            return scriptFile;
-        }
+        /// <param name="filePath">The file path at which the script resides.</param>
+        /// <exception cref="FileNotFoundException">
+        /// <paramref name="filePath"/> is not found.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="filePath"/> contains a null or empty string.
+        /// </exception>
+        public ScriptFile GetFile(string filePath) => GetFile(new Uri(filePath));
 
         /// <summary>
         /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
@@ -136,33 +121,36 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <exception cref="ArgumentException">
         /// <paramref name="filePath"/> contains a null or empty string.
         /// </exception>
-        public ScriptFile GetFile(string filePath)
+        public ScriptFile GetFile(Uri fileUri)
         {
-            Validate.IsNotNullOrEmptyString("filePath", filePath);
+            Validate.IsNotNull(nameof(fileUri), fileUri);
 
             // Resolve the full file path
-            string resolvedFilePath = this.ResolveFilePath(filePath);
-            string keyName = resolvedFilePath.ToLower();
+            Uri resolvedFileUri = ResolveFileUri(fileUri);
+
+            string keyName = VersionUtils.IsLinux
+                ? resolvedFileUri.OriginalString
+                : resolvedFileUri.OriginalString.ToLower();
 
             // Make sure the file isn't already loaded into the workspace
             if (!this.workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile))
             {
                 // This method allows FileNotFoundException to bubble up
                 // if the file isn't found.
-                using (FileStream fileStream = new FileStream(resolvedFilePath, FileMode.Open, FileAccess.Read))
+                using (FileStream fileStream = new FileStream(resolvedFileUri.LocalPath, FileMode.Open, FileAccess.Read))
                 using (StreamReader streamReader = new StreamReader(fileStream, Encoding.UTF8))
                 {
                     scriptFile =
                         new ScriptFile(
-                            resolvedFilePath,
-                            filePath,
+                            resolvedFileUri.LocalPath,
+                            resolvedFileUri.OriginalString,
                             streamReader,
                             this.powerShellVersion);
 
                     this.workspaceFiles.Add(keyName, scriptFile);
                 }
 
-                this.logger.LogDebug("Opened file on disk: " + resolvedFilePath);
+                this.logger.LogDebug("Opened file on disk: " + resolvedFileUri.OriginalString);
             }
 
             return scriptFile;
@@ -173,10 +161,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="filePath">The file path at which the script resides.</param>
         /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
-        public bool TryGetFile(string filePath, out ScriptFile scriptFile)
-        {
-            var fileUri = new Uri(filePath);
+        public bool TryGetFile(string filePath, out ScriptFile scriptFile) =>
+            TryGetFile(new Uri(filePath), out scriptFile);
 
+        /// <summary>
+        /// Tries to get an open file in the workspace. Returns true if it succeeds, false otherwise.
+        /// </summary>
+        /// <param name="fileUri">The file uri at which the script resides.</param>
+        /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
+        public bool TryGetFile(Uri fileUri, out ScriptFile scriptFile)
+        {
             switch (fileUri.Scheme)
             {
                 // List supported schemes here
@@ -191,7 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             try
             {
-                scriptFile = GetFile(filePath);
+                scriptFile = GetFile(fileUri);
                 return true;
             }
             catch (Exception e) when (
@@ -203,7 +197,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 e is SecurityException ||
                 e is UnauthorizedAccessException)
             {
-                this.logger.LogWarning($"Failed to get file for {nameof(filePath)}: '{filePath}'", e);
+                this.logger.LogWarning($"Failed to get file for fileUri: '{fileUri.OriginalString}'", e);
                 scriptFile = null;
                 return false;
             }
@@ -214,10 +208,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="filePath">The file path for which a buffer will be retrieved.</param>
         /// <returns>A ScriptFile instance if there is a buffer for the path, null otherwise.</returns>
-        public ScriptFile GetFileBuffer(string filePath)
-        {
-            return this.GetFileBuffer(filePath, null);
-        }
+        public ScriptFile GetFileBuffer(string filePath) => GetFileBuffer(filePath, initialBuffer: null);
 
         /// <summary>
         /// Gets a new ScriptFile instance which is identified by the given file
@@ -226,27 +217,46 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="filePath">The file path for which a buffer will be retrieved.</param>
         /// <param name="initialBuffer">The initial buffer contents if there is not an existing ScriptFile for this path.</param>
         /// <returns>A ScriptFile instance for the specified path.</returns>
-        public ScriptFile GetFileBuffer(string filePath, string initialBuffer)
+        public ScriptFile GetFileBuffer(string filePath, string initialBuffer) => GetFileBuffer(new Uri(filePath), initialBuffer);
+
+        /// <summary>
+        /// Gets a new ScriptFile instance which is identified by the given file path.
+        /// </summary>
+        /// <param name="fileUri">The file Uri for which a buffer will be retrieved.</param>
+        /// <returns>A ScriptFile instance if there is a buffer for the path, null otherwise.</returns>
+        public ScriptFile GetFileBuffer(Uri fileUri) => GetFileBuffer(fileUri, initialBuffer: null);
+
+        /// <summary>
+        /// Gets a new ScriptFile instance which is identified by the given file
+        /// path and initially contains the given buffer contents.
+        /// </summary>
+        /// <param name="fileUri">The file Uri for which a buffer will be retrieved.</param>
+        /// <param name="initialBuffer">The initial buffer contents if there is not an existing ScriptFile for this path.</param>
+        /// <returns>A ScriptFile instance for the specified path.</returns>
+        public ScriptFile GetFileBuffer(Uri fileUri, string initialBuffer)
         {
-            Validate.IsNotNullOrEmptyString("filePath", filePath);
+            Validate.IsNotNull(nameof(fileUri), fileUri);
 
             // Resolve the full file path
-            string resolvedFilePath = this.ResolveFilePath(filePath);
-            string keyName = resolvedFilePath.ToLower();
+            Uri resolvedFileUri = ResolveFileUri(fileUri);
+
+            string keyName = VersionUtils.IsLinux
+                ? resolvedFileUri.OriginalString
+                : resolvedFileUri.OriginalString.ToLower();
 
             // Make sure the file isn't already loaded into the workspace
             if (!this.workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile) && initialBuffer != null)
             {
                 scriptFile =
                     new ScriptFile(
-                        resolvedFilePath,
-                        filePath,
+                        resolvedFileUri.LocalPath,
+                        resolvedFileUri.OriginalString,
                         initialBuffer,
                         this.powerShellVersion);
 
-                this.workspaceFiles.Add(keyName, scriptFile);
+                this.workspaceFiles[keyName] = scriptFile;
 
-                this.logger.LogDebug("Opened file as in-memory buffer: " + resolvedFilePath);
+                this.logger.LogDebug("Opened file as in-memory buffer: " + resolvedFileUri.OriginalString);
             }
 
             return scriptFile;
@@ -452,6 +462,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return filePath;
         }
 
+        internal Uri ResolveFileUri(Uri fileUri)
+        {
+            if (fileUri.IsFile)
+            {
+                fileUri = WorkspaceService.UnescapeDriveColon(fileUri);
+            }
+
+            this.logger.LogDebug("Resolved path: " + fileUri.OriginalString);
+            return fileUri;
+        }
+
         internal static bool IsPathInMemory(string filePath)
         {
             bool isInMemory = false;
@@ -588,6 +609,42 @@ namespace Microsoft.PowerShell.EditorServices.Services
             sb.Append(fileUri.Substring(12)); // The rest of the URI after the colon
 
             return sb.ToString();
+        }
+
+        private static Uri UnescapeDriveColon(Uri fileUri)
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return fileUri;
+            }
+
+            string driveSegment = fileUri.Segments[1];
+            // Check here that we have something like "file:///C%3A/" as a prefix (caller must check the file:// part)
+            if (!(char.IsLetter(driveSegment[0]) &&
+                  driveSegment[1] == '%' &&
+                  driveSegment[2] == '3' &&
+                  driveSegment[3] == 'A' &&
+                  driveSegment[4] == '/'))
+            {
+                return fileUri;
+            }
+
+            // We lost "%3A" and gained ":", so length - 2
+            var sb = new StringBuilder(fileUri.OriginalString.Length - 2);
+            sb.Append("file:///");
+
+            // The drive letter.
+            sb.Append(driveSegment[0]);
+            sb.Append(":/");
+
+            // The rest of the URI after the colon.
+            // Skip the first two segments which are / and the drive.
+            for (int i = 2; i < fileUri.Segments.Length; i++)
+            {
+                sb.Append(fileUri.Segments[i]);
+            }
+
+            return new Uri(sb.ToString());
         }
 
         /// <summary>

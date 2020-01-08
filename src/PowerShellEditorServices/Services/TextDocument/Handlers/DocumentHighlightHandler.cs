@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DocumentHighlightParams request,
             CancellationToken cancellationToken)
         {
-            ScriptFile scriptFile = _workspaceService.GetFile(PathUtils.FromUri(request.TextDocument.Uri));
+            ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             IReadOnlyList<SymbolReference> symbolOccurrences = _symbolsService.FindOccurrencesInFile(
                 scriptFile,

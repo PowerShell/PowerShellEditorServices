@@ -53,20 +53,6 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             return new Uri($"file://{filePath}");
         }
 
-        public static string FromUri(Uri uri)
-        {
-            if (uri.Segments.Length > 1)
-            {
-                // On windows of the Uri contains %3a local path
-                // doesn't come out as a proper windows path
-                if (uri.Segments[1].IndexOf("%3a", StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    return FromUri(new Uri(uri.AbsoluteUri.Replace("%3a", ":").Replace("%3A", ":")));
-                }
-            }
-            return uri.LocalPath;
-        }
-
         /// <summary>
         /// Converts all alternate path separators to the current platform's main path separators.
         /// </summary>
