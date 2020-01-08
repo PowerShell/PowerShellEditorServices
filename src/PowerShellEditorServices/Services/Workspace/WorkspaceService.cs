@@ -208,7 +208,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="filePath">The file path for which a buffer will be retrieved.</param>
         /// <returns>A ScriptFile instance if there is a buffer for the path, null otherwise.</returns>
-        public ScriptFile GetFileBuffer(string filePath) => GetFileBuffer(filePath, null);
+        public ScriptFile GetFileBuffer(string filePath) => GetFileBuffer(filePath, initialBuffer: null);
 
         /// <summary>
         /// Gets a new ScriptFile instance which is identified by the given file
@@ -224,7 +224,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="fileUri">The file Uri for which a buffer will be retrieved.</param>
         /// <returns>A ScriptFile instance if there is a buffer for the path, null otherwise.</returns>
-        public ScriptFile GetFileBuffer(Uri fileUri) => GetFileBuffer(fileUri, null);
+        public ScriptFile GetFileBuffer(Uri fileUri) => GetFileBuffer(fileUri, initialBuffer: null);
 
         /// <summary>
         /// Gets a new ScriptFile instance which is identified by the given file
