@@ -81,7 +81,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     // This must be run synchronously to ensure debugging works
                     _powerShellContextService
                         .ExecuteScriptStringAsync("[System.Runtime.CompilerServices.RuntimeHelpers]::RunClassConstructor([Microsoft.PowerShell.PSConsoleReadLine].TypeHandle)")
-                        .Wait();
+                        .GetAwaiter()
+                        .GetResult();
                 }
 
                 options.Services = new ServiceCollection()
