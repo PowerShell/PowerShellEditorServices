@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using OmniSharp.Extensions.LanguageServer.Server;
+using Microsoft.PowerShell.EditorServices.Services;
 
 #if DEBUG
 using Serilog.Debugging;
@@ -123,7 +124,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     .SetMinimumLevel(LogLevel.Trace))
                 .AddSingleton<ILanguageServer>(provider => null)
                 .AddPsesLanguageServices(hostStartupInfo)
+                // For a Temp session, there is no LanguageServer so just set it to null
+                .AddSingleton(
+                    typeof(OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer),
+                    _ => null)
                 .BuildServiceProvider();
+
+            // This gets the ExtensionService which triggers the creation of the `$psEditor` variable.
+            // (because services are created only when they are first retrieved)
+            // Keep in mind, for Temp sessions, the `$psEditor` API is a no-op and the user is warned
+            // to run the command in the main PS Integrated Console.
+            serviceProvider.GetService<ExtensionService>();
 
             return new PsesDebugServer(
                 _loggerFactory,

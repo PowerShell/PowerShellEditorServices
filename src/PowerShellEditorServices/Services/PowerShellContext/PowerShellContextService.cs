@@ -84,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private EngineIntrinsics EngineIntrinsics { get; set; }
 
-        private PSHost ExternalHost { get; set; }
+        internal PSHost ExternalHost { get; set; }
 
         /// <summary>
         /// Gets a boolean that indicates whether the debugger is currently stopped,
