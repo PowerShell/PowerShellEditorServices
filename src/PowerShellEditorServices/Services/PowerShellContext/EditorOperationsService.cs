@@ -16,19 +16,27 @@ namespace Microsoft.PowerShell.EditorServices.Services
     {
         private const bool DefaultPreviewSetting = true;
 
-        private WorkspaceService _workspaceService;
-        private ILanguageServer _languageServer;
+        private readonly WorkspaceService _workspaceService;
+        private readonly PowerShellContextService _powerShellContextService;
+        private readonly ILanguageServer _languageServer;
 
         public EditorOperationsService(
             WorkspaceService workspaceService,
+            PowerShellContextService powerShellContextService,
             ILanguageServer languageServer)
         {
-            this._workspaceService = workspaceService;
-            this._languageServer = languageServer;
+            _workspaceService = workspaceService;
+            _powerShellContextService = powerShellContextService;
+            _languageServer = languageServer;
         }
 
         public async Task<EditorContext> GetEditorContextAsync()
         {
+            if (!TestHasLanguageServer())
+            {
+                return null;
+            };
+
             ClientEditorContext clientContext =
                 await _languageServer.SendRequest<GetEditorContextRequest, ClientEditorContext>(
                     "editor/getEditorContext",
@@ -39,6 +47,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task InsertTextAsync(string filePath, string text, BufferRange insertRange)
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            };
+
             await _languageServer.SendRequest<InsertTextRequest>("editor/insertText", new InsertTextRequest
             {
                 FilePath = filePath,
@@ -62,6 +75,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task SetSelectionAsync(BufferRange selectionRange)
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            };
 
             await _languageServer.SendRequest<SetSelectionRequest>("editor/setSelection", new SetSelectionRequest
             {
@@ -106,11 +123,21 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task NewFileAsync()
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            };
+
             await _languageServer.SendRequest<string>("editor/newFile", null);
         }
 
         public async Task OpenFileAsync(string filePath)
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            };
+
             await _languageServer.SendRequest<OpenFileDetails>("editor/openFile", new OpenFileDetails
             {
                 FilePath = filePath,
@@ -120,6 +147,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task OpenFileAsync(string filePath, bool preview)
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            };
+
             await _languageServer.SendRequest<OpenFileDetails>("editor/openFile", new OpenFileDetails
             {
                 FilePath = filePath,
@@ -129,6 +161,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task CloseFileAsync(string filePath)
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            };
+
             await _languageServer.SendRequest<string>("editor/closeFile", filePath);
         }
 
@@ -139,6 +176,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task SaveFileAsync(string currentPath, string newSavePath)
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            };
+
             await _languageServer.SendRequest<SaveFileDetails>("editor/saveFile", new SaveFileDetails
             {
                 FilePath = currentPath,
@@ -158,21 +200,41 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task ShowInformationMessageAsync(string message)
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            };
+
             await _languageServer.SendRequest<string>("editor/showInformationMessage", message);
         }
 
         public async Task ShowErrorMessageAsync(string message)
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            };
+
             await _languageServer.SendRequest<string>("editor/showErrorMessage", message);
         }
 
         public async Task ShowWarningMessageAsync(string message)
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            };
+
             await _languageServer.SendRequest<string>("editor/showWarningMessage", message);
         }
 
         public async Task SetStatusBarMessageAsync(string message, int? timeout)
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            }
+
             await _languageServer.SendRequest<StatusBarMessageDetails>("editor/setStatusBarMessage", new StatusBarMessageDetails
             {
                 Message = message,
@@ -182,7 +244,24 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public void ClearTerminal()
         {
+            if (!TestHasLanguageServer())
+            {
+                return;
+            };
+
             _languageServer.SendNotification("editor/clearTerminal");
+        }
+
+        private bool TestHasLanguageServer()
+        {
+            if (_languageServer != null)
+            {
+                return true;
+            }
+
+            _powerShellContextService.ExternalHost.UI.WriteWarningLine(
+                "Editor operations are not supported in temporary consoles. Re-run the command in the main PowerShell Intergrated Console.");
+            return false;
         }
     }
 }

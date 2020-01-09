@@ -222,7 +222,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void ExtensionService_ExtensionAddedAsync(object sender, EditorCommand e)
         {
-            _languageServer.SendNotification<ExtensionCommandAddedNotification>("powerShell/extensionCommandAdded",
+            _languageServer?.SendNotification<ExtensionCommandAddedNotification>("powerShell/extensionCommandAdded",
                 new ExtensionCommandAddedNotification
                 {
                     Name = e.Name,
@@ -232,7 +232,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void ExtensionService_ExtensionUpdatedAsync(object sender, EditorCommand e)
         {
-            _languageServer.SendNotification<ExtensionCommandUpdatedNotification>("powerShell/extensionCommandUpdated",
+            _languageServer?.SendNotification<ExtensionCommandUpdatedNotification>("powerShell/extensionCommandUpdated",
                 new ExtensionCommandUpdatedNotification
                 {
                     Name = e.Name,
@@ -241,7 +241,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void ExtensionService_ExtensionRemovedAsync(object sender, EditorCommand e)
         {
-            _languageServer.SendNotification<ExtensionCommandRemovedNotification>("powerShell/extensionCommandRemoved",
+            _languageServer?.SendNotification<ExtensionCommandRemovedNotification>("powerShell/extensionCommandRemoved",
                 new ExtensionCommandRemovedNotification
                 {
                     Name = e.Name,

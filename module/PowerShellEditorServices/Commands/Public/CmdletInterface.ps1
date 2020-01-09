@@ -124,6 +124,13 @@ function New-EditorFile {
     }
 
     end {
+        # If editorContext is null, then we're in a Temp session and
+        # this cmdlet won't work so return early.
+        $editorContext = $psEditor.GetEditorContext()
+        if (!$editorContext) {
+            return
+        }
+
         if ($Path) {
             foreach ($fileName in $Path)
             {
@@ -142,7 +149,7 @@ function New-EditorFile {
                     }
 
                     $psEditor.Workspace.OpenFile($fileName, $preview)
-                    $psEditor.GetEditorContext().CurrentFile.InsertText(($valueList | Out-String))
+                    $editorContext.CurrentFile.InsertText(($valueList | Out-String))
                 } else {
                     $PSCmdlet.WriteError( (
                         New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList @(
@@ -154,7 +161,7 @@ function New-EditorFile {
             }
         } else {
             $psEditor.Workspace.NewFile()
-            $psEditor.GetEditorContext().CurrentFile.InsertText(($valueList | Out-String))
+            $editorContext.CurrentFile.InsertText(($valueList | Out-String))
         }
     }
 }
