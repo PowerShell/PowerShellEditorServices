@@ -16,9 +16,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
     {
         private const bool DefaultPreviewSetting = true;
 
-        private WorkspaceService _workspaceService;
-        private PowerShellContextService _powerShellContextService;
-        private ILanguageServer _languageServer;
+        private readonly WorkspaceService _workspaceService;
+        private readonly PowerShellContextService _powerShellContextService;
+        private readonly ILanguageServer _languageServer;
 
         public EditorOperationsService(
             WorkspaceService workspaceService,
@@ -233,7 +233,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest<StatusBarMessageDetails>("editor/setStatusBarMessage", new StatusBarMessageDetails
             {
