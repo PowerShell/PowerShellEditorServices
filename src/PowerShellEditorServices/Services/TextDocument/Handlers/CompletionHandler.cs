@@ -213,7 +213,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 case CompletionType.ParameterName:
                     // Look for type encoded in the tooltip for parameters and variables.
                     // Display PowerShell type names in [] to be consistent with PowerShell syntax
-                    // and now the debugger displays type names.
+                    // and how the debugger displays type names.
                     var matches = Regex.Matches(completionDetails.ToolTipText, @"^(\[.+\])");
                     if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
                     {
