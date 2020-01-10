@@ -204,12 +204,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             switch (completionDetails.CompletionType)
             {
-                case CompletionType.Variable:
                 case CompletionType.ParameterValue:
                 case CompletionType.Method:
                 case CompletionType.Property:
                     detailString = completionDetails.ToolTipText;
                     break;
+                case CompletionType.Variable:
                 case CompletionType.ParameterName:
                     // Look for type encoded in the tooltip for parameters and variables.
                     // Display PowerShell type names in [] to be consistent with PowerShell syntax
@@ -250,7 +250,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
 
                     // Since we want to use a "tab stop" we need to escape a few things for Textmate to render properly.
-                    if(EndsWithQuote(completionText))
+                    if (EndsWithQuote(completionText))
                     {
                         var sb = new StringBuilder(completionDetails.CompletionText)
                             .Replace(@"\", @"\\")
