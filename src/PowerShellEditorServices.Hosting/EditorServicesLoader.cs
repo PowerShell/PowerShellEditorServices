@@ -29,6 +29,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     {
         private const int Net461Version = 394254;
 
+#if !CoreCLR
+        private static readonly string s_psesBaseDirPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+#endif
+
         private static readonly string s_psesDependencyDirPath = Path.GetFullPath(
             Path.Combine(
                 Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
@@ -72,7 +76,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
 #if CoreCLR
             // In .NET Core, we add an event here to redirect dependency loading to the new AssemblyLoadContext we load PSES' dependencies into
-
             logger.Log(PsesLogLevel.Verbose, "Adding AssemblyResolve event handler for new AssemblyLoadContext dependency loading");
 
             var psesLoadContext = new PsesLoadContext(s_psesDependencyDirPath);
@@ -123,14 +126,25 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {args.Name}");
 
                 var asmName = new AssemblyName(args.Name);
-                string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");
-                if (!File.Exists(asmPath))
+                var dllName = $"{asmName.Name}.dll";
+
+                // First look for the required assembly in the .NET Framework DLL dir
+                string baseDirAsmPath = Path.Combine(s_psesBaseDirPath, dllName);
+                if (File.Exists(baseDirAsmPath))
                 {
-                    return null;
+                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES base dir into LoadFrom context");
+                    return Assembly.LoadFrom(baseDirAsmPath);
                 }
 
-                logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES dependency dir into LoadFrom context");
-                return Assembly.LoadFrom(asmPath);
+                // Then look in the shared .NET Standard directory
+                string asmPath = Path.Combine(s_psesDependencyDirPath, dllName);
+                if (File.Exists(asmPath))
+                {
+                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES dependency dir into LoadFrom context");
+                    return Assembly.LoadFrom(asmPath);
+                }
+
+                return null;
             };
 #endif
 
