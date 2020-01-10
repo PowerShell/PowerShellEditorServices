@@ -202,62 +202,65 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             string completionText = completionDetails.CompletionText;
             InsertTextFormat insertTextFormat = InsertTextFormat.PlainText;
 
-            if ((completionDetails.CompletionType == CompletionType.Variable) ||
-                (completionDetails.CompletionType == CompletionType.ParameterName))
+            switch (completionDetails.CompletionType)
             {
-                // Look for type encoded in the tooltip for parameters and variables.
-                // Display PowerShell type names in [] to be consistent with PowerShell syntax
-                // and now the debugger displays type names.
-                var matches = Regex.Matches(completionDetails.ToolTipText, @"^(\[.+\])");
-                if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
-                {
-                    detailString = matches[0].Groups[1].Value;
-                }
-            }
-            else if ((completionDetails.CompletionType == CompletionType.Method) ||
-                     (completionDetails.CompletionType == CompletionType.Property))
-            {
-                // We have a raw signature for .NET members, heck let's display it.  It's
-                // better than nothing.
-                documentationString = completionDetails.ToolTipText;
-            }
-            else if (completionDetails.CompletionType == CompletionType.Command)
-            {
-                // For Commands, let's extract the resolved command or the path for an exe
-                // from the ToolTipText - if there is any ToolTipText.
-                if (completionDetails.ToolTipText != null)
-                {
-                    // Fix for #240 - notepad++.exe in tooltip text caused regex parser to throw.
-                    string escapedToolTipText = Regex.Escape(completionDetails.ToolTipText);
-
-                    // Don't display ToolTipText if it is the same as the ListItemText.
-                    // Reject command syntax ToolTipText - it's too much to display as a detailString.
-                    if (!completionDetails.ListItemText.Equals(
-                            completionDetails.ToolTipText,
-                            StringComparison.OrdinalIgnoreCase) &&
-                        !Regex.IsMatch(completionDetails.ToolTipText,
-                            @"^\s*" + escapedToolTipText + @"\s+\["))
+                case CompletionType.ParameterValue:
+                case CompletionType.Method:
+                case CompletionType.Property:
+                    detailString = completionDetails.ToolTipText;
+                    break;
+                case CompletionType.Variable:
+                case CompletionType.ParameterName:
+                    // Look for type encoded in the tooltip for parameters and variables.
+                    // Display PowerShell type names in [] to be consistent with PowerShell syntax
+                    // and how the debugger displays type names.
+                    var matches = Regex.Matches(completionDetails.ToolTipText, @"^(\[.+\])");
+                    if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
                     {
-                        detailString = completionDetails.ToolTipText;
+                        detailString = matches[0].Groups[1].Value;
                     }
-                }
-            }
-            else if (completionDetails.CompletionType == CompletionType.Folder && EndsWithQuote(completionText))
-            {
-                // Insert a final "tab stop" as identified by $0 in the snippet provided for completion.
-                // For folder paths, we take the path returned by PowerShell e.g. 'C:\Program Files' and insert
-                // the tab stop marker before the closing quote char e.g. 'C:\Program Files$0'.
-                // This causes the editing cursor to be placed *before* the final quote after completion,
-                // which makes subsequent path completions work. See this part of the LSP spec for details:
-                // https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
+                    break;
+                case CompletionType.Command:
+                    // For Commands, let's extract the resolved command or the path for an exe
+                    // from the ToolTipText - if there is any ToolTipText.
+                    if (completionDetails.ToolTipText != null)
+                    {
+                        // Fix for #240 - notepad++.exe in tooltip text caused regex parser to throw.
+                        string escapedToolTipText = Regex.Escape(completionDetails.ToolTipText);
 
-                // Since we want to use a "tab stop" we need to escape a few things for Textmate to render properly.
-                var sb = new StringBuilder(completionDetails.CompletionText)
-                    .Replace(@"\", @"\\")
-                    .Replace(@"}", @"\}")
-                    .Replace(@"$", @"\$");
-                completionText = sb.Insert(sb.Length - 1, "$0").ToString();
-                insertTextFormat = InsertTextFormat.Snippet;
+                        // Don't display ToolTipText if it is the same as the ListItemText.
+                        // Reject command syntax ToolTipText - it's too much to display as a detailString.
+                        if (!completionDetails.ListItemText.Equals(
+                                completionDetails.ToolTipText,
+                                StringComparison.OrdinalIgnoreCase) &&
+                            !Regex.IsMatch(completionDetails.ToolTipText,
+                                @"^\s*" + escapedToolTipText + @"\s+\["))
+                        {
+                            detailString = completionDetails.ToolTipText;
+                        }
+                    }
+
+                    break;
+                case CompletionType.Folder:
+                    // Insert a final "tab stop" as identified by $0 in the snippet provided for completion.
+                    // For folder paths, we take the path returned by PowerShell e.g. 'C:\Program Files' and insert
+                    // the tab stop marker before the closing quote char e.g. 'C:\Program Files$0'.
+                    // This causes the editing cursor to be placed *before* the final quote after completion,
+                    // which makes subsequent path completions work. See this part of the LSP spec for details:
+                    // https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
+
+                    // Since we want to use a "tab stop" we need to escape a few things for Textmate to render properly.
+                    if (EndsWithQuote(completionText))
+                    {
+                        var sb = new StringBuilder(completionDetails.CompletionText)
+                            .Replace(@"\", @"\\")
+                            .Replace(@"}", @"\}")
+                            .Replace(@"$", @"\$");
+                        completionText = sb.Insert(sb.Length - 1, "$0").ToString();
+                        insertTextFormat = InsertTextFormat.Snippet;
+                    }
+
+                    break;
             }
 
             // Force the client to maintain the sort order in which the
