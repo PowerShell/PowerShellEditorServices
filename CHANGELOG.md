@@ -1,6 +1,6 @@
 # PowerShell Editor Services Release History
 
-## v2020.1.0
+## v1.13.3
 ### Wednesday, January 15, 2020
 
 - 🐛 👮‍ [vscode-PowerShell #2375](https://github.com/PowerShell/PowerShellEditorServices/pull/1142) -
