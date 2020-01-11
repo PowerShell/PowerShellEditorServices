@@ -1,6 +1,12 @@
 # PowerShell Editor Services Release History
 
-## 1.13.2
+## v2020.1.0
+### Wednesday, January 15, 2020
+
+- 🐛 👮‍ [vscode-PowerShell #2375](https://github.com/PowerShell/PowerShellEditorServices/pull/1142) -
+  Fix wiring of `WhitespaceInsideBrace` and `WhitespaceAroundPipe`. (Thanks @bergmeister!)
+
+## v1.13.2
 ### Thursday, December 12, 2019
 
 - 🐛 👮‍ [PowerShellEditorServices #1102](https://github.com/PowerShell/PowerShellEditorServices/pull/1102) -
