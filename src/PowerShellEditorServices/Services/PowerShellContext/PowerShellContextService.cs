@@ -512,7 +512,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             bool sendOutputToHost = false,
             bool sendErrorToHost = true)
         {
-            return await ExecuteCommandAsync<TResult>(psCommand, null, sendOutputToHost, sendErrorToHost);
+            return await ExecuteCommandAsync<TResult>(psCommand, errorMessages: null, sendOutputToHost, sendErrorToHost).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -620,7 +620,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         this,
                         psCommand,
                         errorMessages,
-                        executionOptions));
+                        executionOptions)).ConfigureAwait(false);
             }
             else
             {
@@ -644,10 +644,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     // don't write output (e.g. command completion)
                     if (executionTarget == ExecutionTarget.InvocationEvent)
                     {
-                        return (await this.InvocationEventQueue.ExecuteCommandOnIdleAsync<TResult>(
+                        return await this.InvocationEventQueue.ExecuteCommandOnIdleAsync<TResult>(
                             psCommand,
                             errorMessages,
-                            executionOptions));
+                            executionOptions).ConfigureAwait(false);
                     }
 
                     // Prompt is stopped and started based on the execution status, so naturally
@@ -660,7 +660,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             false);
                     }
 
-                    runspaceHandle = await this.GetRunspaceHandleAsync(executionOptions.IsReadLine);
+                    runspaceHandle = await this.GetRunspaceHandleAsync(executionOptions.IsReadLine).ConfigureAwait(false);
                     if (executionOptions.WriteInputToHost)
                     {
                         this.WriteOutput(psCommand.Commands[0].CommandText, true);
@@ -740,7 +740,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             () => shell.Invoke<TResult>(null, invocationSettings),
                             CancellationToken.None, // Might need a cancellation token
                             TaskCreationOptions.None,
-                            TaskScheduler.Default);
+                            TaskScheduler.Default).ConfigureAwait(false);
                     }
                     finally
                     {
@@ -856,7 +856,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             // will exist already so we need to create one and then use it
                             if (runspaceHandle == null)
                             {
-                                runspaceHandle = await this.GetRunspaceHandleAsync();
+                                runspaceHandle = await this.GetRunspaceHandleAsync().ConfigureAwait(false);
                             }
 
                             sessionDetails = this.GetSessionDetailsInRunspace(runspaceHandle.Runspace);
@@ -980,7 +980,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     WriteOutputToHost = writeOutputToHost,
                     AddToHistory = addToHistory,
                     WriteInputToHost = writeInputToHost
-                });
+                }).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1005,8 +1005,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         new PSCommand()
                             .AddCommand("Microsoft.PowerShell.Management\\Get-Location")
                             .AddParameter("PSProvider", "FileSystem"),
-                            false,
-                            false))
+                            sendOutputToHost: false,
+                            sendErrorToHost: false).ConfigureAwait(false))
                         .FirstOrDefault()
                         .ProviderPath;
 
@@ -1062,9 +1062,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             await this.ExecuteCommandAsync<object>(
                 command,
-                null,
+                errorMessages: null,
                 sendOutputToHost: true,
-                addToHistory: true);
+                addToHistory: true).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1101,7 +1101,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             if (this.PromptNest.IsReadLineBusy())
             {
-                await this.InvocationEventQueue.InvokeOnPipelineThreadAsync(invocationAction);
+                await this.InvocationEventQueue.InvokeOnPipelineThreadAsync(invocationAction).ConfigureAwait(false);
                 return;
             }
 
@@ -1115,7 +1115,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             return await PromptContext.InvokeReadLineAsync(
                 isCommandLine,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
         }
 
         internal static TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default(TResult))
@@ -1143,12 +1143,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     PSCommand command = new PSCommand();
                     command.AddCommand(profilePath, false);
-                    await this.ExecuteCommandAsync<object>(command, true, true);
+                    await this.ExecuteCommandAsync<object>(command, sendOutputToHost: true, sendErrorToHost: true).ConfigureAwait(false);
                 }
 
                 // Gather the session details (particularly the prompt) after
                 // loading the user's profiles.
-                await this.GetSessionDetailsInRunspaceAsync();
+                await this.GetSessionDetailsInRunspaceAsync().ConfigureAwait(false);
             }
         }
 
@@ -1235,7 +1235,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             while (this.PromptNest.IsNestedPrompt)
             {
-                await this.PromptNest.WaitForCurrentFrameExitAsync(frame => this.ExitNestedPrompt());
+                await this.PromptNest.WaitForCurrentFrameExitAsync(frame => this.ExitNestedPrompt()).ConfigureAwait(false);
                 this.versionSpecificOperations.ExitNestedPrompt(ExternalHost);
             }
         }
@@ -1345,14 +1345,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.initialRunspace = null;
         }
 
-        private async Task<RunspaceHandle> GetRunspaceHandleAsync(bool isReadLine)
+        private Task<RunspaceHandle> GetRunspaceHandleAsync(bool isReadLine)
         {
-            return await this.GetRunspaceHandleImplAsync(CancellationToken.None, isReadLine);
+            return this.GetRunspaceHandleImplAsync(CancellationToken.None, isReadLine);
         }
 
-        private async Task<RunspaceHandle> GetRunspaceHandleImplAsync(CancellationToken cancellationToken, bool isReadLine)
+        private Task<RunspaceHandle> GetRunspaceHandleImplAsync(CancellationToken cancellationToken, bool isReadLine)
         {
-            return await this.PromptNest.GetRunspaceHandleAsync(cancellationToken, isReadLine);
+            return this.PromptNest.GetRunspaceHandleAsync(cancellationToken, isReadLine);
         }
 
         private ExecutionTarget GetExecutionTarget(ExecutionOptions options = null)
@@ -1557,9 +1557,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// unescaped before calling this method.
         /// </summary>
         /// <param name="path"></param>
-        public async Task SetWorkingDirectoryAsync(string path)
+        public Task SetWorkingDirectoryAsync(string path)
         {
-            await this.SetWorkingDirectoryAsync(path, true);
+            return this.SetWorkingDirectoryAsync(path, isPathAlreadyEscaped: true);
         }
 
         /// <summary>
@@ -1578,10 +1578,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             await ExecuteCommandAsync<PSObject>(
                 new PSCommand().AddCommand("Set-Location").AddParameter("Path", path),
-                null,
+                errorMessages: null,
                 sendOutputToHost: false,
                 sendErrorToHost: false,
-                addToHistory: false);
+                addToHistory: false).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -2150,7 +2150,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private async Task<SessionDetails> GetSessionDetailsInRunspaceAsync()
         {
-            using (RunspaceHandle runspaceHandle = await this.GetRunspaceHandleAsync())
+            using (RunspaceHandle runspaceHandle = await this.GetRunspaceHandleAsync().ConfigureAwait(false))
             {
                 return this.GetSessionDetailsInRunspace(runspaceHandle.Runspace);
             }

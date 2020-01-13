@@ -59,12 +59,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             command.AddArgument(commandName);
             command.AddParameter("ErrorAction", "Ignore");
 
-            return
-                (await powerShellContext
-                    .ExecuteCommandAsync<PSObject>(command, false, false))
-                    .Select(o => o.BaseObject)
-                    .OfType<CommandInfo>()
-                    .FirstOrDefault();
+            return (await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false))
+                .Select(o => o.BaseObject)
+                .OfType<CommandInfo>()
+                .FirstOrDefault();
         }
 
         /// <summary>
@@ -89,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 command.AddArgument(commandInfo);
                 command.AddParameter("ErrorAction", "Ignore");
 
-                var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, false, false);
+                var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false);
                 PSObject helpObject = results.FirstOrDefault();
 
                 if (helpObject != null)

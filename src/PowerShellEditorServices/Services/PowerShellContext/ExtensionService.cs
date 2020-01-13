@@ -88,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Register the editor object in the runspace
             PSCommand variableCommand = new PSCommand();
-            using (RunspaceHandle handle = await this.PowerShellContext.GetRunspaceHandleAsync())
+            using (RunspaceHandle handle = await this.PowerShellContext.GetRunspaceHandleAsync().ConfigureAwait(false))
             {
                 handle.Runspace.SessionStateProxy.PSVariable.Set(
                     "psEditor",
@@ -115,8 +115,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 await this.PowerShellContext.ExecuteCommandAsync<object>(
                     executeCommand,
-                    !editorCommand.SuppressOutput,
-                    true);
+                    sendOutputToHost: !editorCommand.SuppressOutput,
+                    sendErrorToHost: true).ConfigureAwait(false);
             }
             else
             {
