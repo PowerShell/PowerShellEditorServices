@@ -297,10 +297,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             // is in process.
             if (isReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
             {
-                await GetRunspaceHandleImplAsync(cancellationToken, isReadLine: false);
+                await GetRunspaceHandleImplAsync(cancellationToken, isReadLine: false).ConfigureAwait(false);
             }
 
-            return await GetRunspaceHandleImplAsync(cancellationToken, isReadLine);
+            return await GetRunspaceHandleImplAsync(cancellationToken, isReadLine).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -340,10 +340,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 return;
             }
 
-            await ReleaseRunspaceHandleImplAsync(runspaceHandle.IsReadLine);
+            await ReleaseRunspaceHandleImplAsync(runspaceHandle.IsReadLine).ConfigureAwait(false);
             if (runspaceHandle.IsReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
             {
-                await ReleaseRunspaceHandleImplAsync(isReadLine: false);
+                await ReleaseRunspaceHandleImplAsync(isReadLine: false).ConfigureAwait(false);
             }
         }
 
@@ -442,11 +442,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             var currentFrame = CurrentFrame;
             try
             {
-                await initiator.Invoke(currentFrame);
+                await initiator.Invoke(currentFrame).ConfigureAwait(false);
             }
             finally
             {
-                await currentFrame.WaitForFrameExitAsync(CancellationToken.None);
+                await currentFrame.WaitForFrameExitAsync(CancellationToken.None).ConfigureAwait(false);
             }
         }
 
@@ -473,7 +473,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
             finally
             {
-                await currentFrame.WaitForFrameExitAsync(CancellationToken.None);
+                await currentFrame.WaitForFrameExitAsync(CancellationToken.None).ConfigureAwait(false);
             }
         }
 
@@ -490,7 +490,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 return;
             }
 
-            await WaitForCurrentFrameExitAsync(CancellationToken.None);
+            await WaitForCurrentFrameExitAsync(CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -509,7 +509,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 return;
             }
 
-            await CurrentFrame.WaitForFrameExitAsync(cancellationToken);
+            await CurrentFrame.WaitForFrameExitAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private AsyncQueue<RunspaceHandle> NewHandleQueue()
@@ -533,10 +533,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             if (isReadLine)
             {
-                return await _readLineFrame.Queue.DequeueAsync(cancellationToken);
+                return await _readLineFrame.Queue.DequeueAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            return await CurrentFrame.Queue.DequeueAsync(cancellationToken);
+            return await CurrentFrame.Queue.DequeueAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private void ReleaseRunspaceHandleImpl(bool isReadLine)
@@ -554,11 +554,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             if (isReadLine)
             {
-                await _readLineFrame.Queue.EnqueueAsync(new RunspaceHandle(_powerShellContext, true));
+                await _readLineFrame.Queue.EnqueueAsync(new RunspaceHandle(_powerShellContext, true)).ConfigureAwait(false);
                 return;
             }
 
-            await CurrentFrame.Queue.EnqueueAsync(new RunspaceHandle(_powerShellContext, false));
+            await CurrentFrame.Queue.EnqueueAsync(new RunspaceHandle(_powerShellContext, false)).ConfigureAwait(false);
         }
     }
 }
