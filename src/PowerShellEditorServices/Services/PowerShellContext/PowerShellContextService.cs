@@ -591,6 +591,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 throw new ArgumentNullException(nameof(executionOptions));
             }
+
             // Add history to PSReadLine before cancelling, otherwise it will be restored as the
             // cancelled prompt when it's called again.
             if (executionOptions.AddToHistory)
