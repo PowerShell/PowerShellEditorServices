@@ -136,7 +136,7 @@ task Clean BinClean,{
     if (Test-Path $moduleJsonPath) {
         Get-Content -Raw $moduleJsonPath |
             ConvertFrom-Json |
-            ForEach-Object { Remove-Item -Recurse "$PSScriptRoot/module/$($_.Name)" -Path -ErrorAction Ignore }
+            ForEach-Object { Remove-Item -Path "$PSScriptRoot/module/$($_.Name)" -Recurse -Force -ErrorAction Ignore }
     }
 }
 
