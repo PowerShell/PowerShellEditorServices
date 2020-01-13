@@ -43,6 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             PowerShellContextService powerShellContext)
         {
             Validate.IsNotNull(nameof(commandName), commandName);
+            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
             // Make sure the command's noun isn't blacklisted.  This is
             // currently necessary to make sure that Get-Command doesn't
@@ -75,6 +76,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             CommandInfo commandInfo,
             PowerShellContextService powerShellContext)
         {
+            if (powerShellContext is null)
+            {
+                throw new System.ArgumentNullException(nameof(powerShellContext));
+            }
+
             string synopsisString = string.Empty;
 
             if (commandInfo != null &&

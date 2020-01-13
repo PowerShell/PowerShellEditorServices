@@ -474,7 +474,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                 inputLine,
                                 promptStartCol,
                                 promptStartRow,
-                                keyInfo.KeyChar.ToString(),
+                                keyInfo.KeyChar.ToString(), // TODO: Determine whether this should take culture into account
                                 currentCursorIndex,
                                 finalCursorIndex: currentCursorIndex + 1);
                     }

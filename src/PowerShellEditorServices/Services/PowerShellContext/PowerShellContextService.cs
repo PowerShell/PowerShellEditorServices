@@ -175,6 +175,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
             HostStartupInfo hostStartupInfo)
         {
+            if (hostStartupInfo is null)
+            {
+                throw new ArgumentNullException(nameof(hostStartupInfo));
+            }
+
             var logger = factory.CreateLogger<PowerShellContextService>();
 
             // We should only use PSReadLine if we specificied that we want a console repl
@@ -242,6 +247,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             EditorServicesPSHostUserInterface hostUserInterface,
             ILogger logger)
         {
+            if (powerShellContext is null)
+            {
+                throw new ArgumentNullException(nameof(powerShellContext));
+            }
+
             var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
             powerShellContext.ConsoleWriter = hostUserInterface;
             powerShellContext.ConsoleReader = hostUserInterface;
@@ -571,6 +581,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
             StringBuilder errorMessages,
             ExecutionOptions executionOptions)
         {
+            if (psCommand is null)
+            {
+                throw new ArgumentNullException(nameof(psCommand));
+            }
+
+            if (executionOptions is null)
+            {
+                throw new ArgumentNullException(nameof(executionOptions));
+            }
             // Add history to PSReadLine before cancelling, otherwise it will be restored as the
             // cancelled prompt when it's called again.
             if (executionOptions.AddToHistory)
@@ -972,6 +991,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             bool writeOutputToHost,
             bool addToHistory)
         {
+            if (scriptString is null)
+            {
+                throw new ArgumentNullException(nameof(scriptString));
+            }
+
             return await this.ExecuteCommandAsync<object>(
                 new PSCommand().AddScript(scriptString.Trim()),
                 errorMessages,
@@ -992,6 +1016,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task ExecuteScriptWithArgsAsync(string script, string arguments = null, bool writeInputToHost = false)
         {
+            if (script is null)
+            {
+                throw new ArgumentNullException(nameof(script));
+            }
+
             PSCommand command = new PSCommand();
 
             if (arguments != null)
@@ -1569,7 +1598,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="isPathAlreadyEscaped">Specify false to have the path escaped, otherwise specify true if the path has already been escaped.</param>
         public async Task SetWorkingDirectoryAsync(string path, bool isPathAlreadyEscaped)
         {
-            this.InitialWorkingDirectory = path;
+            this.InitialWorkingDirectory = path ?? throw new ArgumentNullException(nameof(path));
 
             if (!isPathAlreadyEscaped)
             {
@@ -1675,6 +1704,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string EscapePath(string path, bool escapeSpaces)
         {
+            if (path is null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
             return WildcardEscapePath(path, escapeSpaces);
         }
 
@@ -1728,6 +1762,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string UnescapePath(string path)
         {
+            if (path is null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
             return UnescapeWildcardEscapedPath(path);
         }
 
@@ -1816,6 +1855,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             public MinifiedRunspaceDetails(RunspaceDetails eventArgs)
             {
+                if (eventArgs is null)
+                {
+                    throw new ArgumentNullException(nameof(eventArgs));
+                }
+
                 this.PowerShellVersion = new PowerShellVersion(eventArgs.PowerShellVersion);
                 this.RunspaceType = eventArgs.Location;
                 this.ConnectionString = eventArgs.ConnectionString;

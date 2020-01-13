@@ -135,6 +135,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>True if the command is newly registered, false if the command already exists.</returns>
         public bool RegisterCommand(EditorCommand editorCommand)
         {
+            if (editorCommand is null)
+            {
+                throw new ArgumentNullException(nameof(editorCommand));
+            }
+
             bool commandExists =
                 this.editorCommands.ContainsKey(
                     editorCommand.Name);
