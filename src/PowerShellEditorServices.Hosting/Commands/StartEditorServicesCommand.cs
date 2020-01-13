@@ -12,6 +12,7 @@ using System.Management.Automation;
 using System.Reflection;
 using SMA = System.Management.Automation;
 using Microsoft.PowerShell.EditorServices.Hosting;
+using System.Globalization;
 
 #if DEBUG
 using System.Diagnostics;
@@ -264,7 +265,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             if (File.Exists(logPath))
             {
                 int randomInt = new Random().Next();
-                logPath = Path.Combine(logDirPath, $"StartEditorServices-temp{randomInt.ToString("X")}.log");
+                logPath = Path.Combine(logDirPath, $"StartEditorServices-temp{randomInt.ToString("X", CultureInfo.InvariantCulture.NumberFormat)}.log");
             }
 
             var fileLogger = StreamLogger.CreateWithNewFile(logPath);
