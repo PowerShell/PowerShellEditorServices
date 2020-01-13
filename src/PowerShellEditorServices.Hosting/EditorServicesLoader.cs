@@ -27,9 +27,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// </summary>
     public sealed class EditorServicesLoader : IDisposable
     {
-        private const int Net461Version = 394254;
 
 #if !CoreCLR
+        private const int Net461Version = 394254;
+
         private static readonly string s_psesBaseDirPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 #endif
 

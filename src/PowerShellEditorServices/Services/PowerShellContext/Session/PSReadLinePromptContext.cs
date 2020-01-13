@@ -46,15 +46,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private readonly PowerShellContextService _powerShellContext;
 
-        private PromptNest _promptNest;
+        private readonly PromptNest _promptNest;
 
-        private InvocationEventQueue _invocationEventQueue;
+        private readonly InvocationEventQueue _invocationEventQueue;
 
-        private ConsoleReadLine _consoleReadLine;
+        private readonly ConsoleReadLine _consoleReadLine;
+
+        private readonly PSReadLineProxy _readLineProxy;
 
         private CancellationTokenSource _readLineCancellationSource;
-
-        private PSReadLineProxy _readLineProxy;
 
         internal PSReadLinePromptContext(
             PowerShellContextService powerShellContext,

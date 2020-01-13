@@ -57,8 +57,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly SemaphoreSlim resumeRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
         private readonly OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer _languageServer;
-        private bool isPSReadLineEnabled;
-        private ILogger logger;
+        private readonly bool isPSReadLineEnabled;
+        private readonly ILogger logger;
+
         private PowerShell powerShell;
         private bool ownsInitialRunspace;
         private RunspaceDetails initialRunspace;
@@ -68,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private IVersionSpecificOperations versionSpecificOperations;
 
-        private Stack<RunspaceDetails> runspaceStack = new Stack<RunspaceDetails>();
+        private readonly Stack<RunspaceDetails> runspaceStack = new Stack<RunspaceDetails>();
 
         private int isCommandLoopRestarterSet;
 
@@ -740,7 +741,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     // Don't change our SessionState for ReadLine.
                     if (!executionOptions.IsReadLine)
                     {
-                        shell.InvocationStateChanged += powerShell_InvocationStateChanged;
+                        shell.InvocationStateChanged += PowerShell_InvocationStateChanged;
                     }
 
                     shell.Runspace = executionOptions.ShouldExecuteInOriginalRunspace
@@ -765,7 +766,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     {
                         if (!executionOptions.IsReadLine)
                         {
-                            shell.InvocationStateChanged -= powerShell_InvocationStateChanged;
+                            shell.InvocationStateChanged -= PowerShell_InvocationStateChanged;
                         }
 
                         if (shell.HadErrors)
@@ -1147,7 +1148,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 cancellationToken).ConfigureAwait(false);
         }
 
-        internal static TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default(TResult))
+        internal static TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default)
         {
             using (PowerShell pwsh = PowerShell.Create())
             {
@@ -1490,7 +1491,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (PromptNest.IsMainThreadBusy() || (runspaceHandle.IsReadLine && PromptNest.IsReadLineBusy()))
             {
-                var unusedTask = PromptNest
+                _ = PromptNest
                     .ReleaseRunspaceHandleAsync(runspaceHandle)
                     .ConfigureAwait(false);
             }
@@ -1943,9 +1944,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             const string ExceptionFormat =
                 "{0}\r\n{1}\r\n    + CategoryInfo          : {2}\r\n    + FullyQualifiedErrorId : {3}";
 
-            IContainsErrorRecord containsErrorRecord = e as IContainsErrorRecord;
-
-            if (containsErrorRecord == null ||
+            if (!(e is IContainsErrorRecord containsErrorRecord) ||
                 containsErrorRecord.ErrorRecord == null)
             {
                 this.WriteError(e.Message, null, 0, 0);
@@ -2010,7 +2009,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        void powerShell_InvocationStateChanged(object sender, PSInvocationStateChangedEventArgs e)
+        void PowerShell_InvocationStateChanged(object sender, PSInvocationStateChangedEventArgs e)
         {
             SessionStateChangedEventArgs eventArgs = TranslateInvocationStateInfo(e.InvocationStateInfo);
             this.OnSessionStateChanged(this, eventArgs);
@@ -2018,9 +2017,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private static SessionStateChangedEventArgs TranslateInvocationStateInfo(PSInvocationStateInfo invocationState)
         {
-            PowerShellContextState newState = PowerShellContextState.Unknown;
             PowerShellExecutionResult executionResult = PowerShellExecutionResult.NotFinished;
 
+            PowerShellContextState newState;
             switch (invocationState.State)
             {
                 case PSInvocationState.NotStarted:
@@ -2346,8 +2345,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             }
 
-            EventHandler<RunspaceAvailabilityEventArgs> handler = null;
-            handler = (runspace, eventArgs) =>
+            void availabilityChangedHandler(object runspace, RunspaceAvailabilityEventArgs eventArgs)
             {
                 if (eventArgs.RunspaceAvailability != RunspaceAvailability.Available ||
                     this.versionSpecificOperations.IsDebuggerStopped(this.PromptNest, (Runspace)runspace))
@@ -2355,12 +2353,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     return;
                 }
 
-                ((Runspace)runspace).AvailabilityChanged -= handler;
+                ((Runspace)runspace).AvailabilityChanged -= availabilityChangedHandler;
                 Interlocked.Exchange(ref this.isCommandLoopRestarterSet, 0);
                 this.ConsoleReader?.StartCommandLoop();
-            };
+            }
 
-            this.CurrentRunspace.Runspace.AvailabilityChanged += handler;
+            this.CurrentRunspace.Runspace.AvailabilityChanged += availabilityChangedHandler;
             Interlocked.Exchange(ref this.isCommandLoopRestarterSet, 1);
         }
 

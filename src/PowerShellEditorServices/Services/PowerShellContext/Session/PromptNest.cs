@@ -18,21 +18,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// </summary>
     internal class PromptNest : IDisposable
     {
-        private ConcurrentStack<PromptNestFrame> _frameStack;
+        private readonly ConcurrentStack<PromptNestFrame> _frameStack;
 
-        private PromptNestFrame _readLineFrame;
+        private readonly PromptNestFrame _readLineFrame;
+
+        private readonly IVersionSpecificOperations _versionSpecificOperations;
+
+        private readonly object _syncObject = new object();
+
+        private readonly object _disposeSyncObject = new object();
 
         private IHostInput _consoleReader;
 
         private PowerShellContextService _powerShellContext;
 
-        private IVersionSpecificOperations _versionSpecificOperations;
-
         private bool _isDisposed;
-
-        private object _syncObject = new object();
-
-        private object _disposeSyncObject = new object();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PromptNest" /> class.

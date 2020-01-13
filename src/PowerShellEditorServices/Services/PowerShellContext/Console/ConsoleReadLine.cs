@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     internal class ConsoleReadLine
     {
         #region Private Field
-        private PowerShellContextService powerShellContext;
+        private readonly PowerShellContextService powerShellContext;
 
         #endregion
 
@@ -48,6 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             SecureString secureString = new SecureString();
 
+            // TODO: Are these values used?
             int initialPromptRow = await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false);
             int initialPromptCol = await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false);
             int previousInputLength = 0;
@@ -154,6 +155,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         internal async Task<string> InvokeLegacyReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
+            // TODO: Is inputBeforeCompletion used?
             string inputBeforeCompletion = null;
             string inputAfterCompletion = null;
             CommandCompletion currentCompletion = null;
@@ -166,6 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             int initialCursorCol = await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false);
             int initialCursorRow = await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false);
 
+            // TODO: Are these used?
             int initialWindowLeft = Console.WindowLeft;
             int initialWindowTop = Console.WindowTop;
 
@@ -488,6 +491,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             return null;
         }
 
+        // TODO: Is this used?
         private int CalculateIndexFromCursor(
             int promptStartCol,
             int promptStartRow,

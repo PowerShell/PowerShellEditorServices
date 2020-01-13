@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     {
         #region Fields
 
-        private Dictionary<string, EditorCommand> editorCommands =
+        private readonly Dictionary<string, EditorCommand> editorCommands =
             new Dictionary<string, EditorCommand>();
 
         private readonly ILanguageServer _languageServer;
@@ -104,9 +104,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task InvokeCommandAsync(string commandName, EditorContext editorContext)
         {
-            EditorCommand editorCommand;
 
-            if (this.editorCommands.TryGetValue(commandName, out editorCommand))
+            if (this.editorCommands.TryGetValue(commandName, out EditorCommand editorCommand))
             {
                 PSCommand executeCommand = new PSCommand();
                 executeCommand.AddCommand("Invoke-Command");
@@ -165,8 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="commandName">The name of the command to be unregistered.</param>
         public void UnregisterCommand(string commandName)
         {
-            EditorCommand existingCommand = null;
-            if (this.editorCommands.TryGetValue(commandName, out existingCommand))
+            if (this.editorCommands.TryGetValue(commandName, out EditorCommand existingCommand))
             {
                 this.editorCommands.Remove(commandName);
                 this.OnCommandRemoved(existingCommand);
