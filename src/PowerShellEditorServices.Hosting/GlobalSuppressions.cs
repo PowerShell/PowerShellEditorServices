@@ -8,4 +8,4 @@
 
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "PSCmdlet.ThrowTerminatingError() is used instead", Scope = "member", Target = "~M:Microsoft.PowerShell.EditorServices.Commands.StartEditorServicesCommand.EndProcessing")]
 
-[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly", Justification = "<Pending>", Scope = "member", Target = "~M:Microsoft.PowerShell.EditorServices.Hosting.EditorServicesLoader.ValidateConfiguration")]
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly", Justification = "Checking user input from a configuration", Scope = "member", Target = "~M:Microsoft.PowerShell.EditorServices.Hosting.EditorServicesLoader.ValidateConfiguration")]
