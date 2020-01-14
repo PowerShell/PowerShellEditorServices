@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
         public StartEditorServicesCommand()
         {
-            SetDistributionChannel();
+            Environment.SetEnvironmentVariable("POWERSHELL_DISTRIBUTION_CHANNEL", "PSES");
             _disposableResources = new List<IDisposable>();
             _loggerUnsubscribers = new List<IDisposable>();
         }
@@ -278,12 +278,6 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             _loggerUnsubscribers.Add(fileLoggerUnsubscriber);
 
             _logger.Log(PsesLogLevel.Diagnostic, "Logging started");
-        }
-        
-        private static void SetDistributionChannel()
-        {
-            //Sets the distribution channel to PSES so starts can be distinguished in PS7+ telemetry
-            Environment.SetEnvironmentVariable("POWERSHELL_DISTRIBUTION_CHANNEL", "PSES");
         }
 
         private string GetLogDirPath()
