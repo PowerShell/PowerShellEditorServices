@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
             catch (Exception ex)
             {
-                str = $"<Error converting poperty value to string - {ex.Message}>";
+                str = $"<Error converting property value to string - {ex.Message}>";
             }
 
             return str;

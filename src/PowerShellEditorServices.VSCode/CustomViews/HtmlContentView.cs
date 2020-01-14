@@ -7,8 +7,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.Extensions.Logging;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
@@ -16,29 +16,29 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     {
         public HtmlContentView(
             string viewTitle,
-            IMessageSender messageSender,
+            ILanguageServer languageServer,
             ILogger logger)
                 : base(
                     viewTitle,
                     CustomViewType.HtmlContent,
-                    messageSender,
+                    languageServer,
                     logger)
         {
         }
 
-        public Task SetContentAsync(string htmlBodyContent)
+        public async Task SetContentAsync(string htmlBodyContent)
         {
-            return
-                this.messageSender.SendRequestAsync(
-                    SetHtmlContentViewRequest.Type,
-                    new SetHtmlContentViewRequest
-                    {
-                        Id = this.Id,
-                        HtmlContent = new HtmlContent { BodyContent = htmlBodyContent }
-                    }, true);
+            await languageServer.SendRequest(
+                SetHtmlContentViewRequest.Method,
+                new SetHtmlContentViewRequest
+                {
+                    Id = this.Id,
+                    HtmlContent = new HtmlContent { BodyContent = htmlBodyContent }
+                }
+            );
         }
 
-        public Task SetContentAsync(HtmlContent htmlContent)
+        public async Task SetContentAsync(HtmlContent htmlContent)
         {
             HtmlContent validatedContent =
                 new HtmlContent()
@@ -48,26 +48,26 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                     StyleSheetPaths = this.GetUriPaths(htmlContent.StyleSheetPaths)
                 };
 
-            return
-                this.messageSender.SendRequestAsync(
-                    SetHtmlContentViewRequest.Type,
-                    new SetHtmlContentViewRequest
-                    {
-                        Id = this.Id,
-                        HtmlContent = validatedContent
-                    }, true);
+            await languageServer.SendRequest(
+                SetHtmlContentViewRequest.Method,
+                new SetHtmlContentViewRequest
+                {
+                    Id = this.Id,
+                    HtmlContent = validatedContent
+                }
+            );
         }
 
-        public Task AppendContentAsync(string appendedHtmlBodyContent)
+        public async Task AppendContentAsync(string appendedHtmlBodyContent)
         {
-            return
-                this.messageSender.SendRequestAsync(
-                    AppendHtmlContentViewRequest.Type,
-                    new AppendHtmlContentViewRequest
-                    {
-                        Id = this.Id,
-                        AppendedHtmlBodyContent = appendedHtmlBodyContent
-                    }, true);
+            await languageServer.SendRequest(
+                AppendHtmlContentViewRequest.Method,
+                new AppendHtmlContentViewRequest
+                {
+                    Id = this.Id,
+                    AppendedHtmlBodyContent = appendedHtmlBodyContent
+                }
+            );
         }
 
         private string[] GetUriPaths(string[] filePaths)

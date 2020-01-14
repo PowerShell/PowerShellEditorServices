@@ -1,5 +1,118 @@
 # PowerShell Editor Services Release History
 
+## v2.0.0-preview.8
+### Monday, January 13, 2020
+
+- 📺 [vscode-powershell #2405](https://github.com/PowerShell/PowerShellEditorServices/pull/1152) -
+  Add tooltip to completions ParameterValue.
+- 🛫 🐛 [vscode-powershell #2393](https://github.com/PowerShell/PowerShellEditorServices/pull/1151) -
+  Probe netfx dir for deps.
+- 🚂 ⏱️ 🐛 [vscode-powershell #2352](https://github.com/PowerShell/PowerShellEditorServices/pull/1149) -
+  Fix lock up that occurs when WinForms is executed on the pipeline thread.
+- 💭 🐛 [vscode-powershell #2402](https://github.com/PowerShell/PowerShellEditorServices/pull/1150) -
+  Fix temp debugging after it broke bringing in $psEditor.
+- 🧠 🐛 [vscode-powershell #2324](https://github.com/PowerShell/PowerShellEditorServices/pull/1143) -
+  Fix unicode character uri bug.
+- 🛫 📺 ✨ [vscode-powershell #2370](https://github.com/PowerShell/PowerShellEditorServices/pull/1141) -
+  Make startup banner simpler.
+- [vscode-powershell #2386](https://github.com/PowerShell/PowerShellEditorServices/pull/1140) -
+  Fix uncaught exception when SafeToString returns null. (Thanks @jborean93!)
+- 🔗 🐛 [vscode-powershell #2374](https://github.com/PowerShell/PowerShellEditorServices/pull/1139) -
+  Simplify logic of determining Reference definition.
+- 🛫 🐛 [vscode-powershell #2379](https://github.com/PowerShell/PowerShellEditorServices/pull/1138) -
+  Use -Option AllScope to fix Windows PowerShell error.
+
+## v2.0.0-preview.7
+### Wednesday, December 11, 2019
+
+- 👷 📟 [PowerShellEditorServices #1129](https://github.com/PowerShell/PowerShellEditorServices/pull/1129) -
+  Update PSReadLine to 2.0.0-rc1 in modules.json.
+- 🛫 🐛 ⚡️ [vscode-powershell #2292](https://github.com/PowerShell/PowerShellEditorServices/pull/1118) -
+  Isolate PSES dependencies from PowerShell on load + make PSES a pure binary module.
+- ✨ 📟 [PowerShellEditorServices #1108](https://github.com/PowerShell/PowerShellEditorServices/pull/1108) -
+  Clear the terminal via the LSP.
+- 🔍 🐛 [vscode-powershell #2319](https://github.com/PowerShell/PowerShellEditorServices/pull/1117) -
+  Run one invocation per SetBreakpoints request. (Thanks @SeeminglyScience!)
+- 🐛 [PowerShellEditorServices #1114](https://github.com/PowerShell/PowerShellEditorServices/pull/1114) -
+  Fix Import-EditorCommand -Module. (Thanks @sk82jack!)
+- 🐛 🔍 [PowerShellEditorServices #1112](https://github.com/PowerShell/PowerShellEditorServices/pull/1112) -
+  Fix breakpoint setting deadlock.
+- 🔗 🐛 [vscode-powershell #2306](https://github.com/PowerShell/PowerShellEditorServices/pull/1110) -
+  Fix references on Windows due to bad WorkspacePath.
+- ✨ 👷 [PowerShellEditorServices #993](https://github.com/PowerShell/PowerShellEditorServices/pull/993) -
+  Add devcontainer support for building in container. (Thanks @bergmeister!)
+- 🛫 🐛 [vscode-powershell #2311](https://github.com/PowerShell/PowerShellEditorServices/pull/1107) -
+  Protect against no RootUri (no open workspace).
+- 🐛 📟 [vscode-powershell #2274](https://github.com/PowerShell/PowerShellEditorServices/pull/1092) -
+  Fix '@' appearing in console.
+- 👮‍ 🐛 [vscode-powershell #2288](https://github.com/PowerShell/PowerShellEditorServices/pull/1094) -
+  Use RootUri.LocalPath for workspace path.
+- 🐛 👮‍ [PowerShellEditorServices #1101](https://github.com/PowerShell/PowerShellEditorServices/pull/1101) -
+  Add `PSAvoidAssignmentToAutomaticVariable` to the default set of PSSA rules. (Thanks @bergmeister!)
+- 👮‍ 🔗 🐛 [vscode-powershell #2290](https://github.com/PowerShell/PowerShellEditorServices/pull/1098) -
+  Fix diagnostics not showing in untitled files and now also show CodeLens.
+- 🔍 🐛 [vscode-powershell #1850](https://github.com/PowerShell/PowerShellEditorServices/pull/1097) -
+  Fixes no prompt showing up when debugging.
+- 🚂 📺 🐛 [vscode-powershell #2284](https://github.com/PowerShell/PowerShellEditorServices/pull/1096) -
+  Fix running indicator by ignoring PSRL aborts.
+
+## v2.0.0-preview.6
+### Friday, November 1, 2019
+
+#### Special Note
+In this release of the preview extension,
+we've merged significant architectural work into PowerShell Editor Services.
+After several months of work, PSES now uses the Omnisharp LSP library
+to handle Language Server Protocol interaction instead of rolling its own,
+allowing PSES to concentrate on being a good PowerShell backend.
+We hope you'll see increased performance and stability in this release.
+As always, [please let us know if you find any issues](https://github.com/PowerShell/PowerShellEditorServices/issues/new).
+
+- 🐛 [PowerShellEditorServices #1080](https://github.com/PowerShell/PowerShellEditorServices/pull/1080) -
+  Remove extra newline in GetComment feature.
+- 🐛 [PowerShellEditorServices #1079](https://github.com/PowerShell/PowerShellEditorServices/pull/1079) -
+  Fix duplicate diagnostics caused by DidChange handler.
+- 🔧 [PowerShellEditorServices #1076](https://github.com/PowerShell/PowerShellEditorServices/pull/1076) -
+  Graduate PSReadLine feature and add UseLegacyReadLine.
+- ⚙️ [PowerShellEditorServices #1075](https://github.com/PowerShell/PowerShellEditorServices/pull/1075) -
+  Lock OmniSharp dependencies to v0.14.0. (Thanks @mholo65!)
+- 📟 [PowerShellEditorServices #1064](https://github.com/PowerShell/PowerShellEditorServices/pull/1064) -
+  Add support for terminal error color settings in PS7.
+- 🐛 [PowerShellEditorServices #1073](https://github.com/PowerShell/PowerShellEditorServices/pull/1073) -
+  Fix prerelease version discovery and fix omnisharp change.
+- 🐛 [PowerShellEditorServices #1065](https://github.com/PowerShell/PowerShellEditorServices/pull/1065) -
+  Fix TEMP debugging.
+- 🐛 [vscode-powershell #1753](https://github.com/PowerShell/PowerShellEditorServices/pull/1072) -
+  Override PSRL ReadKey on Windows as well.
+- 💭 [PowerShellEditorServices #1066](https://github.com/PowerShell/PowerShellEditorServices/pull/1066) -
+  Rework Omnisharp logging integration to make logging to files work again.
+- 👷 [PowerShellEditorServices #1055](https://github.com/PowerShell/PowerShellEditorServices/pull/1055) -
+  Update .Net Core SDK from 2.1.801 to 2.1.802 (latest patch). (Thanks @bergmeister!)
+- 🚂 [PowerShellEditorServices #1056](https://github.com/PowerShell/PowerShellEditorServices/pull/1056) -
+  Re-architect PowerShell Editor Services to use the Omnisharp LSP platform.
+- 🐛 [vscode-powershell #2116](https://github.com/PowerShell/PowerShellEditorServices/pull/1044) -
+  Fix UNC intellisense backslash.
+
+## v2.0.0-preview.5
+### Monday, September 23, 2019
+
+- 🐛 [PowerShellEditorServices #1022](https://github.com/PowerShell/PowerShellEditorServices/pull/1022) -
+  Catch stream exceptions for some Debug Adapter stability.
+- 🔎 [PowerShellEditorServices #1021](https://github.com/PowerShell/PowerShellEditorServices/pull/1021) -
+  Add AutoCorrectAliases setting (PR to be made in VS-Code repo as well) to add support for optionally correcting aliases as well (added in PSSA 1.18.2). (Thanks @bergmeister!).
+- 🐛 [vscode-powershell #1994](https://github.com/PowerShell/PowerShellEditorServices/pull/1000) -
+  Fix crash when setBreakpoint from VSCode sends a git:/ URI.
+- 🧹 [PowerShellEditorServices #988](https://github.com/PowerShell/PowerShellEditorServices/pull/988) -
+  Remove consoleecho lib for PowerShell 7.
+- 📔 [PowerShellEditorServices #986](https://github.com/PowerShell/PowerShellEditorServices) -
+  Documentation updates. (Thanks @SydneyhSmith!)
+- ⚙️ [PowerShellEditorServices #981](https://github.com/PowerShell/PowerShellEditorServices/pull/981) -
+  Update NewtonSoft.Json dependency from 10.0.3 to 11.02 since PS 6.0 has been deprecated. (Thanks @bergmeister!)
+- 🐛 [vscode-powershell #2007](https://github.com/PowerShell/PowerShellEditorServices/pull/974) -
+  Defend against crash when no PSScriptAnalyzer is found.
+- 👷 [PowerShellEditorServices #978](https://github.com/PowerShell/PowerShellEditorServices/pull/977) -
+  Delete stale WebSocket code.
+
 ## v2.0.0-preview.4
 ### Wednesday, May 22, 2019
 

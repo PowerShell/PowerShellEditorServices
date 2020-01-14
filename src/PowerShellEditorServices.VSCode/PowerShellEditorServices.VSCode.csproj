@@ -6,6 +6,7 @@
     <Description>Provides added functionality to PowerShell Editor Services for the Visual Studio Code editor.</Description>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.VSCode</AssemblyName>
+    <Configurations>Debug;Release;CoreCLR</Configurations>
   </PropertyGroup>
 
   <!-- Fail the release build if there are missing public API documentation comments -->
@@ -16,8 +17,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PowerShellEditorServices\PowerShellEditorServices.csproj" />
-    <ProjectReference Include="..\PowerShellEditorServices.Protocol\PowerShellEditorServices.Protocol.csproj" />
-    <ProjectReference Include="..\PowerShellEditorServices.Host\PowerShellEditorServices.Host.csproj" />
+    <PackageReference Include="PowerShellStandard.Library" Version="5.1.0">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

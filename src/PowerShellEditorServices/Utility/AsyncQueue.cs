@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </returns>
         public async Task EnqueueAsync(T item)
         {
-            using (await queueLock.LockAsync())
+            using (await queueLock.LockAsync().ConfigureAwait(false))
             {
                 TaskCompletionSource<T> requestTaskSource = null;
 
@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         {
             Task<T> requestTask;
 
-            using (await queueLock.LockAsync(cancellationToken))
+            using (await queueLock.LockAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (this.itemQueue.Count > 0)
                 {
@@ -171,7 +171,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             // Wait for the request task to complete outside of the lock
-            return await requestTask;
+            return await requestTask.ConfigureAwait(false);
         }
 
         /// <summary>
@@ -221,4 +221,3 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         #endregion
     }
 }
-

@@ -7,7 +7,7 @@ function Import-EditorCommand {
     <#
     .EXTERNALHELP ..\PowerShellEditorServices.Commands-help.xml
     #>
-    [OutputType([Microsoft.PowerShell.EditorServices.Extensions.EditorCommand])]
+    [OutputType([Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommand])]
     [CmdletBinding(DefaultParameterSetName='ByCommand')]
     param(
         [Parameter(Position=0,
@@ -57,14 +57,11 @@ function Import-EditorCommand {
                 return $moduleInfo.ExportedFunctions.Values
             }
         }
-        $flags = [Reflection.BindingFlags]'Instance, NonPublic'
-        $extensionService = $psEditor.GetType().
-                                      GetField('extensionService', $flags).
-                                      GetValue($psEditor)
+        $editorCommands = @{}
 
-        $editorCommands = $extensionService.GetType().
-                                            GetField('editorCommands', $flags).
-                                            GetValue($extensionService)
+        foreach ($existingCommand in $psEditor.GetCommands()) {
+            $editorCommands[$existingCommand.Name] = $existingCommand
+        }
     }
     process {
         switch ($PSCmdlet.ParameterSetName) {
@@ -75,7 +72,7 @@ function Import-EditorCommand {
                 $commands = $Command | Get-Command -ErrorAction SilentlyContinue
             }
         }
-        $attributeType = [Microsoft.PowerShell.EditorServices.Extensions.EditorCommandAttribute]
+        $attributeType = [Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommandAttribute]
         foreach ($aCommand in $commands) {
             # Get the attribute from our command to get name info.
             $details = $aCommand.ScriptBlock.Attributes | Where-Object TypeId -eq $attributeType
@@ -99,7 +96,7 @@ function Import-EditorCommand {
                 }
                 # Check for a context parameter.
                 $contextParameter = $aCommand.Parameters.Values |
-                    Where-Object ParameterType -eq ([Microsoft.PowerShell.EditorServices.Extensions.EditorContext])
+                    Where-Object ParameterType -eq ([Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorContext])
 
                 # If one is found then add a named argument. Otherwise call the command directly.
                 if ($contextParameter) {
@@ -109,7 +106,7 @@ function Import-EditorCommand {
                     $scriptBlock = [scriptblock]::Create($aCommand.Name)
                 }
 
-                $editorCommand = New-Object Microsoft.PowerShell.EditorServices.Extensions.EditorCommand @(
+                $editorCommand = New-Object Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommand @(
                     <# commandName:    #> $details.Name,
                     <# displayName:    #> $details.DisplayName,
                     <# suppressOutput: #> $details.SuppressOutput,

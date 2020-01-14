@@ -20,7 +20,7 @@ the PowerShell debugger.
 Use the @Microsoft.PowerShell.EditorServices.Console.ConsoleService to provide interactive
 console support in the user's editor.
 
-Use the @Microsoft.PowerShell.EditorServices.Extensions.ExtensionService to allow
+Use the @Microsoft.PowerShell.EditorServices.Services.ExtensionService to allow
 the user to extend the host editor with new capabilities using PowerShell code.
 
 The core of all the services is the @Microsoft.PowerShell.EditorServices.PowerShellContext

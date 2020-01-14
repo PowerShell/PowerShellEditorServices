@@ -5,8 +5,6 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
-using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {

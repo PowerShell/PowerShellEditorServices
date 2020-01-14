@@ -9,7 +9,7 @@ uses PowerShell Editor Services.
 ### Introducing `$psEditor`
 
 The entry point for the PowerShell Editor Services extensibility model is the `$psEditor`
-object of the type @Microsoft.PowerShell.EditorServices.Extensions.EditorObject. For
+object of the type @Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorObject. For
 those familiar with the PowerShell ISE's `$psISE` object, the `$psEditor` object is very
 similar.  The primary difference is that this model has been generalized to work against
 any editor which leverages PowerShell Editor Services for its PowerShell editing experience.
@@ -19,7 +19,7 @@ any editor which leverages PowerShell Editor Services for its PowerShell editing
 > please file an issue on our GitHub page.
 
 This object gives access to all of the high-level services in the current
-editing session.  For example, the @Microsoft.PowerShell.EditorServices.Extensions.EditorObject.Workspace
+editing session.  For example, the @Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorObject.Workspace
 property gives access to the editor's workspace, allowing you to create or open files
 in the editor.
 
@@ -79,17 +79,17 @@ Register-EditorCommand `
     -ScriptBlock { Write-Output "My command's script block was invoked!" }
 ```
 
-### The @Microsoft.PowerShell.EditorServices.Extensions.EditorContext parameter
+### The @Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorContext parameter
 
 Your function, cmdlet, or ScriptBlock can optionally accept a single parameter
-of type @Microsoft.PowerShell.EditorServices.Extensions.EditorContext which provides
+of type @Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorContext which provides
 information about the state of the host editor at the time your command was
 invoked.  With this object you can easily perform operations like manipulatin the
 state of the user's active editor buffer or changing the current selection.
 
 The usual convention is that a `$context` parameter is added to your editor
 command's function.  For now it is recommended that you fully specify the
-type of the @Microsoft.PowerShell.EditorServices.Extensions.EditorContext object
+type of the @Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorContext object
 so that you get full IntelliSense on your context parameter.
 
 Here is an example of using the `$context` parameter:
@@ -99,7 +99,7 @@ Register-EditorCommand `
     -Name "MyModule.MyEditorCommandWithContext" `
     -DisplayName "My command with context usage" `
     -ScriptBlock {
-        param([Microsoft.PowerShell.EditorServices.Extensions.EditorContext]$context)
+        param([Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorContext]$context)
         Write-Output "The user's cursor is on line $($context.CursorPosition.Line)!"
     }
 ```

@@ -4,8 +4,6 @@
 //
 
 using System;
-using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Protocol.MessageProtocol;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
@@ -15,11 +13,9 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     public class NewCustomViewRequest
     {
         /// <summary>
-        /// The RequestType for this request.
+        /// The Language Server Protocol 'method'.
         /// </summary>
-        public static readonly
-            RequestType<NewCustomViewRequest, object, object, object> Type =
-            RequestType<NewCustomViewRequest, object, object, object>.Create("powerShell/newCustomView");
+        public static string Method => "powerShell/newCustomView";
 
         /// <summary>
         /// Gets or sets the Id of the view.
@@ -43,11 +39,9 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     public class ShowCustomViewRequest
     {
         /// <summary>
-        /// The RequestType for this request.
+        /// The Language Server Protocol 'method'.
         /// </summary>
-        public static readonly
-            RequestType<ShowCustomViewRequest, object, object, object> Type =
-            RequestType<ShowCustomViewRequest, object, object, object>.Create("powerShell/showCustomView");
+        public static string Method => "powerShell/showCustomView";
 
         /// <summary>
         /// Gets or sets the Id of the view.
@@ -66,11 +60,9 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     public class CloseCustomViewRequest
     {
         /// <summary>
-        /// The RequestType for this request.
+        /// The Language Server Protocol 'method'.
         /// </summary>
-        public static readonly
-            RequestType<CloseCustomViewRequest, object, object, object> Type =
-            RequestType<CloseCustomViewRequest, object, object, object>.Create("powerShell/closeCustomView");
+        public static string Method => "powerShell/closeCustomView";
 
         /// <summary>
         /// Gets or sets the Id of the view.

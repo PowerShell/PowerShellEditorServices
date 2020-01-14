@@ -9,7 +9,14 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'PowerShellEditorServices.psm1'
+RootModule = if ($PSEdition -eq 'Core')
+    {
+        'bin/Core/Microsoft.PowerShell.EditorServices.Hosting.dll'
+    }
+    else
+    {
+        'bin/Desktop/Microsoft.PowerShell.EditorServices.Hosting.dll'
+    }
 
 # Version number of this module.
 ModuleVersion = '2.0.0'
@@ -66,10 +73,10 @@ Copyright = '(c) 2017 Microsoft. All rights reserved.'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('Start-EditorServicesHost', 'Get-PowerShellEditorServicesVersion', 'Compress-LogDir')
+FunctionsToExport = @()
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = @()
+CmdletsToExport = @('Start-EditorServices')
 
 # Variables to export from this module
 VariablesToExport = @()
