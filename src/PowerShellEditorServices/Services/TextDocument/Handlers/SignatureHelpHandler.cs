@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     scriptFile,
                     (int) request.Position.Line + 1,
                     (int) request.Position.Character + 1,
-                    _powerShellContextService);
+                    _powerShellContextService).ConfigureAwait(false);
 
             SignatureInformation[] signatures = s_emptySignatureResult;
 

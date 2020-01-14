@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             formattedScript = await _analysisService.FormatAsync(
                 scriptFile.Contents,
                 pssaSettings,
-                null);
+                null).ConfigureAwait(false);
             formattedScript = formattedScript ?? scriptFile.Contents;
 
             return new TextEditContainer(new TextEdit
@@ -159,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             formattedScript = await _analysisService.FormatAsync(
                 scriptFile.Contents,
                 pssaSettings,
-                rangeList);
+                rangeList).ConfigureAwait(false);
             formattedScript = formattedScript ?? scriptFile.Contents;
 
             return new TextEditContainer(new TextEdit

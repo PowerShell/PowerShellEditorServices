@@ -110,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// A Task instance that can be monitored for completion to get
         /// the user's choice.
         /// </returns>
-        public async Task<int> PromptForChoiceAsync(
+        public Task<int> PromptForChoiceAsync(
             string promptCaption,
             string promptMessage,
             ChoiceDetails[] choices,
@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             cancellationToken.Register(this.CancelPrompt, true);
 
             // Convert the int[] result to int
-            return await this.WaitForTaskAsync(
+            return this.WaitForTaskAsync(
                 this.StartPromptLoopAsync(this.promptCancellationTokenSource.Token)
                     .ContinueWith(
                         task =>
@@ -173,7 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// A Task instance that can be monitored for completion to get
         /// the user's choices.
         /// </returns>
-        public async Task<int[]> PromptForChoiceAsync(
+        public Task<int[]> PromptForChoiceAsync(
             string promptCaption,
             string promptMessage,
             ChoiceDetails[] choices,
@@ -191,17 +191,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             // Cancel the TaskCompletionSource if the caller cancels the task
             cancellationToken.Register(this.CancelPrompt, true);
 
-            return await this.WaitForTaskAsync(
+            return this.WaitForTaskAsync(
                 this.StartPromptLoopAsync(
                     this.promptCancellationTokenSource.Token));
         }
 
         private async Task<T> WaitForTaskAsync<T>(Task<T> taskToWait)
         {
-            Task finishedTask =
-                await Task.WhenAny(
-                    this.cancelTask.Task,
-                    taskToWait);
+            _ = await Task.WhenAny(cancelTask.Task, taskToWait).ConfigureAwait(false);
 
             if (this.cancelTask.Task.IsCanceled)
             {
@@ -221,7 +218,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                string responseString = await this.ReadInputStringAsync(cancellationToken);
+                string responseString = await ReadInputStringAsync(cancellationToken).ConfigureAwait(false);
                 if (responseString == null)
                 {
                     // If the response string is null, the prompt has been cancelled

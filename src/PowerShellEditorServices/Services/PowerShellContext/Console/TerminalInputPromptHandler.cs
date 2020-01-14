@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <returns>A Task that can be awaited to get the user's response.</returns>
         protected override async Task<string> ReadInputStringAsync(CancellationToken cancellationToken)
         {
-            string inputString = await this.consoleReadLine.ReadSimpleLineAsync(cancellationToken);
+            string inputString = await this.consoleReadLine.ReadSimpleLineAsync(cancellationToken).ConfigureAwait(false);
             this.hostOutput.WriteOutput(string.Empty);
 
             return inputString;
@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <returns>A Task that can be awaited to get the user's response.</returns>
         protected override async Task<SecureString> ReadSecureStringAsync(CancellationToken cancellationToken)
         {
-            SecureString secureString = await this.consoleReadLine.ReadSecureLineAsync(cancellationToken);
+            SecureString secureString = await this.consoleReadLine.ReadSecureLineAsync(cancellationToken).ConfigureAwait(false);
             this.hostOutput.WriteOutput(string.Empty);
 
             return secureString;

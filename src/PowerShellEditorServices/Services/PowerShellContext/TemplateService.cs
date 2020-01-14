@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 var getResult =
                     await this.powerShellContext.ExecuteCommandAsync<PSObject>(
-                        psCommand, false, false);
+                        psCommand, false, false).ConfigureAwait(false);
 
                 PSObject moduleObject = getResult.First();
                 this.isPlasterInstalled = moduleObject != null;
@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                     var importResult =
                         await this.powerShellContext.ExecuteCommandAsync<object>(
-                            psCommand, false, false);
+                            psCommand, false, false).ConfigureAwait(false);
 
                     this.isPlasterLoaded = importResult.Any();
                     string loadedQualifier =
@@ -141,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             var templateObjects =
                 await this.powerShellContext.ExecuteCommandAsync<PSObject>(
-                    psCommand, false, false);
+                    psCommand, false, false).ConfigureAwait(false);
 
             this.logger.LogTrace($"Found {templateObjects.Count()} Plaster templates");
 
@@ -180,7 +180,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     WriteOutputToHost = false,
                     WriteErrorsToHost = true,
                     InterruptCommandPrompt = true
-                });
+                }).ConfigureAwait(false);
 
             // If any errors were written out, creation was not successful
             return errorString.Length == 0;

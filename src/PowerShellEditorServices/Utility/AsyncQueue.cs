@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </returns>
         public async Task EnqueueAsync(T item)
         {
-            using (await queueLock.LockAsync())
+            using (await queueLock.LockAsync().ConfigureAwait(false))
             {
                 TaskCompletionSource<T> requestTaskSource = null;
 

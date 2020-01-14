@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 SymbolReference foundDefinition = await _symbolsService.GetDefinitionOfSymbolAsync(
                         scriptFile,
-                        foundSymbol);
+                        foundSymbol).ConfigureAwait(false);
 
                 if (foundDefinition != null)
                 {

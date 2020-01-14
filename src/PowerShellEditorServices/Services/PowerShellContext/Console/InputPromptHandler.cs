@@ -122,10 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             Task<Dictionary<string, object>> promptTask =
                 this.StartPromptLoopAsync(this.promptCancellationTokenSource.Token);
 
-            Task finishedTask =
-                await Task.WhenAny(
-                    cancelTask.Task,
-                    promptTask);
+            _ = await Task.WhenAny(cancelTask.Task, promptTask).ConfigureAwait(false);
 
             if (this.cancelTask.Task.IsCanceled)
             {
@@ -255,13 +252,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 // Read input depending on field type
                 if (this.currentField.FieldType == typeof(SecureString))
                 {
-                    SecureString secureString = await this.ReadSecureStringAsync(cancellationToken);
+                    SecureString secureString = await this.ReadSecureStringAsync(cancellationToken).ConfigureAwait(false);
                     responseValue = secureString;
                     enteredValue = secureString != null;
                 }
                 else
                 {
-                    responseString = await this.ReadInputStringAsync(cancellationToken);
+                    responseString = await this.ReadInputStringAsync(cancellationToken).ConfigureAwait(false);
                     responseValue = responseString;
                     enteredValue = responseString != null && responseString.Length > 0;
 

@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 request.Expression,
                 writeInputToHost: true,
                 writeOutputToHost: true,
-                addToHistory: true);
+                addToHistory: true).ConfigureAwait(false);
 
             return new EvaluateResponseBody
             {

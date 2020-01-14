@@ -126,7 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 if (_remoteFileManagerService.IsUnderRemoteTempPath(savedFile.FilePath))
                 {
-                    await _remoteFileManagerService.SaveRemoteFileAsync(savedFile.FilePath);
+                    await _remoteFileManagerService.SaveRemoteFileAsync(savedFile.FilePath).ConfigureAwait(false);
                 }
             }
             return Unit.Value;

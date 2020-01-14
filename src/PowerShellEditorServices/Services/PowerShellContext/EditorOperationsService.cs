@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ClientEditorContext clientContext =
                 await _languageServer.SendRequest<GetEditorContextRequest, ClientEditorContext>(
                     "editor/getEditorContext",
-                    new GetEditorContextRequest());
+                    new GetEditorContextRequest()).ConfigureAwait(false);
 
             return this.ConvertClientEditorContext(clientContext);
         }
@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest<InsertTextRequest>("editor/insertText", new InsertTextRequest
+            await _languageServer.SendRequest("editor/insertText", new InsertTextRequest
             {
                 FilePath = filePath,
                 InsertText = text,
@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             Character = insertRange.End.Column - 1
                         }
                     }
-            });
+            }).ConfigureAwait(false);
         }
 
         public async Task SetSelectionAsync(BufferRange selectionRange)
@@ -80,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest<SetSelectionRequest>("editor/setSelection", new SetSelectionRequest
+            await _languageServer.SendRequest("editor/setSelection", new SetSelectionRequest
             {
                 SelectionRange =
                     new Range
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             Character = selectionRange.End.Column - 1
                         }
                     }
-            });
+            }).ConfigureAwait(false);
         }
 
         public EditorContext ConvertClientEditorContext(
@@ -128,7 +128,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest<string>("editor/newFile", null);
+            await _languageServer.SendRequest<string>("editor/newFile", null).ConfigureAwait(false);
         }
 
         public async Task OpenFileAsync(string filePath)
@@ -138,11 +138,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest<OpenFileDetails>("editor/openFile", new OpenFileDetails
+            await _languageServer.SendRequest("editor/openFile", new OpenFileDetails
             {
                 FilePath = filePath,
                 Preview = DefaultPreviewSetting
-            });
+            }).ConfigureAwait(false);
         }
 
         public async Task OpenFileAsync(string filePath, bool preview)
@@ -152,11 +152,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest<OpenFileDetails>("editor/openFile", new OpenFileDetails
+            await _languageServer.SendRequest("editor/openFile", new OpenFileDetails
             {
                 FilePath = filePath,
                 Preview = preview
-            });
+            }).ConfigureAwait(false);
         }
 
         public async Task CloseFileAsync(string filePath)
@@ -166,12 +166,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest<string>("editor/closeFile", filePath);
+            await _languageServer.SendRequest("editor/closeFile", filePath).ConfigureAwait(false);
         }
 
-        public async Task SaveFileAsync(string filePath)
+        public Task SaveFileAsync(string filePath)
         {
-            await SaveFileAsync(filePath, null);
+            return SaveFileAsync(filePath, null);
         }
 
         public async Task SaveFileAsync(string currentPath, string newSavePath)
@@ -181,11 +181,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest<SaveFileDetails>("editor/saveFile", new SaveFileDetails
+            await _languageServer.SendRequest("editor/saveFile", new SaveFileDetails
             {
                 FilePath = currentPath,
                 NewPath = newSavePath
-            });
+            }).ConfigureAwait(false);
         }
 
         public string GetWorkspacePath()
@@ -205,7 +205,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest<string>("editor/showInformationMessage", message);
+            await _languageServer.SendRequest("editor/showInformationMessage", message).ConfigureAwait(false);
         }
 
         public async Task ShowErrorMessageAsync(string message)
@@ -215,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest<string>("editor/showErrorMessage", message);
+            await _languageServer.SendRequest("editor/showErrorMessage", message).ConfigureAwait(false);
         }
 
         public async Task ShowWarningMessageAsync(string message)
@@ -225,7 +225,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest<string>("editor/showWarningMessage", message);
+            await _languageServer.SendRequest("editor/showWarningMessage", message).ConfigureAwait(false);
         }
 
         public async Task SetStatusBarMessageAsync(string message, int? timeout)
@@ -235,11 +235,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             }
 
-            await _languageServer.SendRequest<StatusBarMessageDetails>("editor/setStatusBarMessage", new StatusBarMessageDetails
+            await _languageServer.SendRequest("editor/setStatusBarMessage", new StatusBarMessageDetails
             {
                 Message = message,
                 Timeout = timeout
-            });
+            }).ConfigureAwait(false);
         }
 
         public void ClearTerminal()

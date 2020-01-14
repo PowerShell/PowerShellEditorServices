@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 // main runspace.
                 if (powerShellContext.IsCurrentRunspaceOutOfProcess())
                 {
-                    using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandleAsync(cancellationToken))
+                    using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandleAsync(cancellationToken).ConfigureAwait(false))
                     using (System.Management.Automation.PowerShell powerShell = System.Management.Automation.PowerShell.Create())
                     {
                         powerShell.Runspace = runspaceHandle.Runspace;
@@ -127,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                             cursorPosition,
                             options: null,
                             powershell: pwsh);
-                    });
+                    }).ConfigureAwait(false);
                 stopwatch.Stop();
                 logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
 

@@ -55,12 +55,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     {
                         try
                         {
-                            await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess");
+                            await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess").ConfigureAwait(false);
 
                             if (_debugStateService.IsRemoteAttach &&
                                 _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
                             {
-                                await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession");
+                                await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession").ConfigureAwait(false);
                             }
                         }
                         catch (Exception e)

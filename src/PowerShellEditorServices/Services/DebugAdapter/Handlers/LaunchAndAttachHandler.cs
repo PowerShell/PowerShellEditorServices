@@ -162,7 +162,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // the working dir should not be changed.
                 if (!string.IsNullOrEmpty(workingDir))
                 {
-                    await _powerShellContextService.SetWorkingDirectoryAsync(workingDir, isPathAlreadyEscaped: false);
+                    await _powerShellContextService.SetWorkingDirectoryAsync(workingDir, isPathAlreadyEscaped: false).ConfigureAwait(false);
                 }
 
                 _logger.LogTrace($"Working dir " + (string.IsNullOrEmpty(workingDir) ? "not set." : $"set to '{workingDir}'"));
@@ -272,7 +272,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 await _powerShellContextService.ExecuteScriptStringAsync(
                     $"Enter-PSSession -ComputerName \"{request.ComputerName}\"",
-                    errorMessages);
+                    errorMessages).ConfigureAwait(false);
 
                 if (errorMessages.Length > 0)
                 {
@@ -291,7 +291,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 await _powerShellContextService.ExecuteScriptStringAsync(
                     $"Enter-PSHostProcess -Id {processId}",
-                    errorMessages);
+                    errorMessages).ConfigureAwait(false);
 
                 if (errorMessages.Length > 0)
                 {
@@ -307,7 +307,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 await _powerShellContextService.ExecuteScriptStringAsync(
                     $"Enter-PSHostProcess -CustomPipeName {request.CustomPipeName}",
-                    errorMessages);
+                    errorMessages).ConfigureAwait(false);
 
                 if (errorMessages.Length > 0)
                 {
@@ -364,7 +364,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             try
             {
-                await executeTask;
+                await executeTask.ConfigureAwait(false);
             }
             catch (Exception e)
             {

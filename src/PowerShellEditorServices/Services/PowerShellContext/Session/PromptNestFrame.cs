@@ -130,7 +130,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         internal async Task WaitForFrameExitAsync(CancellationToken cancellationToken)
         {
-            await _frameExited.WaitAsync(cancellationToken);
+            await _frameExited.WaitAsync(cancellationToken).ConfigureAwait(false);
             _frameExited.Release();
         }
     }

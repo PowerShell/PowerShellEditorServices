@@ -17,6 +17,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System.Threading;
 using System.Collections.Concurrent;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -53,9 +54,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// An empty diagnostic result to return when a script fails analysis.
         /// </summary>
-        private static readonly PSObject[] s_emptyDiagnosticResult = new PSObject[0];
+        private static readonly PSObject[] s_emptyDiagnosticResult = Array.Empty<PSObject>();
 
-        private static readonly string[] s_emptyGetRuleResult = new string[0];
+        private static readonly string[] s_emptyGetRuleResult = Array.Empty<string>();
 
         private static CancellationTokenSource s_existingRequestCancellation;
 
@@ -171,6 +172,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </returns>
         public static AnalysisService Create(ConfigurationService configurationService, ILanguageServer languageServer, ILogger logger)
         {
+            Validate.IsNotNull(nameof(configurationService), configurationService);
             string settingsPath = configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
             try
             {
@@ -260,6 +262,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns></returns>
         public static Hashtable GetPSSASettingsHashtable(IDictionary<string, Hashtable> ruleSettingsMap)
         {
+            Validate.IsNotNull(nameof(ruleSettingsMap), ruleSettingsMap);
+
             var hashtable = new Hashtable();
             var ruleSettingsHashtable = new Hashtable();
 
@@ -280,9 +284,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="file">The ScriptFile which will be analyzed for semantic markers.</param>
         /// <returns>An array of ScriptFileMarkers containing semantic analysis results.</returns>
-        public async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(ScriptFile file)
+        public Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(ScriptFile file)
         {
-            return await GetSemanticMarkersAsync<string>(file, ActiveRules, SettingsPath);
+            return GetSemanticMarkersAsync<string>(file, ActiveRules, SettingsPath);
         }
 
         /// <summary>
@@ -291,9 +295,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="file">The ScriptFile to be analyzed.</param>
         /// <param name="settings">ScriptAnalyzer settings</param>
         /// <returns></returns>
-        public async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(ScriptFile file, Hashtable settings)
+        public Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(ScriptFile file, Hashtable settings)
         {
-            return await GetSemanticMarkersAsync<Hashtable>(file, null, settings);
+            return GetSemanticMarkersAsync<Hashtable>(file, null, settings);
         }
 
         /// <summary>
@@ -302,11 +306,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="scriptContent">The script content to be analyzed.</param>
         /// <param name="settings">ScriptAnalyzer settings</param>
         /// <returns></returns>
-        public async Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(
+        public Task<List<ScriptFileMarker>> GetSemanticMarkersAsync(
            string scriptContent,
            Hashtable settings)
         {
-            return await GetSemanticMarkersAsync<Hashtable>(scriptContent, null, settings);
+            return GetSemanticMarkersAsync<Hashtable>(scriptContent, null, settings);
         }
 
         /// <summary>
@@ -358,7 +362,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 argsDict.Add("Range", rangeList);
             }
 
-            PowerShellResult result = await InvokePowerShellAsync("Invoke-Formatter", argsDict);
+            PowerShellResult result = await InvokePowerShellAsync("Invoke-Formatter", argsDict).ConfigureAwait(false);
 
             if (result == null)
             {
@@ -403,7 +407,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return await GetSemanticMarkersAsync<TSettings>(
                     file.Contents,
                     rules,
-                    settings);
+                    settings).ConfigureAwait(false);
             }
             else
             {
@@ -420,7 +424,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if ((typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
                 && (rules != null || settings != null))
             {
-                var scriptFileMarkers = await GetDiagnosticRecordsAsync(scriptContent, rules, settings);
+                var scriptFileMarkers = await GetDiagnosticRecordsAsync(scriptContent, rules, settings).ConfigureAwait(false);
                 return scriptFileMarkers.Select(ScriptFileMarker.FromDiagnosticRecord).ToList();
             }
             else
@@ -530,7 +534,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         { settingParameter, settingArgument },
                         // We ignore ParseErrors from PSSA because we already send them when we parse the file.
                         { "Severity", new [] { ScriptFileMarkerLevel.Error, ScriptFileMarkerLevel.Information, ScriptFileMarkerLevel.Warning }}
-                    });
+                    }).ConfigureAwait(false);
 
                 diagnosticRecords = result?.Output;
             }
@@ -587,7 +591,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return InvokePowerShell(command, paramArgMap);
             });
 
-            return await task;
+            return await task.ConfigureAwait(false);
         }
 
         /// <summary>
@@ -746,7 +750,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         s_existingRequestCancellation.Token),
                 CancellationToken.None,
                 TaskCreationOptions.None,
-                TaskScheduler.Default);
+                TaskScheduler.Default).ConfigureAwait(false);
         }
 
         private async Task DelayThenInvokeDiagnosticsAsync(
@@ -759,7 +763,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // analyzing the provided list of files
             try
             {
-                await Task.Delay(delayMilliseconds, cancellationToken);
+                await Task.Delay(delayMilliseconds, cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException)
             {
@@ -787,7 +791,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 List<ScriptFileMarker> semanticMarkers = null;
                 if (isScriptAnalysisEnabled)
                 {
-                    semanticMarkers = await GetSemanticMarkersAsync(scriptFile);
+                    semanticMarkers = await GetSemanticMarkersAsync(scriptFile).ConfigureAwait(false);
                 }
                 else
                 {
@@ -884,7 +888,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            await fileCorrectionsEntry.fileLock.WaitAsync();
+            await fileCorrectionsEntry.fileLock.WaitAsync().ConfigureAwait(false);
             // We must copy the dictionary for thread safety
             var corrections = new Dictionary<string, MarkerCorrection>(fileCorrectionsEntry.corrections.Count);
             try

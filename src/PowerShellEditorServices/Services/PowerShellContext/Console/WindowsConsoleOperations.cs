@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         public async Task<ConsoleKeyInfo> ReadKeyAsync(bool intercept, CancellationToken cancellationToken)
         {
-            await _readKeyHandle.WaitAsync(cancellationToken);
+            await _readKeyHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return

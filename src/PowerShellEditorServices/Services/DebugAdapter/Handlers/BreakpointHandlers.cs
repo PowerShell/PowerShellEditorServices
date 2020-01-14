@@ -48,13 +48,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CommandBreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
             if (!_debugStateService.NoDebug)
             {
-                await _debugStateService.WaitForSetBreakpointHandleAsync();
+                await _debugStateService.WaitForSetBreakpointHandleAsync().ConfigureAwait(false);
 
                 try
                 {
                     updatedBreakpointDetails =
                         await _debugService.SetCommandBreakpointsAsync(
-                            breakpointDetails);
+                            breakpointDetails).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -196,14 +196,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             BreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
             if (!_debugStateService.NoDebug)
             {
-                await _debugStateService.WaitForSetBreakpointHandleAsync();
+                await _debugStateService.WaitForSetBreakpointHandleAsync().ConfigureAwait(false);
 
                 try
                 {
                     updatedBreakpointDetails =
                         await _debugService.SetLineBreakpointsAsync(
                             scriptFile,
-                            breakpointDetails);
+                            breakpointDetails).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {

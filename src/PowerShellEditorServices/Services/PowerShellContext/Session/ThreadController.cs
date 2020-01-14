@@ -66,8 +66,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         internal async Task<IEnumerable<TResult>> RequestPipelineExecutionAsync<TResult>(
             PipelineExecutionRequest<TResult> executionRequest)
         {
-            await PipelineRequestQueue.EnqueueAsync(executionRequest);
-            return await executionRequest.Results;
+            await PipelineRequestQueue.EnqueueAsync(executionRequest).ConfigureAwait(false);
+            return await executionRequest.Results.ConfigureAwait(false);
         }
 
         /// <summary>

@@ -98,12 +98,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 ScriptFile untitledScript = _workspaceService.GetFile(scriptToLaunch);
 
                 await _powerShellContextService
-                    .ExecuteScriptStringAsync(untitledScript.Contents, true, true);
+                    .ExecuteScriptStringAsync(untitledScript.Contents, true, true).ConfigureAwait(false);
             }
             else
             {
                 await _powerShellContextService
-                    .ExecuteScriptWithArgsAsync(scriptToLaunch, _debugStateService.Arguments, writeInputToHost: true);
+                    .ExecuteScriptWithArgsAsync(scriptToLaunch, _debugStateService.Arguments, writeInputToHost: true).ConfigureAwait(false);
             }
 
             _jsonRpcServer.SendNotification(EventNames.Terminated);

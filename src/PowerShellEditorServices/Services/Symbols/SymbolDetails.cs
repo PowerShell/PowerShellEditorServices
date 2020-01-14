@@ -52,14 +52,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 case SymbolType.Function:
                     CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(
                         symbolReference.SymbolName,
-                        powerShellContext);
+                        powerShellContext).ConfigureAwait(false);
 
                     if (commandInfo != null)
                     {
                         symbolDetails.Documentation =
                             await CommandHelpers.GetCommandSynopsisAsync(
                                 commandInfo,
-                                powerShellContext);
+                                powerShellContext).ConfigureAwait(false);
 
                         if (commandInfo.CommandType == CommandTypes.Application)
                         {

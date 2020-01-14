@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await GetCompletionsInFileAsync(
                     scriptFile,
                     cursorLine,
-                    cursorColumn);
+                    cursorColumn).ConfigureAwait(false);
 
             CompletionItem[] completionItems = s_emptyCompletionResult;
 
@@ -99,14 +99,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CommandInfo commandInfo =
                 await CommandHelpers.GetCommandInfoAsync(
                     request.Label,
-                    _powerShellContextService);
+                    _powerShellContextService).ConfigureAwait(false);
 
             if (commandInfo != null)
             {
                 request.Documentation =
                     await CommandHelpers.GetCommandSynopsisAsync(
                         commandInfo,
-                        _powerShellContextService);
+                        _powerShellContextService).ConfigureAwait(false);
             }
 
             // Send back the updated CompletionItem
@@ -158,7 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         fileOffset,
                         _powerShellContextService,
                         _logger,
-                        cts.Token);
+                        cts.Token).ConfigureAwait(false);
             }
 
             if (commandCompletion == null)
