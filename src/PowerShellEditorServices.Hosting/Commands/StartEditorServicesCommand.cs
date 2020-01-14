@@ -26,6 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     /// <summary>
     /// The Start-EditorServices command, the conventional entrypoint for PowerShell Editor Services.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Cmdlet parameters can be arrays")]
     [Cmdlet(VerbsLifecycle.Start, "EditorServices", DefaultParameterSetName = "NamedPipe")]
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
@@ -201,6 +202,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             StartLogging();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Uses ThrowTerminatingError() instead")]
         protected override void EndProcessing()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Beginning EndProcessing block");

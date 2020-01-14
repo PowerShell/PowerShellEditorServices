@@ -21,6 +21,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
+    using System.Diagnostics.CodeAnalysis;
     using System.Management.Automation;
     using Microsoft.PowerShell.EditorServices.Handlers;
     using Microsoft.PowerShell.EditorServices.Hosting;
@@ -41,6 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
 
+        [SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "cctor needed for version specific initialization")]
         static PowerShellContextService()
         {
             // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection
@@ -171,6 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ExecutionStatusChanged += PowerShellContext_ExecutionStatusChangedAsync;
         }
 
+        [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Checked by Validate call")]
         public static PowerShellContextService Create(
             ILoggerFactory factory,
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
@@ -220,10 +223,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                         .AddParameter("Name", module);
 
+#pragma warning disable CS4014
+                // This call queues the loading on the pipeline thread, so no need to await
                 powerShellContext.ExecuteCommandAsync<PSObject>(
                     command,
                     sendOutputToHost: false,
                     sendErrorToHost: true);
+#pragma warning restore CS4014
             }
 
             return powerShellContext;
@@ -559,6 +565,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     });
         }
 
+
         /// <summary>
         /// Executes a PSCommand against the session's runspace and returns
         /// a collection of results of the expected type.
@@ -571,6 +578,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// An awaitable Task which will provide results once the command
         /// execution completes.
         /// </returns>
+        [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Checked by Validate call")]
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "PowerShellContext must catch and log all exceptions to be robust")]
         public async Task<IEnumerable<TResult>> ExecuteCommandAsync<TResult>(
             PSCommand psCommand,
             StringBuilder errorMessages,

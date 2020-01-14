@@ -370,6 +370,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return RuntimeInformation.OSArchitecture.ToString();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly", Justification = "Checking user-defined configuration")]
         private void ValidateConfiguration()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Validating configuration");

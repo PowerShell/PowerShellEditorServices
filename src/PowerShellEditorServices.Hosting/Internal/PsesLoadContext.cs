@@ -54,6 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return null;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best effort; we must not throw if we fail")]
         private void TrySetName(string name)
         {
             try
