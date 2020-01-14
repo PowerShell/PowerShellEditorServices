@@ -38,6 +38,8 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
         public StartEditorServicesCommand()
         {
+            //Sets the distribution channel to "PSES" so starts can be distinguished in PS7+ telemetry
+            Environment.SetEnvironmentVariable("POWERSHELL_DISTRIBUTION_CHANNEL", "PSES");
             _disposableResources = new List<IDisposable>();
             _loggerUnsubscribers = new List<IDisposable>();
         }
