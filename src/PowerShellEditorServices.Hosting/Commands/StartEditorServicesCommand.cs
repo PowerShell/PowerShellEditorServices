@@ -38,9 +38,9 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
         public StartEditorServicesCommand()
         {
+            SetDistributionChannel();
             _disposableResources = new List<IDisposable>();
             _loggerUnsubscribers = new List<IDisposable>();
-            SetDistributionChannel();
         }
 
         /// <summary>
