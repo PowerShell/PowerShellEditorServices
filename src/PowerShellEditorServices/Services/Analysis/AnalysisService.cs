@@ -539,7 +539,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 diagnosticRecords = result?.Output;
             }
 
-            _logger.LogDebug(String.Format("Found {0} violations", diagnosticRecords.Count()));
+            _logger.LogDebug(String.Format("Found {0} violations", diagnosticRecords.Length));
 
             return diagnosticRecords;
         }
