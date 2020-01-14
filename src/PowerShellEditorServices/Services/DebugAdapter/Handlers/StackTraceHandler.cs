@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 return Task.FromResult(new StackTraceResponse
                 {
-                    StackFrames = new StackFrame[0],
+                    StackFrames = Array.Empty<StackFrame>(),
                     TotalFrames = 0
                 });
             }

@@ -474,7 +474,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             if (moduleInfo == null)
             {
-                return new ScriptFile[0];
+                return Array.Empty<ScriptFile>();
             }
 
             string modPath = moduleInfo.Path;

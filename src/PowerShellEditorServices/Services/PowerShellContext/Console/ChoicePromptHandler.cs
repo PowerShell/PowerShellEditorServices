@@ -125,7 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             this.DefaultChoices =
                 defaultChoice == -1
-                ? new int[] { }
+                ? Array.Empty<int>()
                 : new int[] { defaultChoice };
 
             // Cancel the TaskCompletionSource if the caller cancels the task

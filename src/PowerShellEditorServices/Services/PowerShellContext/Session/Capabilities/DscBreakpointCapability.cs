@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
     internal class DscBreakpointCapability : IRunspaceCapability
     {
-        private string[] dscResourceRootPaths = new string[0];
+        private string[] dscResourceRootPaths = Array.Empty<string>();
 
         private Dictionary<string, int[]> breakpointsPerFile =
             new Dictionary<string, int[]>();

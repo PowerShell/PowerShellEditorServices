@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     public class SignatureHelpHandler : ISignatureHelpHandler
     {
-        private static readonly SignatureInformation[] s_emptySignatureResult = new SignatureInformation[0];
+        private static readonly SignatureInformation[] s_emptySignatureResult = Array.Empty<SignatureInformation>();
 
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
             new DocumentFilter()

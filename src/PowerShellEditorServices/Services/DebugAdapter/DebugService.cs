@@ -386,7 +386,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if ((variableReferenceId < 0) || (variableReferenceId >= this.variables.Count))
                 {
                     logger.LogWarning($"Received request for variableReferenceId {variableReferenceId} that is out of range of valid indices.");
-                    return new VariableDetailsBase[0];
+                    return Array.Empty<VariableDetailsBase>();
                 }
 
                 VariableDetailsBase parentVariable = this.variables[variableReferenceId];
@@ -405,7 +405,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 }
                 else
                 {
-                    childVariables = new VariableDetailsBase[0];
+                    childVariables = Array.Empty<VariableDetailsBase>();
                 }
 
                 return childVariables;

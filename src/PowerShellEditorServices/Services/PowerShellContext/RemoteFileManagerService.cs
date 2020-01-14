@@ -577,7 +577,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             // If fileContent is still null after trying to
                             // unpack the contents, just return an empty byte
                             // array.
-                            fileContent = fileContent ?? new byte[0];
+                            fileContent = fileContent ?? Array.Empty<byte>();
 
                             if (remoteFilePath != null)
                             {

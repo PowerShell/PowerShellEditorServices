@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return new GetProjectTemplatesResponse
             {
                 NeedsModuleInstall = true,
-                Templates = new TemplateDetails[0]
+                Templates = Array.Empty<TemplateDetails>()
             };
         }
 

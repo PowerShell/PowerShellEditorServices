@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
             else
             {
-                symbols = new SymbolInformationOrDocumentSymbol[0];
+                symbols = Array.Empty<SymbolInformationOrDocumentSymbol>();
             }
 
 

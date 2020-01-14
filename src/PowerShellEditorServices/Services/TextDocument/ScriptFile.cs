@@ -649,7 +649,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                         ex.Message);
 
                 parseErrors = new[] { parseError };
-                this.ScriptTokens = new Token[0];
+                this.ScriptTokens = Array.Empty<Token>();
                 this.ScriptAst = null;
             }
 
@@ -666,7 +666,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             if (IsUntitledPath(this.FilePath))
             {
                 // Need to initialize the ReferencedFiles property to an empty array.
-                this.ReferencedFiles = new string[0];
+                this.ReferencedFiles = Array.Empty<string>();
                 return;
             }
 

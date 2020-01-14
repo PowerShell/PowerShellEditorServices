@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
     /// </summary>
     internal class ReferencesCodeLensProvider : ICodeLensProvider
     {
-        private static readonly Location[] s_emptyLocationArray = new Location[0];
+        private static readonly Location[] s_emptyLocationArray = Array.Empty<Location>();
 
         /// <summary>
         /// The document symbol provider to supply symbols to generate the code lenses.

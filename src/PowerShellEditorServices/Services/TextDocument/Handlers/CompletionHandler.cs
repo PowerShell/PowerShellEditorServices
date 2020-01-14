@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class CompletionHandler : ICompletionHandler, ICompletionResolveHandler
     {
         const int DefaultWaitTimeoutMilliseconds = 5000;
-        private readonly CompletionItem[] s_emptyCompletionResult = new CompletionItem[0];
+        private readonly CompletionItem[] s_emptyCompletionResult = Array.Empty<CompletionItem>();
 
         private readonly ILogger _logger;
         private readonly PowerShellContextService _powerShellContextService;
