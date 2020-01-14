@@ -76,10 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             CommandInfo commandInfo,
             PowerShellContextService powerShellContext)
         {
-            if (powerShellContext is null)
-            {
-                throw new System.ArgumentNullException(nameof(powerShellContext));
-            }
+            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
             string synopsisString = string.Empty;
 

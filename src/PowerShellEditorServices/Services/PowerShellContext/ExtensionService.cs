@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Collections.Generic;
@@ -134,10 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>True if the command is newly registered, false if the command already exists.</returns>
         public bool RegisterCommand(EditorCommand editorCommand)
         {
-            if (editorCommand is null)
-            {
-                throw new ArgumentNullException(nameof(editorCommand));
-            }
+            Validate.IsNotNull(nameof(editorCommand), editorCommand);
 
             bool commandExists =
                 this.editorCommands.ContainsKey(

@@ -176,10 +176,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
             HostStartupInfo hostStartupInfo)
         {
-            if (hostStartupInfo is null)
-            {
-                throw new ArgumentNullException(nameof(hostStartupInfo));
-            }
+            Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
 
             var logger = factory.CreateLogger<PowerShellContextService>();
 
@@ -248,10 +245,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             EditorServicesPSHostUserInterface hostUserInterface,
             ILogger logger)
         {
-            if (powerShellContext is null)
-            {
-                throw new ArgumentNullException(nameof(powerShellContext));
-            }
+            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
             var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
             powerShellContext.ConsoleWriter = hostUserInterface;
@@ -582,15 +576,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             StringBuilder errorMessages,
             ExecutionOptions executionOptions)
         {
-            if (psCommand is null)
-            {
-                throw new ArgumentNullException(nameof(psCommand));
-            }
+            Validate.IsNotNull(nameof(psCommand), psCommand);
+            Validate.IsNotNull(nameof(executionOptions), executionOptions);
 
-            if (executionOptions is null)
-            {
-                throw new ArgumentNullException(nameof(executionOptions));
-            }
             // Add history to PSReadLine before cancelling, otherwise it will be restored as the
             // cancelled prompt when it's called again.
             if (executionOptions.AddToHistory)
@@ -992,10 +980,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             bool writeOutputToHost,
             bool addToHistory)
         {
-            if (scriptString is null)
-            {
-                throw new ArgumentNullException(nameof(scriptString));
-            }
+            Validate.IsNotNull(nameof(scriptString), scriptString);
 
             return await this.ExecuteCommandAsync<object>(
                 new PSCommand().AddScript(scriptString.Trim()),
@@ -1017,10 +1002,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task ExecuteScriptWithArgsAsync(string script, string arguments = null, bool writeInputToHost = false)
         {
-            if (script is null)
-            {
-                throw new ArgumentNullException(nameof(script));
-            }
+            Validate.IsNotNull(nameof(script), script);
 
             PSCommand command = new PSCommand();
 
@@ -1705,10 +1687,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string EscapePath(string path, bool escapeSpaces)
         {
-            if (path is null)
-            {
-                throw new ArgumentNullException(nameof(path));
-            }
+            Validate.IsNotNull(nameof(path), path);
 
             return WildcardEscapePath(path, escapeSpaces);
         }
@@ -1763,10 +1742,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string UnescapePath(string path)
         {
-            if (path is null)
-            {
-                throw new ArgumentNullException(nameof(path));
-            }
+            Validate.IsNotNull(nameof(path), path);
 
             return UnescapeWildcardEscapedPath(path);
         }
@@ -1856,10 +1832,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             public MinifiedRunspaceDetails(RunspaceDetails eventArgs)
             {
-                if (eventArgs is null)
-                {
-                    throw new ArgumentNullException(nameof(eventArgs));
-                }
+                Validate.IsNotNull(nameof(eventArgs), eventArgs);
 
                 this.PowerShellVersion = new PowerShellVersion(eventArgs.PowerShellVersion);
                 this.RunspaceType = eventArgs.Location;
