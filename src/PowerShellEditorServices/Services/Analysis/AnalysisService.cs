@@ -500,48 +500,42 @@ namespace Microsoft.PowerShell.EditorServices.Services
              string[] rules,
              TSettings settings) where TSettings : class
         {
-            var diagnosticRecords = s_emptyDiagnosticResult;
-
             // When a new, empty file is created there are by definition no issues.
             // Furthermore, if you call Invoke-ScriptAnalyzer with an empty ScriptDefinition
             // it will generate a ParameterBindingValidationException.
-            if (string.IsNullOrEmpty(scriptContent))
+            if (string.IsNullOrEmpty(scriptContent)
+                || !(typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable)))
             {
-                return diagnosticRecords;
+                return s_emptyDiagnosticResult;
             }
 
-            if (typeof(TSettings) == typeof(string) || typeof(TSettings) == typeof(Hashtable))
+            //Use a settings file if one is provided, otherwise use the default rule list.
+            string settingParameter;
+            object settingArgument;
+            if (settings != null)
             {
-                //Use a settings file if one is provided, otherwise use the default rule list.
-                string settingParameter;
-                object settingArgument;
-                if (settings != null)
-                {
-                    settingParameter = "Settings";
-                    settingArgument = settings;
-                }
-                else
-                {
-                    settingParameter = "IncludeRule";
-                    settingArgument = rules;
-                }
-
-                PowerShellResult result = await InvokePowerShellAsync(
-                    "Invoke-ScriptAnalyzer",
-                    new Dictionary<string, object>
-                    {
-                        { "ScriptDefinition", scriptContent },
-                        { settingParameter, settingArgument },
-                        // We ignore ParseErrors from PSSA because we already send them when we parse the file.
-                        { "Severity", new [] { ScriptFileMarkerLevel.Error, ScriptFileMarkerLevel.Information, ScriptFileMarkerLevel.Warning }}
-                    }).ConfigureAwait(false);
-
-                diagnosticRecords = result?.Output;
+                settingParameter = "Settings";
+                settingArgument = settings;
+            }
+            else
+            {
+                settingParameter = "IncludeRule";
+                settingArgument = rules;
             }
 
-            _logger.LogDebug(String.Format("Found {0} violations", diagnosticRecords.Length));
+            PowerShellResult result = await InvokePowerShellAsync(
+                "Invoke-ScriptAnalyzer",
+                new Dictionary<string, object>
+                {
+                    { "ScriptDefinition", scriptContent },
+                    { settingParameter, settingArgument },
+                    // We ignore ParseErrors from PSSA because we already send them when we parse the file.
+                    { "Severity", new [] { ScriptFileMarkerLevel.Error, ScriptFileMarkerLevel.Information, ScriptFileMarkerLevel.Warning }}
+                }).ConfigureAwait(false);
 
-            return diagnosticRecords;
+            var diagnosticResults = result?.Output ?? s_emptyDiagnosticResult;
+            _logger.LogDebug(String.Format("Found {0} violations", diagnosticResults.Length));
+            return diagnosticResults;
         }
 
         private PowerShellResult InvokePowerShell(string command, IDictionary<string, object> paramArgMap = null)
