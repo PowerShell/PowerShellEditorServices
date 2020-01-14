@@ -21,7 +21,7 @@
   Simplify logic of determining Reference definition.
 - 🛫 🐛 [vscode-powershell #2379](https://github.com/PowerShell/PowerShellEditorServices/pull/1138) -
   Use -Option AllScope to fix Windows PowerShell error.
-- 📟 [PowerShellEditorServices #1158](https://github.com/PowerShell/PowerShellEditorServices/pull/1158) -
+- 👷 [PowerShellEditorServices #1158](https://github.com/PowerShell/PowerShellEditorServices/pull/1158) -
  Sets the distribution channel env var to "PSES" so starts can be distinguished in PS7+ telemetry
 
 ## v2.0.0-preview.7
