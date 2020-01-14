@@ -18,6 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     {
         private static IConsoleOperations s_consoleProxy;
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "Platform specific initialization")]
         static ConsoleProxy()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
