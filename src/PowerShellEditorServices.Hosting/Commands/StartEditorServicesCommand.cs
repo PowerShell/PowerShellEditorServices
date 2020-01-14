@@ -40,6 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         {
             _disposableResources = new List<IDisposable>();
             _loggerUnsubscribers = new List<IDisposable>();
+            SetDistributionChannel();
         }
 
         /// <summary>
@@ -215,8 +216,6 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
                 // Create the configuration from parameters
                 EditorServicesConfig editorServicesConfig = CreateConfigObject();
-                // Set the Environment Var
-                SetDistributionChannel();
 
                 var sessionFileWriter = new SessionFileWriter(_logger, SessionDetailsPath);
                 _logger.Log(PsesLogLevel.Diagnostic, "Session file writer created");
@@ -281,7 +280,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             _logger.Log(PsesLogLevel.Diagnostic, "Logging started");
         }
         
-        private void SetDistributionChannel()
+        private static SetDistributionChannel()
         {
             //Sets the distribution channel to PSES so starts can be distinguished in PS7+ telemetry
             Environment.SetEnvironmentVariable("POWERSHELL_DISTRIBUTION_CHANNEL", "PSES");
