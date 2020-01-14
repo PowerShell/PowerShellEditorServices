@@ -38,9 +38,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             await _extensionService.InvokeCommandAsync(
                 request.Name,
-                editorContext);
+                editorContext).ConfigureAwait(false);
 
-            return await Unit.Task;
+            return await Unit.Task.ConfigureAwait(false);
         }
     }
 }

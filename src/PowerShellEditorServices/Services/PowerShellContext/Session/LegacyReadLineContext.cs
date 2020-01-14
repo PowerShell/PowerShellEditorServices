@@ -22,9 +22,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             return Task.FromResult(true);
         }
 
-        public async Task<string> InvokeReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
+        public Task<string> InvokeReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
-            return await _legacyReadLine.InvokeLegacyReadLineAsync(isCommandLine, cancellationToken);
+            return _legacyReadLine.InvokeLegacyReadLineAsync(isCommandLine, cancellationToken);
         }
 
         public Task WaitForReadLineExitAsync()

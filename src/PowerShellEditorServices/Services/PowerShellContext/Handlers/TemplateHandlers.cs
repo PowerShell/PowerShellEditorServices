@@ -27,13 +27,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<GetProjectTemplatesResponse> Handle(GetProjectTemplatesRequest request, CancellationToken cancellationToken)
         {
-            bool plasterInstalled = await _templateService.ImportPlasterIfInstalledAsync();
+            bool plasterInstalled = await _templateService.ImportPlasterIfInstalledAsync().ConfigureAwait(false);
 
             if (plasterInstalled)
             {
                 var availableTemplates =
                     await _templateService.GetAvailableTemplatesAsync(
-                        request.IncludeInstalledModules);
+                        request.IncludeInstalledModules).ConfigureAwait(false);
 
 
                 return new GetProjectTemplatesResponse
@@ -45,16 +45,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return new GetProjectTemplatesResponse
             {
                 NeedsModuleInstall = true,
-                Templates = new TemplateDetails[0]
+                Templates = Array.Empty<TemplateDetails>()
             };
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Want to log any exception")]
         public async Task<NewProjectFromTemplateResponse> Handle(NewProjectFromTemplateRequest request, CancellationToken cancellationToken)
         {
             bool creationSuccessful;
             try
             {
-                await _templateService.CreateFromTemplateAsync(request.TemplatePath, request.DestinationPath);
+                await _templateService.CreateFromTemplateAsync(request.TemplatePath, request.DestinationPath).ConfigureAwait(false);
                 creationSuccessful = true;
             }
             catch (Exception e)

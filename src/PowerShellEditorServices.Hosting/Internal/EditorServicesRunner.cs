@@ -115,11 +115,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     debugServerCreation = CreateDebugServerWithLanguageServerAsync(languageServer, usePSReadLine: _config.ConsoleRepl == ConsoleReplKind.PSReadLine);
                 }
 
+#pragma warning disable CS4014
+                // We don't need to wait for this to start, since we instead wait for it to complete later
                 languageServer.StartAsync();
+#pragma warning restore CS4014
 
                 if (creatingDebugServer)
                 {
+#pragma warning disable CS4014
+                    // We don't need to wait for this to start, since we instead wait for it to complete later
                     StartDebugServer(debugServerCreation);
+#pragma warning restore CS4014
                 }
 
                 await languageServer.WaitForShutdown().ConfigureAwait(false);
@@ -155,7 +161,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
 
             _logger.Log(PsesLogLevel.Diagnostic, "Starting debug server");
+
+#pragma warning disable CS4014
+            // No need to await, since we just want to kick it off
             debugServer.StartAsync();
+#pragma warning restore CS4014
         }
 
         private Task RestartDebugServerAsync(PsesDebugServer debugServer, bool usePSReadLine)

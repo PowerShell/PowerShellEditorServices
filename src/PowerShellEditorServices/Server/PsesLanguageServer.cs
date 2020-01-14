@@ -110,10 +110,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             {
                                 await serviceProvider.GetService<PowerShellContextService>().SetWorkingDirectoryAsync(
                                     workspaceService.WorkspacePath,
-                                    isPathAlreadyEscaped: false);
+                                    isPathAlreadyEscaped: false).ConfigureAwait(false);
                             }
                         });
-            });
+            }).ConfigureAwait(false);
 
             _serverStart.SetResult(true);
         }
@@ -124,8 +124,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <returns>A task that completes when the server is shut down.</returns>
         public async Task WaitForShutdown()
         {
-            await _serverStart.Task;
-            await LanguageServer.WaitForExit;
+            await _serverStart.Task.ConfigureAwait(false);
+            await LanguageServer.WaitForExit.ConfigureAwait(false);
         }
     }
 }

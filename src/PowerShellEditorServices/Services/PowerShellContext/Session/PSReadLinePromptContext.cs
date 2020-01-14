@@ -46,15 +46,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private readonly PowerShellContextService _powerShellContext;
 
-        private PromptNest _promptNest;
+        private readonly PromptNest _promptNest;
 
-        private InvocationEventQueue _invocationEventQueue;
+        private readonly InvocationEventQueue _invocationEventQueue;
 
-        private ConsoleReadLine _consoleReadLine;
+        private readonly ConsoleReadLine _consoleReadLine;
+
+        private readonly PSReadLineProxy _readLineProxy;
 
         private CancellationTokenSource _readLineCancellationSource;
-
-        private PSReadLineProxy _readLineProxy;
 
         internal PSReadLinePromptContext(
             PowerShellContextService powerShellContext,
@@ -124,15 +124,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 if (!isCommandLine)
                 {
                     return await _consoleReadLine.InvokeLegacyReadLineAsync(
-                        false,
-                        _readLineCancellationSource.Token);
+                        isCommandLine: false,
+                        _readLineCancellationSource.Token).ConfigureAwait(false);
                 }
 
                 var result = (await _powerShellContext.ExecuteCommandAsync<string>(
                     new PSCommand()
                         .AddScript(ReadLineScript)
                         .AddArgument(_readLineCancellationSource.Token),
-                    null,
+                    errorMessages: null,
                     new ExecutionOptions()
                     {
                         WriteErrorsToHost = false,
@@ -140,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         InterruptCommandPrompt = false,
                         AddToHistory = false,
                         IsReadLine = isCommandLine
-                    }))
+                    }).ConfigureAwait(false))
                     .FirstOrDefault();
 
                 return cancellationToken.IsCancellationRequested
@@ -173,7 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             _readLineCancellationSource.Cancel();
 
-            await WaitForReadLineExitAsync();
+            await WaitForReadLineExitAsync().ConfigureAwait(false);
         }
 
         public void WaitForReadLineExit()
@@ -183,7 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         }
 
         public async Task WaitForReadLineExitAsync() {
-            using (await _promptNest.GetRunspaceHandleAsync(CancellationToken.None, isReadLine: true))
+            using (await _promptNest.GetRunspaceHandleAsync(CancellationToken.None, isReadLine: true).ConfigureAwait(false))
             { }
         }
 

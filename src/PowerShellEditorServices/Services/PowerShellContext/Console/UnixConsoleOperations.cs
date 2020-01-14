@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         public async Task<ConsoleKeyInfo> ReadKeyAsync(bool intercept, CancellationToken cancellationToken)
         {
-            await s_readKeyHandle.WaitAsync(cancellationToken);
+            await s_readKeyHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             // I tried to replace this library with a call to `stty -echo`, but unfortunately
             // the library also sets up allowing backspace to trigger `Console.KeyAvailable`.
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             try
             {
-                while (!await WaitForKeyAvailableAsync(cancellationToken));
+                while (!await WaitForKeyAvailableAsync(cancellationToken).ConfigureAwait(false)) ;
             }
             finally
             {
@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 s_readKeyHandle.Release();
             }
 
-            await s_stdInHandle.WaitAsync(cancellationToken);
+            await s_stdInHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return System.Console.ReadKey(intercept);
@@ -136,14 +136,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
         }
 
-        public async Task<int> GetCursorLeftAsync()
+        public Task<int> GetCursorLeftAsync()
         {
-            return await GetCursorLeftAsync(CancellationToken.None);
+            return GetCursorLeftAsync(CancellationToken.None);
         }
 
         public async Task<int> GetCursorLeftAsync(CancellationToken cancellationToken)
         {
-            await s_stdInHandle.WaitAsync(cancellationToken);
+            await s_stdInHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return System.Console.CursorLeft;
@@ -172,14 +172,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
         }
 
-        public async Task<int> GetCursorTopAsync()
+        public Task<int> GetCursorTopAsync()
         {
-            return await GetCursorTopAsync(CancellationToken.None);
+            return GetCursorTopAsync(CancellationToken.None);
         }
 
         public async Task<int> GetCursorTopAsync(CancellationToken cancellationToken)
         {
-            await s_stdInHandle.WaitAsync(cancellationToken);
+            await s_stdInHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return System.Console.CursorTop;
@@ -207,9 +207,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private async Task<bool> LongWaitForKeyAsync(CancellationToken cancellationToken)
         {
-            while (!await IsKeyAvailableAsync(cancellationToken))
+            while (!await IsKeyAvailableAsync(cancellationToken).ConfigureAwait(false))
             {
-                await Task.Delay(LongWaitForKeySleepTime, cancellationToken);
+                await Task.Delay(LongWaitForKeySleepTime, cancellationToken).ConfigureAwait(false);
             }
 
             WaitForKeyAvailableAsync = ShortWaitForKeyAsync;
@@ -234,7 +234,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private async Task<bool> ShortWaitForKeyAsync(CancellationToken cancellationToken)
         {
-            if (await SpinUntilKeyAvailableAsync(ShortWaitForKeyTimeout, cancellationToken))
+            if (await SpinUntilKeyAvailableAsync(ShortWaitForKeyTimeout, cancellationToken).ConfigureAwait(false))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 return true;
@@ -256,9 +256,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 millisecondsTimeout);
         }
 
-        private async Task<bool> SpinUntilKeyAvailableAsync(int millisecondsTimeout, CancellationToken cancellationToken)
+        private Task<bool> SpinUntilKeyAvailableAsync(int millisecondsTimeout, CancellationToken cancellationToken)
         {
-            return await Task<bool>.Factory.StartNew(
+            return Task<bool>.Factory.StartNew(
                 () => SpinWait.SpinUntil(
                     () =>
                     {
@@ -284,7 +284,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private async Task<bool> IsKeyAvailableAsync(CancellationToken cancellationToken)
         {
-            await s_stdInHandle.WaitAsync(cancellationToken);
+            await s_stdInHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return System.Console.KeyAvailable;

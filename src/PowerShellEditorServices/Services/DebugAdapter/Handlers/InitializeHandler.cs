@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public async Task<InitializeResponse> Handle(InitializeRequestArguments request, CancellationToken cancellationToken)
         {
             // Clear any existing breakpoints before proceeding
-            await _debugService.ClearAllBreakpointsAsync();
+            await _debugService.ClearAllBreakpointsAsync().ConfigureAwait(false);
 
             // Now send the Initialize response to continue setup
             return new InitializeResponse

@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <returns>A Task that can be awaited to get the user's response.</returns>
         protected override async Task<string> ReadInputStringAsync(CancellationToken cancellationToken)
         {
-            string inputString = await this.consoleReadLine.ReadSimpleLineAsync(cancellationToken);
+            string inputString = await this.consoleReadLine.ReadSimpleLineAsync(cancellationToken).ConfigureAwait(false);
             this.hostOutput.WriteOutput(string.Empty);
 
             return inputString;

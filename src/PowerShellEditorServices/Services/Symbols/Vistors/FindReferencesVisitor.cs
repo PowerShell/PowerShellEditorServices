@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         if (commandName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase) ||
                         alaises.Contains(symbolRef.ScriptRegion.Text.ToLower()) ||
                         command.Equals(symbolRef.ScriptRegion.Text, StringComparison.CurrentCultureIgnoreCase) ||
-                        (!command.Equals(string.Empty) && command.Equals(symbolRefCommandName, StringComparison.CurrentCultureIgnoreCase)))
+                        (!string.IsNullOrEmpty(command) && command.Equals(symbolRefCommandName, StringComparison.CurrentCultureIgnoreCase)))
                         {
                             this.FoundReferences.Add(new SymbolReference(
                                 SymbolType.Function,

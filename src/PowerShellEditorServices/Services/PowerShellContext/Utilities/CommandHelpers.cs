@@ -43,6 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             PowerShellContextService powerShellContext)
         {
             Validate.IsNotNull(nameof(commandName), commandName);
+            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
             // Make sure the command's noun isn't blacklisted.  This is
             // currently necessary to make sure that Get-Command doesn't
@@ -59,12 +60,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             command.AddArgument(commandName);
             command.AddParameter("ErrorAction", "Ignore");
 
-            return
-                (await powerShellContext
-                    .ExecuteCommandAsync<PSObject>(command, false, false))
-                    .Select(o => o.BaseObject)
-                    .OfType<CommandInfo>()
-                    .FirstOrDefault();
+            return (await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false))
+                .Select(o => o.BaseObject)
+                .OfType<CommandInfo>()
+                .FirstOrDefault();
         }
 
         /// <summary>
@@ -77,6 +76,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             CommandInfo commandInfo,
             PowerShellContextService powerShellContext)
         {
+            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
+
             string synopsisString = string.Empty;
 
             if (commandInfo != null &&
@@ -89,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 command.AddArgument(commandInfo);
                 command.AddParameter("ErrorAction", "Ignore");
 
-                var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, false, false);
+                var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false);
                 PSObject helpObject = results.FirstOrDefault();
 
                 if (helpObject != null)

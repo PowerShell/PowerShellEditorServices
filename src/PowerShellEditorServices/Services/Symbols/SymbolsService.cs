@@ -269,7 +269,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             symbolReference.FilePath = scriptFile.FilePath;
             SymbolDetails symbolDetails = await SymbolDetails.CreateAsync(
                 symbolReference,
-                _powerShellContextService);
+                _powerShellContextService).ConfigureAwait(false);
 
             return symbolDetails;
         }
@@ -301,7 +301,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             CommandInfo commandInfo =
                 await CommandHelpers.GetCommandInfoAsync(
                     foundSymbol.SymbolName,
-                    powerShellContext);
+                    powerShellContext).ConfigureAwait(false);
 
             if (commandInfo == null)
             {
@@ -414,7 +414,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 CommandInfo cmdInfo =
                     await CommandHelpers.GetCommandInfoAsync(
                         foundSymbol.SymbolName,
-                        _powerShellContextService);
+                        _powerShellContextService).ConfigureAwait(false);
 
                 foundDefinition =
                     FindDeclarationForBuiltinCommand(
@@ -474,7 +474,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             if (moduleInfo == null)
             {
-                return new ScriptFile[0];
+                return Array.Empty<ScriptFile>();
             }
 
             string modPath = moduleInfo.Path;

@@ -74,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // TODO: Rather than print the help in the console, we should send the string back
             //       to VSCode to display in a help pop-up (or similar)
-            await _powerShellContextService.ExecuteCommandAsync<PSObject>(checkHelpPSCommand, sendOutputToHost: true);
+            await _powerShellContextService.ExecuteCommandAsync<PSObject>(checkHelpPSCommand, sendOutputToHost: true).ConfigureAwait(false);
             return Unit.Value;
         }
     }

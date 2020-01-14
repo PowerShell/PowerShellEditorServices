@@ -117,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<DebugEvaluateHandler>();
 
                 logger.LogInformation("Handlers added");
-            });
+            }).ConfigureAwait(false);
         }
 
         public void Dispose()
@@ -129,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         public async Task WaitForShutdown()
         {
-            await _serverStopped.Task;
+            await _serverStopped.Task.ConfigureAwait(false);
         }
 
         #region Events

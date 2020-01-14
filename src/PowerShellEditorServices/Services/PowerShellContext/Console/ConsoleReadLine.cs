@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     internal class ConsoleReadLine
     {
         #region Private Field
-        private PowerShellContextService powerShellContext;
+        private readonly PowerShellContextService powerShellContext;
 
         #endregion
 
@@ -48,8 +48,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             SecureString secureString = new SecureString();
 
-            int initialPromptRow = await ConsoleProxy.GetCursorTopAsync(cancellationToken);
-            int initialPromptCol = await ConsoleProxy.GetCursorLeftAsync(cancellationToken);
+            // TODO: Are these values used?
+            int initialPromptRow = await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false);
+            int initialPromptCol = await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false);
             int previousInputLength = 0;
 
             Console.TreatControlCAsInput = true;
@@ -58,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    ConsoleKeyInfo keyInfo = await ReadKeyAsync(cancellationToken);
+                    ConsoleKeyInfo keyInfo = await ReadKeyAsync(cancellationToken).ConfigureAwait(false);
 
                     if ((int)keyInfo.Key == 3 ||
                         keyInfo.Key == ConsoleKey.C && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
@@ -96,8 +97,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     }
                     else if (previousInputLength > 0 && currentInputLength < previousInputLength)
                     {
-                        int row = await ConsoleProxy.GetCursorTopAsync(cancellationToken);
-                        int col = await ConsoleProxy.GetCursorLeftAsync(cancellationToken);
+                        int row = await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false);
+                        int col = await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false);
 
                         // Back up the cursor before clearing the character
                         col--;
@@ -127,14 +128,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         #region Private Methods
 
-        private static async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken)
+        private static Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken)
         {
-            return await ConsoleProxy.ReadKeyAsync(intercept: true, cancellationToken);
+            return ConsoleProxy.ReadKeyAsync(intercept: true, cancellationToken);
         }
 
-        private async Task<string> ReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
+        private Task<string> ReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
-            return await this.powerShellContext.InvokeReadLineAsync(isCommandLine, cancellationToken);
+            return this.powerShellContext.InvokeReadLineAsync(isCommandLine, cancellationToken);
         }
 
         /// <summary>
@@ -154,6 +155,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         internal async Task<string> InvokeLegacyReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
+            // TODO: Is inputBeforeCompletion used?
             string inputBeforeCompletion = null;
             string inputAfterCompletion = null;
             CommandCompletion currentCompletion = null;
@@ -163,9 +165,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             StringBuilder inputLine = new StringBuilder();
 
-            int initialCursorCol = await ConsoleProxy.GetCursorLeftAsync(cancellationToken);
-            int initialCursorRow = await ConsoleProxy.GetCursorTopAsync(cancellationToken);
+            int initialCursorCol = await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false);
+            int initialCursorRow = await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false);
 
+            // TODO: Are these used?
             int initialWindowLeft = Console.WindowLeft;
             int initialWindowTop = Console.WindowTop;
 
@@ -177,7 +180,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    ConsoleKeyInfo keyInfo = await ReadKeyAsync(cancellationToken);
+                    ConsoleKeyInfo keyInfo = await ReadKeyAsync(cancellationToken).ConfigureAwait(false);
 
                     // Do final position calculation after the key has been pressed
                     // because the window could have been resized before then
@@ -207,14 +210,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                 command.AddParameter("CursorColumn", currentCursorIndex);
                                 command.AddParameter("Options", null);
 
-                                var results =
-                                    await this.powerShellContext.ExecuteCommandAsync<CommandCompletion>(command, false, false);
+                                var results = await this.powerShellContext
+                                    .ExecuteCommandAsync<CommandCompletion>(command, sendOutputToHost: false, sendErrorToHost: false)
+                                    .ConfigureAwait(false);
 
                                 currentCompletion = results.FirstOrDefault();
                             }
                             else
                             {
-                                using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandleAsync())
+                                using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandleAsync().ConfigureAwait(false))
                                 using (PowerShell powerShell = PowerShell.Create())
                                 {
                                     powerShell.Runspace = runspaceHandle.Runspace;
@@ -325,11 +329,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                             PSCommand command = new PSCommand();
                             command.AddCommand("Get-History");
 
-                            currentHistory =
-                                await this.powerShellContext.ExecuteCommandAsync<PSObject>(
-                                    command,
-                                    false,
-                                    false) as Collection<PSObject>;
+                            currentHistory = await this.powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false)
+                                .ConfigureAwait(false)
+                                as Collection<PSObject>;
 
                             if (currentHistory != null)
                             {
@@ -475,7 +477,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                 inputLine,
                                 promptStartCol,
                                 promptStartRow,
-                                keyInfo.KeyChar.ToString(),
+                                keyInfo.KeyChar.ToString(), // TODO: Determine whether this should take culture into account
                                 currentCursorIndex,
                                 finalCursorIndex: currentCursorIndex + 1);
                     }
@@ -489,6 +491,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             return null;
         }
 
+        // TODO: Is this used?
         private int CalculateIndexFromCursor(
             int promptStartCol,
             int promptStartRow,

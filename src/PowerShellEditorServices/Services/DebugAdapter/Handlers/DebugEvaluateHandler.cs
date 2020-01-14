@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             await _debugService.EvaluateExpressionAsync(
                                 request.Expression,
                                 request.FrameId,
-                                isFromRepl);
+                                isFromRepl).ConfigureAwait(false);
                     }
                 }
 

@@ -87,15 +87,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             await SetInvocationRequestAsync(
                 new InvocationRequest(
-                    pwsh => request.ExecuteAsync().GetAwaiter().GetResult()));
+                    pwsh => request.ExecuteAsync().GetAwaiter().GetResult())).ConfigureAwait(false);
 
             try
             {
-                return await request.Results;
+                return await request.Results.ConfigureAwait(false);
             }
             finally
             {
-                await SetInvocationRequestAsync(request: null);
+                await SetInvocationRequestAsync(request: null).ConfigureAwait(false);
             }
         }
 
@@ -122,21 +122,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 }
             });
 
-            await SetInvocationRequestAsync(request);
+            await SetInvocationRequestAsync(request).ConfigureAwait(false);
             try
             {
-                await request.Task;
+                await request.Task.ConfigureAwait(false);
             }
             finally
             {
-                await SetInvocationRequestAsync(null);
+                await SetInvocationRequestAsync(null).ConfigureAwait(false);
             }
         }
 
         private async Task WaitForExistingRequestAsync()
         {
             InvocationRequest existingRequest;
-            await _lock.WaitAsync();
+            await _lock.WaitAsync().ConfigureAwait(false);
             try
             {
                 existingRequest = _invocationRequest;
@@ -150,13 +150,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 _lock.Release();
             }
 
-            await existingRequest.Task;
+            await existingRequest.Task.ConfigureAwait(false);
         }
 
         private async Task SetInvocationRequestAsync(InvocationRequest request)
         {
-            await WaitForExistingRequestAsync();
-            await _lock.WaitAsync();
+            await WaitForExistingRequestAsync().ConfigureAwait(false);
+            await _lock.WaitAsync().ConfigureAwait(false);
             try
             {
                 _invocationRequest = request;

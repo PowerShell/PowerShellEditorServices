@@ -12,6 +12,7 @@ using System.Management.Automation;
 using System.Reflection;
 using SMA = System.Management.Automation;
 using Microsoft.PowerShell.EditorServices.Hosting;
+using System.Globalization;
 
 #if DEBUG
 using System.Diagnostics;
@@ -25,6 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     /// <summary>
     /// The Start-EditorServices command, the conventional entrypoint for PowerShell Editor Services.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Cmdlet parameters can be arrays")]
     [Cmdlet(VerbsLifecycle.Start, "EditorServices", DefaultParameterSetName = "NamedPipe")]
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
@@ -200,6 +202,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             StartLogging();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Uses ThrowTerminatingError() instead")]
         protected override void EndProcessing()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Beginning EndProcessing block");
@@ -264,7 +267,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             if (File.Exists(logPath))
             {
                 int randomInt = new Random().Next();
-                logPath = Path.Combine(logDirPath, $"StartEditorServices-temp{randomInt.ToString("X")}.log");
+                logPath = Path.Combine(logDirPath, $"StartEditorServices-temp{randomInt.ToString("X", CultureInfo.InvariantCulture.NumberFormat)}.log");
             }
 
             var fileLogger = StreamLogger.CreateWithNewFile(logPath);

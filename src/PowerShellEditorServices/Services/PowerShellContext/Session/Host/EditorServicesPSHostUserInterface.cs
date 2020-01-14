@@ -149,12 +149,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
                 this.commandLoopCancellationToken = new CancellationTokenSource();
 
-                var commandLoopThreadTask =
-                    Task.Factory.StartNew(
-                        async () =>
-                        {
-                            await this.StartReplLoopAsync(this.commandLoopCancellationToken.Token);
-                        });
+                var commandLoopThreadTask = Task.Factory.StartNew(() =>
+                    {
+                        return this.StartReplLoopAsync(this.commandLoopCancellationToken.Token);
+                    });
             }
             else
             {
@@ -719,8 +717,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             try
             {
                 if (this.lastPromptLocation != null &&
-                    this.lastPromptLocation.X == await ConsoleProxy.GetCursorLeftAsync(cancellationToken) &&
-                    this.lastPromptLocation.Y == await ConsoleProxy.GetCursorTopAsync(cancellationToken))
+                    this.lastPromptLocation.X == await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false) &&
+                    this.lastPromptLocation.Y == await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false))
                 {
                     return;
                 }
@@ -735,7 +733,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             cancellationToken.ThrowIfCancellationRequested();
             string promptString =
-                (await this.powerShellContext.ExecuteCommandAsync<PSObject>(promptCommand, false, false))
+                (await this.powerShellContext.ExecuteCommandAsync<PSObject>(promptCommand, false, false).ConfigureAwait(false))
                     .Select(pso => pso.BaseObject)
                     .OfType<string>()
                     .FirstOrDefault() ?? "PS> ";
@@ -768,8 +766,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             // Write the prompt string
             this.WriteOutput(promptString, false);
             this.lastPromptLocation = new Coordinates(
-                await ConsoleProxy.GetCursorLeftAsync(cancellationToken),
-                await ConsoleProxy.GetCursorTopAsync(cancellationToken));
+                await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false),
+                await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false));
         }
 
         private void WriteDebuggerBanner(DebuggerStopEventArgs eventArgs)
@@ -816,7 +814,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
                 try
                 {
-                    await this.WritePromptStringToHostAsync(cancellationToken);
+                    await this.WritePromptStringToHostAsync(cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -825,8 +823,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
                 try
                 {
-                    originalCursorTop = await ConsoleProxy.GetCursorTopAsync(cancellationToken);
-                    commandString = await this.ReadCommandLineAsync(cancellationToken);
+                    originalCursorTop = await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false);
+                    commandString = await this.ReadCommandLineAsync(cancellationToken).ConfigureAwait(false);
                 }
                 catch (PipelineStoppedException)
                 {
@@ -853,7 +851,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 finally
                 {
                     if (!cancellationToken.IsCancellationRequested &&
-                        originalCursorTop == await ConsoleProxy.GetCursorTopAsync(cancellationToken))
+                        originalCursorTop == await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false))
                     {
                         this.WriteLine();
                     }

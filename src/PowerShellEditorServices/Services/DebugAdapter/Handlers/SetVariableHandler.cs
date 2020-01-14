@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     await _debugService.SetVariableAsync(
                         (int) request.VariablesReference,
                         request.Name,
-                        request.Value);
+                        request.Value).ConfigureAwait(false);
 
                 return new SetVariableResponse
                 {

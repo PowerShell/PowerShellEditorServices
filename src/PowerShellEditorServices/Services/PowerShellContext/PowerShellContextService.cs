@@ -21,6 +21,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
+    using System.Diagnostics.CodeAnalysis;
     using System.Management.Automation;
     using Microsoft.PowerShell.EditorServices.Handlers;
     using Microsoft.PowerShell.EditorServices.Hosting;
@@ -41,6 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
 
+        [SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "cctor needed for version specific initialization")]
         static PowerShellContextService()
         {
             // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection
@@ -57,8 +59,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly SemaphoreSlim resumeRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
         private readonly OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer _languageServer;
-        private bool isPSReadLineEnabled;
-        private ILogger logger;
+        private readonly bool isPSReadLineEnabled;
+        private readonly ILogger logger;
+
         private PowerShell powerShell;
         private bool ownsInitialRunspace;
         private RunspaceDetails initialRunspace;
@@ -68,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private IVersionSpecificOperations versionSpecificOperations;
 
-        private Stack<RunspaceDetails> runspaceStack = new Stack<RunspaceDetails>();
+        private readonly Stack<RunspaceDetails> runspaceStack = new Stack<RunspaceDetails>();
 
         private int isCommandLoopRestarterSet;
 
@@ -170,11 +173,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ExecutionStatusChanged += PowerShellContext_ExecutionStatusChangedAsync;
         }
 
+        [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Checked by Validate call")]
         public static PowerShellContextService Create(
             ILoggerFactory factory,
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer languageServer,
             HostStartupInfo hostStartupInfo)
         {
+            Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
+
             var logger = factory.CreateLogger<PowerShellContextService>();
 
             // We should only use PSReadLine if we specificied that we want a console repl
@@ -217,10 +223,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                         .AddParameter("Name", module);
 
+#pragma warning disable CS4014
+                // This call queues the loading on the pipeline thread, so no need to await
                 powerShellContext.ExecuteCommandAsync<PSObject>(
                     command,
                     sendOutputToHost: false,
                     sendErrorToHost: true);
+#pragma warning restore CS4014
             }
 
             return powerShellContext;
@@ -242,6 +251,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             EditorServicesPSHostUserInterface hostUserInterface,
             ILogger logger)
         {
+            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
+
             var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
             powerShellContext.ConsoleWriter = hostUserInterface;
             powerShellContext.ConsoleReader = hostUserInterface;
@@ -512,7 +523,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             bool sendOutputToHost = false,
             bool sendErrorToHost = true)
         {
-            return await ExecuteCommandAsync<TResult>(psCommand, null, sendOutputToHost, sendErrorToHost);
+            return await ExecuteCommandAsync<TResult>(psCommand, errorMessages: null, sendOutputToHost, sendErrorToHost).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -554,6 +565,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     });
         }
 
+
         /// <summary>
         /// Executes a PSCommand against the session's runspace and returns
         /// a collection of results of the expected type.
@@ -566,11 +578,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// An awaitable Task which will provide results once the command
         /// execution completes.
         /// </returns>
+        [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Checked by Validate call")]
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "PowerShellContext must catch and log all exceptions to be robust")]
         public async Task<IEnumerable<TResult>> ExecuteCommandAsync<TResult>(
             PSCommand psCommand,
             StringBuilder errorMessages,
             ExecutionOptions executionOptions)
         {
+            Validate.IsNotNull(nameof(psCommand), psCommand);
+            Validate.IsNotNull(nameof(executionOptions), executionOptions);
+
             // Add history to PSReadLine before cancelling, otherwise it will be restored as the
             // cancelled prompt when it's called again.
             if (executionOptions.AddToHistory)
@@ -620,7 +637,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         this,
                         psCommand,
                         errorMessages,
-                        executionOptions));
+                        executionOptions)).ConfigureAwait(false);
             }
             else
             {
@@ -644,10 +661,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     // don't write output (e.g. command completion)
                     if (executionTarget == ExecutionTarget.InvocationEvent)
                     {
-                        return (await this.InvocationEventQueue.ExecuteCommandOnIdleAsync<TResult>(
+                        return await this.InvocationEventQueue.ExecuteCommandOnIdleAsync<TResult>(
                             psCommand,
                             errorMessages,
-                            executionOptions));
+                            executionOptions).ConfigureAwait(false);
                     }
 
                     // Prompt is stopped and started based on the execution status, so naturally
@@ -660,7 +677,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             false);
                     }
 
-                    runspaceHandle = await this.GetRunspaceHandleAsync(executionOptions.IsReadLine);
+                    runspaceHandle = await this.GetRunspaceHandleAsync(executionOptions.IsReadLine).ConfigureAwait(false);
                     if (executionOptions.WriteInputToHost)
                     {
                         this.WriteOutput(psCommand.Commands[0].CommandText, true);
@@ -721,7 +738,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     // Don't change our SessionState for ReadLine.
                     if (!executionOptions.IsReadLine)
                     {
-                        shell.InvocationStateChanged += powerShell_InvocationStateChanged;
+                        shell.InvocationStateChanged += PowerShell_InvocationStateChanged;
                     }
 
                     shell.Runspace = executionOptions.ShouldExecuteInOriginalRunspace
@@ -740,13 +757,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             () => shell.Invoke<TResult>(null, invocationSettings),
                             CancellationToken.None, // Might need a cancellation token
                             TaskCreationOptions.None,
-                            TaskScheduler.Default);
+                            TaskScheduler.Default).ConfigureAwait(false);
                     }
                     finally
                     {
                         if (!executionOptions.IsReadLine)
                         {
-                            shell.InvocationStateChanged -= powerShell_InvocationStateChanged;
+                            shell.InvocationStateChanged -= PowerShell_InvocationStateChanged;
                         }
 
                         if (shell.HadErrors)
@@ -856,7 +873,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             // will exist already so we need to create one and then use it
                             if (runspaceHandle == null)
                             {
-                                runspaceHandle = await this.GetRunspaceHandleAsync();
+                                runspaceHandle = await this.GetRunspaceHandleAsync().ConfigureAwait(false);
                             }
 
                             sessionDetails = this.GetSessionDetailsInRunspace(runspaceHandle.Runspace);
@@ -972,6 +989,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             bool writeOutputToHost,
             bool addToHistory)
         {
+            Validate.IsNotNull(nameof(scriptString), scriptString);
+
             return await this.ExecuteCommandAsync<object>(
                 new PSCommand().AddScript(scriptString.Trim()),
                 errorMessages,
@@ -980,7 +999,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     WriteOutputToHost = writeOutputToHost,
                     AddToHistory = addToHistory,
                     WriteInputToHost = writeInputToHost
-                });
+                }).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -992,6 +1011,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task ExecuteScriptWithArgsAsync(string script, string arguments = null, bool writeInputToHost = false)
         {
+            Validate.IsNotNull(nameof(script), script);
+
             PSCommand command = new PSCommand();
 
             if (arguments != null)
@@ -1005,8 +1026,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         new PSCommand()
                             .AddCommand("Microsoft.PowerShell.Management\\Get-Location")
                             .AddParameter("PSProvider", "FileSystem"),
-                            false,
-                            false))
+                            sendOutputToHost: false,
+                            sendErrorToHost: false).ConfigureAwait(false))
                         .FirstOrDefault()
                         .ProviderPath;
 
@@ -1062,9 +1083,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             await this.ExecuteCommandAsync<object>(
                 command,
-                null,
+                errorMessages: null,
                 sendOutputToHost: true,
-                addToHistory: true);
+                addToHistory: true).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1101,7 +1122,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             if (this.PromptNest.IsReadLineBusy())
             {
-                await this.InvocationEventQueue.InvokeOnPipelineThreadAsync(invocationAction);
+                await this.InvocationEventQueue.InvokeOnPipelineThreadAsync(invocationAction).ConfigureAwait(false);
                 return;
             }
 
@@ -1115,10 +1136,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             return await PromptContext.InvokeReadLineAsync(
                 isCommandLine,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
         }
 
-        internal static TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default(TResult))
+        internal static TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default)
         {
             using (PowerShell pwsh = PowerShell.Create())
             {
@@ -1143,12 +1164,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     PSCommand command = new PSCommand();
                     command.AddCommand(profilePath, false);
-                    await this.ExecuteCommandAsync<object>(command, true, true);
+                    await this.ExecuteCommandAsync<object>(command, sendOutputToHost: true, sendErrorToHost: true).ConfigureAwait(false);
                 }
 
                 // Gather the session details (particularly the prompt) after
                 // loading the user's profiles.
-                await this.GetSessionDetailsInRunspaceAsync();
+                await this.GetSessionDetailsInRunspaceAsync().ConfigureAwait(false);
             }
         }
 
@@ -1235,7 +1256,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             while (this.PromptNest.IsNestedPrompt)
             {
-                await this.PromptNest.WaitForCurrentFrameExitAsync(frame => this.ExitNestedPrompt());
+                await this.PromptNest.WaitForCurrentFrameExitAsync(frame => this.ExitNestedPrompt()).ConfigureAwait(false);
                 this.versionSpecificOperations.ExitNestedPrompt(ExternalHost);
             }
         }
@@ -1345,14 +1366,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.initialRunspace = null;
         }
 
-        private async Task<RunspaceHandle> GetRunspaceHandleAsync(bool isReadLine)
+        private Task<RunspaceHandle> GetRunspaceHandleAsync(bool isReadLine)
         {
-            return await this.GetRunspaceHandleImplAsync(CancellationToken.None, isReadLine);
+            return this.GetRunspaceHandleImplAsync(CancellationToken.None, isReadLine);
         }
 
-        private async Task<RunspaceHandle> GetRunspaceHandleImplAsync(CancellationToken cancellationToken, bool isReadLine)
+        private Task<RunspaceHandle> GetRunspaceHandleImplAsync(CancellationToken cancellationToken, bool isReadLine)
         {
-            return await this.PromptNest.GetRunspaceHandleAsync(cancellationToken, isReadLine);
+            return this.PromptNest.GetRunspaceHandleAsync(cancellationToken, isReadLine);
         }
 
         private ExecutionTarget GetExecutionTarget(ExecutionOptions options = null)
@@ -1461,7 +1482,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (PromptNest.IsMainThreadBusy() || (runspaceHandle.IsReadLine && PromptNest.IsReadLineBusy()))
             {
-                var unusedTask = PromptNest
+                _ = PromptNest
                     .ReleaseRunspaceHandleAsync(runspaceHandle)
                     .ConfigureAwait(false);
             }
@@ -1557,9 +1578,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// unescaped before calling this method.
         /// </summary>
         /// <param name="path"></param>
-        public async Task SetWorkingDirectoryAsync(string path)
+        public Task SetWorkingDirectoryAsync(string path)
         {
-            await this.SetWorkingDirectoryAsync(path, true);
+            return this.SetWorkingDirectoryAsync(path, isPathAlreadyEscaped: true);
         }
 
         /// <summary>
@@ -1569,6 +1590,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="isPathAlreadyEscaped">Specify false to have the path escaped, otherwise specify true if the path has already been escaped.</param>
         public async Task SetWorkingDirectoryAsync(string path, bool isPathAlreadyEscaped)
         {
+            Validate.IsNotNull(nameof(path), path);
             this.InitialWorkingDirectory = path;
 
             if (!isPathAlreadyEscaped)
@@ -1578,10 +1600,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             await ExecuteCommandAsync<PSObject>(
                 new PSCommand().AddCommand("Set-Location").AddParameter("Path", path),
-                null,
+                errorMessages: null,
                 sendOutputToHost: false,
                 sendErrorToHost: false,
-                addToHistory: false);
+                addToHistory: false).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1675,6 +1697,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string EscapePath(string path, bool escapeSpaces)
         {
+            Validate.IsNotNull(nameof(path), path);
+
             return WildcardEscapePath(path, escapeSpaces);
         }
 
@@ -1728,6 +1752,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         [Obsolete("This API is not meant for public usage and should not be used.")]
         public static string UnescapePath(string path)
         {
+            Validate.IsNotNull(nameof(path), path);
+
             return UnescapeWildcardEscapedPath(path);
         }
 
@@ -1816,6 +1842,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             public MinifiedRunspaceDetails(RunspaceDetails eventArgs)
             {
+                Validate.IsNotNull(nameof(eventArgs), eventArgs);
+
                 this.PowerShellVersion = new PowerShellVersion(eventArgs.PowerShellVersion);
                 this.RunspaceType = eventArgs.Location;
                 this.ConnectionString = eventArgs.ConnectionString;
@@ -1899,9 +1927,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             const string ExceptionFormat =
                 "{0}\r\n{1}\r\n    + CategoryInfo          : {2}\r\n    + FullyQualifiedErrorId : {3}";
 
-            IContainsErrorRecord containsErrorRecord = e as IContainsErrorRecord;
-
-            if (containsErrorRecord == null ||
+            if (!(e is IContainsErrorRecord containsErrorRecord) ||
                 containsErrorRecord.ErrorRecord == null)
             {
                 this.WriteError(e.Message, null, 0, 0);
@@ -1966,7 +1992,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        void powerShell_InvocationStateChanged(object sender, PSInvocationStateChangedEventArgs e)
+        void PowerShell_InvocationStateChanged(object sender, PSInvocationStateChangedEventArgs e)
         {
             SessionStateChangedEventArgs eventArgs = TranslateInvocationStateInfo(e.InvocationStateInfo);
             this.OnSessionStateChanged(this, eventArgs);
@@ -1974,9 +2000,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private static SessionStateChangedEventArgs TranslateInvocationStateInfo(PSInvocationStateInfo invocationState)
         {
-            PowerShellContextState newState = PowerShellContextState.Unknown;
             PowerShellExecutionResult executionResult = PowerShellExecutionResult.NotFinished;
 
+            PowerShellContextState newState;
             switch (invocationState.State)
             {
                 case PSInvocationState.NotStarted:
@@ -2150,7 +2176,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private async Task<SessionDetails> GetSessionDetailsInRunspaceAsync()
         {
-            using (RunspaceHandle runspaceHandle = await this.GetRunspaceHandleAsync())
+            using (RunspaceHandle runspaceHandle = await this.GetRunspaceHandleAsync().ConfigureAwait(false))
             {
                 return this.GetSessionDetailsInRunspace(runspaceHandle.Runspace);
             }
@@ -2302,8 +2328,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             }
 
-            EventHandler<RunspaceAvailabilityEventArgs> handler = null;
-            handler = (runspace, eventArgs) =>
+            void availabilityChangedHandler(object runspace, RunspaceAvailabilityEventArgs eventArgs)
             {
                 if (eventArgs.RunspaceAvailability != RunspaceAvailability.Available ||
                     this.versionSpecificOperations.IsDebuggerStopped(this.PromptNest, (Runspace)runspace))
@@ -2311,12 +2336,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     return;
                 }
 
-                ((Runspace)runspace).AvailabilityChanged -= handler;
+                ((Runspace)runspace).AvailabilityChanged -= availabilityChangedHandler;
                 Interlocked.Exchange(ref this.isCommandLoopRestarterSet, 0);
                 this.ConsoleReader?.StartCommandLoop();
-            };
+            }
 
-            this.CurrentRunspace.Runspace.AvailabilityChanged += handler;
+            this.CurrentRunspace.Runspace.AvailabilityChanged += availabilityChangedHandler;
             Interlocked.Exchange(ref this.isCommandLoopRestarterSet, 1);
         }
 

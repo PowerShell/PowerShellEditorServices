@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class CompletionHandler : ICompletionHandler, ICompletionResolveHandler
     {
         const int DefaultWaitTimeoutMilliseconds = 5000;
-        private readonly CompletionItem[] s_emptyCompletionResult = new CompletionItem[0];
+        private readonly CompletionItem[] s_emptyCompletionResult = Array.Empty<CompletionItem>();
 
         private readonly ILogger _logger;
         private readonly PowerShellContextService _powerShellContextService;
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await GetCompletionsInFileAsync(
                     scriptFile,
                     cursorLine,
-                    cursorColumn);
+                    cursorColumn).ConfigureAwait(false);
 
             CompletionItem[] completionItems = s_emptyCompletionResult;
 
@@ -99,14 +99,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CommandInfo commandInfo =
                 await CommandHelpers.GetCommandInfoAsync(
                     request.Label,
-                    _powerShellContextService);
+                    _powerShellContextService).ConfigureAwait(false);
 
             if (commandInfo != null)
             {
                 request.Documentation =
                     await CommandHelpers.GetCommandSynopsisAsync(
                         commandInfo,
-                        _powerShellContextService);
+                        _powerShellContextService).ConfigureAwait(false);
             }
 
             // Send back the updated CompletionItem
@@ -158,7 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         fileOffset,
                         _powerShellContextService,
                         _logger,
-                        cts.Token);
+                        cts.Token).ConfigureAwait(false);
             }
 
             if (commandCompletion == null)

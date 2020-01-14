@@ -72,9 +72,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 await _powerShellContext.ExecuteCommandAsync<TResult>(
                     _psCommand,
                     _errorMessages,
-                    _executionOptions);
+                    _executionOptions).ConfigureAwait(false);
 
-            var unusedTask = Task.Run(() => _resultsTask.SetResult(results));
+            _ = Task.Run(() => _resultsTask.SetResult(results));
         }
     }
 }

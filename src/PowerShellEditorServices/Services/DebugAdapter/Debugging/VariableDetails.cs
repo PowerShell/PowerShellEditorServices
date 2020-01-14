@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             }
             else
             {
-                childVariables = new VariableDetails[0];
+                childVariables = Array.Empty<VariableDetails>();
             }
 
             return childVariables;

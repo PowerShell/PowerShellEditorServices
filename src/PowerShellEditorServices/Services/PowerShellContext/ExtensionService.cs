@@ -4,6 +4,7 @@
 //
 
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     {
         #region Fields
 
-        private Dictionary<string, EditorCommand> editorCommands =
+        private readonly Dictionary<string, EditorCommand> editorCommands =
             new Dictionary<string, EditorCommand>();
 
         private readonly ILanguageServer _languageServer;
@@ -88,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Register the editor object in the runspace
             PSCommand variableCommand = new PSCommand();
-            using (RunspaceHandle handle = await this.PowerShellContext.GetRunspaceHandleAsync())
+            using (RunspaceHandle handle = await this.PowerShellContext.GetRunspaceHandleAsync().ConfigureAwait(false))
             {
                 handle.Runspace.SessionStateProxy.PSVariable.Set(
                     "psEditor",
@@ -104,9 +105,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task InvokeCommandAsync(string commandName, EditorContext editorContext)
         {
-            EditorCommand editorCommand;
 
-            if (this.editorCommands.TryGetValue(commandName, out editorCommand))
+            if (this.editorCommands.TryGetValue(commandName, out EditorCommand editorCommand))
             {
                 PSCommand executeCommand = new PSCommand();
                 executeCommand.AddCommand("Invoke-Command");
@@ -115,8 +115,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 await this.PowerShellContext.ExecuteCommandAsync<object>(
                     executeCommand,
-                    !editorCommand.SuppressOutput,
-                    true);
+                    sendOutputToHost: !editorCommand.SuppressOutput,
+                    sendErrorToHost: true).ConfigureAwait(false);
             }
             else
             {
@@ -135,6 +135,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>True if the command is newly registered, false if the command already exists.</returns>
         public bool RegisterCommand(EditorCommand editorCommand)
         {
+            Validate.IsNotNull(nameof(editorCommand), editorCommand);
+
             bool commandExists =
                 this.editorCommands.ContainsKey(
                     editorCommand.Name);
@@ -160,8 +162,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="commandName">The name of the command to be unregistered.</param>
         public void UnregisterCommand(string commandName)
         {
-            EditorCommand existingCommand = null;
-            if (this.editorCommands.TryGetValue(commandName, out existingCommand))
+            if (this.editorCommands.TryGetValue(commandName, out EditorCommand existingCommand))
             {
                 this.editorCommands.Remove(commandName);
                 this.OnCommandRemoved(existingCommand);

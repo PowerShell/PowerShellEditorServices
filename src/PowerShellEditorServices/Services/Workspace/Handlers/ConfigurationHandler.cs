@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             LanguageServerSettingsWrapper incomingSettings = request.Settings.ToObject<LanguageServerSettingsWrapper>();
             if(incomingSettings == null)
             {
-                return await Unit.Task;
+                return await Unit.Task.ConfigureAwait(false);
             }
 
             bool oldLoadProfiles = _configurationService.CurrentSettings.EnableProfileLoading;
@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _configurationService.CurrentSettings.EnableProfileLoading &&
                 oldLoadProfiles != _configurationService.CurrentSettings.EnableProfileLoading)
             {
-                await _powerShellContextService.LoadHostProfilesAsync();
+                await _powerShellContextService.LoadHostProfilesAsync().ConfigureAwait(false);
                 this._profilesLoaded = true;
             }
 
@@ -139,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _workspaceService.FollowSymlinks = incomingSettings.Search.FollowSymlinks;
             }
 
-            return await Unit.Task;
+            return await Unit.Task.ConfigureAwait(false);
         }
 
         public void SetCapability(DidChangeConfigurationCapability capability)

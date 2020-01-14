@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
     internal class DscBreakpointCapability : IRunspaceCapability
     {
-        private string[] dscResourceRootPaths = new string[0];
+        private string[] dscResourceRootPaths = Array.Empty<string>();
 
         private Dictionary<string, int[]> breakpointsPerFile =
             new Dictionary<string, int[]>();
@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     ? $"Enable-DscDebug -Breakpoint {hashtableString}"
                     : "Disable-DscDebug",
                 false,
-                false);
+                false).ConfigureAwait(false);
 
             // Verify all the breakpoints and return them
             foreach (var breakpoint in breakpoints)

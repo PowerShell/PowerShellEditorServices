@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await _symbolsService.FindSymbolDetailsAtLocationAsync(
                         scriptFile,
                         (int) request.Position.Line + 1,
-                        (int) request.Position.Character + 1);
+                        (int) request.Position.Character + 1).ConfigureAwait(false);
 
             List<MarkedString> symbolInfo = new List<MarkedString>();
             Range symbolRange = null;

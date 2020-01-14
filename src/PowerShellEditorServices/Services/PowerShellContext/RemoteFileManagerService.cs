@@ -315,7 +315,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             command.AddParameter("Encoding", "Byte");
 
                             byte[] fileContent =
-                                (await this.powerShellContext.ExecuteCommandAsync<byte[]>(command, false, false))
+                                (await this.powerShellContext.ExecuteCommandAsync<byte[]>(command, false, false).ConfigureAwait(false))
                                     .FirstOrDefault();
 
                             if (fileContent != null)
@@ -382,11 +382,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             StringBuilder errorMessages = new StringBuilder();
 
-            await this.powerShellContext.ExecuteCommandAsync<object>(
+            await powerShellContext.ExecuteCommandAsync<object>(
                 saveCommand,
                 errorMessages,
                 false,
-                false);
+                false).ConfigureAwait(false);
 
             if (errorMessages.Length > 0)
             {
@@ -528,7 +528,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     {
                         foreach (string remotePath in remotePathMappings.OpenedPaths)
                         {
-                            await this.editorOperations?.CloseFileAsync(remotePath);
+                            await (this.editorOperations?.CloseFileAsync(remotePath)).ConfigureAwait(false);
                         }
                     }
                 }
@@ -577,7 +577,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             // If fileContent is still null after trying to
                             // unpack the contents, just return an empty byte
                             // array.
-                            fileContent = fileContent ?? new byte[0];
+                            fileContent = fileContent ?? Array.Empty<byte>();
 
                             if (remoteFilePath != null)
                             {
@@ -589,8 +589,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             }
                             else
                             {
-                                await this.editorOperations?.NewFileAsync();
-                                EditorContext context = await this.editorOperations?.GetEditorContextAsync();
+                                await (this.editorOperations?.NewFileAsync()).ConfigureAwait(false);
+                                EditorContext context = await (editorOperations?.GetEditorContextAsync()).ConfigureAwait(false);
                                 context?.CurrentFile.InsertText(Encoding.UTF8.GetString(fileContent, 0, fileContent.Length));
                             }
                         }
