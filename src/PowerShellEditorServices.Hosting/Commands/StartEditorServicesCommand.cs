@@ -280,7 +280,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             _logger.Log(PsesLogLevel.Diagnostic, "Logging started");
         }
         
-        private static SetDistributionChannel()
+        private static void SetDistributionChannel()
         {
             //Sets the distribution channel to PSES so starts can be distinguished in PS7+ telemetry
             Environment.SetEnvironmentVariable("POWERSHELL_DISTRIBUTION_CHANNEL", "PSES");
