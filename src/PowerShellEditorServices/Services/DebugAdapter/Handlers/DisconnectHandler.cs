@@ -75,8 +75,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _logger.LogInformation("Debug adapter is shutting down...");
 
-            // Trigger the clean up of the debugger.
+#pragma warning disable CS4014
+            // Trigger the clean up of the debugger. No need to wait for it.
             Task.Run(_psesDebugServer.OnSessionEnded);
+#pragma warning restore CS4014
 
             return new DisconnectResponse();
         }
