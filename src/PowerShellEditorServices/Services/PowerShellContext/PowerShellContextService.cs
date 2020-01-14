@@ -1581,7 +1581,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="isPathAlreadyEscaped">Specify false to have the path escaped, otherwise specify true if the path has already been escaped.</param>
         public async Task SetWorkingDirectoryAsync(string path, bool isPathAlreadyEscaped)
         {
-            this.InitialWorkingDirectory = path ?? throw new ArgumentNullException(nameof(path));
+            Validate.IsNotNull(nameof(path), path);
+            this.InitialWorkingDirectory = path;
 
             if (!isPathAlreadyEscaped)
             {
