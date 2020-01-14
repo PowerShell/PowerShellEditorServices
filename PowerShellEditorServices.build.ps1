@@ -186,13 +186,15 @@ task CreateBuildInfo -Before Build {
     [string]$buildTime = [datetime]::Now.ToString("s", [System.Globalization.CultureInfo]::InvariantCulture)
 
     $buildInfoContents = @"
+using System.Globalization;
+
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     public static class BuildInfo
     {
         public static readonly string BuildVersion = "$buildVersion";
         public static readonly string BuildOrigin = "$buildOrigin";
-        public static readonly System.DateTime? BuildTime = System.DateTime.Parse("$buildTime");
+        public static readonly System.DateTime? BuildTime = System.DateTime.Parse("$buildTime", CultureInfo.InvariantCulture.DateTimeFormat);
     }
 }
 "@
