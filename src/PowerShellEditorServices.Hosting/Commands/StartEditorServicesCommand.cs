@@ -215,6 +215,8 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
                 // Create the configuration from parameters
                 EditorServicesConfig editorServicesConfig = CreateConfigObject();
+                // Set the Environment Var
+                SetDistributionChannel();
 
                 var sessionFileWriter = new SessionFileWriter(_logger, SessionDetailsPath);
                 _logger.Log(PsesLogLevel.Diagnostic, "Session file writer created");
