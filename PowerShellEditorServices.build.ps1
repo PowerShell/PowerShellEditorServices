@@ -173,7 +173,7 @@ task CreateBuildInfo -Before Build {
     # Set build info fields on build platforms
     if ($env:TF_BUILD)
     {
-        $buildOrigin = "VSTS"
+        $buildOrigin = "Release"
 
         $propsXml = [xml](Get-Content -Raw -LiteralPath "$PSScriptRoot/PowerShellEditorServices.Common.props")
         $propsBody = $propsXml.Project.PropertyGroup
