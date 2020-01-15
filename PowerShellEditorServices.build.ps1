@@ -18,6 +18,13 @@ param(
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
+if ($env:TF_BUILD) {
+    Write-Host "BUILD_BUILDNUMBER: $env:BUILD_BUILDNUMBER"
+    Write-Host "BUILD_NUMBER: $env:BUILD_NUMBER"
+    Write-Host "System.BuildNumber: ${env:System.BuildNumber}"
+    Write-Host "BUILD_BUILDID: $env:BUILD_BUILDID"
+}
+
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
