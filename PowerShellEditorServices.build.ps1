@@ -168,12 +168,12 @@ task GetProductVersion -Before PackageModule, UploadArtifacts {
 
 task CreateBuildInfo -Before Build {
     $buildVersion = "<development-build>"
-    $buildOrigin = "<development>"
+    $buildOrigin = "Development"
 
     # Set build info fields on build platforms
     if ($env:TF_BUILD)
     {
-        $buildOrigin = "Release"
+        $buildOrigin = "AzDO"
 
         $propsXml = [xml](Get-Content -Raw -LiteralPath "$PSScriptRoot/PowerShellEditorServices.Common.props")
         $propsBody = $propsXml.Project.PropertyGroup
