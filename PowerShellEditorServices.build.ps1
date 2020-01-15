@@ -18,13 +18,6 @@ param(
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
-if ($env:TF_BUILD) {
-    Write-Host "BUILD_BUILDNUMBER: $env:BUILD_BUILDNUMBER"
-    Write-Host "BUILD_NUMBER: $env:BUILD_NUMBER"
-    Write-Host "System.BuildNumber: ${env:System.BuildNumber}"
-    Write-Host "BUILD_BUILDID: $env:BUILD_BUILDID"
-}
-
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
@@ -178,9 +171,14 @@ task CreateBuildInfo -Before Build {
     $buildOrigin = "Development"
 
     # Set build info fields on build platforms
-    if ($env:TF_BUILD)
-    {
-        $buildOrigin = "AzDO"
+    if ($env:TF_BUILD) {
+        if ($env:BUILD_BUILDNUMBER -like "PR*") {
+            $buildOrigin = "PR"
+        } elseif ($env:BUILD_BUILDNUMBER -like "CI*") {
+            $buildOrigin = "CI"
+        } else {
+            $buildOrigin = "Release"
+        }
 
         $propsXml = [xml](Get-Content -Raw -LiteralPath "$PSScriptRoot/PowerShellEditorServices.Common.props")
         $propsBody = $propsXml.Project.PropertyGroup
@@ -193,13 +191,11 @@ task CreateBuildInfo -Before Build {
     }
 
     # Allow override of build info fields (except date)
-    if ($env:PSES_BUILD_VERSION)
-    {
+    if ($env:PSES_BUILD_VERSION) {
         $buildVersion = $env:PSES_BUILD_VERSION
     }
 
-    if ($env:PSES_BUILD_ORIGIN)
-    {
+    if ($env:PSES_BUILD_ORIGIN) {
         $buildOrigin = $env:PSES_BUILD_ORIGIN
     }
 
