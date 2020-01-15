@@ -18,6 +18,10 @@ param(
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
+if ($env:TF_BUILD) {
+    Write-Host "AGENT_JOBNAME: $env:AGENT_JOBNAME"
+}
+
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
@@ -172,9 +176,9 @@ task CreateBuildInfo -Before Build {
 
     # Set build info fields on build platforms
     if ($env:TF_BUILD) {
-        if ($env:BUILD_BUILDNUMBER -like "PR*") {
+        if ($env:BUILD_BUILDNUMBER -like "PR-*") {
             $buildOrigin = "PR"
-        } elseif ($env:BUILD_BUILDNUMBER -like "CI*") {
+        } elseif ($env:BUILD_BUILDNUMBER -like "master-*") {
             $buildOrigin = "CI"
         } else {
             $buildOrigin = "Release"
