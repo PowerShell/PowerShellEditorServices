@@ -276,6 +276,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Logging host information");
 
+_logger.Log(PsesLogLevel.Diagnostic, $@"
+PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
+");
+
             _logger.Log(PsesLogLevel.Verbose, $@"
 == Build Details ==
 - Editor Services version: {BuildInfo.BuildVersion}
