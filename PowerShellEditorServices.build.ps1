@@ -18,18 +18,6 @@ param(
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
-if ($env:TF_BUILD) {
-    Write-Host "BULD_DEFINITIONNAME: $env:BUILD_DEFINITIONNAME"
-    Write-Host "BULD_DEFINITIONVERSION: $env:BUILD_DEFINITIONVERSION"
-    Write-Host "BULD_REASON: $env:BUILD_REASON"
-    Write-Host "ENVIRONMENT_NAME: $env:ENVIRONMENT_NAME"
-    Write-Host "SYSTEM_DEFINITIONID: $env:SYSTEM_DEFINITIONID"
-    Write-Host "SYSTEM_JOBID: $env:SYSTEM_JOBID"
-    Write-Host "SYSTEM_JOBNAME: $env:SYSTEM_JOBNAME"
-    Write-Host "SYSTEM_STAGENAME: $env:SYSTEM_STAGENAME"
-    Write-Host "AGENT_JOBNAME: $env:AGENT_JOBNAME"
-}
-
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
@@ -186,7 +174,7 @@ task CreateBuildInfo -Before Build {
     if ($env:TF_BUILD) {
         if ($env:BUILD_BUILDNUMBER -like "PR-*") {
             $buildOrigin = "PR"
-        } elseif ($env:BUILD_BUILDNUMBER -like "master-*") {
+        } elseif ($env:BUILD_DEFINITIONNAME -like "*-CI") {
             $buildOrigin = "CI"
         } else {
             $buildOrigin = "Release"
