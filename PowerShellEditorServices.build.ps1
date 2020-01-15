@@ -170,11 +170,12 @@ task CreateBuildInfo -Before Build {
     $buildVersion = "<development-build>"
     $buildOrigin = "<development>"
 
+    $propsXml = [xml](Get-Content -Raw -LiteralPath "$PSScriptRoot/PowerShellEditorServices.Common.props")
+    $propsBody = $propsXml.Project.PropertyGroup
+    $buildVersion = $propsBody.VersionPrefix
+
     if ($propsBody.VersionSuffix)
     {
-        $propsXml = [xml](Get-Content -Raw -LiteralPath "$PSScriptRoot/PowerShellEditorServices.Common.props")
-        $propsBody = $propsXml.Project.PropertyGroup
-        $buildVersion = $propsBody.VersionPrefix
         $buildVersion += '-' + $propsBody.VersionSuffix
     }
 
