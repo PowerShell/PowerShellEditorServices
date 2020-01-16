@@ -118,15 +118,27 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestE
     Write-Host "`n### Using dotnet v$(& $script:dotnetExe --version) at path $script:dotnetExe`n" -ForegroundColor Green
 }
 
-task Clean {
-    exec { & $script:dotnetExe restore }
-    exec { & $script:dotnetExe clean }
+task BinClean {
     Remove-Item $PSScriptRoot\.tmp -Recurse -Force -ErrorAction Ignore
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
+}
+
+task Clean BinClean,{
+    exec { & $script:dotnetExe restore }
+    exec { & $script:dotnetExe clean }
     Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
+
+    # Remove bundled component modules
+    $moduleJsonPath = "$PSScriptRoot\modules.json"
+    if (Test-Path $moduleJsonPath) {
+        Get-Content -Raw $moduleJsonPath |
+            ConvertFrom-Json |
+            ForEach-Object { $_.PSObject.Properties.Name } |
+            ForEach-Object { Remove-Item -Path "$PSScriptRoot/module/$_" -Recurse -Force -ErrorAction Ignore }
+    }
 }
 
 task GetProductVersion -Before PackageModule, UploadArtifacts {
@@ -156,30 +168,34 @@ task GetProductVersion -Before PackageModule, UploadArtifacts {
 
 task CreateBuildInfo -Before Build {
     $buildVersion = "<development-build>"
-    $buildOrigin = "<development>"
+    $buildOrigin = "Development"
 
-    if ($propsBody.VersionSuffix)
-    {
+    # Set build info fields on build platforms
+    if ($env:TF_BUILD) {
+        if ($env:BUILD_BUILDNUMBER -like "PR-*") {
+            $buildOrigin = "PR"
+        } elseif ($env:BUILD_DEFINITIONNAME -like "*-CI") {
+            $buildOrigin = "CI"
+        } else {
+            $buildOrigin = "Release"
+        }
+
         $propsXml = [xml](Get-Content -Raw -LiteralPath "$PSScriptRoot/PowerShellEditorServices.Common.props")
         $propsBody = $propsXml.Project.PropertyGroup
         $buildVersion = $propsBody.VersionPrefix
-        $buildVersion += '-' + $propsBody.VersionSuffix
-    }
 
-    # Set build info fields on build platforms
-    if ($env:TF_BUILD)
-    {
-        $buildOrigin = "VSTS"
+        if ($propsBody.VersionSuffix)
+        {
+            $buildVersion += '-' + $propsBody.VersionSuffix
+        }
     }
 
     # Allow override of build info fields (except date)
-    if ($env:PSES_BUILD_VERSION)
-    {
+    if ($env:PSES_BUILD_VERSION) {
         $buildVersion = $env:PSES_BUILD_VERSION
     }
 
-    if ($env:PSES_BUILD_ORIGIN)
-    {
+    if ($env:PSES_BUILD_ORIGIN) {
         $buildOrigin = $env:PSES_BUILD_ORIGIN
     }
 
@@ -208,7 +224,7 @@ task SetupHelpForTests -Before Test {
     }
 }
 
-task Build {
+task Build BinClean,{
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Core }
     if (-not $script:IsUnix)
