@@ -1076,9 +1076,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (writeInputToHost)
             {
+                // We need to abort ReadLine first because otherwise PSReadLine will attempt to reset
+                // the cursor position to the position it's at before the call to this.WriteOutput(...) below.
+                if (this.isPSReadLineEnabled)
+                {
+                    this.PromptContext.AbortReadLine();
+                }
+
+                // TODO: Figure out why with PSReadLine turned on, we get a random newline somewhere in our output.
+                // It appears to happen at this line but more testing needs to be done:
+                // https://github.com/PowerShell/PowerShellEditorServices/blob/3b890c3018b0ef8d92d77edf1215d345d55604eb/src/PowerShellEditorServices/Services/PowerShellContext/Session/Host/TerminalPSHostUserInterface.cs#L148
                 this.WriteOutput(
-                    script + Environment.NewLine,
-                    true);
+                    script,
+                    includeNewLine: true);
             }
 
             await this.ExecuteCommandAsync<object>(
