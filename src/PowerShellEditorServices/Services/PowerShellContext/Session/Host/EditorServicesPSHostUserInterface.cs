@@ -848,14 +848,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
                     Logger.LogException("Caught exception while reading command line", e);
                 }
-                finally
-                {
-                    if (!cancellationToken.IsCancellationRequested &&
-                        originalCursorTop == await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        this.WriteLine();
-                    }
-                }
 
                 if (!string.IsNullOrWhiteSpace(commandString))
                 {
