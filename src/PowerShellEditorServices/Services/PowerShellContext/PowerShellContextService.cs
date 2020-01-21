@@ -1083,9 +1083,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     this.PromptContext.AbortReadLine();
                 }
 
-                // TODO: Figure out why with PSReadLine turned on, we get a random newline somewhere in our output.
-                // It appears to happen at this line but more testing needs to be done:
-                // https://github.com/PowerShell/PowerShellEditorServices/blob/3b890c3018b0ef8d92d77edf1215d345d55604eb/src/PowerShellEditorServices/Services/PowerShellContext/Session/Host/TerminalPSHostUserInterface.cs#L148
+                // Write the script path out and include a newline to start so the output can start
+                // on the next line.
                 this.WriteOutput(
                     script,
                     includeNewLine: true);
