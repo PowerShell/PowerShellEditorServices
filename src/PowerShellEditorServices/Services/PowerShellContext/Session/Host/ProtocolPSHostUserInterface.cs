@@ -30,7 +30,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             ILanguageServer languageServer,
             PowerShellContextService powerShellContext,
             ILogger logger)
-            : base(powerShellContext, new SimplePSHostRawUserInterface(logger), logger)
+            : base (
+                powerShellContext,
+                new SimplePSHostRawUserInterface(logger),
+                isPSReadLineEnabled: false,
+                logger)
         {
             _languageServer = languageServer;
         }

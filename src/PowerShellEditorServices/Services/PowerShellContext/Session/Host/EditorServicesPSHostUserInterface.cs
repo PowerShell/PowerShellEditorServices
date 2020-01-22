@@ -37,6 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         private PromptHandler activePromptHandler;
         private PSHostRawUserInterface rawUserInterface;
         private CancellationTokenSource commandLoopCancellationToken;
+        private bool _isPSReadLineEnabled;
 
         /// <summary>
         /// The PowerShellContext to use for executing commands.
@@ -104,11 +105,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         public EditorServicesPSHostUserInterface(
             PowerShellContextService powerShellContext,
             PSHostRawUserInterface rawUserInterface,
+            bool isPSReadLineEnabled,
             ILogger logger)
         {
             this.Logger = logger;
             this.powerShellContext = powerShellContext;
             this.rawUserInterface = rawUserInterface;
+            _isPSReadLineEnabled = isPSReadLineEnabled;
 
             this.powerShellContext.DebuggerStop += PowerShellContext_DebuggerStop;
             this.powerShellContext.DebuggerResumed += PowerShellContext_DebuggerResumed;
@@ -847,6 +850,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         OutputType.Error);
 
                     Logger.LogException("Caught exception while reading command line", e);
+                }
+                finally
+                {
+                    // This supplies the newline in the Legacy ReadLine when executing code in the terminal via hitting the ENTER key.
+                    // Without this, hitting ENTER with a no input looks like it does nothing (no new prompt is written)
+                    // and also the output would show up on the same line as the code you wanted to execute (the prompt line).
+                    // Since PSReadLine handles ENTER internally to itself, we only want to do this when using the Legacy ReadLine.
+                    if (!_isPSReadLineEnabled &&
+                        !cancellationToken.IsCancellationRequested &&
+                        originalCursorTop == await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        this.WriteLine();
+                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(commandString))

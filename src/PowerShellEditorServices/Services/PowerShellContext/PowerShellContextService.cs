@@ -199,7 +199,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 hostStartupInfo.ConsoleReplEnabled
-                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, hostStartupInfo.PSHost)
+                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, shouldUsePSReadLine, logger)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
