@@ -680,7 +680,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     runspaceHandle = await this.GetRunspaceHandleAsync(executionOptions.IsReadLine).ConfigureAwait(false);
                     if (executionOptions.WriteInputToHost)
                     {
-                        this.WriteOutput(psCommand.Commands[0].CommandText, true);
+                        this.WriteOutput(
+                            psCommand.Commands[0].CommandText,
+                            includeNewLine: true);
                     }
 
                     if (executionTarget == ExecutionTarget.Debugger)
@@ -1074,27 +1076,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 command.AddCommand(script, false);
             }
 
-            if (writeInputToHost)
-            {
-                // We need to abort ReadLine first because otherwise PSReadLine will attempt to reset
-                // the cursor position to the position it's at before the call to this.WriteOutput(...) below.
-                if (this.isPSReadLineEnabled)
-                {
-                    this.PromptContext.AbortReadLine();
-                }
-
-                // Write the script path out and include a newline to start so the output can start
-                // on the next line.
-                this.WriteOutput(
-                    script,
-                    includeNewLine: true);
-            }
 
             await this.ExecuteCommandAsync<object>(
-                command,
-                errorMessages: null,
-                sendOutputToHost: true,
-                addToHistory: true).ConfigureAwait(false);
+                    command,
+                    errorMessages: null,
+                    new ExecutionOptions
+                    {
+                        WriteInputToHost = true,
+                        WriteOutputToHost = true,
+                        WriteErrorsToHost = true,
+                        AddToHistory = true,
+                    }).ConfigureAwait(false);
         }
 
         /// <summary>
