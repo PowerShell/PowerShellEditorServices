@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         private PromptHandler activePromptHandler;
         private PSHostRawUserInterface rawUserInterface;
         private CancellationTokenSource commandLoopCancellationToken;
-        private bool _isPSReadLineEnabled;
+        private readonly bool _isPSReadLineEnabled;
 
         /// <summary>
         /// The PowerShellContext to use for executing commands.
