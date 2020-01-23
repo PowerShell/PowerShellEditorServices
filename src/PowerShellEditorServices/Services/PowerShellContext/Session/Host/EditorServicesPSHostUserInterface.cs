@@ -34,10 +34,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private readonly ConcurrentDictionary<ProgressKey, object> currentProgressMessages =
             new ConcurrentDictionary<ProgressKey, object>();
+
+        private readonly bool _isPSReadLineEnabled;
         private PromptHandler activePromptHandler;
         private PSHostRawUserInterface rawUserInterface;
         private CancellationTokenSource commandLoopCancellationToken;
-        private readonly bool _isPSReadLineEnabled;
 
         /// <summary>
         /// The PowerShellContext to use for executing commands.
