@@ -37,11 +37,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="internalHost">The InternalHost instance from the origin runspace.</param>
         public TerminalPSHostUserInterface(
             PowerShellContextService powerShellContext,
-            ILogger logger,
-            PSHost internalHost)
-            : base(
+            PSHost internalHost,
+            bool isPSReadLineEnabled,
+            ILogger logger)
+            : base (
                 powerShellContext,
                 new TerminalPSHostRawUserInterface(logger, internalHost),
+                isPSReadLineEnabled,
                 logger)
         {
             this.internalHostUI = internalHost.UI;

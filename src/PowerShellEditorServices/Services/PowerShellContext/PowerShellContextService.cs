@@ -199,7 +199,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 hostStartupInfo.ConsoleReplEnabled
-                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, logger, hostStartupInfo.PSHost)
+                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, shouldUsePSReadLine, logger)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
@@ -680,7 +680,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     runspaceHandle = await this.GetRunspaceHandleAsync(executionOptions.IsReadLine).ConfigureAwait(false);
                     if (executionOptions.WriteInputToHost)
                     {
-                        this.WriteOutput(psCommand.Commands[0].CommandText, true);
+                        this.WriteOutput(
+                            psCommand.Commands[0].CommandText,
+                            includeNewLine: true);
                     }
 
                     if (executionTarget == ExecutionTarget.Debugger)
@@ -1074,18 +1076,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 command.AddCommand(script, false);
             }
 
-            if (writeInputToHost)
-            {
-                this.WriteOutput(
-                    script + Environment.NewLine,
-                    true);
-            }
 
             await this.ExecuteCommandAsync<object>(
-                command,
-                errorMessages: null,
-                sendOutputToHost: true,
-                addToHistory: true).ConfigureAwait(false);
+                    command,
+                    errorMessages: null,
+                    new ExecutionOptions
+                    {
+                        WriteInputToHost = true,
+                        WriteOutputToHost = true,
+                        WriteErrorsToHost = true,
+                        AddToHistory = true,
+                    }).ConfigureAwait(false);
         }
 
         /// <summary>
