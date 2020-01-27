@@ -1161,12 +1161,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (this.profilePaths != null)
             {
                 // Load any of the profile paths that exist
+                var command = new PSCommand();
                 foreach (var profilePath in GetLoadableProfilePaths(this.profilePaths))
                 {
-                    PSCommand command = new PSCommand();
-                    command.AddCommand(profilePath, false);
-                    await this.ExecuteCommandAsync<object>(command, sendOutputToHost: true, sendErrorToHost: true).ConfigureAwait(false);
+                    command.AddCommand(profilePath, false).AddStatement();
                 }
+                await ExecuteCommandAsync<object>(command, sendOutputToHost: true, sendErrorToHost: true).ConfigureAwait(false);
 
                 // Gather the session details (particularly the prompt) after
                 // loading the user's profiles.
