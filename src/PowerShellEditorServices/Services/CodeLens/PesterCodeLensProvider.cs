@@ -42,9 +42,10 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <returns>All CodeLenses for the given Pester symbol.</returns>
         private CodeLens[] GetPesterLens(PesterSymbolReference pesterSymbol, ScriptFile scriptFile)
         {
-
+            var word = pesterSymbol.Command == PesterCommandType.It ? "test" : "tests";
             var codeLensResults = new CodeLens[]
             {
+                
                 new CodeLens()
                 {
                     Range = pesterSymbol.ScriptRegion.ToRange(),
@@ -55,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     Command = new Command()
                     {
                         Name = "PowerShell.RunPesterTests",
-                        Title = "Run tests",
+                        Title = $"Run {word}",
                         Arguments = JArray.FromObject(new object[] {
                             scriptFile.DocumentUri,
                             false /* No debug */,
@@ -74,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     Command = new Command()
                     {
                         Name = "PowerShell.RunPesterTests",
-                        Title = "Debug tests",
+                        Title = $"Debug {word}",
                         Arguments = JArray.FromObject(new object[] {
                             scriptFile.DocumentUri,
                             true /* No debug */,
@@ -99,11 +100,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             {
                 if (symbol is PesterSymbolReference pesterSymbol)
                 {
-                    if (pesterSymbol.Command != PesterCommandType.Describe)
-                    {
-                        continue;
-                    }
-
                     lenses.AddRange(GetPesterLens(pesterSymbol, scriptFile));
                 }
             }
