@@ -1166,7 +1166,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     command.AddCommand(profilePath, false).AddStatement();
                 }
-                await ExecuteCommandAsync<object>(command, sendOutputToHost: true, sendErrorToHost: true).ConfigureAwait(false);
+                await ExecuteCommandAsync<object>(command, sendOutputToHost: true).ConfigureAwait(false);
 
                 // Gather the session details (particularly the prompt) after
                 // loading the user's profiles.
