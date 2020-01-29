@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
@@ -41,11 +42,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _debugStateService = debugStateService;
         }
 
-        public List<Breakpoint> GetBreakpoints()
+        public async Task<List<Breakpoint>> GetBreakpointsAsync()
         {
-            return BreakpointApiUtils.GetBreakpoints(
-                _powerShellContextService.CurrentRunspace.Runspace.Debugger,
-                _debugStateService.RunspaceId);
+            if (VersionUtils.IsPS7OrGreater)
+            {
+                return BreakpointApiUtils.GetBreakpoints(
+                    _powerShellContextService.CurrentRunspace.Runspace.Debugger,
+                    _debugStateService.RunspaceId);
+            }
+
+            // Legacy behavior
+            PSCommand psCommand = new PSCommand();
+            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
+            IEnumerable<Breakpoint> breakpoints = await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand);
+            return breakpoints.ToList();
         }
 
         public async Task<IEnumerable<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IEnumerable<BreakpointDetails> breakpoints)
@@ -238,9 +248,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 PSCommand psCommand = new PSCommand();
                 psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
+
+                if (!string.IsNullOrEmpty(scriptPath))
+                {
+                    psCommand.AddParameter("Script", scriptPath);
+                }
+
                 psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
 
-                await _powerShellContextService.ExecuteCommandAsync<object>(psCommand);
+                await _powerShellContextService.ExecuteCommandAsync<object>(psCommand).ConfigureAwait(false);
             }
             catch (Exception e)
             {

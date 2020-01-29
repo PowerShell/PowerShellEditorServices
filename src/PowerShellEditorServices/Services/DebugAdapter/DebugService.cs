@@ -212,7 +212,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (clearExisting)
             {
                 // Flatten dictionary values into one list and remove them all.
-                await _breakpointService.RemoveBreakpointsAsync(_breakpointService.GetBreakpoints().Where( i => i is CommandBreakpoint)).ConfigureAwait(false);
+                await _breakpointService.RemoveBreakpointsAsync((await _breakpointService.GetBreakpointsAsync()).Where( i => i is CommandBreakpoint)).ConfigureAwait(false);
             }
 
             if (breakpoints.Length > 0)
@@ -672,8 +672,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // {
                 // if (breakpoints.Count > 0)
                 // {
-                    await _breakpointService.RemoveBreakpointsAsync(_breakpointService.GetBreakpoints()
-                        .Where(bp => bp is LineBreakpoint lbp && string.Equals(lbp.Script, scriptFile.FilePath))).ConfigureAwait(false);
+                    await _breakpointService.RemoveAllBreakpointsAsync(scriptFile.FilePath).ConfigureAwait(false);
+                    // await _breakpointService.RemoveBreakpointsAsync((await _breakpointService.GetBreakpointsAsync())
+                    //     .Where(bp => bp is LineBreakpoint lbp && string.Equals(lbp.Script, scriptFile.FilePath))).ConfigureAwait(false);
 
                     // Clear the existing breakpoints list for the file
                     // breakpoints.Clear();
