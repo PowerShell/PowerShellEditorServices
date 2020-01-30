@@ -370,7 +370,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 .ExecuteScriptStringAsync(debugRunspaceCmd)
                 .ContinueWith(OnExecutionCompletedAsync);
 
-            _jsonRpcServer.SendNotification(EventNames.Initialized);
             return Unit.Value;
         }
 
