@@ -288,7 +288,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _messageQueue = new BlockingCollection<string>();
 
             // Start writer listening to queue
-            _writerTask = Task.Run(RunWriter);
+            _writerTask = Task.Factory.StartNew(
+                RunWriter,
+                CancellationToken.None, // Inner method will manage cancellation
+                TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
+                TaskScheduler.Default);
         }
 
         public void OnCompleted()

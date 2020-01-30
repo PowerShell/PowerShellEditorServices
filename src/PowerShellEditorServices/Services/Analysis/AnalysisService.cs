@@ -578,14 +578,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private async Task<PowerShellResult> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap = null)
+        private Task<PowerShellResult> InvokePowerShellAsync(string command, IDictionary<string, object> paramArgMap = null)
         {
-            var task = Task.Run(() =>
-            {
-                return InvokePowerShell(command, paramArgMap);
-            });
-
-            return await task.ConfigureAwait(false);
+            return Task.Run(() => InvokePowerShell(command, paramArgMap));
         }
 
         /// <summary>
@@ -694,7 +689,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             public bool HasErrors { get; }
         }
 
-        internal async Task RunScriptDiagnosticsAsync(
+        internal Task RunScriptDiagnosticsAsync(
             ScriptFile[] filesToAnalyze)
         {
             // If there's an existing task, attempt to cancel it
@@ -721,13 +716,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 TaskCompletionSource<bool> cancelTask = new TaskCompletionSource<bool>();
                 cancelTask.SetCanceled();
-                return;
+                return Task.CompletedTask;
             }
 
             // If filesToAnalzye is empty, nothing to do so return early.
             if (filesToAnalyze.Length == 0)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             // Create a fresh cancellation token and then start the task.
@@ -735,16 +730,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // don't block the main message loop thread.
             // TODO: Is there a better way to do this?
             s_existingRequestCancellation = new CancellationTokenSource();
-            await Task.Factory.StartNew(
-                () =>
-                    DelayThenInvokeDiagnosticsAsync(
-                        750,
-                        filesToAnalyze,
-                        _configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false,
-                        s_existingRequestCancellation.Token),
-                CancellationToken.None,
-                TaskCreationOptions.None,
-                TaskScheduler.Default).ConfigureAwait(false);
+            bool scriptAnalysisEnabled = _configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false;
+            return Task.Run(() => DelayThenInvokeDiagnosticsAsync(delayMilliseconds: 750, filesToAnalyze, scriptAnalysisEnabled, s_existingRequestCancellation.Token));
         }
 
         private async Task DelayThenInvokeDiagnosticsAsync(
