@@ -185,7 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 if (clearExisting)
                 {
-                    await this.ClearBreakpointsInFileAsync(scriptFile).ConfigureAwait(false);
+                    await _breakpointService.RemoveAllBreakpointsAsync(scriptFile.FilePath).ConfigureAwait(false);
                 }
 
                 return (await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false)).ToArray();
@@ -664,23 +664,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #endregion
 
         #region Private Methods
-
-        private async Task ClearBreakpointsInFileAsync(ScriptFile scriptFile)
-        {
-            // Get the list of breakpoints for this file
-            // if (_breakpointService.BreakpointsPerFile.TryGetValue(scriptFile.Id, out HashSet<Breakpoint> breakpoints))
-            // {
-                // if (breakpoints.Count > 0)
-                // {
-                    await _breakpointService.RemoveAllBreakpointsAsync(scriptFile.FilePath).ConfigureAwait(false);
-                    // await _breakpointService.RemoveBreakpointsAsync((await _breakpointService.GetBreakpointsAsync())
-                    //     .Where(bp => bp is LineBreakpoint lbp && string.Equals(lbp.Script, scriptFile.FilePath))).ConfigureAwait(false);
-
-                    // Clear the existing breakpoints list for the file
-                    // breakpoints.Clear();
-                // }
-            // }
-        }
 
         private async Task FetchStackFramesAndVariablesAsync(string scriptNameOverride)
         {

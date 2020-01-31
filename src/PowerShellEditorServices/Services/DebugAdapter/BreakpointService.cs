@@ -281,6 +281,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                                 bps.Remove(lineBreakpoint);
                             }
                             break;
+                        default:
+                            throw new ArgumentException("Unsupported breakpoint type.");
                     }
                 }
 
