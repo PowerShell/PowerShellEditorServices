@@ -35,10 +35,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // Now send the Initialize response to continue setup
             return new InitializeResponse
                 {
+                    SupportsConditionalBreakpoints = true,
                     SupportsConfigurationDoneRequest = true,
                     SupportsFunctionBreakpoints = true,
-                    SupportsConditionalBreakpoints = true,
                     SupportsHitConditionalBreakpoints = true,
+                    SupportsLogPoints = true,
                     SupportsSetVariable = true
                 };
         }

@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
@@ -370,6 +371,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 .ExecuteScriptStringAsync(debugRunspaceCmd)
                 .ContinueWith(OnExecutionCompletedAsync);
 
+            if (runspaceVersion.Version.Major >= 7)
+            {
+                _jsonRpcServer.SendNotification(EventNames.Initialized);
+            }
             return Unit.Value;
         }
 
@@ -387,33 +392,33 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _logger.LogTrace("Execution completed, terminating...");
 
-            //_debugStateService.ExecutionCompleted = true;
+            _debugStateService.ExecutionCompleted = true;
 
-            //_debugEventHandlerService.UnregisterEventHandlers();
+            _debugEventHandlerService.UnregisterEventHandlers();
 
-            //if (_debugStateService.IsAttachSession)
-            //{
-            //    // Pop the sessions
-            //    if (_powerShellContextService.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
-            //    {
-            //        try
-            //        {
-            //            await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess");
+            if (_debugStateService.IsAttachSession)
+            {
+               // Pop the sessions
+               if (_powerShellContextService.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
+               {
+                   try
+                   {
+                       await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess");
 
-            //            if (_debugStateService.IsRemoteAttach &&
-            //                _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
-            //            {
-            //                await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession");
-            //            }
-            //        }
-            //        catch (Exception e)
-            //        {
-            //            _logger.LogException("Caught exception while popping attached process after debugging", e);
-            //        }
-            //    }
-            //}
+                       if (_debugStateService.IsRemoteAttach &&
+                           _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
+                       {
+                           await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession");
+                       }
+                   }
+                   catch (Exception e)
+                   {
+                       _logger.LogException("Caught exception while popping attached process after debugging", e);
+                   }
+               }
+            }
 
-            //_debugService.IsClientAttached = false;
+            _debugService.IsClientAttached = false;
             _jsonRpcServer.SendNotification(EventNames.Terminated);
         }
     }

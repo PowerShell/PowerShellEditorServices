@@ -4,18 +4,13 @@
 //
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Management.Automation;
-using System.Management.Automation.Language;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
-using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -44,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<List<Breakpoint>> GetBreakpointsAsync()
         {
-            if (VersionUtils.IsPS7OrGreater)
+            if (BreakpointApiUtils.SupportsBreakpointApis)
             {
                 return BreakpointApiUtils.GetBreakpoints(
                     _powerShellContextService.CurrentRunspace.Runspace.Debugger,
@@ -60,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<IEnumerable<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IEnumerable<BreakpointDetails> breakpoints)
         {
-            if (VersionUtils.IsPS7OrGreater)
+            if (BreakpointApiUtils.SupportsBreakpointApis)
             {
                 foreach (BreakpointDetails breakpointDetails in breakpoints)
                 {
@@ -150,7 +145,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<IEnumerable<CommandBreakpointDetails>> SetCommandBreakpoints(IEnumerable<CommandBreakpointDetails> breakpoints)
         {
-            if (VersionUtils.IsPS7OrGreater)
+            if (BreakpointApiUtils.SupportsBreakpointApis)
             {
                 foreach (CommandBreakpointDetails commandBreakpointDetails in breakpoints)
                 {
@@ -226,7 +221,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             try
             {
-                if (VersionUtils.IsPS7OrGreater)
+                if (BreakpointApiUtils.SupportsBreakpointApis)
                 {
                     foreach (Breakpoint breakpoint in BreakpointApiUtils.GetBreakpoints(
                             _powerShellContextService.CurrentRunspace.Runspace.Debugger,
@@ -266,7 +261,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task RemoveBreakpointsAsync(IEnumerable<Breakpoint> breakpoints)
         {
-            if (VersionUtils.IsPS7OrGreater)
+            if (BreakpointApiUtils.SupportsBreakpointApis)
             {
                 foreach (Breakpoint breakpoint in breakpoints)
                 {

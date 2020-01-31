@@ -9,9 +9,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 using OmniSharp.Extensions.JsonRpc;
@@ -100,12 +100,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 ScriptFile untitledScript = _workspaceService.GetFile(scriptToLaunch);
 
-                if (VersionUtils.IsPS7OrGreater)
+                if (BreakpointApiUtils.SupportsBreakpointApis)
                 {
+                    // Parse untitled files with their `Untitled:` URI as the file name which will cache the URI & contents within the PowerShell parser.
+                    // By doing this, we light up the ability to debug Untitled files with breakpoints.
+                    // This is only possible via the direct usage of the breakpoint APIs in PowerShell because
+                    // Set-PSBreakpoint validates that paths are actually on the filesystem.
                     ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri, out Token[] tokens, out ParseError[] errors);
 
                     // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
-                    PSCommand cmd = new PSCommand().AddScript("& $args[0]").AddArgument(ast.GetScriptBlock());
+                    var cmd = new PSCommand().AddScript("& $args[0]").AddArgument(ast.GetScriptBlock());
                     await _powerShellContextService
                         .ExecuteCommandAsync<object>(cmd, sendOutputToHost: true, sendErrorToHost:true)
                         .ConfigureAwait(false);

@@ -5,14 +5,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Reflection;
 using System.Text;
 using System.Threading;
-using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
@@ -115,6 +113,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         #endregion
 
+        #region Public Static Properties
+
+        // TODO: Try to compute this more dynamically. If we're launching a script in the PSIC, there are APIs are available in PS 5.1 and up.
+        // For now, only PS7 or greater gets this feature.
+        public static bool SupportsBreakpointApis => VersionUtils.IsPS7OrGreater;
+
+        #endregion
+
         #region Public Static Methods
 
         public static Breakpoint SetBreakpoint(Debugger debugger, BreakpointDetailsBase breakpoint, int? runspaceId = null)
@@ -172,7 +178,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     // In the HitCount only case, this is simple as we can just use the HitCount
                     // property on the breakpoint object which is represented by $_.
                     builder.Insert(0, $"if ($_.HitCount -eq {parsedHitCount}) {{ ")
-                        .Append(" }}");
+                        .Append(" }");
                 }
 
                 Interlocked.Increment(ref breakpointHitCounter);
@@ -181,7 +187,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     $"$global:{s_psesGlobalVariableNamePrefix}BreakHitCounter_{breakpointHitCounter}";
 
                 builder.Insert(0, $"if (++{globalHitCountVarName} -eq {parsedHitCount}) {{ ")
-                    .Append(" }}");
+                    .Append(" }");
             }
 
             if (!string.IsNullOrWhiteSpace(condition))

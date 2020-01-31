@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             string fileExtension = Path.GetExtension(scriptFile?.FilePath ?? "")?.ToLower();
             bool isUntitledPath = ScriptFile.IsUntitledPath(request.Source.Path);
             if ((!isUntitledPath && fileExtension != ".ps1" && fileExtension != ".psm1") ||
-                (!VersionUtils.IsPS7OrGreater && isUntitledPath))
+                (!BreakpointApiUtils.SupportsBreakpointApis && isUntitledPath))
             {
                 _logger.LogWarning(
                     $"Attempted to set breakpoints on a non-PowerShell file: {request.Source.Path}");
@@ -189,7 +189,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     (int)srcBreakpoint.Line,
                     (int?)srcBreakpoint.Column,
                     srcBreakpoint.Condition,
-                    srcBreakpoint.HitCondition))
+                    srcBreakpoint.HitCondition,
+                    srcBreakpoint.LogMessage))
                 .ToArray();
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
