@@ -312,7 +312,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         keyValuePair.Key,
                         keyValuePair.Value != null
                             ? PSObject.AsPSObject(keyValuePair.Value)
-                            : null);
+                            : string.Empty);
                 }
             }
 
