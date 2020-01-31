@@ -45,6 +45,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 return [Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null]
             }";
 
+        private static ExecutionOptions s_psrlExecutionOptions = new ExecutionOptions
+        {
+            WriteErrorsToHost = false,
+            WriteOutputToHost = false,
+            InterruptCommandPrompt = false,
+            AddToHistory = false,
+            IsReadLine = true,
+        };
+
         private readonly PowerShellContextService _powerShellContext;
 
         private readonly PromptNest _promptNest;
@@ -133,19 +142,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 .AddScript(ReadLineScript)
                 .AddArgument(_readLineCancellationSource.Token);
 
-            var executionOptions = new ExecutionOptions
-            {
-                WriteErrorsToHost = false,
-                WriteOutputToHost = false,
-                InterruptCommandPrompt = false,
-                AddToHistory = false,
-                IsReadLine = isCommandLine,
-            };
-
             IEnumerable<string> readLineResults = await _powerShellContext.ExecuteCommandAsync<string>(
                 readLineCommand,
                 errorMessages: null,
-                executionOptions).ConfigureAwait(false);
+                s_psrlExecutionOptions).ConfigureAwait(false);
 
             string line = readLineResults.FirstOrDefault();
 
