@@ -310,9 +310,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 {
                     psObjectDict.Add(
                         keyValuePair.Key,
-                        keyValuePair.Value != null
-                            ? PSObject.AsPSObject(keyValuePair.Value)
-                            : string.Empty);
+                        PSObject.AsPSObject(keyValuePair.Value ?? string.Empty));
                 }
             }
 
