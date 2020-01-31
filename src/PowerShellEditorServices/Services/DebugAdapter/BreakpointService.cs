@@ -86,17 +86,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     !string.IsNullOrWhiteSpace(breakpoint.HitCondition) ||
                     !string.IsNullOrWhiteSpace(breakpoint.LogMessage))
                 {
-                    try
-                    {
-                        actionScriptBlock = BreakpointApiUtils.GetBreakpointActionScriptBlock(
-                            breakpoint.Condition,
-                            breakpoint.HitCondition,
-                            breakpoint.LogMessage);
-                    }
-                    catch (InvalidOperationException e)
+                    actionScriptBlock = BreakpointApiUtils.GetBreakpointActionScriptBlock(
+                        breakpoint.Condition,
+                        breakpoint.HitCondition,
+                        breakpoint.LogMessage,
+                        out string errorMessage);
+
+                    if (!string.IsNullOrEmpty(errorMessage))
                     {
                         breakpoint.Verified = false;
-                        breakpoint.Message = e.Message;
+                        breakpoint.Message = errorMessage;
+                        configuredBreakpoints.Add(breakpoint);
+                        continue;
                     }
                 }
 
@@ -188,12 +189,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     !string.IsNullOrWhiteSpace(breakpoint.HitCondition))
                 {
                     ScriptBlock actionScriptBlock =
-                        BreakpointApiUtils.GetBreakpointActionScriptBlock(breakpoint);
+                        BreakpointApiUtils.GetBreakpointActionScriptBlock(
+                            breakpoint.Condition,
+                            breakpoint.HitCondition,
+                            logMessage: null,
+                            out string errorMessage);
 
                     // If there was a problem with the condition string,
                     // move onto the next breakpoint.
-                    if (actionScriptBlock == null)
+                    if (!string.IsNullOrEmpty(errorMessage))
                     {
+                        breakpoint.Verified = false;
+                        breakpoint.Message = errorMessage;
                         configuredBreakpoints.Add(breakpoint);
                         continue;
                     }

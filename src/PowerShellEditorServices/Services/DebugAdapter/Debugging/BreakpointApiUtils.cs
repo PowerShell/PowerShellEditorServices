@@ -132,7 +132,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 !string.IsNullOrWhiteSpace(breakpoint.HitCondition) ||
                 !string.IsNullOrWhiteSpace(logMessage))
             {
-                actionScriptBlock = GetBreakpointActionScriptBlock(breakpoint.Condition, breakpoint.HitCondition, logMessage);
+                actionScriptBlock = GetBreakpointActionScriptBlock(
+                    breakpoint.Condition,
+                    breakpoint.HitCondition,
+                    logMessage,
+                    out string errorMessage);
+
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    // This is handled by the caller where it will set the 'Message' and 'Verified' on the BreakpointDetails
+                    throw new InvalidOperationException(errorMessage);
+                }
             }
 
             switch (breakpoint)
@@ -158,165 +168,86 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             return RemoveBreakpointDelegate(debugger, breakpoint, runspaceId);
         }
 
-        public static ScriptBlock GetBreakpointActionScriptBlock(string condition, string hitCondition, string logMessage)
-        {
-            StringBuilder builder = new StringBuilder(
-                string.IsNullOrEmpty(logMessage)
-                    ? "break"
-                    : $"Microsoft.PowerShell.Utility\\Write-Host '{logMessage}'");
-
-            // If HitCondition specified, parse and verify it.
-            if (!(string.IsNullOrWhiteSpace(hitCondition)))
-            {
-                if (!int.TryParse(hitCondition, out int parsedHitCount))
-                {
-                    throw new InvalidOperationException("Hit Count was not a valid integer.");
-                }
-
-                if(string.IsNullOrWhiteSpace(condition))
-                {
-                    // In the HitCount only case, this is simple as we can just use the HitCount
-                    // property on the breakpoint object which is represented by $_.
-                    builder.Insert(0, $"if ($_.HitCount -eq {parsedHitCount}) {{ ")
-                        .Append(" }");
-                }
-
-                Interlocked.Increment(ref breakpointHitCounter);
-
-                string globalHitCountVarName =
-                    $"$global:{s_psesGlobalVariableNamePrefix}BreakHitCounter_{breakpointHitCounter}";
-
-                builder.Insert(0, $"if (++{globalHitCountVarName} -eq {parsedHitCount}) {{ ")
-                    .Append(" }");
-            }
-
-            if (!string.IsNullOrWhiteSpace(condition))
-            {
-                ScriptBlock parsed = ScriptBlock.Create(condition);
-
-                // Check for simple, common errors that ScriptBlock parsing will not catch
-                // e.g. $i == 3 and $i > 3
-                if (!ValidateBreakpointConditionAst(parsed.Ast, out string message))
-                {
-                    throw new InvalidOperationException(message);
-                }
-
-                // Check for "advanced" condition syntax i.e. if the user has specified
-                // a "break" or  "continue" statement anywhere in their scriptblock,
-                // pass their scriptblock through to the Action parameter as-is.
-                if (parsed.Ast.Find(ast =>
-                    (ast is BreakStatementAst || ast is ContinueStatementAst), true) != null)
-                {
-                    return parsed;
-                }
-
-                builder.Insert(0, $"if ({condition}) {{ ")
-                    .Append(" }}");
-            }
-
-            return ScriptBlock.Create(builder.ToString());
-        }
-
         /// <summary>
         /// Inspects the condition, putting in the appropriate scriptblock template
         /// "if (expression) { break }".  If errors are found in the condition, the
         /// breakpoint passed in is updated to set Verified to false and an error
         /// message is put into the breakpoint.Message property.
         /// </summary>
-        /// <param name="breakpoint"></param>
+        /// <param name="condition">The expression that needs to be true for the breakpoint to be triggered.</param>
+        /// <param name="hitCondition">The amount of times this line should be hit til the breakpoint is triggered.</param>
+        /// <param name="logMessage">The log message to write instead of calling 'break'. In VS Code, this is called a 'logPoint'.</param>
         /// <returns>ScriptBlock</returns>
-        public static ScriptBlock GetBreakpointActionScriptBlock(
-            BreakpointDetailsBase breakpoint)
+        public static ScriptBlock GetBreakpointActionScriptBlock(string condition, string hitCondition, string logMessage, out string errorMessage)
         {
+            errorMessage = null;
+
             try
             {
-                ScriptBlock actionScriptBlock;
-                int? hitCount = null;
+                StringBuilder builder = new StringBuilder(
+                    string.IsNullOrEmpty(logMessage)
+                        ? "break"
+                        : $"Microsoft.PowerShell.Utility\\Write-Host '{logMessage}'");
 
                 // If HitCondition specified, parse and verify it.
-                if (!(string.IsNullOrWhiteSpace(breakpoint.HitCondition)))
+                if (!(string.IsNullOrWhiteSpace(hitCondition)))
                 {
-                    if (int.TryParse(breakpoint.HitCondition, out int parsedHitCount))
+                    if (!int.TryParse(hitCondition, out int parsedHitCount))
                     {
-                        hitCount = parsedHitCount;
+                        throw new InvalidOperationException("Hit Count was not a valid integer.");
                     }
-                    else
+
+                    if(string.IsNullOrWhiteSpace(condition))
                     {
-                        breakpoint.Verified = false;
-                        breakpoint.Message = $"The specified HitCount '{breakpoint.HitCondition}' is not valid. " +
-                                              "The HitCount must be an integer number.";
-                        return null;
+                        // In the HitCount only case, this is simple as we can just use the HitCount
+                        // property on the breakpoint object which is represented by $_.
+                        builder.Insert(0, $"if ($_.HitCount -eq {parsedHitCount}) {{ ")
+                            .Append(" }");
                     }
+
+                    int incrementResult = Interlocked.Increment(ref breakpointHitCounter);
+
+                    string globalHitCountVarName =
+                        $"$global:{s_psesGlobalVariableNamePrefix}BreakHitCounter_{incrementResult}";
+
+                    builder.Insert(0, $"if (++{globalHitCountVarName} -eq {parsedHitCount}) {{ ")
+                        .Append(" }");
                 }
 
-                // Create an Action scriptblock based on condition and/or hit count passed in.
-                if (hitCount.HasValue && string.IsNullOrWhiteSpace(breakpoint.Condition))
+                if (!string.IsNullOrWhiteSpace(condition))
                 {
-                    // In the HitCount only case, this is simple as we can just use the HitCount
-                    // property on the breakpoint object which is represented by $_.
-                    string action = $"if ($_.HitCount -eq {hitCount}) {{ break }}";
-                    actionScriptBlock = ScriptBlock.Create(action);
-                }
-                else if (!string.IsNullOrWhiteSpace(breakpoint.Condition))
-                {
-                    // Must be either condition only OR condition and hit count.
-                    actionScriptBlock = ScriptBlock.Create(breakpoint.Condition);
+                    ScriptBlock parsed = ScriptBlock.Create(condition);
 
                     // Check for simple, common errors that ScriptBlock parsing will not catch
                     // e.g. $i == 3 and $i > 3
-                    if (!ValidateBreakpointConditionAst(actionScriptBlock.Ast, out string message))
+                    if (!ValidateBreakpointConditionAst(parsed.Ast, out string message))
                     {
-                        breakpoint.Verified = false;
-                        breakpoint.Message = message;
-                        return null;
+                        throw new InvalidOperationException(message);
                     }
 
                     // Check for "advanced" condition syntax i.e. if the user has specified
                     // a "break" or  "continue" statement anywhere in their scriptblock,
                     // pass their scriptblock through to the Action parameter as-is.
-                    Ast breakOrContinueStatementAst =
-                        actionScriptBlock.Ast.Find(
-                            ast => (ast is BreakStatementAst || ast is ContinueStatementAst), true);
-
-                    // If this isn't advanced syntax then the conditions string should be a simple
-                    // expression that needs to be wrapped in a "if" test that conditionally executes
-                    // a break statement.
-                    if (breakOrContinueStatementAst == null)
+                    if (parsed.Ast.Find(ast =>
+                        (ast is BreakStatementAst || ast is ContinueStatementAst), true) != null)
                     {
-                        string wrappedCondition;
-
-                        if (hitCount.HasValue)
-                        {
-                            Interlocked.Increment(ref breakpointHitCounter);
-
-                            string globalHitCountVarName =
-                                $"$global:{s_psesGlobalVariableNamePrefix}BreakHitCounter_{breakpointHitCounter}";
-
-                            wrappedCondition =
-                                $"if ({breakpoint.Condition}) {{ if (++{globalHitCountVarName} -eq {hitCount}) {{ break }} }}";
-                        }
-                        else
-                        {
-                            wrappedCondition = $"if ({breakpoint.Condition}) {{ break }}";
-                        }
-
-                        actionScriptBlock = ScriptBlock.Create(wrappedCondition);
+                        return parsed;
                     }
-                }
-                else
-                {
-                    // Shouldn't get here unless someone called this with no condition and no hit count.
-                    actionScriptBlock = ScriptBlock.Create("break");
+
+                    builder.Insert(0, $"if ({condition}) {{ ")
+                        .Append(" }");
                 }
 
-                return actionScriptBlock;
+                return ScriptBlock.Create(builder.ToString());
             }
-            catch (ParseException ex)
+            catch (ParseException e)
             {
-                // Failed to create conditional breakpoint likely because the user provided an
-                // invalid PowerShell expression. Let the user know why.
-                breakpoint.Verified = false;
-                breakpoint.Message = ExtractAndScrubParseExceptionMessage(ex, breakpoint.Condition);
+                errorMessage = ExtractAndScrubParseExceptionMessage(e, condition);
+                return null;
+            }
+            catch (InvalidOperationException e)
+            {
+                errorMessage = e.Message;
                 return null;
             }
         }
