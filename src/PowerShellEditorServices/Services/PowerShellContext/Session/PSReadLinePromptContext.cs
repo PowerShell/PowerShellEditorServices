@@ -12,6 +12,7 @@ using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 {
+    using System.Collections.Generic;
     using System.Management.Automation;
     using Microsoft.Extensions.Logging;
 
@@ -68,7 +69,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             _consoleReadLine = new ConsoleReadLine(powerShellContext);
             _readLineProxy = readLineProxy;
 
-
             _readLineProxy.OverrideReadKey(
                 intercept => ConsoleProxy.SafeReadKey(
                     intercept,
@@ -81,6 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             out PSReadLineProxy readLineProxy)
         {
             readLineProxy = null;
+            logger.LogTrace("Attempting to load PSReadLine");
             using (var pwsh = PowerShell.Create())
             {
                 pwsh.Runspace = runspace;
@@ -91,6 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
                 if (psReadLineType == null)
                 {
+                    logger.LogWarning("PSReadLine unable to be loaded: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
                     return false;
                 }
 
@@ -98,11 +100,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 {
                     readLineProxy = new PSReadLineProxy(psReadLineType, logger);
                 }
-                catch (InvalidOperationException)
+                catch (InvalidOperationException e)
                 {
                     // The Type we got back from PowerShell doesn't have the members we expected.
                     // Could be an older version, a custom build, or something a newer version with
                     // breaking changes.
+                    logger.LogWarning("PSReadLine unable to be loaded: {Reason}", e);
                     return false;
                 }
             }
@@ -119,38 +122,36 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 throw new TaskCanceledException();
             }
 
-            try
+            if (!isCommandLine)
             {
-                if (!isCommandLine)
-                {
-                    return await _consoleReadLine.InvokeLegacyReadLineAsync(
-                        isCommandLine: false,
-                        _readLineCancellationSource.Token).ConfigureAwait(false);
-                }
-
-                var result = (await _powerShellContext.ExecuteCommandAsync<string>(
-                    new PSCommand()
-                        .AddScript(ReadLineScript)
-                        .AddArgument(_readLineCancellationSource.Token),
-                    errorMessages: null,
-                    new ExecutionOptions()
-                    {
-                        WriteErrorsToHost = false,
-                        WriteOutputToHost = false,
-                        InterruptCommandPrompt = false,
-                        AddToHistory = false,
-                        IsReadLine = isCommandLine
-                    }).ConfigureAwait(false))
-                    .FirstOrDefault();
-
-                return cancellationToken.IsCancellationRequested
-                    ? string.Empty
-                    : result;
+                return await _consoleReadLine.InvokeLegacyReadLineAsync(
+                    isCommandLine: false,
+                    _readLineCancellationSource.Token).ConfigureAwait(false);
             }
-            finally
+
+            var readLineCommand = new PSCommand()
+                .AddScript(ReadLineScript)
+                .AddArgument(_readLineCancellationSource.Token);
+
+            var executionOptions = new ExecutionOptions
             {
-                _readLineCancellationSource = null;
-            }
+                WriteErrorsToHost = false,
+                WriteOutputToHost = false,
+                InterruptCommandPrompt = false,
+                AddToHistory = false,
+                IsReadLine = isCommandLine,
+            };
+
+            IEnumerable<string> readLineResults = await _powerShellContext.ExecuteCommandAsync<string>(
+                readLineCommand,
+                errorMessages: null,
+                executionOptions).ConfigureAwait(false);
+
+            string line = readLineResults.FirstOrDefault();
+
+            return cancellationToken.IsCancellationRequested
+                ? string.Empty
+                : line;
         }
 
         public void AbortReadLine()
