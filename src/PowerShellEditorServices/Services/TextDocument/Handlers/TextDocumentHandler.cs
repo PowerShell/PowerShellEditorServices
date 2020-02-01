@@ -123,7 +123,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (fileToClose != null)
             {
                 _workspaceService.CloseFile(fileToClose);
-                _analysisService.ClearMarkers(fileToClose);
+                if (_analysisService != null)
+                {
+                    _analysisService.ClearMarkers(fileToClose);
+                }
             }
 
             _logger.LogTrace("Finished closing document.");
