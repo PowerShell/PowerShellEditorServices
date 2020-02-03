@@ -142,8 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     scriptFile =
                         new ScriptFile(
-                            resolvedFileUri.LocalPath,
-                            resolvedFileUri.OriginalString,
+                            resolvedFileUri,
                             streamReader,
                             this.powerShellVersion);
 
@@ -249,8 +248,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 scriptFile =
                     new ScriptFile(
-                        resolvedFileUri.LocalPath,
-                        resolvedFileUri.OriginalString,
+                        resolvedFileUri,
                         initialBuffer,
                         this.powerShellVersion);
 
@@ -399,9 +397,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Dictionary<string, ScriptFile> referencedScriptFiles)
         {
             // Get the base path of the current script for use in resolving relative paths
-            string baseFilePath =
-                GetBaseFilePath(
-                    scriptFile.FilePath);
+            string baseFilePath = scriptFile.IsInMemory
+                ? WorkspacePath
+                : Path.GetDirectoryName(scriptFile.FilePath);
 
             foreach (string referencedFileName in scriptFile.ReferencedFiles)
             {
@@ -435,31 +433,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
                 }
             }
-        }
-
-        internal string ResolveFilePath(string filePath)
-        {
-            if (!IsPathInMemory(filePath))
-            {
-                if (filePath.StartsWith(@"file://"))
-                {
-                    filePath = WorkspaceService.UnescapeDriveColon(filePath);
-                    // Client sent the path in URI format, extract the local path
-                    filePath = new Uri(filePath).LocalPath;
-                }
-
-                // Clients could specify paths with escaped space, [ and ] characters which .NET APIs
-                // will not handle.  These paths will get appropriately escaped just before being passed
-                // into the PowerShell engine.
-                //filePath = PowerShellContext.UnescapeWildcardEscapedPath(filePath);
-
-                // Get the absolute file path
-                filePath = Path.GetFullPath(filePath);
-            }
-
-            this.logger.LogDebug("Resolved path: " + filePath);
-
-            return filePath;
         }
 
         internal Uri ResolveFileUri(Uri fileUri)
@@ -509,27 +482,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return isInMemory;
         }
 
-        private string GetBaseFilePath(string filePath)
-        {
-            if (IsPathInMemory(filePath))
-            {
-                // If the file is in memory, use the workspace path
-                return this.WorkspacePath;
-            }
-
-            if (!Path.IsPathRooted(filePath))
-            {
-                // TODO: Assert instead?
-                throw new InvalidOperationException(
-                    string.Format(
-                        "Must provide a full path for originalScriptPath: {0}",
-                        filePath));
-            }
-
-            // Get the directory of the file path
-            return Path.GetDirectoryName(filePath);
-        }
-
         internal string ResolveRelativeScriptPath(string baseFilePath, string relativePath)
         {
             string combinedPath = null;
@@ -576,39 +528,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             return combinedPath;
-        }
-
-        /// <summary>
-        /// Takes a file-scheme URI with an escaped colon after the drive letter and unescapes only the colon.
-        /// VSCode sends escaped colons after drive letters, but System.Uri expects unescaped.
-        /// </summary>
-        /// <param name="fileUri">The fully-escaped file-scheme URI string.</param>
-        /// <returns>A file-scheme URI string with the drive colon unescaped.</returns>
-        private static string UnescapeDriveColon(string fileUri)
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return fileUri;
-            }
-
-            // Check here that we have something like "file:///C%3A/" as a prefix (caller must check the file:// part)
-            if (!(fileUri[7] == '/' &&
-                  char.IsLetter(fileUri[8]) &&
-                  fileUri[9] == '%' &&
-                  fileUri[10] == '3' &&
-                  fileUri[11] == 'A' &&
-                  fileUri[12] == '/'))
-            {
-                return fileUri;
-            }
-
-            var sb = new StringBuilder(fileUri.Length - 2); // We lost "%3A" and gained ":", so length - 2
-            sb.Append("file:///");
-            sb.Append(fileUri[8]); // The drive letter
-            sb.Append(':');
-            sb.Append(fileUri.Substring(12)); // The rest of the URI after the colon
-
-            return sb.ToString();
         }
 
         private static Uri UnescapeDriveColon(Uri fileUri)
