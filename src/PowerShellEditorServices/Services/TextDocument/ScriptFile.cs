@@ -150,20 +150,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Creates a new ScriptFile instance by reading file contents from
         /// the given TextReader.
         /// </summary>
-        /// <param name="filePath">The path at which the script file resides.</param>
-        /// <param name="clientFilePath">The path which the client uses to identify the file.</param>
+        /// <param name="fileUri">The System.Uri of the file.</param>
         /// <param name="textReader">The TextReader to use for reading the file's contents.</param>
         /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
         public ScriptFile(
-            string filePath,
-            string clientFilePath,
+            Uri fileUri,
             TextReader textReader,
             Version powerShellVersion)
         {
-            this.FilePath = filePath;
-            this.ClientFilePath = clientFilePath;
+            this.FilePath = fileUri.IsFile
+                ? fileUri.LocalPath
+                : fileUri.OriginalString;
+            this.ClientFilePath = fileUri.OriginalString;
             this.IsAnalysisEnabled = true;
-            this.IsInMemory = WorkspaceService.IsPathInMemory(filePath);
+            this.IsInMemory = !fileUri.IsFile;
             this.powerShellVersion = powerShellVersion;
 
             // SetFileContents() calls ParseFileContents() which initializes the rest of the properties.
@@ -173,37 +173,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Creates a new ScriptFile instance with the specified file contents.
         /// </summary>
-        /// <param name="filePath">The path at which the script file resides.</param>
-        /// <param name="clientFilePath">The path which the client uses to identify the file.</param>
+        /// <param name="fileUri">The System.Uri of the file.</param>
         /// <param name="initialBuffer">The initial contents of the script file.</param>
         /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
         public ScriptFile(
-            string filePath,
-            string clientFilePath,
+            Uri fileUri,
             string initialBuffer,
             Version powerShellVersion)
             : this(
-                  filePath,
-                  clientFilePath,
+                  fileUri,
                   new StringReader(initialBuffer),
-                  powerShellVersion)
-        {
-        }
-
-        /// <summary>
-        /// Creates a new ScriptFile instance with the specified filepath.
-        /// </summary>
-        /// <param name="filePath">The path at which the script file resides.</param>
-        /// <param name="clientFilePath">The path which the client uses to identify the file.</param>
-        /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
-        public ScriptFile(
-            string filePath,
-            string clientFilePath,
-            Version powerShellVersion)
-            : this(
-                  filePath,
-                  clientFilePath,
-                  File.ReadAllText(filePath),
                   powerShellVersion)
         {
         }

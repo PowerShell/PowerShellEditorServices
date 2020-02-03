@@ -142,8 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     scriptFile =
                         new ScriptFile(
-                            resolvedFileUri.LocalPath,
-                            resolvedFileUri.OriginalString,
+                            resolvedFileUri,
                             streamReader,
                             this.powerShellVersion);
 
@@ -249,8 +248,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 scriptFile =
                     new ScriptFile(
-                        resolvedFileUri.LocalPath,
-                        resolvedFileUri.OriginalString,
+                        resolvedFileUri,
                         initialBuffer,
                         this.powerShellVersion);
 
@@ -296,7 +294,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // add original file so it's not searched for, then find all file references
             referencedScriptFiles.Add(scriptFile.Id, scriptFile);
-            RecursivelyFindReferences(scriptFile, referencedScriptFiles);
+            if (!scriptFile.IsInMemory)
+            {
+                RecursivelyFindReferences(scriptFile, referencedScriptFiles);
+            }
 
             // remove original file from referened file and add it as the first element of the
             // expanded referenced list to maintain order so the original file is always first in the list
