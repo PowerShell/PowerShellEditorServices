@@ -158,6 +158,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             TextReader textReader,
             Version powerShellVersion)
         {
+            // For non-files, use their URI representation instead
+            // so that other operations know it's untitled/in-memory
+            // and don't think that it's a relative path
+            // on the file system.
             this.FilePath = fileUri.IsFile
                 ? fileUri.LocalPath
                 : fileUri.OriginalString;
