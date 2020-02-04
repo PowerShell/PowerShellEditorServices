@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// <summary>
     /// Provides details about a command breakpoint that is set in the PowerShell debugger.
     /// </summary>
-    public class CommandBreakpointDetails : BreakpointDetailsBase
+    internal class CommandBreakpointDetails : BreakpointDetailsBase
     {
         /// <summary>
         /// Gets the name of the command on which the command breakpoint has been set.
@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="condition">Condition string that would be applied to the breakpoint Action parameter.</param>
         /// <param name="hitCondition">Hit condition string that would be applied to the breakpoint Action parameter.</param>
         /// <returns></returns>
-        public static CommandBreakpointDetails Create(
+        internal static CommandBreakpointDetails Create(
             string name,
             string condition = null,
             string hitCondition = null)
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </summary>
         /// <param name="breakpoint">The Breakpoint instance from which details will be taken.</param>
         /// <returns>A new instance of the BreakpointDetails class.</returns>
-        public static CommandBreakpointDetails Create(Breakpoint breakpoint)
+        internal static CommandBreakpointDetails Create(Breakpoint breakpoint)
         {
             Validate.IsNotNull("breakpoint", breakpoint);
 

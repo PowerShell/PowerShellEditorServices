@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// Provides details about a breakpoint that is set in the
     /// PowerShell debugger.
     /// </summary>
-    public class BreakpointDetails : BreakpointDetailsBase
+    internal class BreakpointDetails : BreakpointDetailsBase
     {
         /// <summary>
         /// Gets the unique ID of the breakpoint.
@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="condition"></param>
         /// <param name="hitCondition"></param>
         /// <returns></returns>
-        public static BreakpointDetails Create(
+        internal static BreakpointDetails Create(
             string source,
             int line,
             int? column = null,
@@ -80,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </summary>
         /// <param name="breakpoint">The Breakpoint instance from which details will be taken.</param>
         /// <returns>A new instance of the BreakpointDetails class.</returns>
-        public static BreakpointDetails Create(Breakpoint breakpoint)
+        internal static BreakpointDetails Create(Breakpoint breakpoint)
         {
             Validate.IsNotNull("breakpoint", breakpoint);
 
