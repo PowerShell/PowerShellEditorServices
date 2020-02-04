@@ -14,11 +14,9 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
-using System.Collections.Concurrent;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {

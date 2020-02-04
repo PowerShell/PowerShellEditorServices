@@ -16,6 +16,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -183,7 +184,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugStateService.Arguments = arguments;
             _debugStateService.IsUsingTempIntegratedConsole = request.CreateTemporaryIntegratedConsole;
 
-            // TODO: Bring this back
+            if (request.CreateTemporaryIntegratedConsole
+                && !string.IsNullOrEmpty(request.Script)
+                && ScriptFile.IsUntitledPath(request.Script))
+            {
+                throw new RpcErrorException(0, "Running an Untitled file in a temporary integrated console is currently not supported.");
+            }
+
             // If the current session is remote, map the script path to the remote
             // machine if necessary
             if (_debugStateService.ScriptToLaunch != null &&
