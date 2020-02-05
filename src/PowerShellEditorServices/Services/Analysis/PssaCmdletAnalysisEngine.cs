@@ -392,6 +392,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
                 RunspacePool runspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
 
+                runspacePool.SetMaxRunspaces(1);
+                runspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
+
                 // Open the runspace pool here so we can deterministically handle the PSModulePath change issue
                 using (PSModulePathPreserver.Take())
                 {
