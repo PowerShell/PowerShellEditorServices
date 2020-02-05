@@ -41,13 +41,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         {
             // RunspacePool takes care of queuing commands for us so we do not
             // need to worry about executing concurrent commands
-            RunspacePool pssaRunspacePool = CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo);
-
-            var cmdletAnalysisEngine = new PssaCmdletAnalysisEngine(logger, pssaRunspacePool, pssaModuleInfo);
-
-            cmdletAnalysisEngine.LogAvailablePssaFeatures();
-
-            return cmdletAnalysisEngine;
+            try
+            {
+                RunspacePool pssaRunspacePool = CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo);
+                var cmdletAnalysisEngine = new PssaCmdletAnalysisEngine(logger, pssaRunspacePool, pssaModuleInfo);
+                cmdletAnalysisEngine.LogAvailablePssaFeatures();
+                return cmdletAnalysisEngine;
+            }
+            catch (FileNotFoundException e)
+            {
+                logger.LogError(e, "Unable to find PSScriptAnalyzer. Disabling script analysis.");
+                return null;
+            }
         }
 
         private readonly ILogger _logger;
@@ -291,11 +296,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 return;
             }
 
-            // If we already know the module that was imported, save some work
-            if (_pssaModuleInfo == null)
-            {
-            }
-
             if (_pssaModuleInfo == null)
             {
                 throw new FileNotFoundException("Unable to find loaded PSScriptAnalyzer module for logging");
@@ -428,6 +428,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             public bool HasErrors { get; }
         }
 
+        /// <summary>
+        /// Struct to manage a call that may change the PSModulePath, so that it can be safely reset afterward.
+        /// </summary>
+        /// <remarks>
+        /// If the user manages to set the module path at the same time, using this struct may override that.
+        /// But this happening is less likely than the current issue where the PSModulePath is always reset.
+        /// </remarks>
         private struct PSModulePathPreserver : IDisposable
         {
             private static object s_psModulePathMutationLock = new object();
