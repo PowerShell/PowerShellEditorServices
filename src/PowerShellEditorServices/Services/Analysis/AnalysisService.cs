@@ -23,6 +23,10 @@ using Microsoft.PowerShell.EditorServices.Services.Analysis;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
+    /// <summary>
+    /// Provides a high-level service for performing semantic analysis
+    /// of PowerShell scripts.
+    /// </summary>
     internal class AnalysisService : IDisposable
     {
         /// <summary>
@@ -48,6 +52,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         };
 
 
+        /// <summary>
+        /// Factory method for producing AnalysisService instances. Handles loading of the PSScriptAnalyzer module
+        /// and runspace pool instantiation before creating the service instance.
+        /// </summary>
+        /// <param name="logger">EditorServices logger for logging information.</param>
+        /// <param name="languageServer">The language server instance to use for messaging.</param>
+        /// <returns>
+        /// A new analysis service instance with a freshly imported PSScriptAnalyzer module and runspace pool.
+        /// Returns null if problems occur. This method should never throw.
+        /// </returns>
         public static AnalysisService Create(ILogger logger, ILanguageServer languageServer)
         {
             IAnalysisEngine analysisEngine = PssaCmdletAnalysisEngine.Create(logger);
@@ -298,119 +312,5 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
         #endregion
 
-    }
-
-    /// <summary>
-    /// Provides a high-level service for performing semantic analysis
-    /// of PowerShell scripts.
-    /// </summary>
-    public class OldOldAnalysisService
-    {
-        /// <summary>
-        /// Construct a new AnalysisService object.
-        /// </summary>
-        /// <param name="analysisRunspacePool">
-        /// The runspace pool with PSScriptAnalyzer module loaded that will handle
-        /// analysis tasks.
-        /// </param>
-        /// <param name="pssaSettingsPath">
-        /// The path to the PSScriptAnalyzer settings file to handle analysis settings.
-        /// </param>
-        /// <param name="activeRules">An array of rules to be used for analysis.</param>
-        /// <param name="logger">Maintains logs for the analysis service.</param>
-        /// <param name="pssaModuleInfo">
-        /// Optional module info of the loaded PSScriptAnalyzer module. If not provided,
-        /// the analysis service will populate it, but it can be given here to save time.
-        /// </param>
-        private AnalysisService(
-            RunspacePool analysisRunspacePool,
-            string pssaSettingsPath,
-            IEnumerable<string> activeRules,
-            ILanguageServer languageServer,
-            ConfigurationService configurationService,
-            ILogger logger,
-            PSModuleInfo pssaModuleInfo = null)
-        {
-            _analysisRunspacePool = analysisRunspacePool;
-            SettingsPath = pssaSettingsPath;
-            ActiveRules = activeRules.ToArray();
-            _languageServer = languageServer;
-            _configurationService = configurationService;
-            _logger = logger;
-            _pssaModuleInfo = pssaModuleInfo;
-            _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)>();
-        }
-
-        #endregion // constructors
-
-        #region Public Methods
-
-        /// <summary>
-        /// Factory method for producing AnalysisService instances. Handles loading of the PSScriptAnalyzer module
-        /// and runspace pool instantiation before creating the service instance.
-        /// </summary>
-        /// <param name="settingsPath">Path to the PSSA settings file to be used for this service instance.</param>
-        /// <param name="logger">EditorServices logger for logging information.</param>
-        /// <returns>
-        /// A new analysis service instance with a freshly imported PSScriptAnalyzer module and runspace pool.
-        /// Returns null if problems occur. This method should never throw.
-        /// </returns>
-        public static AnalysisService Create(ConfigurationService configurationService, ILanguageServer languageServer, ILogger logger)
-        {
-            Validate.IsNotNull(nameof(configurationService), configurationService);
-            string settingsPath = configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
-            try
-            {
-                RunspacePool analysisRunspacePool;
-                PSModuleInfo pssaModuleInfo;
-                try
-                {
-                    // Try and load a PSScriptAnalyzer module with the required version
-                    // by looking on the script path. Deep down, this internally runs Get-Module -ListAvailable,
-                    // so we'll use this to check whether such a module exists
-                    analysisRunspacePool = CreatePssaRunspacePool(out pssaModuleInfo);
-
-                }
-                catch (Exception e)
-                {
-                    throw new AnalysisServiceLoadException("PSScriptAnalyzer runspace pool could not be created", e);
-                }
-
-                if (analysisRunspacePool == null)
-                {
-                    throw new AnalysisServiceLoadException("PSScriptAnalyzer runspace pool failed to be created");
-                }
-
-                // Having more than one runspace doesn't block code formatting if one
-                // runspace is occupied for diagnostics
-                analysisRunspacePool.SetMaxRunspaces(NumRunspaces);
-                analysisRunspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
-                analysisRunspacePool.Open();
-
-                var analysisService = new AnalysisService(
-                    analysisRunspacePool,
-                    settingsPath,
-                    s_includedRules,
-                    languageServer,
-                    configurationService,
-                    logger,
-                    pssaModuleInfo);
-
-                // Log what features are available in PSSA here
-                analysisService.LogAvailablePssaFeatures();
-
-                return analysisService;
-            }
-            catch (AnalysisServiceLoadException e)
-            {
-                logger.LogWarning("PSScriptAnalyzer cannot be imported, AnalysisService will be disabled", e);
-                return null;
-            }
-            catch (Exception e)
-            {
-                logger.LogWarning("AnalysisService could not be started due to an unexpected exception", e);
-                return null;
-            }
-        }
     }
 }
