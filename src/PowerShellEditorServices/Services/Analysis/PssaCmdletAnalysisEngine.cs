@@ -12,6 +12,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Threading;
@@ -21,6 +22,60 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 {
     internal class PssaCmdletAnalysisEngine : IAnalysisEngine
     {
+        public class Builder
+        {
+            private readonly ILogger _logger;
+
+            private object _settingsParameter;
+
+            private string[] _rules;
+
+            public Builder(ILogger logger)
+            {
+                _logger = logger;
+            }
+
+            public Builder WithSettingsFile(string settingsPath)
+            {
+                _settingsParameter = settingsPath;
+                return this;
+            }
+            
+            public Builder WithSettings(Hashtable settings)
+            {
+                _settingsParameter = settings;
+                return this;
+            }
+
+            public Builder WithIncludedRules(string[] rules)
+            {
+                _rules = rules;
+                return this;
+            }
+
+            public PssaCmdletAnalysisEngine Build()
+            {
+                // RunspacePool takes care of queuing commands for us so we do not
+                // need to worry about executing concurrent commands
+                try
+                {
+                    RunspacePool pssaRunspacePool = CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo);
+
+                    PssaCmdletAnalysisEngine cmdletAnalysisEngine = _settingsParameter != null
+                        ? new PssaCmdletAnalysisEngine(_logger, pssaRunspacePool, pssaModuleInfo, _settingsParameter)
+                        : new PssaCmdletAnalysisEngine(_logger, pssaRunspacePool, pssaModuleInfo, _rules);
+
+                    cmdletAnalysisEngine.LogAvailablePssaFeatures();
+                    return cmdletAnalysisEngine;
+                }
+                catch (FileNotFoundException e)
+                {
+                    _logger.LogError(e, "Unable to find PSScriptAnalyzer. Disabling script analysis.");
+                    return null;
+                }
+            }
+        }
+
         private const string PSSA_MODULE_NAME = "PSScriptAnalyzer";
 
         /// <summary>
@@ -37,46 +92,47 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             ScriptFileMarkerLevel.Information
         };
 
-        public static PssaCmdletAnalysisEngine Create(ILogger logger)
-        {
-            // RunspacePool takes care of queuing commands for us so we do not
-            // need to worry about executing concurrent commands
-            try
-            {
-                RunspacePool pssaRunspacePool = CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo);
-                var cmdletAnalysisEngine = new PssaCmdletAnalysisEngine(logger, pssaRunspacePool, pssaModuleInfo);
-                cmdletAnalysisEngine.LogAvailablePssaFeatures();
-                return cmdletAnalysisEngine;
-            }
-            catch (FileNotFoundException e)
-            {
-                logger.LogError(e, "Unable to find PSScriptAnalyzer. Disabling script analysis.");
-                return null;
-            }
-        }
-
         private readonly ILogger _logger;
 
         private readonly RunspacePool _analysisRunspacePool;
 
         private readonly PSModuleInfo _pssaModuleInfo;
 
+        private readonly object _settingsParameter;
+
+        private readonly string[] _rulesToInclude;
+
         private bool _alreadyRun;
 
         private PssaCmdletAnalysisEngine(
             ILogger logger,
             RunspacePool analysisRunspacePool,
-            PSModuleInfo pssaModuleInfo)
+            PSModuleInfo pssaModuleInfo,
+            string[] rulesToInclude)
         {
             _logger = logger;
             _analysisRunspacePool = analysisRunspacePool;
             _pssaModuleInfo = pssaModuleInfo;
+            _rulesToInclude = rulesToInclude;
+            _alreadyRun = false;
+        }
+
+        private PssaCmdletAnalysisEngine(
+            ILogger logger,
+            RunspacePool analysisRunspacePool,
+            PSModuleInfo pssaModuleInfo,
+            object analysisSettingsParameter)
+        {
+            _logger = logger;
+            _analysisRunspacePool = analysisRunspacePool;
+            _pssaModuleInfo = pssaModuleInfo;
+            _settingsParameter = analysisSettingsParameter;
             _alreadyRun = false;
         }
 
         public bool IsEnabled => true;
 
-        public async Task<string> FormatAsync(string scriptDefinition, Hashtable settings, int[] rangeList)
+        public async Task<string> FormatAsync(string scriptDefinition, Hashtable formatSettings, int[] rangeList)
         {
             // We cannot use Range type therefore this workaround of using -1 default value.
             // Invoke-Formatter throws a ParameterBinderValidationException if the ScriptDefinition is an empty string.
@@ -88,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             var psCommand = new PSCommand()
                 .AddCommand("Invoke-Formatter")
                 .AddParameter("ScriptDefinition", scriptDefinition)
-                .AddParameter("Settings", settings);
+                .AddParameter("Settings", formatSettings);
 
             if (rangeList != null)
             {
@@ -125,44 +181,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return null;
         }
 
-        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent, Hashtable settings)
+        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent)
         {
-            PSCommand command = CreateInitialScriptAnalyzerInvocation(scriptContent);
-
-            if (command == null)
+            // When a new, empty file is created there are by definition no issues.
+            // Furthermore, if you call Invoke-ScriptAnalyzer with an empty ScriptDefinition
+            // it will generate a ParameterBindingValidationException.
+            if (string.IsNullOrEmpty(scriptContent))
             {
                 return Task.FromResult(Array.Empty<ScriptFileMarker>());
             }
 
-            command.AddParameter("Settings", settings);
+            var command = new PSCommand()
+                .AddCommand("Invoke-ScriptAnalyzer")
+                .AddParameter("ScriptDefinition", scriptContent)
+                .AddParameter("Severity", s_scriptMarkerLevels);
 
-            return GetSemanticMarkersFromCommandAsync(command);
-        }
-
-        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent, string settingsFilePath)
-        {
-            PSCommand command = CreateInitialScriptAnalyzerInvocation(scriptContent);
-
-            if (command == null)
+            if (_settingsParameter != null)
             {
-                return Task.FromResult(Array.Empty<ScriptFileMarker>());
+                command.AddParameter("Settings", _settingsParameter);
             }
-
-            command.AddParameter("Settings", settingsFilePath);
-
-            return GetSemanticMarkersFromCommandAsync(command);
-        }
-
-        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent, string[] rules)
-        {
-            PSCommand command = CreateInitialScriptAnalyzerInvocation(scriptContent);
-
-            if (command == null)
+            else
             {
-                return Task.FromResult(Array.Empty<ScriptFileMarker>());
+                command.AddParameter("IncludeRules", _rulesToInclude);
             }
-
-            command.AddParameter("IncludeRules", rules);
 
             return GetSemanticMarkersFromCommandAsync(command);
         }
@@ -191,22 +232,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         }
 
         #endregion
-
-        private PSCommand CreateInitialScriptAnalyzerInvocation(string scriptContent)
-        {
-            // When a new, empty file is created there are by definition no issues.
-            // Furthermore, if you call Invoke-ScriptAnalyzer with an empty ScriptDefinition
-            // it will generate a ParameterBindingValidationException.
-            if (string.IsNullOrEmpty(scriptContent))
-            {
-                return null;
-            }
-
-            return new PSCommand()
-                .AddCommand("Invoke-ScriptAnalyzer")
-                .AddParameter("ScriptDefinition", scriptContent)
-                .AddParameter("Severity", s_scriptMarkerLevels);
-        }
 
         private async Task<ScriptFileMarker[]> GetSemanticMarkersFromCommandAsync(PSCommand command)
         {

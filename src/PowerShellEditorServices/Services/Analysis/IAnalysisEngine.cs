@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Analysis
@@ -24,44 +25,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// Format a PowerShell script.
         /// </summary>
         /// <param name="scriptDefinition">The string of the PowerShell script to format.</param>
-        /// <param name="settings">The formatter settings.</param>
+        /// <param name="formatSettings">The settings to apply when formatting.</param>
         /// <param name="rangeList">An optional list of ranges to format in the script.</param>
         /// <returns></returns>
         Task<string> FormatAsync(
             string scriptDefinition,
-            Hashtable settings,
+            Hashtable formatSettings,
             int[] rangeList);
 
         /// <summary>
         /// Analyze a PowerShell script file using a settings object.
         /// </summary>
         /// <param name="scriptFileContent">The script to analyze in string form.</param>
-        /// <param name="settings">The settings hashtable to configure the analyzer with.</param>
         /// <returns>Markers for any diagnostics in the script.</returns>
-        Task<ScriptFileMarker[]> AnalyzeScriptAsync(
-            string scriptFileContent,
-            Hashtable settings);
-
-        /// <summary>
-        /// Analyze a PowerShell script file with a path to a settings file.
-        /// </summary>
-        /// <param name="scriptFileContent">The script to analyze in string form.</param>
-        /// <param name="settingsFilePath">The path to the settings file with which to configure the analyzer.</param>
-        /// <returns>Markers for any diagnostics in the script.</returns>
-        Task<ScriptFileMarker[]> AnalyzeScriptAsync(
-            string scriptFileContent,
-            string settingsFilePath);
-
-        /// <summary>
-        /// Analyze a PowerShell script file using a set of script analysis rules.
-        /// </summary>
-        /// <param name="scriptFileContent">The script to analyze in string form.</param>
-        /// <param name="rules">The rules to run on the script for analysis.</param>
-        /// <returns>Markers for any diagnostics in the script.</returns>
-        Task<ScriptFileMarker[]> AnalyzeScriptAsync(
-            string scriptFileContent,
-            string[] rules);
-
+        Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptFileContent);
     }
 
 }

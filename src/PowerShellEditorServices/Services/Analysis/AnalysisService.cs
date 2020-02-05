@@ -20,6 +20,9 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System.Collections.ObjectModel;
 using Microsoft.PowerShell.EditorServices.Services.Analysis;
+using Microsoft.PowerShell.EditorServices.Handlers;
+using System.IO;
+using Microsoft.PowerShell.EditorServices.Services.Configuration;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -29,6 +32,30 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     internal class AnalysisService : IDisposable
     {
+        internal static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
+        {
+            Position start = diagnostic.Range.Start;
+            Position end = diagnostic.Range.End;
+
+            var sb = new StringBuilder(256)
+            .Append(diagnostic.Source ?? "?")
+            .Append("_")
+            .Append(diagnostic.Code.IsString ? diagnostic.Code.String : diagnostic.Code.Long.ToString())
+            .Append("_")
+            .Append(diagnostic.Severity?.ToString() ?? "?")
+            .Append("_")
+            .Append(start.Line)
+            .Append(":")
+            .Append(start.Character)
+            .Append("-")
+            .Append(end.Line)
+            .Append(":")
+            .Append(end.Character);
+
+            var id = sb.ToString();
+            return id;
+        }
+
         /// <summary>
         /// Defines the list of Script Analyzer rules to include by default if
         /// no settings file is specified.
@@ -51,52 +78,32 @@ namespace Microsoft.PowerShell.EditorServices.Services
             "PSPossibleIncorrectUsageOfRedirectionOperator"
         };
 
-
-        /// <summary>
-        /// Factory method for producing AnalysisService instances. Handles loading of the PSScriptAnalyzer module
-        /// and runspace pool instantiation before creating the service instance.
-        /// </summary>
-        /// <param name="logger">EditorServices logger for logging information.</param>
-        /// <param name="languageServer">The language server instance to use for messaging.</param>
-        /// <returns>
-        /// A new analysis service instance with a freshly imported PSScriptAnalyzer module and runspace pool.
-        /// Returns null if problems occur. This method should never throw.
-        /// </returns>
-        public static AnalysisService Create(ILogger logger, ILanguageServer languageServer)
-        {
-            IAnalysisEngine analysisEngine = PssaCmdletAnalysisEngine.Create(logger);
-
-            // ?? doesn't work above sadly
-            if (analysisEngine == null)
-            {
-                analysisEngine = new NullAnalysisEngine();
-            }
-
-            var analysisService = new AnalysisService(logger, languageServer, analysisEngine)
-            {
-                EnabledRules = s_defaultRules,
-            };
-
-            return analysisService;
-        }
-
         private readonly ILogger _logger;
 
         private readonly ILanguageServer _languageServer;
 
-        private readonly IAnalysisEngine _analysisEngine;
+        private readonly ConfigurationService _configurationService;
+
+        private readonly WorkspaceService _workplaceService;
 
         private readonly int _analysisDelayMillis;
 
         private readonly ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)> _mostRecentCorrectionsByFile;
 
+        private IAnalysisEngine _analysisEngine;
+
         private CancellationTokenSource _diagnosticsCancellationTokenSource;
 
-        public AnalysisService(ILogger logger, ILanguageServer languageServer, IAnalysisEngine analysisEngine)
+        public AnalysisService(
+            ILogger logger,
+            ILanguageServer languageServer,
+            ConfigurationService configurationService,
+            WorkspaceService workspaceService)
         {
             _logger = logger;
             _languageServer = languageServer;
-            _analysisEngine = analysisEngine;
+            _configurationService = configurationService;
+            _workplaceService = workspaceService;
             _analysisDelayMillis = 750;
             _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)>();
         }
@@ -104,6 +111,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public string[] EnabledRules { get; set; }
 
         public string SettingsPath { get; set; }
+
+        private IAnalysisEngine AnalysisEngine
+        {
+            get
+            {
+                if (_analysisEngine == null)
+                {
+                    _analysisEngine = InstantiateAnalysisEngine();
+                }
+
+                return _analysisEngine;
+            }
+        }
 
         public Task RunScriptDiagnosticsAsync(
             ScriptFile[] filesToAnalyze,
@@ -133,6 +153,58 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             return Task.Run(() => DelayThenInvokeDiagnosticsAsync(filesToAnalyze, _diagnosticsCancellationTokenSource.Token), _diagnosticsCancellationTokenSource.Token);
+        }
+
+        public void OnConfigurationUpdated(object sender, LanguageServerSettings settings)
+        {
+            ClearMarkers();
+            _analysisEngine = InstantiateAnalysisEngine();
+        }
+
+        private IAnalysisEngine InstantiateAnalysisEngine()
+        {
+            if (_configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false)
+            {
+                return new NullAnalysisEngine();
+            }
+
+            var pssaCmdletEngineBuilder = new PssaCmdletAnalysisEngine.Builder(_logger);
+
+            if (TryFindSettingsFile(out string settingsFilePath))
+            {
+                _logger.LogInformation($"Configuring PSScriptAnalyzer with rules at '{settingsFilePath}'");
+                pssaCmdletEngineBuilder.WithSettingsFile(settingsFilePath);
+            }
+            else
+            {
+                _logger.LogInformation("PSScriptAnalyzer settings file not found. Falling back to default rules");
+                pssaCmdletEngineBuilder.WithIncludedRules(s_defaultRules);
+            }
+
+            return pssaCmdletEngineBuilder.Build();
+        }
+
+        private bool TryFindSettingsFile(out string settingsFilePath)
+        {
+            string configuredPath = _configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
+
+            if (!string.IsNullOrEmpty(configuredPath))
+            {
+                settingsFilePath = _workplaceService.ResolveWorkspacePath(configuredPath);
+                return settingsFilePath != null;
+            }
+
+            // TODO: Could search for a default here
+
+            settingsFilePath = null;
+            return false;
+        }
+
+        private Task ClearMarkers()
+        {
+            return Task.WhenAll(
+                _workplaceService.GetOpenedFiles()
+                    .Select(file => PublishScriptDiagnosticsAsync(file, Array.Empty<ScriptFileMarker>())));
         }
 
         private async Task DelayThenInvokeDiagnosticsAsync(ScriptFile[] filesToAnalyze, CancellationToken cancellationToken)
@@ -166,9 +238,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             foreach (ScriptFile scriptFile in filesToAnalyze)
             {
-                ScriptFileMarker[] semanticMarkers = SettingsPath != null
-                    ? await _analysisEngine.AnalyzeScriptAsync(scriptFile.Contents, SettingsPath).ConfigureAwait(false)
-                    : await _analysisEngine.AnalyzeScriptAsync(scriptFile.Contents, EnabledRules).ConfigureAwait(false);
+                ScriptFileMarker[] semanticMarkers = await _analysisEngine.AnalyzeScriptAsync(scriptFile.Contents).ConfigureAwait(false);
 
                 scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
 
@@ -176,7 +246,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private async Task PublishScriptDiagnosticsAsync(ScriptFile scriptFile)
+        private Task PublishScriptDiagnosticsAsync(ScriptFile scriptFile) => PublishScriptDiagnosticsAsync(scriptFile, scriptFile.DiagnosticMarkers);
+
+        private async Task PublishScriptDiagnosticsAsync(ScriptFile scriptFile, IReadOnlyList<ScriptFileMarker> markers)
         {
             (SemaphoreSlim fileLock, Dictionary<string, MarkerCorrection> fileCorrections) = _mostRecentCorrectionsByFile.GetOrAdd(
                 scriptFile.DocumentUri,
@@ -189,9 +261,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 fileCorrections.Clear();
 
-                for (int i = 0; i < scriptFile.DiagnosticMarkers.Count; i++)
+                for (int i = 0; i < markers.Count; i++)
                 {
-                    ScriptFileMarker marker = scriptFile.DiagnosticMarkers[i];
+                    ScriptFileMarker marker = markers[i];
 
                     Diagnostic diagnostic = GetDiagnosticFromMarker(marker);
 
@@ -261,30 +333,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 default:
                     return DiagnosticSeverity.Error;
             }
-        }
-
-        internal static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
-        {
-            Position start = diagnostic.Range.Start;
-            Position end = diagnostic.Range.End;
-
-            var sb = new StringBuilder(256)
-            .Append(diagnostic.Source ?? "?")
-            .Append("_")
-            .Append(diagnostic.Code.IsString ? diagnostic.Code.String : diagnostic.Code.Long.ToString())
-            .Append("_")
-            .Append(diagnostic.Severity?.ToString() ?? "?")
-            .Append("_")
-            .Append(start.Line)
-            .Append(":")
-            .Append(start.Character)
-            .Append("-")
-            .Append(end.Line)
-            .Append(":")
-            .Append(end.Character);
-
-            var id = sb.ToString();
-            return id;
         }
 
         #region IDisposable Support

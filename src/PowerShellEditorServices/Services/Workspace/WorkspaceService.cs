@@ -482,6 +482,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return isInMemory;
         }
 
+        internal string ResolveWorkspacePath(string path)
+        {
+            return ResolveRelativeScriptPath(WorkspacePath, path);
+        }
+
         internal string ResolveRelativeScriptPath(string baseFilePath, string relativePath)
         {
             string combinedPath = null;
