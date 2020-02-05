@@ -19,17 +19,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             throw CreateInvocationException();
         }
 
-        public Task<ScriptFileMarker[]> GetSemanticMarkersAsync(string scriptFileContent, Hashtable settings)
+        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptFileContent, Hashtable settings)
         {
             throw CreateInvocationException();
         }
 
-        public Task<ScriptFileMarker[]> GetSemanticMarkersAsync(string scriptFileContent, string settingsFilePath)
+        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptFileContent, string settingsFilePath)
         {
             throw CreateInvocationException();
         }
 
-        public Task<ScriptFileMarker[]> GetSemanticMarkersAsync(string scriptFileContent, string[] rules)
+        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptFileContent, string[] rules)
         {
             throw CreateInvocationException();
         }

@@ -125,7 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return null;
         }
 
-        public Task<ScriptFileMarker[]> GetSemanticMarkersAsync(string scriptContent, Hashtable settings)
+        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent, Hashtable settings)
         {
             PSCommand command = CreateInitialScriptAnalyzerInvocation(scriptContent);
 
@@ -139,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return GetSemanticMarkersFromCommandAsync(command);
         }
 
-        public Task<ScriptFileMarker[]> GetSemanticMarkersAsync(string scriptContent, string settingsFilePath)
+        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent, string settingsFilePath)
         {
             PSCommand command = CreateInitialScriptAnalyzerInvocation(scriptContent);
 
@@ -153,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return GetSemanticMarkersFromCommandAsync(command);
         }
 
-        public Task<ScriptFileMarker[]> GetSemanticMarkersAsync(string scriptContent, string[] rules)
+        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent, string[] rules)
         {
             PSCommand command = CreateInitialScriptAnalyzerInvocation(scriptContent);
 

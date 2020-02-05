@@ -167,8 +167,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             foreach (ScriptFile scriptFile in filesToAnalyze)
             {
                 ScriptFileMarker[] semanticMarkers = SettingsPath != null
-                    ? await _analysisEngine.GetSemanticMarkersAsync(scriptFile.Contents, SettingsPath).ConfigureAwait(false)
-                    : await _analysisEngine.GetSemanticMarkersAsync(scriptFile.Contents, EnabledRules).ConfigureAwait(false);
+                    ? await _analysisEngine.AnalyzeScriptAsync(scriptFile.Contents, SettingsPath).ConfigureAwait(false)
+                    : await _analysisEngine.AnalyzeScriptAsync(scriptFile.Contents, EnabledRules).ConfigureAwait(false);
 
                 scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
 
