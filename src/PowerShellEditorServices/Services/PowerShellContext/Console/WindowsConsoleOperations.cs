@@ -37,7 +37,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             await _readKeyHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                return _bufferedKey ?? await Task.Run(() => (_bufferedKey = System.Console.ReadKey(intercept)).Value).ConfigureAwait(false);
+                if (_bufferedKey == null)
+                {
+                    _bufferedKey = await Task.Run(() => Console.ReadKey(intercept)).ConfigureAwait(false);
+                }
+
+                return _bufferedKey.Value;
             }
             finally
             {
