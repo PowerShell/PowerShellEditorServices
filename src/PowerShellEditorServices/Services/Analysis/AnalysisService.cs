@@ -112,6 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ConfigurationService configurationService,
             WorkspaceService workspaceService)
         {
+            Debugger.Launch();
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<AnalysisService>();
             _languageServer = languageServer;
@@ -426,12 +427,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private static DiagnosticSeverity MapDiagnosticSeverity(ScriptFileMarkerLevel markerLevel)
         {
-            return markerLevel switch
+            switch (markerLevel)
             {
-                ScriptFileMarkerLevel.Error => DiagnosticSeverity.Error,
-                ScriptFileMarkerLevel.Warning => DiagnosticSeverity.Warning,
-                ScriptFileMarkerLevel.Information => DiagnosticSeverity.Information,
-                _ => DiagnosticSeverity.Error,
+                case ScriptFileMarkerLevel.Error:       return DiagnosticSeverity.Error;
+                case ScriptFileMarkerLevel.Warning:     return DiagnosticSeverity.Warning;
+                case ScriptFileMarkerLevel.Information: return DiagnosticSeverity.Information;
+                default:                                return DiagnosticSeverity.Error;
             };
         }
 
