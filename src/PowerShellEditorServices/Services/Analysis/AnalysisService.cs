@@ -28,6 +28,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     internal class AnalysisService : IDisposable
     {
+        /// <summary>
+        /// Reliably generate an ID for a diagnostic record to track it.
+        /// </summary>
+        /// <param name="diagnostic">The diagnostic to generate an ID for.</param>
+        /// <returns>A string unique to this diagnostic given where and what kind it is.</returns>
         internal static string GetUniqueIdFromDiagnostic(Diagnostic diagnostic)
         {
             Position start = diagnostic.Range.Start;
@@ -90,6 +95,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private CancellationTokenSource _diagnosticsCancellationTokenSource;
 
+        /// <summary>
+        /// Construct a new AnalysisService.
+        /// </summary>
+        /// <param name="loggerFactory">Logger factory to create logger instances with.</param>
+        /// <param name="languageServer">The LSP language server for notifications.</param>
+        /// <param name="configurationService">The configuration service to query for configurations.</param>
+        /// <param name="workspaceService">The workspace service for file handling within a workspace.</param>
         public AnalysisService(
             ILoggerFactory loggerFactory,
             ILanguageServer languageServer,
@@ -104,10 +116,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, ConcurrentDictionary<string, MarkerCorrection>)>();
         }
 
-        public string[] EnabledRules { get; set; }
-
-        public string SettingsPath { get; set; }
-
+        /// <summary>
+        /// The analysis engine to use for running script analysis.
+        /// </summary>
         private IAnalysisEngine AnalysisEngine
         {
             get
@@ -121,6 +132,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
+        /// <summary>
+        /// Sets up a script analysis run, eventually returning the result.
+        /// </summary>
+        /// <param name="filesToAnalyze">The files to run script analysis on.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel this call with.</param>
+        /// <returns>A task that finishes when script diagnostics have been published.</returns>
         public Task RunScriptDiagnosticsAsync(
             ScriptFile[] filesToAnalyze,
             CancellationToken cancellationToken)
@@ -156,6 +173,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return Task.Run(() => DelayThenInvokeDiagnosticsAsync(filesToAnalyze, _diagnosticsCancellationTokenSource.Token), _diagnosticsCancellationTokenSource.Token);
         }
 
+        /// <summary>
+        /// Formats a PowerShell script with the given settings.
+        /// </summary>
+        /// <param name="scriptFileContents">The script to format.</param>
+        /// <param name="formatSettings">The settings to use with the formatter.</param>
+        /// <param name="formatRange">Optionally, the range that should be formatted.</param>
+        /// <returns>The text of the formatted PowerShell script.</returns>
         public Task<string> FormatAsync(string scriptFileContents, Hashtable formatSettings, int[] formatRange = null)
         {
             if (!AnalysisEngine.IsEnabled)
@@ -166,6 +190,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return AnalysisEngine.FormatAsync(scriptFileContents, formatSettings, formatRange);
         }
 
+        /// <summary>
+        /// Get comment help text for a PowerShell function definition.
+        /// </summary>
+        /// <param name="functionText">The text of the function to get comment help for.</param>
+        /// <param name="helpLocation">A string referring to which location comment help should be placed around the function.</param>
+        /// <param name="forBlockComment">If true, block comment help will be supplied.</param>
+        /// <returns></returns>
         public async Task<string> GetCommentHelpText(string functionText, string helpLocation, bool forBlockComment)
         {
             if (!AnalysisEngine.IsEnabled)
@@ -187,6 +218,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return analysisResults[0].Correction.Edits[0].Text;
         }
 
+        /// <summary>
+        /// Get the most recent corrections computed for a given script file.
+        /// </summary>
+        /// <param name="documentUri">The URI string of the file to get code actions for.</param>
+        /// <returns>A threadsafe readonly dictionary of the code actions of the particular file.</returns>
         public IReadOnlyDictionary<string, MarkerCorrection> GetMostRecentCodeActionsForFile(string documentUri)
         {
             if (!_mostRecentCorrectionsByFile.TryGetValue(documentUri, out (SemaphoreSlim fileLock, ConcurrentDictionary<string, MarkerCorrection> corrections) fileCorrectionsEntry))
@@ -197,11 +233,21 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return fileCorrectionsEntry.corrections;
         }
 
+        /// <summary>
+        /// Clear all diagnostic markers for a given file.
+        /// </summary>
+        /// <param name="file">The file to clear markers in.</param>
+        /// <returns>A task that ends when all markers in the file have been cleared.</returns>
         public Task ClearMarkers(ScriptFile file)
         {
             return PublishScriptDiagnosticsAsync(file, Array.Empty<ScriptFileMarker>());
         }
 
+        /// <summary>
+        /// Event subscription method to be run when PSES configuration has been updated.
+        /// </summary>
+        /// <param name="sender">The sender of the configuration update event.</param>
+        /// <param name="settings">The new language server settings.</param>
         public void OnConfigurationUpdated(object sender, LanguageServerSettings settings)
         {
             ClearOpenFileMarkers();
@@ -217,6 +263,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             var pssaCmdletEngineBuilder = new PssaCmdletAnalysisEngine.Builder(_logger);
 
+            // If there's a settings file use that
             if (TryFindSettingsFile(out string settingsFilePath))
             {
                 _logger.LogInformation($"Configuring PSScriptAnalyzer with rules at '{settingsFilePath}'");
@@ -238,6 +285,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (!string.IsNullOrEmpty(configuredPath))
             {
                 settingsFilePath = _workplaceService.ResolveWorkspacePath(configuredPath);
+
+                if (settingsFilePath == null)
+                {
+                    _logger.LogError($"Unable to find PSSA settings file at '{configuredPath}'. Loading default rules.");
+                }
+
                 return settingsFilePath != null;
             }
 
@@ -366,20 +419,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private static DiagnosticSeverity MapDiagnosticSeverity(ScriptFileMarkerLevel markerLevel)
         {
-            switch (markerLevel)
+            return markerLevel switch
             {
-                case ScriptFileMarkerLevel.Error:
-                    return DiagnosticSeverity.Error;
-
-                case ScriptFileMarkerLevel.Warning:
-                    return DiagnosticSeverity.Warning;
-
-                case ScriptFileMarkerLevel.Information:
-                    return DiagnosticSeverity.Information;
-
-                default:
-                    return DiagnosticSeverity.Error;
-            }
+                ScriptFileMarkerLevel.Error => DiagnosticSeverity.Error,
+                ScriptFileMarkerLevel.Warning => DiagnosticSeverity.Warning,
+                ScriptFileMarkerLevel.Information => DiagnosticSeverity.Information,
+                _ => DiagnosticSeverity.Error,
+            };
         }
 
         private static Hashtable GetCommentHelpRuleSettings(string helpLocation, bool forBlockComment)
