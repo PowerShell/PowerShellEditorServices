@@ -18,6 +18,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using System.Collections;
+using System.Diagnostics;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -174,7 +175,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             Hashtable commentHelpSettings = AnalysisService.GetCommentHelpRuleSettings(helpLocation, forBlockComment);
 
-            ScriptFileMarker[] analysisResults = await AnalysisEngine.AnalyzeScriptAsync(functionText, commentHelpSettings);
+            ScriptFileMarker[] analysisResults = await AnalysisEngine.AnalyzeScriptAsync(functionText, commentHelpSettings).ConfigureAwait(false);
 
             if (analysisResults.Length == 0
                 || analysisResults[0]?.Correction?.Edits == null
@@ -209,7 +210,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private IAnalysisEngine InstantiateAnalysisEngine()
         {
-            if (_configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false)
+            if (!(_configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false))
             {
                 return new NullAnalysisEngine();
             }
@@ -302,7 +303,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             var diagnostics = new Diagnostic[scriptFile.DiagnosticMarkers.Count];
 
-            await fileLock.WaitAsync();
+            await fileLock.WaitAsync().ConfigureAwait(false);
             try
             {
                 fileCorrections.Clear();

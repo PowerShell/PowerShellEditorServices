@@ -205,7 +205,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             }
             else
             {
-                command.AddParameter("IncludeRules", _rulesToInclude);
+                command.AddParameter("IncludeRule", _rulesToInclude);
             }
 
             return GetSemanticMarkersFromCommandAsync(command);

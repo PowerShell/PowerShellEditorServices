@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 funcText = string.Join("\n", lines);
             }
 
-            string helpText = await _analysisService.GetCommentHelpText(funcText, helpLocation, forBlockComment: request.BlockComment);
+            string helpText = await _analysisService.GetCommentHelpText(funcText, helpLocation, forBlockComment: request.BlockComment).ConfigureAwait(false);
 
             if (helpText == null)
             {

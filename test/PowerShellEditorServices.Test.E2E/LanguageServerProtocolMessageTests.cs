@@ -35,7 +35,6 @@ namespace PowerShellEditorServices.Test.E2E
 
         public LanguageServerProtocolMessageTests(ITestOutputHelper output, LSPTestsFixture data)
         {
-            Diagnostics = new List<Diagnostic>();
             LanguageClient = data.LanguageClient;
             Diagnostics = data.Diagnostics;
             PwshExe = TestsFixture.PwshExe;
@@ -61,6 +60,7 @@ namespace PowerShellEditorServices.Test.E2E
 
         private string NewTestFile(string script, bool isPester = false)
         {
+            Diagnostics.Clear();
             string fileExt = isPester ? ".Tests.ps1" : ".ps1";
             string filePath = Path.Combine(s_binDir, Path.GetRandomFileName() + fileExt);
             File.WriteAllText(filePath, script);
