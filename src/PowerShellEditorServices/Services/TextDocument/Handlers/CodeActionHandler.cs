@@ -69,19 +69,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // If there are any code fixes, send these commands first so they appear at top of "Code Fix" menu in the client UI.
             foreach (Diagnostic diagnostic in request.Context.Diagnostics)
             {
-                if (diagnostic.Code.IsLong)
-                {
-                    _logger.LogWarning(
-                        $"textDocument/codeAction skipping diagnostic with non-string code {diagnostic.Code.Long}: {diagnostic.Source} {diagnostic.Message}");
-                }
-                else if (string.IsNullOrEmpty(diagnostic.Code.String))
+                if (string.IsNullOrEmpty(diagnostic.Code.String))
                 {
                     _logger.LogWarning(
                         $"textDocument/codeAction skipping diagnostic with empty Code field: {diagnostic.Source} {diagnostic.Message}");
 
                     continue;
                 }
-
 
                 string diagnosticId = AnalysisService.GetUniqueIdFromDiagnostic(diagnostic);
                 if (corrections.TryGetValue(diagnosticId, out MarkerCorrection correction))

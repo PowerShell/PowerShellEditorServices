@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly int _analysisDelayMillis;
 
-        private readonly ConcurrentDictionary<string, (SemaphoreSlim, ConcurrentDictionary<string, MarkerCorrection>)> _mostRecentCorrectionsByFile;
+        private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, MarkerCorrection>> _mostRecentCorrectionsByFile;
 
         private bool _hasInstantiatedAnalysisEngine;
 
@@ -112,14 +112,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ConfigurationService configurationService,
             WorkspaceService workspaceService)
         {
-            Debugger.Launch();
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<AnalysisService>();
             _languageServer = languageServer;
             _configurationService = configurationService;
             _workplaceService = workspaceService;
             _analysisDelayMillis = 750;
-            _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, ConcurrentDictionary<string, MarkerCorrection>)>();
+            _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, ConcurrentDictionary<string, MarkerCorrection>>();
             _hasInstantiatedAnalysisEngine = false;
         }
 
@@ -233,12 +232,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A threadsafe readonly dictionary of the code actions of the particular file.</returns>
         public IReadOnlyDictionary<string, MarkerCorrection> GetMostRecentCodeActionsForFile(string documentUri)
         {
-            if (!_mostRecentCorrectionsByFile.TryGetValue(documentUri, out (SemaphoreSlim fileLock, ConcurrentDictionary<string, MarkerCorrection> corrections) fileCorrectionsEntry))
+            if (!_mostRecentCorrectionsByFile.TryGetValue(documentUri, out ConcurrentDictionary<string, MarkerCorrection> corrections))
             {
                 return null;
             }
 
-            return fileCorrectionsEntry.corrections;
+            return corrections;
         }
 
         /// <summary>
@@ -246,9 +245,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="file">The file to clear markers in.</param>
         /// <returns>A task that ends when all markers in the file have been cleared.</returns>
-        public Task ClearMarkers(ScriptFile file)
+        public void ClearMarkers(ScriptFile file)
         {
-            return PublishScriptDiagnosticsAsync(file, Array.Empty<ScriptFileMarker>());
+            PublishScriptDiagnostics(file, Array.Empty<ScriptFileMarker>());
         }
 
         /// <summary>
@@ -308,11 +307,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return false;
         }
 
-        private Task ClearOpenFileMarkers()
+        private void ClearOpenFileMarkers()
         {
-            return Task.WhenAll(
-                _workplaceService.GetOpenedFiles()
-                    .Select(file => ClearMarkers(file)));
+            foreach (ScriptFile file in _workplaceService.GetOpenedFiles())
+            {
+                ClearMarkers(file);
+            }
         }
 
         private async Task DelayThenInvokeDiagnosticsAsync(ScriptFile[] filesToAnalyze, CancellationToken cancellationToken)
@@ -329,10 +329,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             catch (TaskCanceledException)
             {
                 // Ensure no stale markers are displayed
-                foreach (ScriptFile script in filesToAnalyze)
-                {
-                    await PublishScriptDiagnosticsAsync(script).ConfigureAwait(false);
-                }
+                //foreach (ScriptFile script in filesToAnalyze)
+                //{
+                //    PublishScriptDiagnosticsAsync(script);
+                //}
 
                 return;
             }
@@ -350,43 +350,35 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
 
-                await PublishScriptDiagnosticsAsync(scriptFile).ConfigureAwait(false);
+                PublishScriptDiagnostics(scriptFile);
             }
         }
 
-        private Task PublishScriptDiagnosticsAsync(ScriptFile scriptFile) => PublishScriptDiagnosticsAsync(scriptFile, scriptFile.DiagnosticMarkers);
+        private void PublishScriptDiagnostics(ScriptFile scriptFile) => PublishScriptDiagnostics(scriptFile, scriptFile.DiagnosticMarkers);
 
-        private async Task PublishScriptDiagnosticsAsync(ScriptFile scriptFile, IReadOnlyList<ScriptFileMarker> markers)
+        private void PublishScriptDiagnostics(ScriptFile scriptFile, IReadOnlyList<ScriptFileMarker> markers)
         {
-            (SemaphoreSlim fileLock, ConcurrentDictionary<string, MarkerCorrection> fileCorrections) = _mostRecentCorrectionsByFile.GetOrAdd(
+            var diagnostics = new Diagnostic[scriptFile.DiagnosticMarkers.Count];
+
+            ConcurrentDictionary<string, MarkerCorrection> fileCorrections = _mostRecentCorrectionsByFile.GetOrAdd(
                 scriptFile.DocumentUri,
                 CreateFileCorrectionsEntry);
 
-            var diagnostics = new Diagnostic[scriptFile.DiagnosticMarkers.Count];
+            fileCorrections.Clear();
 
-            await fileLock.WaitAsync().ConfigureAwait(false);
-            try
+            for (int i = 0; i < markers.Count; i++)
             {
-                fileCorrections.Clear();
+                ScriptFileMarker marker = markers[i];
 
-                for (int i = 0; i < markers.Count; i++)
+                Diagnostic diagnostic = GetDiagnosticFromMarker(marker);
+
+                if (marker.Correction != null)
                 {
-                    ScriptFileMarker marker = markers[i];
-
-                    Diagnostic diagnostic = GetDiagnosticFromMarker(marker);
-
-                    if (marker.Correction != null)
-                    {
-                        string diagnosticId = GetUniqueIdFromDiagnostic(diagnostic);
-                        fileCorrections[diagnosticId] = marker.Correction;
-                    }
-
-                    diagnostics[i] = diagnostic;
+                    string diagnosticId = GetUniqueIdFromDiagnostic(diagnostic);
+                    fileCorrections[diagnosticId] = marker.Correction;
                 }
-            }
-            finally
-            {
-                fileLock.Release();
+
+                diagnostics[i] = diagnostic;
             }
 
             _languageServer.Document.PublishDiagnostics(new PublishDiagnosticsParams
@@ -396,9 +388,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             });
         }
 
-        private static (SemaphoreSlim, ConcurrentDictionary<string, MarkerCorrection>) CreateFileCorrectionsEntry(string fileUri)
+        private static ConcurrentDictionary<string, MarkerCorrection> CreateFileCorrectionsEntry(string fileUri)
         {
-            return (AsyncUtils.CreateSimpleLockingSemaphore(), new ConcurrentDictionary<string, MarkerCorrection>());
+            return new ConcurrentDictionary<string, MarkerCorrection>();
         }
 
         private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
@@ -474,6 +466,5 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Dispose(true);
         }
         #endregion
-
     }
 }

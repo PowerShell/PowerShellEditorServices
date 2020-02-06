@@ -60,7 +60,6 @@ namespace PowerShellEditorServices.Test.E2E
 
         private string NewTestFile(string script, bool isPester = false)
         {
-            Diagnostics.Clear();
             string fileExt = isPester ? ".Tests.ps1" : ".ps1";
             string filePath = Path.Combine(s_binDir, Path.GetRandomFileName() + fileExt);
             File.WriteAllText(filePath, script);
@@ -636,6 +635,8 @@ CanSendReferencesCodeLensRequest
         [Fact]
         public async Task CanSendCodeActionRequest()
         {
+            Debugger.Launch();
+            Diagnostics.Clear();
             string filePath = NewTestFile("gci");
             await WaitForDiagnostics();
 

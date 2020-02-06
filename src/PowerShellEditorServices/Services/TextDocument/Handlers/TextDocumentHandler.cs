@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _remoteFileManagerService = remoteFileManagerService;
         }
 
-        public Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
+        public async Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
         {
             ScriptFile changedFile = _workspaceService.GetFile(notification.TextDocument.Uri);
 
@@ -65,9 +65,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 #pragma warning disable CS4014
             // Kick off script diagnostics without blocking the response
             // TODO: Get all recently edited files in the workspace
-            _analysisService.RunScriptDiagnosticsAsync(new ScriptFile[] { changedFile }, token);
+            await _analysisService.RunScriptDiagnosticsAsync(new ScriptFile[] { changedFile }, token);
 #pragma warning restore CS4014
-            return Unit.Task;
+            return Unit.Value;
         }
 
         TextDocumentChangeRegistrationOptions IRegistration<TextDocumentChangeRegistrationOptions>.GetRegistrationOptions()
@@ -84,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _capability = capability;
         }
 
-        public Task<Unit> Handle(DidOpenTextDocumentParams notification, CancellationToken token)
+        public async Task<Unit> Handle(DidOpenTextDocumentParams notification, CancellationToken token)
         {
             ScriptFile openedFile =
                 _workspaceService.GetFileBuffer(
@@ -94,11 +94,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 #pragma warning disable CS4014
             // Kick off script diagnostics without blocking the response
             // TODO: Get all recently edited files in the workspace
-            _analysisService.RunScriptDiagnosticsAsync(new ScriptFile[] { openedFile }, token);
+            await _analysisService.RunScriptDiagnosticsAsync(new ScriptFile[] { openedFile }, token);
 #pragma warning restore CS4014
 
             _logger.LogTrace("Finished opening document.");
-            return Unit.Task;
+            return Unit.Value;
         }
 
         TextDocumentRegistrationOptions IRegistration<TextDocumentRegistrationOptions>.GetRegistrationOptions()
