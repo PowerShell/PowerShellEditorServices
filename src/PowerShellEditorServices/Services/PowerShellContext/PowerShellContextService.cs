@@ -755,7 +755,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
 
                     // May need a cancellation token here
-                    return await Task.Run<IEnumerable<TResult>>(() => shell.Invoke<TResult>(null, invocationSettings), CancellationToken.None).ConfigureAwait(false);
+                    return await Task.Run<IEnumerable<TResult>>(() => shell.Invoke<TResult>(input: null, invocationSettings), CancellationToken.None).ConfigureAwait(false);
                 }
                 finally
                 {
