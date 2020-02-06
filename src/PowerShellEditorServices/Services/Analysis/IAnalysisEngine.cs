@@ -39,6 +39,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// <param name="scriptFileContent">The script to analyze in string form.</param>
         /// <returns>Markers for any diagnostics in the script.</returns>
         Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptFileContent);
+
+        /// <summary>
+        /// Analyze a PowerShell script file using a settings object.
+        /// </summary>
+        /// <param name="scriptFileContent">The script to analyze in string form.</param>
+        /// <param name="settings">A settings object to use as engine settings in this call.</param>
+        /// <returns>Markers for any diagnostics in the script.</returns>
+        Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptFileContent, Hashtable settings);
     }
 
 }

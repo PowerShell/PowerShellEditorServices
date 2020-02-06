@@ -6,11 +6,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Management.Automation.Runspaces;
-using System.Management.Automation;
 using System.Collections.Generic;
 using System.Text;
-using System.Collections;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -18,11 +15,9 @@ using System.Threading;
 using System.Collections.Concurrent;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
-using System.Collections.ObjectModel;
 using Microsoft.PowerShell.EditorServices.Services.Analysis;
-using Microsoft.PowerShell.EditorServices.Handlers;
-using System.IO;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
+using System.Collections;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -88,24 +83,24 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly int _analysisDelayMillis;
 
-        private readonly ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)> _mostRecentCorrectionsByFile;
+        private readonly ConcurrentDictionary<string, (SemaphoreSlim, ConcurrentDictionary<string, MarkerCorrection>)> _mostRecentCorrectionsByFile;
 
-        private IAnalysisEngine _analysisEngine;
+        private IAnalysisEngine _analysisEngineField;
 
         private CancellationTokenSource _diagnosticsCancellationTokenSource;
 
         public AnalysisService(
-            ILogger logger,
+            ILoggerFactory loggerFactory,
             ILanguageServer languageServer,
             ConfigurationService configurationService,
             WorkspaceService workspaceService)
         {
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<AnalysisService>();
             _languageServer = languageServer;
             _configurationService = configurationService;
             _workplaceService = workspaceService;
             _analysisDelayMillis = 750;
-            _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, Dictionary<string, MarkerCorrection>)>();
+            _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, ConcurrentDictionary<string, MarkerCorrection>)>();
         }
 
         public string[] EnabledRules { get; set; }
@@ -116,12 +111,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             get
             {
-                if (_analysisEngine == null)
+                if (_analysisEngineField == null)
                 {
-                    _analysisEngine = InstantiateAnalysisEngine();
+                    _analysisEngineField = InstantiateAnalysisEngine();
                 }
 
-                return _analysisEngine;
+                return _analysisEngineField;
             }
         }
 
@@ -129,6 +124,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ScriptFile[] filesToAnalyze,
             CancellationToken cancellationToken)
         {
+            if (!AnalysisEngine.IsEnabled)
+            {
+                return Task.CompletedTask;
+            }
+
             // Create a cancellation token source that will cancel if we do or if the caller does
             var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
@@ -155,10 +155,56 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return Task.Run(() => DelayThenInvokeDiagnosticsAsync(filesToAnalyze, _diagnosticsCancellationTokenSource.Token), _diagnosticsCancellationTokenSource.Token);
         }
 
+        public Task<string> FormatAsync(string scriptFileContents, Hashtable formatSettings, int[] formatRange = null)
+        {
+            if (!AnalysisEngine.IsEnabled)
+            {
+                return null;
+            }
+
+            return AnalysisEngine.FormatAsync(scriptFileContents, formatSettings, formatRange);
+        }
+
+        public async Task<string> GetCommentHelpText(string functionText, string helpLocation, bool forBlockComment)
+        {
+            if (!AnalysisEngine.IsEnabled)
+            {
+                return null;
+            }
+
+            Hashtable commentHelpSettings = AnalysisService.GetCommentHelpRuleSettings(helpLocation, forBlockComment);
+
+            ScriptFileMarker[] analysisResults = await AnalysisEngine.AnalyzeScriptAsync(functionText, commentHelpSettings);
+
+            if (analysisResults.Length == 0
+                || analysisResults[0]?.Correction?.Edits == null
+                || analysisResults[0].Correction.Edits.Count() == 0)
+            {
+                return null;
+            }
+
+            return analysisResults[0].Correction.Edits[0].Text;
+        }
+
+        public IReadOnlyDictionary<string, MarkerCorrection> GetMostRecentCodeActionsForFile(string documentUri)
+        {
+            if (!_mostRecentCorrectionsByFile.TryGetValue(documentUri, out (SemaphoreSlim fileLock, ConcurrentDictionary<string, MarkerCorrection> corrections) fileCorrectionsEntry))
+            {
+                return null;
+            }
+
+            return fileCorrectionsEntry.corrections;
+        }
+
+        public Task ClearMarkers(ScriptFile file)
+        {
+            return PublishScriptDiagnosticsAsync(file, Array.Empty<ScriptFileMarker>());
+        }
+
         public void OnConfigurationUpdated(object sender, LanguageServerSettings settings)
         {
-            ClearMarkers();
-            _analysisEngine = InstantiateAnalysisEngine();
+            ClearOpenFileMarkers();
+            _analysisEngineField = InstantiateAnalysisEngine();
         }
 
         private IAnalysisEngine InstantiateAnalysisEngine()
@@ -200,11 +246,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return false;
         }
 
-        private Task ClearMarkers()
+        private Task ClearOpenFileMarkers()
         {
             return Task.WhenAll(
                 _workplaceService.GetOpenedFiles()
-                    .Select(file => PublishScriptDiagnosticsAsync(file, Array.Empty<ScriptFileMarker>())));
+                    .Select(file => ClearMarkers(file)));
         }
 
         private async Task DelayThenInvokeDiagnosticsAsync(ScriptFile[] filesToAnalyze, CancellationToken cancellationToken)
@@ -238,7 +284,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             foreach (ScriptFile scriptFile in filesToAnalyze)
             {
-                ScriptFileMarker[] semanticMarkers = await _analysisEngine.AnalyzeScriptAsync(scriptFile.Contents).ConfigureAwait(false);
+                ScriptFileMarker[] semanticMarkers = await AnalysisEngine.AnalyzeScriptAsync(scriptFile.Contents).ConfigureAwait(false);
 
                 scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
 
@@ -250,7 +296,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private async Task PublishScriptDiagnosticsAsync(ScriptFile scriptFile, IReadOnlyList<ScriptFileMarker> markers)
         {
-            (SemaphoreSlim fileLock, Dictionary<string, MarkerCorrection> fileCorrections) = _mostRecentCorrectionsByFile.GetOrAdd(
+            (SemaphoreSlim fileLock, ConcurrentDictionary<string, MarkerCorrection> fileCorrections) = _mostRecentCorrectionsByFile.GetOrAdd(
                 scriptFile.DocumentUri,
                 CreateFileCorrectionsEntry);
 
@@ -288,9 +334,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             });
         }
 
-        private static (SemaphoreSlim, Dictionary<string, MarkerCorrection>) CreateFileCorrectionsEntry(string fileUri)
+        private static (SemaphoreSlim, ConcurrentDictionary<string, MarkerCorrection>) CreateFileCorrectionsEntry(string fileUri)
         {
-            return (AsyncUtils.CreateSimpleLockingSemaphore(), new Dictionary<string, MarkerCorrection>());
+            return (AsyncUtils.CreateSimpleLockingSemaphore(), new ConcurrentDictionary<string, MarkerCorrection>());
         }
 
         private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
@@ -335,6 +381,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
+        private static Hashtable GetCommentHelpRuleSettings(string helpLocation, bool forBlockComment)
+        {
+            return new Hashtable {
+                { "Rules", new Hashtable {
+                    { "PSProvideCommentHelp", new Hashtable {
+                        { "Enable", true },
+                        { "ExportedOnly", false },
+                        { "BlockComment", forBlockComment },
+                        { "VSCodeSnippetCorrection", true },
+                        { "Placement", helpLocation }}
+                    }}
+                }};
+        }
+
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
@@ -344,7 +404,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 if (disposing)
                 {
-                    _analysisEngine.Dispose();
+                    _analysisEngineField?.Dispose();
                     _diagnosticsCancellationTokenSource?.Dispose();
                 }
 

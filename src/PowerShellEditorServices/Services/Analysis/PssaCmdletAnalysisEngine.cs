@@ -181,7 +181,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return null;
         }
 
-        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent)
+        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent) => AnalyzeScriptAsync(scriptContent, settings: null);
+
+        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent, Hashtable settings)
         {
             // When a new, empty file is created there are by definition no issues.
             // Furthermore, if you call Invoke-ScriptAnalyzer with an empty ScriptDefinition
@@ -196,9 +198,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 .AddParameter("ScriptDefinition", scriptContent)
                 .AddParameter("Severity", s_scriptMarkerLevels);
 
-            if (_settingsParameter != null)
+            object settingsValue = settings ?? _settingsParameter;
+            if (settingsValue != null)
             {
-                command.AddParameter("Settings", _settingsParameter);
+                command.AddParameter("Settings", settingsValue);
             }
             else
             {

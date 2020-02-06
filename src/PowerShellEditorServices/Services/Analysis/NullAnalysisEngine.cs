@@ -24,6 +24,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         {
             throw CreateInvocationException();
         }
+
+        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptFileContent, Hashtable settings) => AnalyzeScriptAsync(scriptFileContent);
+
         private Exception CreateInvocationException()
         {
             return new InvalidOperationException($"{nameof(NullAnalysisEngine)} implements no functionality and its methods should not be called");

@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<CommandOrCodeActionContainer> Handle(CodeActionParams request, CancellationToken cancellationToken)
         {
-            IReadOnlyDictionary<string, MarkerCorrection> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(request.TextDocument.Uri.OriginalString).ConfigureAwait(false);
+            IReadOnlyDictionary<string, MarkerCorrection> corrections = _analysisService.GetMostRecentCodeActionsForFile(request.TextDocument.Uri.OriginalString);
 
             if (corrections == null)
             {
