@@ -35,7 +35,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         private readonly ConcurrentDictionary<ProgressKey, object> currentProgressMessages =
             new ConcurrentDictionary<ProgressKey, object>();
 
-        private readonly bool _isPSReadLineEnabled;
         private PromptHandler activePromptHandler;
         private PSHostRawUserInterface rawUserInterface;
         private CancellationTokenSource commandLoopCancellationToken;
@@ -106,13 +105,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         public EditorServicesPSHostUserInterface(
             PowerShellContextService powerShellContext,
             PSHostRawUserInterface rawUserInterface,
-            bool isPSReadLineEnabled,
             ILogger logger)
         {
             this.Logger = logger;
             this.powerShellContext = powerShellContext;
             this.rawUserInterface = rawUserInterface;
-            _isPSReadLineEnabled = isPSReadLineEnabled;
 
             this.powerShellContext.DebuggerStop += PowerShellContext_DebuggerStop;
             this.powerShellContext.DebuggerResumed += PowerShellContext_DebuggerResumed;

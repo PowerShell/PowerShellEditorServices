@@ -38,12 +38,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         public TerminalPSHostUserInterface(
             PowerShellContextService powerShellContext,
             PSHost internalHost,
-            bool isPSReadLineEnabled,
             ILogger logger)
             : base (
                 powerShellContext,
                 new TerminalPSHostRawUserInterface(logger, internalHost),
-                isPSReadLineEnabled,
                 logger)
         {
             this.internalHostUI = internalHost.UI;
