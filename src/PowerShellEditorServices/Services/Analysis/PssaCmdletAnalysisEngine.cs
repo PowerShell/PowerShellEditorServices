@@ -12,7 +12,6 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
-using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Threading;
@@ -20,57 +19,89 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 {
-    internal class PssaCmdletAnalysisEngine : IAnalysisEngine
+    /// <summary>
+    /// PowerShell script analysis engine that uses PSScriptAnalyzer
+    /// cmdlets run through a PowerShell API to drive analysis.
+    /// </summary>
+    internal class PssaCmdletAnalysisEngine
     {
+        /// <summary>
+        /// Builder for the PssaCmdletAnalysisEngine allowing settings configuration.
+        /// </summary>
         public class Builder
         {
-            private readonly ILogger _logger;
+            private readonly ILoggerFactory _loggerFactory;
 
             private object _settingsParameter;
 
             private string[] _rules;
 
-            public Builder(ILogger logger)
+            /// <summary>
+            /// Create a builder for PssaCmdletAnalysisEngine construction.
+            /// </summary>
+            /// <param name="logger">The logger to use.</param>
+            public Builder(ILoggerFactory loggerFactory)
             {
-                _logger = logger;
+                _loggerFactory = loggerFactory;
             }
 
+            /// <summary>
+            /// Uses a settings file for PSSA rule configuration.
+            /// </summary>
+            /// <param name="settingsPath">The absolute path to the settings file.</param>
+            /// <returns>The builder for chaining.</returns>
             public Builder WithSettingsFile(string settingsPath)
             {
                 _settingsParameter = settingsPath;
                 return this;
             }
             
+            /// <summary>
+            /// Uses a settings hashtable for PSSA rule configuration.
+            /// </summary>
+            /// <param name="settings">The settings hashtable to pass to PSSA.</param>
+            /// <returns>The builder for chaining.</returns>
             public Builder WithSettings(Hashtable settings)
             {
                 _settingsParameter = settings;
                 return this;
             }
 
+            /// <summary>
+            /// Uses a set of unconfigured rules for PSSA configuration.
+            /// </summary>
+            /// <param name="rules">The rules for PSSA to run.</param>
+            /// <returns>The builder for chaining.</returns>
             public Builder WithIncludedRules(string[] rules)
             {
                 _rules = rules;
                 return this;
             }
 
+            /// <summary>
+            /// Attempts to build a PssaCmdletAnalysisEngine with the given configuration.
+            /// If PSScriptAnalyzer cannot be found, this will return null.
+            /// </summary>
+            /// <returns>A newly configured PssaCmdletAnalysisEngine, or null if PSScriptAnalyzer cannot be found.</returns>
             public PssaCmdletAnalysisEngine Build()
             {
                 // RunspacePool takes care of queuing commands for us so we do not
                 // need to worry about executing concurrent commands
+                ILogger logger = _loggerFactory.CreateLogger<PssaCmdletAnalysisEngine>();
                 try
                 {
                     RunspacePool pssaRunspacePool = CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo);
 
                     PssaCmdletAnalysisEngine cmdletAnalysisEngine = _settingsParameter != null
-                        ? new PssaCmdletAnalysisEngine(_logger, pssaRunspacePool, pssaModuleInfo, _settingsParameter)
-                        : new PssaCmdletAnalysisEngine(_logger, pssaRunspacePool, pssaModuleInfo, _rules);
+                        ? new PssaCmdletAnalysisEngine(logger, pssaRunspacePool, pssaModuleInfo, _settingsParameter)
+                        : new PssaCmdletAnalysisEngine(logger, pssaRunspacePool, pssaModuleInfo, _rules);
 
                     cmdletAnalysisEngine.LogAvailablePssaFeatures();
                     return cmdletAnalysisEngine;
                 }
                 catch (FileNotFoundException e)
                 {
-                    _logger.LogError(e, "Unable to find PSScriptAnalyzer. Disabling script analysis.");
+                    logger.LogError(e, $"Unable to find PSScriptAnalyzer. Disabling script analysis. PSModulePath: '{Environment.GetEnvironmentVariable("PSModulePath")}'");
                     return null;
                 }
             }
@@ -130,8 +161,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             _alreadyRun = false;
         }
 
-        public bool IsEnabled => true;
-
+        /// <summary>
+        /// Format a script given its contents.
+        /// </summary>
+        /// <param name="scriptDefinition">The full text of a script.</param>
+        /// <param name="formatSettings">The formatter settings to use.</param>
+        /// <param name="rangeList">A possible range over which to run the formatter.</param>
+        /// <returns></returns>
         public async Task<string> FormatAsync(string scriptDefinition, Hashtable formatSettings, int[] rangeList)
         {
             // We cannot use Range type therefore this workaround of using -1 default value.
@@ -181,8 +217,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return null;
         }
 
+        /// <summary>
+        /// Analyze a given script using PSScriptAnalyzer.
+        /// </summary>
+        /// <param name="scriptContent">The contents of the script to analyze.</param>
+        /// <returns>An array of markers indicating script analysis diagnostics.</returns>
         public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent) => AnalyzeScriptAsync(scriptContent, settings: null);
 
+
+        /// <summary>
+        /// Analyze a given script using PSScriptAnalyzer.
+        /// </summary>
+        /// <param name="scriptContent">The contents of the script to analyze.</param>
+        /// <param name="settings">The settings file to use in this instance of analysis.</param>
+        /// <returns>An array of markers indicating script analysis diagnostics.</returns>
         public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent, Hashtable settings)
         {
             // When a new, empty file is created there are by definition no issues.
@@ -291,6 +339,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             }
         }
 
+        /// <summary>
+        /// Execute PSScriptAnalyzer cmdlets in PowerShell while preserving the PSModulePath.
+        /// Attempts to prevent PSModulePath mutation by runspace creation within the PSScriptAnalyzer module.
+        /// </summary>
+        /// <param name="powershell">The PowerShell instance to execute.</param>
+        /// <returns>The output of PowerShell execution.</returns>
         private Collection<PSObject> InvokePowerShellWithModulePathPreservation(System.Management.Automation.PowerShell powershell)
         {
             if (_alreadyRun)

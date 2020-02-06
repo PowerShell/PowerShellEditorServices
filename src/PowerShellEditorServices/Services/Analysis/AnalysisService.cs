@@ -91,7 +91,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ConcurrentDictionary<string, (SemaphoreSlim, ConcurrentDictionary<string, MarkerCorrection>)> _mostRecentCorrectionsByFile;
 
-        private IAnalysisEngine _analysisEngineField;
+        private bool _hasInstantiatedAnalysisEngine;
+
+        private PssaCmdletAnalysisEngine _analysisEngine;
 
         private CancellationTokenSource _diagnosticsCancellationTokenSource;
 
@@ -114,21 +116,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _workplaceService = workspaceService;
             _analysisDelayMillis = 750;
             _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, (SemaphoreSlim, ConcurrentDictionary<string, MarkerCorrection>)>();
+            _hasInstantiatedAnalysisEngine = false;
         }
 
         /// <summary>
         /// The analysis engine to use for running script analysis.
         /// </summary>
-        private IAnalysisEngine AnalysisEngine
+        private PssaCmdletAnalysisEngine AnalysisEngine
         {
             get
             {
-                if (_analysisEngineField == null)
+                if (!_hasInstantiatedAnalysisEngine)
                 {
-                    _analysisEngineField = InstantiateAnalysisEngine();
+                    _analysisEngine = InstantiateAnalysisEngine();
+                    _hasInstantiatedAnalysisEngine = true;
                 }
 
-                return _analysisEngineField;
+                return _analysisEngine;
             }
         }
 
@@ -142,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ScriptFile[] filesToAnalyze,
             CancellationToken cancellationToken)
         {
-            if (!AnalysisEngine.IsEnabled)
+            if (AnalysisEngine == null)
             {
                 return Task.CompletedTask;
             }
@@ -182,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>The text of the formatted PowerShell script.</returns>
         public Task<string> FormatAsync(string scriptFileContents, Hashtable formatSettings, int[] formatRange = null)
         {
-            if (!AnalysisEngine.IsEnabled)
+            if (AnalysisEngine == null)
             {
                 return null;
             }
@@ -199,7 +203,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns></returns>
         public async Task<string> GetCommentHelpText(string functionText, string helpLocation, bool forBlockComment)
         {
-            if (!AnalysisEngine.IsEnabled)
+            if (AnalysisEngine == null)
             {
                 return null;
             }
@@ -251,14 +255,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public void OnConfigurationUpdated(object sender, LanguageServerSettings settings)
         {
             ClearOpenFileMarkers();
-            _analysisEngineField = InstantiateAnalysisEngine();
+            _analysisEngine = InstantiateAnalysisEngine();
         }
 
-        private IAnalysisEngine InstantiateAnalysisEngine()
+        private PssaCmdletAnalysisEngine InstantiateAnalysisEngine()
         {
             if (!(_configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false))
             {
-                return new NullAnalysisEngine();
+                return null;
             }
 
             var pssaCmdletEngineBuilder = new PssaCmdletAnalysisEngine.Builder(_logger);
@@ -451,7 +455,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 if (disposing)
                 {
-                    _analysisEngineField?.Dispose();
+                    _analysisEngine?.Dispose();
                     _diagnosticsCancellationTokenSource?.Dispose();
                 }
 
