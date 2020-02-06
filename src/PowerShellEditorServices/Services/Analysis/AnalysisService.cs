@@ -79,6 +79,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             "PSPossibleIncorrectUsageOfRedirectionOperator"
         };
 
+        private readonly ILoggerFactory _loggerFactory;
+
         private readonly ILogger _logger;
 
         private readonly ILanguageServer _languageServer;
@@ -110,6 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ConfigurationService configurationService,
             WorkspaceService workspaceService)
         {
+            _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<AnalysisService>();
             _languageServer = languageServer;
             _configurationService = configurationService;
@@ -265,7 +268,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            var pssaCmdletEngineBuilder = new PssaCmdletAnalysisEngine.Builder(_logger);
+            var pssaCmdletEngineBuilder = new PssaCmdletAnalysisEngine.Builder(_loggerFactory);
 
             // If there's a settings file use that
             if (TryFindSettingsFile(out string settingsFilePath))
