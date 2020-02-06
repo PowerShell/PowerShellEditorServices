@@ -852,12 +852,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 }
                 finally
                 {
-                    // This supplies the newline in the Legacy ReadLine when executing code in the terminal via hitting the ENTER key.
-                    // Without this, hitting ENTER with a no input looks like it does nothing (no new prompt is written)
+                    // This supplies the newline in the Legacy ReadLine when executing code in the terminal via hitting the ENTER key
+                    // or Ctrl+C. Without this, hitting ENTER with a no input looks like it does nothing (no new prompt is written)
                     // and also the output would show up on the same line as the code you wanted to execute (the prompt line).
-                    // Since PSReadLine handles ENTER internally to itself, we only want to do this when using the Legacy ReadLine.
-                    if (!_isPSReadLineEnabled &&
-                        !cancellationToken.IsCancellationRequested &&
+                    // This is AlSO applied to PSReadLine for the Ctrl+C scenario which appears like it does nothing...
+                    // TODO: This still gives an extra newline when you hit ENTER in the PSReadLine experience. We should figure
+                    // out if there's any way to avoid that... but unfortunately, in both scenarios, we only see that empty
+                    // string is returned.
+                    if (!cancellationToken.IsCancellationRequested &&
                         originalCursorTop == await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false))
                     {
                         this.WriteLine();
