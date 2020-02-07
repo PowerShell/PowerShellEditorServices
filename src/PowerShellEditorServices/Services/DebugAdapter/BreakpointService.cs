@@ -62,7 +62,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     try
                     {
                         BreakpointApiUtils.SetBreakpoint(_powerShellContextService.CurrentRunspace.Runspace.Debugger, breakpointDetails, _debugStateService.RunspaceId);
-
                     }
                     catch(InvalidOperationException e)
                     {

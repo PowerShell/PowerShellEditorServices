@@ -109,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri, out Token[] tokens, out ParseError[] errors);
 
                     // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
-                    var cmd = new PSCommand().AddScript("& $args[0]").AddArgument(ast.GetScriptBlock());
+                    var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());
                     await _powerShellContextService
                         .ExecuteCommandAsync<object>(cmd, sendOutputToHost: true, sendErrorToHost:true)
                         .ConfigureAwait(false);

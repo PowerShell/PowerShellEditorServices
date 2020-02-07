@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Management.Automation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -341,10 +342,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             string debugRunspaceCmd;
             if (request.RunspaceName != null)
             {
-                var ids = await _powerShellContextService.ExecuteScriptStringAsync($"Get-Runspace -Name {request.RunspaceName} | % Id");
+                IEnumerable<int?> ids = await _powerShellContextService.ExecuteCommandAsync<int?>(new PSCommand()
+                    .AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace")
+                    .AddParameter("Name", request.RunspaceName)
+                    .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
+                    .AddParameter("ExpandProperty", "Id"));
                 foreach (var id in ids)
                 {
-                    _debugStateService.RunspaceId = (int?) id;
+                    _debugStateService.RunspaceId = id;
                     break;
                 }
                 debugRunspaceCmd = $"\nDebug-Runspace -Name '{request.RunspaceName}'";
