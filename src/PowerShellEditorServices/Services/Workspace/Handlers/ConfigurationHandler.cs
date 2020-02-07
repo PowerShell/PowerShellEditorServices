@@ -83,7 +83,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 this._consoleReplStarted = true;
             }
 
-            ConfigurationUpdated.Invoke(this, _configurationService.CurrentSettings);
+            // Run any events subscribed to configuration updates
+            ConfigurationUpdated(this, _configurationService.CurrentSettings);
 
             // Convert the editor file glob patterns into an array for the Workspace
             // Both the files.exclude and search.exclude hash tables look like (glob-text, is-enabled):
