@@ -14,11 +14,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System.Threading;
 using System.Collections.Concurrent;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Utility;
 using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using System.Collections;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.EditorServices.Services
