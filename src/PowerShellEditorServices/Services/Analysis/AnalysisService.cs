@@ -243,6 +243,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A threadsafe readonly dictionary of the code actions of the particular file.</returns>
         public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(string documentUri)
         {
+            // On Windows, VSCode still gives us file URIs like "file:///c%3a/...", so we need to escape them
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var uri = new Uri(documentUri);
