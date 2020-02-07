@@ -152,11 +152,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             if (this.commandLoopCancellationToken == null)
             {
                 this.commandLoopCancellationToken = new CancellationTokenSource();
-
-                var commandLoopThreadTask = Task.Factory.StartNew(() =>
-                    {
-                        return this.StartReplLoopAsync(this.commandLoopCancellationToken.Token);
-                    });
+                Task.Run(() => this.StartReplLoopAsync(this.commandLoopCancellationToken.Token));
             }
             else
             {

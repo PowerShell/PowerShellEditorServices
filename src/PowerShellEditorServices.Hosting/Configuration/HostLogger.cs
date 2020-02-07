@@ -271,7 +271,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly CancellationTokenSource _cancellationSource;
 
-        private readonly Task _writerTask;
+        private readonly Thread _writerThread;
 
         // This cannot be a bool
         // See https://stackoverflow.com/q/6164751
@@ -288,7 +288,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _messageQueue = new BlockingCollection<string>();
 
             // Start writer listening to queue
-            _writerTask = Task.Run(RunWriter);
+            _writerThread = new Thread(RunWriter);
+            _writerThread.Start();
         }
 
         public void OnCompleted()
@@ -301,7 +302,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             _cancellationSource.Cancel();
 
-            _writerTask.Wait();
+            _writerThread.Join();
 
             _unsubscriber.Dispose();
             _fileWriter.Flush();
