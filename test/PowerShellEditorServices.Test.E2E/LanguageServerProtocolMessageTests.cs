@@ -37,8 +37,9 @@ namespace PowerShellEditorServices.Test.E2E
         {
             LanguageClient = data.LanguageClient;
             Diagnostics = data.Diagnostics;
-            PwshExe = TestsFixture.PwshExe;
             Diagnostics.Clear();
+
+            PwshExe = TestsFixture.PwshExe;
 
             _output = output;
 
@@ -635,7 +636,6 @@ CanSendReferencesCodeLensRequest
         [Fact]
         public async Task CanSendCodeActionRequest()
         {
-            Diagnostics.Clear();
             string filePath = NewTestFile("gci");
             await WaitForDiagnostics();
 

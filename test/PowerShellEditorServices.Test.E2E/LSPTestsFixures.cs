@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -41,7 +43,7 @@ namespace PowerShellEditorServices.Test.E2E
             Diagnostics = new List<Diagnostic>();
             LanguageClient.TextDocument.OnPublishDiagnostics((uri, diagnostics) =>
             {
-                Diagnostics.AddRange(diagnostics);
+                Diagnostics.AddRange(diagnostics.Where(d => d != null));
             });
         }
 
