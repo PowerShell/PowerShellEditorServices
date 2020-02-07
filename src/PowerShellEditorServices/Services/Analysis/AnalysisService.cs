@@ -19,6 +19,7 @@ using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using System.Collections;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -91,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly int _analysisDelayMillis;
 
-        private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, MarkerCorrection>> _mostRecentCorrectionsByFile;
+        private readonly ConcurrentDictionary<string, CorrectionTableEntry> _mostRecentCorrectionsByFile;
 
         private bool _hasInstantiatedAnalysisEngine;
 
@@ -118,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _configurationService = configurationService;
             _workplaceService = workspaceService;
             _analysisDelayMillis = 750;
-            _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, ConcurrentDictionary<string, MarkerCorrection>>();
+            _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, CorrectionTableEntry>();
             _hasInstantiatedAnalysisEngine = false;
         }
 
@@ -145,13 +146,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="filesToAnalyze">The files to run script analysis on.</param>
         /// <param name="cancellationToken">A cancellation token to cancel this call with.</param>
         /// <returns>A task that finishes when script diagnostics have been published.</returns>
-        public Task RunScriptDiagnosticsAsync(
+        public void RunScriptDiagnostics(
             ScriptFile[] filesToAnalyze,
             CancellationToken cancellationToken)
         {
             if (AnalysisEngine == null)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             // Create a cancellation token source that will cancel if we do or if the caller does
@@ -174,10 +175,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (filesToAnalyze.Length == 0)
             {
-                return Task.CompletedTask;
+                return;
             }
 
-            return Task.Run(() => DelayThenInvokeDiagnosticsAsync(filesToAnalyze, _diagnosticsCancellationTokenSource.Token), _diagnosticsCancellationTokenSource.Token);
+            var analysisTask = Task.Run(() => DelayThenInvokeDiagnosticsAsync(filesToAnalyze, _diagnosticsCancellationTokenSource.Token), _diagnosticsCancellationTokenSource.Token);
+
+            // Ensure that any next corrections request will wait for this diagnostics publication
+            foreach (ScriptFile file in filesToAnalyze)
+            {
+                CorrectionTableEntry fileCorrectionsEntry = _mostRecentCorrectionsByFile.GetOrAdd(
+                    file.DocumentUri,
+                    CorrectionTableEntry.CreateForFile);
+
+                fileCorrectionsEntry.DiagnosticPublish = analysisTask;
+            }
         }
 
         /// <summary>
@@ -230,14 +241,27 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="documentUri">The URI string of the file to get code actions for.</param>
         /// <returns>A threadsafe readonly dictionary of the code actions of the particular file.</returns>
-        public IReadOnlyDictionary<string, MarkerCorrection> GetMostRecentCodeActionsForFile(string documentUri)
+        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(string documentUri)
         {
-            if (!_mostRecentCorrectionsByFile.TryGetValue(documentUri, out ConcurrentDictionary<string, MarkerCorrection> corrections))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var uri = new Uri(documentUri);
+                if (uri.Scheme == "file")
+                {
+                    documentUri = WorkspaceService.UnescapeDriveColon(uri).AbsoluteUri;
+                }
+            }
+
+
+            if (!_mostRecentCorrectionsByFile.TryGetValue(documentUri, out CorrectionTableEntry corrections))
             {
                 return null;
             }
 
-            return corrections;
+            // Wait for diagnostics to be published for this file
+            await corrections.DiagnosticPublish.ConfigureAwait(false);
+
+            return corrections.Corrections;
         }
 
         /// <summary>
@@ -360,11 +384,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             var diagnostics = new Diagnostic[scriptFile.DiagnosticMarkers.Count];
 
-            ConcurrentDictionary<string, MarkerCorrection> fileCorrections = _mostRecentCorrectionsByFile.GetOrAdd(
+            CorrectionTableEntry fileCorrections = _mostRecentCorrectionsByFile.GetOrAdd(
                 scriptFile.DocumentUri,
-                CreateFileCorrectionsEntry);
+                CorrectionTableEntry.CreateForFile);
 
-            fileCorrections.Clear();
+            fileCorrections.Corrections.Clear();
 
             for (int i = 0; i < markers.Count; i++)
             {
@@ -375,7 +399,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (marker.Correction != null)
                 {
                     string diagnosticId = GetUniqueIdFromDiagnostic(diagnostic);
-                    fileCorrections[diagnosticId] = marker.Correction;
+                    fileCorrections.Corrections[diagnosticId] = marker.Correction;
                 }
 
                 diagnostics[i] = diagnostic;
@@ -466,5 +490,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Dispose(true);
         }
         #endregion
+
+        private class CorrectionTableEntry
+        {
+            public static CorrectionTableEntry CreateForFile(string fileUri)
+            {
+                return new CorrectionTableEntry();
+            }
+
+            public CorrectionTableEntry()
+            {
+                Corrections = new ConcurrentDictionary<string, MarkerCorrection>();
+                DiagnosticPublish = Task.CompletedTask;
+            }
+
+            public ConcurrentDictionary<string, MarkerCorrection> Corrections { get; }
+
+            public Task DiagnosticPublish { get; set; }
+        }
     }
 }

@@ -535,7 +535,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return combinedPath;
         }
 
-        private static Uri UnescapeDriveColon(Uri fileUri)
+        internal static Uri UnescapeDriveColon(Uri fileUri)
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {

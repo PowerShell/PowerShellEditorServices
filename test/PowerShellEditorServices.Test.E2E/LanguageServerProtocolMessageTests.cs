@@ -635,7 +635,6 @@ CanSendReferencesCodeLensRequest
         [Fact]
         public async Task CanSendCodeActionRequest()
         {
-            Debugger.Launch();
             Diagnostics.Clear();
             string filePath = NewTestFile("gci");
             await WaitForDiagnostics();

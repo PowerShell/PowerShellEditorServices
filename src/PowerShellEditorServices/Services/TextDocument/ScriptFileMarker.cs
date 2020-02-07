@@ -158,7 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
                 correction = new MarkerCorrection
                 {
-                    Name = correctionMessage == null ? diagnosticRecord.Message : correctionMessage,
+                    Name = correctionMessage ?? diagnosticRecord.Message,
                     Edits = editRegions.ToArray()
                 };
             }
