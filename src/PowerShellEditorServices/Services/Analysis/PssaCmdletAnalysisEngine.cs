@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
     /// PowerShell script analysis engine that uses PSScriptAnalyzer
     /// cmdlets run through a PowerShell API to drive analysis.
     /// </summary>
-    internal class PssaCmdletAnalysisEngine
+    internal class PssaCmdletAnalysisEngine : IDisposable
     {
         /// <summary>
         /// Builder for the PssaCmdletAnalysisEngine allowing settings configuration.
