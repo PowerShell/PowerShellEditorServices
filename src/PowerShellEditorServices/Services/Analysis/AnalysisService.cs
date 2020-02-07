@@ -351,12 +351,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
             catch (TaskCanceledException)
             {
-                // Ensure no stale markers are displayed
-                //foreach (ScriptFile script in filesToAnalyze)
-                //{
-                //    PublishScriptDiagnosticsAsync(script);
-                //}
-
                 return;
             }
 
