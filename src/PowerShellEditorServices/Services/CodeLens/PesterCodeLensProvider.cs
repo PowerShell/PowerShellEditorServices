@@ -49,7 +49,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             var word = pesterSymbol.Command == PesterCommandType.It ? "test" : "tests";
             var codeLensResults = new CodeLens[]
             {
-                
                 new CodeLens()
                 {
                     Range = pesterSymbol.ScriptRegion.ToRange(),
