@@ -27,7 +27,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
-        private readonly ConfigurationService _configurationService;
 
         private CodeLensCapability _capability;
 

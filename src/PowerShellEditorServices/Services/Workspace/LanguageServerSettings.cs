@@ -378,7 +378,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         /// <summary>
         /// Whether integration features specific to Pester v5 are enabled
         /// </summary>
-        public bool Pester5CodeLens { get; set; } = false;
+        public bool Pester5CodeLens { get; set; }
     }
 
     /// <summary>
