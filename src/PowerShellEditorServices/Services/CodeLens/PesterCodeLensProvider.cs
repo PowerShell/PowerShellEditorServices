@@ -3,7 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Collections.Generic;
+using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -14,6 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 {
     internal class PesterCodeLensProvider : ICodeLensProvider
     {
+        private readonly ConfigurationService _configurationService;
 
         /// <summary>
         /// The symbol provider to get symbols from to build code lenses with.
@@ -29,8 +32,9 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <summary>
         /// Create a new Pester CodeLens provider for a given editor session.
         /// </summary>
-        public PesterCodeLensProvider()
+        public PesterCodeLensProvider(ConfigurationService configurationService)
         {
+            _configurationService = configurationService;
             _symbolProvider = new PesterDocumentSymbolProvider();
         }
 
@@ -100,7 +104,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             {
                 if (symbol is PesterSymbolReference pesterSymbol)
                 {
-                    lenses.AddRange(GetPesterLens(pesterSymbol, scriptFile));
+                    if (_configurationService.CurrentSettings.Pester.Pester5CodeLens 
+                        || pesterSymbol.Command == PesterCommandType.Describe)
+                    {
+                        lenses.AddRange(GetPesterLens(pesterSymbol, scriptFile));
+                    }
                 }
             }
 

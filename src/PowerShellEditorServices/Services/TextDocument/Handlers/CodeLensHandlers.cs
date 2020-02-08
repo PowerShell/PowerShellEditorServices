@@ -27,14 +27,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
+        private readonly ConfigurationService _configurationService;
 
         private CodeLensCapability _capability;
 
-        public CodeLensHandlers(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService)
+        public CodeLensHandlers(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService, ConfigurationService configurationService)
         {
             _logger = factory.CreateLogger<FoldingRangeHandler>();
             _workspaceService = workspaceService;
             _symbolsService = symbolsService;
+            _configurationService = configurationService;
         }
 
         CodeLensRegistrationOptions IRegistration<CodeLensRegistrationOptions>.GetRegistrationOptions()

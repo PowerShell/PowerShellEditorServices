@@ -26,11 +26,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 
         public CodeFoldingSettings CodeFolding { get; set; }
 
+        public PesterSettings Pester { get; set; }
+
         public LanguageServerSettings()
         {
             this.ScriptAnalysis = new ScriptAnalysisSettings();
             this.CodeFormatting = new CodeFormattingSettings();
             this.CodeFolding = new CodeFoldingSettings();
+            this.Pester = new PesterSettings();
         }
 
         public void Update(
@@ -49,6 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                         logger);
                     this.CodeFormatting = new CodeFormattingSettings(settings.CodeFormatting);
                     this.CodeFolding.Update(settings.CodeFolding, logger);
+                    this.Pester = new PesterSettings(settings.Pester);
                 }
             }
         }
@@ -354,6 +358,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Pester settings
+    /// </summary>
+    public class PesterSettings
+    {
+        public PesterSettings()
+        {
+
+        }
+
+        public PesterSettings(PesterSettings settings)
+        {
+            Pester5CodeLens = settings.Pester5CodeLens;
+        }
+
+        /// <summary>
+        /// Whether integration features specific to Pester v5 are enabled
+        /// </summary>
+        public bool Pester5CodeLens { get; set; } = false;
     }
 
     /// <summary>
