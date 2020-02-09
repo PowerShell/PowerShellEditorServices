@@ -209,6 +209,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public bool WhitespaceAroundOperator { get; set; }
         public bool WhitespaceAfterSeparator { get; set; }
         public bool WhitespaceInsideBrace { get; set; }
+        public bool WhitespaceBetweenParameters { get; set; }
         public bool WhitespaceAroundPipe { get; set; }
         public bool IgnoreOneLineBlock { get; set; }
         public bool AlignPropertyValuePairs { get; set; }
@@ -284,6 +285,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     { "CheckOperator", WhitespaceAroundOperator },
                     { "CheckSeparator", WhitespaceAfterSeparator },
                     { "CheckInnerBrace", WhitespaceInsideBrace },
+                    { "CheckParameter", WhitespaceBetweenParameters },
                     { "CheckPipe", WhitespaceAroundPipe },
                 }},
                 { "PSAlignAssignmentStatement", new Hashtable {
