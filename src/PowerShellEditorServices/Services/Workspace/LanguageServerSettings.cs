@@ -367,7 +367,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     {
         public PesterSettings()
         {
-
         }
 
         public PesterSettings(PesterSettings settings)
