@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
     /// Specifies the contract for an implementation of
     /// the ICodeLenses component.
     /// </summary>
-    public interface ICodeLenses
+    internal interface ICodeLenses
     {
         /// <summary>
         /// Gets the collection of ICodeLensProvider implementations

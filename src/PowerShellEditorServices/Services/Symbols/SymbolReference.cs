@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// A class that holds the type, name, script extent, and source line of a symbol
     /// </summary>
     [DebuggerDisplay("SymbolType = {SymbolType}, SymbolName = {SymbolName}")]
-    public class SymbolReference
+    internal class SymbolReference
     {
         #region Properties
 

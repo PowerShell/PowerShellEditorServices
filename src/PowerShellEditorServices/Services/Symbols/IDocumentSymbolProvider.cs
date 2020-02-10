@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// <summary>
     /// Specifies the contract for a document symbols provider.
     /// </summary>
-    public interface IDocumentSymbolProvider
+    internal interface IDocumentSymbolProvider
     {
         /// <summary>
         /// Provides a list of symbols for the given document.

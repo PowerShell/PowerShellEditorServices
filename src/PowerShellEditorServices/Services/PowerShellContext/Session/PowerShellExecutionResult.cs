@@ -9,7 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Enumerates the possible execution results that can occur after
     /// executing a command or script.
     /// </summary>
-    public enum PowerShellExecutionResult
+    internal enum PowerShellExecutionResult
     {
         /// <summary>
         /// Indicates that execution is not yet finished.

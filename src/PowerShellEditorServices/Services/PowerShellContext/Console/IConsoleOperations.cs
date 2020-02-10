@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides platform specific console utilities.
     /// </summary>
-    public interface IConsoleOperations
+    internal interface IConsoleOperations
     {
         /// <summary>
         /// Obtains the next character or function key pressed by the user asynchronously.

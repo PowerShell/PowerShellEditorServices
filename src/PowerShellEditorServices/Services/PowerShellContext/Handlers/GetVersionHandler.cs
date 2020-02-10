@@ -11,7 +11,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class GetVersionHandler : IGetVersionHandler
+    internal class GetVersionHandler : IGetVersionHandler
     {
         private readonly ILogger<GetVersionHandler> _logger;
 

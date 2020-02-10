@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// new projects from those templates.  This service leverages the Plaster
     /// module for creating projects from templates.
     /// </summary>
-    public class TemplateService
+    internal class TemplateService
     {
         #region Private Fields
 

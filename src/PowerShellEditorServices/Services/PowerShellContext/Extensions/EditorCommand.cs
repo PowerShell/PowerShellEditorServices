@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Provides details about a command that has been registered
     /// with the editor.
     /// </summary>
-    public class EditorCommand
+    public sealed class EditorCommand
     {
         #region Properties
 

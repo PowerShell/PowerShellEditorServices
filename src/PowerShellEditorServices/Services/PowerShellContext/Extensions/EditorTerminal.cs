@@ -9,7 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Provides a PowerShell-facing API which allows scripts to
     /// interact with the editor's terminal.
     /// </summary>
-    public class EditorTerminal
+    public sealed class EditorTerminal
     {
         #region Private Fields
 

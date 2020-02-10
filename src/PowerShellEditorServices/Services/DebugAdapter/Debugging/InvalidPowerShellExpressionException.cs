@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// <summary>
     /// Represents the exception that is thrown when an invalid expression is provided to the DebugService's SetVariable method.
     /// </summary>
-    public class InvalidPowerShellExpressionException : Exception
+    internal class InvalidPowerShellExpressionException : Exception
     {
         /// <summary>
         /// Initializes a new instance of the SetVariableExpressionException class.

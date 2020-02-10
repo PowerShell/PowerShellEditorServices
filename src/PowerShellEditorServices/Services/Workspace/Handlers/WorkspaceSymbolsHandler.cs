@@ -19,7 +19,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class WorkspaceSymbolsHandler : IWorkspaceSymbolsHandler
+    internal class WorkspaceSymbolsHandler : IWorkspaceSymbolsHandler
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;

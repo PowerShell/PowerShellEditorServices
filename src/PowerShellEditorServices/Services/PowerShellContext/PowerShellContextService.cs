@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// Handles nested PowerShell prompts and also manages execution of
     /// commands whether inside or outside of the debugger.
     /// </summary>
-    public class PowerShellContextService : IDisposable, IHostSupportsInteractiveSession
+    internal class PowerShellContextService : IDisposable, IHostSupportsInteractiveSession
     {
         private static readonly string s_commandsModulePath = Path.GetFullPath(
             Path.Combine(
@@ -1836,7 +1836,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         // P.S. MinifiedRunspaceDetails use to be called RunspaceDetails... as in, there were 2 DIFFERENT
         // RunspaceDetails types in this codebase but I've changed it to be minified since the type is
         // slightly simpler than the other RunspaceDetails.
-        public class MinifiedRunspaceDetails
+        internal class MinifiedRunspaceDetails
         {
             public PowerShellVersion PowerShellVersion { get; set; }
 

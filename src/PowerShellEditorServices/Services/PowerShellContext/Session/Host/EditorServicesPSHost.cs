@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// ConsoleService and routes its calls to an IConsoleHost
     /// implementation.
     /// </summary>
-    public class EditorServicesPSHost : PSHost, IHostSupportsInteractiveSession
+    internal class EditorServicesPSHost : PSHost, IHostSupportsInteractiveSession
     {
         #region Private Fields
 

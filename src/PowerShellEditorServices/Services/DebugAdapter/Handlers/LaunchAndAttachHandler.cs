@@ -22,12 +22,12 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("launch")]
-    interface IPsesLaunchHandler : IJsonRpcRequestHandler<PsesLaunchRequestArguments> { }
+    internal interface IPsesLaunchHandler : IJsonRpcRequestHandler<PsesLaunchRequestArguments> { }
 
     [Serial, Method("attach")]
-    interface IPsesAttachHandler : IJsonRpcRequestHandler<PsesAttachRequestArguments> { }
+    internal interface IPsesAttachHandler : IJsonRpcRequestHandler<PsesAttachRequestArguments> { }
 
-    public class PsesLaunchRequestArguments : IRequest
+    internal class PsesLaunchRequestArguments : IRequest
     {
         /// <summary>
         /// Gets or sets the absolute path to the script to debug.
@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public Dictionary<string, string> Env { get; set; }
     }
 
-    public class PsesAttachRequestArguments : IRequest
+    internal class PsesAttachRequestArguments : IRequest
     {
         public string ComputerName { get; set; }
 

@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Provides details about output that has been written to the
     /// PowerShell host.
     /// </summary>
-    public class OutputWrittenEventArgs
+    internal class OutputWrittenEventArgs
     {
         /// <summary>
         /// Gets the text of the output.

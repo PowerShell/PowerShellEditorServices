@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// Specifies the contract for an implementation of
     /// the IDocumentSymbols component.
     /// </summary>
-    public interface IDocumentSymbols
+    internal interface IDocumentSymbols
     {
         /// <summary>
         /// Gets the collection of IDocumentSymbolsProvider implementations

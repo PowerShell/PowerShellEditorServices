@@ -12,7 +12,7 @@ using Microsoft.PowerShell.EditorServices.Services;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class TemplateHandlers : IGetProjectTemplatesHandler, INewProjectFromTemplateHandler
+    internal class TemplateHandlers : IGetProjectTemplatesHandler, INewProjectFromTemplateHandler
     {
         private readonly ILogger<GetVersionHandler> _logger;
         private readonly TemplateService _templateService;

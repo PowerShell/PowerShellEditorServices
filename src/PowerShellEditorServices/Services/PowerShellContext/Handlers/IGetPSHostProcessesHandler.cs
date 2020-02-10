@@ -9,11 +9,11 @@ using OmniSharp.Extensions.JsonRpc;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/getPSHostProcesses")]
-    public interface IGetPSHostProcessesHandler : IJsonRpcRequestHandler<GetPSHostProcesssesParams, PSHostProcessResponse[]> { }
+    internal interface IGetPSHostProcessesHandler : IJsonRpcRequestHandler<GetPSHostProcesssesParams, PSHostProcessResponse[]> { }
 
-    public class GetPSHostProcesssesParams : IRequest<PSHostProcessResponse[]> { }
+    internal class GetPSHostProcesssesParams : IRequest<PSHostProcessResponse[]> { }
 
-    public class PSHostProcessResponse
+    internal class PSHostProcessResponse
     {
         public string ProcessName { get; set; }
 

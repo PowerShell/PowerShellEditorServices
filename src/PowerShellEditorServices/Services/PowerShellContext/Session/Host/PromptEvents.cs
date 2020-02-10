@@ -5,7 +5,7 @@
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 {
-    public class ShowChoicePromptRequest
+    internal class ShowChoicePromptRequest
     {
         public bool IsMultiChoice { get; set; }
 
@@ -18,14 +18,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         public int[] DefaultChoices { get; set; }
     }
 
-    public class ShowChoicePromptResponse
+    internal class ShowChoicePromptResponse
     {
         public bool PromptCancelled { get; set; }
 
         public string ResponseText { get; set; }
     }
 
-    public class ShowInputPromptRequest
+    internal class ShowInputPromptRequest
     {
         /// <summary>
         /// Gets or sets the name of the field.
@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         public string Label { get; set; }
     }
 
-    public class ShowInputPromptResponse
+    internal class ShowInputPromptResponse
     {
         public bool PromptCancelled { get; set; }
 

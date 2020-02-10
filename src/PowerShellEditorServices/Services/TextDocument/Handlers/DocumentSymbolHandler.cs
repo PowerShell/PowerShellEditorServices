@@ -22,7 +22,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class DocumentSymbolHandler : IDocumentSymbolHandler
+    internal class DocumentSymbolHandler : IDocumentSymbolHandler
     {
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
             new DocumentFilter

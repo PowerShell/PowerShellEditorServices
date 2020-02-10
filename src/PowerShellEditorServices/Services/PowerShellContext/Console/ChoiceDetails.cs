@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// to the user.  This class is meant to be serializable to the
     /// user's UI.
     /// </summary>
-    public class ChoiceDetails
+    internal class ChoiceDetails
     {
         #region Private Fields
 

@@ -21,7 +21,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class CodeLensHandlers : ICodeLensHandler, ICodeLensResolveHandler
+    internal class CodeLensHandlers : ICodeLensHandler, ICodeLensResolveHandler
     {
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
             new DocumentFilter

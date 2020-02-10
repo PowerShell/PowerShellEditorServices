@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Provides a simplified interface for writing output to a
     /// PowerShell host implementation.
     /// </summary>
-    public interface IHostOutput
+    internal interface IHostOutput
     {
         /// <summary>
         /// Writes output of the given type to the user interface with
@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides helpful extension methods for the IHostOutput interface.
     /// </summary>
-    public static class IHostOutputExtensions
+    internal static class IHostOutputExtensions
     {
         /// <summary>
         /// Writes normal output with a newline to the user interface.

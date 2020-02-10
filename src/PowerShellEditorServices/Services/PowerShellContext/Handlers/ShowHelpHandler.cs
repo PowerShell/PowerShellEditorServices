@@ -14,14 +14,14 @@ using OmniSharp.Extensions.JsonRpc;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/showHelp")]
-    public interface IShowHelpHandler : IJsonRpcNotificationHandler<ShowHelpParams> { }
+    internal interface IShowHelpHandler : IJsonRpcNotificationHandler<ShowHelpParams> { }
 
-    public class ShowHelpParams : IRequest
+    internal class ShowHelpParams : IRequest
     {
         public string Text { get; set; }
     }
 
-    public class ShowHelpHandler : IShowHelpHandler
+    internal class ShowHelpHandler : IShowHelpHandler
     {
         private readonly ILogger _logger;
         private readonly PowerShellContextService _powerShellContextService;

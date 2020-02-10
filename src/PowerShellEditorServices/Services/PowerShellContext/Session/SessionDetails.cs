@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides details about the current PowerShell session.
     /// </summary>
-    public class SessionDetails
+    internal class SessionDetails
     {
         /// <summary>
         /// Gets the process ID of the current process.

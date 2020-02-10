@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// Provides a high-level service for performing code completion and
     /// navigation operations on PowerShell scripts.
     /// </summary>
-    public class SymbolsService
+    internal class SymbolsService
     {
         #region Private Fields
 

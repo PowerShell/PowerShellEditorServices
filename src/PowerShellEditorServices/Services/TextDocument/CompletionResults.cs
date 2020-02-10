@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// <summary>
     /// Provides the results of a single code completion request.
     /// </summary>
-    public sealed class CompletionResults
+    internal sealed class CompletionResults
     {
         #region Properties
 
@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// <summary>
     /// Enumerates the completion types that may be returned.
     /// </summary>
-    public enum CompletionType
+    internal enum CompletionType
     {
         /// <summary>
         /// Completion type is unknown, either through being uninitialized or
@@ -156,7 +156,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// Provides the details about a single completion result.
     /// </summary>
     [DebuggerDisplay("CompletionType = {CompletionType.ToString()}, CompletionText = {CompletionText}")]
-    public sealed class CompletionDetails
+    internal sealed class CompletionDetails
     {
         #region Properties
 

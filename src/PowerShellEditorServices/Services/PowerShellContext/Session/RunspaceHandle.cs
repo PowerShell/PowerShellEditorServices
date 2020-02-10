@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Provides a handle to the runspace that is managed by
     /// a PowerShellContext.  The holder of this handle.
     /// </summary>
-    public class RunspaceHandle : IDisposable
+    internal class RunspaceHandle : IDisposable
     {
         private PowerShellContextService powerShellContext;
 

@@ -10,11 +10,11 @@ using OmniSharp.Extensions.JsonRpc;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/getVersion")]
-    public interface IGetVersionHandler : IJsonRpcRequestHandler<GetVersionParams, PowerShellVersion> { }
+    internal interface IGetVersionHandler : IJsonRpcRequestHandler<GetVersionParams, PowerShellVersion> { }
 
-    public class GetVersionParams : IRequest<PowerShellVersion> { }
+    internal class GetVersionParams : IRequest<PowerShellVersion> { }
 
-    public class PowerShellVersion
+    internal class PowerShellVersion
     {
         public string Version { get; set; }
         public string DisplayVersion { get; set; }

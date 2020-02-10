@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     using System.Management.Automation;
 
-    public class PSHostProcessAndRunspaceHandlers : IGetPSHostProcessesHandler, IGetRunspaceHandler
+    internal class PSHostProcessAndRunspaceHandlers : IGetPSHostProcessesHandler, IGetRunspaceHandler
     {
         private readonly ILogger<GetVersionHandler> _logger;
         private readonly PowerShellContextService _powerShellContextService;

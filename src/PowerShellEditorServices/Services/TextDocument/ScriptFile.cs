@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// <summary>
     /// Contains the details and contents of an open script file.
     /// </summary>
-    public class ScriptFile
+    public sealed class ScriptFile
     {
         #region Private Fields
 

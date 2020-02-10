@@ -10,7 +10,7 @@ using Microsoft.PowerShell.EditorServices.Services;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class EvaluateHandler : IEvaluateHandler
+    internal class EvaluateHandler : IEvaluateHandler
     {
         private readonly ILogger _logger;
         private readonly PowerShellContextService _powerShellContextService;

@@ -8,7 +8,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Defines options for the execution of a command.
     /// </summary>
-    public class ExecutionOptions
+    internal class ExecutionOptions
     {
         private bool? _shouldExecuteInOriginalRunspace;
 

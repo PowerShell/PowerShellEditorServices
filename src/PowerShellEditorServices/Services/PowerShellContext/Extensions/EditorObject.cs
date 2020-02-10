@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Provides the entry point of the extensibility API, inserted into
     /// the PowerShell session as the "$psEditor" variable.
     /// </summary>
-    public class EditorObject
+    public sealed class EditorObject
     {
         #region Private Fields
 

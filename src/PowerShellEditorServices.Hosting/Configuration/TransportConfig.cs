@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// <summary>
     /// Configuration for the standard input/output transport.
     /// </summary>
-    public class StdioTransportConfig : ITransportConfig
+    public sealed class StdioTransportConfig : ITransportConfig
     {
         public string EndpointDetails => "<stdio>";
 
@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// <summary>
     /// Configuration for a full duplex named pipe.
     /// </summary>
-    public class DuplexNamedPipeTransportConfig : ITransportConfig
+    public sealed class DuplexNamedPipeTransportConfig : ITransportConfig
     {
         /// <summary>
         /// Create a duplex named pipe transport config with an automatically generated pipe name.
@@ -108,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// <summary>
     /// Configuration for two simplex named pipes.
     /// </summary>
-    public class SimplexNamedPipeTransportConfig : ITransportConfig
+    public sealed class SimplexNamedPipeTransportConfig : ITransportConfig
     {
         private const string InPipePrefix = "in";
         private const string OutPipePrefix = "out";

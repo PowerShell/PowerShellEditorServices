@@ -9,7 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Enumerates the types of output lines that will be sent
     /// to an IConsoleHost implementation.
     /// </summary>
-    public enum OutputType
+    internal enum OutputType
     {
         /// <summary>
         /// A normal output line, usually written with the or Write-Host or

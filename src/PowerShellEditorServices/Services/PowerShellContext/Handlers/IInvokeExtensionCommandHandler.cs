@@ -10,16 +10,16 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/invokeExtensionCommand")]
-    public interface IInvokeExtensionCommandHandler : IJsonRpcNotificationHandler<InvokeExtensionCommandParams> { }
+    internal interface IInvokeExtensionCommandHandler : IJsonRpcNotificationHandler<InvokeExtensionCommandParams> { }
 
-    public class InvokeExtensionCommandParams : IRequest
+    internal class InvokeExtensionCommandParams : IRequest
     {
         public string Name { get; set; }
 
         public ClientEditorContext Context { get; set; }
     }
 
-    public class ClientEditorContext
+    internal class ClientEditorContext
     {
         public string CurrentFileContent { get; set; }
 

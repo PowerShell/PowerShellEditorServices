@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Specifies the possible types of a runspace.
     /// </summary>
-    public enum RunspaceLocation
+    internal enum RunspaceLocation
     {
         /// <summary>
         /// A runspace on the local machine.
@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Specifies the context in which the runspace was encountered.
     /// </summary>
-    public enum RunspaceContext
+    internal enum RunspaceContext
     {
         /// <summary>
         /// The original runspace in a local or remote session.
@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Provides details about a runspace being used in the current
     /// editing session.
     /// </summary>
-    public class RunspaceDetails
+    internal class RunspaceDetails
     {
         #region Private Fields
 

@@ -8,7 +8,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides methods for integrating with the host's input system.
     /// </summary>
-    public interface IHostInput
+    internal interface IHostInput
     {
         /// <summary>
         /// Starts the host's interactive command loop.

@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// Defines the common details between a variable and a variable container such as a scope
     /// in the current debugging session.
     /// </summary>
-    public abstract class VariableDetailsBase
+    internal abstract class VariableDetailsBase
     {
         /// <summary>
         /// Provides a constant that is used as the starting variable ID for all.

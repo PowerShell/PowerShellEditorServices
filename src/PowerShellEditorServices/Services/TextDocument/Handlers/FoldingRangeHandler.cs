@@ -15,7 +15,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class FoldingRangeHandler : IFoldingRangeHandler
+    internal class FoldingRangeHandler : IFoldingRangeHandler
     {
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
             new DocumentFilter()

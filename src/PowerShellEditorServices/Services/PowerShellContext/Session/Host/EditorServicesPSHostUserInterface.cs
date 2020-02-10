@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// for the ConsoleService and routes its calls to an IConsoleHost
     /// implementation.
     /// </summary>
-    public abstract class EditorServicesPSHostUserInterface :
+    internal abstract class EditorServicesPSHostUserInterface :
         PSHostUserInterface,
         IHostInput,
         IHostOutput,

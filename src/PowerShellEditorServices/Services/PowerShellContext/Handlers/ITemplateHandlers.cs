@@ -9,17 +9,17 @@ using OmniSharp.Extensions.JsonRpc;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/getProjectTemplates")]
-    public interface IGetProjectTemplatesHandler : IJsonRpcRequestHandler<GetProjectTemplatesRequest, GetProjectTemplatesResponse> { }
+    internal interface IGetProjectTemplatesHandler : IJsonRpcRequestHandler<GetProjectTemplatesRequest, GetProjectTemplatesResponse> { }
 
     [Serial, Method("powerShell/newProjectFromTemplate")]
-    public interface INewProjectFromTemplateHandler : IJsonRpcRequestHandler<NewProjectFromTemplateRequest, NewProjectFromTemplateResponse> { }
+    internal interface INewProjectFromTemplateHandler : IJsonRpcRequestHandler<NewProjectFromTemplateRequest, NewProjectFromTemplateResponse> { }
 
-    public class GetProjectTemplatesRequest : IRequest<GetProjectTemplatesResponse>
+    internal class GetProjectTemplatesRequest : IRequest<GetProjectTemplatesResponse>
     {
         public bool IncludeInstalledModules { get; set; }
     }
 
-    public class GetProjectTemplatesResponse
+    internal class GetProjectTemplatesResponse
     {
         public bool NeedsModuleInstall { get; set; }
 
@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     /// <summary>
     /// Provides details about a file or project template.
     /// </summary>
-    public class TemplateDetails
+    internal class TemplateDetails
     {
         /// <summary>
         /// Gets or sets the title of the template.
@@ -62,14 +62,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public string TemplatePath { get; set; }
     }
 
-    public class NewProjectFromTemplateRequest : IRequest<NewProjectFromTemplateResponse>
+    internal class NewProjectFromTemplateRequest : IRequest<NewProjectFromTemplateResponse>
     {
         public string DestinationPath { get; set; }
 
         public string TemplatePath { get; set; }
     }
 
-    public class NewProjectFromTemplateResponse
+    internal class NewProjectFromTemplateResponse
     {
         public bool CreationSuccessful { get; set; }
     }

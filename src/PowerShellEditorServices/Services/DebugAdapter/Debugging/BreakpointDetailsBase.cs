@@ -9,7 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// Provides details about a breakpoint that is set in the
     /// PowerShell debugger.
     /// </summary>
-    public abstract class BreakpointDetailsBase
+    internal abstract class BreakpointDetailsBase
     {
         /// <summary>
         /// Gets or sets a boolean indicator that if true, breakpoint could be set

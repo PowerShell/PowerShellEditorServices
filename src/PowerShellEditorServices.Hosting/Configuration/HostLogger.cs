@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// A logging front-end for host startup allowing handover to the backend
     /// and decoupling from the host's particular logging sink.
     /// </summary>
-    public class HostLogger :
+    public sealed class HostLogger :
         IObservable<(PsesLogLevel logLevel, string message)>,
         IObservable<(int logLevel, string message)>
     {

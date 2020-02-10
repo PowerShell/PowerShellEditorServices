@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides utility methods for working with PowerShell commands.
     /// </summary>
-    public static class CommandHelpers
+    internal static class CommandHelpers
     {
         private static readonly ConcurrentDictionary<string, bool> NounExclusionList =
             new ConcurrentDictionary<string, bool>();

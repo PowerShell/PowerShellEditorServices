@@ -9,7 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Provides a PowerShell-facing API which allows scripts to
     /// interact with the editor's workspace.
     /// </summary>
-    public class EditorWorkspace
+    public sealed class EditorWorkspace
     {
         #region Private Fields
 

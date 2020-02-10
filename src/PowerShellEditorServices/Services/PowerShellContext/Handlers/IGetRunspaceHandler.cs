@@ -9,14 +9,14 @@ using OmniSharp.Extensions.JsonRpc;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/getRunspace")]
-    public interface IGetRunspaceHandler : IJsonRpcRequestHandler<GetRunspaceParams, RunspaceResponse[]> { }
+    internal interface IGetRunspaceHandler : IJsonRpcRequestHandler<GetRunspaceParams, RunspaceResponse[]> { }
 
-    public class GetRunspaceParams : IRequest<RunspaceResponse[]>
+    internal class GetRunspaceParams : IRequest<RunspaceResponse[]>
     {
         public string ProcessId {get; set; }
     }
 
-    public class RunspaceResponse
+    internal class RunspaceResponse
     {
         public int Id { get; set; }
 

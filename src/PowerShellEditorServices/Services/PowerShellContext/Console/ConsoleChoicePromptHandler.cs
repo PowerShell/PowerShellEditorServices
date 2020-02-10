@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Provides a standard implementation of ChoicePromptHandler
     /// for use in the interactive console (REPL).
     /// </summary>
-    public abstract class ConsoleChoicePromptHandler : ChoicePromptHandler
+    internal abstract class ConsoleChoicePromptHandler : ChoicePromptHandler
     {
         #region Private Fields
 

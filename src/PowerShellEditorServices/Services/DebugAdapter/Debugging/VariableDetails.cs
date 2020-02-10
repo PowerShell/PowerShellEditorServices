@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// debugging session.
     /// </summary>
     [DebuggerDisplay("Name = {Name}, Id = {Id}, Value = {ValueString}")]
-    public class VariableDetails : VariableDetailsBase
+    internal class VariableDetails : VariableDetailsBase
     {
         #region Fields
 

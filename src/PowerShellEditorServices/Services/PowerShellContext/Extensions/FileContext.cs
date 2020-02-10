@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides context for a file that is open in the editor.
     /// </summary>
-    public class FileContext
+    public sealed class FileContext
     {
         #region Private Fields
 
@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="editorContext">The EditorContext to which this file relates.</param>
         /// <param name="editorOperations">An IEditorOperations implementation which performs operations in the editor.</param>
         /// <param name="language">Determines the language of the file.false If it is not specified, then it defaults to "Unknown"</param>
-        public FileContext(
+        internal FileContext(
             ScriptFile scriptFile,
             EditorContext editorContext,
             IEditorOperations editorOperations,

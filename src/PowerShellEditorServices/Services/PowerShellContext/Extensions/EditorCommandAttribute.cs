@@ -7,7 +7,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// commands for import as editor commands.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class EditorCommandAttribute : Attribute
+    public sealed class EditorCommandAttribute : Attribute
     {
 
         #region Properties

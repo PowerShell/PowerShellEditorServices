@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Provides an EditorServicesPSHostUserInterface implementation
     /// that integrates with the user's terminal UI.
     /// </summary>
-    public class TerminalPSHostUserInterface : EditorServicesPSHostUserInterface
+    internal class TerminalPSHostUserInterface : EditorServicesPSHostUserInterface
     {
         #region Private Fields
 

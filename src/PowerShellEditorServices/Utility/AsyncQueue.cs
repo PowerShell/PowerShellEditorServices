@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     /// operations.  This is primarily used for producer/consumer scenarios.
     /// </summary>
     /// <typeparam name="T">The type of item contained in the queue.</typeparam>
-    public class AsyncQueue<T>
+    internal class AsyncQueue<T>
     {
         #region Private Fields
 

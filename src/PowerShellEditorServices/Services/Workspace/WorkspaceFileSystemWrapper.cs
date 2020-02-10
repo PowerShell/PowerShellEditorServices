@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
     /// with a maximum recursion depth and silently ignores most file system errors. Typically this is used by the
     /// Microsoft.Extensions.FileSystemGlobbing library.
     /// </summary>
-    public class WorkspaceFileSystemWrapperFactory
+    internal class WorkspaceFileSystemWrapperFactory
     {
         private readonly DirectoryInfoBase _rootDirectory;
         private readonly string[] _allowedExtensions;
@@ -179,7 +179,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
     /// <see cref="Microsoft.Extensions.FileSystemGlobbing.Abstractions.DirectoryInfoBase" />.
     /// Based on https://github.com/aspnet/Extensions/blob/c087cadf1dfdbd2b8785ef764e5ef58a1a7e5ed0/src/FileSystemGlobbing/src/Abstractions/DirectoryInfoWrapper.cs
     /// </summary>
-    public class WorkspaceFileSystemDirectoryWrapper : DirectoryInfoBase
+    internal class WorkspaceFileSystemDirectoryWrapper : DirectoryInfoBase
     {
         private readonly DirectoryInfo _concreteDirectoryInfo;
         private readonly bool _isParentPath;
@@ -306,7 +306,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
     /// <summary>
     /// Wraps an instance of <see cref="System.IO.FileInfo" /> to provide implementation of <see cref="Microsoft.Extensions.FileSystemGlobbing.Abstractions.FileInfoBase" />.
     /// </summary>
-    public class WorkspaceFileSystemFileInfoWrapper : FileInfoBase
+    internal class WorkspaceFileSystemFileInfoWrapper : FileInfoBase
     {
         private readonly FileInfo _concreteFileInfo;
         private readonly WorkspaceFileSystemWrapperFactory _fsWrapperFactory;

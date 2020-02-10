@@ -17,7 +17,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class DefinitionHandler : IDefinitionHandler
+    internal class DefinitionHandler : IDefinitionHandler
     {
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
             new DocumentFilter

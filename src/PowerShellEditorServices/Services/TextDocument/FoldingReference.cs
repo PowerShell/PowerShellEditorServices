@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// <summary>
     /// A class that holds the information for a foldable region of text in a document
     /// </summary>
-    public class FoldingReference: IComparable<FoldingReference>, IEquatable<FoldingReference>
+    internal class FoldingReference: IComparable<FoldingReference>, IEquatable<FoldingReference>
     {
         /// <summary>
         /// The zero-based line number from where the folded range starts.
@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// A class that holds a list of FoldingReferences and ensures that when adding a reference that the
     /// folding rules are obeyed, e.g. Only one fold per start line
     /// </summary>
-    public class FoldingReferenceList
+    internal class FoldingReferenceList
     {
         private readonly Dictionary<int, FoldingReference> references = new Dictionary<int, FoldingReference>();
 

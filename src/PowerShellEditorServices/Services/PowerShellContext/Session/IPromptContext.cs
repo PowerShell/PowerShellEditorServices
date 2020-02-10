@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides methods for interacting with implementations of ReadLine.
     /// </summary>
-    public interface IPromptContext
+    internal interface IPromptContext
     {
         /// <summary>
         /// Read a string that has been input by the user.

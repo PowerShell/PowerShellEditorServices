@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// Provides a high-level service which enables PowerShell scripts
     /// and modules to extend the behavior of the host editor.
     /// </summary>
-    public class ExtensionService
+    public sealed class ExtensionService
     {
         #region Fields
 
@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Gets the PowerShellContext in which extension code will be executed.
         /// </summary>
-        public PowerShellContextService PowerShellContext { get; private set; }
+        internal PowerShellContextService PowerShellContext { get; private set; }
 
         #endregion
 
@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// PowerShellContext for loading and executing extension code.
         /// </summary>
         /// <param name="powerShellContext">A PowerShellContext used to execute extension code.</param>
-        public ExtensionService(PowerShellContextService powerShellContext, ILanguageServer languageServer)
+        internal ExtensionService(PowerShellContextService powerShellContext, ILanguageServer languageServer)
         {
             this.PowerShellContext = powerShellContext;
             _languageServer = languageServer;

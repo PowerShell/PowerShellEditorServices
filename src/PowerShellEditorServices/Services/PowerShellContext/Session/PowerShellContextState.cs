@@ -8,7 +8,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Enumerates the possible states for a PowerShellContext.
     /// </summary>
-    public enum PowerShellContextState
+    internal enum PowerShellContextState
     {
         /// <summary>
         /// Indicates an unknown, potentially uninitialized state.

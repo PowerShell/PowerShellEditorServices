@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// way to organize variables into a useful UI structure.
     /// </summary>
     [DebuggerDisplay("Name = {Name}, Id = {Id}, Count = {Children.Count}")]
-    public class VariableContainerDetails : VariableDetailsBase
+    internal class VariableContainerDetails : VariableDetailsBase
     {
         /// <summary>
         /// Provides a constant for the name of the Global scope.

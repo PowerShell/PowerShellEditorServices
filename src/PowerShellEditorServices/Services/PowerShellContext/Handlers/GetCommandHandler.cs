@@ -15,15 +15,15 @@ using OmniSharp.Extensions.JsonRpc;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/getCommand")]
-    public interface IGetCommandHandler : IJsonRpcRequestHandler<GetCommandParams, List<PSCommandMessage>> { }
+    internal interface IGetCommandHandler : IJsonRpcRequestHandler<GetCommandParams, List<PSCommandMessage>> { }
 
-    public class GetCommandParams : IRequest<List<PSCommandMessage>> { }
+    internal class GetCommandParams : IRequest<List<PSCommandMessage>> { }
 
     /// <summary>
     /// Describes the message to get the details for a single PowerShell Command
     /// from the current session
     /// </summary>
-    public class PSCommandMessage
+    internal class PSCommandMessage
     {
         public string Name { get; set; }
         public string ModuleName { get; set; }
@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public System.Collections.ObjectModel.ReadOnlyCollection<CommandParameterSetInfo> ParameterSets { get; set; }
     }
 
-    public class GetCommandHandler : IGetCommandHandler
+    internal class GetCommandHandler : IGetCommandHandler
     {
         private readonly ILogger<GetCommandHandler> _logger;
         private readonly PowerShellContextService _powerShellContextService;

@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// Provides a standard implementation of InputPromptHandler
     /// for use in the interactive console (REPL).
     /// </summary>
-    public abstract class ConsoleInputPromptHandler : InputPromptHandler
+    internal abstract class ConsoleInputPromptHandler : InputPromptHandler
     {
         #region Private Fields
 

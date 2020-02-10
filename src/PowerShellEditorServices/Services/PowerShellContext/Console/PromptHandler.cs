@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Defines an abstract base class for prompt handler implementations.
     /// </summary>
-    public abstract class PromptHandler
+    internal abstract class PromptHandler
     {
         /// <summary>
         /// Gets the ILogger implementation used for this instance.

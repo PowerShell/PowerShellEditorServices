@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Indicates the style of prompt to be displayed.
     /// </summary>
-    public enum PromptStyle
+    internal enum PromptStyle
     {
         /// <summary>
         /// Indicates that the full prompt should be displayed
@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// that present the user a set of options from which a selection
     /// should be made.
     /// </summary>
-    public abstract class ChoicePromptHandler : PromptHandler
+    internal abstract class ChoicePromptHandler : PromptHandler
     {
         #region Private Fields
 

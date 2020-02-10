@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides context for the host editor at the time of creation.
     /// </summary>
-    public class EditorContext
+    public sealed class EditorContext
     {
         #region Private Fields
 
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="cursorPosition">The position of the user's cursor in the active editor buffer.</param>
         /// <param name="selectedRange">The range of the user's selection in the active editor buffer.</param>
         /// <param name="language">Determines the language of the file.false If it is not specified, then it defaults to "Unknown"</param>
-        public EditorContext(
+        internal EditorContext(
             IEditorOperations editorOperations,
             ScriptFile currentFile,
             BufferPosition cursorPosition,
