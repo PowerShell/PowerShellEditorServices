@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly ILoggerFactory _loggerFactory;
 
-        private readonly Extensions.Logging.ILogger _logger;
+        private readonly Microsoft.Extensions.Logging.ILogger _logger;
 
         private readonly LogLevel _minimumLogLevel;
 

@@ -8,7 +8,7 @@ using System.IO;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
     /// Provides context for a file that is open in the editor.
@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="editorContext">The EditorContext to which this file relates.</param>
         /// <param name="editorOperations">An IEditorOperations implementation which performs operations in the editor.</param>
         /// <param name="language">Determines the language of the file.false If it is not specified, then it defaults to "Unknown"</param>
-        internal FileContext(
+        public FileContext(
             ScriptFile scriptFile,
             EditorContext editorContext,
             IEditorOperations editorOperations,

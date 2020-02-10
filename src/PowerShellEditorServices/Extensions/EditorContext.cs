@@ -8,7 +8,7 @@ using System.Linq;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
     /// Provides context for the host editor at the time of creation.
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="cursorPosition">The position of the user's cursor in the active editor buffer.</param>
         /// <param name="selectedRange">The range of the user's selection in the active editor buffer.</param>
         /// <param name="language">Determines the language of the file.false If it is not specified, then it defaults to "Unknown"</param>
-        internal EditorContext(
+        public EditorContext(
             IEditorOperations editorOperations,
             ScriptFile currentFile,
             BufferPosition cursorPosition,

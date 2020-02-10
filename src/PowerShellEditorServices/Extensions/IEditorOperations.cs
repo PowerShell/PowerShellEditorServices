@@ -6,7 +6,7 @@
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
     /// Provides an interface that must be implemented by an editor

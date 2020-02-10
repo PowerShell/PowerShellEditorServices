@@ -5,36 +5,36 @@
 
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
-    internal class ExtensionCommandAddedNotification
+    public class ExtensionCommandAddedNotification
     {
         public string Name { get; set; }
 
         public string DisplayName { get; set; }
     }
 
-    internal class ExtensionCommandUpdatedNotification
+    public class ExtensionCommandUpdatedNotification
     {
         public string Name { get; set; }
     }
 
-    internal class ExtensionCommandRemovedNotification
+    public class ExtensionCommandRemovedNotification
     {
         public string Name { get; set; }
     }
 
 
-    internal class GetEditorContextRequest
+    public class GetEditorContextRequest
     {}
 
-    internal enum EditorCommandResponse
+    public enum EditorCommandResponse
     {
         Unsupported,
         OK
     }
 
-    internal class InsertTextRequest
+    public class InsertTextRequest
     {
         public string FilePath { get; set; }
 
@@ -43,31 +43,31 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         public Range InsertRange { get; set; }
     }
 
-    internal class SetSelectionRequest
+    public class SetSelectionRequest
     {
         public Range SelectionRange { get; set; }
     }
 
-    internal class SetCursorPositionRequest
+    public class SetCursorPositionRequest
     {
         public Position CursorPosition { get; set; }
     }
 
-    internal class OpenFileDetails
+    public class OpenFileDetails
     {
         public string FilePath { get; set; }
 
         public bool Preview { get; set; }
     }
 
-    internal class SaveFileDetails
+    public class SaveFileDetails
     {
         public string FilePath { get; set; }
 
         public string NewPath { get; set; }
     }
 
-    internal class StatusBarMessageDetails
+    public class StatusBarMessageDetails
     {
         public string Message { get; set; }
 

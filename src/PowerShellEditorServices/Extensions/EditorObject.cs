@@ -3,16 +3,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.PowerShell.EditorServices.Services;
 using System;
 using System.Reflection;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
     /// Provides the entry point of the extensibility API, inserted into
     /// the PowerShell session as the "$psEditor" variable.
     /// </summary>
-    public sealed class EditorObject
+    public class EditorObject
     {
         #region Private Fields
 
@@ -42,11 +43,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         public EditorWindow Window { get; private set; }
 
-        /// <summary>
-        /// Gets the components that are registered.
-        /// </summary>
-        public IServiceProvider Components => _serviceProvider;
-
         #endregion
 
         /// <summary>
@@ -54,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         /// <param name="extensionService">An ExtensionService which handles command registration.</param>
         /// <param name="editorOperations">An IEditorOperations implementation which handles operations in the host editor.</param>
-        public EditorObject(
+        internal EditorObject(
             IServiceProvider serviceProvider,
             ExtensionService extensionService,
             IEditorOperations editorOperations)
@@ -103,15 +99,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         public EditorContext GetEditorContext()
         {
             return this._editorOperations.GetEditorContextAsync().Result;
-        }
-
-        /// <summary>
-        /// Get's the desired service which allows for advanced control of PowerShellEditorServices.
-        /// </summary>
-        /// <returns>The singleton service object of the type requested.</returns>
-        public object GetService(Type type)
-        {
-            return _serviceProvider.GetService(type);
         }
     }
 }

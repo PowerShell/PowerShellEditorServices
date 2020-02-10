@@ -1,6 +1,6 @@
 using System;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
     /// Provides an attribute that can be used to target PowerShell
