@@ -809,7 +809,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             while (!cancellationToken.IsCancellationRequested)
             {
                 string commandString = null;
-                int originalCursorTop = 0;
 
                 try
                 {
@@ -822,7 +821,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
                 try
                 {
-                    originalCursorTop = await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false);
                     commandString = await this.ReadCommandLineAsync(cancellationToken).ConfigureAwait(false);
                 }
                 catch (PipelineStoppedException)
@@ -856,8 +854,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     // TODO: This still gives an extra newline when you hit ENTER in the PSReadLine experience. We should figure
                     // out if there's any way to avoid that... but unfortunately, in both scenarios, we only see that empty
                     // string is returned.
-                    if (!cancellationToken.IsCancellationRequested &&
-                        originalCursorTop == await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false))
+                    if (!cancellationToken.IsCancellationRequested)
                     {
                         this.WriteLine();
                     }
