@@ -3,10 +3,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Management.Automation;
+using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
@@ -97,8 +100,26 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 ScriptFile untitledScript = _workspaceService.GetFile(scriptToLaunch);
 
-                await _powerShellContextService
-                    .ExecuteScriptStringAsync(untitledScript.Contents, true, true).ConfigureAwait(false);
+                if (BreakpointApiUtils.SupportsBreakpointApis)
+                {
+                    // Parse untitled files with their `Untitled:` URI as the file name which will cache the URI & contents within the PowerShell parser.
+                    // By doing this, we light up the ability to debug Untitled files with breakpoints.
+                    // This is only possible via the direct usage of the breakpoint APIs in PowerShell because
+                    // Set-PSBreakpoint validates that paths are actually on the filesystem.
+                    ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri, out Token[] tokens, out ParseError[] errors);
+
+                    // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
+                    var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());
+                    await _powerShellContextService
+                        .ExecuteCommandAsync<object>(cmd, sendOutputToHost: true, sendErrorToHost:true)
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    await _powerShellContextService
+                        .ExecuteScriptStringAsync(untitledScript.Contents, writeInputToHost: true, writeOutputToHost: true)
+                        .ConfigureAwait(false);
+                }
             }
             else
             {

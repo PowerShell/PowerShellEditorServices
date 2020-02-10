@@ -19,6 +19,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal bool IsRemoteAttach { get; set; }
 
+        internal int? RunspaceId { get; set; }
+
         internal bool IsAttachSession { get; set; }
 
         internal bool WaitingForAttach { get; set; }

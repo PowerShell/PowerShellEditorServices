@@ -6,15 +6,18 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Management.Automation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -182,7 +185,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugStateService.Arguments = arguments;
             _debugStateService.IsUsingTempIntegratedConsole = request.CreateTemporaryIntegratedConsole;
 
-            // TODO: Bring this back
+            if (request.CreateTemporaryIntegratedConsole
+                && !string.IsNullOrEmpty(request.Script)
+                && ScriptFile.IsUntitledPath(request.Script))
+            {
+                throw new RpcErrorException(0, "Running an Untitled file in a temporary integrated console is currently not supported.");
+            }
+
             // If the current session is remote, map the script path to the remote
             // machine if necessary
             if (_debugStateService.ScriptToLaunch != null &&
@@ -212,6 +221,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private readonly ILogger<AttachHandler> _logger;
         private readonly DebugService _debugService;
+        private readonly BreakpointService _breakpointService;
         private readonly PowerShellContextService _powerShellContextService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
@@ -223,11 +233,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugService debugService,
             PowerShellContextService powerShellContextService,
             DebugStateService debugStateService,
+            BreakpointService breakpointService,
             DebugEventHandlerService debugEventHandlerService)
         {
             _logger = factory.CreateLogger<AttachHandler>();
             _jsonRpcServer = jsonRpcServer;
             _debugService = debugService;
+            _breakpointService = breakpointService;
             _powerShellContextService = powerShellContextService;
             _debugStateService = debugStateService;
             _debugEventHandlerService = debugEventHandlerService;
@@ -322,9 +334,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 throw new RpcErrorException(0, "A positive integer must be specified for the processId field.");
             }
 
-            // Clear any existing breakpoints before proceeding
-            await _debugService.ClearAllBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
-
             // Execute the Debug-Runspace command but don't await it because it
             // will block the debug adapter initialization process.  The
             // InitializedEvent will be sent as soon as the RunspaceChanged
@@ -333,6 +342,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             string debugRunspaceCmd;
             if (request.RunspaceName != null)
             {
+                IEnumerable<int?> ids = await _powerShellContextService.ExecuteCommandAsync<int?>(new PSCommand()
+                    .AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace")
+                    .AddParameter("Name", request.RunspaceName)
+                    .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
+                    .AddParameter("ExpandProperty", "Id"));
+                foreach (var id in ids)
+                {
+                    _debugStateService.RunspaceId = id;
+                    break;
+                }
                 debugRunspaceCmd = $"\nDebug-Runspace -Name '{request.RunspaceName}'";
             }
             else if (request.RunspaceId != null)
@@ -345,18 +364,29 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     throw new RpcErrorException(0, "A positive integer must be specified for the RunspaceId field.");
                 }
 
+                _debugStateService.RunspaceId =  runspaceId;
+
                 debugRunspaceCmd = $"\nDebug-Runspace -Id {runspaceId}";
             }
             else
             {
+                _debugStateService.RunspaceId =  1;
+
                 debugRunspaceCmd = "\nDebug-Runspace -Id 1";
             }
+
+            // Clear any existing breakpoints before proceeding
+            await _breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
 
             _debugStateService.WaitingForAttach = true;
             Task nonAwaitedTask = _powerShellContextService
                 .ExecuteScriptStringAsync(debugRunspaceCmd)
                 .ContinueWith(OnExecutionCompletedAsync);
 
+            if (runspaceVersion.Version.Major >= 7)
+            {
+                _jsonRpcServer.SendNotification(EventNames.Initialized);
+            }
             return Unit.Value;
         }
 
@@ -374,33 +404,33 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _logger.LogTrace("Execution completed, terminating...");
 
-            //_debugStateService.ExecutionCompleted = true;
+            _debugStateService.ExecutionCompleted = true;
 
-            //_debugEventHandlerService.UnregisterEventHandlers();
+            _debugEventHandlerService.UnregisterEventHandlers();
 
-            //if (_debugStateService.IsAttachSession)
-            //{
-            //    // Pop the sessions
-            //    if (_powerShellContextService.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
-            //    {
-            //        try
-            //        {
-            //            await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess");
+            if (_debugStateService.IsAttachSession)
+            {
+               // Pop the sessions
+               if (_powerShellContextService.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
+               {
+                   try
+                   {
+                       await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess");
 
-            //            if (_debugStateService.IsRemoteAttach &&
-            //                _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
-            //            {
-            //                await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession");
-            //            }
-            //        }
-            //        catch (Exception e)
-            //        {
-            //            _logger.LogException("Caught exception while popping attached process after debugging", e);
-            //        }
-            //    }
-            //}
+                       if (_debugStateService.IsRemoteAttach &&
+                           _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
+                       {
+                           await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession");
+                       }
+                   }
+                   catch (Exception e)
+                   {
+                       _logger.LogException("Caught exception while popping attached process after debugging", e);
+                   }
+               }
+            }
 
-            //_debugService.IsClientAttached = false;
+            _debugService.IsClientAttached = false;
             _jsonRpcServer.SendNotification(EventNames.Terminated);
         }
     }

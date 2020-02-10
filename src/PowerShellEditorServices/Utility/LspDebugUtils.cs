@@ -4,9 +4,9 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
-    public static class LspDebugUtils
+    internal static class LspDebugUtils
     {
-        public static Breakpoint CreateBreakpoint(
+        internal static Breakpoint CreateBreakpoint(
             BreakpointDetails breakpointDetails)
         {
             Validate.IsNotNull(nameof(breakpointDetails), breakpointDetails);
@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             };
         }
 
-        public static Breakpoint CreateBreakpoint(
+        internal static Breakpoint CreateBreakpoint(
             CommandBreakpointDetails breakpointDetails)
         {
             Validate.IsNotNull(nameof(breakpointDetails), breakpointDetails);

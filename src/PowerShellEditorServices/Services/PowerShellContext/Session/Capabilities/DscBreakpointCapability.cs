@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         private Dictionary<string, int[]> breakpointsPerFile =
             new Dictionary<string, int[]>();
 
-        public async Task<List<BreakpointDetails>> SetLineBreakpointsAsync(
+        public async Task<BreakpointDetails[]> SetLineBreakpointsAsync(
             PowerShellContextService powerShellContext,
             string scriptPath,
             BreakpointDetails[] breakpoints)
@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 breakpoint.Verified = true;
             }
 
-            return breakpoints.ToList();
+            return breakpoints.ToArray();
         }
 
         public bool IsDscResourcePath(string scriptPath)
