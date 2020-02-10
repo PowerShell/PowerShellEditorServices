@@ -33,7 +33,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             : base (
                 powerShellContext,
                 new SimplePSHostRawUserInterface(logger),
-                isPSReadLineEnabled: false,
                 logger)
         {
             _languageServer = languageServer;
