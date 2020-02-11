@@ -87,7 +87,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         private static Func<IDisposable> GetPsesAlcReflectionContextEntryFunc()
         {
-            PsesAssemblyLoadContext.GetType();
             MethodInfo enterReflectionContextMethod = AsmLoadContextType.GetMethod("EnterContextualReflection", BindingFlags.Public | BindingFlags.Instance);
 
             return Expression.Lambda<Func<IDisposable>>(
