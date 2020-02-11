@@ -10,6 +10,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Collections.Generic;
 using System.Management.Automation;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services
@@ -87,6 +88,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     serviceProvider,
                     this,
                     editorOperations);
+
+            // Assign the new EditorObject to be the static instance available to binary APIs
+            this.EditorObject.SetAsStaticInstance();
 
             // Register the editor object in the runspace
             PSCommand variableCommand = new PSCommand();

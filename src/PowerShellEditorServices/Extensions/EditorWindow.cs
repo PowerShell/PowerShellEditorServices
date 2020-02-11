@@ -3,6 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using System.Threading.Tasks;
+
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
@@ -12,6 +15,8 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     public sealed class EditorWindow
     {
         #region Private Fields
+
+        private readonly ILanguageServer _languageServer;
 
         private readonly IEditorOperations editorOperations;
 
@@ -32,8 +37,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Creates a new instance of the EditorWindow class.
         /// </summary>
         /// <param name="editorOperations">An IEditorOperations implementation which handles operations in the host editor.</param>
-        internal EditorWindow(IEditorOperations editorOperations)
+        internal EditorWindow(ILanguageServer languageServer, IEditorOperations editorOperations)
         {
+            _languageServer = languageServer;
             this.editorOperations = editorOperations;
             this.Terminal = new EditorTerminal(editorOperations);
         }

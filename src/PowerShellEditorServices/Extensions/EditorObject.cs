@@ -6,6 +6,7 @@
 using Microsoft.PowerShell.EditorServices.Services;
 using System;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
@@ -15,11 +16,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     /// </summary>
     public class EditorObject
     {
+        public static EditorObject Instance { get; private set; }
+
         #region Private Fields
 
         private readonly IServiceProvider _serviceProvider;
         private readonly ExtensionService _extensionService;
         private readonly IEditorOperations _editorOperations;
+        private readonly EditorEngine _engine;
 
         #endregion
 
@@ -58,6 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             this._serviceProvider = serviceProvider;
             this._extensionService = extensionService;
             this._editorOperations = editorOperations;
+            this._engine = new EditorEngine(serviceProvider);
 
             // Create API area objects
             this.Workspace = new EditorWorkspace(this._editorOperations);
@@ -99,6 +104,17 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public EditorContext GetEditorContext()
         {
             return this._editorOperations.GetEditorContextAsync().Result;
+        }
+
+        public EditorEngine GetEngine()
+        {
+            // Provided as a method so that it doesn't show up in the formatter
+            return _engine;
+        }
+
+        internal void SetAsStaticInstance()
+        {
+            EditorObject.Instance = this;
         }
     }
 }
