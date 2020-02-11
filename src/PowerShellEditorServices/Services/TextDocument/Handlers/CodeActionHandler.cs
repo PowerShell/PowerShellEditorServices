@@ -32,12 +32,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private readonly AnalysisService _analysisService;
 
+        private readonly WorkspaceService _workspaceService;
+
         private CodeActionCapability _capability;
 
-        public CodeActionHandler(ILoggerFactory factory, AnalysisService analysisService)
+        public CodeActionHandler(ILoggerFactory factory, AnalysisService analysisService, WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<TextDocumentHandler>();
             _analysisService = analysisService;
+            _workspaceService = workspaceService;
             _registrationOptions = new CodeActionRegistrationOptions
             {
                 DocumentSelector = new DocumentSelector(new DocumentFilter() { Language = "powershell" }),
@@ -57,8 +60,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<CommandOrCodeActionContainer> Handle(CodeActionParams request, CancellationToken cancellationToken)
         {
+            // On Windows, VSCode still gives us file URIs like "file:///c%3a/...", so we need to escape them
             IReadOnlyDictionary<string, MarkerCorrection> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
-                request.TextDocument.Uri.OriginalString).ConfigureAwait(false);
+                _workspaceService.GetFile(request.TextDocument.Uri)).ConfigureAwait(false);
 
             if (corrections == null)
             {

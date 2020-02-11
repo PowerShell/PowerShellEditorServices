@@ -90,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly int _analysisDelayMillis;
 
-        private readonly ConcurrentDictionary<string, CorrectionTableEntry> _mostRecentCorrectionsByFile;
+        private readonly ConcurrentDictionary<ScriptFile, CorrectionTableEntry> _mostRecentCorrectionsByFile;
 
         private bool _hasInstantiatedAnalysisEngine;
 
@@ -117,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _configurationService = configurationService;
             _workplaceService = workspaceService;
             _analysisDelayMillis = 750;
-            _mostRecentCorrectionsByFile = new ConcurrentDictionary<string, CorrectionTableEntry>();
+            _mostRecentCorrectionsByFile = new ConcurrentDictionary<ScriptFile, CorrectionTableEntry>();
             _hasInstantiatedAnalysisEngine = false;
         }
 
@@ -182,7 +182,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             foreach (ScriptFile file in filesToAnalyze)
             {
                 CorrectionTableEntry fileCorrectionsEntry = _mostRecentCorrectionsByFile.GetOrAdd(
-                    file.DocumentUri,
+                    file,
                     CorrectionTableEntry.CreateForFile);
 
                 fileCorrectionsEntry.DiagnosticPublish = analysisTask;
@@ -239,20 +239,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="documentUri">The URI string of the file to get code actions for.</param>
         /// <returns>A threadsafe readonly dictionary of the code actions of the particular file.</returns>
-        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(string documentUri)
+        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(ScriptFile scriptFile)
         {
-            // On Windows, VSCode still gives us file URIs like "file:///c%3a/...", so we need to escape them
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                var uri = new Uri(documentUri);
-                if (uri.Scheme == "file")
-                {
-                    documentUri = WorkspaceService.UnescapeDriveColon(uri).AbsoluteUri;
-                }
-            }
-
-
-            if (!_mostRecentCorrectionsByFile.TryGetValue(documentUri, out CorrectionTableEntry corrections))
+            if (!_mostRecentCorrectionsByFile.TryGetValue(scriptFile, out CorrectionTableEntry corrections))
             {
                 return null;
             }
@@ -378,7 +367,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var diagnostics = new Diagnostic[scriptFile.DiagnosticMarkers.Count];
 
             CorrectionTableEntry fileCorrections = _mostRecentCorrectionsByFile.GetOrAdd(
-                scriptFile.DocumentUri,
+                scriptFile,
                 CorrectionTableEntry.CreateForFile);
 
             fileCorrections.Corrections.Clear();
@@ -486,7 +475,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private class CorrectionTableEntry
         {
-            public static CorrectionTableEntry CreateForFile(string fileUri)
+            public static CorrectionTableEntry CreateForFile(ScriptFile file)
             {
                 return new CorrectionTableEntry();
             }
