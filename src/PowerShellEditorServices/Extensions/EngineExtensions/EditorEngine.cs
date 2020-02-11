@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         {
             Type alcType = Type.GetType("System.Runtime.Loader.AssemblyLoadContext");
             MethodInfo getAlcMethod = alcType.GetMethod("GetLoadContext", BindingFlags.Public | BindingFlags.Static);
-            object psesAlc = getAlcMethod.Invoke(obj: null, new[] { s_psesAsm });
+            object psesAlc = getAlcMethod.Invoke(obj: null, new object[] { s_psesAsm });
             MethodInfo enterReflectionContextMethod = alcType.GetMethod("EnterContextualReflection", BindingFlags.Public | BindingFlags.Instance);
 
             return Expression.Lambda<Func<IDisposable>>(
