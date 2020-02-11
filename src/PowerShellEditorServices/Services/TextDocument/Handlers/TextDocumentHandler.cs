@@ -62,11 +62,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         textChange.Text));
             }
 
-#pragma warning disable CS4014
             // Kick off script diagnostics without blocking the response
             // TODO: Get all recently edited files in the workspace
             _analysisService.RunScriptDiagnostics(new ScriptFile[] { changedFile }, token);
-#pragma warning restore CS4014
             return Unit.Task;
         }
 
@@ -91,11 +89,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     notification.TextDocument.Uri,
                     notification.TextDocument.Text);
 
-#pragma warning disable CS4014
             // Kick off script diagnostics without blocking the response
             // TODO: Get all recently edited files in the workspace
             _analysisService.RunScriptDiagnostics(new ScriptFile[] { openedFile }, token);
-#pragma warning restore CS4014
 
             _logger.LogTrace("Finished opening document.");
             return Unit.Task;

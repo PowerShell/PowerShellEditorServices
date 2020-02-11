@@ -156,9 +156,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Create a cancellation token source that will cancel if we do or if the caller does
             var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-            CancellationTokenSource oldTaskCancellation;
-            // If there's an existing task, we want to cancel it here
-            if ((oldTaskCancellation = Interlocked.Exchange(ref _diagnosticsCancellationTokenSource, cancellationSource)) != null)
+            // If there's an existing task, we want to cancel it here;
+            CancellationTokenSource oldTaskCancellation = Interlocked.Exchange(ref _diagnosticsCancellationTokenSource, cancellationSource);
+            if (oldTaskCancellation != null)
             {
                 try
                 {
