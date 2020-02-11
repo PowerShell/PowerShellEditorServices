@@ -16,8 +16,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     {
         #region Private Fields
 
-        private readonly ILanguageServer _languageServer;
-
         private readonly IEditorOperations editorOperations;
 
         #endregion
@@ -37,9 +35,8 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Creates a new instance of the EditorWindow class.
         /// </summary>
         /// <param name="editorOperations">An IEditorOperations implementation which handles operations in the host editor.</param>
-        internal EditorWindow(ILanguageServer languageServer, IEditorOperations editorOperations)
+        internal EditorWindow(IEditorOperations editorOperations)
         {
-            _languageServer = languageServer;
             this.editorOperations = editorOperations;
             this.Terminal = new EditorTerminal(editorOperations);
         }
