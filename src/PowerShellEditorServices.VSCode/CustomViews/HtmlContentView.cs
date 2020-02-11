@@ -7,8 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using Microsoft.PowerShell.EditorServices.Extensions;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
@@ -16,19 +15,17 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     {
         public HtmlContentView(
             string viewTitle,
-            ILanguageServer languageServer,
-            ILogger logger)
+            EditorLanguageServer languageServer)
                 : base(
                     viewTitle,
                     CustomViewType.HtmlContent,
-                    languageServer,
-                    logger)
+                    languageServer)
         {
         }
 
         public async Task SetContentAsync(string htmlBodyContent)
         {
-            await languageServer.SendRequest(
+            await languageServer.SendRequestAsync(
                 SetHtmlContentViewRequest.Method,
                 new SetHtmlContentViewRequest
                 {
@@ -48,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                     StyleSheetPaths = this.GetUriPaths(htmlContent.StyleSheetPaths)
                 };
 
-            await languageServer.SendRequest(
+            await languageServer.SendRequestAsync(
                 SetHtmlContentViewRequest.Method,
                 new SetHtmlContentViewRequest
                 {
@@ -60,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 
         public async Task AppendContentAsync(string appendedHtmlBodyContent)
         {
-            await languageServer.SendRequest(
+            await languageServer.SendRequestAsync(
                 AppendHtmlContentViewRequest.Method,
                 new AppendHtmlContentViewRequest
                 {
