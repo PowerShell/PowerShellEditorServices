@@ -33,8 +33,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             param()
             end {
                 $module = Get-Module -ListAvailable PSReadLine |
-                    Where-Object Version -eq '2.0.0' |
-                    Where-Object { $_.PrivateData.PSData.Prerelease -notin 'beta1','beta2','beta3' } |
+                    Where-Object Version -ge '2.0.0' |
+                    Where-Object { -not $_.PrivateData.PSData.Prerelease } |
                     Sort-Object -Descending Version |
                     Select-Object -First 1
                 if (-not $module) {
