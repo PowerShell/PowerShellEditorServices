@@ -246,10 +246,9 @@ task Test TestServer,TestE2E
 task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
 
-    # TODO Bring back Windows PowerShell
-    # if (-not $script:IsUnix) {
-    #     exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
-    # }
+    if (-not $script:IsUnix) {
+        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
+    }
 
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
         exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Core (DotNetTestFilter) }

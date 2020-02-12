@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private PowerShellContextService powerShellContext;
         private static readonly string s_baseSharedScriptPath =
             Path.Combine(
-                    Path.GetDirectoryName(typeof(LanguageServiceTests).Assembly.Location),
+                    Path.GetDirectoryName(typeof(LanguageServiceTests).Assembly.CodeBase),
                     "..","..","..","..",
                     "PowerShellEditorServices.Test.Shared");
 
