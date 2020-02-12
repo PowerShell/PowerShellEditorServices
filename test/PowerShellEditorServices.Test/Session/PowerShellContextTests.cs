@@ -3,7 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
@@ -18,32 +20,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
     public class PowerShellContextTests : IDisposable
     {
-        private PowerShellContext powerShellContext;
+        private PowerShellContextService powerShellContext;
         private AsyncQueue<SessionStateChangedEventArgs> stateChangeQueue;
 
         private static readonly string s_debugTestFilePath =
             TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/DebugTest.ps1");
 
-        public static readonly HostDetails TestHostDetails =
-            new HostDetails(
-                "PowerShell Editor Services Test Host",
-                "Test.PowerShellEditorServices",
-                new Version("1.0.0"));
-
-        // NOTE: These paths are arbitrarily chosen just to verify that the profile paths
-        //       can be set to whatever they need to be for the given host.
-
-        public static readonly ProfilePaths TestProfilePaths =
-            new ProfilePaths(
-                TestHostDetails.ProfileId,
-                    Path.GetFullPath(
-                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile")),
-                    Path.GetFullPath(
-                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared")));
-
         public PowerShellContextTests()
         {
-            this.powerShellContext = PowerShellContextFactory.Create(Logging.NullLogger);
+            this.powerShellContext = PowerShellContextFactory.Create(NullLogger.Instance);
             this.powerShellContext.SessionStateChanged += OnSessionStateChanged;
             this.stateChangeQueue = new AsyncQueue<SessionStateChangedEventArgs>();
         }
@@ -54,6 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             this.powerShellContext = null;
         }
 
+        [Trait("Category", "PowerShellContext")]
         [Fact]
         public async Task CanExecutePSCommand()
         {
@@ -70,6 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             Assert.Equal("foo", result.First());
         }
 
+        [Trait("Category", "PowerShellContext")]
         [Fact]
         public async Task CanQueueParallelRunspaceRequests()
         {
@@ -98,6 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             Assert.Equal(3, result);
         }
 
+        [Trait("Category", "PowerShellContext")]
         [Fact]
         public async Task CanAbortExecution()
         {
@@ -117,16 +105,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             await executeTask;
         }
 
+        [Trait("Category", "PowerShellContext")]
         [Fact]
         public async Task CanResolveAndLoadProfilesForHostId()
         {
             string[] expectedProfilePaths =
                 new string[]
                 {
-                    TestProfilePaths.AllUsersAllHosts,
-                    TestProfilePaths.AllUsersCurrentHost,
-                    TestProfilePaths.CurrentUserAllHosts,
-                    TestProfilePaths.CurrentUserCurrentHost
+                    PowerShellContextFactory.TestProfilePaths.AllUsersAllHosts,
+                    PowerShellContextFactory.TestProfilePaths.AllUsersCurrentHost,
+                    PowerShellContextFactory.TestProfilePaths.CurrentUserAllHosts,
+                    PowerShellContextFactory.TestProfilePaths.CurrentUserCurrentHost
                 };
 
             // Load the profiles for the test host name

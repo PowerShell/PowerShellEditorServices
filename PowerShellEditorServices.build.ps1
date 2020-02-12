@@ -242,7 +242,7 @@ function DotNetTestFilter {
 }
 
 # task Test TestServer,TestProtocol,TestE2E
-task Test TestE2E
+task Test TestServer,TestE2E
 
 task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\

@@ -7,8 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
-using Microsoft.PowerShell.EditorServices.Utility;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Session
@@ -32,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             string testPathOutside = TestUtilities.NormalizePath("c:/Test/PeerPath/FilePath.ps1");
             string testPathAnotherDrive = TestUtilities.NormalizePath("z:/TryAndFindMe/FilePath.ps1");
 
-            Workspace workspace = new Workspace(PowerShellVersion, Logging.NullLogger);
+            WorkspaceService workspace = new WorkspaceService(NullLoggerFactory.Instance);
 
             // Test without a workspace path
             Assert.Equal(testPathOutside, workspace.GetRelativePath(testPathOutside));
@@ -47,9 +48,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             Assert.Equal(testPathAnotherDrive, workspace.GetRelativePath(testPathAnotherDrive));
         }
 
-        public static Workspace FixturesWorkspace()
+        public static WorkspaceService FixturesWorkspace()
         {
-            return new Workspace(PowerShellVersion, Logging.NullLogger) {
+            return new WorkspaceService(NullLoggerFactory.Instance) {
                 WorkspacePath = TestUtilities.NormalizePath("Fixtures/Workspace")
             };
         }
@@ -62,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         private static bool     s_defaultIgnoreReparsePoints = false;
 
         public static List<string> ExecuteEnumeratePSFiles(
-            Workspace workspace,
+            WorkspaceService workspace,
             string[] excludeGlobs,
             string[] includeGlobs,
             int maxDepth,
@@ -186,7 +187,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             foreach (var testCase in testCases)
             {
                 Assert.True(
-                    Workspace.IsPathInMemory(testCase.Path) == testCase.IsInMemory,
+                    WorkspaceService.IsPathInMemory(testCase.Path) == testCase.IsInMemory,
                     $"Testing path {testCase.Path}");
             }
         }
@@ -196,11 +197,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [MemberData(nameof(PathsToResolve), parameters: 2)]
         public void CorrectlyResolvesPaths(string givenPath, string expectedPath)
         {
-            Workspace workspace = new Workspace(PowerShellVersion, Logging.NullLogger);
+            WorkspaceService workspace = new WorkspaceService(NullLoggerFactory.Instance);
 
-            string resolvedPath = workspace.ResolveFilePath(givenPath);
+            Uri resolvedPath = workspace.ResolveFileUri(new Uri(givenPath));
 
-            Assert.Equal(expectedPath, resolvedPath);
+            Assert.Equal(expectedPath, resolvedPath.LocalPath);
         }
 
         public static IEnumerable<object[]> PathsToResolve

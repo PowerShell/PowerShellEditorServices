@@ -4,7 +4,7 @@
 //
 
 using System;
-using Microsoft.PowerShell.EditorServices;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 {
@@ -16,12 +16,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
         };
 
         public static readonly ScriptRegion SourceDetails =
-            new ScriptRegion
-            {
-                File = TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
-                StartLineNumber = 13,
-                StartColumnNumber = 8
-            };
+            new ScriptRegion(
+                file: TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
+                text: string.Empty,
+                startLineNumber: 13,
+                startColumnNumber: 8,
+                startOffset: 0,
+                endLineNumber: 0,
+                endColumnNumber: 0,
+                endOffset: 0);
 
         public static readonly CompletionDetails ExpectedCompletion =
             CompletionDetails.Create(

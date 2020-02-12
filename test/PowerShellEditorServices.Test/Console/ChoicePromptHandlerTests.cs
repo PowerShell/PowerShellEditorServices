@@ -3,11 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Console;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Xunit;
-using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         private const int DefaultChoice = 1;
 
+        [Trait("Category", "Prompt")]
         [Fact]
         public void ChoicePromptReturnsCorrectIdForChoice()
         {
@@ -45,6 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             Assert.Equal(1, choicePromptHandler.TimesPrompted);
         }
 
+        [Trait("Category", "Prompt")]
         [Fact]
         public void ChoicePromptReturnsCorrectIdForHotKey()
         {
@@ -68,8 +70,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             Assert.Equal(1, choicePromptHandler.TimesPrompted);
         }
 
+        [Trait("Category", "Prompt")]
         [Fact]
-        public void ChoicePromptRepromptsOnInvalidInput()
+        public async Task ChoicePromptRepromptsOnInvalidInput()
         {
             TestChoicePromptHandler choicePromptHandler =
                 new TestChoicePromptHandler();
@@ -85,6 +88,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             // Choice is invalid, should reprompt
             choicePromptHandler.ReturnInputString("INVALID");
 
+            // Give time for the prompt to reappear.
+            await Task.Delay(1000);
+
             Assert.Equal(TaskStatus.WaitingForActivation, promptTask.Status);
             Assert.Equal(2, choicePromptHandler.TimesPrompted);
         }
@@ -96,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public int TimesPrompted { get; private set; }
 
-        public TestChoicePromptHandler() : base(Logging.NullLogger)
+        public TestChoicePromptHandler() : base(NullLogger.Instance)
         {
         }
 

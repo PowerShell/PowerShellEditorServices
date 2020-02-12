@@ -3,19 +3,22 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 {
     public class CompleteCommandInFile
     {
         public static readonly ScriptRegion SourceDetails =
-            new ScriptRegion
-            {
-                File = TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
-                StartLineNumber = 8,
-                StartColumnNumber = 7
-            };
+            new ScriptRegion(
+                file: TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
+                text: string.Empty,
+                startLineNumber: 8,
+                startColumnNumber: 7,
+                startOffset: 0,
+                endLineNumber: 0,
+                endColumnNumber: 0,
+                endOffset: 0);
 
         public static readonly CompletionDetails ExpectedCompletion =
             CompletionDetails.Create(
@@ -24,4 +27,3 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
                 "Get-Something");
     }
 }
-
