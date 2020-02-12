@@ -50,7 +50,7 @@ function Invoke-WithCreateDefaultHook {
     }
 }
 
-task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestProtocol, TestE2E {
+task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestE2E {
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -246,23 +246,12 @@ task Test TestServer,TestE2E
 task TestServer {
     Set-Location .\test\PowerShellEditorServices.Test\
 
-    if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
-    }
+    # TODO Bring back Windows PowerShell
+    # if (-not $script:IsUnix) {
+    #     exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
+    # }
 
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Core (DotNetTestFilter) }
-    }
-}
-
-task TestProtocol {
-    Set-Location .\test\PowerShellEditorServices.Test.Protocol\
-
-    if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
-    }
-
-    Invoke-WithCreateDefaultHook {
         exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Core (DotNetTestFilter) }
     }
 }

@@ -16,7 +16,7 @@ namespace PSLanguageService.Test
     {
 
 #if CoreCLR
-        private static readonly Version PowerShellVersion = new Version(6, 1);
+        private static readonly Version PowerShellVersion = new Version(6, 2);
 #else
         private static readonly Version PowerShellVersion = new Version(5, 1);
 #endif
@@ -190,7 +190,8 @@ namespace PSLanguageService.Test
             {
                 ScriptFile scriptFile =
                     new ScriptFile(
-                        new Uri("/Users/tyleonha/DotSourceTestFile.ps1"),
+                        // Use any absolute path. Even if it doesn't exist.
+                        new Uri(Path.Combine(typeof(ScriptFileChangeTests).Assembly.Location, "TestFile.ps1")),
                         stringReader,
                         PowerShellVersion);
 
@@ -246,7 +247,8 @@ namespace PSLanguageService.Test
                 // Create an in-memory file from the StringReader
                 ScriptFile fileToChange =
                     new ScriptFile(
-                        new Uri("/Users/tyleonha/TestFile.ps1"),
+                        // Use any absolute path. Even if it doesn't exist.
+                        new Uri(Path.Combine(typeof(ScriptFileChangeTests).Assembly.Location, "TestFile.ps1")),
                         stringReader,
                         PowerShellVersion);
 
@@ -570,7 +572,8 @@ First line
         [Fact]
         public void PropertiesInitializedCorrectlyForFile()
         {
-            var path = "/Users/tyleonha/TestFile.ps1";
+            // Use any absolute path. Even if it doesn't exist.
+            var path = Path.Combine(typeof(ScriptFileChangeTests).Assembly.Location, "TestFile.ps1");
             var scriptFile = ScriptFileChangeTests.CreateScriptFile("");
 
             Assert.Equal(path, scriptFile.FilePath);

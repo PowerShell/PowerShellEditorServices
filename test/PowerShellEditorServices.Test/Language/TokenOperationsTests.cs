@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.IO;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
@@ -17,7 +18,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         /// </summary>
         private FoldingReference[] GetRegions(string text) {
             ScriptFile scriptFile = new ScriptFile(
-                new Uri("/Users/tyleonha/testfile.ps1"),
+                // Use any absolute path. Even if it doesn't exist.
+                new Uri(Path.Combine(typeof(TokenOperationsTests).Assembly.Location, "TestFile.ps1")),
                 text,
                 Version.Parse("5.0"));
 

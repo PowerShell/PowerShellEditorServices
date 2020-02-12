@@ -219,12 +219,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             new object[] { "file:///C%3A/banana/", @"C:\banana\" },
             new object[] { "file:///C%3A/banana/ex.ps1", @"C:\banana\ex.ps1" },
             new object[] { "file:///E%3A/Path/to/awful%23path", @"E:\Path\to\awful#path" },
-            new object[] { "file:///path/with/no/drive", $@"{CurrentDriveLetter}:\path\with\no\drive" },
-            new object[] { "file:///path/wi[th]/squ[are/brackets/", $@"{CurrentDriveLetter}:\path\wi[th]\squ[are\brackets\" },
-            new object[] { "file:///Carrots/A%5Ere/Good/", $@"{CurrentDriveLetter}:\Carrots\A^re\Good\" },
-            new object[] { "file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", $@"{CurrentDriveLetter}:\Users\barnaby\脚本\Reduce-Directory" },
+            new object[] { "file:///path/with/no/drive", "/path/with/no/drive" },
+            new object[] { "file:///path/wi[th]/squ[are/brackets/", "/path/wi[th]/squ[are/brackets/" },
+            new object[] { "file:///Carrots/A%5Ere/Good/", "/Carrots/A^re/Good/" },
+            new object[] { "file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", "/Users/barnaby/脚本/Reduce-Directory" },
             new object[] { "file:///C%3A/Program%20Files%20%28x86%29/PowerShell/6/pwsh.exe", @"C:\Program Files (x86)\PowerShell\6\pwsh.exe" },
-            new object[] { "file:///home/maxim/test%20folder/%D0%9F%D0%B0%D0%BF%D0%BA%D0%B0/helloworld.ps1", $@"{CurrentDriveLetter}:\home\maxim\test folder\Папка\helloworld.ps1" }
+            new object[] { "file:///home/maxim/test%20folder/%D0%9F%D0%B0%D0%BF%D0%BA%D0%B0/helloworld.ps1", "/home/maxim/test folder/Папка/helloworld.ps1" }
         };
 
         private static object[][] s_unixPathsToResolve = new object[][]
