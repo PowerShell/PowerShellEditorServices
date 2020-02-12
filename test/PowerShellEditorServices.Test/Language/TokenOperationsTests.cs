@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private FoldingReference[] GetRegions(string text) {
             ScriptFile scriptFile = new ScriptFile(
                 // Use any absolute path. Even if it doesn't exist.
-                new Uri(Path.Combine(typeof(TokenOperationsTests).Assembly.Location, "TestFile.ps1")),
+                new Uri(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
                 Version.Parse("5.0"));
 

@@ -191,7 +191,7 @@ namespace PSLanguageService.Test
                 ScriptFile scriptFile =
                     new ScriptFile(
                         // Use any absolute path. Even if it doesn't exist.
-                        new Uri(Path.Combine(typeof(ScriptFileChangeTests).Assembly.Location, "TestFile.ps1")),
+                        new Uri(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                         stringReader,
                         PowerShellVersion);
 
@@ -248,7 +248,7 @@ namespace PSLanguageService.Test
                 ScriptFile fileToChange =
                     new ScriptFile(
                         // Use any absolute path. Even if it doesn't exist.
-                        new Uri(Path.Combine(typeof(ScriptFileChangeTests).Assembly.Location, "TestFile.ps1")),
+                        new Uri(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                         stringReader,
                         PowerShellVersion);
 
@@ -573,7 +573,7 @@ First line
         public void PropertiesInitializedCorrectlyForFile()
         {
             // Use any absolute path. Even if it doesn't exist.
-            var path = Path.Combine(typeof(ScriptFileChangeTests).Assembly.Location, "TestFile.ps1");
+            var path = Path.Combine(Path.GetTempPath(), "TestFile.ps1");
             var scriptFile = ScriptFileChangeTests.CreateScriptFile("");
 
             Assert.Equal(path, scriptFile.FilePath);
