@@ -15,13 +15,13 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using System.Collections.Generic;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Language
 {
@@ -33,7 +33,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private readonly PowerShellContextService powerShellContext;
         private static readonly string s_baseSharedScriptPath =
             Path.Combine(
-                    Path.GetDirectoryName(typeof(LanguageServiceTests).Assembly.CodeBase),
+                    Path.GetDirectoryName(RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                        // On non-Windows platforms, CodeBase has file:// in it.
+                        // On Windows, Location points to a temp directory.
+                        ? typeof(LanguageServiceTests).Assembly.CodeBase
+                        : typeof(LanguageServiceTests).Assembly.Location),
                     "..","..","..","..",
                     "PowerShellEditorServices.Test.Shared");
 
