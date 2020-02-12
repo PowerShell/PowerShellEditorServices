@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private CompletionHandler completionHandler;
         private PowerShellContextService powerShellContext;
         private static readonly string s_baseSharedScriptPath =
-            TestUtilities.NormalizePath(Path.Join(
+            TestUtilities.NormalizePath(Path.Combine(
                     Path.GetDirectoryName(typeof(LanguageServiceTests).Assembly.Location),
                     "../../../../PowerShellEditorServices.Test.Shared/"));
 
