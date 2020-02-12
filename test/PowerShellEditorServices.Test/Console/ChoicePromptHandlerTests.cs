@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             choicePromptHandler.ReturnInputString("INVALID");
 
             // Give time for the prompt to reappear.
-            await Task.Delay(1000);
+            await Task.Delay(1000).ConfigureAwait(false);
 
             Assert.Equal(TaskStatus.WaitingForActivation, promptTask.Status);
             Assert.Equal(2, choicePromptHandler.TimesPrompted);

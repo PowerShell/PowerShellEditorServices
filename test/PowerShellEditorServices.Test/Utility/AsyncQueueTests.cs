@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             await inputQueue.EnqueueAsync(1);
 
             // Wait for things to propegate.
-            await Task.Delay(1000);
+            await Task.Delay(1000).ConfigureAwait(false);
 
             // Did the second task get the number?
             Assert.Equal(TaskStatus.Canceled, taskOne.Status);

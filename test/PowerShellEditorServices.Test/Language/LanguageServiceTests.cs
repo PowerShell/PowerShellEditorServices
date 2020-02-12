@@ -27,10 +27,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 {
     public class LanguageServiceTests : IDisposable
     {
-        private WorkspaceService workspace;
-        private SymbolsService symbolsService;
-        private CompletionHandler completionHandler;
-        private PowerShellContextService powerShellContext;
+        private readonly WorkspaceService workspace;
+        private readonly SymbolsService symbolsService;
+        private readonly CompletionHandler completionHandler;
+        private readonly PowerShellContextService powerShellContext;
         private static readonly string s_baseSharedScriptPath =
             Path.Combine(
                     Path.GetDirectoryName(typeof(LanguageServiceTests).Assembly.CodeBase),

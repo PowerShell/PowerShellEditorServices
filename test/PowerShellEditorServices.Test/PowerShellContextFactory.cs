@@ -19,8 +19,6 @@ namespace Microsoft.PowerShell.EditorServices.Test
 {
     internal static class PowerShellContextFactory
     {
-        public static HostStartupInfo TestHostDetails;
-
         // NOTE: These paths are arbitrarily chosen just to verify that the profile paths
         //       can be set to whatever they need to be for the given host.
 
@@ -39,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
         {
             PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
 
-            TestHostDetails = new HostStartupInfo(
+            HostStartupInfo testHostDetails = new HostStartupInfo(
                 "PowerShell Editor Services Test Host",
                 "Test.PowerShellEditorServices",
                 new Version("1.0.0"),
@@ -56,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
             powerShellContext.Initialize(
                 TestProfilePaths,
                 PowerShellContextService.CreateRunspace(
-                    TestHostDetails,
+                    testHostDetails,
                     powerShellContext,
                     new TestPSHostUserInterface(powerShellContext, logger),
                     logger),
