@@ -108,15 +108,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 Source = "PowerShell"
             };
         }
-        private static string GetIfExistsString(PSObject psobj, string memberName)
-        {
-            if (psobj.Members.Match(memberName).Count == 0)
-            {
-                return string.Empty;
-            }
-
-            return psobj.Members[memberName].Value as string ?? string.Empty;
-        }
 
         internal static ScriptFileMarker FromDiagnosticRecord(PSObject psObject)
         {
