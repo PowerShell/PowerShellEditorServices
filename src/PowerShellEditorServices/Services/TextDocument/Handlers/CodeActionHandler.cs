@@ -90,7 +90,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                     codeActions.Add(new CodeAction
                     {
+                        Title = correction.Name,
                         Kind = CodeActionKind.QuickFix,
+                        Diagnostics = new Container<Diagnostic>(diagnostic),
                         Command = new Command
                         {
                             Title = correction.Name,
@@ -114,13 +116,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     ruleNamesProcessed.Add(diagnostic.Code.String);
 
+                    // This should always be a string but just in case, we fall back to the Long value.
+                    var code = diagnostic.Code.IsString ? diagnostic.Code.String : diagnostic.Code.Long.ToString();
+                    var title = $"Show documentation for: {code}";
                     codeActions.Add(new CodeAction
                     {
+                        Title = title,
+                        // This doesn't fix anything, but I'm adding it here so that it shows up in VS Code's
+                        // Quick fix UI. The VS Code team is working on a way to support documentation CodeAction's better
+                        // but this is good for now until that's ready.
+                        Kind = CodeActionKind.QuickFix,
                         Command = new Command
                         {
-                            Title = $"Show documentation for \"{diagnostic.Code}\"",
+                            Title = title,
                             Name = "PowerShell.ShowCodeActionDocumentation",
-                            Arguments = JArray.FromObject(new[] { diagnostic.Code })
+                            Arguments = JArray.FromObject(new[] { code })
                         }
                     });
                 }
