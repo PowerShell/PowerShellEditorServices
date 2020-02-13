@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             ExtensionCommands = new ExtensionCommandService(_serviceProvider.GetService<ExtensionService>());
             Workspace = new WorkspaceService(_serviceProvider.GetService<Internal.WorkspaceService>());
             EditorContext = new EditorContextService(_serviceProvider.GetService<ILanguageServer>());
-            EditorUIService = new EditorUIService(_serviceProvider.GetService<ILanguageServer>());
+            EditorUI = new EditorUIService(_serviceProvider.GetService<ILanguageServer>());
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <summary>
         /// Service providing editor UI functionality.
         /// </summary>
-        public IEditorUIService UI { get; }
+        public IEditorUIService EditorUI { get; }
 
         /// <summary>
         /// Get an underlying service object from PSES by type name.
