@@ -473,6 +473,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
         #endregion
 
+        /// <summary>
+        /// Tracks corrections suggested by PSSA for a given file,
+        /// so that after a diagnostics request has fired,
+        /// a code action request can look up that file,
+        /// wait for analysis to finish if needed,
+        /// and then fetch the corrections set in the table entry by PSSA.
+        /// </summary>
         private class CorrectionTableEntry
         {
             public static CorrectionTableEntry CreateForFile(ScriptFile file)
