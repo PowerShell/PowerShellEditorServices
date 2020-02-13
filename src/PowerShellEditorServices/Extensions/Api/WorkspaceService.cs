@@ -19,27 +19,27 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <summary>
         /// The URI of the script file.
         /// </summary>
-        public Uri Uri { get; }
+        Uri Uri { get; }
 
         /// <summary>
         /// The text content of the file.
         /// </summary>
-        public string Content { get; }
+        string Content { get; }
 
         /// <summary>
         /// The lines of the file.
         /// </summary>
-        public IReadOnlyList<string> Lines { get; }
+        IReadOnlyList<string> Lines { get; }
 
         /// <summary>
         /// The PowerShell AST of the script in the file.
         /// </summary>
-        public ScriptBlockAst Ast { get; }
+        ScriptBlockAst Ast { get; }
 
         /// <summary>
         /// The PowerShell syntactic tokens of the script in the file.
         /// </summary>
-        public IReadOnlyList<Token> Tokens { get; }
+        IReadOnlyList<Token> Tokens { get; }
     }
 
     /// <summary>

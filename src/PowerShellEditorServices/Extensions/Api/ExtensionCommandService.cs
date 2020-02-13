@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// Returns all registered EditorCommands.
         /// </summary>
         /// <returns>A list of all registered EditorCommands.</returns>
-        public IReadOnlyList<EditorCommand> GetCommands();
+        IReadOnlyList<EditorCommand> GetCommands();
 
         /// <summary>
         /// Raised when a new editor command is added.

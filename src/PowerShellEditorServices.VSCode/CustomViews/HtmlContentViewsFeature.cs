@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     internal class HtmlContentViewsFeature : CustomViewFeatureBase<IHtmlContentView>, IHtmlContentViews
     {
         public HtmlContentViewsFeature(
-            LanguageServerService languageServer)
+            ILanguageServerService languageServer)
                 : base(languageServer)
         {
         }

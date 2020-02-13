@@ -62,14 +62,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <summary>
         /// The unique ID of this provider.
         /// </summary>
-        public string ProviderId { get; }
+        string ProviderId { get; }
 
         /// <summary>
         /// Run this provider to provide symbols to PSES from the given file.
         /// </summary>
         /// <param name="scriptFile">The script file to provide symbols for.</param>
         /// <returns>Symbols about the file.</returns>
-        public IEnumerable<SymbolReference> ProvideDocumentSymbols(IEditorScriptFile scriptFile);
+        IEnumerable<SymbolReference> ProvideDocumentSymbols(IEditorScriptFile scriptFile);
     }
 
     /// <summary>
@@ -168,14 +168,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// </summary>
         /// <param name="documentSymbolProvider">The document symbol provider to register.</param>
         /// <returns>True if the symbol provider was successfully registered, false otherwise.</returns>
-        public bool TryRegisterDocumentSymbolProvider(IDocumentSymbolProvider documentSymbolProvider);
+        bool TryRegisterDocumentSymbolProvider(IDocumentSymbolProvider documentSymbolProvider);
 
         /// <summary>
         /// Deregister a symbol provider of the given ID.
         /// </summary>
         /// <param name="providerId">The ID of the provider to deregister.</param>
         /// <returns>True if a provider by the given ID was deregistered, false if no such provider was found.</returns>
-        public bool DeregisterDocumentSymbolProvider(string providerId);
+        bool DeregisterDocumentSymbolProvider(string providerId);
     }
 
     internal class DocumentSymbolService : IDocumentSymbolService

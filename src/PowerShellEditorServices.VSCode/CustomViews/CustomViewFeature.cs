@@ -12,12 +12,12 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     internal abstract class CustomViewFeatureBase<TView>
         where TView : ICustomView
     {
-        protected LanguageServerService languageServer;
+        protected ILanguageServerService languageServer;
 
         private readonly Dictionary<Guid, TView> viewIndex;
 
         public CustomViewFeatureBase(
-            LanguageServerService languageServer)
+            ILanguageServerService languageServer)
         {
             this.viewIndex = new Dictionary<Guid, TView>();
             this.languageServer = languageServer;

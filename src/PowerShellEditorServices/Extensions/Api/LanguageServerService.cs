@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using MediatR;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System.Threading.Tasks;
 
@@ -17,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// Send a parameterless notification.
         /// </summary>
         /// <param name="method">The method to send.</param>
-        public void SendNotification(string method);
+        void SendNotification(string method);
 
         /// <summary>
         /// Send a notification with parameters.
@@ -25,7 +26,23 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <typeparam name="T">The type of the parameter object.</typeparam>
         /// <param name="method">The method to send.</param>
         /// <param name="parameters">The parameters to send.</param>
-        public void SendNotification<T>(string method, T parameters);
+        void SendNotification<T>(string method, T parameters);
+
+        /// <summary>
+        /// Send a parameterless request with no response output.
+        /// </summary>
+        /// <param name="method">The method to send.</param>
+        /// <returns>A task that resolves when the request is acknowledged.</returns>
+        Task SendRequestAsync(string method);
+
+        /// <summary>
+        /// Send a request with no response output.
+        /// </summary>
+        /// <typeparam name="T">The type of the request parameter object.</typeparam>
+        /// <param name="method">The method to send.</param>
+        /// <param name="parameters">The request parameter object/body.</param>
+        /// <returns>A task that resolves when the request is acknowledged.</returns>
+        Task SendRequestAsync<T>(string method, T parameters);
 
         /// <summary>
         /// Send a parameterless request and get its response.
@@ -33,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <typeparam name="TResponse">The type of the response expected.</typeparam>
         /// <param name="method">The method to send.</param>
         /// <returns>A task that resolves to the response sent by the server.</returns>
-        public Task<TResponse> SendRequestAsync<TResponse>(string method);
+        Task<TResponse> SendRequestAsync<TResponse>(string method);
 
         /// <summary>
         /// Send a request and get its response.
@@ -43,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <param name="method">The method to send.</param>
         /// <param name="parameters">The parameters to send.</param>
         /// <returns>A task that resolves to the response sent by the server.</returns>
-        public Task<TResponse> SendRequestAsync<T, TResponse>(string method, T parameters);
+        Task<TResponse> SendRequestAsync<T, TResponse>(string method, T parameters);
     }
 
     internal struct LanguageServerService : ILanguageServerService
@@ -68,6 +85,16 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         public void SendNotification(string method, object parameters)
         {
             _languageServer.SendNotification(method, parameters);
+        }
+
+        public Task SendRequestAsync(string method)
+        {
+            return _languageServer.SendRequest<Unit>(method);
+        }
+
+        public Task SendRequestAsync<T>(string method, T parameters)
+        {
+            return _languageServer.SendRequest<T, Unit>(method, parameters);
         }
 
         public Task<TResponse> SendRequestAsync<TResponse>(string method)

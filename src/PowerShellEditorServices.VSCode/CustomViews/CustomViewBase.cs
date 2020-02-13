@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
     internal abstract class CustomViewBase : ICustomView
     {
-        protected LanguageServerService languageServer;
+        protected ILanguageServerService languageServer;
 
         public Guid Id { get; private set; }
 
@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public CustomViewBase(
             string viewTitle,
             CustomViewType viewType,
-            LanguageServerService languageServer)
+            ILanguageServerService languageServer)
         {
             this.Id = Guid.NewGuid();
             this.Title = viewTitle;

@@ -14,27 +14,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Gets the symbol's type
         /// </summary>
-        public SymbolType SymbolType { get; }
+        SymbolType SymbolType { get; }
 
         /// <summary>
         /// Gets the name of the symbol
         /// </summary>
-        public string SymbolName { get; }
+        string SymbolName { get; }
 
         /// <summary>
         /// Gets the script extent of the symbol
         /// </summary>
-        public ScriptRegion ScriptRegion { get; }
+        ScriptRegion ScriptRegion { get; }
 
         /// <summary>
         /// Gets the contents of the line the given symbol is on
         /// </summary>
-        public string SourceLine { get; }
+        string SourceLine { get; }
 
         /// <summary>
         /// Gets the path of the file in which the symbol was found.
         /// </summary>
-        public string FilePath { get; }
+        string FilePath { get; }
     }
 
     /// <summary>

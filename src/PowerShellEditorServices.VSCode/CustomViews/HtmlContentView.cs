@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     {
         public HtmlContentView(
             string viewTitle,
-            LanguageServerService languageServer)
+            ILanguageServerService languageServer)
                 : base(
                     viewTitle,
                     CustomViewType.HtmlContent,
