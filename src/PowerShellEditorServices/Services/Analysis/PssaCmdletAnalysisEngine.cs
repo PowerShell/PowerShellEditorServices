@@ -464,7 +464,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                     throw new FileNotFoundException("Unable to find PSScriptAnalyzer module on the module path");
                 }
 
-                // Create a base session state with PSScriptAnalyzer loaded
+                // Now that we know where the PSScriptAnalyzer we want to use is,
+                // create a base session state with PSScriptAnalyzer loaded
 #if DEBUG
                 InitialSessionState sessionState = Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1"
                     ? InitialSessionState.CreateDefault()
