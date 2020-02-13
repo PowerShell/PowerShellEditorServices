@@ -92,12 +92,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     {
                         Title = correction.Name,
                         Kind = CodeActionKind.QuickFix,
-                        Diagnostics = new Container<Diagnostic>(diagnostic),
-                        Command = new Command
+                        Edit = new WorkspaceEdit
                         {
-                            Title = correction.Name,
-                            Name = "PowerShell.ApplyCodeActionEdits",
-                            Arguments = JArray.FromObject(correction.Edits)
+                            DocumentChanges = new Container<WorkspaceEditDocumentChange>(
+                                new WorkspaceEditDocumentChange(
+                                    new TextDocumentEdit()
+                                    {
+                                        TextDocument = new VersionedTextDocumentIdentifier()
+                                        {
+                                            Uri = request.TextDocument.Uri
+                                        },
+                                        Edits = new Container<TextEdit>(correction.Edits.Select(ScriptRegion.ToTextEdit))
+                                    }))
                         }
                     });
                 }
