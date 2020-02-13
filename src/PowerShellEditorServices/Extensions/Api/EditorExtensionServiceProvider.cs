@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using PowerShellEditorServices.Extensions.Api;
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -47,20 +48,38 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             ExtensionCommands = new ExtensionCommandService(_serviceProvider.GetService<ExtensionService>());
             Workspace = new WorkspaceService(_serviceProvider.GetService<Internal.WorkspaceService>());
             EditorContext = new EditorContextService(_serviceProvider.GetService<ILanguageServer>());
+            EditorUIService = new EditorUIService(_serviceProvider.GetService<ILanguageServer>());
         }
 
         /// <summary>
-        /// A service wrapper around the language server allowing sending notifications and requests.
+        /// A service wrapper around the language server allowing sending notifications and requests to the LSP client.
         /// </summary>
         public ILanguageServerService LanguageServer { get; }
 
+        /// <summary>
+        /// Service providing document symbol provider registration.
+        /// </summary>
         public IDocumentSymbolService DocumentSymbols { get; }
 
+        /// <summary>
+        /// Service providing extension command registration and functionality.
+        /// </summary>
         public IExtensionCommandService ExtensionCommands { get; }
 
+        /// <summary>
+        /// Service providing editor workspace functionality.
+        /// </summary>
         public IWorkspaceService Workspace { get; }
 
+        /// <summary>
+        /// Service providing current editor context functionality.
+        /// </summary>
         public IEditorContextService EditorContext { get; }
+
+        /// <summary>
+        /// Service providing editor UI functionality.
+        /// </summary>
+        public IEditorUIService UI { get; }
 
         /// <summary>
         /// Get an underlying service object from PSES by type name.
