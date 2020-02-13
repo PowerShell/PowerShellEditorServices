@@ -446,10 +446,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
                 try
                 {
-                    // Get the latest version of PSScriptAnalyzer we can find
-                    pssaModuleInfo = ps.Invoke<PSModuleInfo>()?
-                        .OrderByDescending(moduleInfo => moduleInfo.Version)
-                        .FirstOrDefault();
+                    using (PSModulePathPreserver.Take())
+                    {
+                        // Get the latest version of PSScriptAnalyzer we can find
+                        pssaModuleInfo = ps.Invoke<PSModuleInfo>()?
+                            .OrderByDescending(moduleInfo => moduleInfo.Version)
+                            .FirstOrDefault();
+                    }
                 }
                 catch (Exception e)
                 {
