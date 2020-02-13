@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 {
     /// <summary>
-    /// Service allowing the sending of notifications and requests to the PowerShell LSP language server.
+    /// Service allowing the sending of notifications and requests to the PowerShell LSP language client from the server.
     /// </summary>
     public interface ILanguageServerService
     {
@@ -41,6 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <typeparam name="T">The type of the request parameter object.</typeparam>
         /// <param name="method">The method to send.</param>
         /// <param name="parameters">The request parameter object/body.</param>
+using System.Text;
         /// <returns>A task that resolves when the request is acknowledged.</returns>
         Task SendRequestAsync<T>(string method, T parameters);
 
