@@ -41,7 +41,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <typeparam name="T">The type of the request parameter object.</typeparam>
         /// <param name="method">The method to send.</param>
         /// <param name="parameters">The request parameter object/body.</param>
-using System.Text;
         /// <returns>A task that resolves when the request is acknowledged.</returns>
         Task SendRequestAsync<T>(string method, T parameters);
 
