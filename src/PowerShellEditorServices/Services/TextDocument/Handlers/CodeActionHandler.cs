@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -86,11 +87,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 string diagnosticId = AnalysisService.GetUniqueIdFromDiagnostic(diagnostic);
                 if (corrections.TryGetValue(diagnosticId, out MarkerCorrection correction))
                 {
-                    codeActions.Add(new Command()
+
+                    codeActions.Add(new CodeAction
                     {
-                        Title = correction.Name,
-                        Name = "PowerShell.ApplyCodeActionEdits",
-                        Arguments = JArray.FromObject(correction.Edits)
+                        Kind = CodeActionKind.QuickFix,
+                        Command = new Command
+                        {
+                            Title = correction.Name,
+                            Name = "PowerShell.ApplyCodeActionEdits",
+                            Arguments = JArray.FromObject(correction.Edits)
+                        }
                     });
                 }
             }
@@ -108,13 +114,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     ruleNamesProcessed.Add(diagnostic.Code.String);
 
-                    codeActions.Add(
-                        new Command
+                    codeActions.Add(new CodeAction
+                    {
+                        Command = new Command
                         {
                             Title = $"Show documentation for \"{diagnostic.Code}\"",
                             Name = "PowerShell.ShowCodeActionDocumentation",
                             Arguments = JArray.FromObject(new[] { diagnostic.Code })
-                        });
+                        }
+                    });
                 }
             }
 
