@@ -4,11 +4,13 @@
 //
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using Internal = Microsoft.PowerShell.EditorServices.Services;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 {
@@ -41,12 +43,24 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         {
             _serviceProvider = serviceProvider;
             LanguageServer = new LanguageServerService(_serviceProvider.GetService<ILanguageServer>());
+            DocumentSymbols = new DocumentSymbolService(_serviceProvider.GetService<SymbolsService>());
+            ExtensionCommands = new ExtensionCommandService(_serviceProvider.GetService<ExtensionService>());
+            Workspace = new WorkspaceService(_serviceProvider.GetService<Internal.WorkspaceService>());
+            EditorContext = new EditorContextService(_serviceProvider.GetService<ILanguageServer>());
         }
 
         /// <summary>
         /// A service wrapper around the language server allowing sending notifications and requests.
         /// </summary>
         public ILanguageServerService LanguageServer { get; }
+
+        public IDocumentSymbolService DocumentSymbols { get; }
+
+        public IExtensionCommandService ExtensionCommands { get; }
+
+        public IWorkspaceService Workspace { get; }
+
+        public IEditorContextService EditorContext { get; }
 
         /// <summary>
         /// Get an underlying service object from PSES by type name.

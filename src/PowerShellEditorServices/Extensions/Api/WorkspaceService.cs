@@ -110,15 +110,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
     internal class WorkspaceService : IWorkspaceService
     {
-        private readonly IEditorOperations _editorOperations;
         private readonly EditorServices.Services.WorkspaceService _workspaceService;
 
         internal WorkspaceService(
-            IEditorOperations editorOperations,
             EditorServices.Services.WorkspaceService workspaceService)
         {
             _workspaceService = workspaceService;
-            _editorOperations = editorOperations;
             ExcludedFileGlobs = _workspaceService.ExcludeFilesGlob.AsReadOnly();
         }
 

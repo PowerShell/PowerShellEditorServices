@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// Provides a high-level service which enables PowerShell scripts
     /// and modules to extend the behavior of the host editor.
     /// </summary>
-    public sealed class ExtensionService
+    internal sealed class ExtensionService
     {
         #region Fields
 
@@ -74,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="editorOperations">An IEditorOperations implementation.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
-        public async Task InitializeAsync(
+        internal async Task InitializeAsync(
             IServiceProvider serviceProvider,
             IEditorOperations editorOperations)
         {
