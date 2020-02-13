@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -17,9 +18,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     {
         #region Private Fields
 
-        internal ScriptFile scriptFile;
-        private EditorContext editorContext;
-        private IEditorOperations editorOperations;
+        private readonly ScriptFile scriptFile;
+        private readonly EditorContext editorContext;
+        private readonly IEditorOperations editorOperations;
 
         #endregion
 
@@ -28,19 +29,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the parsed abstract syntax tree for the file.
         /// </summary>
-        public Ast Ast
-        {
-            get { return this.scriptFile.ScriptAst; }
-        }
+        public Ast Ast => this.scriptFile.ScriptAst;
 
         /// <summary>
         /// Gets a BufferRange which represents the entire content
         /// range of the file.
         /// </summary>
-        public BufferRange FileRange
-        {
-            get { return this.scriptFile.FileRange; }
-        }
+        public IFileRange FileRange => new BufferFileRange(this.scriptFile.FileRange);
 
         /// <summary>
         /// Gets the language of the file.
@@ -50,18 +45,17 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the filesystem path of the file.
         /// </summary>
-        public string Path
-        {
-            get { return this.scriptFile.FilePath; }
-        }
+        public string Path => this.scriptFile.FilePath;
+
+        /// <summary>
+        /// Gets the URI of the file.
+        /// </summary>
+        public Uri Uri { get; } 
 
         /// <summary>
         /// Gets the parsed token list for the file.
         /// </summary>
-        public Token[] Tokens
-        {
-            get { return this.scriptFile.ScriptTokens; }
-        }
+        public IReadOnlyList<Token> Tokens => this.scriptFile.ScriptTokens;
 
         /// <summary>
         /// Gets the workspace-relative path of the file.
@@ -87,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="editorContext">The EditorContext to which this file relates.</param>
         /// <param name="editorOperations">An IEditorOperations implementation which performs operations in the editor.</param>
         /// <param name="language">Determines the language of the file.false If it is not specified, then it defaults to "Unknown"</param>
-        public FileContext(
+        internal FileContext(
             ScriptFile scriptFile,
             EditorContext editorContext,
             IEditorOperations editorOperations,
@@ -102,6 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             this.editorContext = editorContext;
             this.editorOperations = editorOperations;
             this.Language = language;
+            this.Uri = new Uri(scriptFile.DocumentUri);
         }
 
         #endregion
@@ -122,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="bufferRange">The buffer range for which content will be extracted.</param>
         /// <returns>A string with the specified range of content.</returns>
-        public string GetText(BufferRange bufferRange)
+        public string GetText(FileRange bufferRange)
         {
             return
                 string.Join(
@@ -144,9 +139,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="bufferRange">The buffer range for which content will be extracted.</param>
         /// <returns>An array of strings, each representing a line in the file within the specified range.</returns>
-        public string[] GetTextLines(BufferRange bufferRange)
+        public string[] GetTextLines(FileRange fileRange)
         {
-            return this.scriptFile.GetLinesInRange(bufferRange);
+            return this.scriptFile.GetLinesInRange(fileRange.ToBufferRange());
         }
 
         #endregion
@@ -161,7 +156,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public void InsertText(string textToInsert)
         {
             // Is there a selection?
-            if (this.editorContext.SelectedRange.HasRange)
+            if (this.editorContext.SelectedRange.HasRange())
             {
                 this.InsertText(
                     textToInsert,
@@ -180,11 +175,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="textToInsert">The text string to insert.</param>
         /// <param name="insertPosition">The position at which the text will be inserted.</param>
-        public void InsertText(string textToInsert, BufferPosition insertPosition)
+        public void InsertText(string textToInsert, IFilePosition insertPosition)
         {
             this.InsertText(
                 textToInsert,
-                new BufferRange(insertPosition, insertPosition));
+                new FileRange(insertPosition, insertPosition));
         }
 
         /// <summary>
@@ -197,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         {
             this.InsertText(
                 textToInsert,
-                new BufferPosition(insertLine, insertColumn));
+                new FilePosition(insertLine, insertColumn));
         }
 
         /// <summary>
@@ -220,11 +215,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         {
             this.InsertText(
                 textToInsert,
-                new BufferRange(
-                    startLine,
-                    startColumn,
-                    endLine,
-                    endColumn));
+                new FileRange(
+                    new FilePosition(startLine, startColumn),
+                    new FilePosition(endLine, endColumn)));
         }
 
         /// <summary>
@@ -234,10 +227,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="textToInsert">The text string to insert.</param>
         /// <param name="insertRange">The buffer range which will be replaced by the string.</param>
-        public void InsertText(string textToInsert, BufferRange insertRange)
+        public void InsertText(string textToInsert, IFileRange insertRange)
         {
             this.editorOperations
-                .InsertTextAsync(this.scriptFile.ClientFilePath, textToInsert, insertRange)
+                .InsertTextAsync(this.scriptFile.ClientFilePath, textToInsert, insertRange.ToBufferRange())
                 .Wait();
         }
 

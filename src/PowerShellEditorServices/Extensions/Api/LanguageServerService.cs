@@ -1,0 +1,88 @@
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using System.Threading.Tasks;
+
+namespace Microsoft.PowerShell.EditorServices.Extensions.Services
+{
+    /// <summary>
+    /// Service allowing the sending of notifications and requests to the PowerShell LSP language server.
+    /// </summary>
+    public interface ILanguageServerService
+    {
+        /// <summary>
+        /// Send a parameterless notification.
+        /// </summary>
+        /// <param name="method">The method to send.</param>
+        public void SendNotification(string method);
+
+        /// <summary>
+        /// Send a notification with parameters.
+        /// </summary>
+        /// <typeparam name="T">The type of the parameter object.</typeparam>
+        /// <param name="method">The method to send.</param>
+        /// <param name="parameters">The parameters to send.</param>
+        public void SendNotification<T>(string method, T parameters);
+
+        /// <summary>
+        /// Send a parameterless request and get its response.
+        /// </summary>
+        /// <typeparam name="TResponse">The type of the response expected.</typeparam>
+        /// <param name="method">The method to send.</param>
+        /// <returns>A task that resolves to the response sent by the server.</returns>
+        public Task<TResponse> SendRequestAsync<TResponse>(string method);
+
+        /// <summary>
+        /// Send a request and get its response.
+        /// </summary>
+        /// <typeparam name="T">The type of the parameter object.</typeparam>
+        /// <typeparam name="TResponse">The type of the response expected.</typeparam>
+        /// <param name="method">The method to send.</param>
+        /// <param name="parameters">The parameters to send.</param>
+        /// <returns>A task that resolves to the response sent by the server.</returns>
+        public Task<TResponse> SendRequestAsync<T, TResponse>(string method, T parameters);
+    }
+
+    internal struct LanguageServerService : ILanguageServerService
+    {
+        private readonly ILanguageServer _languageServer;
+
+        internal LanguageServerService(ILanguageServer languageServer)
+        {
+            _languageServer = languageServer;
+        }
+
+        public void SendNotification(string method)
+        {
+            _languageServer.SendNotification(method);
+        }
+
+        public void SendNotification<T>(string method, T parameters)
+        {
+            _languageServer.SendNotification(method, parameters);
+        }
+
+        public void SendNotification(string method, object parameters)
+        {
+            _languageServer.SendNotification(method, parameters);
+        }
+
+        public Task<TResponse> SendRequestAsync<TResponse>(string method)
+        {
+            return _languageServer.SendRequest<TResponse>(method);
+        }
+
+        public Task<TResponse> SendRequestAsync<T, TResponse>(string method, T parameters)
+        {
+            return _languageServer.SendRequest<T, TResponse>(method, parameters);
+        }
+
+        public Task<object> SendRequestAsync(string method, object parameters)
+        {
+            return _languageServer.SendRequest<object, object>(method, parameters);
+        }
+    }
+}

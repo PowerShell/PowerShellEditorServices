@@ -17,8 +17,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// </summary>
     internal class PesterDocumentSymbolProvider : IDocumentSymbolProvider
     {
+        string IDocumentSymbolProvider.ProviderId => nameof(PesterDocumentSymbolProvider);
 
-        IEnumerable<SymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
+        IEnumerable<ISymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
             if (!scriptFile.FilePath.EndsWith(

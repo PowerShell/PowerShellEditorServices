@@ -7,7 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Extensions.Services;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
     {
         public HtmlContentView(
             string viewTitle,
-            EditorLanguageServer languageServer)
+            LanguageServerService languageServer)
                 : base(
                     viewTitle,
                     CustomViewType.HtmlContent,

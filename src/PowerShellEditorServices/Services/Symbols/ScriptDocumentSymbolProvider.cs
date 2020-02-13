@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -17,7 +18,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// </summary>
     internal class ScriptDocumentSymbolProvider : IDocumentSymbolProvider
     {
-        IEnumerable<SymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
+        string IDocumentSymbolProvider.ProviderId => nameof(ScriptDocumentSymbolProvider);
+
+        IEnumerable<ISymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
             // If we have an AST, then we know it's a PowerShell file

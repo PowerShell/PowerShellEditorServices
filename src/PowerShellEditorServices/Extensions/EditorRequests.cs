@@ -7,34 +7,34 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
-    public class ExtensionCommandAddedNotification
+    internal class ExtensionCommandAddedNotification
     {
         public string Name { get; set; }
 
         public string DisplayName { get; set; }
     }
 
-    public class ExtensionCommandUpdatedNotification
+    internal class ExtensionCommandUpdatedNotification
     {
         public string Name { get; set; }
     }
 
-    public class ExtensionCommandRemovedNotification
+    internal class ExtensionCommandRemovedNotification
     {
         public string Name { get; set; }
     }
 
 
-    public class GetEditorContextRequest
+    internal class GetEditorContextRequest
     {}
 
-    public enum EditorCommandResponse
+    internal enum EditorCommandResponse
     {
         Unsupported,
         OK
     }
 
-    public class InsertTextRequest
+    internal class InsertTextRequest
     {
         public string FilePath { get; set; }
 
@@ -43,34 +43,35 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public Range InsertRange { get; set; }
     }
 
-    public class SetSelectionRequest
+    internal class SetSelectionRequest
     {
         public Range SelectionRange { get; set; }
     }
 
-    public class SetCursorPositionRequest
+    internal class SetCursorPositionRequest
     {
         public Position CursorPosition { get; set; }
     }
 
-    public class OpenFileDetails
+    internal class OpenFileDetails
     {
         public string FilePath { get; set; }
 
         public bool Preview { get; set; }
     }
 
-    public class SaveFileDetails
+    internal class SaveFileDetails
     {
         public string FilePath { get; set; }
 
         public string NewPath { get; set; }
     }
 
-    public class StatusBarMessageDetails
+    internal class StatusBarMessageDetails
     {
         public string Message { get; set; }
 
         public int? Timeout { get; set; }
     }
 }
+

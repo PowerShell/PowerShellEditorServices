@@ -4,14 +4,14 @@
 //
 
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Extensions.Services;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
     internal class HtmlContentViewsFeature : CustomViewFeatureBase<IHtmlContentView>, IHtmlContentViews
     {
         public HtmlContentViewsFeature(
-            EditorLanguageServer languageServer)
+            LanguageServerService languageServer)
                 : base(languageServer)
         {
         }

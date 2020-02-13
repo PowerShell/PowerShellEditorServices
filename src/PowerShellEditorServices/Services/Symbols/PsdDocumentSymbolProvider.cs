@@ -17,7 +17,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// </summary>
     internal class PsdDocumentSymbolProvider : IDocumentSymbolProvider
     {
-        IEnumerable<SymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
+        string IDocumentSymbolProvider.ProviderId => nameof(PsdDocumentSymbolProvider);
+
+        IEnumerable<ISymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
             if ((scriptFile.FilePath != null &&

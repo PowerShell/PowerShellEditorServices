@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     /// host to perform operations invoked by extensions written in
     /// PowerShell.
     /// </summary>
-    public interface IEditorOperations
+    internal interface IEditorOperations
     {
         /// <summary>
         /// Gets the EditorContext for the editor's current state.

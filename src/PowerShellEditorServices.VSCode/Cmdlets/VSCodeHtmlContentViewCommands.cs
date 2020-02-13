@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
                 if (GetVariableValue("psEditor") is EditorObject psEditor)
                 {
                     _htmlContentViewsFeature = new HtmlContentViewsFeature(
-                        psEditor.GetEngine().LanguageServer);
+                        psEditor.GetExtensionServiceProvider().LanguageServer);
                 }
                 else
                 {

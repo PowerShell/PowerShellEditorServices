@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
@@ -14,6 +15,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.CodeLenses;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
@@ -33,7 +35,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly ILogger _logger;
         private readonly PowerShellContextService _powerShellContextService;
         private readonly WorkspaceService _workspaceService;
-        private readonly IDocumentSymbolProvider[] _documentSymbolProviders;
+
+        private readonly ConcurrentDictionary<string, ICodeLensProvider> _codeLensProviders;
+        private readonly ConcurrentDictionary<string, IDocumentSymbolProvider> _documentSymbolProviders;
 
         #endregion
 
@@ -52,15 +56,62 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _logger = factory.CreateLogger<SymbolsService>();
             _powerShellContextService = powerShellContextService;
             _workspaceService = workspaceService;
-            _documentSymbolProviders = new IDocumentSymbolProvider[]
+
+            _codeLensProviders = new ConcurrentDictionary<string, ICodeLensProvider>();
+            var codeLensProviders = new ICodeLensProvider[]
+            {
+                new ReferencesCodeLensProvider(_workspaceService, this),
+                new PesterCodeLensProvider(),
+            };
+            foreach (ICodeLensProvider codeLensProvider in codeLensProviders)
+            {
+                _codeLensProviders.TryAdd(codeLensProvider.ProviderId, codeLensProvider);
+            }
+
+            _documentSymbolProviders = new ConcurrentDictionary<string, IDocumentSymbolProvider>();
+            var documentSymbolProviders = new IDocumentSymbolProvider[]
             {
                 new ScriptDocumentSymbolProvider(),
                 new PsdDocumentSymbolProvider(),
-                new PesterDocumentSymbolProvider()
+                new PesterDocumentSymbolProvider(),
             };
+            foreach (IDocumentSymbolProvider documentSymbolProvider in documentSymbolProviders)
+            {
+                _documentSymbolProviders.TryAdd(documentSymbolProvider.ProviderId, documentSymbolProvider);
+            }
         }
 
         #endregion
+
+        public bool TryResgisterCodeLensProvider(ICodeLensProvider codeLensProvider)
+        {
+            return _codeLensProviders.TryAdd(codeLensProvider.ProviderId, codeLensProvider);
+        }
+
+        public bool DeregisterCodeLensProvider(string providerId)
+        {
+            return _codeLensProviders.TryRemove(providerId, out _);
+        }
+
+        public IEnumerable<ICodeLensProvider> GetCodeLensProviders()
+        {
+            return _codeLensProviders.Values;
+        }
+
+        public bool TryRegisterDocumentSymbolProvider(IDocumentSymbolProvider documentSymbolProvider)
+        {
+            return _documentSymbolProviders.TryAdd(documentSymbolProvider.ProviderId, documentSymbolProvider);
+        }
+
+        public bool DeregisterDocumentSymbolProvider(string providerId)
+        {
+            return _documentSymbolProviders.TryRemove(providerId, out _);
+        }
+
+        public IEnumerable<IDocumentSymbolProvider> GetDocumentSymbolProviders()
+        {
+            return _documentSymbolProviders.Values;
+        }
 
         /// <summary>
         /// Finds all the symbols in a file.
@@ -72,7 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
             var foundOccurrences = new List<SymbolReference>();
-            foreach (IDocumentSymbolProvider symbolProvider in _documentSymbolProviders)
+            foreach (IDocumentSymbolProvider symbolProvider in GetDocumentSymbolProviders())
             {
                 foreach (SymbolReference reference in symbolProvider.ProvideDocumentSymbols(scriptFile))
                 {

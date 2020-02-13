@@ -3,9 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
-using System.Threading.Tasks;
-
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>

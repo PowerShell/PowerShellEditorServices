@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// a file buffer.
     /// </summary>
     [DebuggerDisplay("Start = {Start.Line}:{Start.Column}, End = {End.Line}:{End.Column}")]
-    public sealed class BufferRange
+    internal sealed class BufferRange
     {
         #region Properties
 

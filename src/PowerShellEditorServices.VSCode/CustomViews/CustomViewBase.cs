@@ -5,15 +5,13 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Extensions;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using Microsoft.PowerShell.EditorServices.Extensions.Services;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
     internal abstract class CustomViewBase : ICustomView
     {
-        protected EditorLanguageServer languageServer;
+        protected LanguageServerService languageServer;
 
         public Guid Id { get; private set; }
 
@@ -24,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public CustomViewBase(
             string viewTitle,
             CustomViewType viewType,
-            EditorLanguageServer languageServer)
+            LanguageServerService languageServer)
         {
             this.Id = Guid.NewGuid();
             this.Title = viewTitle;
