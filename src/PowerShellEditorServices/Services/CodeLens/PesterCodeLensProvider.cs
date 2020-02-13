@@ -101,14 +101,18 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             var lenses = new List<CodeLens>();
             foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
-                if (symbol is PesterSymbolReference pesterSymbol)
+                if (!(symbol is PesterSymbolReference pesterSymbol))
                 {
-                    if (_configurationService.CurrentSettings.Pester.Pester5CodeLens 
-                        || pesterSymbol.Command == PesterCommandType.Describe)
-                    {
-                        lenses.AddRange(GetPesterLens(pesterSymbol, scriptFile));
-                    }
+                    continue;
                 }
+
+                if (!_configurationService.CurrentSettings.Pester.Pester5CodeLens
+                        && pesterSymbol.Command != PesterCommandType.Describe)
+                {
+                    continue;
+                }
+
+                lenses.AddRange(GetPesterLens(pesterSymbol, scriptFile));
             }
 
             return lenses.ToArray();
