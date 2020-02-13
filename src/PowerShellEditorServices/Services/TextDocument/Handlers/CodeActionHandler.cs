@@ -95,9 +95,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         {
                             DocumentChanges = new Container<WorkspaceEditDocumentChange>(
                                 new WorkspaceEditDocumentChange(
-                                    new TextDocumentEdit()
+                                    new TextDocumentEdit
                                     {
-                                        TextDocument = new VersionedTextDocumentIdentifier()
+                                        TextDocument = new VersionedTextDocumentIdentifier
                                         {
                                             Uri = request.TextDocument.Uri
                                         },
