@@ -665,8 +665,17 @@ CanSendReferencesCodeLensRequest
                         }
                     });
 
-            Assert.Single(commandOrCodeActions,
-                command => command.Command.Name == "PowerShell.ApplyCodeActionEdits");
+            Assert.Collection(commandOrCodeActions,
+                command =>
+                {
+                    Assert.Equal(
+                        "'gci' is an alias of 'Get-ChildItem'. Alias can introduce possible problems and make scripts hard to maintain. Please consider changing alias to its full content.PSScriptAnalyzer(PSAvoidUsingCmdletAliases)",
+                        command.CodeAction.Title);
+                    Assert.Equal(
+                        CodeActionKind.QuickFix,
+                        command.CodeAction.Kind);
+                    Assert.Single(command.CodeAction.Edit.DocumentChanges);
+                });
         }
 
         [Fact]
