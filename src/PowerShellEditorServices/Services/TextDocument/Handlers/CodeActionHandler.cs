@@ -87,7 +87,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 string diagnosticId = AnalysisService.GetUniqueIdFromDiagnostic(diagnostic);
                 if (corrections.TryGetValue(diagnosticId, out MarkerCorrection correction))
                 {
-
                     codeActions.Add(new CodeAction
                     {
                         Title = correction.Name,
@@ -121,10 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     !ruleNamesProcessed.Contains(diagnostic.Code.String))
                 {
                     ruleNamesProcessed.Add(diagnostic.Code.String);
-
-                    // This should always be a string but just in case, we fall back to the Long value.
-                    var code = diagnostic.Code.IsString ? diagnostic.Code.String : diagnostic.Code.Long.ToString();
-                    var title = $"Show documentation for: {code}";
+                    var title = $"Show documentation for: {diagnostic.Code.String}";
                     codeActions.Add(new CodeAction
                     {
                         Title = title,
@@ -136,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         {
                             Title = title,
                             Name = "PowerShell.ShowCodeActionDocumentation",
-                            Arguments = JArray.FromObject(new[] { code })
+                            Arguments = JArray.FromObject(new[] { diagnostic.Code.String })
                         }
                     });
                 }
