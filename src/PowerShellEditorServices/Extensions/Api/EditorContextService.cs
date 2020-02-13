@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// Open a fresh untitled file in the editor.
         /// </summary>
         /// <returns>A task that resolves when the file has been opened.</returns>
-        Task OpenNewUntitledFile();
+        Task OpenNewUntitledFileAsync();
 
         /// <summary>
         /// Open the given file in the editor.
@@ -101,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             return new LspCurrentFileContext(clientContext);
         }
 
-        public Task OpenNewUntitledFile()
+        public Task OpenNewUntitledFileAsync()
         {
             return _languageServer.SendRequest<string>("editor/newFile", null);
         }
