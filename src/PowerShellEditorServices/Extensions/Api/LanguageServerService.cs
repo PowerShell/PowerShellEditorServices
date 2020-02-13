@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         Task<TResponse> SendRequestAsync<T, TResponse>(string method, T parameters);
     }
 
-    internal struct LanguageServerService : ILanguageServerService
+    internal class LanguageServerService : ILanguageServerService
     {
         private readonly ILanguageServer _languageServer;
 

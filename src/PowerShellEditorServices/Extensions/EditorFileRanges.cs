@@ -114,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         ILspFileRange SelectionRange { get; }
     }
 
-    internal struct OmnisharpLspPosition : ILspFilePosition
+    internal struct OmnisharpLspPosition : ILspFilePosition, IEquatable<OmnisharpLspPosition>
     {
         private readonly Position _position;
 
@@ -126,9 +126,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public long Line => _position.Line;
 
         public long Character => _position.Character;
+
+        public bool Equals(OmnisharpLspPosition other)
+        {
+            return _position == other._position;
+        }
     }
 
-    internal struct OmnisharpLspRange : ILspFileRange
+    internal struct OmnisharpLspRange : ILspFileRange, IEquatable<OmnisharpLspRange>
     {
         private readonly Range _range;
 
@@ -140,9 +145,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public ILspFilePosition Start => new OmnisharpLspPosition(_range.Start);
 
         public ILspFilePosition End => new OmnisharpLspPosition(_range.End);
+
+        public bool Equals(OmnisharpLspRange other)
+        {
+            return _range == other._range;
+        }
     }
 
-    internal struct BufferFilePosition : IFilePosition
+    internal struct BufferFilePosition : IFilePosition, IEquatable<BufferFilePosition>
     {
         private readonly BufferPosition _position;
 
@@ -154,9 +164,15 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public int Line => _position.Line;
 
         public int Column => _position.Column;
+
+        public bool Equals(BufferFilePosition other)
+        {
+            return _position == other._position
+                || _position.Equals(other._position);
+        }
     }
 
-    internal struct BufferFileRange : IFileRange
+    internal struct BufferFileRange : IFileRange, IEquatable<BufferFileRange>
     {
         private readonly BufferRange _range;
 
@@ -168,6 +184,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public IFilePosition Start => new BufferFilePosition(_range.Start);
 
         public IFilePosition End => new BufferFilePosition(_range.End);
+
+        public bool Equals(BufferFileRange other)
+        {
+            return _range == other._range
+                || _range.Equals(other._range);
+        }
     }
 
     /// <summary>
