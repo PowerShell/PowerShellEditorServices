@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -30,12 +32,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private readonly AnalysisService _analysisService;
 
+        private readonly WorkspaceService _workspaceService;
+
         private CodeActionCapability _capability;
 
-        public CodeActionHandler(ILoggerFactory factory, AnalysisService analysisService)
+        public CodeActionHandler(ILoggerFactory factory, AnalysisService analysisService, WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<TextDocumentHandler>();
             _analysisService = analysisService;
+            _workspaceService = workspaceService;
             _registrationOptions = new CodeActionRegistrationOptions
             {
                 DocumentSelector = new DocumentSelector(new DocumentFilter() { Language = "powershell" }),
@@ -55,7 +60,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<CommandOrCodeActionContainer> Handle(CodeActionParams request, CancellationToken cancellationToken)
         {
-            IReadOnlyDictionary<string, MarkerCorrection> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(request.TextDocument.Uri.OriginalString).ConfigureAwait(false);
+            // On Windows, VSCode still gives us file URIs like "file:///c%3a/...", so we need to escape them
+            IReadOnlyDictionary<string, MarkerCorrection> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
+                _workspaceService.GetFile(request.TextDocument.Uri)).ConfigureAwait(false);
 
             if (corrections == null)
             {
@@ -68,19 +75,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // If there are any code fixes, send these commands first so they appear at top of "Code Fix" menu in the client UI.
             foreach (Diagnostic diagnostic in request.Context.Diagnostics)
             {
-                if (diagnostic.Code.IsLong)
-                {
-                    _logger.LogWarning(
-                        $"textDocument/codeAction skipping diagnostic with non-string code {diagnostic.Code.Long}: {diagnostic.Source} {diagnostic.Message}");
-                }
-                else if (string.IsNullOrEmpty(diagnostic.Code.String))
+                if (string.IsNullOrEmpty(diagnostic.Code.String))
                 {
                     _logger.LogWarning(
                         $"textDocument/codeAction skipping diagnostic with empty Code field: {diagnostic.Source} {diagnostic.Message}");
 
                     continue;
                 }
-
 
                 string diagnosticId = AnalysisService.GetUniqueIdFromDiagnostic(diagnostic);
                 if (corrections.TryGetValue(diagnosticId, out MarkerCorrection correction))

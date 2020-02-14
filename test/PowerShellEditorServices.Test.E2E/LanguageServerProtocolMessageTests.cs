@@ -35,11 +35,11 @@ namespace PowerShellEditorServices.Test.E2E
 
         public LanguageServerProtocolMessageTests(ITestOutputHelper output, LSPTestsFixture data)
         {
-            Diagnostics = new List<Diagnostic>();
             LanguageClient = data.LanguageClient;
             Diagnostics = data.Diagnostics;
-            PwshExe = TestsFixture.PwshExe;
             Diagnostics.Clear();
+
+            PwshExe = TestsFixture.PwshExe;
 
             _output = output;
 

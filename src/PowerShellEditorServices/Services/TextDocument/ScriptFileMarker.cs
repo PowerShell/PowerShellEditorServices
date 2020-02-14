@@ -108,21 +108,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 Source = "PowerShell"
             };
         }
-        private static string GetIfExistsString(PSObject psobj, string memberName)
-        {
-            if (psobj.Members.Match(memberName).Count > 0)
-            {
-                return psobj.Members[memberName].Value != null ? (string)psobj.Members[memberName].Value : "";
-            }
-            else
-            {
-                return "";
-            }
-        }
 
         internal static ScriptFileMarker FromDiagnosticRecord(PSObject psObject)
         {
-            Validate.IsNotNull("psObject", psObject);
+            Validate.IsNotNull(nameof(psObject), psObject);
             MarkerCorrection correction = null;
 
             // make sure psobject is of type DiagnosticRecord
@@ -160,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
                 correction = new MarkerCorrection
                 {
-                    Name = correctionMessage == null ? diagnosticRecord.Message : correctionMessage,
+                    Name = correctionMessage ?? diagnosticRecord.Message,
                     Edits = editRegions.ToArray()
                 };
             }
@@ -175,8 +164,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             return new ScriptFileMarker
             {
-                Message = $"{diagnosticRecord.Message as string}",
-                RuleName = $"{diagnosticRecord.RuleName as string}",
+                Message = diagnosticRecord.Message as string ?? string.Empty,
+                RuleName = diagnosticRecord.RuleName as string ?? string.Empty,
                 Level = level,
                 ScriptRegion = ScriptRegion.Create(diagnosticRecord.Extent as IScriptExtent),
                 Correction = correction,

@@ -20,7 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class ConfigurationHandler : IDidChangeConfigurationHandler
     {
         private readonly ILogger _logger;
-        private readonly AnalysisService _analysisService;
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
         private readonly PowerShellContextService _powerShellContextService;
@@ -37,9 +36,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _logger = factory.CreateLogger<ConfigurationHandler>();
             _workspaceService = workspaceService;
-            _analysisService = analysisService;
             _configurationService = configurationService;
             _powerShellContextService = powerShellContextService;
+
+            ConfigurationUpdated += analysisService.OnConfigurationUpdated;
         }
 
         public object GetRegistrationOptions()
@@ -83,31 +83,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 this._consoleReplStarted = true;
             }
 
-            // If there is a new settings file path, restart the analyzer with the new settings.
-            bool settingsPathChanged = false;
-            string newSettingsPath = _configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
-            if (!string.Equals(oldScriptAnalysisSettingsPath, newSettingsPath, StringComparison.OrdinalIgnoreCase))
-            {
-                if (_analysisService != null)
-                {
-                    _analysisService.SettingsPath = newSettingsPath;
-                    settingsPathChanged = true;
-                }
-            }
-
-            // If script analysis settings have changed we need to clear & possibly update the current diagnostic records.
-            if ((oldScriptAnalysisEnabled != _configurationService.CurrentSettings.ScriptAnalysis?.Enable) || settingsPathChanged)
-            {
-                // If the user just turned off script analysis or changed the settings path, send a diagnostics
-                // event to clear the analysis markers that they already have.
-                if (!_configurationService.CurrentSettings.ScriptAnalysis.Enable.Value || settingsPathChanged)
-                {
-                    foreach (var scriptFile in _workspaceService.GetOpenedFiles())
-                    {
-                        _analysisService.ClearMarkers(scriptFile);
-                    }
-                }
-            }
+            // Run any events subscribed to configuration updates
+            ConfigurationUpdated(this, _configurationService.CurrentSettings);
 
             // Convert the editor file glob patterns into an array for the Workspace
             // Both the files.exclude and search.exclude hash tables look like (glob-text, is-enabled):
@@ -146,5 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _capability = capability;
         }
+
+        public event EventHandler<LanguageServerSettings> ConfigurationUpdated;
     }
 }

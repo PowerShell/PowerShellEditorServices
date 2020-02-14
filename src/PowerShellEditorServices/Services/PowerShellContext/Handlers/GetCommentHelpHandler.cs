@@ -14,7 +14,7 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class GetCommentHelpHandler : IGetCommentHelpHandler
+    internal class GetCommentHelpHandler : IGetCommentHelpHandler
     {
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
@@ -70,21 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 funcText = string.Join("\n", lines);
             }
 
-            List<ScriptFileMarker> analysisResults = await _analysisService.GetSemanticMarkersAsync(
-                funcText,
-                AnalysisService.GetCommentHelpRuleSettings(
-                    enable: true,
-                    exportedOnly: false,
-                    blockComment: request.BlockComment,
-                    vscodeSnippetCorrection: true,
-                    placement: helpLocation));
-
-            if (analysisResults == null || analysisResults.Count == 0)
-            {
-                return result;
-            }
-
-            string helpText = analysisResults[0]?.Correction?.Edits[0].Text;
+            string helpText = await _analysisService.GetCommentHelpText(funcText, helpLocation, forBlockComment: request.BlockComment).ConfigureAwait(false);
 
             if (helpText == null)
             {

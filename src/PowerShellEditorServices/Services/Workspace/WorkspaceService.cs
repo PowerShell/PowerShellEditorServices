@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Microsoft.PowerShell.EditorServices.Services.Workspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using System.Collections.Concurrent;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -53,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ILogger logger;
         private readonly Version powerShellVersion;
-        private readonly Dictionary<string, ScriptFile> workspaceFiles = new Dictionary<string, ScriptFile>();
+        private readonly ConcurrentDictionary<string, ScriptFile> workspaceFiles = new ConcurrentDictionary<string, ScriptFile>();
 
         #endregion
 
@@ -146,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             streamReader,
                             this.powerShellVersion);
 
-                    this.workspaceFiles.Add(keyName, scriptFile);
+                    this.workspaceFiles[keyName] = scriptFile;
                 }
 
                 this.logger.LogDebug("Opened file on disk: " + resolvedFileUri.OriginalString);
@@ -277,7 +278,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             Validate.IsNotNull("scriptFile", scriptFile);
 
-            this.workspaceFiles.Remove(scriptFile.Id);
+            this.workspaceFiles.TryRemove(scriptFile.Id, out ScriptFile _);
         }
 
         /// <summary>
@@ -480,6 +481,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             return isInMemory;
+        }
+
+        internal string ResolveWorkspacePath(string path)
+        {
+            return ResolveRelativeScriptPath(WorkspacePath, path);
         }
 
         internal string ResolveRelativeScriptPath(string baseFilePath, string relativePath)

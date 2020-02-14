@@ -1153,20 +1153,30 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A Task that can be awaited for completion.</returns>
         public async Task LoadHostProfilesAsync()
         {
-            if (this.profilePaths != null)
+            if (this.profilePaths == null)
             {
-                // Load any of the profile paths that exist
-                var command = new PSCommand();
-                foreach (var profilePath in GetLoadableProfilePaths(this.profilePaths))
-                {
-                    command.AddCommand(profilePath, false).AddStatement();
-                }
-                await ExecuteCommandAsync<object>(command, sendOutputToHost: true).ConfigureAwait(false);
-
-                // Gather the session details (particularly the prompt) after
-                // loading the user's profiles.
-                await this.GetSessionDetailsInRunspaceAsync().ConfigureAwait(false);
+                return;
             }
+
+            // Load any of the profile paths that exist
+            var command = new PSCommand();
+            bool hasLoadablePath = false;
+            foreach (var profilePath in GetLoadableProfilePaths(this.profilePaths))
+            {
+                hasLoadablePath = true;
+                command.AddCommand(profilePath, false).AddStatement();
+            }
+
+            if (!hasLoadablePath)
+            {
+                return;
+            }
+
+            await ExecuteCommandAsync<object>(command, sendOutputToHost: true).ConfigureAwait(false);
+
+            // Gather the session details (particularly the prompt) after
+            // loading the user's profiles.
+            await this.GetSessionDetailsInRunspaceAsync().ConfigureAwait(false);
         }
 
         /// <summary>
