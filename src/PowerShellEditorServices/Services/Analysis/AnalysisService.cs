@@ -3,12 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.Analysis;
-using Microsoft.PowerShell.EditorServices.Services.Configuration;
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -17,6 +11,12 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.Analysis;
+using Microsoft.PowerShell.EditorServices.Services.Configuration;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
