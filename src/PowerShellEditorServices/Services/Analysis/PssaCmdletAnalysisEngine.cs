@@ -107,8 +107,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             }
         }
 
-        private const int PSSA_RUNPOOL_SIZE = 10;
-
         private const string PSSA_MODULE_NAME = "PSScriptAnalyzer";
 
         /// <summary>
