@@ -50,12 +50,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         private readonly ExtensionService _extensionService;
         private readonly IEditorOperations _editorOperations;
+        private readonly Lazy<EditorExtensionServiceProvider> _apiLazy;
 
         #endregion
 
         #region Properties
 
-        internal EditorExtensionServiceProvider Api { get; }
+        internal EditorExtensionServiceProvider Api => _apiLazy.Value;
 
         /// <summary>
         /// Gets the version of PowerShell Editor Services.
@@ -93,7 +94,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             // Create API area objects
             this.Workspace = new EditorWorkspace(this._editorOperations);
             this.Window = new EditorWindow(this._editorOperations);
-            this.Api = new EditorExtensionServiceProvider(serviceProvider);
+
+            // Create this lazily so that dependency injection does not have a circular call dependency
+            _apiLazy = new Lazy<EditorExtensionServiceProvider>(() => new EditorExtensionServiceProvider(serviceProvider));
         }
 
         /// <summary>
