@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace PowerShellEditorServices.Logging
+namespace Microsoft.PowerShell.EditorServices.Logging
 {
     /// <summary>
     /// Adapter class to allow logging events sent by the host to be recorded by PSES' logging infrastructure.

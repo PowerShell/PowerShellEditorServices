@@ -5,7 +5,6 @@
 
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Server;
-using PowerShellEditorServices.Logging;
 using Serilog;
 using Serilog.Events;
 using System;
@@ -14,6 +13,7 @@ using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Logging;
 
 #if DEBUG
 using Serilog.Debugging;
