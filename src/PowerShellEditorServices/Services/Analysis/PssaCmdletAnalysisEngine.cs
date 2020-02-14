@@ -107,6 +107,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             }
         }
 
+        private const int PSSA_RUNPOOL_SIZE = 10;
+
         private const string PSSA_MODULE_NAME = "PSScriptAnalyzer";
 
         /// <summary>
@@ -133,19 +135,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
         private readonly string[] _rulesToInclude;
 
-        private bool _alreadyRun;
+        // Used to mitigate the side effects of PSSA opening runspaces with its runspace pool under the hood
+        private int _pssaRunCount;
 
         private PssaCmdletAnalysisEngine(
             ILogger logger,
             RunspacePool analysisRunspacePool,
             PSModuleInfo pssaModuleInfo,
             string[] rulesToInclude)
+            : this(logger, analysisRunspacePool, pssaModuleInfo)
         {
-            _logger = logger;
-            _analysisRunspacePool = analysisRunspacePool;
-            _pssaModuleInfo = pssaModuleInfo;
             _rulesToInclude = rulesToInclude;
-            _alreadyRun = false;
         }
 
         private PssaCmdletAnalysisEngine(
@@ -153,12 +153,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             RunspacePool analysisRunspacePool,
             PSModuleInfo pssaModuleInfo,
             object analysisSettingsParameter)
+            : this(logger, analysisRunspacePool, pssaModuleInfo)
+        {
+            _settingsParameter = analysisSettingsParameter;
+        }
+
+        private PssaCmdletAnalysisEngine(
+            ILogger logger,
+            RunspacePool analysisRunspacePool,
+            PSModuleInfo pssaModuleInfo)
         {
             _logger = logger;
             _analysisRunspacePool = analysisRunspacePool;
             _pssaModuleInfo = pssaModuleInfo;
-            _settingsParameter = analysisSettingsParameter;
-            _alreadyRun = false;
+            _pssaRunCount = 0;
         }
 
         /// <summary>
@@ -347,22 +355,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// <returns>The output of PowerShell execution.</returns>
         private Collection<PSObject> InvokePowerShellWithModulePathPreservation(System.Management.Automation.PowerShell powershell)
         {
-            if (_alreadyRun)
+            if (_pssaRunCount > PSSA_RUNPOOL_SIZE)
             {
                 return powershell.Invoke();
             }
 
-            // PSScriptAnalyzer uses a runspace pool underneath and we need to stop the PSModulePath from being changed by it
-            try
+            // PSScriptAnalyzer uses a runspace pool underneath and we need to stop the PSModulePath from being changed by it on invocation
+            // Each time a new runspace is opened we need to take this precaution, which is effectively a lock
+            // But when the runspace pool is at capacity and stops opening new runspaces, we can stop
+            using (PSModulePathPreserver.Take())
             {
-                using (PSModulePathPreserver.Take())
+                try
                 {
                     return powershell.Invoke();
                 }
-            }
-            finally
-            {
-                _alreadyRun = true;
+                finally
+                {
+                    Interlocked.Increment(ref _pssaRunCount);
+                }
             }
         }
 

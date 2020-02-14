@@ -3,21 +3,20 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
-using System.Threading;
-using System.Collections.Concurrent;
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using System;
 using System.Collections;
-using System.Runtime.InteropServices;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -92,11 +91,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ConcurrentDictionary<ScriptFile, CorrectionTableEntry> _mostRecentCorrectionsByFile;
 
-        private bool _hasInstantiatedAnalysisEngine;
-
-        private PssaCmdletAnalysisEngine _analysisEngine;
+        private Lazy<PssaCmdletAnalysisEngine> _analysisEngine;
 
         private CancellationTokenSource _diagnosticsCancellationTokenSource;
+
+        #region Engine Initialization
+        #endregion
 
         /// <summary>
         /// Construct a new AnalysisService.
@@ -118,25 +118,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _workplaceService = workspaceService;
             _analysisDelayMillis = 750;
             _mostRecentCorrectionsByFile = new ConcurrentDictionary<ScriptFile, CorrectionTableEntry>();
-            _hasInstantiatedAnalysisEngine = false;
+            _analysisEngine = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
         }
 
         /// <summary>
         /// The analysis engine to use for running script analysis.
         /// </summary>
-        private PssaCmdletAnalysisEngine AnalysisEngine
-        {
-            get
-            {
-                if (!_hasInstantiatedAnalysisEngine)
-                {
-                    _analysisEngine = InstantiateAnalysisEngine();
-                    _hasInstantiatedAnalysisEngine = true;
-                }
-
-                return _analysisEngine;
-            }
-        }
+        private PssaCmdletAnalysisEngine AnalysisEngine => _analysisEngine.Value;
 
         /// <summary>
         /// Sets up a script analysis run, eventually returning the result.
@@ -270,7 +258,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public void OnConfigurationUpdated(object sender, LanguageServerSettings settings)
         {
             ClearOpenFileMarkers();
-            _analysisEngine = InstantiateAnalysisEngine();
+            _analysisEngine = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
         }
 
         private PssaCmdletAnalysisEngine InstantiateAnalysisEngine()
@@ -457,7 +445,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 if (disposing)
                 {
-                    _analysisEngine?.Dispose();
+                    if (_analysisEngine.IsValueCreated) { _analysisEngine.Value.Dispose(); }
                     _diagnosticsCancellationTokenSource?.Dispose();
                 }
 
