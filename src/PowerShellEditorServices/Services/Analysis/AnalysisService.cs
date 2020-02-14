@@ -95,9 +95,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private CancellationTokenSource _diagnosticsCancellationTokenSource;
 
-        #region Engine Initialization
-        #endregion
-
         /// <summary>
         /// Construct a new AnalysisService.
         /// </summary>
