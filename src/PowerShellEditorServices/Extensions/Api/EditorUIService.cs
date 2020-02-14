@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PowerShellEditorServices.Extensions.Api
+namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 {
     /// <summary>
     /// Object specifying a UI prompt option to display to the user.
