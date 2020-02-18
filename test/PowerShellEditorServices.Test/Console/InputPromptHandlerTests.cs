@@ -47,17 +47,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     CancellationToken.None);
 
             Assert.Equal(NameField, inputPromptHandler.LastField.Name);
-            await inputPromptHandler.ReturnInputString(NameValue);
+            await inputPromptHandler.ReturnInputString(NameValue).ConfigureAwait(false);
 
             Assert.Equal(AgeField, inputPromptHandler.LastField.Name);
-            await inputPromptHandler.ReturnInputString(AgeValue.ToString());
+            await inputPromptHandler.ReturnInputString(AgeValue.ToString()).ConfigureAwait(false);
 
             Assert.Equal(BooksField + "[0]", inputPromptHandler.LastField.Name);
-            await inputPromptHandler.ReturnInputString((string)BookItems[0]);
+            await inputPromptHandler.ReturnInputString((string)BookItems[0]).ConfigureAwait(false);
             Assert.Equal(BooksField + "[1]", inputPromptHandler.LastField.Name);
-            await inputPromptHandler.ReturnInputString((string)BookItems[1]);
+            await inputPromptHandler.ReturnInputString((string)BookItems[1]).ConfigureAwait(false);
             Assert.Equal(BooksField + "[2]", inputPromptHandler.LastField.Name);
-            await inputPromptHandler.ReturnInputString("");
+            await inputPromptHandler.ReturnInputString("").ConfigureAwait(false);
 
             // Make sure the right results are returned
             Assert.Equal(TaskStatus.RanToCompletion, promptTask.Status);
@@ -83,8 +83,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     CancellationToken.None);
 
             Assert.Equal("Numbers[0]", inputPromptHandler.LastField.Name);
-            await inputPromptHandler.ReturnInputString("1");
-            await inputPromptHandler.ReturnInputString("");
+            await inputPromptHandler.ReturnInputString("1").ConfigureAwait(false);
+            await inputPromptHandler.ReturnInputString("").ConfigureAwait(false);
 
             // Make sure the right results are returned
             Assert.Equal(TaskStatus.RanToCompletion, promptTask.Status);
@@ -105,19 +105,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     CancellationToken.None);
 
             Assert.Equal(NameField, inputPromptHandler.LastField.Name);
-            await inputPromptHandler.ReturnInputString(NameValue);
+            await inputPromptHandler.ReturnInputString(NameValue).ConfigureAwait(false);
 
             // Intentionally give a non-integer string to cause an error
             Assert.Equal(AgeField, inputPromptHandler.LastField.Name);
-            await inputPromptHandler.ReturnInputString(NameValue);
+            await inputPromptHandler.ReturnInputString(NameValue).ConfigureAwait(false);
             Assert.NotNull(inputPromptHandler.LastError);
 
             // Give the right value the next time
             Assert.Equal(AgeField, inputPromptHandler.LastField.Name);
-            await inputPromptHandler.ReturnInputString(AgeValue.ToString());
+            await inputPromptHandler.ReturnInputString(AgeValue.ToString()).ConfigureAwait(false);
 
             Assert.Equal(BooksField + "[0]", inputPromptHandler.LastField.Name);
-            await inputPromptHandler.ReturnInputString("");
+            await inputPromptHandler.ReturnInputString("").ConfigureAwait(false);
 
             // Make sure the right results are returned
             Assert.Equal(TaskStatus.RanToCompletion, promptTask.Status);
@@ -180,4 +180,3 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         }
     }
 }
-
