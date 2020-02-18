@@ -15,6 +15,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
+    // TODO: Bring these tests back when we've mocked more of the O# LSP middleware
+
+    /*
     public class InputPromptHandlerTests
     {
         const string NameField = "Name";
@@ -179,4 +182,5 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             this.LastError = e;
         }
     }
+    */
 }
