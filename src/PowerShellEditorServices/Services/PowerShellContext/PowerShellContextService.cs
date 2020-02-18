@@ -183,14 +183,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             var logger = factory.CreateLogger<PowerShellContextService>();
 
-            // We should only use PSReadLine if we specificied that we want a console repl
-            // and we have not explicitly said to use the legacy ReadLine.
-            // We also want it if we are either:
-            // * On Windows on any version OR
-            // * On Linux or macOS on any version greater than or equal to 7
             bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
-                && !hostStartupInfo.UsesLegacyReadLine
-                && (VersionUtils.IsWindows || !VersionUtils.IsPS6);
+                && !hostStartupInfo.UsesLegacyReadLine;
 
             var powerShellContext = new PowerShellContextService(
                 logger,
