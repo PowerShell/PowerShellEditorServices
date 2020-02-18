@@ -164,12 +164,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
     public interface IDocumentSymbolService
     {
         /// <summary>
-        /// Try to register a document symbol provider by its ID.
+        /// Register a document symbol provider by its ID.
         /// If another provider is already registered by the same ID, this will fail and return false.
         /// </summary>
         /// <param name="documentSymbolProvider">The document symbol provider to register.</param>
         /// <returns>True if the symbol provider was successfully registered, false otherwise.</returns>
-        bool TryRegisterDocumentSymbolProvider(IDocumentSymbolProvider documentSymbolProvider);
+        bool RegisterDocumentSymbolProvider(IDocumentSymbolProvider documentSymbolProvider);
 
         /// <summary>
         /// Deregister a symbol provider of the given ID.
@@ -188,7 +188,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             _symbolsService = symbolsService;
         }
 
-        public bool TryRegisterDocumentSymbolProvider(IDocumentSymbolProvider documentSymbolProvider)
+        public bool RegisterDocumentSymbolProvider(IDocumentSymbolProvider documentSymbolProvider)
         {
             return _symbolsService.TryRegisterDocumentSymbolProvider(new ExternalDocumentSymbolProviderAdapter(documentSymbolProvider));
         }
