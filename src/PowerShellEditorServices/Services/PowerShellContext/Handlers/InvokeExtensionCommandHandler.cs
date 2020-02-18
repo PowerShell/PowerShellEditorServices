@@ -5,9 +5,9 @@
 
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
-using MediatR;
 using Microsoft.PowerShell.EditorServices.Extensions;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers

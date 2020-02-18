@@ -3,11 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Extensions.Services;
-using Microsoft.PowerShell.EditorServices.Services;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Extensions.Services;
+using Microsoft.PowerShell.EditorServices.Services;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {

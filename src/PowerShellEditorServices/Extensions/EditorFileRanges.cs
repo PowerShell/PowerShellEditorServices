@@ -333,10 +333,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         internal static bool HasRange(this IFileRange range)
         {
-            return range.Start.Line == 0
-                && range.Start.Column == 0
-                && range.End.Line == 0
-                && range.End.Column == 0;
+            return range.Start.Line != 0
+                && range.Start.Column != 0
+                && range.End.Line != 0
+                && range.End.Column != 0;
         }
         internal static ILspFilePosition ToLspPosition(this Position position)
         {

@@ -33,7 +33,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
-        private readonly IEnumerable<ICodeLensProvider> _codeLensProviders;
 
         private CodeLensCapability _capability;
 
@@ -42,7 +41,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _logger = factory.CreateLogger<FoldingRangeHandler>();
             _workspaceService = workspaceService;
             _symbolsService = symbolsService;
-            _codeLensProviders = _symbolsService.GetCodeLensProviders();
         }
 
         CodeLensRegistrationOptions IRegistration<CodeLensRegistrationOptions>.GetRegistrationOptions()
@@ -74,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public bool CanResolve(CodeLens value)
         {
             CodeLensData codeLensData = value.Data.ToObject<CodeLensData>();
-            return value?.Data != null && _codeLensProviders.Any(provider => provider.ProviderId.Equals(codeLensData.ProviderId));
+            return value?.Data != null && _symbolsService.GetCodeLensProviders().Any(provider => provider.ProviderId.Equals(codeLensData.ProviderId));
         }
 
         public Task<CodeLens> Handle(CodeLens request, CancellationToken cancellationToken)
@@ -82,9 +80,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // TODO: Catch deserializtion exception on bad object
             CodeLensData codeLensData = request.Data.ToObject<CodeLensData>();
 
-            ICodeLensProvider originalProvider =
-                _codeLensProviders.FirstOrDefault(
-                    provider => provider.ProviderId.Equals(codeLensData.ProviderId));
+            ICodeLensProvider originalProvider = _symbolsService
+                .GetCodeLensProviders()
+                .FirstOrDefault(provider => provider.ProviderId.Equals(codeLensData.ProviderId));
 
             ScriptFile scriptFile =
                 _workspaceService.GetFile(
@@ -126,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             Stopwatch invokeTimer = new Stopwatch();
             List<TResult> providerResults = new List<TResult>();
 
-            foreach (ICodeLensProvider provider in _codeLensProviders)
+            foreach (ICodeLensProvider provider in _symbolsService.GetCodeLensProviders())
             {
                 try
                 {

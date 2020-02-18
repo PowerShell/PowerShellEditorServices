@@ -3,12 +3,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 {
@@ -29,6 +29,8 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                 throw new ArgumentNullException(nameof(label));
             }
 
+            // Currently VSCode sends back selected labels as a single string concatenated with ','
+            // When this is fixed, we'll be able to allow commas in labels
             if (label.Contains(","))
             {
                 throw new ArgumentException($"Labels may not contain ','. Label: '{label}'", nameof(label));
@@ -186,6 +188,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                 {
                     Label           = promptChoiceDetails[i].Label,
                     HelpMessage     = promptChoiceDetails[i].HelpMessage,
+                    // There were intended to enable hotkey use for choice selections,
+                    // but currently VSCode does not do anything with them.
+                    // They can be exposed once VSCode supports them.
                     HotKeyIndex     = -1,
                     HotKeyCharacter = null,
                 };

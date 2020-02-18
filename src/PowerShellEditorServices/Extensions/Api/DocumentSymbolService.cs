@@ -3,12 +3,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+
 using Internal = Microsoft.PowerShell.EditorServices.Services.Symbols;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions.Services
