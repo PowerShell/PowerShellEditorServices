@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         {
             _serviceProvider = serviceProvider;
             LanguageServer = new LanguageServerService(_serviceProvider.GetService<ILanguageServer>());
-            DocumentSymbols = new DocumentSymbolService(_serviceProvider.GetService<SymbolsService>());
+            //DocumentSymbols = new DocumentSymbolService(_serviceProvider.GetService<SymbolsService>());
             ExtensionCommands = new ExtensionCommandService(_serviceProvider.GetService<ExtensionService>());
             Workspace = new WorkspaceService(_serviceProvider.GetService<Internal.WorkspaceService>());
             EditorContext = new EditorContextService(_serviceProvider.GetService<ILanguageServer>());
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <summary>
         /// Service providing document symbol provider registration.
         /// </summary>
-        public IDocumentSymbolService DocumentSymbols { get; }
+        // public IDocumentSymbolService DocumentSymbols { get; }
 
         /// <summary>
         /// Service providing extension command registration and functionality.

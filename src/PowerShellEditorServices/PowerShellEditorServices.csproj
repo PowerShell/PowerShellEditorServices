@@ -51,4 +51,8 @@
     <PackageReference Include="UnixConsoleEcho" Version="0.1.0" />
     <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.15.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Extensions\Api\DocumentSymbolService.cs"/>
+  </ItemGroup>
 </Project>

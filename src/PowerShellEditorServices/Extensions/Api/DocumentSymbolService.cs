@@ -12,6 +12,9 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 using Internal = Microsoft.PowerShell.EditorServices.Services.Symbols;
 
+// TODO: This is currently disabled in the csproj
+//       Redesign this API and bring it back once it's fit for purpose
+
 namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 {
     /// <summary>
