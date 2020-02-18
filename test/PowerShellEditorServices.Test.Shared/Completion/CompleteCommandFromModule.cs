@@ -8,7 +8,7 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 {
-    public class CompleteCommandFromModule
+    internal class CompleteCommandFromModule
     {
         private static readonly string[] s_getRandomParamSets = {
             "Get-Random [[-Maximum] <Object>] [-SetSeed <int>] [-Minimum <Object>] [<CommonParameters>]",
