@@ -145,7 +145,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
             // TODO: refactor tests to not need this Delay. There seems to be a race condition
             // in how this test cleans up after SetResult is run.
-            return Task.Delay(100);
+            return Task.Delay(300);
         }
 
         public void ReturnSecureString(SecureString secureString)
