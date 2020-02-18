@@ -13,8 +13,12 @@ using System.Reflection;
 using SMA = System.Management.Automation;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Collections;
+
+// TODO: Remove this when we drop support for PS6.
+#if CoreCLR
+using System.Runtime.InteropServices;
+#endif
 
 #if DEBUG
 using System.Diagnostics;
@@ -32,8 +36,13 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     [Cmdlet(VerbsLifecycle.Start, "EditorServices", DefaultParameterSetName = "NamedPipe")]
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
-        // TODO: Remove this when we drop support for PS6
-        private static bool _isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        // TODO: Remove this when we drop support for PS6.
+        private static bool s_isWindows =
+#if CoreCLR
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+#else
+        true;
+#endif
 
         private readonly List<IDisposable> _disposableResources;
 
@@ -396,12 +405,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 return ConsoleReplKind.None;
             }
 
-            // TODO: Remove this when we drop PS6 support.
+            // TODO: Remove this when we drop support for PS6.
             var psVersionTable = (Hashtable) this.SessionState.PSVariable.GetValue("PSVersionTable");
             dynamic version = psVersionTable["PSVersion"];
             var majorVersion = (int) version.Major;
 
-            if (UseLegacyReadLine || (!_isWindows && majorVersion == 6))
+            if (UseLegacyReadLine || (!s_isWindows && majorVersion == 6))
             {
                 _logger.Log(PsesLogLevel.Diagnostic, "REPL configured as Legacy");
                 return ConsoleReplKind.LegacyReadLine;
