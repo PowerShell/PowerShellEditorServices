@@ -55,6 +55,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
     public interface IEditorUIService
     {
         /// <summary>
+        /// Prompt input after displaying the given message.
+        /// </summary>
+        /// <param name="message">The message to display with the prompt.</param>
+        /// <returns>The input entered by the user, or null if the prompt was canceled.</returns>
+        Task<string> PromptInput(string message);
+
+        /// <summary>
         /// Prompt a single selection from a set of choices.
         /// </summary>
         /// <param name="message">The message to display for the prompt.</param>
@@ -98,6 +105,24 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         public EditorUIService(ILanguageServer languageServer)
         {
             _languageServer = languageServer;
+        }
+
+        public async Task<string> PromptInput(string message)
+        {
+            // The VSCode client currently doesn't use the Label field, so we ignore it
+            ShowInputPromptResponse response = await _languageServer.SendRequest<ShowInputPromptRequest, ShowInputPromptResponse>(
+                "powerShell/showInputPrompt",
+                new ShowInputPromptRequest
+                {
+                    Name = message,
+                });
+
+            if (response.PromptCancelled)
+            {
+                return null;
+            }
+
+            return response.ResponseText;
         }
 
         public Task<IReadOnlyList<string>> PromptMultipleSelection(string message, IReadOnlyList<PromptChoiceDetails> choices) =>
