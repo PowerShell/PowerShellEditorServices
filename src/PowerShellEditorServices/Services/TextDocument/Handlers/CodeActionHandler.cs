@@ -5,8 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -86,11 +85,23 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 string diagnosticId = AnalysisService.GetUniqueIdFromDiagnostic(diagnostic);
                 if (corrections.TryGetValue(diagnosticId, out MarkerCorrection correction))
                 {
-                    codeActions.Add(new Command()
+                    codeActions.Add(new CodeAction
                     {
                         Title = correction.Name,
-                        Name = "PowerShell.ApplyCodeActionEdits",
-                        Arguments = JArray.FromObject(correction.Edits)
+                        Kind = CodeActionKind.QuickFix,
+                        Edit = new WorkspaceEdit
+                        {
+                            DocumentChanges = new Container<WorkspaceEditDocumentChange>(
+                                new WorkspaceEditDocumentChange(
+                                    new TextDocumentEdit
+                                    {
+                                        TextDocument = new VersionedTextDocumentIdentifier
+                                        {
+                                            Uri = request.TextDocument.Uri
+                                        },
+                                        Edits = new Container<TextEdit>(correction.Edits.Select(ScriptRegion.ToTextEdit))
+                                    }))
+                        }
                     });
                 }
             }
@@ -107,14 +118,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     !ruleNamesProcessed.Contains(diagnostic.Code.String))
                 {
                     ruleNamesProcessed.Add(diagnostic.Code.String);
-
-                    codeActions.Add(
-                        new Command
+                    var title = $"Show documentation for: {diagnostic.Code.String}";
+                    codeActions.Add(new CodeAction
+                    {
+                        Title = title,
+                        // This doesn't fix anything, but I'm adding it here so that it shows up in VS Code's
+                        // Quick fix UI. The VS Code team is working on a way to support documentation CodeAction's better
+                        // but this is good for now until that's ready.
+                        Kind = CodeActionKind.QuickFix,
+                        Command = new Command
                         {
-                            Title = $"Show documentation for \"{diagnostic.Code}\"",
+                            Title = title,
                             Name = "PowerShell.ShowCodeActionDocumentation",
-                            Arguments = JArray.FromObject(new[] { diagnostic.Code })
-                        });
+                            Arguments = JArray.FromObject(new[] { diagnostic.Code.String })
+                        }
+                    });
                 }
             }
 

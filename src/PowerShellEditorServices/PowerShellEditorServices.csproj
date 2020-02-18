@@ -36,7 +36,7 @@
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="3.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
-    <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.14.2" />
+    <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.15.0" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
     <PackageReference Include="Serilog" Version="2.9.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
@@ -46,6 +46,6 @@
     <PackageReference Include="System.Security.Principal" Version="4.3.0" />
     <PackageReference Include="System.Security.Principal.Windows" Version="4.7.0" />
     <PackageReference Include="UnixConsoleEcho" Version="0.1.0" />
-    <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.14.2" />
+    <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.15.0" />
   </ItemGroup>
 </Project>

@@ -5,6 +5,7 @@
 
 using System;
 using System.Management.Automation.Language;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 {
@@ -47,6 +48,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 scriptExtent.EndLineNumber,
                 scriptExtent.EndColumnNumber,
                 scriptExtent.EndOffset);
+        }
+
+        internal static TextEdit ToTextEdit(ScriptRegion scriptRegion)
+        {
+            return new TextEdit
+            {
+                NewText = scriptRegion.Text,
+                Range = new Range
+                {
+                    Start = new Position
+                    {
+                        Line = scriptRegion.StartLineNumber - 1,
+                        Character = scriptRegion.StartColumnNumber - 1,
+                    },
+                    End = new Position
+                    {
+                        Line = scriptRegion.EndLineNumber - 1,
+                        Character = scriptRegion.EndColumnNumber - 1,
+                    }
+                }
+            };
         }
 
         #endregion

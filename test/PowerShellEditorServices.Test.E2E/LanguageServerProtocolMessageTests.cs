@@ -665,8 +665,23 @@ CanSendReferencesCodeLensRequest
                         }
                     });
 
-            Assert.Single(commandOrCodeActions,
-                command => command.Command.Name == "PowerShell.ApplyCodeActionEdits");
+            Assert.Collection(commandOrCodeActions,
+                command =>
+                {
+                    Assert.Equal(
+                        "Replace gci with Get-ChildItem",
+                        command.CodeAction.Title);
+                    Assert.Equal(
+                        CodeActionKind.QuickFix.Kind,
+                        command.CodeAction.Kind.Kind);
+                    Assert.Single(command.CodeAction.Edit.DocumentChanges);
+                },
+                command =>
+                {
+                    Assert.Equal(
+                        "PowerShell.ShowCodeActionDocumentation",
+                        command.CodeAction.Command.Name);
+                });
         }
 
         [Fact]
