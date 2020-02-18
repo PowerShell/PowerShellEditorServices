@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                 throw new TaskCanceledException(task);
                             }
 
-                            return this.GetSingleResult(task.Result);
+                            return this.GetSingleResult(task.GetAwaiter().GetResult());
                         }));
         }
 
@@ -205,7 +205,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 throw new PipelineStoppedException();
             }
 
-            return taskToWait.Result;
+            return await taskToWait.ConfigureAwait(false);
         }
 
         private async Task<int[]> StartPromptLoopAsync(

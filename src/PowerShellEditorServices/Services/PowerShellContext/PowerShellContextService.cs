@@ -431,11 +431,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// the runspace.  This method will be moved somewhere else soon.
         /// </summary>
         /// <returns></returns>
-        public Task ImportCommandsModuleAsync()
+        public Task ImportCommandsModuleAsync() => ImportCommandsModuleAsync(s_commandsModulePath);
+
+        public Task ImportCommandsModuleAsync(string path)
         {
             PSCommand importCommand = new PSCommand()
                 .AddCommand("Import-Module")
-                .AddArgument(s_commandsModulePath);
+                .AddArgument(path);
 
             return this.ExecuteCommandAsync<PSObject>(importCommand, sendOutputToHost: false, sendErrorToHost: false);
         }

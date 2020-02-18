@@ -3,27 +3,58 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Session;
-using Microsoft.PowerShell.EditorServices.Test.Console;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Hosting;
+using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
+using System.Collections.Generic;
 using System.IO;
-using Microsoft.PowerShell.EditorServices.Utility;
-using Microsoft.PowerShell.EditorServices.Console;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Management.Automation.Host;
 
 namespace Microsoft.PowerShell.EditorServices.Test
 {
     internal static class PowerShellContextFactory
     {
-        public static PowerShellContext Create(ILogger logger)
+        // NOTE: These paths are arbitrarily chosen just to verify that the profile paths
+        //       can be set to whatever they need to be for the given host.
+
+        public static readonly ProfilePathInfo TestProfilePaths =
+            new ProfilePathInfo(
+                    Path.GetFullPath(
+                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/Test.PowerShellEditorServices_profile.ps1")),
+                    Path.GetFullPath(
+                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/ProfileTest.ps1")),
+                    Path.GetFullPath(
+                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Test.PowerShellEditorServices_profile.ps1")),
+                    Path.GetFullPath(
+                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
+
+        public static PowerShellContextService Create(ILogger logger)
         {
-            PowerShellContext powerShellContext = new PowerShellContext(logger, isPSReadLineEnabled: false);
+            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
+
+            HostStartupInfo testHostDetails = new HostStartupInfo(
+                "PowerShell Editor Services Test Host",
+                "Test.PowerShellEditorServices",
+                new Version("1.0.0"),
+                null,
+                TestProfilePaths,
+                new List<string>(),
+                new List<string>(),
+                null,
+                0,
+                consoleReplEnabled: false,
+                usesLegacyReadLine: false);
+
+
             powerShellContext.Initialize(
-                PowerShellContextTests.TestProfilePaths,
-                PowerShellContext.CreateRunspace(
-                    PowerShellContextTests.TestHostDetails,
+                TestProfilePaths,
+                PowerShellContextService.CreateRunspace(
+                    testHostDetails,
                     powerShellContext,
                     new TestPSHostUserInterface(powerShellContext, logger),
                     logger),
@@ -36,12 +67,12 @@ namespace Microsoft.PowerShell.EditorServices.Test
     public class TestPSHostUserInterface : EditorServicesPSHostUserInterface
     {
         public TestPSHostUserInterface(
-            PowerShellContext powerShellContext,
+            PowerShellContextService powerShellContext,
             ILogger logger)
             : base(
                 powerShellContext,
                 new SimplePSHostRawUserInterface(logger),
-                Logging.NullLogger)
+                NullLogger.Instance)
         {
         }
 

@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Console;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -11,7 +10,8 @@ using Xunit;
 using System;
 using System.Threading;
 using System.Security;
-using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
@@ -34,8 +34,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 new CollectionFieldDetails(BooksField, "Favorite Books", typeof(IList), false, null)
             };
 
+        [Trait("Category", "Prompt")]
         [Fact]
-        public void InputPromptHandlerReturnsValuesOfCorrectType()
+        public async Task InputPromptHandlerReturnsValuesOfCorrectType()
         {
             TestInputPromptHandler inputPromptHandler = new TestInputPromptHandler();
             Task<Dictionary<string, object>> promptTask =
@@ -46,17 +47,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     CancellationToken.None);
 
             Assert.Equal(NameField, inputPromptHandler.LastField.Name);
-            inputPromptHandler.ReturnInputString(NameValue);
+            await inputPromptHandler.ReturnInputString(NameValue).ConfigureAwait(false);
 
             Assert.Equal(AgeField, inputPromptHandler.LastField.Name);
-            inputPromptHandler.ReturnInputString(AgeValue.ToString());
+            await inputPromptHandler.ReturnInputString(AgeValue.ToString()).ConfigureAwait(false);
 
             Assert.Equal(BooksField + "[0]", inputPromptHandler.LastField.Name);
-            inputPromptHandler.ReturnInputString((string)BookItems[0]);
+            await inputPromptHandler.ReturnInputString((string)BookItems[0]).ConfigureAwait(false);
             Assert.Equal(BooksField + "[1]", inputPromptHandler.LastField.Name);
-            inputPromptHandler.ReturnInputString((string)BookItems[1]);
+            await inputPromptHandler.ReturnInputString((string)BookItems[1]).ConfigureAwait(false);
             Assert.Equal(BooksField + "[2]", inputPromptHandler.LastField.Name);
-            inputPromptHandler.ReturnInputString("");
+            await inputPromptHandler.ReturnInputString("").ConfigureAwait(false);
 
             // Make sure the right results are returned
             Assert.Equal(TaskStatus.RanToCompletion, promptTask.Status);
@@ -66,8 +67,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             Assert.Equal(BookItems, fieldValues[BooksField]);
         }
 
+        [Trait("Category", "Prompt")]
         [Fact]
-        public void InputPromptHandlerAcceptsArrayOfNonStringValues()
+        public async Task InputPromptHandlerAcceptsArrayOfNonStringValues()
         {
             TestInputPromptHandler inputPromptHandler = new TestInputPromptHandler();
             Task<Dictionary<string, object>> promptTask =
@@ -81,8 +83,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     CancellationToken.None);
 
             Assert.Equal("Numbers[0]", inputPromptHandler.LastField.Name);
-            inputPromptHandler.ReturnInputString("1");
-            inputPromptHandler.ReturnInputString("");
+            await inputPromptHandler.ReturnInputString("1").ConfigureAwait(false);
+            await inputPromptHandler.ReturnInputString("").ConfigureAwait(false);
 
             // Make sure the right results are returned
             Assert.Equal(TaskStatus.RanToCompletion, promptTask.Status);
@@ -90,8 +92,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             Assert.Equal(new int[] { 1 }, fieldValues["Numbers"]);
         }
 
+        [Trait("Category", "Prompt")]
         [Fact]
-        public void InputPromptRetriesWhenCannotCastValue()
+        public async Task InputPromptRetriesWhenCannotCastValue()
         {
             TestInputPromptHandler inputPromptHandler = new TestInputPromptHandler();
             Task<Dictionary<string, object>> promptTask =
@@ -102,19 +105,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     CancellationToken.None);
 
             Assert.Equal(NameField, inputPromptHandler.LastField.Name);
-            inputPromptHandler.ReturnInputString(NameValue);
+            await inputPromptHandler.ReturnInputString(NameValue).ConfigureAwait(false);
 
             // Intentionally give a non-integer string to cause an error
             Assert.Equal(AgeField, inputPromptHandler.LastField.Name);
-            inputPromptHandler.ReturnInputString(NameValue);
+            await inputPromptHandler.ReturnInputString(NameValue).ConfigureAwait(false);
             Assert.NotNull(inputPromptHandler.LastError);
 
             // Give the right value the next time
             Assert.Equal(AgeField, inputPromptHandler.LastField.Name);
-            inputPromptHandler.ReturnInputString(AgeValue.ToString());
+            await inputPromptHandler.ReturnInputString(AgeValue.ToString()).ConfigureAwait(false);
 
             Assert.Equal(BooksField + "[0]", inputPromptHandler.LastField.Name);
-            inputPromptHandler.ReturnInputString("");
+            await inputPromptHandler.ReturnInputString("").ConfigureAwait(false);
 
             // Make sure the right results are returned
             Assert.Equal(TaskStatus.RanToCompletion, promptTask.Status);
@@ -132,13 +135,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public Exception LastError { get; private set; }
 
-        public TestInputPromptHandler() : base(Logging.NullLogger)
+        public TestInputPromptHandler() : base(NullLogger.Instance)
         {
         }
 
-        public void ReturnInputString(string inputString)
+        public Task ReturnInputString(string inputString)
         {
             this.linePromptTask.SetResult(inputString);
+
+            // TODO: refactor tests to not need this Delay. There seems to be a race condition
+            // in how this test cleans up after SetResult is run.
+            return Task.Delay(100);
         }
 
         public void ReturnSecureString(SecureString secureString)
@@ -173,4 +180,3 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         }
     }
 }
-

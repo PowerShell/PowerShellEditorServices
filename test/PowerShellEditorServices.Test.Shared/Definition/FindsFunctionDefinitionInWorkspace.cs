@@ -3,18 +3,21 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared.Definition
 {
     public class FindsFunctionDefinitionInWorkspace
     {
         public static readonly ScriptRegion SourceDetails =
-            new ScriptRegion
-            {
-                File = TestUtilities.NormalizePath("References/ReferenceFileD.ps1"),
-                StartLineNumber = 1,
-                StartColumnNumber = 2
-            };
+            new ScriptRegion(
+                file: TestUtilities.NormalizePath("References/ReferenceFileD.ps1"),
+                text: string.Empty,
+                startLineNumber: 1,
+                startColumnNumber: 2,
+                startOffset: 0,
+                endLineNumber: 0,
+                endColumnNumber: 0,
+                endOffset: 0);
     }
 }

@@ -1,7 +1,6 @@
-using System;
 using Xunit;
-using Microsoft.PowerShell.EditorServices;
 using System.IO;
+using Microsoft.PowerShell.EditorServices.Services;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Session
 {
@@ -9,6 +8,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
     {
         private const string ScriptAssetPath = @"..\..\..\..\PowerShellEditorServices.Test.Shared\scriptassets";
 
+        [Trait("Category", "PathEscaping")]
         [Theory]
         [InlineData("DebugTest.ps1", "DebugTest.ps1")]
         [InlineData("../../DebugTest.ps1", "../../DebugTest.ps1")]
@@ -25,10 +25,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData("C:\\&nimals\\утка\\qu*ck?.ps1", "C:\\&nimals\\утка\\qu`*ck`?.ps1")]
         public void CorrectlyWildcardEscapesPaths_NoSpaces(string unescapedPath, string escapedPath)
         {
-            string extensionEscapedPath = PowerShellContext.WildcardEscapePath(unescapedPath);
+            string extensionEscapedPath = PowerShellContextService.WildcardEscapePath(unescapedPath);
             Assert.Equal(escapedPath, extensionEscapedPath);
         }
 
+        [Trait("Category", "PathEscaping")]
         [Theory]
         [InlineData("DebugTest.ps1", "DebugTest.ps1")]
         [InlineData("../../DebugTest.ps1", "../../DebugTest.ps1")]
@@ -45,10 +46,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData("C:\\&nimals\\утка\\qu*ck?.ps1", "C:\\&nimals\\утка\\qu`*ck`?.ps1")]
         public void CorrectlyWildcardEscapesPaths_Spaces(string unescapedPath, string escapedPath)
         {
-            string extensionEscapedPath = PowerShellContext.WildcardEscapePath(unescapedPath, escapeSpaces: true);
+            string extensionEscapedPath = PowerShellContextService.WildcardEscapePath(unescapedPath, escapeSpaces: true);
             Assert.Equal(escapedPath, extensionEscapedPath);
         }
 
+        [Trait("Category", "PathEscaping")]
         [Theory]
         [InlineData("DebugTest.ps1", "'DebugTest.ps1'")]
         [InlineData("../../DebugTest.ps1", "'../../DebugTest.ps1'")]
@@ -66,10 +68,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData("C:\\&nimals\\утка\\qu*ck?.ps1", "'C:\\&nimals\\утка\\qu*ck?.ps1'")]
         public void CorrectlyQuoteEscapesPaths(string unquotedPath, string expectedQuotedPath)
         {
-            string extensionQuotedPath = PowerShellContext.QuoteEscapeString(unquotedPath);
+            string extensionQuotedPath = PowerShellContextService.QuoteEscapeString(unquotedPath);
             Assert.Equal(expectedQuotedPath, extensionQuotedPath);
         }
 
+        [Trait("Category", "PathEscaping")]
         [Theory]
         [InlineData("DebugTest.ps1", "'DebugTest.ps1'")]
         [InlineData("../../DebugTest.ps1", "'../../DebugTest.ps1'")]
@@ -87,10 +90,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData("C:\\&nimals\\утка\\qu*ck?.ps1", "'C:\\&nimals\\утка\\qu`*ck`?.ps1'")]
         public void CorrectlyFullyEscapesPaths(string unescapedPath, string escapedPath)
         {
-            string extensionEscapedPath = PowerShellContext.FullyPowerShellEscapePath(unescapedPath);
+            string extensionEscapedPath = PowerShellContextService.FullyPowerShellEscapePath(unescapedPath);
             Assert.Equal(escapedPath, extensionEscapedPath);
         }
 
+        [Trait("Category", "PathEscaping")]
         [Theory]
         [InlineData("DebugTest.ps1", "DebugTest.ps1")]
         [InlineData("../../DebugTest.ps1", "../../DebugTest.ps1")]
@@ -107,10 +111,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData("C:\\&nimals\\утка\\qu`*ck`?.ps1", "C:\\&nimals\\утка\\qu*ck?.ps1")]
         public void CorrectlyUnescapesPaths(string escapedPath, string expectedUnescapedPath)
         {
-            string extensionUnescapedPath = PowerShellContext.UnescapeWildcardEscapedPath(escapedPath);
+            string extensionUnescapedPath = PowerShellContextService.UnescapeWildcardEscapedPath(escapedPath);
             Assert.Equal(expectedUnescapedPath, extensionUnescapedPath);
         }
 
+        [Trait("Category", "PathEscaping")]
         [Theory]
         [InlineData("NormalScript.ps1")]
         [InlineData("Bad&name4script.ps1")]
@@ -118,7 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         public void CanDotSourcePath(string rawFileName)
         {
             string fullPath = Path.Combine(ScriptAssetPath, rawFileName);
-            string quotedPath = PowerShellContext.QuoteEscapeString(fullPath);
+            string quotedPath = PowerShellContextService.QuoteEscapeString(fullPath);
 
             var psCommand = new System.Management.Automation.PSCommand().AddScript($". {quotedPath}");
 

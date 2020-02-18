@@ -7,8 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
-using Microsoft.PowerShell.EditorServices.Utility;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Session
@@ -32,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             string testPathOutside = TestUtilities.NormalizePath("c:/Test/PeerPath/FilePath.ps1");
             string testPathAnotherDrive = TestUtilities.NormalizePath("z:/TryAndFindMe/FilePath.ps1");
 
-            Workspace workspace = new Workspace(PowerShellVersion, Logging.NullLogger);
+            WorkspaceService workspace = new WorkspaceService(NullLoggerFactory.Instance);
 
             // Test without a workspace path
             Assert.Equal(testPathOutside, workspace.GetRelativePath(testPathOutside));
@@ -47,9 +48,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             Assert.Equal(testPathAnotherDrive, workspace.GetRelativePath(testPathAnotherDrive));
         }
 
-        public static Workspace FixturesWorkspace()
+        public static WorkspaceService FixturesWorkspace()
         {
-            return new Workspace(PowerShellVersion, Logging.NullLogger) {
+            return new WorkspaceService(NullLoggerFactory.Instance) {
                 WorkspacePath = TestUtilities.NormalizePath("Fixtures/Workspace")
             };
         }
@@ -62,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         private static bool     s_defaultIgnoreReparsePoints = false;
 
         public static List<string> ExecuteEnumeratePSFiles(
-            Workspace workspace,
+            WorkspaceService workspace,
             string[] excludeGlobs,
             string[] includeGlobs,
             int maxDepth,
@@ -186,7 +187,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             foreach (var testCase in testCases)
             {
                 Assert.True(
-                    Workspace.IsPathInMemory(testCase.Path) == testCase.IsInMemory,
+                    WorkspaceService.IsPathInMemory(testCase.Path) == testCase.IsInMemory,
                     $"Testing path {testCase.Path}");
             }
         }
@@ -196,11 +197,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [MemberData(nameof(PathsToResolve), parameters: 2)]
         public void CorrectlyResolvesPaths(string givenPath, string expectedPath)
         {
-            Workspace workspace = new Workspace(PowerShellVersion, Logging.NullLogger);
+            WorkspaceService workspace = new WorkspaceService(NullLoggerFactory.Instance);
 
-            string resolvedPath = workspace.ResolveFilePath(givenPath);
+            Uri resolvedPath = workspace.ResolveFileUri(new Uri(givenPath));
 
-            Assert.Equal(expectedPath, resolvedPath);
+            Assert.Equal(expectedPath, resolvedPath.LocalPath);
         }
 
         public static IEnumerable<object[]> PathsToResolve
@@ -218,12 +219,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             new object[] { "file:///C%3A/banana/", @"C:\banana\" },
             new object[] { "file:///C%3A/banana/ex.ps1", @"C:\banana\ex.ps1" },
             new object[] { "file:///E%3A/Path/to/awful%23path", @"E:\Path\to\awful#path" },
-            new object[] { "file:///path/with/no/drive", $@"{CurrentDriveLetter}:\path\with\no\drive" },
-            new object[] { "file:///path/wi[th]/squ[are/brackets/", $@"{CurrentDriveLetter}:\path\wi[th]\squ[are\brackets\" },
-            new object[] { "file:///Carrots/A%5Ere/Good/", $@"{CurrentDriveLetter}:\Carrots\A^re\Good\" },
-            new object[] { "file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", $@"{CurrentDriveLetter}:\Users\barnaby\脚本\Reduce-Directory" },
+            new object[] { "file:///path/with/no/drive", "/path/with/no/drive" },
+            new object[] { "file:///path/wi[th]/squ[are/brackets/", "/path/wi[th]/squ[are/brackets/" },
+            new object[] { "file:///Carrots/A%5Ere/Good/", "/Carrots/A^re/Good/" },
+            new object[] { "file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", "/Users/barnaby/脚本/Reduce-Directory" },
             new object[] { "file:///C%3A/Program%20Files%20%28x86%29/PowerShell/6/pwsh.exe", @"C:\Program Files (x86)\PowerShell\6\pwsh.exe" },
-            new object[] { "file:///home/maxim/test%20folder/%D0%9F%D0%B0%D0%BF%D0%BA%D0%B0/helloworld.ps1", $@"{CurrentDriveLetter}:\home\maxim\test folder\Папка\helloworld.ps1" }
+            new object[] { "file:///home/maxim/test%20folder/%D0%9F%D0%B0%D0%BF%D0%BA%D0%B0/helloworld.ps1", "/home/maxim/test folder/Папка/helloworld.ps1" }
         };
 
         private static object[][] s_unixPathsToResolve = new object[][]

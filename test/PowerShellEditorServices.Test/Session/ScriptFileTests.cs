@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.IO;
@@ -16,11 +16,12 @@ namespace PSLanguageService.Test
     {
 
 #if CoreCLR
-        private static readonly Version PowerShellVersion = new Version(6, 1);
+        private static readonly Version PowerShellVersion = new Version(6, 2);
 #else
         private static readonly Version PowerShellVersion = new Version(5, 1);
 #endif
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanApplySingleLineInsert()
         {
@@ -37,6 +38,7 @@ namespace PSLanguageService.Test
                 });
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanApplySingleLineReplace()
         {
@@ -53,6 +55,7 @@ namespace PSLanguageService.Test
                 });
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanApplySingleLineDelete()
         {
@@ -69,6 +72,7 @@ namespace PSLanguageService.Test
                 });
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanApplyMultiLineInsert()
         {
@@ -85,6 +89,7 @@ namespace PSLanguageService.Test
                 });
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanApplyMultiLineReplace()
         {
@@ -101,6 +106,7 @@ namespace PSLanguageService.Test
                 });
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanApplyMultiLineReplaceWithRemovedLines()
         {
@@ -117,6 +123,7 @@ namespace PSLanguageService.Test
                 });
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanApplyMultiLineDelete()
         {
@@ -133,6 +140,7 @@ namespace PSLanguageService.Test
                 });
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanApplyEditsToEndOfFile()
         {
@@ -149,6 +157,7 @@ namespace PSLanguageService.Test
                 });
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanAppendToEndOfFile()
         {
@@ -166,6 +175,7 @@ namespace PSLanguageService.Test
             );
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void FindsDotSourcedFiles()
         {
@@ -180,8 +190,8 @@ namespace PSLanguageService.Test
             {
                 ScriptFile scriptFile =
                     new ScriptFile(
-                        "DotSourceTestFile.ps1",
-                        "DotSourceTestFile.ps1",
+                        // Use any absolute path. Even if it doesn't exist.
+                        new Uri(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                         stringReader,
                         PowerShellVersion);
 
@@ -191,6 +201,7 @@ namespace PSLanguageService.Test
             }
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void ThrowsExceptionWithEditOutsideOfRange()
         {
@@ -211,6 +222,7 @@ namespace PSLanguageService.Test
                 });
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanDeleteFromEndOfFile()
         {
@@ -235,8 +247,8 @@ namespace PSLanguageService.Test
                 // Create an in-memory file from the StringReader
                 ScriptFile fileToChange =
                     new ScriptFile(
-                        "TestFile.ps1",
-                        "TestFile.ps1",
+                        // Use any absolute path. Even if it doesn't exist.
+                        new Uri(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                         stringReader,
                         PowerShellVersion);
 
@@ -285,6 +297,7 @@ namespace PSLanguageService.Test
                 TestString_TrailingNewline);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetWholeLine()
         {
@@ -296,6 +309,7 @@ namespace PSLanguageService.Test
             Assert.Equal("Line Five", lines[0]);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetMultipleWholeLines()
         {
@@ -306,6 +320,7 @@ namespace PSLanguageService.Test
             Assert.Equal(s_testStringLines_noTrailingNewline.Skip(1).Take(3), lines);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetSubstringInSingleLine()
         {
@@ -317,6 +332,7 @@ namespace PSLanguageService.Test
             Assert.Equal("ne Fo", lines[0]);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetEmptySubstringRange()
         {
@@ -328,6 +344,7 @@ namespace PSLanguageService.Test
             Assert.Equal("", lines[0]);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetSubstringInMultipleLines()
         {
@@ -345,6 +362,7 @@ namespace PSLanguageService.Test
             Assert.Equal(expectedLines, lines);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetRangeAtLineBoundaries()
         {
@@ -362,18 +380,21 @@ namespace PSLanguageService.Test
             Assert.Equal(expectedLines, lines);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanSplitLines_NoTrailingNewline()
         {
             Assert.Equal(s_testStringLines_noTrailingNewline, _scriptFile_noTrailingNewline.FileLines);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanSplitLines_TrailingNewline()
         {
             Assert.Equal(s_testStringLines_trailingNewline, _scriptFile_trailingNewline.FileLines);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetSameLinesWithUnixLineBreaks()
         {
@@ -381,6 +402,7 @@ namespace PSLanguageService.Test
             Assert.Equal(_scriptFile_noTrailingNewline.FileLines, unixFile.FileLines);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetLineForEmptyString()
         {
@@ -389,6 +411,7 @@ namespace PSLanguageService.Test
             Assert.Equal(string.Empty, emptyFile.FileLines[0]);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetLineForSpace()
         {
@@ -412,6 +435,7 @@ First line
 ");
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanOffsetByLine()
         {
@@ -426,6 +450,7 @@ First line
                 1, 1);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanOffsetByColumn()
         {
@@ -440,6 +465,7 @@ First line
                 2, 2);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void ThrowsWhenPositionOutOfRange()
         {
@@ -480,6 +506,7 @@ First line
                 });
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanFindBeginningOfLine()
         {
@@ -489,6 +516,7 @@ First line
                 4, 5);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanFindEndOfLine()
         {
@@ -498,6 +526,7 @@ First line
                 4, 15);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanComposePositionOperations()
         {
@@ -539,10 +568,12 @@ First line
     {
         private static readonly Version PowerShellVersion = new Version("5.0");
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void PropertiesInitializedCorrectlyForFile()
         {
-            var path = "TestFile.ps1";
+            // Use any absolute path. Even if it doesn't exist.
+            var path = Path.Combine(Path.GetTempPath(), "TestFile.ps1");
             var scriptFile = ScriptFileChangeTests.CreateScriptFile("");
 
             Assert.Equal(path, scriptFile.FilePath);
@@ -555,6 +586,7 @@ First line
             Assert.Single(scriptFile.FileLines);
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void PropertiesInitializedCorrectlyForUntitled()
         {
@@ -568,7 +600,7 @@ First line
             using (StringReader stringReader = new StringReader(script))
             {
                 // Create an in-memory file from the StringReader
-                var scriptFile = new ScriptFile(path, path, stringReader, PowerShellVersion);
+                var scriptFile = new ScriptFile(new Uri(path), stringReader, PowerShellVersion);
 
                 Assert.Equal(path, scriptFile.FilePath);
                 Assert.Equal(path, scriptFile.ClientFilePath);
@@ -582,6 +614,7 @@ First line
             }
         }
 
+        [Trait("Category", "ScriptFile")]
         [Fact]
         public void DocumentUriRetunsCorrectStringForAbsolutePath()
         {
@@ -592,35 +625,35 @@ First line
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
                 path = @"C:\Users\AmosBurton\projects\Rocinate\ProtoMolecule.ps1";
-                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///c%3A/Users/AmosBurton/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
 
                 path = @"c:\Users\BobbieDraper\projects\Rocinate\foo's_~#-[@] +,;=%.ps1";
-                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///c%3A/Users/BobbieDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
 
                 // Test UNC path
                 path = @"\\ClarissaMao\projects\Rocinate\foo's_~#-[@] +,;=%.ps1";
-                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file://ClarissaMao/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
             }
             else
             {
                 // Test the following only on Linux and macOS.
                 path = "/home/AlexKamal/projects/Rocinate/ProtoMolecule.ps1";
-                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/AlexKamal/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
 
                 path = "/home/BobbieDraper/projects/Rocinate/foo's_~#-[@] +,;=%.ps1";
-                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/BobbieDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
 
                 path = "/home/NaomiNagata/projects/Rocinate/Proto:Mole:cule.ps1";
-                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/NaomiNagata/projects/Rocinate/Proto%3AMole%3Acule.ps1", scriptFile.DocumentUri);
 
                 path = "/home/JamesHolden/projects/Rocinate/Proto:Mole\\cule.ps1";
-                scriptFile = new ScriptFile(path, path, emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/JamesHolden/projects/Rocinate/Proto%3AMole%5Ccule.ps1", scriptFile.DocumentUri);
             }
         }

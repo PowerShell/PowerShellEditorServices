@@ -4,6 +4,9 @@
 //
 
 using System;
+using System.IO;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Language
@@ -15,12 +18,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         /// </summary>
         private FoldingReference[] GetRegions(string text) {
             ScriptFile scriptFile = new ScriptFile(
-                "testfile",
-                "clienttestfile",
+                // Use any absolute path. Even if it doesn't exist.
+                new Uri(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
                 Version.Parse("5.0"));
 
-            var result = Microsoft.PowerShell.EditorServices.TokenOperations.FoldableReferences(scriptFile.ScriptTokens).ToArray();
+            var result = TokenOperations.FoldableReferences(scriptFile.ScriptTokens).ToArray();
             // The foldable regions need to be deterministic for testing so sort the array.
             Array.Sort(result);
             return result;
@@ -29,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         /// <summary>
         /// Helper method to create FoldingReference objects with less typing
         /// </summary>
-        private static FoldingReference CreateFoldingReference(int startLine, int startCharacter, int endLine, int endCharacter, string matchKind) {
+        private static FoldingReference CreateFoldingReference(int startLine, int startCharacter, int endLine, int endCharacter, FoldingRangeKind? matchKind) {
             return new FoldingReference {
                 StartLine      = startLine,
                 StartCharacter = startCharacter,
@@ -130,21 +133,21 @@ $foo = 'bar'
 #EnDReGion
 ";
         private FoldingReference[] expectedAllInOneScriptFolds = {
-            CreateFoldingReference(0,   0,  4, 10, "region"),
-            CreateFoldingReference(1,   0,  3,  2, "comment"),
-            CreateFoldingReference(10,  0, 15,  2, "comment"),
+            CreateFoldingReference(0,   0,  4, 10, FoldingRangeKind.Region),
+            CreateFoldingReference(1,   0,  3,  2, FoldingRangeKind.Comment),
+            CreateFoldingReference(10,  0, 15,  2, FoldingRangeKind.Comment),
             CreateFoldingReference(16, 30, 63,  1, null),
-            CreateFoldingReference(17,  0, 22,  2, "comment"),
+            CreateFoldingReference(17,  0, 22,  2, FoldingRangeKind.Comment),
             CreateFoldingReference(23,  7, 26,  2, null),
             CreateFoldingReference(31,  5, 34,  2, null),
-            CreateFoldingReference(38,  2, 40,  0, "comment"),
-            CreateFoldingReference(42,  2, 52, 14, "region"),
-            CreateFoldingReference(44,  4, 48, 14, "region"),
+            CreateFoldingReference(38,  2, 40,  0, FoldingRangeKind.Comment),
+            CreateFoldingReference(42,  2, 52, 14, FoldingRangeKind.Region),
+            CreateFoldingReference(44,  4, 48, 14, FoldingRangeKind.Region),
             CreateFoldingReference(54,  7, 56,  3, null),
             CreateFoldingReference(59,  7, 62,  3, null),
-            CreateFoldingReference(67,  0, 69,  0, "comment"),
-            CreateFoldingReference(70,  0, 75, 26, "region"),
-            CreateFoldingReference(71,  0, 73,  0, "comment"),
+            CreateFoldingReference(67,  0, 69,  0, FoldingRangeKind.Comment),
+            CreateFoldingReference(70,  0, 75, 26, FoldingRangeKind.Region),
+            CreateFoldingReference(71,  0, 73,  0, FoldingRangeKind.Comment),
             CreateFoldingReference(78,  0, 80,  6, null),
         };
 
@@ -201,7 +204,7 @@ $something = 'foldable'
 #region should not fold - mismatched
 ";
             FoldingReference[] expectedFolds = {
-                CreateFoldingReference(2, 0, 4, 10, "region")
+                CreateFoldingReference(2, 0, 4, 10, FoldingRangeKind.Region)
             };
 
             FoldingReference[] result = GetRegions(testString);
@@ -256,6 +259,7 @@ $y = $(
         }
 
         // A simple PowerShell Classes test
+        [Trait("Category", "Folding")]
         [Fact]
         public void LaguageServiceFindsFoldablRegionsWithClasses() {
             string testString =
@@ -282,6 +286,7 @@ $y = $(
         }
 
         // This tests DSC style keywords and param blocks
+        [Trait("Category", "Folding")]
         [Fact]
         public void LaguageServiceFindsFoldablRegionsWithDSC() {
             string testString =

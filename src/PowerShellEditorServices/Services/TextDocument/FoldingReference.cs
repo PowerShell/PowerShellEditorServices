@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// <summary>
     /// A class that holds the information for a foldable region of text in a document
     /// </summary>
-    public class FoldingReference: IComparable<FoldingReference>
+    public class FoldingReference: IComparable<FoldingReference>, IEquatable<FoldingReference>
     {
         /// <summary>
         /// The zero-based line number from where the folded range starts.
@@ -59,8 +59,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             if (this.EndCharacter > that.EndCharacter) { return 1; }
 
             // They're the same range, but what about kind
-            return that.Kind.Value - this.Kind.Value;
+            if (this.Kind == null)
+            {
+                if (that.Kind == null)
+                {
+                    return 0;
+                }
+                // that has a kind but this doesn't.
+                return 1;
+            }
+
+            if (that.Kind != null)
+            {
+                return that.Kind.Value - this.Kind.Value;
+            }
+
+            // this has a kind but that doesn't.
+            return -1;
         }
+
+        public bool Equals(FoldingReference other) => this.CompareTo(other) == 0;
     }
 
     /// <summary>
