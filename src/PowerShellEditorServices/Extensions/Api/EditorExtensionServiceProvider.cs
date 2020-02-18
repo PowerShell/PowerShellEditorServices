@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                 serviceType = Type.GetType(asmQualifiedTypeName);
             }
 
-            return _serviceProvider.GetService(serviceType);
+            return GetService(serviceType);
         }
 
         /// <summary>
