@@ -13,6 +13,12 @@ using System.Reflection;
 using SMA = System.Management.Automation;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using System.Globalization;
+using System.Collections;
+
+// TODO: Remove this when we drop support for PS6.
+#if CoreCLR
+using System.Runtime.InteropServices;
+#endif
 
 #if DEBUG
 using System.Diagnostics;
@@ -30,6 +36,14 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     [Cmdlet(VerbsLifecycle.Start, "EditorServices", DefaultParameterSetName = "NamedPipe")]
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
+        // TODO: Remove this when we drop support for PS6.
+        private static bool s_isWindows =
+#if CoreCLR
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+#else
+        true;
+#endif
+
         private readonly List<IDisposable> _disposableResources;
 
         private readonly List<IDisposable> _loggerUnsubscribers;
@@ -376,6 +390,11 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 $"{HostProfileId}_profile.ps1");
         }
 
+        // We should only use PSReadLine if we specificied that we want a console repl
+        // and we have not explicitly said to use the legacy ReadLine.
+        // We also want it if we are either:
+        // * On Windows on any version OR
+        // * On Linux or macOS on any version greater than or equal to 7
         private ConsoleReplKind GetReplKind()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Determining REPL kind");
@@ -386,7 +405,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 return ConsoleReplKind.None;
             }
 
-            if (UseLegacyReadLine)
+            // TODO: Remove this when we drop support for PS6.
+            var psVersionTable = (Hashtable) this.SessionState.PSVariable.GetValue("PSVersionTable");
+            dynamic version = psVersionTable["PSVersion"];
+            var majorVersion = (int) version.Major;
+
+            if (UseLegacyReadLine || (!s_isWindows && majorVersion == 6))
             {
                 _logger.Log(PsesLogLevel.Diagnostic, "REPL configured as Legacy");
                 return ConsoleReplKind.LegacyReadLine;
