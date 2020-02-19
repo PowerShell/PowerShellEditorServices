@@ -1,6 +1,6 @@
 # PowerShell Editor Services Release History
 
-## v2.0.0
+## v2.0.0-preview.9
 ### Thursday, February 20, 2020
 
 - 🐛📁 [vscode-PowerShell #2421](https://github.com/powershell/powershelleditorservices/pull/1161) -
@@ -30,7 +30,7 @@
   fixing an error when PSScriptAnalyzer is not available, fix CodeActions not appearing on Windows,
   fix an issue where the PSModulePath is reset by PSScriptAnalyzer opening new runspaces.
 - 🚂 [PowerShellEditorServices #1183](https://github.com/PowerShell/PowerShellEditorServices/pull/1183) -
-  Mark APIs not intended for consumption as non-public.
+  Close over public APIs not intended for external use and replace with new, async-friendly APIs.
 
 ## v2.0.0-preview.8
 ### Monday, January 13, 2020
