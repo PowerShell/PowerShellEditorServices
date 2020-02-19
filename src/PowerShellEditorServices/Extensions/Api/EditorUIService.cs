@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// </summary>
         /// <param name="message">The message to display with the prompt.</param>
         /// <returns>The input entered by the user, or null if the prompt was canceled.</returns>
-        Task<string> PromptInput(string message);
+        Task<string> PromptInputAsync(string message);
 
         /// <summary>
         /// Prompt a single selection from a set of choices.
@@ -69,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <param name="message">The message to display for the prompt.</param>
         /// <param name="choices">The choices to give the user.</param>
         /// <returns>The label of the selected choice, or null if the prompt was canceled.</returns>
-        Task<string> PromptSelection(string message, IReadOnlyList<PromptChoiceDetails> choices);
+        Task<string> PromptSelectionAsync(string message, IReadOnlyList<PromptChoiceDetails> choices);
 
         /// <summary>
         /// Prompt a single selection from a set of choices.
@@ -78,7 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <param name="choices">The choices to give the user.</param>
         /// <param name="defaultChoiceIndex">The index in the choice list of the default choice.</param>
         /// <returns>The label of the selected choice, or null if the prompt was canceled.</returns>
-        Task<string> PromptSelection(string message, IReadOnlyList<PromptChoiceDetails> choices, int defaultChoiceIndex);
+        Task<string> PromptSelectionAsync(string message, IReadOnlyList<PromptChoiceDetails> choices, int defaultChoiceIndex);
 
         /// <summary>
         /// Prompt a set of selections from a list of choices.
@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <param name="message">The message to display for the prompt.</param>
         /// <param name="choices">The choices to give the user.</param>
         /// <returns>A list of the labels of selected choices, or null if the prompt was canceled.</returns>
-        Task<IReadOnlyList<string>> PromptMultipleSelection(string message, IReadOnlyList<PromptChoiceDetails> choices);
+        Task<IReadOnlyList<string>> PromptMultipleSelectionAsync(string message, IReadOnlyList<PromptChoiceDetails> choices);
 
         /// <summary>
         /// Prompt a set of selections from a list of choices.
@@ -95,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <param name="choices">The choices to give the user.</param>
         /// <param name="defaultChoiceIndexes">A list of the indexes of choices to mark as default.</param>
         /// <returns>A list of the labels of selected choices, or null if the prompt was canceled.</returns>
-        Task<IReadOnlyList<string>> PromptMultipleSelection(string message, IReadOnlyList<PromptChoiceDetails> choices, IReadOnlyList<int> defaultChoiceIndexes);
+        Task<IReadOnlyList<string>> PromptMultipleSelectionAsync(string message, IReadOnlyList<PromptChoiceDetails> choices, IReadOnlyList<int> defaultChoiceIndexes);
     }
 
     internal class EditorUIService : IEditorUIService
@@ -109,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             _languageServer = languageServer;
         }
 
-        public async Task<string> PromptInput(string message)
+        public async Task<string> PromptInputAsync(string message)
         {
             // The VSCode client currently doesn't use the Label field, so we ignore it
             ShowInputPromptResponse response = await _languageServer.SendRequest<ShowInputPromptRequest, ShowInputPromptResponse>(
@@ -127,10 +127,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             return response.ResponseText;
         }
 
-        public Task<IReadOnlyList<string>> PromptMultipleSelection(string message, IReadOnlyList<PromptChoiceDetails> choices) =>
-            PromptMultipleSelection(message, choices, defaultChoiceIndexes: null);
+        public Task<IReadOnlyList<string>> PromptMultipleSelectionAsync(string message, IReadOnlyList<PromptChoiceDetails> choices) =>
+            PromptMultipleSelectionAsync(message, choices, defaultChoiceIndexes: null);
 
-        public async Task<IReadOnlyList<string>> PromptMultipleSelection(string message, IReadOnlyList<PromptChoiceDetails> choices, IReadOnlyList<int> defaultChoiceIndexes)
+        public async Task<IReadOnlyList<string>> PromptMultipleSelectionAsync(string message, IReadOnlyList<PromptChoiceDetails> choices, IReadOnlyList<int> defaultChoiceIndexes)
         {
             ChoiceDetails[] choiceDetails = GetChoiceDetails(choices);
 
@@ -153,10 +153,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             return response.ResponseText.Split(s_choiceResponseLabelSeparators, StringSplitOptions.None);
         }
 
-        public Task<string> PromptSelection(string message, IReadOnlyList<PromptChoiceDetails> choices) =>
-            PromptSelection(message, choices, defaultChoiceIndex: -1);
+        public Task<string> PromptSelectionAsync(string message, IReadOnlyList<PromptChoiceDetails> choices) =>
+            PromptSelectionAsync(message, choices, defaultChoiceIndex: -1);
 
-        public async Task<string> PromptSelection(string message, IReadOnlyList<PromptChoiceDetails> choices, int defaultChoiceIndex)
+        public async Task<string> PromptSelectionAsync(string message, IReadOnlyList<PromptChoiceDetails> choices, int defaultChoiceIndex)
         {
             ChoiceDetails[] choiceDetails = GetChoiceDetails(choices);
 
