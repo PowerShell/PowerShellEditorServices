@@ -1,5 +1,37 @@
 # PowerShell Editor Services Release History
 
+## v2.0.0-preview.9
+### Thursday, February 20, 2020
+
+- 🐛📁 [vscode-PowerShell #2421](https://github.com/powershell/powershelleditorservices/pull/1161) -
+  Fix WorkspacePath so that references work with non-ASCII characters.
+- 🐛📟 [vscode-PowerShell #2372](https://github.com/powershell/powershelleditorservices/pull/1162) -
+  Fix prompt behavior when debugging.
+- 🐛🛫 [PowerShellEditorServices #1171](https://github.com/powershell/powershelleditorservices/pull/1171) -
+  Fix race condition where running multiple profiles caused errors.
+- 🐛📟 [vscode-PowerShell #2420](https://github.com/powershell/powershelleditorservices/pull/1173) -
+  Fix an issue where pasting to a `Get-Credential` prompt in some Windows versions caused a crash.
+- 🐛📟 [vscode-PowerShell #1790](https://github.com/powershell/powershelleditorservices/pull/1174) -
+  Fix an inconsistency where `Read-Host -Prompt 'prompt'` would return `$null` rather than empty string
+  when given no input.
+- 🐛🔗 [PowerShellEditorServices #1177](https://github.com/powershell/powershelleditorservices/pull/1174) -
+  Fix an issue where untitled files did not work with CodeLens.
+- ⚡️⏱️ [PowerShellEditorServices #1172](https://github.com/powershell/powershelleditorservices/pull/1172) -
+  Improve `async`/`await` and `Task` usage to reduce concurrency overhead and improve performance.
+- 🐛📟 [PowerShellEditorServices #1178](https://github.com/powershell/powershelleditorservices/pull/1178) -
+  Improve PSReadLine experience where no new line is rendered in the console.
+- ✨🔍 [PowerShellEditorServices #1119](https://github.com/powershell/powershelleditorservices/pull/1119) -
+  Enable new debugging APIs added in PowerShell 7, improving performance and fixing issues where
+  the debugger would hang or be unable to update breakpoints while scripts were running.
+- 👷📟 [PowerShellEditorServices #1187](https://github.com/PowerShell/PowerShellEditorServices/pull/1187) -
+  Upgrade built-in PSReadLine to 2.0.0 GA.
+- 🐛👮 [PowerShellEditorServices #1179](https://github.com/PowerShell/PowerShellEditorServices/pull/1179) -
+  Improve integration with PSScriptAnalyzer, improving performance,
+  fixing an error when PSScriptAnalyzer is not available, fix CodeActions not appearing on Windows,
+  fix an issue where the PSModulePath is reset by PSScriptAnalyzer opening new runspaces.
+- 🚂 [PowerShellEditorServices #1183](https://github.com/PowerShell/PowerShellEditorServices/pull/1183) -
+  Close over public APIs not intended for external use and replace with new, async-friendly APIs.
+
 ## v2.0.0-preview.8
 ### Monday, January 13, 2020
 
