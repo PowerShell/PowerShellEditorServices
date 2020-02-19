@@ -4,16 +4,14 @@
 //
 
 using System;
-using System.Linq;
-using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
     /// Provides context for the host editor at the time of creation.
     /// </summary>
-    public class EditorContext
+    public sealed class EditorContext
     {
         #region Private Fields
 
@@ -31,12 +29,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <summary>
         /// Gets the BufferRange representing the current selection in the file.
         /// </summary>
-        public BufferRange SelectedRange { get; private set; }
+        public IFileRange SelectedRange { get; private set; }
 
         /// <summary>
         /// Gets the FilePosition representing the current cursor position.
         /// </summary>
-        public FilePosition CursorPosition { get; private set; }
+        public IFilePosition CursorPosition { get; private set; }
 
         #endregion
 
@@ -50,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="cursorPosition">The position of the user's cursor in the active editor buffer.</param>
         /// <param name="selectedRange">The range of the user's selection in the active editor buffer.</param>
         /// <param name="language">Determines the language of the file.false If it is not specified, then it defaults to "Unknown"</param>
-        public EditorContext(
+        internal EditorContext(
             IEditorOperations editorOperations,
             ScriptFile currentFile,
             BufferPosition cursorPosition,
@@ -59,8 +57,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             this.editorOperations = editorOperations;
             this.CurrentFile = new FileContext(currentFile, this, editorOperations, language);
-            this.SelectedRange = selectedRange;
-            this.CursorPosition = new FilePosition(currentFile, cursorPosition);
+            this.SelectedRange = new BufferFileRange(selectedRange);
+            this.CursorPosition = new BufferFilePosition(cursorPosition);
         }
 
         #endregion
@@ -81,9 +79,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             int endColumn)
         {
             this.SetSelection(
-                new BufferRange(
-                    startLine, startColumn,
-                    endLine, endColumn));
+                new FileRange(
+                    new FilePosition(startLine, startColumn),
+                    new FilePosition(endLine, endColumn)));
         }
 
         /// <summary>
@@ -92,11 +90,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="startPosition">The starting position of the selection.</param>
         /// <param name="endPosition">The ending position of the selection.</param>
         public void SetSelection(
-            BufferPosition startPosition,
-            BufferPosition endPosition)
+            FilePosition startPosition,
+            FilePosition endPosition)
         {
             this.SetSelection(
-                new BufferRange(
+                new FileRange(
                     startPosition,
                     endPosition));
         }
@@ -105,10 +103,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// Sets a selection in the host editor's active buffer.
         /// </summary>
         /// <param name="selectionRange">The range of the selection.</param>
-        public void SetSelection(BufferRange selectionRange)
+        public void SetSelection(FileRange selectionRange)
         {
             this.editorOperations
-                .SetSelectionAsync(selectionRange)
+                .SetSelectionAsync(selectionRange.ToBufferRange())
                 .Wait();
         }
 

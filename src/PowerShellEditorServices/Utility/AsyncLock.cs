@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     /// synchronization locking inside of async calls.  Cannot be
     /// used recursively.
     /// </summary>
-    public class AsyncLock
+    internal class AsyncLock
     {
         #region Fields
 

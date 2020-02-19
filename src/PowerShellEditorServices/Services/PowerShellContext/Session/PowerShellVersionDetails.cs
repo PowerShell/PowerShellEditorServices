@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Defines the possible enumeration values for the PowerShell process architecture.
     /// </summary>
-    public enum PowerShellProcessArchitecture
+    internal enum PowerShellProcessArchitecture
     {
         /// <summary>
         /// The processor architecture is unknown or wasn't accessible.
@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides details about the version of the PowerShell runtime.
     /// </summary>
-    public class PowerShellVersionDetails
+    internal class PowerShellVersionDetails
     {
         #region Properties
 

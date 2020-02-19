@@ -8,7 +8,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Contains details about an executed
     /// </summary>
-    public class ExecutionStatusChangedEventArgs
+    internal class ExecutionStatusChangedEventArgs
     {
         #region Properties
 

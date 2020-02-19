@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// Contains details about the host as well as any other information
     /// needed by Editor Services at startup time.
     /// </summary>
-    public class HostStartupInfo
+    public sealed class HostStartupInfo
     {
         #region Constants
 
@@ -150,7 +150,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         #endregion
     }
 
-    public class ProfilePathInfo
+    public sealed class ProfilePathInfo
     {
         public ProfilePathInfo(
             string currentUserAllHosts,

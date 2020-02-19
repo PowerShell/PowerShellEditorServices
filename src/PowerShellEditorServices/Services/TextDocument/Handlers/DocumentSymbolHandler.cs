@@ -22,7 +22,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class DocumentSymbolHandler : IDocumentSymbolHandler
+    internal class DocumentSymbolHandler : IDocumentSymbolHandler
     {
         private readonly DocumentSelector _documentSelector = new DocumentSelector(
             new DocumentFilter
@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            IEnumerable<SymbolReference> foundSymbols =
+            IEnumerable<ISymbolReference> foundSymbols =
                 this.ProvideDocumentSymbols(scriptFile);
 
             SymbolInformationOrDocumentSymbol[] symbols = null;
@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _capability = capability;
         }
 
-        private IEnumerable<SymbolReference> ProvideDocumentSymbols(
+        private IEnumerable<ISymbolReference> ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
             return
@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
         }
 
-        private static string GetDecoratedSymbolName(SymbolReference symbolReference)
+        private static string GetDecoratedSymbolName(ISymbolReference symbolReference)
         {
             string name = symbolReference.SymbolName;
 

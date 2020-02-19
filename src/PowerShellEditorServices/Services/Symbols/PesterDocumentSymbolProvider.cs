@@ -15,10 +15,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// Provides an IDocumentSymbolProvider implementation for
     /// enumerating test symbols in Pester test (tests.ps1) files.
     /// </summary>
-    public class PesterDocumentSymbolProvider : IDocumentSymbolProvider
+    internal class PesterDocumentSymbolProvider : IDocumentSymbolProvider
     {
+        string IDocumentSymbolProvider.ProviderId => nameof(PesterDocumentSymbolProvider);
 
-        IEnumerable<SymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
+        IEnumerable<ISymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
             if (!scriptFile.FilePath.EndsWith(
@@ -150,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// <summary>
     /// Defines command types for Pester test blocks.
     /// </summary>
-    public enum PesterCommandType
+    internal enum PesterCommandType
     {
         /// <summary>
         /// Identifies a Describe block.
@@ -172,7 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// Provides a specialization of SymbolReference containing
     /// extra information about Pester test symbols.
     /// </summary>
-    public class PesterSymbolReference : SymbolReference
+    internal class PesterSymbolReference : SymbolReference
     {
         /// <summary>
         /// Lookup for Pester keywords we support. Ideally we could extract these from Pester itself

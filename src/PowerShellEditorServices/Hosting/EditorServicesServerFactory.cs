@@ -3,17 +3,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Server;
-using PowerShellEditorServices.Logging;
-using Serilog;
-using Serilog.Events;
 using System;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
-using OmniSharp.Extensions.LanguageServer.Server;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services;
+using Serilog;
+using Serilog.Events;
+using OmniSharp.Extensions.LanguageServer.Server;
 
 #if DEBUG
 using Serilog.Debugging;
@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly ILoggerFactory _loggerFactory;
 
-        private readonly Extensions.Logging.ILogger _logger;
+        private readonly Microsoft.Extensions.Logging.ILogger _logger;
 
         private readonly LogLevel _minimumLogLevel;
 

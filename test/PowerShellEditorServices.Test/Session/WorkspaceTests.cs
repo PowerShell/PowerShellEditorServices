@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             Assert.Equal(testPathAnotherDrive, workspace.GetRelativePath(testPathAnotherDrive));
         }
 
-        public static WorkspaceService FixturesWorkspace()
+        internal static WorkspaceService FixturesWorkspace()
         {
             return new WorkspaceService(NullLoggerFactory.Instance) {
                 WorkspacePath = TestUtilities.NormalizePath("Fixtures/Workspace")
@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         private static int      s_defaultMaxDepth            = 64;
         private static bool     s_defaultIgnoreReparsePoints = false;
 
-        public static List<string> ExecuteEnumeratePSFiles(
+        internal static List<string> ExecuteEnumeratePSFiles(
             WorkspaceService workspace,
             string[] excludeGlobs,
             string[] includeGlobs,

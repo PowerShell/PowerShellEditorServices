@@ -6,14 +6,14 @@
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
     /// Provides an interface that must be implemented by an editor
     /// host to perform operations invoked by extensions written in
     /// PowerShell.
     /// </summary>
-    public interface IEditorOperations
+    internal interface IEditorOperations
     {
         /// <summary>
         /// Gets the EditorContext for the editor's current state.

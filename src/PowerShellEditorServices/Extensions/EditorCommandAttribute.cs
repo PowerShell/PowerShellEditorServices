@@ -1,13 +1,13 @@
 using System;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
     /// Provides an attribute that can be used to target PowerShell
     /// commands for import as editor commands.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class EditorCommandAttribute : Attribute
+    public sealed class EditorCommandAttribute : Attribute
     {
 
         #region Properties

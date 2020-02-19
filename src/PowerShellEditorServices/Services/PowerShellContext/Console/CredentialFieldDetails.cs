@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// from an InputPromptHandler.  This class is meant to
     /// be serializable to the user's UI.
     /// </summary>
-    public class CredentialFieldDetails : FieldDetails
+    internal class CredentialFieldDetails : FieldDetails
     {
         private string userName;
         private SecureString password;

@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// that present the user a set of fields for which values
     /// should be entered.
     /// </summary>
-    public abstract class InputPromptHandler : PromptHandler
+    internal abstract class InputPromptHandler : PromptHandler
     {
         #region Private Fields
 

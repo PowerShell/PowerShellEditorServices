@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Defines the set of actions that will cause the runspace to be changed.
     /// </summary>
-    public enum RunspaceChangeAction
+    internal enum RunspaceChangeAction
     {
         /// <summary>
         /// The runspace change was caused by entering a new session.
@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides arguments for the PowerShellContext.RunspaceChanged event.
     /// </summary>
-    public class RunspaceChangedEventArgs
+    internal class RunspaceChangedEventArgs
     {
         /// <summary>
         /// Gets the RunspaceChangeAction which caused this event.

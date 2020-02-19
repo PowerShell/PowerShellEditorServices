@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// <summary>
     /// Contains the details and contents of an open script file.
     /// </summary>
-    public class ScriptFile
+    internal sealed class ScriptFile
     {
         #region Private Fields
 
@@ -153,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <param name="fileUri">The System.Uri of the file.</param>
         /// <param name="textReader">The TextReader to use for reading the file's contents.</param>
         /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
-        public ScriptFile(
+        internal ScriptFile(
             Uri fileUri,
             TextReader textReader,
             Version powerShellVersion)
@@ -180,7 +180,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <param name="fileUri">The System.Uri of the file.</param>
         /// <param name="initialBuffer">The initial contents of the script file.</param>
         /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
-        public ScriptFile(
+        internal ScriptFile(
             Uri fileUri,
             string initialBuffer,
             Version powerShellVersion)
@@ -200,8 +200,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// </summary>
         /// <param name="text">Input string to be split up into lines.</param>
         /// <returns>The lines in the string.</returns>
-        [Obsolete("This method is not designed for public exposure and will be retired in later versions of EditorServices")]
-        public static IList<string> GetLines(string text)
+        internal static IList<string> GetLines(string text)
         {
             return GetLinesInternal(text);
         }
@@ -227,7 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// </summary>
         /// <param name="path">The path to check.</param>
         /// <returns>True if the path is an untitled file, false otherwise.</returns>
-        public static bool IsUntitledPath(string path)
+        internal static bool IsUntitledPath(string path)
         {
             Validate.IsNotNull(nameof(path), path);
 
@@ -321,19 +320,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             {
                 throw new ArgumentOutOfRangeException($"Position {line}:{column} is outside of the column range of 1 to {maxColumn}.");
             }
-        }
-
-
-        /// <summary>
-        /// Defunct ValidatePosition method call. The isInsertion parameter is ignored.
-        /// </summary>
-        /// <param name="line"></param>
-        /// <param name="column"></param>
-        /// <param name="isInsertion"></param>
-        [Obsolete("Use ValidatePosition(int, int) instead")]
-        public void ValidatePosition(int line, int column, bool isInsertion)
-        {
-            ValidatePosition(line, column);
         }
 
         /// <summary>

@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// InputPromptHandler.  This class is meant to be
     /// serializable to the user's UI.
     /// </summary>
-    public class FieldDetails
+    internal class FieldDetails
     {
         #region Private Fields
 

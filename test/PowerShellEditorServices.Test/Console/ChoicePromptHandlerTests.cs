@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         }
 
         [Trait("Category", "Prompt")]
-        [Fact]
+        [Fact(Skip = "Hotkeys are not exposed while VSCode ignores them")]
         public void ChoicePromptReturnsCorrectIdForHotKey()
         {
             TestChoicePromptHandler choicePromptHandler = new TestChoicePromptHandler();

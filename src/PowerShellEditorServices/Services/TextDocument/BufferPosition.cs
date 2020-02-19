@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// first line and column in the file is position 1,1).
     /// </summary>
     [DebuggerDisplay("Position = {Line}:{Column}")]
-    public class BufferPosition
+    internal class BufferPosition
     {
         #region Properties
 

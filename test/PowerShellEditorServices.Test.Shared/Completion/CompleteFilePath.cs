@@ -7,7 +7,7 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 {
-    public class CompleteFilePath
+    internal class CompleteFilePath
     {
         public static readonly ScriptRegion SourceDetails =
             new ScriptRegion(

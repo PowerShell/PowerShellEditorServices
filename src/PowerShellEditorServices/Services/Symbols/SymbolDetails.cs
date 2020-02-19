@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// Provides detailed information for a given symbol.
     /// </summary>
     [DebuggerDisplay("SymbolReference = {SymbolReference.SymbolType}/{SymbolReference.SymbolName}, DisplayString = {DisplayString}")]
-    public class SymbolDetails
+    internal class SymbolDetails
     {
         #region Properties
 

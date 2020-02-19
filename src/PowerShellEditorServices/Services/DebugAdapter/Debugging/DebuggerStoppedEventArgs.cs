@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// <summary>
     /// Provides event arguments for the DebugService.DebuggerStopped event.
     /// </summary>
-    public class DebuggerStoppedEventArgs
+    internal class DebuggerStoppedEventArgs
     {
         #region Properties
 

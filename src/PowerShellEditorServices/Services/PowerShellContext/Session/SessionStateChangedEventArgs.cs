@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides details about a change in state of a PowerShellContext.
     /// </summary>
-    public class SessionStateChangedEventArgs
+    internal class SessionStateChangedEventArgs
     {
         /// <summary>
         /// Gets the new state for the session.

@@ -5,24 +5,58 @@
 
 using System;
 using System.Reflection;
+using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Extensions.Services;
+using Microsoft.PowerShell.EditorServices.Services;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
+    /// <summary>
+    /// Extension class to access the editor API with.
+    /// This is done so that the async/ALC APIs aren't exposed to PowerShell, where they're likely only to cause problems.
+    /// </summary>
+    public static class EditorObjectExtensions
+    {
+        /// <summary>
+        /// Get the provider of extension services for .NET extension tooling.
+        /// </summary>
+        /// <param name="editorObject">The editor object ($psEditor).</param>
+        /// <returns>The extension services provider.</returns>
+        public static EditorExtensionServiceProvider GetExtensionServiceProvider(this EditorObject editorObject)
+        {
+            return editorObject.Api;
+        }
+    }
+
     /// <summary>
     /// Provides the entry point of the extensibility API, inserted into
     /// the PowerShell session as the "$psEditor" variable.
     /// </summary>
     public class EditorObject
     {
+        private static readonly TaskCompletionSource<bool> s_editorObjectReady = new TaskCompletionSource<bool>();
+
+        /// <summary>
+        /// A reference to the editor object instance. Only valid when <see cref="EditorObjectReady"/> completes.
+        /// </summary>
+        public static EditorObject Instance { get; private set; }
+
+        /// <summary>
+        /// A task that completes when the editor object static instance has been set.
+        /// </summary>
+        public static Task EditorObjectReady => s_editorObjectReady.Task;
+
         #region Private Fields
 
-        private readonly IServiceProvider _serviceProvider;
         private readonly ExtensionService _extensionService;
         private readonly IEditorOperations _editorOperations;
+        private readonly Lazy<EditorExtensionServiceProvider> _apiLazy;
 
         #endregion
 
         #region Properties
+
+        internal EditorExtensionServiceProvider Api => _apiLazy.Value;
 
         /// <summary>
         /// Gets the version of PowerShell Editor Services.
@@ -42,11 +76,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         public EditorWindow Window { get; private set; }
 
-        /// <summary>
-        /// Gets the components that are registered.
-        /// </summary>
-        public IServiceProvider Components => _serviceProvider;
-
         #endregion
 
         /// <summary>
@@ -54,18 +83,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         /// <param name="extensionService">An ExtensionService which handles command registration.</param>
         /// <param name="editorOperations">An IEditorOperations implementation which handles operations in the host editor.</param>
-        public EditorObject(
+        internal EditorObject(
             IServiceProvider serviceProvider,
             ExtensionService extensionService,
             IEditorOperations editorOperations)
         {
-            this._serviceProvider = serviceProvider;
             this._extensionService = extensionService;
             this._editorOperations = editorOperations;
 
             // Create API area objects
             this.Workspace = new EditorWorkspace(this._editorOperations);
             this.Window = new EditorWindow(this._editorOperations);
+
+            // Create this lazily so that dependency injection does not have a circular call dependency
+            _apiLazy = new Lazy<EditorExtensionServiceProvider>(() => new EditorExtensionServiceProvider(serviceProvider));
         }
 
         /// <summary>
@@ -105,13 +136,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             return this._editorOperations.GetEditorContextAsync().Result;
         }
 
-        /// <summary>
-        /// Get's the desired service which allows for advanced control of PowerShellEditorServices.
-        /// </summary>
-        /// <returns>The singleton service object of the type requested.</returns>
-        public object GetService(Type type)
+        internal void SetAsStaticInstance()
         {
-            return _serviceProvider.GetService(type);
+            EditorObject.Instance = this;
+            s_editorObjectReady.SetResult(true);
         }
     }
 }

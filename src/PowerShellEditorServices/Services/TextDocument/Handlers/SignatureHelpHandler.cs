@@ -17,7 +17,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class SignatureHelpHandler : ISignatureHelpHandler
+    internal class SignatureHelpHandler : ISignatureHelpHandler
     {
         private static readonly SignatureInformation[] s_emptySignatureResult = Array.Empty<SignatureInformation>();
 

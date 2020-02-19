@@ -3,13 +3,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
-using Microsoft.PowerShell.EditorServices.Utility;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Collections.Generic;
 using System.Management.Automation;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -17,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// Provides a high-level service which enables PowerShell scripts
     /// and modules to extend the behavior of the host editor.
     /// </summary>
-    public class ExtensionService
+    internal sealed class ExtensionService
     {
         #region Fields
 
@@ -45,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Gets the PowerShellContext in which extension code will be executed.
         /// </summary>
-        public PowerShellContextService PowerShellContext { get; private set; }
+        internal PowerShellContextService PowerShellContext { get; private set; }
 
         #endregion
 
@@ -56,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// PowerShellContext for loading and executing extension code.
         /// </summary>
         /// <param name="powerShellContext">A PowerShellContext used to execute extension code.</param>
-        public ExtensionService(PowerShellContextService powerShellContext, ILanguageServer languageServer)
+        internal ExtensionService(PowerShellContextService powerShellContext, ILanguageServer languageServer)
         {
             this.PowerShellContext = powerShellContext;
             _languageServer = languageServer;
@@ -72,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="editorOperations">An IEditorOperations implementation.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
-        public async Task InitializeAsync(
+        internal async Task InitializeAsync(
             IServiceProvider serviceProvider,
             IEditorOperations editorOperations)
         {
@@ -86,6 +87,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     serviceProvider,
                     this,
                     editorOperations);
+
+            // Assign the new EditorObject to be the static instance available to binary APIs
+            this.EditorObject.SetAsStaticInstance();
 
             // Register the editor object in the runspace
             PSCommand variableCommand = new PSCommand();

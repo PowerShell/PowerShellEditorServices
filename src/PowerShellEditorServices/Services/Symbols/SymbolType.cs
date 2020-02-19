@@ -8,7 +8,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// <summary>
     /// A way to define symbols on a higher level
     /// </summary>
-    public enum SymbolType
+    internal enum SymbolType
     {
         /// <summary>
         /// The symbol type is unknown

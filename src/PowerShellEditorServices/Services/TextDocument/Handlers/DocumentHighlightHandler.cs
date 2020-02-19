@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    public class DocumentHighlightHandler : IDocumentHighlightHandler
+    internal class DocumentHighlightHandler : IDocumentHighlightHandler
     {
         private static readonly DocumentHighlightContainer s_emptyHighlightContainer = new DocumentHighlightContainer();
 

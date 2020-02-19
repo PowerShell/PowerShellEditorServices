@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// Manages a "workspace" of script files that are open for a particular
     /// editing session.  Also helps to navigate references between ScriptFiles.
     /// </summary>
-    public class WorkspaceService
+    internal class WorkspaceService
     {
         #region Private Fields
 

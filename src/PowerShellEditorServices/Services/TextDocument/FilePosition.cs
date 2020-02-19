@@ -9,7 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// Provides details and operations for a buffer position in a
     /// specific file.
     /// </summary>
-    public class FilePosition : BufferPosition
+    internal sealed class FilePosition : BufferPosition
     {
         #region Private Fields
 

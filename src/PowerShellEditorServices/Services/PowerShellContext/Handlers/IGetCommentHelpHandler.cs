@@ -10,14 +10,14 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/getCommentHelp")]
-    public interface IGetCommentHelpHandler : IJsonRpcRequestHandler<CommentHelpRequestParams, CommentHelpRequestResult> { }
+    internal interface IGetCommentHelpHandler : IJsonRpcRequestHandler<CommentHelpRequestParams, CommentHelpRequestResult> { }
 
-    public class CommentHelpRequestResult
+    internal class CommentHelpRequestResult
     {
         public string[] Content { get; set; }
     }
 
-    public class CommentHelpRequestParams : IRequest<CommentHelpRequestResult>
+    internal class CommentHelpRequestParams : IRequest<CommentHelpRequestResult>
     {
         public string DocumentUri { get; set; }
         public Position TriggerPosition { get; set; }

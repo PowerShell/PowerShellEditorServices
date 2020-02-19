@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// from an InputPromptHandler.  This class is meant to be
     /// serializable to the user's UI.
     /// </summary>
-    public class CollectionFieldDetails : FieldDetails
+    internal class CollectionFieldDetails : FieldDetails
     {
         #region Private Fields
 

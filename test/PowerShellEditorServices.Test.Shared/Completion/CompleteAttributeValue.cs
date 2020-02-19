@@ -7,7 +7,7 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 {
-    public class CompleteAttributeValue
+    internal class CompleteAttributeValue
     {
         public static readonly ScriptRegion SourceDetails =
             new ScriptRegion(

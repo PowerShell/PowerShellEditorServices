@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// <summary>
     /// Contains details for a code correction which can be applied from a ScriptFileMarker.
     /// </summary>
-    public class MarkerCorrection
+    public sealed class MarkerCorrection
     {
         /// <summary>
         /// Gets or sets the display name of the code correction.

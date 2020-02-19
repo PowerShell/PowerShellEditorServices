@@ -9,9 +9,9 @@ using OmniSharp.Extensions.JsonRpc;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("evaluate")]
-    public interface IEvaluateHandler : IJsonRpcRequestHandler<EvaluateRequestArguments, EvaluateResponseBody> { }
+    internal interface IEvaluateHandler : IJsonRpcRequestHandler<EvaluateRequestArguments, EvaluateResponseBody> { }
 
-    public class EvaluateRequestArguments : IRequest<EvaluateResponseBody>
+    internal class EvaluateRequestArguments : IRequest<EvaluateResponseBody>
     {
         /// <summary>
         /// The expression to evaluate.
@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public int FrameId { get; set; }
     }
 
-    public class EvaluateResponseBody
+    internal class EvaluateResponseBody
     {
         /// <summary>
         /// The evaluation result.

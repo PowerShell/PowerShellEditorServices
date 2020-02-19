@@ -15,19 +15,19 @@ using OmniSharp.Extensions.JsonRpc;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/expandAlias")]
-    public interface IExpandAliasHandler : IJsonRpcRequestHandler<ExpandAliasParams, ExpandAliasResult> { }
+    internal interface IExpandAliasHandler : IJsonRpcRequestHandler<ExpandAliasParams, ExpandAliasResult> { }
 
-    public class ExpandAliasParams : IRequest<ExpandAliasResult>
+    internal class ExpandAliasParams : IRequest<ExpandAliasResult>
     {
         public string Text { get; set; }
     }
 
-    public class ExpandAliasResult
+    internal class ExpandAliasResult
     {
         public string Text { get; set; }
     }
 
-    public class ExpandAliasHandler : IExpandAliasHandler
+    internal class ExpandAliasHandler : IExpandAliasHandler
     {
         private readonly ILogger _logger;
         private readonly PowerShellContextService _powerShellContextService;

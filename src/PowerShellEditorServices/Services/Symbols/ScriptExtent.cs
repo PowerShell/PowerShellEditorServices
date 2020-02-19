@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// containing details about a section of script content
     /// in a file.
     /// </summary>
-    public class ScriptExtent : IScriptExtent
+    internal class ScriptExtent : IScriptExtent
     {
         #region Properties
 

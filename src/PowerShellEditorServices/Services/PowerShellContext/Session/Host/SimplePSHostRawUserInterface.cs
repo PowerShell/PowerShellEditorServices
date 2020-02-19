@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides an simple implementation of the PSHostRawUserInterface class.
     /// </summary>
-    public class SimplePSHostRawUserInterface : PSHostRawUserInterface
+    internal class SimplePSHostRawUserInterface : PSHostRawUserInterface
     {
         #region Private Fields
 

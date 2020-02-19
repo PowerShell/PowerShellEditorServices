@@ -8,7 +8,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// <summary>
     /// Contains details relating to a content change in an open file.
     /// </summary>
-    public class FileChange
+    public sealed class FileChange
     {
         /// <summary>
         /// The string which is to be inserted in the file.

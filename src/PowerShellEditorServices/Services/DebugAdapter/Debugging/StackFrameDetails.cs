@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// Contains details pertaining to a single stack frame in
     /// the current debugging session.
     /// </summary>
-    public class StackFrameDetails
+    internal class StackFrameDetails
     {
         #region Fields
 

@@ -5,16 +5,13 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using Microsoft.PowerShell.EditorServices.Extensions.Services;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
     internal abstract class CustomViewBase : ICustomView
     {
-        protected ILanguageServer languageServer;
-
-        protected ILogger logger;
+        protected ILanguageServerService languageServer;
 
         public Guid Id { get; private set; }
 
@@ -25,19 +22,17 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public CustomViewBase(
             string viewTitle,
             CustomViewType viewType,
-            ILanguageServer languageServer,
-            ILogger logger)
+            ILanguageServerService languageServer)
         {
             this.Id = Guid.NewGuid();
             this.Title = viewTitle;
             this.ViewType = viewType;
             this.languageServer = languageServer;
-            this.logger = logger;
         }
 
         internal async Task CreateAsync()
         {
-            await languageServer.SendRequest(
+            await languageServer.SendRequestAsync(
                 NewCustomViewRequest.Method,
                 new NewCustomViewRequest
                 {
@@ -50,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 
         public async Task Show(ViewColumn viewColumn)
         {
-            await languageServer.SendRequest(
+            await languageServer.SendRequestAsync(
                 ShowCustomViewRequest.Method,
                 new ShowCustomViewRequest
                 {
@@ -62,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 
         public async Task Close()
         {
-            await languageServer.SendRequest(
+            await languageServer.SendRequestAsync(
                 CloseCustomViewRequest.Method,
                 new CloseCustomViewRequest
                 {

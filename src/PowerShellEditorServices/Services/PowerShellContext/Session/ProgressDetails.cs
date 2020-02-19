@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// <summary>
     /// Provides details about the progress of a particular activity.
     /// </summary>
-    public class ProgressDetails
+    internal class ProgressDetails
     {
         /// <summary>
         /// Gets the percentage of the activity that has been completed.

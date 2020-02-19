@@ -3,13 +3,15 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+using System.Threading.Tasks;
+
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
     /// Provides a PowerShell-facing API which allows scripts to
     /// interact with the editor's workspace.
     /// </summary>
-    public class EditorWorkspace
+    public sealed class EditorWorkspace
     {
         #region Private Fields
 

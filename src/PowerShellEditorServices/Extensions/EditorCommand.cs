@@ -5,13 +5,13 @@
 
 using System.Management.Automation;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
     /// Provides details about a command that has been registered
     /// with the editor.
     /// </summary>
-    public class EditorCommand
+    public sealed class EditorCommand
     {
         #region Properties
 

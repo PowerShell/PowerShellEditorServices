@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// <summary>
     /// The default session file writer, which uses PowerShell to write a session file.
     /// </summary>
-    public class SessionFileWriter : ISessionFileWriter
+    public sealed class SessionFileWriter : ISessionFileWriter
     {
         // Use BOM-less UTF-8 for session file
         private static readonly Encoding s_sessionFileEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);

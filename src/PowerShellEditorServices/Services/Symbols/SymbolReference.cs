@@ -9,11 +9,39 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
+    internal interface ISymbolReference
+    {
+        /// <summary>
+        /// Gets the symbol's type
+        /// </summary>
+        SymbolType SymbolType { get; }
+
+        /// <summary>
+        /// Gets the name of the symbol
+        /// </summary>
+        string SymbolName { get; }
+
+        /// <summary>
+        /// Gets the script extent of the symbol
+        /// </summary>
+        ScriptRegion ScriptRegion { get; }
+
+        /// <summary>
+        /// Gets the contents of the line the given symbol is on
+        /// </summary>
+        string SourceLine { get; }
+
+        /// <summary>
+        /// Gets the path of the file in which the symbol was found.
+        /// </summary>
+        string FilePath { get; }
+    }
+
     /// <summary>
     /// A class that holds the type, name, script extent, and source line of a symbol
     /// </summary>
     [DebuggerDisplay("SymbolType = {SymbolType}, SymbolName = {SymbolName}")]
-    public class SymbolReference
+    internal class SymbolReference : ISymbolReference
     {
         #region Properties
 
@@ -75,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         /// <summary>
-        /// Constructs and instance of a SymbolReference
+        /// Constructs an instance of a SymbolReference
         /// </summary>
         /// <param name="symbolType">The higher level type of the symbol</param>
         /// <param name="scriptExtent">The script extent of the symbol</param>

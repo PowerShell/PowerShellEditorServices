@@ -14,7 +14,7 @@ using Microsoft.PowerShell.EditorServices.Logging;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 {
-    public class LanguageServerSettings
+    internal class LanguageServerSettings
     {
         private readonly object updateLock = new object();
         public bool EnableProfileLoading { get; set; }
@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         }
     }
 
-    public class ScriptAnalysisSettings
+    internal class ScriptAnalysisSettings
     {
         private readonly object updateLock = new object();
 
@@ -128,7 +128,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     /// Code formatting presets.
     /// See https://en.wikipedia.org/wiki/Indent_style for details on indent and brace styles.
     /// </summary>
-    public enum CodeFormattingPreset
+    internal enum CodeFormattingPreset
     {
         /// <summary>
         /// Use the formatting settings as-is.
@@ -154,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     /// <summary>
     /// Multi-line pipeline style settings.
     /// </summary>
-    public enum PipelineIndentationStyle
+    internal enum PipelineIndentationStyle
     {
         /// <summary>
         /// After the indentation level only once after the first pipeline and keep this level for the following pipelines.
@@ -172,7 +172,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         NoIndentation
     }
 
-    public class CodeFormattingSettings
+    internal class CodeFormattingSettings
     {
         /// <summary>
         /// Default constructor.
@@ -321,7 +321,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     /// <summary>
     /// Code folding settings
     /// </summary>
-    public class CodeFoldingSettings
+    internal class CodeFoldingSettings
     {
         /// <summary>
         /// Whether the folding is enabled. Default is true as per VSCode
@@ -357,7 +357,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     /// Additional settings from the Language Client that affect Language Server operations but
     /// do not exist under the 'powershell' section
     /// </summary>
-    public class EditorFileSettings
+    internal class EditorFileSettings
     {
         /// <summary>
         /// Exclude files globs consists of hashtable with the key as the glob and a boolean value to indicate if the
@@ -370,7 +370,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     /// Additional settings from the Language Client that affect Language Server operations but
     /// do not exist under the 'powershell' section
     /// </summary>
-    public class EditorSearchSettings
+    internal class EditorSearchSettings
     {
         /// <summary>
         /// Exclude files globs consists of hashtable with the key as the glob and a boolean value to indicate if the
@@ -383,7 +383,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public bool FollowSymlinks { get; set; } = true;
     }
 
-    public class LanguageServerSettingsWrapper
+    internal class LanguageServerSettingsWrapper
     {
         // NOTE: This property is capitalized as 'Powershell' because the
         // mode name sent from the client is written as 'powershell' and

@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// A class for containing the commandName, the command's
     /// possible signatures, and the script extent of the command
     /// </summary>
-    public class ParameterSetSignatures
+    internal class ParameterSetSignatures
     {
         #region Properties
 
@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// <summary>
     /// A class for containing the signature text and the collection of parameters for a signature
     /// </summary>
-    public class ParameterSetSignature
+    internal class ParameterSetSignature
     {
         private static readonly ConcurrentDictionary<string, bool> commonParameterNames =
             new ConcurrentDictionary<string, bool>();
@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// <summary>
     /// A class for containing the parameter info of a parameter
     /// </summary>
-    public class ParameterInfo
+    internal class ParameterInfo
     {
         #region Properties
         /// <summary>

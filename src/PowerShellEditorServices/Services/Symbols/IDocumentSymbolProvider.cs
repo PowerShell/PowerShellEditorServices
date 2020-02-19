@@ -11,8 +11,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// <summary>
     /// Specifies the contract for a document symbols provider.
     /// </summary>
-    public interface IDocumentSymbolProvider
+    internal interface IDocumentSymbolProvider
     {
+        string ProviderId { get; }
+
         /// <summary>
         /// Provides a list of symbols for the given document.
         /// </summary>
@@ -20,6 +22,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// The document for which SymbolReferences should be provided.
         /// </param>
         /// <returns>An IEnumerable collection of SymbolReferences.</returns>
-        IEnumerable<SymbolReference> ProvideDocumentSymbols(ScriptFile scriptFile);
+        IEnumerable<ISymbolReference> ProvideDocumentSymbols(ScriptFile scriptFile);
     }
 }

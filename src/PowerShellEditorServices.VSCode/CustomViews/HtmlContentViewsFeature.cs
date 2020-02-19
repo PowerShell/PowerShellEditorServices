@@ -4,17 +4,15 @@
 //
 
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using Microsoft.PowerShell.EditorServices.Extensions.Services;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
     internal class HtmlContentViewsFeature : CustomViewFeatureBase<IHtmlContentView>, IHtmlContentViews
     {
         public HtmlContentViewsFeature(
-            ILanguageServer languageServer,
-            ILogger logger)
-                : base(languageServer, logger)
+            ILanguageServerService languageServer)
+                : base(languageServer)
         {
         }
 
@@ -23,8 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
             HtmlContentView htmlView =
                 new HtmlContentView(
                     viewTitle,
-                    this.languageServer,
-                    this.logger);
+                    languageServer);
 
             await htmlView.CreateAsync();
             this.AddView(htmlView);

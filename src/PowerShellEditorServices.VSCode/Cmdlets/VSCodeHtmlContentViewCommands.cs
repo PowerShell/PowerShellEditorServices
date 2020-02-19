@@ -7,7 +7,7 @@ using System;
 using System.Management.Automation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.VSCode.CustomViews;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
@@ -19,8 +19,6 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
     public class NewVSCodeHtmlContentViewCommand : PSCmdlet
     {
         private HtmlContentViewsFeature _htmlContentViewsFeature;
-
-        private ILogger _logger;
 
         private ViewColumn? _showInColumn;
 
@@ -44,13 +42,8 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
             {
                 if (GetVariableValue("psEditor") is EditorObject psEditor)
                 {
-                    _logger = psEditor.Components.GetService<ILoggerFactory>().CreateLogger("PowerShellEditorServices.VSCode");
-
                     _htmlContentViewsFeature = new HtmlContentViewsFeature(
-                        psEditor.Components.GetService<ILanguageServer>(),
-                        _logger);
-
-                    _logger.LogInformation("PowerShell Editor Services VS Code module loaded.");
+                        psEditor.GetExtensionServiceProvider().LanguageServer);
                 }
                 else
                 {

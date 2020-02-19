@@ -9,7 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// Contains details pertaining to a variable scope in the current
     /// debugging session.
     /// </summary>
-    public class VariableScope
+    internal class VariableScope
     {
         /// <summary>
         /// Gets a numeric ID that can be used in future operations
