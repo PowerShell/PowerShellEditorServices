@@ -47,15 +47,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         [SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "cctor needed for version specific initialization")]
         static PowerShellContextService()
         {
-            // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection
+            // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection.
             if (!VersionUtils.IsNetCore || VersionUtils.IsPS7OrGreater)
             {
                 MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
                 Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
                 s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>)setter;
 
-                // Used to write Error Views to
-                s_writeStreamProperty = typeof(PSObject).GetProperty("WriteStream", BindingFlags.Instance | BindingFlags.NonPublic);
+                // Used to write ErrorRecords to the Error stream. Using Public and NonPublic because the plan is to make this property
+                // public in 7.0.1
+                s_writeStreamProperty = typeof(PSObject).GetProperty("WriteStream", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
                 Type writeStreamType = typeof(PSObject).Assembly.GetType("System.Management.Automation.WriteStreamType");
                 s_errorStreamValue = Enum.Parse(writeStreamType, "Error");
             }
