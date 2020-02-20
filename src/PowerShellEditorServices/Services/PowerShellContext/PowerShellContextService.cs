@@ -53,7 +53,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
                 Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
                 s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>)setter;
+            }
 
+            if (VersionUtils.IsPS7OrGreater)
+            {
                 // Used to write ErrorRecords to the Error stream. Using Public and NonPublic because the plan is to make this property
                 // public in 7.0.1
                 s_writeStreamProperty = typeof(PSObject).GetProperty("WriteStream", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -1935,7 +1938,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private void WriteExceptionToHost(RuntimeException e)
         {
             var psObject = PSObject.AsPSObject(e.ErrorRecord);
-            s_writeStreamProperty.SetValue(psObject, s_errorStreamValue);
+
+            // Used to write ErrorRecords to the Error stream so they are rendered in the console correctly.
+            if (VersionUtils.IsPS7OrGreater)
+            {
+                s_writeStreamProperty.SetValue(psObject, s_errorStreamValue);
+            }
+            else
+            {
+                var note = new PSNoteProperty("writeErrorStream", true);
+                psObject.Properties.Add(note);
+            }
+
             ExecuteCommandAsync(new PSCommand().AddCommand("Microsoft.PowerShell.Core\\Out-Default").AddParameter("InputObject", psObject));
         }
 
