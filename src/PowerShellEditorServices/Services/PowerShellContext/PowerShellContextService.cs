@@ -41,16 +41,27 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 "../../Commands/PowerShellEditorServices.Commands.psd1"));
 
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
+        private static readonly PropertyInfo s_writeStreamProperty;
+        private static readonly object s_errorStreamValue;
 
         [SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "cctor needed for version specific initialization")]
         static PowerShellContextService()
         {
-            // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection
+            // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection.
             if (!VersionUtils.IsNetCore || VersionUtils.IsPS7OrGreater)
             {
                 MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
                 Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
                 s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>)setter;
+            }
+
+            if (VersionUtils.IsPS7OrGreater)
+            {
+                // Used to write ErrorRecords to the Error stream. Using Public and NonPublic because the plan is to make this property
+                // public in 7.0.1
+                s_writeStreamProperty = typeof(PSObject).GetProperty("WriteStream", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                Type writeStreamType = typeof(PSObject).Assembly.GetType("System.Management.Automation.WriteStreamType");
+                s_errorStreamValue = Enum.Parse(writeStreamType, "Error");
             }
         }
 
@@ -1924,43 +1935,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private void WriteExceptionToHost(Exception e)
+        private void WriteExceptionToHost(RuntimeException e)
         {
-            const string ExceptionFormat =
-                "{0}\r\n{1}\r\n    + CategoryInfo          : {2}\r\n    + FullyQualifiedErrorId : {3}";
+            var psObject = PSObject.AsPSObject(e.ErrorRecord);
 
-            if (!(e is IContainsErrorRecord containsErrorRecord) ||
-                containsErrorRecord.ErrorRecord == null)
+            // Used to write ErrorRecords to the Error stream so they are rendered in the console correctly.
+            if (VersionUtils.IsPS7OrGreater)
             {
-                this.WriteError(e.Message, null, 0, 0);
-                return;
+                s_writeStreamProperty.SetValue(psObject, s_errorStreamValue);
+            }
+            else
+            {
+                var note = new PSNoteProperty("writeErrorStream", true);
+                psObject.Properties.Add(note);
             }
 
-            ErrorRecord errorRecord = containsErrorRecord.ErrorRecord;
-            if (errorRecord.InvocationInfo == null)
-            {
-                this.WriteError(errorRecord.ToString(), String.Empty, 0, 0);
-                return;
-            }
-
-            string errorRecordString = errorRecord.ToString();
-            if ((errorRecord.InvocationInfo.PositionMessage != null) &&
-                errorRecordString.IndexOf(errorRecord.InvocationInfo.PositionMessage, StringComparison.Ordinal) != -1)
-            {
-                this.WriteError(errorRecordString);
-                return;
-            }
-
-            string message =
-                string.Format(
-                    CultureInfo.InvariantCulture,
-                    ExceptionFormat,
-                    errorRecord.ToString(),
-                    errorRecord.InvocationInfo.PositionMessage,
-                    errorRecord.CategoryInfo,
-                    errorRecord.FullyQualifiedErrorId);
-
-            this.WriteError(message);
+            ExecuteCommandAsync(new PSCommand().AddCommand("Microsoft.PowerShell.Core\\Out-Default").AddParameter("InputObject", psObject));
         }
 
         private void WriteError(
