@@ -573,6 +573,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="value"></param>
         public override void WriteErrorLine(string value)
         {
+            // PowerShell's ConsoleHost also skips over empty lines:
+            // https://github.com/PowerShell/PowerShell/blob/8e683972284a5a7f773ea6d027d9aac14d7e7524/src/Microsoft.PowerShell.ConsoleHost/host/msh/ConsoleHostUserInterface.cs#L1334-L1337
+            if (string.IsNullOrEmpty(value))
+            {
+                return;
+            }
+
             this.WriteOutput(
                 value,
                 true,
