@@ -1946,7 +1946,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
             else
             {
-                var note = new PSNoteProperty("writeErrorStream", true);
+                var note = new PSNoteProperty("WriteErrorStream", true);
                 psObject.Properties.Add(note);
             }
 
