@@ -220,6 +220,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private void LoadEditorServices()
         {
+            // This must be in its own method, since the actual load happens when the calling method is called
+            // The call within this method is therefore a total no-op
             EditorServicesLoading.LoadEditorServicesForHost();
         }
 
