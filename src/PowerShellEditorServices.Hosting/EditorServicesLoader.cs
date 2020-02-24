@@ -211,7 +211,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public void Dispose()
         {
-            _editorServicesRunner.Dispose();
+            _editorServicesRunner?.Dispose();
 
             // TODO:
             // Remove assembly resolve events
