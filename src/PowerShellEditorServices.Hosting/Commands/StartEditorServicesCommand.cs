@@ -25,6 +25,7 @@ using System.Diagnostics;
 using System.Threading;
 
 using Debugger = System.Diagnostics.Debugger;
+using System.Threading.Tasks;
 #endif
 
 namespace Microsoft.PowerShell.EditorServices.Commands
@@ -238,7 +239,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 using (var psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter, _loggerUnsubscribers))
                 {
                     _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
-                    psesLoader.LoadAndRunEditorServicesAsync().Wait();
+                    psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();
                 }
             }
             catch (Exception e)

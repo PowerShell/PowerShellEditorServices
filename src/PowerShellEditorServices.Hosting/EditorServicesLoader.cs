@@ -160,6 +160,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly IReadOnlyCollection<IDisposable> _loggersToUnsubscribe;
 
+        private EditorServicesRunner _editorServicesRunner;
+
         private EditorServicesLoader(
             HostLogger logger,
             EditorServicesConfig hostConfig,
@@ -177,7 +179,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// This method's returned task will end when Editor Services shuts down.
         /// </summary>
         /// <returns></returns>
-        public async Task LoadAndRunEditorServicesAsync()
+        public Task LoadAndRunEditorServicesAsync()
         {
             // Log important host information here
             LogHostInformation();
@@ -200,18 +202,21 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             LoadEditorServices();
 
             _logger.Log(PsesLogLevel.Verbose, "Starting EditorServices");
-            using (var editorServicesRunner = new EditorServicesRunner(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe))
-            {
-                // The trigger method for Editor Services
-                // We will wait here until Editor Services shuts down
-                await editorServicesRunner.RunUntilShutdown().ConfigureAwait(false);
-            }
+
+            _editorServicesRunner = new EditorServicesRunner(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe);
+
+            // The trigger method for Editor Services
+            // We will wait here until Editor Services shuts down
+            return Task.Run(_editorServicesRunner.RunUntilShutdown);
         }
 
         public void Dispose()
         {
-            // TODO: Remove assembly resolve events
-            //       This is not high priority, since the PSES process shouldn't be reused
+            _editorServicesRunner.Dispose();
+
+            // TODO:
+            // Remove assembly resolve events
+            // This is not high priority, since the PSES process shouldn't be reused
         }
 
         private void LoadEditorServices()
