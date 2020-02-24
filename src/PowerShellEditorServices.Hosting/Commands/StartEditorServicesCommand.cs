@@ -433,20 +433,20 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
             if (Stdio)
             {
-                return new StdioTransportConfig();
+                return new StdioTransportConfig(_logger);
             }
 
             if (LanguageServiceInPipeName != null && LanguageServiceOutPipeName != null)
             {
-                return SimplexNamedPipeTransportConfig.Create(LanguageServiceInPipeName, LanguageServiceOutPipeName);
+                return SimplexNamedPipeTransportConfig.Create(_logger, LanguageServiceInPipeName, LanguageServiceOutPipeName);
             }
 
             if (SplitInOutPipes)
             {
-                return SimplexNamedPipeTransportConfig.Create(LanguageServicePipeName);
+                return SimplexNamedPipeTransportConfig.Create(_logger, LanguageServicePipeName);
             }
 
-            return DuplexNamedPipeTransportConfig.Create(LanguageServicePipeName);
+            return DuplexNamedPipeTransportConfig.Create(_logger, LanguageServicePipeName);
         }
 
         private ITransportConfig GetDebugServiceTransport()
@@ -457,7 +457,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             {
                 if (DebugServiceOnly)
                 {
-                    return new StdioTransportConfig();
+                    return new StdioTransportConfig(_logger);
                 }
 
                 _logger.Log(PsesLogLevel.Diagnostic, "No debug transport: Transport is Stdio with debug disabled");
@@ -466,15 +466,15 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
             if (DebugServiceInPipeName != null && DebugServiceOutPipeName != null)
             {
-                return SimplexNamedPipeTransportConfig.Create(DebugServiceInPipeName, DebugServiceOutPipeName);
+                return SimplexNamedPipeTransportConfig.Create(_logger, DebugServiceInPipeName, DebugServiceOutPipeName);
             }
 
             if (SplitInOutPipes)
             {
-                return SimplexNamedPipeTransportConfig.Create(DebugServicePipeName);
+                return SimplexNamedPipeTransportConfig.Create(_logger, DebugServicePipeName);
             }
 
-            return DuplexNamedPipeTransportConfig.Create(DebugServicePipeName);
+            return DuplexNamedPipeTransportConfig.Create(_logger, DebugServicePipeName);
         }
 
         private enum ProfileHostKind

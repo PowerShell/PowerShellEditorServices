@@ -57,6 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _sessionFileWriter.WriteSessionStarted(_config.LanguageServiceTransport, _config.DebugServiceTransport);
 
             // Finally, wait for Editor Services to shut down
+            _logger.Log(PsesLogLevel.Diagnostic, "Waiting on PSES run/shutdown");
             return runAndAwaitShutdown;
         }
 
@@ -73,6 +74,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             try
             {
+                _logger.Log(PsesLogLevel.Diagnostic, "Creating/running editor services");
+
                 bool creatingLanguageServer = _config.LanguageServiceTransport != null;
                 bool creatingDebugServer = _config.DebugServiceTransport != null;
                 bool isTempDebugSession = creatingDebugServer && !creatingLanguageServer;

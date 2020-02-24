@@ -211,6 +211,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public void Dispose()
         {
+            _logger.Log(PsesLogLevel.Diagnostic, "Loader disposed");
             _editorServicesRunner?.Dispose();
 
             // TODO:
