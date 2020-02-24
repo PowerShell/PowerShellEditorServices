@@ -22,6 +22,7 @@ using System.Runtime.InteropServices;
 
 #if DEBUG
 using Debugger = System.Diagnostics.Debugger;
+using System.Diagnostics;
 using System.Threading;
 #endif
 
@@ -236,6 +237,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 using (var psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter, _loggerUnsubscribers))
                 {
                     _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
+                    // Start editor services and wait here until it shuts down
                     psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();
                 }
             }

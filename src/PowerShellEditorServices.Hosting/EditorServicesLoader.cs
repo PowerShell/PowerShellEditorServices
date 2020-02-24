@@ -206,7 +206,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _editorServicesRunner = new EditorServicesRunner(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe);
 
             // The trigger method for Editor Services
-            // We will wait here until Editor Services shuts down
             return Task.Run(_editorServicesRunner.RunUntilShutdown);
         }
 
