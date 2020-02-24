@@ -21,11 +21,8 @@ using System.Runtime.InteropServices;
 #endif
 
 #if DEBUG
-using System.Diagnostics;
-using System.Threading;
-
 using Debugger = System.Diagnostics.Debugger;
-using System.Threading.Tasks;
+using System.Threading;
 #endif
 
 namespace Microsoft.PowerShell.EditorServices.Commands
