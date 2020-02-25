@@ -99,8 +99,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private Lazy<PssaCmdletAnalysisEngine> _analysisEngineLazy;
 
-        private FileSystemWatcher _pssaSettingsFileWatcher;
-
         private CancellationTokenSource _diagnosticsCancellationTokenSource;
 
         /// <summary>
@@ -265,19 +263,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             InitializeAnalysisEngineToCurrentSettings();
         }
 
-        private void OnSettingsFileUpdated(object sender, FileSystemEventArgs args)
-        {
-            InitializeAnalysisEngineToCurrentSettings();
-        }
-
         private void InitializeAnalysisEngineToCurrentSettings()
         {
             // If script analysis has been disabled, just return null
             if (_configurationService.CurrentSettings.ScriptAnalysis.Enable != true)
             {
-                _pssaSettingsFileWatcher?.Dispose();
-                _pssaSettingsFileWatcher = null;
-
                 if (_analysisEngineLazy != null && _analysisEngineLazy.IsValueCreated)
                 {
                     _analysisEngineLazy.Value.Dispose();
@@ -315,7 +305,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (TryFindSettingsFile(out string settingsFilePath))
             {
                 _logger.LogInformation($"Configuring PSScriptAnalyzer with rules at '{settingsFilePath}'");
-                SetSettingsFileWatcher(settingsFilePath);
                 pssaCmdletEngineBuilder.WithSettingsFile(settingsFilePath);
             }
             else
@@ -332,47 +321,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (TryFindSettingsFile(out string settingsFilePath))
             {
                 _logger.LogInformation($"Recreating analysis engine with rules at '{settingsFilePath}'");
-                SetSettingsFileWatcher(settingsFilePath);
                 return oldAnalysisEngine.RecreateWithNewSettings(settingsFilePath);
             }
 
             _logger.LogInformation("PSScriptAnalyzer settings file not found. Falling back to default rules");
             return oldAnalysisEngine.RecreateWithRules(s_defaultRules);
-        }
-
-        private void SetSettingsFileWatcher(string path)
-        {
-            string dirPath = Path.GetDirectoryName(path);
-            string fileName = Path.GetFileName(path);
-
-            if (_pssaSettingsFileWatcher != null)
-            {
-                if (string.Equals(dirPath, _pssaSettingsFileWatcher.Path, s_osPathStringComparison))
-                {
-                    if (string.Equals(fileName, _pssaSettingsFileWatcher.Filter, s_osPathStringComparison))
-                    {
-                        // The current watcher is already watching the right file, so we are done
-                        return;
-                    }
-
-                    // We just need to update the filter, which we can do without recreating the watcher
-                    _pssaSettingsFileWatcher.Filter = fileName;
-                    return;
-                }
-
-                // Otherwise we need to remove the old watcher
-                // and create a new one
-                DisposeCurrentSettingsFileWatcher();
-            }
-
-            _pssaSettingsFileWatcher = new FileSystemWatcher(dirPath)
-            {
-                Filter = fileName,
-                EnableRaisingEvents = true,
-            };
-            _pssaSettingsFileWatcher.Created += OnSettingsFileUpdated;
-            _pssaSettingsFileWatcher.Changed += OnSettingsFileUpdated;
-            _pssaSettingsFileWatcher.Deleted += OnSettingsFileUpdated;
         }
 
         private bool TryFindSettingsFile(out string settingsFilePath)
@@ -396,21 +349,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             return true;
-        }
-
-        private void DisposeCurrentSettingsFileWatcher()
-        {
-            if (_pssaSettingsFileWatcher == null)
-            {
-                return;
-            }
-
-            _pssaSettingsFileWatcher.Created -= OnSettingsFileUpdated;
-            _pssaSettingsFileWatcher.Changed -= OnSettingsFileUpdated;
-            _pssaSettingsFileWatcher.Deleted -= OnSettingsFileUpdated;
-
-            _pssaSettingsFileWatcher.Dispose();
-            _pssaSettingsFileWatcher = null;
         }
 
         private void ClearOpenFileMarkers()
@@ -558,8 +496,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
 
                     _diagnosticsCancellationTokenSource?.Dispose();
-
-                    DisposeCurrentSettingsFileWatcher();
                 }
 
                 disposedValue = true;
