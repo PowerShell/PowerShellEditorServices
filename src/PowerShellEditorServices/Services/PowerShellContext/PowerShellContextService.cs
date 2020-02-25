@@ -2089,7 +2089,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             // We want to get the list hierarchy of execution policies
             // Calling the cmdlet is the simplest way to do that
-            IEnumerable<PSObject> policies = this.powerShell
+            IReadOnlyList<PSObject> policies = this.powerShell
                 .AddCommand("Get-ExecutionPolicy")
                     .AddParameter("-List")
                 .Invoke();
@@ -2107,17 +2107,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Get-ExecutionPolicy -List emits PSObjects with Scope and ExecutionPolicy note properties
             // set to expected values, so we must sift through those.
             ExecutionPolicy policyToSet = ExecutionPolicy.Bypass;
-            foreach (PSObject policy in policies)
+            for (int i = policies.Count; i >= 0; i--)
             {
-                if ((ExecutionPolicyScope)policy.Members["Scope"].Value == ExecutionPolicyScope.Process)
+                PSObject policyObject = policies[i];
+
+                if ((ExecutionPolicyScope)policyObject.Members["Scope"].Value == ExecutionPolicyScope.Process)
                 {
                     continue;
                 }
 
-                var executionPolicy = (ExecutionPolicy)policy.Members["ExecutionPolicy"].Value;
+                var executionPolicy = (ExecutionPolicy)policyObject.Members["ExecutionPolicy"].Value;
                 if (executionPolicy != ExecutionPolicy.Undefined)
                 {
                     policyToSet = executionPolicy;
+                    break;
                 }
             }
 
