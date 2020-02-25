@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -92,6 +93,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly ConcurrentDictionary<ScriptFile, CorrectionTableEntry> _mostRecentCorrectionsByFile;
 
         private Lazy<PssaCmdletAnalysisEngine> _analysisEngine;
+
+        private FileSystemWatcher _pssaSettingsFileWatcher;
 
         private CancellationTokenSource _diagnosticsCancellationTokenSource;
 
@@ -254,12 +257,33 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="settings">The new language server settings.</param>
         public void OnConfigurationUpdated(object sender, LanguageServerSettings settings)
         {
+            ReinitializeAnalysisEngine();
+        }
+
+        private void OnSettingsFileDeleted(object sender, FileSystemEventArgs args)
+        {
+            if (args.ChangeType != WatcherChangeTypes.Deleted)
+            {
+                return;
+            }
+
+            ReinitializeAnalysisEngine();
+        }
+
+        private void ReinitializeAnalysisEngine()
+        {
             ClearOpenFileMarkers();
             _analysisEngine = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
         }
 
         private PssaCmdletAnalysisEngine InstantiateAnalysisEngine()
         {
+            if (_pssaSettingsFileWatcher != null)
+            {
+                _pssaSettingsFileWatcher.Dispose();
+                _pssaSettingsFileWatcher = null;
+            }
+
             if (!(_configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false))
             {
                 return null;
@@ -271,6 +295,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (TryFindSettingsFile(out string settingsFilePath))
             {
                 _logger.LogInformation($"Configuring PSScriptAnalyzer with rules at '{settingsFilePath}'");
+                _pssaSettingsFileWatcher = new FileSystemWatcher(settingsFilePath)
+                {
+                    EnableRaisingEvents = true,
+                };
+                _pssaSettingsFileWatcher.Deleted += OnSettingsFileDeleted;
                 pssaCmdletEngineBuilder.WithSettingsFile(settingsFilePath);
             }
             else
