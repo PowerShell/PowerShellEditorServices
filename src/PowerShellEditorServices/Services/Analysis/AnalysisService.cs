@@ -97,6 +97,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private CancellationTokenSource _diagnosticsCancellationTokenSource;
 
+        private string _pssaSettingsFilePath;
+
         /// <summary>
         /// Construct a new AnalysisService.
         /// </summary>
@@ -118,6 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _analysisDelayMillis = 750;
             _mostRecentCorrectionsByFile = new ConcurrentDictionary<ScriptFile, CorrectionTableEntry>();
             _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
+            _pssaSettingsFilePath = null;
         }
 
         /// <summary>
@@ -139,6 +142,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 return;
             }
+
+            EnsureEngineSettingsCurrent();
 
             // Create a cancellation token source that will cancel if we do or if the caller does
             var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -189,6 +194,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 return null;
             }
+
+            EnsureEngineSettingsCurrent();
 
             return AnalysisEngine.FormatAsync(scriptFileContents, formatSettings, formatRange);
         }
@@ -259,6 +266,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
             InitializeAnalysisEngineToCurrentSettings();
         }
 
+        private void EnsureEngineSettingsCurrent()
+        {
+            if (_pssaSettingsFilePath != null
+                && !File.Exists(_pssaSettingsFilePath))
+            {
+                InitializeAnalysisEngineToCurrentSettings();
+            }
+        }
+
         private void InitializeAnalysisEngineToCurrentSettings()
         {
             // If script analysis has been disabled, just return null
@@ -301,6 +317,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (TryFindSettingsFile(out string settingsFilePath))
             {
                 _logger.LogInformation($"Configuring PSScriptAnalyzer with rules at '{settingsFilePath}'");
+                _pssaSettingsFilePath = settingsFilePath;
                 pssaCmdletEngineBuilder.WithSettingsFile(settingsFilePath);
             }
             else
@@ -317,6 +334,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (TryFindSettingsFile(out string settingsFilePath))
             {
                 _logger.LogInformation($"Recreating analysis engine with rules at '{settingsFilePath}'");
+                _pssaSettingsFilePath = settingsFilePath;
                 return oldAnalysisEngine.RecreateWithNewSettings(settingsFilePath);
             }
 
