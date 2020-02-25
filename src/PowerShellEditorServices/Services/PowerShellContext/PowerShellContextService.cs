@@ -2090,7 +2090,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // We want to get the list hierarchy of execution policies
             // Calling the cmdlet is the simplest way to do that
             IReadOnlyList<PSObject> policies = this.powerShell
-                .AddCommand("Get-ExecutionPolicy")
+                .AddCommand("Microsoft.PowerShell.Security\\Get-ExecutionPolicy")
                     .AddParameter("-List")
                 .Invoke();
 
@@ -2136,7 +2136,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             try
             {
                 this.powerShell
-                    .AddCommand("Set-ExecutionPolicy")
+                    .AddCommand("Microsoft.PowerShell.Security\\Set-ExecutionPolicy")
                     .AddParameter("Scope", ExecutionPolicyScope.Process)
                     .AddParameter("ExecutionPolicy", policyToSet)
                     .AddParameter("Force")
