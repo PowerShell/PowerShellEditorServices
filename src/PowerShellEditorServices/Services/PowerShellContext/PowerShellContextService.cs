@@ -367,7 +367,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     powerShellVersion.ToString());
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (VersionUtils.IsWindows)
             {
                 this.SetExecutionPolicy();
             }
