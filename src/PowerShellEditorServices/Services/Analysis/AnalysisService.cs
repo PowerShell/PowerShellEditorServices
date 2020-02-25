@@ -362,7 +362,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 // Otherwise we need to remove the old watcher
                 // and create a new one
-                _pssaSettingsFileWatcher.Dispose();
+                DisposeCurrentSettingsFileWatcher();
             }
 
             _pssaSettingsFileWatcher = new FileSystemWatcher(dirPath)
@@ -396,6 +396,21 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             return true;
+        }
+
+        private void DisposeCurrentSettingsFileWatcher()
+        {
+            if (_pssaSettingsFileWatcher == null)
+            {
+                return;
+            }
+
+            _pssaSettingsFileWatcher.Created -= OnSettingsFileUpdated;
+            _pssaSettingsFileWatcher.Changed -= OnSettingsFileUpdated;
+            _pssaSettingsFileWatcher.Deleted -= OnSettingsFileUpdated;
+
+            _pssaSettingsFileWatcher.Dispose();
+            _pssaSettingsFileWatcher = null;
         }
 
         private void ClearOpenFileMarkers()
@@ -543,7 +558,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
 
                     _diagnosticsCancellationTokenSource?.Dispose();
-                    _pssaSettingsFileWatcher?.Dispose();
+
+                    DisposeCurrentSettingsFileWatcher();
                 }
 
                 disposedValue = true;
