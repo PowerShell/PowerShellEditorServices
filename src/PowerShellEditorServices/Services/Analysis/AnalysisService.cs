@@ -299,7 +299,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             }
 
-            // Retrieve the current script analysis engine so we can recreate it after we've overridden in
+            // Retrieve the current script analysis engine so we can recreate it after we've overridden it
             PssaCmdletAnalysisEngine currentAnalysisEngine = AnalysisEngine;
 
             // Clear the open file markers and set the new engine factory
