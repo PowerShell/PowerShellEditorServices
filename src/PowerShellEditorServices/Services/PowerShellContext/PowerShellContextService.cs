@@ -369,7 +369,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // TODO: Should this be configurable?
                 this.SetExecutionPolicy();
             }
 
