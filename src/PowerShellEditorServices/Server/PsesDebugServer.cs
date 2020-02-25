@@ -76,7 +76,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 _powerShellContextService.IsDebugServerActive = true;
 
                 // Needed to make sure PSReadLine's static properties are initialized in the pipeline thread.
-                if (_usePSReadLine && Interlocked.Exchange(ref s_hasRunPsrlStaticCtor, 1) == 0)
+                // This is only needed for Temp sessions who only have a debug server.
+                if (_usePSReadLine && _useTempSession && Interlocked.Exchange(ref s_hasRunPsrlStaticCtor, 1) == 0)
                 {
                     // This must be run synchronously to ensure debugging works
                     _powerShellContextService
