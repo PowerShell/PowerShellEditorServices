@@ -319,12 +319,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 settingsFilePath = _workplaceService.ResolveWorkspacePath(configuredPath);
 
-                if (settingsFilePath == null)
+                if (settingsFilePath == null
+                    || !File.Exists(settingsFilePath))
                 {
                     _logger.LogError($"Unable to find PSSA settings file at '{configuredPath}'. Loading default rules.");
+                    return false;
                 }
 
-                return settingsFilePath != null;
+                return true;
             }
 
             // TODO: Could search for a default here
