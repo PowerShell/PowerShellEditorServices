@@ -138,12 +138,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ScriptFile[] filesToAnalyze,
             CancellationToken cancellationToken)
         {
+            EnsureEngineSettingsCurrent();
+
             if (AnalysisEngine == null)
             {
                 return;
             }
-
-            EnsureEngineSettingsCurrent();
 
             // Create a cancellation token source that will cancel if we do or if the caller does
             var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -190,12 +190,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>The text of the formatted PowerShell script.</returns>
         public Task<string> FormatAsync(string scriptFileContents, Hashtable formatSettings, int[] formatRange = null)
         {
+            EnsureEngineSettingsCurrent();
+
             if (AnalysisEngine == null)
             {
                 return null;
             }
-
-            EnsureEngineSettingsCurrent();
 
             return AnalysisEngine.FormatAsync(scriptFileContents, formatSettings, formatRange);
         }
