@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -78,6 +79,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             "PSPossibleIncorrectUsageOfRedirectionOperator"
         };
 
+        private static readonly StringComparison s_osPathStringComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+            ? StringComparison.Ordinal
+            : StringComparison.OrdinalIgnoreCase;
+
         private readonly ILoggerFactory _loggerFactory;
 
         private readonly ILogger _logger;
@@ -92,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ConcurrentDictionary<ScriptFile, CorrectionTableEntry> _mostRecentCorrectionsByFile;
 
-        private Lazy<PssaCmdletAnalysisEngine> _analysisEngine;
+        private Lazy<PssaCmdletAnalysisEngine> _analysisEngineLazy;
 
         private FileSystemWatcher _pssaSettingsFileWatcher;
 
@@ -118,13 +123,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _workplaceService = workspaceService;
             _analysisDelayMillis = 750;
             _mostRecentCorrectionsByFile = new ConcurrentDictionary<ScriptFile, CorrectionTableEntry>();
-            _analysisEngine = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
+            _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
         }
 
         /// <summary>
         /// The analysis engine to use for running script analysis.
         /// </summary>
-        private PssaCmdletAnalysisEngine AnalysisEngine => _analysisEngine.Value;
+        private PssaCmdletAnalysisEngine AnalysisEngine => _analysisEngineLazy?.Value;
 
         /// <summary>
         /// Sets up a script analysis run, eventually returning the result.
@@ -257,44 +262,60 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="settings">The new language server settings.</param>
         public void OnConfigurationUpdated(object sender, LanguageServerSettings settings)
         {
-            ReinitializeAnalysisEngine();
+            InitializeAnalysisEngineToCurrentSettings();
         }
 
         private void OnSettingsFileUpdated(object sender, FileSystemEventArgs args)
         {
-            ReinitializeAnalysisEngine();
+            InitializeAnalysisEngineToCurrentSettings();
         }
 
-        private void ReinitializeAnalysisEngine()
+        private void InitializeAnalysisEngineToCurrentSettings()
         {
+            // If script analysis has been disabled, just return null
+            if (_configurationService.CurrentSettings.ScriptAnalysis.Enable != true)
+            {
+                _pssaSettingsFileWatcher?.Dispose();
+                _pssaSettingsFileWatcher = null;
+
+                if (_analysisEngineLazy != null && _analysisEngineLazy.IsValueCreated)
+                {
+                    _analysisEngineLazy.Value.Dispose();
+                }
+
+                _analysisEngineLazy = null;
+                return;
+            }
+
+            // We may be triggered after the lazy factory is set,
+            // but before it's been able to instantiate
+            if (_analysisEngineLazy == null)
+            {
+                _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
+                return;
+            }
+            else if (!_analysisEngineLazy.IsValueCreated)
+            {
+                return;
+            }
+
+            // Retrieve the current script analysis engine so we can recreate it after we've overridden in
+            PssaCmdletAnalysisEngine currentAnalysisEngine = AnalysisEngine;
+
+            // Clear the open file markers and set the new engine factory
             ClearOpenFileMarkers();
-            _analysisEngine = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
+            _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(() => RecreateAnalysisEngine(currentAnalysisEngine));
         }
 
         private PssaCmdletAnalysisEngine InstantiateAnalysisEngine()
         {
-            if (_pssaSettingsFileWatcher != null)
-            {
-                _pssaSettingsFileWatcher.Dispose();
-                _pssaSettingsFileWatcher = null;
-            }
-
-            if (!(_configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false))
-            {
-                return null;
-            }
-
             var pssaCmdletEngineBuilder = new PssaCmdletAnalysisEngine.Builder(_loggerFactory);
 
             // If there's a settings file use that
             if (TryFindSettingsFile(out string settingsFilePath))
             {
                 _logger.LogInformation($"Configuring PSScriptAnalyzer with rules at '{settingsFilePath}'");
-                _pssaSettingsFileWatcher = new FileSystemWatcher(settingsFilePath)
-                {
-                    EnableRaisingEvents = true,
-                };
-                _pssaSettingsFileWatcher.Changed += OnSettingsFileUpdated;
+                SetSettingsFileWatcher(settingsFilePath);
                 pssaCmdletEngineBuilder.WithSettingsFile(settingsFilePath);
             }
             else
@@ -304,6 +325,54 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             return pssaCmdletEngineBuilder.Build();
+        }
+
+        private PssaCmdletAnalysisEngine RecreateAnalysisEngine(PssaCmdletAnalysisEngine oldAnalysisEngine)
+        {
+            if (TryFindSettingsFile(out string settingsFilePath))
+            {
+                _logger.LogInformation($"Recreating analysis engine with rules at '{settingsFilePath}'");
+                SetSettingsFileWatcher(settingsFilePath);
+                return oldAnalysisEngine.RecreateWithNewSettings(settingsFilePath);
+            }
+
+            _logger.LogInformation("PSScriptAnalyzer settings file not found. Falling back to default rules");
+            return oldAnalysisEngine.RecreateWithRules(s_defaultRules);
+        }
+
+        private void SetSettingsFileWatcher(string path)
+        {
+            string dirPath = Path.GetDirectoryName(path);
+            string fileName = Path.GetFileName(path);
+
+            if (_pssaSettingsFileWatcher != null)
+            {
+                if (string.Equals(dirPath, _pssaSettingsFileWatcher.Path, s_osPathStringComparison))
+                {
+                    if (string.Equals(fileName, _pssaSettingsFileWatcher.Filter, s_osPathStringComparison))
+                    {
+                        // The current watcher is already watching the right file, so we are done
+                        return;
+                    }
+
+                    // We just need to update the filter, which we can do without recreating the watcher
+                    _pssaSettingsFileWatcher.Filter = fileName;
+                    return;
+                }
+
+                // Otherwise we need to remove the old watcher
+                // and create a new one
+                _pssaSettingsFileWatcher.Dispose();
+            }
+
+            _pssaSettingsFileWatcher = new FileSystemWatcher(dirPath)
+            {
+                Filter = fileName,
+                EnableRaisingEvents = true,
+            };
+            _pssaSettingsFileWatcher.Created += OnSettingsFileUpdated;
+            _pssaSettingsFileWatcher.Changed += OnSettingsFileUpdated;
+            _pssaSettingsFileWatcher.Deleted += OnSettingsFileUpdated;
         }
 
         private bool TryFindSettingsFile(out string settingsFilePath)
@@ -321,7 +390,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (settingsFilePath == null
                 || !File.Exists(settingsFilePath))
             {
-                _logger.LogError($"Unable to find PSSA settings file at '{configuredPath}'. Loading default rules.");
+                _logger.LogWarning($"Unable to find PSSA settings file at '{configuredPath}'. Loading default rules.");
+                settingsFilePath = null;
                 return false;
             }
 
@@ -466,8 +536,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 if (disposing)
                 {
-                    if (_analysisEngine.IsValueCreated) { _analysisEngine.Value.Dispose(); }
+                    if (_analysisEngineLazy != null
+                        && _analysisEngineLazy.IsValueCreated)
+                    { 
+                        _analysisEngineLazy.Value.Dispose();
+                    }
+
                     _diagnosticsCancellationTokenSource?.Dispose();
+                    _pssaSettingsFileWatcher?.Dispose();
                 }
 
                 disposedValue = true;
