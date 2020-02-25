@@ -260,13 +260,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ReinitializeAnalysisEngine();
         }
 
-        private void OnSettingsFileDeleted(object sender, FileSystemEventArgs args)
+        private void OnSettingsFileUpdated(object sender, FileSystemEventArgs args)
         {
-            if (args.ChangeType != WatcherChangeTypes.Deleted)
-            {
-                return;
-            }
-
             ReinitializeAnalysisEngine();
         }
 
@@ -299,7 +294,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     EnableRaisingEvents = true,
                 };
-                _pssaSettingsFileWatcher.Deleted += OnSettingsFileDeleted;
+                _pssaSettingsFileWatcher.Changed += OnSettingsFileUpdated;
                 pssaCmdletEngineBuilder.WithSettingsFile(settingsFilePath);
             }
             else
@@ -315,24 +310,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             string configuredPath = _configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
 
-            if (!string.IsNullOrEmpty(configuredPath))
+            if (string.IsNullOrEmpty(configuredPath))
             {
-                settingsFilePath = _workplaceService.ResolveWorkspacePath(configuredPath);
-
-                if (settingsFilePath == null
-                    || !File.Exists(settingsFilePath))
-                {
-                    _logger.LogError($"Unable to find PSSA settings file at '{configuredPath}'. Loading default rules.");
-                    return false;
-                }
-
-                return true;
+                settingsFilePath = null;
+                return false;
             }
 
-            // TODO: Could search for a default here
+            settingsFilePath = _workplaceService.ResolveWorkspacePath(configuredPath);
 
-            settingsFilePath = null;
-            return false;
+            if (settingsFilePath == null
+                || !File.Exists(settingsFilePath))
+            {
+                _logger.LogError($"Unable to find PSSA settings file at '{configuredPath}'. Loading default rules.");
+                return false;
+            }
+
+            return true;
         }
 
         private void ClearOpenFileMarkers()
