@@ -79,10 +79,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             "PSPossibleIncorrectUsageOfRedirectionOperator"
         };
 
-        private static readonly StringComparison s_osPathStringComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-            ? StringComparison.Ordinal
-            : StringComparison.OrdinalIgnoreCase;
-
         private readonly ILoggerFactory _loggerFactory;
 
         private readonly ILogger _logger;
