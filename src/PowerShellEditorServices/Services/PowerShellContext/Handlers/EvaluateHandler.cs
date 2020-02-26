@@ -21,19 +21,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _powerShellContextService = powerShellContextService;
         }
 
-        public async Task<EvaluateResponseBody> Handle(EvaluateRequestArguments request, CancellationToken cancellationToken)
+        public Task<EvaluateResponseBody> Handle(EvaluateRequestArguments request, CancellationToken cancellationToken)
         {
-            await _powerShellContextService.ExecuteScriptStringAsync(
+            _powerShellContextService.ExecuteScriptStringAsync(
                 request.Expression,
                 writeInputToHost: true,
                 writeOutputToHost: true,
-                addToHistory: true).ConfigureAwait(false);
+                addToHistory: true);
 
-            return new EvaluateResponseBody
+            return Task.FromResult(new EvaluateResponseBody
             {
                 Result = "",
                 VariablesReference = 0
-            };
+            });
         }
     }
 }
