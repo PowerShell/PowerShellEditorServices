@@ -363,7 +363,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     _fileWriter.WriteLine(logMessage);
                 }
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException)
             {
             }
         }

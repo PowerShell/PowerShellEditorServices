@@ -43,6 +43,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// </summary>
     public sealed class StdioTransportConfig : ITransportConfig
     {
+        private readonly HostLogger _logger;
+
+        public StdioTransportConfig(HostLogger logger)
+        {
+            _logger = logger;
+        }
+
         public string EndpointDetails => "<stdio>";
 
         public string SessionFileTransportName => "Stdio";
@@ -51,6 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync()
         {
+            _logger.Log(PsesLogLevel.Diagnostic, "Connecting stdio streams");
             return Task.FromResult((Console.OpenStandardInput(), Console.OpenStandardOutput()));
         }
     }
@@ -64,29 +72,32 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Create a duplex named pipe transport config with an automatically generated pipe name.
         /// </summary>
         /// <returns>A new duplex named pipe transport configuration.</returns>
-        public static DuplexNamedPipeTransportConfig Create()
+        public static DuplexNamedPipeTransportConfig Create(HostLogger logger)
         {
-            return new DuplexNamedPipeTransportConfig(NamedPipeUtils.GenerateValidNamedPipeName());
+            return new DuplexNamedPipeTransportConfig(logger, NamedPipeUtils.GenerateValidNamedPipeName());
         }
 
         /// <summary>
         /// Create a duplex named pipe transport config with the given pipe name.
         /// </summary>
         /// <returns>A new duplex named pipe transport configuration.</returns>
-        public static DuplexNamedPipeTransportConfig Create(string pipeName)
+        public static DuplexNamedPipeTransportConfig Create(HostLogger logger, string pipeName)
         {
             if (pipeName == null)
             {
-                return DuplexNamedPipeTransportConfig.Create();
+                return DuplexNamedPipeTransportConfig.Create(logger);
             }
 
-            return new DuplexNamedPipeTransportConfig(pipeName);
+            return new DuplexNamedPipeTransportConfig(logger, pipeName);
         }
+
+        private readonly HostLogger _logger;
 
         private readonly string _pipeName;
 
-        private DuplexNamedPipeTransportConfig(string pipeName)
+        private DuplexNamedPipeTransportConfig(HostLogger logger, string pipeName)
         {
+            _logger = logger;
             _pipeName = pipeName;
             SessionFileEntries = new Dictionary<string, object>{ { "PipeName", NamedPipeUtils.GetNamedPipePath(pipeName) } };
         }
@@ -99,8 +110,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public async Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync()
         {
+            _logger.Log(PsesLogLevel.Diagnostic, "Creating named pipe");
             NamedPipeServerStream namedPipe = NamedPipeUtils.CreateNamedPipe(_pipeName, PipeDirection.InOut);
+            _logger.Log(PsesLogLevel.Diagnostic, "Waiting for named pipe connection");
             await namedPipe.WaitForConnectionAsync().ConfigureAwait(false);
+            _logger.Log(PsesLogLevel.Diagnostic, "Named pipe connected");
             return (namedPipe, namedPipe);
         }
     }
@@ -117,42 +131,44 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Create a pair of simplex named pipes using generated names.
         /// </summary>
         /// <returns>A new simplex named pipe transport config.</returns>
-        public static SimplexNamedPipeTransportConfig Create()
+        public static SimplexNamedPipeTransportConfig Create(HostLogger logger)
         {
-            return SimplexNamedPipeTransportConfig.Create(NamedPipeUtils.GenerateValidNamedPipeName(new[] { InPipePrefix, OutPipePrefix }));
+            return SimplexNamedPipeTransportConfig.Create(logger, NamedPipeUtils.GenerateValidNamedPipeName(new[] { InPipePrefix, OutPipePrefix }));
         }
 
         /// <summary>
         /// Create a pair of simplex named pipes using the given name as a base.
         /// </summary>
         /// <returns>A new simplex named pipe transport config.</returns>
-        public static SimplexNamedPipeTransportConfig Create(string pipeNameBase)
+        public static SimplexNamedPipeTransportConfig Create(HostLogger logger, string pipeNameBase)
         {
             if (pipeNameBase == null)
             {
-                return SimplexNamedPipeTransportConfig.Create();
+                return SimplexNamedPipeTransportConfig.Create(logger);
             }
 
             string inPipeName = $"{InPipePrefix}_{pipeNameBase}";
             string outPipeName = $"{OutPipePrefix}_{pipeNameBase}";
 
-            return SimplexNamedPipeTransportConfig.Create(inPipeName, outPipeName);
+            return SimplexNamedPipeTransportConfig.Create(logger, inPipeName, outPipeName);
         }
 
         /// <summary>
         /// Create a pair of simplex named pipes using the given names.
         /// </summary>
         /// <returns>A new simplex named pipe transport config.</returns>
-        public static SimplexNamedPipeTransportConfig Create(string inPipeName, string outPipeName)
+        public static SimplexNamedPipeTransportConfig Create(HostLogger logger, string inPipeName, string outPipeName)
         {
-            return new SimplexNamedPipeTransportConfig(inPipeName, outPipeName);
+            return new SimplexNamedPipeTransportConfig(logger, inPipeName, outPipeName);
         }
 
+        private readonly HostLogger _logger;
         private readonly string _inPipeName;
         private readonly string _outPipeName;
 
-        private SimplexNamedPipeTransportConfig(string inPipeName, string outPipeName)
+        private SimplexNamedPipeTransportConfig(HostLogger logger, string inPipeName, string outPipeName)
         {
+            _logger = logger;
             _inPipeName = inPipeName;
             _outPipeName = outPipeName;
 
@@ -171,14 +187,18 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public async Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync()
         {
+            _logger.Log(PsesLogLevel.Diagnostic, "Starting in pipe connection");
             NamedPipeServerStream inPipe = NamedPipeUtils.CreateNamedPipe(_inPipeName, PipeDirection.InOut);
             Task inPipeConnected = inPipe.WaitForConnectionAsync();
 
+            _logger.Log(PsesLogLevel.Diagnostic, "Starting out pipe connection");
             NamedPipeServerStream outPipe = NamedPipeUtils.CreateNamedPipe(_outPipeName, PipeDirection.Out);
             Task outPipeConnected = outPipe.WaitForConnectionAsync();
 
+            _logger.Log(PsesLogLevel.Diagnostic, "Wating for pipe connections");
             await Task.WhenAll(inPipeConnected, outPipeConnected).ConfigureAwait(false);
 
+            _logger.Log(PsesLogLevel.Diagnostic, "Simplex named pipe transport connected");
             return (inPipe, outPipe);
         }
     }

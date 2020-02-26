@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Start and run Editor Services and then wait for shutdown.
         /// </summary>
         /// <returns>A task that ends when Editor Services shuts down.</returns>
-        public async Task RunUntilShutdown()
+        public Task RunUntilShutdown()
         {
             // Start Editor Services
             Task runAndAwaitShutdown = CreateEditorServicesAndRunUntilShutdown();
@@ -57,7 +57,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _sessionFileWriter.WriteSessionStarted(_config.LanguageServiceTransport, _config.DebugServiceTransport);
 
             // Finally, wait for Editor Services to shut down
-            await runAndAwaitShutdown.ConfigureAwait(false);
+            _logger.Log(PsesLogLevel.Diagnostic, "Waiting on PSES run/shutdown");
+            return runAndAwaitShutdown;
         }
 
         public void Dispose()
@@ -73,6 +74,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             try
             {
+                _logger.Log(PsesLogLevel.Diagnostic, "Creating/running editor services");
+
                 bool creatingLanguageServer = _config.LanguageServiceTransport != null;
                 bool creatingDebugServer = _config.DebugServiceTransport != null;
                 bool isTempDebugSession = creatingDebugServer && !creatingLanguageServer;
