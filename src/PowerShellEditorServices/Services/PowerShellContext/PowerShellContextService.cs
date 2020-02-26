@@ -2113,7 +2113,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 if ((ExecutionPolicyScope)policyObject.Members["Scope"].Value == ExecutionPolicyScope.Process)
                 {
-                    continue;
+                    break;
                 }
 
                 var executionPolicy = (ExecutionPolicy)policyObject.Members["ExecutionPolicy"].Value;
