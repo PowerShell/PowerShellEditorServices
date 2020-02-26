@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Management.Automation.Host;
@@ -23,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 {
     using System.Diagnostics.CodeAnalysis;
     using System.Management.Automation;
+    using System.Runtime.InteropServices;
     using Microsoft.PowerShell.EditorServices.Handlers;
     using Microsoft.PowerShell.EditorServices.Hosting;
     using Microsoft.PowerShell.EditorServices.Logging;
@@ -367,10 +367,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     powerShellVersion.ToString());
             }
 
-            if (this.LocalPowerShellVersion.Edition != "Linux")
+            if (VersionUtils.IsWindows)
             {
-                // TODO: Should this be configurable?
-                this.SetExecutionPolicy(ExecutionPolicy.RemoteSigned);
+                this.SetExecutionPolicy();
             }
 
             // Set up the runspace
@@ -2086,56 +2085,70 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return stringBuilder.ToString();
         }
 
-        private void SetExecutionPolicy(ExecutionPolicy desiredExecutionPolicy)
+        private void SetExecutionPolicy()
         {
-            var currentPolicy = ExecutionPolicy.Undefined;
+            // We want to get the list hierarchy of execution policies
+            // Calling the cmdlet is the simplest way to do that
+            IReadOnlyList<PSObject> policies = this.powerShell
+                .AddCommand("Microsoft.PowerShell.Security\\Get-ExecutionPolicy")
+                    .AddParameter("-List")
+                .Invoke();
 
-            // Get the current execution policy so that we don't set it higher than it already is
-            this.powerShell.Commands.AddCommand("Get-ExecutionPolicy");
+            this.powerShell.Commands.Clear();
 
-            var result = this.powerShell.Invoke<ExecutionPolicy>();
-            if (result.Count > 0)
+            // The policies come out in the following order:
+            // - MachinePolicy
+            // - UserPolicy
+            // - Process
+            // - CurrentUser
+            // - LocalMachine
+            // This is the order of precedence we want to follow, skipping the Process scope
+            //
+            // Get-ExecutionPolicy -List emits PSObjects with Scope and ExecutionPolicy note properties
+            // set to expected values, so we must sift through those.
+            ExecutionPolicy policyToSet = ExecutionPolicy.Bypass;
+            for (int i = policies.Count - 1; i >= 0; i--)
             {
-                currentPolicy = result.FirstOrDefault();
+                PSObject policyObject = policies[i];
+
+                if ((ExecutionPolicyScope)policyObject.Members["Scope"].Value == ExecutionPolicyScope.Process)
+                {
+                    break;
+                }
+
+                var executionPolicy = (ExecutionPolicy)policyObject.Members["ExecutionPolicy"].Value;
+                if (executionPolicy != ExecutionPolicy.Undefined)
+                {
+                    policyToSet = executionPolicy;
+                    break;
+                }
             }
 
-            if (desiredExecutionPolicy < currentPolicy ||
-                desiredExecutionPolicy == ExecutionPolicy.Bypass ||
-                currentPolicy == ExecutionPolicy.Undefined)
+            // If there's nothing to do, save ourselves a PowerShell invocation
+            if (policyToSet == ExecutionPolicy.Bypass)
             {
-                this.logger.LogTrace(
-                    string.Format(
-                        "Setting execution policy:\r\n    Current = ExecutionPolicy.{0}\r\n    Desired = ExecutionPolicy.{1}",
-                        currentPolicy,
-                        desiredExecutionPolicy));
+                this.logger.LogTrace("Execution policy already set to Bypass. Skipping execution policy set");
+                return;
+            }
 
-                this.powerShell.Commands.Clear();
+            // Finally set the inherited execution policy
+            this.logger.LogTrace("Setting execution policy to {Policy}", policyToSet);
+            try
+            {
                 this.powerShell
-                    .AddCommand("Set-ExecutionPolicy")
-                    .AddParameter("ExecutionPolicy", desiredExecutionPolicy)
+                    .AddCommand("Microsoft.PowerShell.Security\\Set-ExecutionPolicy")
                     .AddParameter("Scope", ExecutionPolicyScope.Process)
-                    .AddParameter("Force");
-
-                try
-                {
-                    this.powerShell.Invoke();
-                }
-                catch (CmdletInvocationException e)
-                {
-                    this.logger.LogException(
-                        $"An error occurred while calling Set-ExecutionPolicy, the desired policy of {desiredExecutionPolicy} may not be set.",
-                        e);
-                }
-
-                this.powerShell.Commands.Clear();
+                    .AddParameter("ExecutionPolicy", policyToSet)
+                    .AddParameter("Force")
+                    .Invoke();
             }
-            else
+            catch (CmdletInvocationException e)
             {
-                this.logger.LogTrace(
-                    string.Format(
-                        "Current execution policy: ExecutionPolicy.{0}",
-                        currentPolicy));
-
+                this.logger.LogError(e, "Error occurred calling 'Set-ExecutionPolicy -Scope Process -ExecutionPolicy {Policy} -Force'", policyToSet);
+            }
+            finally
+            {
+                this.powerShell.Commands.Clear();
             }
         }
 
