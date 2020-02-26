@@ -261,6 +261,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return GetSemanticMarkersFromCommandAsync(command);
         }
 
+        public PssaCmdletAnalysisEngine RecreateWithNewSettings(string settingsPath)
+        {
+            return new PssaCmdletAnalysisEngine(_logger, _analysisRunspacePool, _pssaModuleInfo, settingsPath);
+        }
+
+        public PssaCmdletAnalysisEngine RecreateWithNewSettings(Hashtable settingsHashtable)
+        {
+            return new PssaCmdletAnalysisEngine(_logger, _analysisRunspacePool, _pssaModuleInfo, settingsHashtable);
+        }
+
+        public PssaCmdletAnalysisEngine RecreateWithRules(string[] rules)
+        {
+            return new PssaCmdletAnalysisEngine(_logger, _analysisRunspacePool, _pssaModuleInfo, rules);
+        }
+
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
