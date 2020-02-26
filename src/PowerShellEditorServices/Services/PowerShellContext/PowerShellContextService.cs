@@ -2107,7 +2107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Get-ExecutionPolicy -List emits PSObjects with Scope and ExecutionPolicy note properties
             // set to expected values, so we must sift through those.
             ExecutionPolicy policyToSet = ExecutionPolicy.Bypass;
-            for (int i = policies.Count; i >= 0; i--)
+            for (int i = policies.Count - 1; i >= 0; i--)
             {
                 PSObject policyObject = policies[i];
 
