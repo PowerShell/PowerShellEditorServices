@@ -1225,14 +1225,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (this.PromptNest.IsInDebugger)
             {
+                this.versionSpecificOperations.StopCommandInDebugger(this);
                 if (shouldAbortDebugSession)
                 {
-                    this.versionSpecificOperations.StopCommandInDebugger(this);
                     this.ResumeDebugger(DebuggerResumeAction.Stop);
-                }
-                else
-                {
-                    this.versionSpecificOperations.StopCommandInDebugger(this);
                 }
             }
             else
