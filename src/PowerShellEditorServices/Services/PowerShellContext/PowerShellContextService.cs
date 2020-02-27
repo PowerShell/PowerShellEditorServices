@@ -68,6 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #region Fields
 
         private readonly SemaphoreSlim resumeRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
+        private readonly SemaphoreSlim sessionStateLock = AsyncUtils.CreateSimpleLockingSemaphore();
 
         private readonly OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer _languageServer;
         private readonly bool isPSReadLineEnabled;
@@ -745,6 +746,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Don't change our SessionState for ReadLine.
                 if (!executionOptions.IsReadLine)
                 {
+                    await this.sessionStateLock.WaitAsync();
                     shell.InvocationStateChanged += PowerShell_InvocationStateChanged;
                 }
 
@@ -768,6 +770,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     if (!executionOptions.IsReadLine)
                     {
                         shell.InvocationStateChanged -= PowerShell_InvocationStateChanged;
+                        this.sessionStateLock.Release();
                     }
 
                     if (shell.HadErrors)
@@ -1204,45 +1207,52 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </param>
         public void AbortExecution(bool shouldAbortDebugSession)
         {
-            if (this.SessionState != PowerShellContextState.Aborting &&
-                this.SessionState != PowerShellContextState.Disposed)
+            if (this.SessionState == PowerShellContextState.Aborting
+                || this.SessionState == PowerShellContextState.Disposed)
             {
-                this.logger.LogTrace("Execution abort requested...");
+                this.logger.LogTrace(
+                    string.Format(
+                        $"Execution abort requested when already aborted (SessionState = {this.SessionState})"));
+                return;
+            }
 
+            this.logger.LogTrace("Execution abort requested...");
+
+            if (shouldAbortDebugSession)
+            {
+                this.ExitAllNestedPrompts();
+            }
+
+            if (this.PromptNest.IsInDebugger)
+            {
                 if (shouldAbortDebugSession)
                 {
-                    this.ExitAllNestedPrompts();
-                }
-
-                if (this.PromptNest.IsInDebugger)
-                {
-                    if (shouldAbortDebugSession)
-                    {
-                        this.versionSpecificOperations.StopCommandInDebugger(this);
-                        this.ResumeDebugger(DebuggerResumeAction.Stop);
-                    }
-                    else
-                    {
-                        this.versionSpecificOperations.StopCommandInDebugger(this);
-                    }
+                    this.versionSpecificOperations.StopCommandInDebugger(this);
+                    this.ResumeDebugger(DebuggerResumeAction.Stop);
                 }
                 else
                 {
-                    this.PromptNest.GetPowerShell(isReadLine: false).BeginStop(null, null);
+                    this.versionSpecificOperations.StopCommandInDebugger(this);
                 }
+            }
+            else
+            {
+                this.PromptNest.GetPowerShell(isReadLine: false).BeginStop(null, null);
+            }
 
+            this.sessionStateLock.Wait();
+            try
+            {
                 this.SessionState = PowerShellContextState.Aborting;
-
                 this.OnExecutionStatusChanged(
                     ExecutionStatus.Aborted,
                     null,
                     false);
             }
-            else
+            finally
             {
-                this.logger.LogTrace(
-                    string.Format(
-                        $"Execution abort requested when already aborted (SessionState = {this.SessionState})"));
+                this.SessionState = PowerShellContextState.Ready;
+                this.sessionStateLock.Release();
             }
         }
 
