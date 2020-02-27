@@ -69,7 +69,7 @@ function Set-ScriptExtent {
             $differenceOffset = $aText.Length - $aExtent.Text.Length
             $scriptText       = $fileContext.GetText()
 
-            $fileContext.InsertText($aText, $aExtent.BufferRange)
+            $fileContext.InsertText($aText, $aExtent)
 
             $newText = $scriptText.Remove($aExtent.StartOffset, $aExtent.Text.Length).Insert($aExtent.StartOffset, $aText)
 
