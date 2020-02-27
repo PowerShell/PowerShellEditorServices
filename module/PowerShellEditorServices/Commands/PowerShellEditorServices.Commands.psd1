@@ -72,14 +72,17 @@ FunctionsToExport = @('Register-EditorCommand',
                       'Find-Ast',
                       'Import-EditorCommand',
                       'ConvertFrom-ScriptExtent',
-                      'ConvertTo-ScriptExtent',
                       'Get-Token',
                       'Out-CurrentFile',
-                      'Join-ScriptExtent',
-                      'Test-ScriptExtent',
                       'Open-EditorFile',
                       'New-EditorFile',
-                      'Clear-Host')
+                      'Clear-Host'
+
+                      # Removed until FullScriptExtent can be brought back
+                      #'ConvertTo-ScriptExtent',
+                      #'Join-ScriptExtent',
+                      #'Test-ScriptExtent',
+                    )
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()

@@ -3,7 +3,7 @@ Register-EditorCommand `
     -DisplayName 'Open Editor Profile' `
     -SuppressOutput `
     -ScriptBlock {
-        param([Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorContext]$context)
+        param([Microsoft.PowerShell.EditorServices.Extensions.EditorContext, Microsoft.PowerShell.EditorServices]$context)
         If (!(Test-Path -Path $Profile)) { New-Item -Path $Profile -ItemType File }
         $psEditor.Workspace.OpenFile($Profile)
     }
@@ -13,7 +13,7 @@ Register-EditorCommand `
     -DisplayName 'Open Profile from List (Current User)' `
     -SuppressOutput `
     -ScriptBlock {
-        param([Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorContext]$context)
+        param([Microsoft.PowerShell.EditorServices.Extensions.EditorContext, Microsoft.PowerShell.EditorServices]$context)
 
         $Current = Split-Path -Path $profile -Leaf
         $List = @($Current,'Microsoft.VSCode_profile.ps1','Microsoft.PowerShell_profile.ps1','Microsoft.PowerShellISE_profile.ps1','Profile.ps1') | Select-Object -Unique

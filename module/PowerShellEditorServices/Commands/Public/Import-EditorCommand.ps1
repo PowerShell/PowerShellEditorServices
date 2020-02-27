@@ -7,7 +7,7 @@ function Import-EditorCommand {
     <#
     .EXTERNALHELP ..\PowerShellEditorServices.Commands-help.xml
     #>
-    [OutputType([Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommand])]
+    [OutputType([Microsoft.PowerShell.EditorServices.Extensions.EditorCommand, Microsoft.PowerShell.EditorServices])]
     [CmdletBinding(DefaultParameterSetName='ByCommand')]
     param(
         [Parameter(Position=0,
@@ -72,7 +72,7 @@ function Import-EditorCommand {
                 $commands = $Command | Get-Command -ErrorAction SilentlyContinue
             }
         }
-        $attributeType = [Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommandAttribute]
+        $attributeType = [Microsoft.PowerShell.EditorServices.Extensions.EditorCommandAttribute, Microsoft.PowerShell.EditorServices]
         foreach ($aCommand in $commands) {
             # Get the attribute from our command to get name info.
             $details = $aCommand.ScriptBlock.Attributes | Where-Object TypeId -eq $attributeType
@@ -96,7 +96,7 @@ function Import-EditorCommand {
                 }
                 # Check for a context parameter.
                 $contextParameter = $aCommand.Parameters.Values |
-                    Where-Object ParameterType -eq ([Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorContext])
+                    Where-Object ParameterType -eq ([Microsoft.PowerShell.EditorServices.Extensions.EditorContext, Microsoft.PowerShell.EditorServices])
 
                 # If one is found then add a named argument. Otherwise call the command directly.
                 if ($contextParameter) {
@@ -106,7 +106,7 @@ function Import-EditorCommand {
                     $scriptBlock = [scriptblock]::Create($aCommand.Name)
                 }
 
-                $editorCommand = New-Object Microsoft.PowerShell.EditorServices.Services.PowerShellContext.EditorCommand @(
+                $editorCommand = [Microsoft.PowerShell.EditorServices.Extensions.EditorCommand, Microsoft.PowerShell.EditorServices]::new(
                     <# commandName:    #> $details.Name,
                     <# displayName:    #> $details.DisplayName,
                     <# suppressOutput: #> $details.SuppressOutput,

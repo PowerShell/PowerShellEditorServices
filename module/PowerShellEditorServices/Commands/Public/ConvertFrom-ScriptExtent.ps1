@@ -8,8 +8,8 @@ function ConvertFrom-ScriptExtent {
     .EXTERNALHELP ..\PowerShellEditorServices.Commands-help.xml
     #>
     [CmdletBinding()]
-    [OutputType([Microsoft.PowerShell.EditorServices.BufferRange],      ParameterSetName='BufferRange')]
-    [OutputType([Microsoft.PowerShell.EditorServices.BufferPosition],   ParameterSetName='BufferPosition')]
+    [OutputType([Microsoft.PowerShell.EditorServices.Extensions.IFileRange, Microsoft.PowerShell.EditorServices],    ParameterSetName='BufferRange')]
+    [OutputType([Microsoft.PowerShell.EditorServices.Extensions.IFilePosition, Microsoft.PowerShell.EditorServices], ParameterSetName='BufferPosition')]
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [ValidateNotNullOrEmpty()]
@@ -37,7 +37,7 @@ function ConvertFrom-ScriptExtent {
             switch ($PSCmdlet.ParameterSetName) {
                 BufferRange {
                     # yield
-                    New-Object Microsoft.PowerShell.EditorServices.BufferRange @(
+                    [Microsoft.PowerShell.EditorServices.Extensions.FileRange, Microsoft.PowerShell.EditorServices]::new(
                         $aExtent.StartLineNumber,
                         $aExtent.StartColumnNumber,
                         $aExtent.EndLineNumber,
@@ -52,7 +52,7 @@ function ConvertFrom-ScriptExtent {
                         $column = $aExtent.StartLineNumber
                     }
                     # yield
-                    New-Object Microsoft.PowerShell.EditorServices.BufferPosition @(
+                    [Microsoft.PowerShell.EditorServices.Extensions.FileRange, Microsoft.PowerShell.EditorServices]::new(
                         $line,
                         $column)
                 }
