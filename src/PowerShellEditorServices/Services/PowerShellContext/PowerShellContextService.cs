@@ -1240,6 +1240,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.PromptNest.GetPowerShell(isReadLine: false).BeginStop(null, null);
             }
 
+            // TODO:
+            // This lock and state reset are a temporary fix at best.
+            // We need to investigate how the debugger should be interacting
+            // with PowerShell in this cancellation scenario.
             this.sessionStateLock.Wait();
             try
             {
