@@ -1,5 +1,23 @@
 # PowerShell Editor Services Release History
 
+## v2.0.0
+### Thursday, March 5, 2020
+
+- 🐛📟 [PowerShellEditorServices #1201](https://github.com/PowerShell/PowerShellEditorServices/pull/1201) -
+  Fix newlines in error formatting.
+- 🐛👮 [vscode-PowerShell #2489](https://github.com/PowerShell/PowerShellEditorServices/pull/1206) -
+  Fix PSScriptAnalyzer not using default rules when no settings file present.
+- 🐛📟 [vscode-PowerShell #2291](https://github.com/PowerShell/PowerShellEditorServices/pull/1207) -
+  Fix `Read-Host` dropping characters.
+- 🐛📺 [vscode-PowerShell #2424](https://github.com/PowerShell/PowerShellEditorServices/pull/1209) -
+  Fix `F8` not working repeatedly in an Interactive Debugging session.
+- 🐛🛫 [vscode-PowerShell #2404](https://github.com/PowerShell/PowerShellEditorServices/pull/1208) -
+  Fix execution policy being set incorrectly at startup on Windows.
+- 🐛🧠 [vscode-PowerShell #2364](https://github.com/PowerShell/PowerShellEditorServices/pull/1210) -
+  Fix intellisense and `F5` not working after debugging.
+- 🐛🧰 [vscode-PowerShell #2495](https://github.com/PowerShell/PowerShellEditorServices/pull/1211) -
+  Fix PowerShellEditorServices.Commands module commands not working due to types being moved.
+
 ## v2.0.0-preview.9
 ### Thursday, February 20, 2020
 
