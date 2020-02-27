@@ -43,7 +43,7 @@ function Register-EditorCommand {
         }
         else
         {
-            Write-Verbose "Registering command '$Name' which executes a function"
+            $null = Write-Verbose "Registering command '$Name' which executes a function"
             [Microsoft.PowerShell.EditorServices.Extensions.EditorCommand, Microsoft.PowerShell.EditorServices]::new($Name, $DisplayName, $SuppressOutput, $Function)
         }
 
