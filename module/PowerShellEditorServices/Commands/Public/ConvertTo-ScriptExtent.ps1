@@ -49,12 +49,12 @@ function ConvertTo-ScriptExtent {
 
         [Parameter(ValueFromPipelineByPropertyName, ParameterSetName='ByBuffer')]
         [Alias('Start')]
-        [Microsoft.PowerShell.EditorServices.BufferPosition]
+        [Microsoft.PowerShell.EditorServices.Extensions.IFilePosition, Microsoft.PowerShell.EditorServices]
         $StartBuffer,
 
         [Parameter(ValueFromPipelineByPropertyName, ParameterSetName='ByBuffer')]
         [Alias('End')]
-        [Microsoft.PowerShell.EditorServices.BufferPosition]
+        [Microsoft.PowerShell.EditorServices.Extensions.IFilePosition, Microsoft.PowerShell.EditorServices]
         $EndBuffer,
 
         [Parameter(Mandatory,

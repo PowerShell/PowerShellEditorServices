@@ -36,18 +36,17 @@ function Register-EditorCommand {
     {
         $commandArgs = @($Name, $DisplayName, $SuppressOutput.IsPresent)
 
-        if ($ScriptBlock -ne $null)
+        $editorCommand = if ($ScriptBlock -ne $null)
         {
-            Write-Verbose "Registering command '$Name' which executes a ScriptBlock"
-            $commandArgs += $ScriptBlock
+            $null = Write-Verbose "Registering command '$Name' which executes a ScriptBlock"
+            [Microsoft.PowerShell.EditorServices.Extensions.EditorCommand, Microsoft.PowerShell.EditorServices]::new($Name, $DisplayName, $SuppressOutput, $ScriptBlock)
         }
         else
         {
             Write-Verbose "Registering command '$Name' which executes a function"
-            $commandArgs += $Function
+            [Microsoft.PowerShell.EditorServices.Extensions.EditorCommand, Microsoft.PowerShell.EditorServices]::new($Name, $DisplayName, $SuppressOutput, $Function)
         }
 
-        $editorCommand = New-Object Microsoft.PowerShell.EditorServices.Extensions.EditorCommand -ArgumentList $commandArgs
         if ($psEditor.RegisterCommand($editorCommand))
         {
             Write-Verbose "Registered new command '$Name'"
