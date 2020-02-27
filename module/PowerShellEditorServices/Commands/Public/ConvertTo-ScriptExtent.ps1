@@ -66,13 +66,11 @@ function ConvertTo-ScriptExtent {
     )
     begin {
         $fileContext = $psEditor.GetEditorContext().CurrentFile
-        $emptyExtent = New-Object Microsoft.PowerShell.EditorServices.FullScriptExtent @(
-            <# filecontext: #> $fileContext,
-            <# startOffset: #> 0,
-            <# endOffset:   #> 0)
+        $emptyExtent = [Microsoft.PowerShell.EditorServices.Extensions.FileScriptExtent, Microsoft.PowerShell.EditorServices]::Empty
     }
+
     process {
-        # Already a InternalScriptExtent, FullScriptExtent or is empty.
+        # Already a InternalScriptExtent, FileScriptExtent or is empty.
         $returnAsIs = $Extent -and
                      (0 -ne $Extent.StartOffset   -or
                       0 -ne $Extent.EndOffset     -or
@@ -88,32 +86,36 @@ function ConvertTo-ScriptExtent {
             if (-not $EndOffsetNumber) {
                 $endOffset = $startOffset
             }
-            return New-Object Microsoft.PowerShell.EditorServices.FullScriptExtent @(
+
+            return [Microsoft.PowerShell.EditorServices.Extensions.FileScriptExtent, Microsoft.PowerShell.EditorServices]::FromOffsets(
                 $fileContext,
                 $startOffset,
                 $endOffset)
         }
-        if (-not $StartBuffer) {
-            if (-not $StartColumnNumber) { $StartColumnNumber = 1 }
-            if (-not $StartLineNumber)   { $StartLineNumber   = 1 }
-            $StartBuffer = New-Object Microsoft.PowerShell.EditorServices.BufferPosition @(
-                $StartLineNumber,
-                $StartColumnNumber)
 
-            if ($EndLineNumber -and $EndColumnNumber) {
-                $EndBuffer = New-Object Microsoft.PowerShell.EditorServices.BufferPosition @(
-                    $EndLineNumber,
-                    $EndColumnNumber)
+        if ($StartBuffer) {
+            if (-not $EndBuffer)
+            {
+                $EndBuffer = $StartBuffer
             }
+
+            return [Microsoft.PowerShell.EditorServices.Extensions.FileScriptExtent, Microsoft.PowerShell.EditorServices]::FromPositions(
+                $fileContext,
+                $StartBuffer.Line,
+                $StartBuffer.Column,
+                $EndBuffer.Line,
+                $EndBuffer.Column)
         }
-        if (-not $EndBuffer) { $EndBuffer = $StartBuffer }
 
-        $bufferRange = New-Object Microsoft.PowerShell.EditorServices.BufferRange @(
-            $StartBuffer,
-            $EndBuffer)
+        if (-not $StartColumnNumber) { $StartColumnNumber = 1 }
+        if (-not $StartLineNumber)   { $StartLineNumber   = 1 }
+        if (-not $EndLineNumber)     { $EndLineNumber     = 1 }
+        if (-not $EndColumnNumber)   { $EndColumnNumber   = 1 }
 
-        return New-Object Microsoft.PowerShell.EditorServices.FullScriptExtent @(
-            $fileContext,
-            $bufferRange)
+        return [Microsoft.PowerShell.EditorServices.Extensions.FileScriptExtent, Microsoft.PowerShell.EditorServices]::FromPositions(
+            $StartLineNumber,
+            $StartColumnNumber,
+            $EndLineNumber,
+            $EndColumnNumber)
     }
 }

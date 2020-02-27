@@ -7,9 +7,146 @@ using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System;
+using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
+    public class FileScriptPosition : IScriptPosition, IFilePosition
+    {
+        public static FileScriptPosition Empty { get; } = new FileScriptPosition(null, 0, 0, 0);
+
+        public static FileScriptPosition FromPosition(FileContext file, int lineNumber, int columnNumber)
+        {
+            int offset = 0;
+            int currLine = 1;
+            string fileText = file.Ast.Extent.Text;
+            while (offset < fileText.Length && currLine < lineNumber)
+            {
+                offset = fileText.IndexOf('\n', offset);
+                currLine++;
+            }
+
+            offset += columnNumber - 1;
+
+            return new FileScriptPosition(file, lineNumber, columnNumber, offset);
+        }
+
+        public static FileScriptPosition FromOffset(FileContext file, int offset)
+        {
+
+            int line = 1;
+            string fileText = file.Ast.Extent.Text;
+
+            if (offset >= fileText.Length)
+            {
+                throw new ArgumentException(nameof(offset), "Offset greater than file length");
+            }
+
+            int lastLineOffset = -1;
+            for (int i = 0; i < offset; i++)
+            {
+                if (fileText[i] == '\n')
+                {
+                    lastLineOffset = i;
+                    line++;
+                }
+            }
+
+            int column = offset - lastLineOffset;
+
+            return new FileScriptPosition(file, line, column, offset);
+        }
+
+        private readonly FileContext _file;
+
+        internal FileScriptPosition(FileContext file, int lineNumber, int columnNumber, int offset)
+        {
+            _file = file;
+            Line = file.GetTextLines()[lineNumber - 1];
+            ColumnNumber = columnNumber;
+            LineNumber = lineNumber;
+            Offset = offset;
+        }
+
+        public int ColumnNumber { get; }
+
+        public string File { get; }
+
+        public string Line { get; }
+
+        public int LineNumber { get; }
+
+        public int Offset { get; }
+
+        int IFilePosition.Column => ColumnNumber;
+
+        int IFilePosition.Line => LineNumber;
+
+        public string GetFullScript() => _file.GetText();
+    }
+
+    public class FileScriptExtent : IScriptExtent, IFileRange
+    {
+        public static bool IsEmpty(FileScriptExtent extent)
+        {
+            return extent == Empty
+                || (extent.StartOffset == 0 && extent.EndOffset == 0);
+        }
+
+        public static FileScriptExtent Empty { get; } = new FileScriptExtent(null, FileScriptPosition.Empty, FileScriptPosition.Empty);
+
+        public static FileScriptExtent FromOffsets(FileContext file, int startOffset, int endOffset)
+        {
+            return new FileScriptExtent(
+                file,
+                FileScriptPosition.FromOffset(file, startOffset),
+                FileScriptPosition.FromOffset(file, endOffset));
+        }
+
+        public static FileScriptExtent FromPositions(FileContext file, int startLine, int startColumn, int endLine, int endColumn)
+        {
+            return new FileScriptExtent(
+                file,
+                FileScriptPosition.FromPosition(file, startLine, startColumn),
+                FileScriptPosition.FromPosition(file, endLine, endColumn));
+        }
+
+        private readonly FileContext _file;
+        private readonly FileScriptPosition _start;
+        private readonly FileScriptPosition _end;
+
+        public FileScriptExtent(FileContext file, FileScriptPosition start, FileScriptPosition end)
+        {
+            _file = file;
+            _start = start;
+            _end = end;
+        }
+
+        public int EndColumnNumber => _end.ColumnNumber;
+
+        public int EndLineNumber => _end.LineNumber;
+
+        public int EndOffset => _end.Offset;
+
+        public IScriptPosition EndScriptPosition => _end;
+
+        public string File => _file.Path;
+
+        public int StartColumnNumber => _start.ColumnNumber;
+
+        public int StartLineNumber => _start.LineNumber;
+
+        public int StartOffset => _start.Offset;
+
+        public IScriptPosition StartScriptPosition => _start;
+
+        public string Text => _file.GetText().Substring(_start.Offset, _end.Offset - _start.Offset);
+
+        IFilePosition IFileRange.Start => _start;
+
+        IFilePosition IFileRange.End => _end;
+    }
+
     /// <summary>
     /// A 1-based file position, referring to a point in a file.
     /// </summary>
