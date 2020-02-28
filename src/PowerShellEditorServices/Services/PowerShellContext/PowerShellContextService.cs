@@ -744,7 +744,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Don't change our SessionState for ReadLine.
                 if (!executionOptions.IsReadLine)
                 {
-                    await this.sessionStateLock.WaitAsync();
+                    await this.sessionStateLock.WaitAsync().ConfigureAwait(false);
                     shell.InvocationStateChanged += PowerShell_InvocationStateChanged;
                 }
 
