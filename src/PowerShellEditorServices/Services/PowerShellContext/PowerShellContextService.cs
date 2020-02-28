@@ -22,10 +22,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 {
     using System.Diagnostics.CodeAnalysis;
     using System.Management.Automation;
-    using System.Runtime.InteropServices;
     using Microsoft.PowerShell.EditorServices.Handlers;
     using Microsoft.PowerShell.EditorServices.Hosting;
-    using Microsoft.PowerShell.EditorServices.Logging;
     using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 
     /// <summary>
@@ -68,6 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #region Fields
 
         private readonly SemaphoreSlim resumeRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
+        private readonly SemaphoreSlim sessionStateLock = AsyncUtils.CreateSimpleLockingSemaphore();
 
         private readonly OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer _languageServer;
         private readonly bool isPSReadLineEnabled;
@@ -745,6 +744,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Don't change our SessionState for ReadLine.
                 if (!executionOptions.IsReadLine)
                 {
+                    await this.sessionStateLock.WaitAsync().ConfigureAwait(false);
                     shell.InvocationStateChanged += PowerShell_InvocationStateChanged;
                 }
 
@@ -768,6 +768,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     if (!executionOptions.IsReadLine)
                     {
                         shell.InvocationStateChanged -= PowerShell_InvocationStateChanged;
+                        this.sessionStateLock.Release();
                     }
 
                     if (shell.HadErrors)
@@ -1204,45 +1205,58 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </param>
         public void AbortExecution(bool shouldAbortDebugSession)
         {
-            if (this.SessionState != PowerShellContextState.Aborting &&
-                this.SessionState != PowerShellContextState.Disposed)
-            {
-                this.logger.LogTrace("Execution abort requested...");
-
-                if (shouldAbortDebugSession)
-                {
-                    this.ExitAllNestedPrompts();
-                }
-
-                if (this.PromptNest.IsInDebugger)
-                {
-                    if (shouldAbortDebugSession)
-                    {
-                        this.versionSpecificOperations.StopCommandInDebugger(this);
-                        this.ResumeDebugger(DebuggerResumeAction.Stop);
-                    }
-                    else
-                    {
-                        this.versionSpecificOperations.StopCommandInDebugger(this);
-                    }
-                }
-                else
-                {
-                    this.PromptNest.GetPowerShell(isReadLine: false).BeginStop(null, null);
-                }
-
-                this.SessionState = PowerShellContextState.Aborting;
-
-                this.OnExecutionStatusChanged(
-                    ExecutionStatus.Aborted,
-                    null,
-                    false);
-            }
-            else
+            if (this.SessionState == PowerShellContextState.Aborting
+                || this.SessionState == PowerShellContextState.Disposed)
             {
                 this.logger.LogTrace(
                     string.Format(
                         $"Execution abort requested when already aborted (SessionState = {this.SessionState})"));
+                return;
+            }
+
+            this.logger.LogTrace("Execution abort requested...");
+
+            if (shouldAbortDebugSession)
+            {
+                this.ExitAllNestedPrompts();
+            }
+
+            if (this.PromptNest.IsInDebugger)
+            {
+                this.versionSpecificOperations.StopCommandInDebugger(this);
+                if (shouldAbortDebugSession)
+                {
+                    this.ResumeDebugger(DebuggerResumeAction.Stop);
+                }
+            }
+            else
+            {
+                this.PromptNest.GetPowerShell(isReadLine: false).BeginStop(null, null);
+            }
+
+            // TODO:
+            // This lock and state reset are a temporary fix at best.
+            // We need to investigate how the debugger should be interacting
+            // with PowerShell in this cancellation scenario.
+            //
+            // Currently we try to acquire a lock on the execution status changed event.
+            // If we can't, it's because a command is executing, so we shouldn't change the status.
+            // If we can, we own the status and should fire the event.
+            if (this.sessionStateLock.Wait(0))
+            {
+                try
+                {
+                    this.SessionState = PowerShellContextState.Aborting;
+                    this.OnExecutionStatusChanged(
+                        ExecutionStatus.Aborted,
+                        null,
+                        false);
+                }
+                finally
+                {
+                    this.SessionState = PowerShellContextState.Ready;
+                    this.sessionStateLock.Release();
+                }
             }
         }
 
