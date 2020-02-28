@@ -22,10 +22,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 {
     using System.Diagnostics.CodeAnalysis;
     using System.Management.Automation;
-    using System.Runtime.InteropServices;
     using Microsoft.PowerShell.EditorServices.Handlers;
     using Microsoft.PowerShell.EditorServices.Hosting;
-    using Microsoft.PowerShell.EditorServices.Logging;
     using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 
     /// <summary>
@@ -1240,19 +1238,21 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // This lock and state reset are a temporary fix at best.
             // We need to investigate how the debugger should be interacting
             // with PowerShell in this cancellation scenario.
-            this.sessionStateLock.Wait();
-            try
+            if (this.sessionStateLock.Wait(0))
             {
-                this.SessionState = PowerShellContextState.Aborting;
-                this.OnExecutionStatusChanged(
-                    ExecutionStatus.Aborted,
-                    null,
-                    false);
-            }
-            finally
-            {
-                this.SessionState = PowerShellContextState.Ready;
-                this.sessionStateLock.Release();
+                try
+                {
+                    this.SessionState = PowerShellContextState.Aborting;
+                    this.OnExecutionStatusChanged(
+                        ExecutionStatus.Aborted,
+                        null,
+                        false);
+                }
+                finally
+                {
+                    this.SessionState = PowerShellContextState.Ready;
+                    this.sessionStateLock.Release();
+                }
             }
         }
 
