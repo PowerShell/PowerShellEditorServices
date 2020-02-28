@@ -2102,25 +2102,24 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // - Process
             // - CurrentUser
             // - LocalMachine
-            // This is the order of precedence we want to follow, skipping the Process scope
+            // We want to ignore policy settings, since we'll already have those anyway.
+            // Then we need to look at the CurrentUser setting, and then the LocalMachine setting.
             //
             // Get-ExecutionPolicy -List emits PSObjects with Scope and ExecutionPolicy note properties
             // set to expected values, so we must sift through those.
+
             ExecutionPolicy policyToSet = ExecutionPolicy.Bypass;
-            for (int i = policies.Count - 1; i >= 0; i--)
+            var currentUserPolicy = (ExecutionPolicy)policies[policies.Count - 2].Members["ExecutionPolicy"].Value;
+            if (currentUserPolicy != ExecutionPolicy.Undefined)
             {
-                PSObject policyObject = policies[i];
-
-                if ((ExecutionPolicyScope)policyObject.Members["Scope"].Value == ExecutionPolicyScope.Process)
+                policyToSet = currentUserPolicy
+            }
+            else
+            {
+                var localMachinePolicy = (ExecutionPolicy)policies[policies.Count - 1].Members["ExecutionPolicy"].Value;
+                if (localMachinePolicy != ExecutionPolicy.Undefined)
                 {
-                    break;
-                }
-
-                var executionPolicy = (ExecutionPolicy)policyObject.Members["ExecutionPolicy"].Value;
-                if (executionPolicy != ExecutionPolicy.Undefined)
-                {
-                    policyToSet = executionPolicy;
-                    break;
+                    policyToSet = localMachinePolicy;
                 }
             }
 
