@@ -1238,6 +1238,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // This lock and state reset are a temporary fix at best.
             // We need to investigate how the debugger should be interacting
             // with PowerShell in this cancellation scenario.
+            //
+            // Currently we try to acquire a lock on the execution status changed event.
+            // If we can't, it's because a command is executing, so we shouldn't change the status.
+            // If we can, we own the status and should fire the event.
             if (this.sessionStateLock.Wait(0))
             {
                 try
