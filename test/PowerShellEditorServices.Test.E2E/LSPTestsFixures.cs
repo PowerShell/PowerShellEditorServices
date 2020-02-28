@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -48,9 +49,16 @@ namespace PowerShellEditorServices.Test.E2E
 
         public override async Task DisposeAsync()
         {
-            await LanguageClient.Shutdown();
-            await _psesProcess.Stop();
-            LanguageClient?.Dispose();
+            try
+            {
+                await LanguageClient.Shutdown();
+                await _psesProcess.Stop();
+                LanguageClient?.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Language client has a disposal bug in it
+            }
         }
     }
 }
