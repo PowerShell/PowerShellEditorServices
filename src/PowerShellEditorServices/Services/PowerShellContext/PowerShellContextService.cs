@@ -2112,7 +2112,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var currentUserPolicy = (ExecutionPolicy)policies[policies.Count - 2].Members["ExecutionPolicy"].Value;
             if (currentUserPolicy != ExecutionPolicy.Undefined)
             {
-                policyToSet = currentUserPolicy
+                policyToSet = currentUserPolicy;
             }
             else
             {
