@@ -367,11 +367,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     powerShellVersion.ToString());
             }
 
-            if (VersionUtils.IsWindows)
-            {
-                this.SetExecutionPolicy();
-            }
-
             // Set up the runspace
             this.ConfigureRunspace(this.CurrentRunspace);
 
@@ -427,6 +422,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             else
             {
                 this.PromptContext = new LegacyReadLineContext(this);
+            }
+
+            if (VersionUtils.IsWindows)
+            {
+                this.SetExecutionPolicy();
             }
         }
 
