@@ -27,11 +27,11 @@ function Set-ScriptExtent {
     )
     begin {
         $fileContext = $psEditor.GetEditorContext().CurrentFile
-        $extentList = New-Object System.Collections.Generic.List[Microsoft.PowerShell.EditorServices.FullScriptExtent]
+        $extentList = [System.Collections.Generic.List[Microsoft.PowerShell.EditorServices.Extensions.FileScriptExtent, Microsoft.PowerShell.EditorServices]]::new()
     }
     process {
-        if ($Extent -isnot [Microsoft.PowerShell.EditorServices.FullScriptExtent]) {
-            $Extent = New-Object Microsoft.PowerShell.EditorServices.FullScriptExtent @(
+        if ($Extent -isnot [Microsoft.PowerShell.EditorServices.Extensions.FileScriptExtent, Microsoft.PowerShell.EditorServices]) {
+            $Extent = [Microsoft.PowerShell.EditorServices.Extensions.FileScriptExtent, Microsoft.PowerShell.EditorServices]::FromOffsets(
                 $fileContext,
                 $Extent.StartOffset,
                 $Extent.EndOffset)
@@ -69,7 +69,7 @@ function Set-ScriptExtent {
             $differenceOffset = $aText.Length - $aExtent.Text.Length
             $scriptText       = $fileContext.GetText()
 
-            $fileContext.InsertText($aText, $aExtent.BufferRange)
+            $fileContext.InsertText($aText, $aExtent)
 
             $newText = $scriptText.Remove($aExtent.StartOffset, $aExtent.Text.Length).Insert($aExtent.StartOffset, $aText)
 
