@@ -809,9 +809,13 @@ CanSendDefinitionRequest
             string scriptPath = NewTestFile(@"
 function CanSendGetCommentHelpRequest {
     param(
-        [string]
-        $myParam
+        $myParam,
+        $myOtherParam,
+        $yetAnotherParam
     )
+
+    # Include other problematic code to make sure this still works
+    gci
 }
 ");
 

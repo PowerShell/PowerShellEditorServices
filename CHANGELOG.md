@@ -17,6 +17,8 @@
   Fix intellisense and `F5` not working after debugging.
 - 🐛🧰 [vscode-PowerShell #2495](https://github.com/PowerShell/PowerShellEditorServices/pull/1211) -
   Fix PowerShellEditorServices.Commands module commands not working due to types being moved.
+- 🐛👮 [vscode-PowerShell #2516](https://github.com/PowerShell/PowerShellEditorServices/pull/1216) -
+  Fix CommentHelp for when a function has other problems with it.
 
 ## v2.0.0-preview.9
 ### Thursday, February 20, 2020

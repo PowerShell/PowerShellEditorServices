@@ -490,8 +490,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         { "BlockComment", forBlockComment },
                         { "VSCodeSnippetCorrection", true },
                         { "Placement", helpLocation }}
-                    }}
-                }};
+                    }}},
+                { "IncludeRules", "PSProvideCommentHelp" }};
         }
 
         #region IDisposable Support
@@ -505,7 +505,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     if (_analysisEngineLazy != null
                         && _analysisEngineLazy.IsValueCreated)
-                    { 
+                    {
                         _analysisEngineLazy.Value.Dispose();
                     }
 
