@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #region Fields
 
         private readonly SemaphoreSlim resumeRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
-        private readonly SemaphoreSlim sessionStateLock = AsyncUtils.CreateSimpleLockingSemaphore();
+        private readonly SessionStateLock sessionStateLock = new SessionStateLock();
 
         private readonly OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer _languageServer;
         private readonly bool isPSReadLineEnabled;
@@ -744,7 +744,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Don't change our SessionState for ReadLine.
                 if (!executionOptions.IsReadLine)
                 {
-                    await this.sessionStateLock.WaitAsync().ConfigureAwait(false);
+                    await this.sessionStateLock.AcquireForExecuteCommandAsync().ConfigureAwait(false);
                     shell.InvocationStateChanged += PowerShell_InvocationStateChanged;
                 }
 
@@ -768,7 +768,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     if (!executionOptions.IsReadLine)
                     {
                         shell.InvocationStateChanged -= PowerShell_InvocationStateChanged;
-                        this.sessionStateLock.Release();
+                        await this.sessionStateLock.ReleaseForExecuteCommand().ConfigureAwait(false);
                     }
 
                     if (shell.HadErrors)
@@ -1242,7 +1242,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Currently we try to acquire a lock on the execution status changed event.
             // If we can't, it's because a command is executing, so we shouldn't change the status.
             // If we can, we own the status and should fire the event.
-            if (this.sessionStateLock.Wait(0))
+            if (this.sessionStateLock.TryAcquireForDebuggerAbort())
             {
                 try
                 {
@@ -1255,7 +1255,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 finally
                 {
                     this.SessionState = PowerShellContextState.Ready;
-                    this.sessionStateLock.Release();
+                    this.sessionStateLock.ReleaseForDebuggerAbort();
                 }
             }
         }
@@ -2700,5 +2700,90 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         #endregion
+
+        /// <summary>
+        /// Encapsulates the locking semantics hacked together for debugging to work.
+        /// This allows ExecuteCommandAsync locking to work "re-entrantly",
+        /// while making sure that a debug abort won't corrupt state.
+        /// </summary>
+        private class SessionStateLock
+        {
+            /// <summary>
+            /// The actual lock to acquire to modify the session state of the PowerShellContextService.
+            /// </summary>
+            private readonly SemaphoreSlim _sessionStateLock;
+
+            /// <summary>
+            /// A lock used by this class to ensure that count incrementing and session state locking happens atomically.
+            /// </summary>
+            private readonly SemaphoreSlim _internalLock;
+
+            /// <summary>
+            /// A count of how re-entrant the current execute command lock call is,
+            /// so we can effectively use it as a two-way semaphore.
+            /// </summary>
+            private int _executeCommandLockCount;
+
+            public SessionStateLock()
+            {
+                _sessionStateLock = AsyncUtils.CreateSimpleLockingSemaphore();
+                _internalLock = AsyncUtils.CreateSimpleLockingSemaphore();
+                _executeCommandLockCount = 0;
+            }
+
+            public async Task AcquireForExecuteCommandAsync()
+            {
+                // Algorithm here is:
+                // - Acquire the internal lock to keep operations atomic
+                // - Increment the number of lock holders
+                // - If we're the only one, acquire the lock
+                // - Release the internal lock
+
+                await _internalLock.WaitAsync().ConfigureAwait(false);
+                try
+                {
+                    if (_executeCommandLockCount++ == 0)
+                    {
+                        await _sessionStateLock.WaitAsync().ConfigureAwait(false);
+                    }
+                }
+                finally
+                {
+                    _internalLock.Release();
+                }
+            }
+
+            public bool TryAcquireForDebuggerAbort()
+            {
+                return _sessionStateLock.Wait(0);
+            }
+
+            public async Task ReleaseForExecuteCommand()
+            {
+                // Algorithm here is the opposite of the acquisition algorithm:
+                // - Acquire the internal lock to ensure the operation is atomic
+                // - Decrement the lock holder count
+                // - If we were the last ones, release the lock
+                // - Release the internal lock
+
+                await _internalLock.WaitAsync().ConfigureAwait(false);
+                try
+                {
+                    if (--_executeCommandLockCount == 0)
+                    {
+                        _sessionStateLock.Release();
+                    }
+                }
+                finally
+                {
+                    _internalLock.Release();
+                }
+            }
+
+            public void ReleaseForDebuggerAbort()
+            {
+                _sessionStateLock.Release();
+            }
+        }
     }
 }
