@@ -298,14 +298,17 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
         private string GetLogDirPath()
         {
-            if (!string.IsNullOrEmpty(LogPath))
+            string logDir = !string.IsNullOrEmpty(LogPath)
+                ? Path.GetDirectoryName(LogPath)
+                : Path.GetDirectoryName(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+
+            // Ensure logDir exists
+            if (!Directory.Exists(logDir))
             {
-                return Path.GetDirectoryName(LogPath);
+                Directory.CreateDirectory(logDir);
             }
 
-            return Path.GetDirectoryName(
-                Path.GetDirectoryName(
-                    Assembly.GetExecutingAssembly().Location));
+            return logDir;
         }
 
         private void RemovePSReadLineForStartup()
