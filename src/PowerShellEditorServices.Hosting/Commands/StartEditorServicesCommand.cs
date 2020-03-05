@@ -303,10 +303,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 : Path.GetDirectoryName(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
 
             // Ensure logDir exists
-            if (!Directory.Exists(logDir))
-            {
-                Directory.CreateDirectory(logDir);
-            }
+            Directory.CreateDirectory(logDir);
 
             return logDir;
         }
