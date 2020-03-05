@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
             if (incomingSettings.Search?.Exclude != null)
             {
-                foreach(KeyValuePair<string, bool> patternEntry in incomingSettings.Files.Exclude)
+                foreach(KeyValuePair<string, bool> patternEntry in incomingSettings.Search.Exclude)
                 {
                     if (patternEntry.Value && !excludeFilePatterns.Contains(patternEntry.Key)) { excludeFilePatterns.Add(patternEntry.Key); }
                 }
