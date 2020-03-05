@@ -19,13 +19,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     class ReferencesHandler : IReferencesHandler
     {
-        private readonly DocumentSelector _documentSelector = new DocumentSelector(
-            new DocumentFilter()
-            {
-                Language = "powershell"
-            }
-        );
-
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
@@ -42,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return new TextDocumentRegistrationOptions
             {
-                DocumentSelector = _documentSelector
+                DocumentSelector = LspUtils.PowerShellDocumentSelector
             };
         }
 

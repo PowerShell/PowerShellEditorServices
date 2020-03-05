@@ -24,13 +24,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class DocumentSymbolHandler : IDocumentSymbolHandler
     {
-        private readonly DocumentSelector _documentSelector = new DocumentSelector(
-            new DocumentFilter
-            {
-                Language = "powershell"
-            }
-        );
-
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
 
@@ -54,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return new TextDocumentRegistrationOptions
             {
-                DocumentSelector = _documentSelector,
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
             };
         }
 

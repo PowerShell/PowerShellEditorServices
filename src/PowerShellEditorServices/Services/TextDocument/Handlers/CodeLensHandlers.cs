@@ -14,6 +14,7 @@ using Microsoft.PowerShell.EditorServices.CodeLenses;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -23,13 +24,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class CodeLensHandlers : ICodeLensHandler, ICodeLensResolveHandler
     {
-        private readonly DocumentSelector _documentSelector = new DocumentSelector(
-            new DocumentFilter
-            {
-                Language = "powershell"
-            }
-        );
-
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
@@ -47,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return new CodeLensRegistrationOptions
             {
-                DocumentSelector = _documentSelector,
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
                 ResolveProvider = true
             };
         }
@@ -65,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return new TextDocumentRegistrationOptions
             {
-                DocumentSelector = _documentSelector,
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
             };
         }
 
