@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -42,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
             _registrationOptions = new CodeActionRegistrationOptions
             {
-                DocumentSelector = new DocumentSelector(new DocumentFilter() { Language = "powershell" }),
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
                 CodeActionKinds = s_supportedCodeActions
             };
         }

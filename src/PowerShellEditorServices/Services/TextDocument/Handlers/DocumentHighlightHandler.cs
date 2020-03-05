@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _symbolsService = symbolService;
             _registrationOptions = new TextDocumentRegistrationOptions()
             {
-                DocumentSelector = new DocumentSelector(new DocumentFilter() { Language = "powershell" } )
+                DocumentSelector = LspUtils.PowerShellDocumentSelector
             };
             _logger.LogInformation("highlight handler loaded");
         }

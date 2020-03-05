@@ -15,6 +15,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -25,14 +26,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly AnalysisService _analysisService;
         private readonly WorkspaceService _workspaceService;
         private readonly RemoteFileManagerService _remoteFileManagerService;
-
-        private readonly DocumentSelector _documentSelector = new DocumentSelector(
-            new DocumentFilter()
-            {
-                Language = "powershell"
-            }
-        );
-
         private SynchronizationCapability _capability;
 
         public TextDocumentSyncKind Change => TextDocumentSyncKind.Incremental;
@@ -72,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return new TextDocumentChangeRegistrationOptions()
             {
-                DocumentSelector = _documentSelector,
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
                 SyncKind = Change
             };
         }
@@ -101,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return new TextDocumentRegistrationOptions()
             {
-                DocumentSelector = _documentSelector,
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
             };
         }
 
@@ -138,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return new TextDocumentSaveRegistrationOptions()
             {
-                DocumentSelector = _documentSelector,
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
                 IncludeText = true
             };
         }

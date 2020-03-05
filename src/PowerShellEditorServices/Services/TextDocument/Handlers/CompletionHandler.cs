@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return new CompletionRegistrationOptions
             {
-                DocumentSelector = new DocumentSelector(new DocumentFilter { Language = "powershell" }),
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
                 ResolveProvider = true,
                 TriggerCharacters = new[] { ".", "-", ":", "\\" }
             };

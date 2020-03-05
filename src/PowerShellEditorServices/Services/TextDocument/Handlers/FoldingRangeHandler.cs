@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -17,13 +18,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class FoldingRangeHandler : IFoldingRangeHandler
     {
-        private readonly DocumentSelector _documentSelector = new DocumentSelector(
-            new DocumentFilter()
-            {
-                Language = "powershell"
-            }
-        );
-
         private readonly ILogger _logger;
         private readonly ConfigurationService _configurationService;
         private readonly WorkspaceService _workspaceService;
@@ -40,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return new TextDocumentRegistrationOptions()
             {
-                DocumentSelector = _documentSelector,
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
             };
         }
 

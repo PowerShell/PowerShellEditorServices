@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -20,14 +21,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class SignatureHelpHandler : ISignatureHelpHandler
     {
         private static readonly SignatureInformation[] s_emptySignatureResult = Array.Empty<SignatureInformation>();
-
-        private readonly DocumentSelector _documentSelector = new DocumentSelector(
-            new DocumentFilter()
-            {
-                Language = "powershell"
-            }
-        );
-
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
@@ -51,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return new SignatureHelpRegistrationOptions
             {
-                DocumentSelector = _documentSelector,
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
                 // A sane default of " ". We may be able to include others like "-".
                 TriggerCharacters = new Container<string>(" ")
             };
