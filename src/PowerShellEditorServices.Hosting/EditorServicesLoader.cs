@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 using SMA = System.Management.Automation;
+using System.Management.Automation;
 
 #if CoreCLR
 using System.Runtime.Loader;
@@ -339,16 +340,17 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
 
         private void LogPowerShellDetails()
         {
+            PSLanguageMode languageMode;
             using (var pwsh = SMA.PowerShell.Create(SMA.RunspaceMode.CurrentRunspace))
             {
-                string psVersion = pwsh.AddScript("$PSVersionTable.PSVersion").Invoke()[0].ToString();
-
-                _logger.Log(PsesLogLevel.Verbose, $@"
-== PowerShell Details ==
-- PowerShell version: {psVersion}
-- Language mode:      {pwsh.Runspace.SessionStateProxy.LanguageMode}
-");
+                languageMode = pwsh.Runspace.SessionStateProxy.LanguageMode;
             }
+
+            _logger.Log(PsesLogLevel.Verbose, $@"
+== PowerShell Details ==
+- PowerShell version: {GetPSVersion()}
+- Language mode:      {languageMode}
+");
         }
 
         private void LogOperatingSystemDetails()
@@ -405,6 +407,21 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
             {
                 throw new ArgumentNullException(nameof(_hostConfig.PSHost));
             }
+        }
+
+        private object GetPSVersion()
+        {
+#if CoreCLR
+            return typeof(PSObject).Assembly
+                .GetType("System.Management.Automation.PSVersionInfo")
+                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.NonPublic)
+                .Invoke(null, Array.Empty<object>());
+#else
+            return typeof(PSObject).Assembly
+                .GetType("System.Management.Automation.PSVersionInfo", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.NonPublic)
+                .Invoke(null, Array.Empty<object>());
+#endif
         }
     }
 }
