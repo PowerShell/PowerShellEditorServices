@@ -414,7 +414,7 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
 #if CoreCLR
             return typeof(PSObject).Assembly
                 .GetType("System.Management.Automation.PSVersionInfo")
-                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.NonPublic)
+                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public)
                 .Invoke(null, Array.Empty<object>());
 #else
             return typeof(PSObject).Assembly
