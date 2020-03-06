@@ -409,7 +409,7 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
             }
         }
 
-        private object GetPSVersion()
+        private static object GetPSVersion()
         {
 #if CoreCLR
             return typeof(PSObject).Assembly
