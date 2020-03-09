@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using SMA = System.Management.Automation;
 using System.Management.Automation;
 using System.Collections;
+using System.Management.Automation.Runspaces;
 
 #if CoreCLR
 using System.Runtime.Loader;
@@ -341,11 +342,7 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
 
         private void LogPowerShellDetails()
         {
-            PSLanguageMode languageMode;
-            using (var pwsh = SMA.PowerShell.Create(SMA.RunspaceMode.CurrentRunspace))
-            {
-                languageMode = pwsh.Runspace.SessionStateProxy.LanguageMode;
-            }
+            PSLanguageMode languageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode;
 
             _logger.Log(PsesLogLevel.Verbose, $@"
 == PowerShell Details ==
@@ -358,7 +355,7 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
         {
             _logger.Log(PsesLogLevel.Verbose, $@"
 == Environment Details ==
- - OS description: {RuntimeInformation.OSDescription}
+ - OS description:  {RuntimeInformation.OSDescription}
  - OS architecture: {GetOSArchitecture()}
  - Process bitness: {(Environment.Is64BitProcess ? "64" : "32")}
 ");
@@ -412,11 +409,22 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
 
         private static object GetPSVersion()
         {
-            using (var pwsh = SMA.PowerShell.Create())
-            {
-                var psVersionTable = (Hashtable)pwsh.Runspace.SessionStateProxy.PSVariable.GetValue("PSVersionTable");
-                return psVersionTable["PSVersion"];
-            }
+            // In order to read the $PSVersionTable variable,
+            // we are forced to create a new runspace to avoid concurrency issues,
+            // which is expensive.
+            // Rather than do that, we instead go straight to the source,
+            // which is a static property, internal in WinPS and public in PS 6+
+#if CoreCLR
+            return typeof(PSObject).Assembly
+                .GetType("System.Management.Automation.PSVersionInfo")
+                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public)
+                .Invoke(null, Array.Empty<object>());
+#else
+            return typeof(PSObject).Assembly
+                .GetType("System.Management.Automation.PSVersionInfo", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.NonPublic)
+                .Invoke(null, Array.Empty<object>());
+#endif
         }
     }
 }
