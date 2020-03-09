@@ -414,17 +414,10 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
             // which is expensive.
             // Rather than do that, we instead go straight to the source,
             // which is a static property, internal in WinPS and public in PS 6+
-#if CoreCLR
             return typeof(PSObject).Assembly
                 .GetType("System.Management.Automation.PSVersionInfo")
-                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public)
+                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
                 .Invoke(null, Array.Empty<object>());
-#else
-            return typeof(PSObject).Assembly
-                .GetType("System.Management.Automation.PSVersionInfo", BindingFlags.Instance | BindingFlags.NonPublic)
-                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.NonPublic)
-                .Invoke(null, Array.Empty<object>());
-#endif
         }
     }
 }
