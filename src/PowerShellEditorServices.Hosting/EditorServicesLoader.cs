@@ -12,7 +12,6 @@ using System.Runtime.InteropServices;
 
 using SMA = System.Management.Automation;
 using System.Management.Automation;
-using System.Collections;
 using System.Management.Automation.Runspaces;
 
 #if CoreCLR
@@ -258,12 +257,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         private void CheckLanguageMode()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Checking that PSES is running in FullLanguage mode");
-            using (var pwsh = SMA.PowerShell.Create())
+            if (Runspace.DefaultRunspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
             {
-                if (pwsh.Runspace.SessionStateProxy.LanguageMode != SMA.PSLanguageMode.FullLanguage)
-                {
-                    throw new InvalidOperationException("Cannot start PowerShell Editor Services in Constrained Language Mode");
-                }
+                throw new InvalidOperationException("Cannot start PowerShell Editor Services in Constrained Language Mode");
             }
         }
 
