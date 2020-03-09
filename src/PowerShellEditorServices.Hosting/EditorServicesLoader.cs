@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 
 using SMA = System.Management.Automation;
 using System.Management.Automation;
+using System.Collections;
 
 #if CoreCLR
 using System.Runtime.Loader;
@@ -411,17 +412,11 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
 
         private static object GetPSVersion()
         {
-#if CoreCLR
-            return typeof(PSObject).Assembly
-                .GetType("System.Management.Automation.PSVersionInfo")
-                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public)
-                .Invoke(null, Array.Empty<object>());
-#else
-            return typeof(PSObject).Assembly
-                .GetType("System.Management.Automation.PSVersionInfo", BindingFlags.Instance | BindingFlags.NonPublic)
-                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.NonPublic)
-                .Invoke(null, Array.Empty<object>());
-#endif
+            using (var pwsh = SMA.PowerShell.Create())
+            {
+                var psVersionTable = (Hashtable)pwsh.Runspace.SessionStateProxy.PSVariable.GetValue("PSVersionTable");
+                return psVersionTable["PSVersion"];
+            }
         }
     }
 }
