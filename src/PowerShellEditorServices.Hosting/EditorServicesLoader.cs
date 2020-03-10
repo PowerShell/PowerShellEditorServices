@@ -406,28 +406,5 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
                 throw new ArgumentNullException(nameof(_hostConfig.PSHost));
             }
         }
-
-#if !CoreCLR
-        private static void LoadAllAssembliesInDirectory(HostLogger logger, string directoryPath)
-        {
-            foreach (string asmPath in Directory.GetFiles(directoryPath, "*.dll"))
-            {
-                Assembly result = null;
-                try
-                {
-                    result = Assembly.LoadFile(asmPath);
-                }
-                catch (Exception e)
-                {
-                    logger.Log(PsesLogLevel.Diagnostic, $"Exception trying to load '{asmPath}':\n{e}");
-                }
-
-                if (result == null)
-                {
-                    logger.Log(PsesLogLevel.Diagnostic, $"Loading assembly '{asmPath}' returned null");
-                }
-            }
-        }
-#endif
     }
 }
