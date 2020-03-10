@@ -117,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 {
                     logger.Log(
                         PsesLogLevel.Diagnostic,
-                        $"Loaded {args.LoadedAssembly.GetName()}");
+                        $"Loaded '{args.LoadedAssembly.GetName()}' from '{args.LoadedAssembly.Location}'");
                 };
             }
 
@@ -134,7 +134,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 if (File.Exists(baseDirAsmPath))
                 {
                     logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES base dir into LoadFrom context");
-                    return Assembly.LoadFrom(baseDirAsmPath);
+                    return Assembly.LoadFile(baseDirAsmPath);
                 }
 
                 // Then look in the shared .NET Standard directory
@@ -142,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 if (File.Exists(asmPath))
                 {
                     logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES dependency dir into LoadFrom context");
-                    return Assembly.LoadFrom(asmPath);
+                    return Assembly.LoadFile(asmPath);
                 }
 
                 return null;
@@ -406,5 +406,28 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
                 throw new ArgumentNullException(nameof(_hostConfig.PSHost));
             }
         }
+
+#if !CoreCLR
+        private static void LoadAllAssembliesInDirectory(HostLogger logger, string directoryPath)
+        {
+            foreach (string asmPath in Directory.GetFiles(directoryPath, "*.dll"))
+            {
+                Assembly result = null;
+                try
+                {
+                    result = Assembly.LoadFile(asmPath);
+                }
+                catch (Exception e)
+                {
+                    logger.Log(PsesLogLevel.Diagnostic, $"Exception trying to load '{asmPath}':\n{e}");
+                }
+
+                if (result == null)
+                {
+                    logger.Log(PsesLogLevel.Diagnostic, $"Loading assembly '{asmPath}' returned null");
+                }
+            }
+        }
+#endif
     }
 }
