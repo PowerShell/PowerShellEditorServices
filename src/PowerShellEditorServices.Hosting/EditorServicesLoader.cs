@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 using SMA = System.Management.Automation;
+using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 
 #if CoreCLR
 using System.Runtime.Loader;
@@ -255,12 +257,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         private void CheckLanguageMode()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Checking that PSES is running in FullLanguage mode");
-            using (var pwsh = SMA.PowerShell.Create())
+            if (Runspace.DefaultRunspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
             {
-                if (pwsh.Runspace.SessionStateProxy.LanguageMode != SMA.PSLanguageMode.FullLanguage)
-                {
-                    throw new InvalidOperationException("Cannot start PowerShell Editor Services in Constrained Language Mode");
-                }
+                throw new InvalidOperationException("Cannot start PowerShell Editor Services in Constrained Language Mode");
             }
         }
 
@@ -339,23 +338,20 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
 
         private void LogPowerShellDetails()
         {
-            using (var pwsh = SMA.PowerShell.Create(SMA.RunspaceMode.CurrentRunspace))
-            {
-                string psVersion = pwsh.AddScript("$PSVersionTable.PSVersion").Invoke()[0].ToString();
+            PSLanguageMode languageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode;
 
-                _logger.Log(PsesLogLevel.Verbose, $@"
+            _logger.Log(PsesLogLevel.Verbose, $@"
 == PowerShell Details ==
-- PowerShell version: {psVersion}
-- Language mode:      {pwsh.Runspace.SessionStateProxy.LanguageMode}
+- PowerShell version: {GetPSVersion()}
+- Language mode:      {languageMode}
 ");
-            }
         }
 
         private void LogOperatingSystemDetails()
         {
             _logger.Log(PsesLogLevel.Verbose, $@"
 == Environment Details ==
- - OS description: {RuntimeInformation.OSDescription}
+ - OS description:  {RuntimeInformation.OSDescription}
  - OS architecture: {GetOSArchitecture()}
  - Process bitness: {(Environment.Is64BitProcess ? "64" : "32")}
 ");
@@ -405,6 +401,19 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
             {
                 throw new ArgumentNullException(nameof(_hostConfig.PSHost));
             }
+        }
+
+        private static object GetPSVersion()
+        {
+            // In order to read the $PSVersionTable variable,
+            // we are forced to create a new runspace to avoid concurrency issues,
+            // which is expensive.
+            // Rather than do that, we instead go straight to the source,
+            // which is a static property, internal in WinPS and public in PS 6+
+            return typeof(PSObject).Assembly
+                .GetType("System.Management.Automation.PSVersionInfo")
+                .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                .Invoke(null, Array.Empty<object>());
         }
     }
 }
