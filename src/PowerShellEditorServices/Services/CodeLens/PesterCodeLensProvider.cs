@@ -106,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     continue;
                 }
 
-                if (!_configurationService.CurrentSettings.Pester.EnableLegacyCodeLens
+                if (_configurationService.CurrentSettings.Pester.EnableLegacyCodeLens
                         && pesterSymbol.Command != PesterCommandType.Describe)
                 {
                     continue;
