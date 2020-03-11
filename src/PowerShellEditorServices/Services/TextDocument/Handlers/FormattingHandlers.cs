@@ -14,17 +14,24 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class DocumentFormattingHandler : IDocumentFormattingHandler
+    // TODO: Add IDocumentOnTypeFormatHandler to support on-type formatting.
+    internal class DocumentFormattingHandlers : IDocumentFormattingHandler, IDocumentRangeFormattingHandler
     {
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
         private readonly ConfigurationService _configurationService;
         private readonly WorkspaceService _workspaceService;
-        private DocumentFormattingCapability _capability;
 
-        public DocumentFormattingHandler(ILoggerFactory factory, AnalysisService analysisService, ConfigurationService configurationService, WorkspaceService workspaceService)
+        private DocumentFormattingCapability _documentFormattingCapability;
+        private DocumentRangeFormattingCapability _documentRangeFormattingCapability;
+
+        public DocumentFormattingHandlers(
+            ILoggerFactory factory,
+            AnalysisService analysisService,
+            ConfigurationService configurationService,
+            WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<DocumentFormattingHandler>();
+            _logger = factory.CreateLogger<DocumentFormattingHandlers>();
             _analysisService = analysisService;
             _configurationService = configurationService;
             _workspaceService = workspaceService;
@@ -43,7 +50,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             var scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
             var pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
                 (int)request.Options.TabSize,
-                request.Options.InsertSpaces);
+                request.Options.InsertSpaces,
+                _logger);
 
 
             // TODO raise an error event in case format returns null
@@ -79,42 +87,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             });
         }
 
-        public void SetCapability(DocumentFormattingCapability capability)
-        {
-            _capability = capability;
-        }
-    }
-
-    internal class DocumentRangeFormattingHandler : IDocumentRangeFormattingHandler
-    {
-        private readonly ILogger _logger;
-        private readonly AnalysisService _analysisService;
-        private readonly ConfigurationService _configurationService;
-        private readonly WorkspaceService _workspaceService;
-        private DocumentRangeFormattingCapability _capability;
-
-        public DocumentRangeFormattingHandler(ILoggerFactory factory, AnalysisService analysisService, ConfigurationService configurationService, WorkspaceService workspaceService)
-        {
-            _logger = factory.CreateLogger<DocumentRangeFormattingHandler>();
-            _analysisService = analysisService;
-            _configurationService = configurationService;
-            _workspaceService = workspaceService;
-        }
-
-        public TextDocumentRegistrationOptions GetRegistrationOptions()
-        {
-            return new TextDocumentRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector
-            };
-        }
-
         public async Task<TextEditContainer> Handle(DocumentRangeFormattingParams request, CancellationToken cancellationToken)
         {
             var scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
             var pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
                 (int)request.Options.TabSize,
-                request.Options.InsertSpaces);
+                request.Options.InsertSpaces,
+                _logger);
 
             // TODO raise an error event in case format returns null;
             string formattedScript;
@@ -137,17 +116,24 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             };
 
             Range range = request.Range;
-            var rangeList = range == null ? null : new int[] {
+            var rangeList = range == null ? null : new int[]
+            {
                 (int)range.Start.Line + 1,
                 (int)range.Start.Character + 1,
                 (int)range.End.Line + 1,
-                (int)range.End.Character + 1};
+                (int)range.End.Character + 1
+            };
 
             formattedScript = await _analysisService.FormatAsync(
                 scriptFile.Contents,
                 pssaSettings,
                 rangeList).ConfigureAwait(false);
-            formattedScript = formattedScript ?? scriptFile.Contents;
+
+            if (formattedScript == null)
+            {
+                _logger.LogWarning("Formatting returned null. Returning original contents for file: {0}", scriptFile.DocumentUri);
+                formattedScript = scriptFile.Contents;
+            }
 
             return new TextEditContainer(new TextEdit
             {
@@ -156,9 +142,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             });
         }
 
+        public void SetCapability(DocumentFormattingCapability capability)
+        {
+            _documentFormattingCapability = capability;
+        }
+
         public void SetCapability(DocumentRangeFormattingCapability capability)
         {
-            _capability = capability;
+            _documentRangeFormattingCapability = capability;
         }
     }
 }
