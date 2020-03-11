@@ -133,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 string baseDirAsmPath = Path.Combine(s_psesBaseDirPath, dllName);
                 if (File.Exists(baseDirAsmPath))
                 {
-                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES base dir into LoadFrom context");
+                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES base dir into LoadFile context");
                     return Assembly.LoadFile(baseDirAsmPath);
                 }
 
@@ -141,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 string asmPath = Path.Combine(s_psesDependencyDirPath, dllName);
                 if (File.Exists(asmPath))
                 {
-                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES dependency dir into LoadFrom context");
+                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES dependency dir into LoadFile context");
                     return Assembly.LoadFile(asmPath);
                 }
 
