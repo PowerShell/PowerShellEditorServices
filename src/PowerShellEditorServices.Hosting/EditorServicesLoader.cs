@@ -119,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 {
                     logger.Log(
                         PsesLogLevel.Diagnostic,
-                        $"Loaded {args.LoadedAssembly.GetName()}");
+                        $"Loaded '{args.LoadedAssembly.GetName()}' from '{args.LoadedAssembly.Location}'");
                 };
             }
 
@@ -135,16 +135,16 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 string baseDirAsmPath = Path.Combine(s_psesBaseDirPath, dllName);
                 if (File.Exists(baseDirAsmPath))
                 {
-                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES base dir into LoadFrom context");
-                    return Assembly.LoadFrom(baseDirAsmPath);
+                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES base dir into LoadFile context");
+                    return Assembly.LoadFile(baseDirAsmPath);
                 }
 
                 // Then look in the shared .NET Standard directory
                 string asmPath = Path.Combine(s_psesDependencyDirPath, dllName);
                 if (File.Exists(asmPath))
                 {
-                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES dependency dir into LoadFrom context");
-                    return Assembly.LoadFrom(asmPath);
+                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES dependency dir into LoadFile context");
+                    return Assembly.LoadFile(asmPath);
                 }
 
                 return null;
