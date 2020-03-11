@@ -645,6 +645,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         executionOptions)).ConfigureAwait(false);
             }
 
+            Task writeErrorsToConsoleTask = null;
             try
             {
                 // Instruct PowerShell to send output and errors to the host
@@ -836,7 +837,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (executionOptions.WriteErrorsToHost)
                 {
                     // Write the error to the host
-                    this.WriteExceptionToHost(e);
+                    writeErrorsToConsoleTask = this.WriteExceptionToHostAsync(e);
                 }
             }
             catch (Exception)
@@ -896,6 +897,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (runspaceHandle != null)
                 {
                     runspaceHandle.Dispose();
+                    if (writeErrorsToConsoleTask != null)
+                    {
+                        await writeErrorsToConsoleTask.ConfigureAwait(false);
+                    }
                 }
 
                 this.OnExecutionStatusChanged(
@@ -1948,7 +1953,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private void WriteExceptionToHost(RuntimeException e)
+        private Task WriteExceptionToHostAsync(RuntimeException e)
         {
             var psObject = PSObject.AsPSObject(e.ErrorRecord);
 
@@ -1963,7 +1968,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 psObject.Properties.Add(note);
             }
 
-            ExecuteCommandAsync(new PSCommand().AddCommand("Microsoft.PowerShell.Core\\Out-Default").AddParameter("InputObject", psObject));
+            return ExecuteCommandAsync(new PSCommand().AddCommand("Microsoft.PowerShell.Core\\Out-Default").AddParameter("InputObject", psObject));
         }
 
         private void WriteError(
