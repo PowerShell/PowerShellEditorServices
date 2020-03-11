@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
+using Newtonsoft.Json;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 {
@@ -223,7 +224,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         /// <returns></returns>
         public Hashtable GetPSSASettingsHashtable(
             int tabSize,
-            bool insertSpaces)
+            bool insertSpaces,
+            ILogger logger)
         {
             var settings = GetCustomPSSASettingsHashtable(tabSize, insertSpaces);
             var ruleSettings = (Hashtable)(settings["Rules"]);
@@ -253,6 +255,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     break;
             }
 
+            logger.LogDebug("Created formatting hashtable: {0}", JsonConvert.SerializeObject(settings));
             return settings;
         }
 
