@@ -244,7 +244,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public void ClearTerminal()
         {
-            if (!TestHasLanguageServer())
+            if (!TestHasLanguageServer(warnUser: false))
             {
                 return;
             };
@@ -252,15 +252,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _languageServer.SendNotification("editor/clearTerminal");
         }
 
-        private bool TestHasLanguageServer()
+        private bool TestHasLanguageServer(bool warnUser = true)
         {
             if (_languageServer != null)
             {
                 return true;
             }
 
-            _powerShellContextService.ExternalHost.UI.WriteWarningLine(
-                "Editor operations are not supported in temporary consoles. Re-run the command in the main PowerShell Intergrated Console.");
+            if (warnUser)
+            {
+                _powerShellContextService.ExternalHost.UI.WriteWarningLine(
+                    "Editor operations are not supported in temporary consoles. Re-run the command in the main PowerShell Intergrated Console.");
+            }
+
             return false;
         }
     }
