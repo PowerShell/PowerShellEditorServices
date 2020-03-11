@@ -837,6 +837,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (executionOptions.WriteErrorsToHost)
                 {
                     // Write the error to the host
+                    // We must await this after the runspace handle has been released or we will deadlock
                     writeErrorsToConsoleTask = this.WriteExceptionToHostAsync(e);
                 }
             }
