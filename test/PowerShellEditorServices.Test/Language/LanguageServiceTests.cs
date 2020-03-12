@@ -46,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             var logger = NullLogger.Instance;
             powerShellContext = PowerShellContextFactory.Create(logger);
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
-            symbolsService = new SymbolsService(NullLoggerFactory.Instance, powerShellContext, workspace);
+            symbolsService = new SymbolsService(NullLoggerFactory.Instance, powerShellContext, workspace, new ConfigurationService());
             completionHandler = new CompletionHandler(NullLoggerFactory.Instance, powerShellContext, workspace);
         }
 
