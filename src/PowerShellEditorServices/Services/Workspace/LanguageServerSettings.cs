@@ -371,13 +371,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 
         public PesterSettings(PesterSettings settings)
         {
-            EnableLegacyCodeLens = settings.EnableLegacyCodeLens;
+            UseLegacyCodeLens = settings.UseLegacyCodeLens;
         }
 
         /// <summary>
         /// Whether integration features specific to Pester v5 are enabled
         /// </summary>
-        public bool EnableLegacyCodeLens { get; set; }
+        public bool UseLegacyCodeLens { get; set; }
     }
 
     /// <summary>
