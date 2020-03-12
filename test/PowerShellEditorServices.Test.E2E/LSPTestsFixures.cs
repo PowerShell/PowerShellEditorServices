@@ -32,9 +32,9 @@ namespace PowerShellEditorServices.Test.E2E
             // Make sure Script Analysis is enabled because we'll need it in the tests.
             LanguageClient.Workspace.DidChangeConfiguration(JObject.Parse(@"
 {
-    ""PowerShell"": {
-        ""ScriptAnalysis"": {
-            ""Enable"": true
+    ""powershell"": {
+        ""scriptAnalysis"": {
+            ""enable"": true
         }
     }
 }
