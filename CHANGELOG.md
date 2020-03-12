@@ -14,16 +14,16 @@
 - ✨💎 [PowerShellEditorServices #1228](https://github.com/PowerShell/PowerShellEditorServices/pull/1228) -
   Add better logging for formatter and refactor it into 1 class.
 - 🐛🚂 [vscode-powershell #2397](https://github.com/PowerShell/PowerShellEditorServices/pull/1227) -
-  Use Assembly.LoadFile in WinPS.
+  Use Assembly.LoadFile for dependency loading in WinPS.
 - ✨🛫 [PowerShellEditorServices #1222](https://github.com/PowerShell/PowerShellEditorServices/pull/1222) -
-  Make initial logging work in constrained language mode.
+  Make initial logging work in constrained language mode, allowing the desired user-facing error to present.
 - 🐛🛫 [PowerShellEditorServices #1225](https://github.com/PowerShell/PowerShellEditorServices/pull/1225) -
   Sign Clear-Host.ps1.
 - 🐛🛫 [PowerShellEditorServices #1219](https://github.com/PowerShell/PowerShellEditorServices/pull/1219) -
   Ensure log directory is created.
 - 🐛👷‍♀️ [PowerShellEditorServices #1223](https://github.com/PowerShell/PowerShellEditorServices/pull/1223) -
   Change Ms-vscode.csharp to ms-dotnettools.csharp. (Thanks @devlead!)
-- 🐛 [PowerShellEditorServices #1220](https://github.com/PowerShell/PowerShellEditorServices/pull/1220) -
+- 🐛🔧 [PowerShellEditorServices #1220](https://github.com/PowerShell/PowerShellEditorServices/pull/1220) -
   Fix typo in settings.
 - ✨🔧 [PowerShellEditorServices #1218](https://github.com/PowerShell/PowerShellEditorServices/pull/1218) -
   Switch to better document selecting for vim extension.
