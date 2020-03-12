@@ -198,9 +198,9 @@ function CanSendWorkspaceSymbolRequest {
                 {
                     Settings = JToken.Parse(@"
 {
-    ""PowerShell"": {
-        ""ScriptAnalysis"": {
-            ""Enable"": false
+    ""powershell"": {
+        ""scriptAnalysis"": {
+            ""enable"": false
         }
     }
 }
@@ -216,9 +216,9 @@ function CanSendWorkspaceSymbolRequest {
                 {
                     Settings = JToken.Parse(@"
 {
-    ""PowerShell"": {
-        ""ScriptAnalysis"": {
-            ""Enable"": true
+    ""powershell"": {
+        ""scriptAnalysis"": {
+            ""enable"": true
         }
     }
 }
@@ -550,8 +550,19 @@ Write-Host 'Goodbye'
         }
 
         [Fact]
-        public async Task CanSendPesterCodeLensRequest()
+        public async Task CanSendPesterLegacyCodeLensRequest()
         {
+            // Make sure LegacyCodeLens is enabled because we'll need it in this test.
+            LanguageClient.Workspace.DidChangeConfiguration(JObject.Parse(@"
+{
+    ""powershell"": {
+        ""pester"": {
+            ""useLegacyCodeLens"": true
+        }
+    }
+}
+"));
+
             string filePath = NewTestFile(@"
 Describe 'DescribeName' {
     Context 'ContextName' {
@@ -594,6 +605,109 @@ Describe 'DescribeName' {
                     Assert.Equal(1, range.End.Character);
 
                     Assert.Equal("Debug tests", codeLens2.Command.Title);
+                });
+        }
+
+        [Fact]
+        public async Task CanSendPesterCodeLensRequest()
+        {
+            // Make sure Pester legacy CodeLens is disabled because we'll need it in this test.
+            LanguageClient.Workspace.DidChangeConfiguration(JObject.Parse(@"
+            {
+                ""powershell"": {
+                    ""pester"": {
+                        ""useLegacyCodeLens"": false
+                    }
+                }
+            }
+            "));
+
+            string filePath = NewTestFile(@"
+Describe 'DescribeName' {
+    Context 'ContextName' {
+        It 'ItName' {
+            1 | Should - Be 1
+        }
+    }
+}
+", isPester: true);
+
+            CodeLensContainer codeLenses = await LanguageClient.SendRequest<CodeLensContainer>(
+                "textDocument/codeLens",
+                new CodeLensParams
+                {
+                    TextDocument = new TextDocumentIdentifier
+                    {
+                        Uri = new Uri(filePath)
+                    }
+                });
+
+            Assert.Collection(codeLenses,
+                codeLens =>
+                {
+                    Range range = codeLens.Range;
+
+                    Assert.Equal(1, range.Start.Line);
+                    Assert.Equal(0, range.Start.Character);
+                    Assert.Equal(7, range.End.Line);
+                    Assert.Equal(1, range.End.Character);
+
+                    Assert.Equal("Run tests", codeLens.Command.Title);
+                },
+                codeLens =>
+                {
+                    Range range = codeLens.Range;
+
+                    Assert.Equal(1, range.Start.Line);
+                    Assert.Equal(0, range.Start.Character);
+                    Assert.Equal(7, range.End.Line);
+                    Assert.Equal(1, range.End.Character);
+
+                    Assert.Equal("Debug tests", codeLens.Command.Title);
+                },
+                codeLens =>
+                {
+                    Range range = codeLens.Range;
+
+                    Assert.Equal(2, range.Start.Line);
+                    Assert.Equal(4, range.Start.Character);
+                    Assert.Equal(6, range.End.Line);
+                    Assert.Equal(5, range.End.Character);
+
+                    Assert.Equal("Run tests", codeLens.Command.Title);
+                },
+                codeLens =>
+                {
+                    Range range = codeLens.Range;
+
+                    Assert.Equal(2, range.Start.Line);
+                    Assert.Equal(4, range.Start.Character);
+                    Assert.Equal(6, range.End.Line);
+                    Assert.Equal(5, range.End.Character);
+
+                    Assert.Equal("Debug tests", codeLens.Command.Title);
+                },
+                codeLens =>
+                {
+                    Range range = codeLens.Range;
+
+                    Assert.Equal(3, range.Start.Line);
+                    Assert.Equal(8, range.Start.Character);
+                    Assert.Equal(5, range.End.Line);
+                    Assert.Equal(9, range.End.Character);
+
+                    Assert.Equal("Run test", codeLens.Command.Title);
+                },
+                codeLens =>
+                {
+                    Range range = codeLens.Range;
+
+                    Assert.Equal(3, range.Start.Line);
+                    Assert.Equal(8, range.Start.Character);
+                    Assert.Equal(5, range.End.Line);
+                    Assert.Equal(9, range.End.Character);
+
+                    Assert.Equal("Debug test", codeLens.Command.Title);
                 });
         }
 

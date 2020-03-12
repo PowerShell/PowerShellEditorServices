@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private CodeLensCapability _capability;
 
-        public CodeLensHandlers(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService)
+        public CodeLensHandlers(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService, ConfigurationService configurationService)
         {
             _logger = factory.CreateLogger<FoldingRangeHandler>();
             _workspaceService = workspaceService;
