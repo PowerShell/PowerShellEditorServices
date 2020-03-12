@@ -95,6 +95,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         // Handler for "completionItem/resolve". In VSCode this is fired when a completion item is highlighted in the completion list.
         public async Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
         {
+            // We currently only support this request for anything that returns a CommandInfo: functions, cmdlets, aliases.
+            if (request.Kind != CompletionItemKind.Function)
+            {
+                return request;
+            }
+
             // Get the documentation for the function
             CommandInfo commandInfo =
                 await CommandHelpers.GetCommandInfoAsync(
