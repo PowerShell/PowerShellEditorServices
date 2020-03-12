@@ -35,7 +35,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _logger = factory.CreateLogger<FoldingRangeHandler>();
             _workspaceService = workspaceService;
             _symbolsService = symbolsService;
-            _configurationService = configurationService;
         }
 
         CodeLensRegistrationOptions IRegistration<CodeLensRegistrationOptions>.GetRegistrationOptions()

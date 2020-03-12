@@ -51,7 +51,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public SymbolsService(
             ILoggerFactory factory,
             PowerShellContextService powerShellContextService,
-            WorkspaceService workspaceService)
+            WorkspaceService workspaceService,
+            ConfigurationService configurationService)
         {
             _logger = factory.CreateLogger<SymbolsService>();
             _powerShellContextService = powerShellContextService;
@@ -61,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var codeLensProviders = new ICodeLensProvider[]
             {
                 new ReferencesCodeLensProvider(_workspaceService, this),
-                new PesterCodeLensProvider(),
+                new PesterCodeLensProvider(configurationService),
             };
             foreach (ICodeLensProvider codeLensProvider in codeLensProviders)
             {
