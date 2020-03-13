@@ -345,7 +345,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     lineNumber,
                     columnNumber);
 
-            if (foundSymbol == null)
+            // If we are not possibly looking at a Function, we don't
+            // need to continue because we won't be able to get the
+            // CommandInfo object.
+            if (foundSymbol?.SymbolType != SymbolType.Function
+            && foundSymbol?.SymbolType != SymbolType.Unknown)
             {
                 return null;
             }
@@ -459,9 +463,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 }
             }
 
-            // if definition is not found in file in the workspace
-            // look for it in the builtin commands
-            if (foundDefinition == null)
+            // if the definition is not found in a file in the workspace
+            // look for it in the builtin commands but only if the symbol
+            // we are looking at is possibly a Function.
+            if (foundDefinition == null
+            && (foundSymbol.SymbolType == SymbolType.Function
+            || foundSymbol.SymbolType == SymbolType.Unknown))
             {
                 CommandInfo cmdInfo =
                     await CommandHelpers.GetCommandInfoAsync(
