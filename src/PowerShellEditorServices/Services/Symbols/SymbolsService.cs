@@ -349,7 +349,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // need to continue because we won't be able to get the
             // CommandInfo object.
             if (foundSymbol?.SymbolType != SymbolType.Function
-            && foundSymbol?.SymbolType != SymbolType.Unknown)
+                && foundSymbol?.SymbolType != SymbolType.Unknown)
             {
                 return null;
             }
@@ -467,8 +467,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // look for it in the builtin commands but only if the symbol
             // we are looking at is possibly a Function.
             if (foundDefinition == null
-            && (foundSymbol.SymbolType == SymbolType.Function
-            || foundSymbol.SymbolType == SymbolType.Unknown))
+                && (foundSymbol.SymbolType == SymbolType.Function
+                    || foundSymbol.SymbolType == SymbolType.Unknown))
             {
                 CommandInfo cmdInfo =
                     await CommandHelpers.GetCommandInfoAsync(
