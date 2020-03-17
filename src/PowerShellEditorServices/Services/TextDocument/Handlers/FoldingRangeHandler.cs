@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                Task.FromResult(new Container<FoldingRange>());
+                return Task.FromResult(new Container<FoldingRange>());
             }
 
             // TODO Should be using dynamic registrations
