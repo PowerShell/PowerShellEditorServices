@@ -60,6 +60,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<CommandOrCodeActionContainer> Handle(CodeActionParams request, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return new List<CommandOrCodeAction>();
+            }
+
             // On Windows, VSCode still gives us file URIs like "file:///c%3a/...", so we need to escape them
             IReadOnlyDictionary<string, MarkerCorrection> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
                 _workspaceService.GetFile(request.TextDocument.Uri)).ConfigureAwait(false);

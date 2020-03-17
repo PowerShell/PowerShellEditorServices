@@ -40,6 +40,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<Container<FoldingRange>> Handle(FoldingRangeRequestParam request, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                Task.FromResult(new Container<FoldingRange>());
+            }
+
             // TODO Should be using dynamic registrations
             if (!_configurationService.CurrentSettings.CodeFolding.Enable) { return null; }
 
