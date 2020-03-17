@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            await _completionLock.WaitAsync();
+            await _completionLock.WaitAsync().ConfigureAwait(false);
 
             try
             {
