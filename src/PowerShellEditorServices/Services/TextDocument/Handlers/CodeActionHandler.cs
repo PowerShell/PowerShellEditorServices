@@ -105,7 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                                         {
                                             Uri = request.TextDocument.Uri
                                         },
-                                        Edits = new Container<TextEdit>(correction.Edits.Select(ScriptRegion.ToTextEdit))
+                                        Edits = new TextEditContainer(correction.Edits.Select(ScriptRegion.ToTextEdit))
                                     }))
                         }
                     });

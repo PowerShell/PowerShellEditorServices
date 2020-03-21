@@ -32,13 +32,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspace;
         }
 
-        public object GetRegistrationOptions()
+        public WorkspaceSymbolRegistrationOptions GetRegistrationOptions()
         {
-            return null;
-            // throw new NotImplementedException();
+            return new WorkspaceSymbolRegistrationOptions();
         }
 
-        public Task<SymbolInformationContainer> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
+        public Task<Container<SymbolInformation>> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
         {
             var symbols = new List<SymbolInformation>();
 
@@ -75,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
             _logger.LogWarning("Logging in a handler works now.");
 
-            return Task.FromResult(new SymbolInformationContainer(symbols));
+            return Task.FromResult(new Container<SymbolInformation>(symbols));
         }
 
         public void SetCapability(WorkspaceSymbolCapability capability)

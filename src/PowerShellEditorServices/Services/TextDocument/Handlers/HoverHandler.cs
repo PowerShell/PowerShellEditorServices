@@ -38,11 +38,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _powerShellContextService = powerShellContextService;
         }
 
-        public TextDocumentRegistrationOptions GetRegistrationOptions()
+        public HoverRegistrationOptions GetRegistrationOptions()
         {
-            return new TextDocumentRegistrationOptions
+            return new HoverRegistrationOptions
             {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
+                DocumentSelector = LspUtils.PowerShellDocumentSelector
             };
         }
 

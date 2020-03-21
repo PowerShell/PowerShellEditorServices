@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             _jsonRpcServer = await JsonRpcServer.From(options =>
             {
                 options.Serializer = new DapProtocolSerializer();
-                options.Reciever = new DapReciever();
+                options.Receiver = new DapReceiver();
                 options.LoggerFactory = _loggerFactory;
                 ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
 
