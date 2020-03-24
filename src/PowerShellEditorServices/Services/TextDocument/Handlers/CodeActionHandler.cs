@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                return new List<CommandOrCodeAction>();
+                return Array.Empty<CommandOrCodeAction>();
             }
 
             // On Windows, VSCode still gives us file URIs like "file:///c%3a/...", so we need to escape them
@@ -71,8 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (corrections == null)
             {
-                // TODO: Find out if we can cache this empty value
-                return new CommandOrCodeActionContainer();
+                return Array.Empty<CommandOrCodeAction>();
             }
 
             var codeActions = new List<CommandOrCodeAction>();

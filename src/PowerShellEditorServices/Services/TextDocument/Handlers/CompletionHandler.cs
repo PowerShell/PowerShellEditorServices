@@ -24,7 +24,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class CompletionHandler : ICompletionHandler, ICompletionResolveHandler
     {
         const int DefaultWaitTimeoutMilliseconds = 5000;
-        private static readonly CompletionItem[] s_emptyCompletionResult = Array.Empty<CompletionItem>();
         private readonly SemaphoreSlim _completionLock = AsyncUtils.CreateSimpleLockingSemaphore();
 
         private readonly ILogger _logger;
@@ -75,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 if (cancellationToken.IsCancellationRequested)
                 {
                     _logger.LogDebug("Completion request canceled for file: {0}", request.TextDocument.Uri);
-                    return new CompletionList(s_emptyCompletionResult);
+                    return Array.Empty<CompletionItem>();
                 }
 
                 CompletionResults completionResults =
@@ -84,18 +83,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         cursorLine,
                         cursorColumn).ConfigureAwait(false);
 
-                CompletionItem[] completionItems = s_emptyCompletionResult;
-
-                if (completionResults != null)
+                if (completionResults == null)
                 {
-                    completionItems = new CompletionItem[completionResults.Completions.Length];
-                    for (int i = 0; i < completionItems.Length; i++)
-                    {
-                        completionItems[i] = CreateCompletionItem(completionResults.Completions[i], completionResults.ReplacedRange, i + 1);
-                    }
+                    return Array.Empty<CompletionItem>();
                 }
 
-                return new CompletionList(completionItems);
+                CompletionItem[] completionItems = new CompletionItem[completionResults.Completions.Length];
+                for (int i = 0; i < completionItems.Length; i++)
+                {
+                    completionItems[i] = CreateCompletionItem(completionResults.Completions[i], completionResults.ReplacedRange, i + 1);
+                }
+
+                return completionItems;
             }
             finally
             {
