@@ -21,6 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     class TextDocumentHandler : ITextDocumentSyncHandler
     {
+        private static readonly Uri s_fakeUri = new Uri("Untitled:fake");
 
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
@@ -85,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (LspUtils.PowerShellDocumentSelector.IsMatch(new TextDocumentAttributes(
                 // We use a fake Uri because we only want to test the LanguageId here and not if the
                 // file ends in ps*1.
-                new Uri("Untitled:file"),
+                s_fakeUri,
                 notification.TextDocument.LanguageId)))
             {
                 // Kick off script diagnostics if we got a PowerShell file without blocking the response
