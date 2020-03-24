@@ -83,9 +83,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     notification.TextDocument.Text);
 
             if (LspUtils.PowerShellDocumentSelector.IsMatch(new TextDocumentAttributes(
-                // We use null because we only want to test the LanguageId here and not if the
+                // We use a fake Uri because we only want to test the LanguageId here and not if the
                 // file ends in ps*1.
-                null,
+                new Uri("Untitled:file"),
                 notification.TextDocument.LanguageId)))
             {
                 // Kick off script diagnostics if we got a PowerShell file without blocking the response
