@@ -82,9 +82,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     notification.TextDocument.Uri,
                     notification.TextDocument.Text);
 
-            // Kick off script diagnostics without blocking the response
+            // Kick off script diagnostics if we got a PowerShell file without blocking the response
             // TODO: Get all recently edited files in the workspace
-            _analysisService.RunScriptDiagnostics(new ScriptFile[] { openedFile }, token);
+            if (notification.TextDocument.LanguageId == "powershell")
+            {
+                _analysisService.RunScriptDiagnostics(new ScriptFile[] { openedFile }, token);
+            }
 
             _logger.LogTrace("Finished opening document.");
             return Unit.Task;
