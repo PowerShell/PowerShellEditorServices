@@ -20,8 +20,8 @@ so that we can ensure we are solving the right problems in the right way.
 - Contribute a bug fix or feature implementation by submitting a pull request
 - Contribute more unit tests for feature areas that lack good coverage
 - Review the pull requests that others submit to ensure they follow [established guidelines](#follow-the-pull-request-process)
-- Help others gets started with the project by contributing documentation or hanging out
-  in the #editors room in the [PowerShell community Slack chat](http://slack.poshcode.org).
+- Help others gets started with the project by contributing documentation or chatting
+  in the #editors or #vscode rooms in the [PowerShell community Slack chat](http://slack.poshcode.org).
 
 ## Code Contribution Guidelines
 
