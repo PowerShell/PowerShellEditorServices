@@ -59,7 +59,7 @@ namespace PowerShellEditorServices.Test.E2E
             Diagnostics.Clear();
         }
 
-        private string NewTestFile(string script, bool isPester = false)
+        private string NewTestFile(string script, bool isPester = false, string languageId = "powershell")
         {
             string fileExt = isPester ? ".Tests.ps1" : ".ps1";
             string filePath = Path.Combine(s_binDir, Path.GetRandomFileName() + fileExt);
@@ -69,7 +69,7 @@ namespace PowerShellEditorServices.Test.E2E
             {
                 TextDocument = new TextDocumentItem
                 {
-                    LanguageId = "powershell",
+                    LanguageId = languageId,
                     Version = 0,
                     Text = script,
                     Uri = new Uri(filePath)
@@ -143,6 +143,15 @@ function CanSendWorkspaceSymbolRequest {
 
             Diagnostic diagnostic = Assert.Single(Diagnostics);
             Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
+        }
+
+        [Fact]
+        public async Task WontReceiveDiagnosticsFromFileOpenThatIsNotPowerShell()
+        {
+            NewTestFile("$a = 4", languageId: "plaintext");
+            await Task.Delay(2000);
+
+            Assert.Empty(Diagnostics);
         }
 
         [Fact]

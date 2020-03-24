@@ -82,10 +82,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     notification.TextDocument.Uri,
                     notification.TextDocument.Text);
 
-            // Kick off script diagnostics if we got a PowerShell file without blocking the response
-            // TODO: Get all recently edited files in the workspace
-            if (notification.TextDocument.LanguageId == "powershell")
+            if (LspUtils.PowerShellDocumentSelector.IsMatch(new TextDocumentAttributes(
+                // We use null because we only want to test the LanguageId here and not if the
+                // file ends in ps*1.
+                null,
+                notification.TextDocument.LanguageId)))
             {
+                // Kick off script diagnostics if we got a PowerShell file without blocking the response
+                // TODO: Get all recently edited files in the workspace
                 _analysisService.RunScriptDiagnostics(new ScriptFile[] { openedFile }, token);
             }
 
