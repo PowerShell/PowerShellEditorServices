@@ -72,7 +72,7 @@
   Improve PSReadLine experience where no new line is rendered in the console.
 - ✨🔍 [PowerShellEditorServices #1119](https://github.com/powershell/powershelleditorservices/pull/1119) -
   Enable new debugging APIs added in PowerShell 7, improving performance and fixing issues where
-  the debugger would hang or be unable to update breakpoints while scripts were running.
+  the debugger would stop responding or be unable to update breakpoints while scripts were running.
 - 👷📟 [PowerShellEditorServices #1187](https://github.com/PowerShell/PowerShellEditorServices/pull/1187) -
   Upgrade built-in PSReadLine to 2.0.0 GA.
 - 🐛👮 [PowerShellEditorServices #1179](https://github.com/PowerShell/PowerShellEditorServices/pull/1179) -
@@ -701,7 +701,7 @@ Fix remote editing in PSCore by fixing *-Content calls in psedit scripts and set
   Handle exception case when finding references of a symbol
 
 - [PowerShell/vscode-powershell #942](https://github.com/PowerShell/vscode-powershell/issues/942) -
-  Temporary debugging session now does not hang when running "PowerShell Interactive Session" debugging configuration in VS Code
+  Temporary debugging session now does not stop responding when running "PowerShell Interactive Session" debugging configuration in VS Code
 
 - [PowerShell/vscode-powershell #872](https://github.com/PowerShell/vscode-powershell/issues/872) -
   Watch variables with children are now expandable
@@ -791,7 +791,7 @@ Fix remote editing in PSCore by fixing *-Content calls in psedit scripts and set
   the CodeLens feature.
 
 - [PowerShell/vscode-powershell#851](https://github.com/PowerShell/vscode-powershell/issues/851) -
-  Fixed an issue where the language server would hang when typing out a describe
+  Fixed an issue where the language server would stop responding when typing out a describe
   block.
 
 - [PowerShell/vscode-powershell#852](https://github.com/PowerShell/vscode-powershell/issues/852) -
