@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             };
         }
 
-        public async Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
+        public Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
@@ -69,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
             }
 
-            return new LocationContainer(locations);
+            return Task.FromResult(new LocationContainer(locations));
         }
 
         public void SetCapability(ReferencesCapability capability)

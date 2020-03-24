@@ -410,7 +410,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void PublishScriptDiagnostics(ScriptFile scriptFile, IReadOnlyList<ScriptFileMarker> markers)
         {
-            var diagnostics = new Diagnostic[scriptFile.DiagnosticMarkers.Count];
+            var diagnostics = new Diagnostic[markers.Count];
 
             CorrectionTableEntry fileCorrections = _mostRecentCorrectionsByFile.GetOrAdd(
                 scriptFile,
