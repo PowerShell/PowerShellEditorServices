@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 .AddCommand(@"Microsoft.PowerShell.Core\Get-Help")
                 // We use .Name here instead of just passing in commandInfo because
                 // CommandInfo.ToString() duplicates the Prefix if one exists.
-                .AddArgument(commandInfo.Name)
+                .AddParameter("Name", commandInfo.Name)
                 .AddParameter("ErrorAction", "Ignore");
 
             var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false);
