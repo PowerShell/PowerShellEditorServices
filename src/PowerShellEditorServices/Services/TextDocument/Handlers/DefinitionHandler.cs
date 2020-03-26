@@ -35,9 +35,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        public TextDocumentRegistrationOptions GetRegistrationOptions()
+        public DefinitionRegistrationOptions GetRegistrationOptions()
         {
-            return new TextDocumentRegistrationOptions
+            return new DefinitionRegistrationOptions
             {
                 DocumentSelector = LspUtils.PowerShellDocumentSelector
             };

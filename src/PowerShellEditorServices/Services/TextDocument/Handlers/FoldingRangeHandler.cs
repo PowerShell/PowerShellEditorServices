@@ -30,16 +30,22 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _configurationService = configurationService;
             _workspaceService = workspaceService;
         }
-        public TextDocumentRegistrationOptions GetRegistrationOptions()
+
+        public FoldingRangeRegistrationOptions GetRegistrationOptions()
         {
-            return new TextDocumentRegistrationOptions()
+            return new FoldingRangeRegistrationOptions
             {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
+                DocumentSelector = LspUtils.PowerShellDocumentSelector
             };
         }
 
         public Task<Container<FoldingRange>> Handle(FoldingRangeRequestParam request, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return Task.FromResult(new Container<FoldingRange>());
+            }
+
             // TODO Should be using dynamic registrations
             if (!_configurationService.CurrentSettings.CodeFolding.Enable) { return null; }
 

@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public DocumentSymbolHandler(ILoggerFactory factory, ConfigurationService configurationService, WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<FoldingRangeHandler>();
+            _logger = factory.CreateLogger<DocumentSymbolHandler>();
             _workspaceService = workspaceService;
             _providers = new IDocumentSymbolProvider[]
             {
@@ -43,11 +43,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             };
         }
 
-        public TextDocumentRegistrationOptions GetRegistrationOptions()
+        public DocumentSymbolRegistrationOptions GetRegistrationOptions()
         {
-            return new TextDocumentRegistrationOptions
+            return new DocumentSymbolRegistrationOptions
             {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
+                DocumentSelector = LspUtils.PowerShellDocumentSelector
             };
         }
 

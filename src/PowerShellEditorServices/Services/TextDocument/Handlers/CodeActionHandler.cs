@@ -60,14 +60,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<CommandOrCodeActionContainer> Handle(CodeActionParams request, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return Array.Empty<CommandOrCodeAction>();
+            }
+
             // On Windows, VSCode still gives us file URIs like "file:///c%3a/...", so we need to escape them
             IReadOnlyDictionary<string, MarkerCorrection> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
                 _workspaceService.GetFile(request.TextDocument.Uri)).ConfigureAwait(false);
 
             if (corrections == null)
             {
-                // TODO: Find out if we can cache this empty value
-                return new CommandOrCodeActionContainer();
+                return Array.Empty<CommandOrCodeAction>();
             }
 
             var codeActions = new List<CommandOrCodeAction>();
@@ -100,7 +104,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                                         {
                                             Uri = request.TextDocument.Uri
                                         },
-                                        Edits = new Container<TextEdit>(correction.Edits.Select(ScriptRegion.ToTextEdit))
+                                        Edits = new TextEditContainer(correction.Edits.Select(ScriptRegion.ToTextEdit))
                                     }))
                         }
                     });

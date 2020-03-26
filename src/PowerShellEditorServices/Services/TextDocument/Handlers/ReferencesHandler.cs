@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
-        private ReferencesCapability _capability;
+        private ReferenceCapability _capability;
 
         public ReferencesHandler(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService)
         {
@@ -31,9 +31,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        public TextDocumentRegistrationOptions GetRegistrationOptions()
+        public ReferenceRegistrationOptions GetRegistrationOptions()
         {
-            return new TextDocumentRegistrationOptions
+            return new ReferenceRegistrationOptions
             {
                 DocumentSelector = LspUtils.PowerShellDocumentSelector
             };
@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Task.FromResult(new LocationContainer(locations));
         }
 
-        public void SetCapability(ReferencesCapability capability)
+        public void SetCapability(ReferenceCapability capability)
         {
             _capability = capability;
         }

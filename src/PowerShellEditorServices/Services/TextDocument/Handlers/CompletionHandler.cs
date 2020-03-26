@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class CompletionHandler : ICompletionHandler, ICompletionResolveHandler
     {
         const int DefaultWaitTimeoutMilliseconds = 5000;
-        private readonly CompletionItem[] s_emptyCompletionResult = Array.Empty<CompletionItem>();
+        private readonly SemaphoreSlim _completionLock = AsyncUtils.CreateSimpleLockingSemaphore();
 
         private readonly ILogger _logger;
         private readonly PowerShellContextService _powerShellContextService;
@@ -67,24 +67,39 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            CompletionResults completionResults =
-                await GetCompletionsInFileAsync(
-                    scriptFile,
-                    cursorLine,
-                    cursorColumn).ConfigureAwait(false);
+            await _completionLock.WaitAsync().ConfigureAwait(false);
 
-            CompletionItem[] completionItems = s_emptyCompletionResult;
-
-            if (completionResults != null)
+            try
             {
-                completionItems = new CompletionItem[completionResults.Completions.Length];
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    _logger.LogDebug("Completion request canceled for file: {0}", request.TextDocument.Uri);
+                    return Array.Empty<CompletionItem>();
+                }
+
+                CompletionResults completionResults =
+                    await GetCompletionsInFileAsync(
+                        scriptFile,
+                        cursorLine,
+                        cursorColumn).ConfigureAwait(false);
+
+                if (completionResults == null)
+                {
+                    return Array.Empty<CompletionItem>();
+                }
+
+                CompletionItem[] completionItems = new CompletionItem[completionResults.Completions.Length];
                 for (int i = 0; i < completionItems.Length; i++)
                 {
                     completionItems[i] = CreateCompletionItem(completionResults.Completions[i], completionResults.ReplacedRange, i + 1);
                 }
-            }
 
-            return new CompletionList(completionItems);
+                return completionItems;
+            }
+            finally
+            {
+                _completionLock.Release();
+            }
         }
 
         public bool CanResolve(CompletionItem value)

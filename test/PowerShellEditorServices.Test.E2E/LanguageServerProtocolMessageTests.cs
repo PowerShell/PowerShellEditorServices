@@ -124,7 +124,7 @@ function CanSendWorkspaceSymbolRequest {
 }
 ");
 
-            SymbolInformationContainer symbols = await LanguageClient.SendRequest<SymbolInformationContainer>(
+            Container<SymbolInformation> symbols = await LanguageClient.SendRequest<Container<SymbolInformation>>(
                 "workspace/symbol",
                 new WorkspaceSymbolParams
                 {

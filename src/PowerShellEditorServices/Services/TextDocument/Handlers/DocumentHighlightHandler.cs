@@ -27,8 +27,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private readonly SymbolsService _symbolsService;
 
-        private readonly TextDocumentRegistrationOptions _registrationOptions;
-
         private DocumentHighlightCapability _capability;
 
         public DocumentHighlightHandler(
@@ -36,19 +34,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             WorkspaceService workspaceService,
             SymbolsService symbolService)
         {
-            _logger = loggerFactory.CreateLogger<OmniSharp.Extensions.LanguageServer.Protocol.Server.DocumentHighlightHandler>();
+            _logger = loggerFactory.CreateLogger<DocumentHighlightHandler>();
             _workspaceService = workspaceService;
             _symbolsService = symbolService;
-            _registrationOptions = new TextDocumentRegistrationOptions()
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector
-            };
             _logger.LogInformation("highlight handler loaded");
         }
 
-        public TextDocumentRegistrationOptions GetRegistrationOptions()
+        public DocumentHighlightRegistrationOptions GetRegistrationOptions()
         {
-            return _registrationOptions;
+            return new DocumentHighlightRegistrationOptions
+            {
+                DocumentSelector = LspUtils.PowerShellDocumentSelector
+            };
         }
 
         public Task<DocumentHighlightContainer> Handle(
