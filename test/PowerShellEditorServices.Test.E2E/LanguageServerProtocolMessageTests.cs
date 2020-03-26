@@ -826,15 +826,14 @@ CanSendReferencesCodeLensRequest
         }
 
         [Fact]
-        public async Task CanSGetHelpCompletionResolveWithPrefixRequest()
+        public async Task CanSendCompletionResolveWithModulePrefixRequest()
         {
-            EvaluateResponseBody evaluateResponseBody =
-                await LanguageClient.SendRequest<EvaluateResponseBody>(
-                    "evaluate",
-                    new EvaluateRequestArguments
-                    {
-                        Expression = "Import-Module Microsoft.PowerShell.Archive -Prefix Slow"
-                    });
+            await LanguageClient.SendRequest<EvaluateResponseBody>(
+                "evaluate",
+                new EvaluateRequestArguments
+                {
+                    Expression = "Import-Module Microsoft.PowerShell.Archive -Prefix Slow"
+                });
 
             string filePath = NewTestFile("Expand-SlowArch");
 
