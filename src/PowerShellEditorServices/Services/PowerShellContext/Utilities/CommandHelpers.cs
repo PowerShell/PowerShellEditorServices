@@ -76,36 +76,36 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             CommandInfo commandInfo,
             PowerShellContextService powerShellContext)
         {
+            Validate.IsNotNull(nameof(commandInfo), commandInfo);
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
-            string synopsisString = string.Empty;
-
-            if (commandInfo != null &&
-                (commandInfo.CommandType == CommandTypes.Cmdlet ||
-                 commandInfo.CommandType == CommandTypes.Function ||
-                 commandInfo.CommandType == CommandTypes.Filter))
+            // A small optimization to not run Get-Help on things like DSC resources.
+            if (commandInfo.CommandType != CommandTypes.Cmdlet &&
+                commandInfo.CommandType != CommandTypes.Function &&
+                commandInfo.CommandType != CommandTypes.Filter)
             {
-                PSCommand command = new PSCommand();
-                command.AddCommand(@"Microsoft.PowerShell.Core\Get-Help");
-                command.AddArgument(commandInfo);
-                command.AddParameter("ErrorAction", "Ignore");
+                return string.Empty;
+            }
 
-                var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false);
-                PSObject helpObject = results.FirstOrDefault();
+            PSCommand command = new PSCommand()
+                .AddCommand(@"Microsoft.PowerShell.Core\Get-Help")
+                // We use .Name here instead of just passing in commandInfo because
+                // CommandInfo.ToString() duplicates the Prefix if one exists.
+                .AddParameter("Name", commandInfo.Name)
+                .AddParameter("ErrorAction", "Ignore");
 
-                if (helpObject != null)
-                {
-                    // Extract the synopsis string from the object
-                    synopsisString =
-                        (string)helpObject.Properties["synopsis"].Value ??
-                        string.Empty;
+            var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false);
+            PSObject helpObject = results.FirstOrDefault();
 
-                    // Ignore the placeholder value for this field
-                    if (string.Equals(synopsisString, "SHORT DESCRIPTION", System.StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        synopsisString = string.Empty;
-                    }
-                }
+            // Extract the synopsis string from the object
+            string synopsisString =
+                (string)helpObject?.Properties["synopsis"].Value ??
+                string.Empty;
+
+            // Ignore the placeholder value for this field
+            if (string.Equals(synopsisString, "SHORT DESCRIPTION", System.StringComparison.CurrentCultureIgnoreCase))
+            {
+                return string.Empty;
             }
 
             return synopsisString;

@@ -826,6 +826,31 @@ CanSendReferencesCodeLensRequest
         }
 
         [Fact]
+        public async Task CanSendCompletionResolveWithModulePrefixRequest()
+        {
+            await LanguageClient.SendRequest<EvaluateResponseBody>(
+                "evaluate",
+                new EvaluateRequestArguments
+                {
+                    Expression = "Import-Module Microsoft.PowerShell.Archive -Prefix Slow"
+                });
+
+            string filePath = NewTestFile("Expand-SlowArch");
+
+            CompletionList completionItems = await LanguageClient.TextDocument.Completions(
+                filePath, line: 0, column: 15);
+
+            CompletionItem completionItem = Assert.Single(completionItems,
+                completionItem1 => completionItem1.Label == "Expand-SlowArchive");
+
+            CompletionItem updatedCompletionItem = await LanguageClient.SendRequest<CompletionItem>(
+                "completionItem/resolve",
+                completionItem);
+
+            Assert.Contains("Extracts files from a specified archive", updatedCompletionItem.Documentation.String);
+        }
+
+        [Fact]
         public async Task CanSendHoverRequest()
         {
             string filePath = NewTestFile("Write-Host");
