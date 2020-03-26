@@ -1,5 +1,17 @@
 # PowerShell Editor Services Release History
 
+## v2.1.0-preview.2
+### Thursday, March 26, 2020
+
+- 🐛🧠 [vscode-powershell #2584](https://github.com/PowerShell/PowerShellEditorServices/pull/1243) -
+  Refactor GetCommandSynopsisAsync method to make sure cmdlets with module prefixes work.
+- 🐛⚡️🧠📚 [vscode-powershell #2556](https://github.com/PowerShell/PowerShellEditorServices/pull/1238) -
+  Add cancellation for `textDocument/completion`, `textDocument/codeAction`, `textDocument/folding`.
+- ✨👮 [vscode-powershell #2572](https://github.com/PowerShell/PowerShellEditorServices/pull/1241) -
+  Only run diagnostics on PowerShell files.
+- ⚡️🧠 [PowerShellEditorServices #1237](https://github.com/PowerShell/PowerShellEditorServices/pull/1237) -
+  Optimize when we run GetCommandInfoAsync to use the pipeline less for Intellisense.
+
 ## v2.1.0-preview.1
 ### Thursday, March 12, 2020
 
