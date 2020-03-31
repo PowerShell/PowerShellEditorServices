@@ -1,5 +1,13 @@
 # PowerShell Editor Services Release History
 
+## v2.1.0-preview.3
+### Tuesday, March 31, 2020
+
+- ✨📟 [PowerShellEditorServices #1245](https://github.com/PowerShell/PowerShellEditorServices/pull/1245) -
+  Better PSReadLine version filter check to include 2.1.0+ prereleases.
+- 🐛⚡️🧠🔗 [PowerShellEditorServices #1248](https://github.com/PowerShell/PowerShellEditorServices/pull/1248) -
+  Fix cancellation for completions and add `textDocument/hover` cancellation support.
+
 ## v2.1.0-preview.2
 ### Thursday, March 26, 2020
 
