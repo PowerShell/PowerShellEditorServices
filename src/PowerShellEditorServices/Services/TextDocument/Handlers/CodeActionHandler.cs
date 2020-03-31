@@ -62,6 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (cancellationToken.IsCancellationRequested)
             {
+                _logger.LogDebug("CodeAction request canceled at range: {0}", request.Range);
                 return Array.Empty<CommandOrCodeAction>();
             }
 
