@@ -48,6 +48,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<Hover> Handle(HoverParams request, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug("Hover request canceled for file: {0}", request.TextDocument.Uri);
+                return new Hover();
+            }
+
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             SymbolDetails symbolDetails =
@@ -56,20 +62,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         (int) request.Position.Line + 1,
                         (int) request.Position.Character + 1).ConfigureAwait(false);
 
-            List<MarkedString> symbolInfo = new List<MarkedString>();
-            Range symbolRange = null;
-
-            if (symbolDetails != null)
+            if (symbolDetails == null)
             {
-                symbolInfo.Add(new MarkedString("PowerShell", symbolDetails.DisplayString));
-
-                if (!string.IsNullOrEmpty(symbolDetails.Documentation))
-                {
-                    symbolInfo.Add(new MarkedString("markdown", symbolDetails.Documentation));
-                }
-
-                symbolRange = GetRangeFromScriptRegion(symbolDetails.SymbolReference.ScriptRegion);
+                return new Hover();
             }
+
+            List<MarkedString> symbolInfo = new List<MarkedString>();
+            symbolInfo.Add(new MarkedString("PowerShell", symbolDetails.DisplayString));
+
+            if (!string.IsNullOrEmpty(symbolDetails.Documentation))
+            {
+                symbolInfo.Add(new MarkedString("markdown", symbolDetails.Documentation));
+            }
+
+            Range symbolRange = GetRangeFromScriptRegion(symbolDetails.SymbolReference.ScriptRegion);
 
             return new Hover
             {
