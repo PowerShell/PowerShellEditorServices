@@ -43,6 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (cancellationToken.IsCancellationRequested)
             {
+                _logger.LogDebug("FoldingRange request canceled for file: {0}", request.TextDocument.Uri);
                 return Task.FromResult(new Container<FoldingRange>());
             }
 
