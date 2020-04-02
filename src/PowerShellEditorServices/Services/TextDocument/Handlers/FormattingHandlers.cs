@@ -3,9 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
@@ -66,34 +68,52 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // TODO raise an error event in case format returns null
             string formattedScript;
             Range editRange;
-            var extent = scriptFile.ScriptAst.Extent;
-
-            // todo create an extension for converting range to script extent
-            editRange = new Range
+            try
             {
-                Start = new Position
-                {
-                    Line = extent.StartLineNumber - 1,
-                    Character = extent.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = extent.EndLineNumber - 1,
-                    Character = extent.EndColumnNumber - 1
-                }
-            };
+                var extent = scriptFile.ScriptAst.Extent;
 
-            formattedScript = await _analysisService.FormatAsync(
-                scriptFile.Contents,
-                pssaSettings,
-                null).ConfigureAwait(false);
-            formattedScript = formattedScript ?? scriptFile.Contents;
-
-            return new TextEditContainer(new TextEdit
+                // todo create an extension for converting range to script extent
+                editRange = new Range
+                {
+                    Start = new Position
+                    {
+                        Line = extent.StartLineNumber - 1,
+                        Character = extent.StartColumnNumber - 1
+                    },
+                    End = new Position
+                    {
+                        Line = extent.EndLineNumber - 1,
+                        Character = extent.EndColumnNumber - 1
+                    }
+                };
+            }
+            catch (Exception e)
             {
-                NewText = formattedScript,
-                Range = editRange
-            });
+                _logger.LogError("FAILED IN RANGE CREATION: \n" + e.StackTrace);
+                _logger.LogException($"Exception occurred formatting document at: {request.TextDocument.Uri}", e);
+                throw;
+            }
+
+            try
+            {
+                formattedScript = await _analysisService.FormatAsync(
+                    scriptFile.Contents,
+                    pssaSettings,
+                    null).ConfigureAwait(false);
+                formattedScript = formattedScript ?? scriptFile.Contents;
+
+                return new TextEditContainer(new TextEdit
+                {
+                    NewText = formattedScript,
+                    Range = editRange
+                });
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("FAILED IN FORMAT ASYNC: \n" + e.StackTrace);
+                _logger.LogException($"Exception occurred formatting document at: {request.TextDocument.Uri}", e);
+                throw;
+            }
         }
 
         public async Task<TextEditContainer> Handle(DocumentRangeFormattingParams request, CancellationToken cancellationToken)
