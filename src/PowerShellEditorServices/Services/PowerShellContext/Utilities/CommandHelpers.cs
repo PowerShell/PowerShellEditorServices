@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 return cmdInfo;
             }
 
-            // Make sure the command's noun isn't blacklisted.  This is
+            // Make sure the command's noun isn't in the exclusion list.  This is
             // currently necessary to make sure that Get-Command doesn't
             // load PackageManagement or PowerShellGet because they cause
             // a major slowdown in IntelliSense.
