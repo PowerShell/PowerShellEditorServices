@@ -20,7 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class SignatureHelpHandler : ISignatureHelpHandler
     {
-        private static readonly SignatureInformation[] s_emptySignatureResult = Array.Empty<SignatureInformation>();
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
@@ -52,6 +51,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<SignatureHelp> Handle(SignatureHelpParams request, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug("SignatureHelp request canceled for file: {0}", request.TextDocument.Uri);
+                return new SignatureHelp();
+            }
+
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             ParameterSetSignatures parameterSets =
@@ -61,28 +66,28 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     (int) request.Position.Character + 1,
                     _powerShellContextService).ConfigureAwait(false);
 
-            SignatureInformation[] signatures = s_emptySignatureResult;
-
-            if (parameterSets != null)
+            if (parameterSets == null)
             {
-                signatures = new SignatureInformation[parameterSets.Signatures.Length];
-                for (int i = 0; i < signatures.Length; i++)
-                {
-                    var parameters = new ParameterInformation[parameterSets.Signatures[i].Parameters.Count()];
-                    int j = 0;
-                    foreach (ParameterInfo param in parameterSets.Signatures[i].Parameters)
-                    {
-                        parameters[j] = CreateParameterInfo(param);
-                        j++;
-                    }
+                return new SignatureHelp();
+            }
 
-                    signatures[i] = new SignatureInformation
-                    {
-                        Label = parameterSets.CommandName + " " + parameterSets.Signatures[i].SignatureText,
-                        Documentation = null,
-                        Parameters = parameters,
-                    };
+            SignatureInformation[] signatures = new SignatureInformation[parameterSets.Signatures.Length];
+            for (int i = 0; i < signatures.Length; i++)
+            {
+                var parameters = new ParameterInformation[parameterSets.Signatures[i].Parameters.Count()];
+                int j = 0;
+                foreach (ParameterInfo param in parameterSets.Signatures[i].Parameters)
+                {
+                    parameters[j] = CreateParameterInfo(param);
+                    j++;
                 }
+
+                signatures[i] = new SignatureInformation
+                {
+                    Label = parameterSets.CommandName + " " + parameterSets.Signatures[i].SignatureText,
+                    Documentation = null,
+                    Parameters = parameters,
+                };
             }
 
             return new SignatureHelp

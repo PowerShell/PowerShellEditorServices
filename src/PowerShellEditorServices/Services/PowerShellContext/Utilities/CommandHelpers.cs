@@ -16,20 +16,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// </summary>
     internal static class CommandHelpers
     {
-        private static readonly ConcurrentDictionary<string, bool> NounExclusionList =
+        private static readonly ConcurrentDictionary<string, bool> s_nounExclusionList =
             new ConcurrentDictionary<string, bool>();
+
+        private static readonly ConcurrentDictionary<string, CommandInfo> s_commandInfoCache =
+            new ConcurrentDictionary<string, CommandInfo>();
+
+        private static readonly ConcurrentDictionary<string, string> s_synopsisCache =
+            new ConcurrentDictionary<string, string>();
 
         static CommandHelpers()
         {
-            NounExclusionList.TryAdd("Module", true);
-            NounExclusionList.TryAdd("Script", true);
-            NounExclusionList.TryAdd("Package", true);
-            NounExclusionList.TryAdd("PackageProvider", true);
-            NounExclusionList.TryAdd("PackageSource", true);
-            NounExclusionList.TryAdd("InstalledModule", true);
-            NounExclusionList.TryAdd("InstalledScript", true);
-            NounExclusionList.TryAdd("ScriptFileInfo", true);
-            NounExclusionList.TryAdd("PSRepository", true);
+            s_nounExclusionList.TryAdd("Module", true);
+            s_nounExclusionList.TryAdd("Script", true);
+            s_nounExclusionList.TryAdd("Package", true);
+            s_nounExclusionList.TryAdd("PackageProvider", true);
+            s_nounExclusionList.TryAdd("PackageSource", true);
+            s_nounExclusionList.TryAdd("InstalledModule", true);
+            s_nounExclusionList.TryAdd("InstalledScript", true);
+            s_nounExclusionList.TryAdd("ScriptFileInfo", true);
+            s_nounExclusionList.TryAdd("PSRepository", true);
         }
 
         /// <summary>
@@ -45,12 +51,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             Validate.IsNotNull(nameof(commandName), commandName);
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
+            // If we have a CommandInfo cached, return that.
+            if (s_commandInfoCache.TryGetValue(commandName, out CommandInfo cmdInfo))
+            {
+                return cmdInfo;
+            }
+
             // Make sure the command's noun isn't blacklisted.  This is
             // currently necessary to make sure that Get-Command doesn't
             // load PackageManagement or PowerShellGet because they cause
             // a major slowdown in IntelliSense.
             var commandParts = commandName.Split('-');
-            if (commandParts.Length == 2 && NounExclusionList.ContainsKey(commandParts[1]))
+            if (commandParts.Length == 2 && s_nounExclusionList.ContainsKey(commandParts[1]))
             {
                 return null;
             }
@@ -60,10 +72,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             command.AddArgument(commandName);
             command.AddParameter("ErrorAction", "Ignore");
 
-            return (await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false))
+            CommandInfo commandInfo = (await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false))
                 .Select(o => o.BaseObject)
                 .OfType<CommandInfo>()
                 .FirstOrDefault();
+
+            // Only cache CmdletInfos since they're exposed in binaries and can never change throughout the session.
+            if (commandInfo.CommandType == CommandTypes.Cmdlet)
+            {
+                s_commandInfoCache.TryAdd(commandName, commandInfo);
+            }
+
+            return commandInfo;
         }
 
         /// <summary>
@@ -87,6 +107,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 return string.Empty;
             }
 
+            // If we have a synopsis cached, return that.
+            if (s_synopsisCache.TryGetValue(commandInfo.Name, out string synopsis))
+            {
+                return synopsis;
+            }
+
             PSCommand command = new PSCommand()
                 .AddCommand(@"Microsoft.PowerShell.Core\Get-Help")
                 // We use .Name here instead of just passing in commandInfo because
@@ -101,6 +127,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             string synopsisString =
                 (string)helpObject?.Properties["synopsis"].Value ??
                 string.Empty;
+
+            // Only cache cmdlet infos because since they're exposed in binaries, the can never change throughout the session.
+            if (commandInfo.CommandType == CommandTypes.Cmdlet)
+            {
+                s_synopsisCache.TryAdd(commandInfo.Name, synopsisString);
+            }
 
             // Ignore the placeholder value for this field
             if (string.Equals(synopsisString, "SHORT DESCRIPTION", System.StringComparison.CurrentCultureIgnoreCase))

@@ -22,20 +22,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
-        private readonly PowerShellContextService _powerShellContextService;
 
         private HoverCapability _capability;
 
         public HoverHandler(
             ILoggerFactory factory,
             SymbolsService symbolsService,
-            WorkspaceService workspaceService,
-            PowerShellContextService powerShellContextService)
+            WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<HoverHandler>();
             _symbolsService = symbolsService;
             _workspaceService = workspaceService;
-            _powerShellContextService = powerShellContextService;
         }
 
         public HoverRegistrationOptions GetRegistrationOptions()
