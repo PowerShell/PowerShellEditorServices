@@ -11,8 +11,7 @@ steps:
       ./install-powershell.ps1 -Destination $powerShellPath -Daily
 
       # Update PATH
-      $vstsCommandString = "vso[task.setvariable variable=PATH]$powerShellPath;$env:PATH"
-      Write-Host "##$vstsCommandString"
+      Write-Host "##vso[task.prependpath]$powerShellPath"
     displayName: Install PowerShell daily
 
   - pwsh: 'Get-ChildItem -Path env:'
