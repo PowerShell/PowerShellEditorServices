@@ -17,7 +17,7 @@ steps:
       Write-Host "##$vstsCommandString"
     displayName: Install PowerShell daily
 
-  - pwsh: Get-ChildItem -Path env:
+  - pwsh: 'Get-ChildItem -Path env:'
     displayName: Capture environment
     condition: succeededOrFailed()
 
