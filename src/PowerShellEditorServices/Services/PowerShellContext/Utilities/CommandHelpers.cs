@@ -108,6 +108,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
 
             // If we have a synopsis cached, return that.
+            // NOTE: If the user runs Update-Help, it's possible that this synopsis will be out of date.
+            // Given the perf increase of doing this, and the simple workaround of restarting the extension,
+            // this seems worth it.
             if (s_synopsisCache.TryGetValue(commandInfo.Name, out string synopsis))
             {
                 return synopsis;
