@@ -19,6 +19,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         private static readonly ConcurrentDictionary<string, bool> s_nounExclusionList =
             new ConcurrentDictionary<string, bool>();
 
+        // This is used when a noun exists in multiple modules (for example, "Command" is used in Microsoft.PowerShell.Core and also PowerShellGet)
+        private static readonly ConcurrentDictionary<string, bool> s_cmdletExclusionList =
+            new ConcurrentDictionary<string, bool>();
+
         private static readonly ConcurrentDictionary<string, CommandInfo> s_commandInfoCache =
             new ConcurrentDictionary<string, CommandInfo>();
 
@@ -27,15 +31,30 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         static CommandHelpers()
         {
-            s_nounExclusionList.TryAdd("Module", true);
+            // PowerShellGet v2 nouns
+            s_nounExclusionList.TryAdd("CredsFromCredentialProvider", true);
+            s_nounExclusionList.TryAdd("DscResource", true);
+            s_nounExclusionList.TryAdd("InstalledModule", true);
+            s_nounExclusionList.TryAdd("InstalledScript", true);
+            s_nounExclusionList.TryAdd("PSRepository", true);
+            s_nounExclusionList.TryAdd("RoleCapability", true);
             s_nounExclusionList.TryAdd("Script", true);
+            s_nounExclusionList.TryAdd("ScriptFileInfo", true);
+
+            // PackageManagement nouns
             s_nounExclusionList.TryAdd("Package", true);
             s_nounExclusionList.TryAdd("PackageProvider", true);
             s_nounExclusionList.TryAdd("PackageSource", true);
-            s_nounExclusionList.TryAdd("InstalledModule", true);
-            s_nounExclusionList.TryAdd("InstalledScript", true);
-            s_nounExclusionList.TryAdd("ScriptFileInfo", true);
-            s_nounExclusionList.TryAdd("PSRepository", true);
+
+            // Cmdlet's in PowerShellGet with conflicting nouns
+            s_cmdletExclusionList.TryAdd("Find-Command", true);
+            s_cmdletExclusionList.TryAdd("Find-Module", true);
+            s_cmdletExclusionList.TryAdd("Install-Module", true);
+            s_cmdletExclusionList.TryAdd("Publish-Module", true);
+            s_cmdletExclusionList.TryAdd("Save-Module", true);
+            s_cmdletExclusionList.TryAdd("Uninstall-Module", true);
+            s_cmdletExclusionList.TryAdd("Update-Module", true);
+            s_cmdletExclusionList.TryAdd("Update-ModuleManifest", true);
         }
 
         /// <summary>
@@ -57,12 +76,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 return cmdInfo;
             }
 
-            // Make sure the command's noun isn't in the exclusion list.  This is
-            // currently necessary to make sure that Get-Command doesn't
-            // load PackageManagement or PowerShellGet because they cause
+            // Make sure the command's noun or command's name isn't in the exclusion lists.
+            // This is currently necessary to make sure that Get-Command doesn't
+            // load PackageManagement or PowerShellGet v2 because they cause
             // a major slowdown in IntelliSense.
             var commandParts = commandName.Split('-');
-            if (commandParts.Length == 2 && s_nounExclusionList.ContainsKey(commandParts[1]))
+            if ((commandParts.Length == 2 && s_nounExclusionList.ContainsKey(commandParts[1]))
+                    || s_cmdletExclusionList.ContainsKey(commandName))
             {
                 return null;
             }

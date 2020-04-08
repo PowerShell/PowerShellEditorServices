@@ -3,8 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -71,15 +70,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return new SignatureHelp();
             }
 
-            SignatureInformation[] signatures = new SignatureInformation[parameterSets.Signatures.Length];
+            var signatures = new SignatureInformation[parameterSets.Signatures.Length];
             for (int i = 0; i < signatures.Length; i++)
             {
-                var parameters = new ParameterInformation[parameterSets.Signatures[i].Parameters.Count()];
-                int j = 0;
+                var parameters = new List<ParameterInformation>();
                 foreach (ParameterInfo param in parameterSets.Signatures[i].Parameters)
                 {
-                    parameters[j] = CreateParameterInfo(param);
-                    j++;
+                    parameters.Add(CreateParameterInfo(param));
                 }
 
                 signatures[i] = new SignatureInformation
