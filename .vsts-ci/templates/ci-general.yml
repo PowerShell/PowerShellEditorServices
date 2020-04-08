@@ -15,6 +15,9 @@ steps:
       Write-Host "##vso[task.prependpath]$powerShellPath"
     displayName: Install PowerShell Daily
 
+  - pwsh: '$PSVersionTable'
+    displayName: Display PowerShell version information
+
   - pwsh: Write-Host "##vso[build.updatebuildnumber]$env:BUILD_SOURCEBRANCHNAME-$env:BUILD_SOURCEVERSION-$((get-date).ToString("yyyyMMddhhmmss"))"
     displayName: Set Build Name for Non-PR
     condition: ne(variables['Build.Reason'], 'PullRequest')
