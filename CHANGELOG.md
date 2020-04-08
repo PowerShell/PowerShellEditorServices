@@ -1,5 +1,13 @@
 # PowerShell Editor Services Release History
 
+## v2.1.0-preview.4
+### Wednesday, April 08, 2020
+
+- ✨👷 [PowerShellEditorServices #1252](https://github.com/PowerShell/PowerShellEditorServices/pull/1252) -
+  Use PowerShell Daily in CI.
+- 🐛⚡️🧠🔗 [PowerShellEditorServices #1251](https://github.com/PowerShell/PowerShellEditorServices/pull/1251) -
+  Add cancellation to SignatureHelp request and cache results for cmdlets on `Get-Command` and `Get-Help`.
+
 ## v2.1.0-preview.3
 ### Tuesday, March 31, 2020
 
