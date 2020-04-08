@@ -1,5 +1,13 @@
 # PowerShell Editor Services Release History
 
+## v2.1.0-preview.4
+### Wednesday, April 08, 2020
+
+- [PowerShellEditorServices #1252](https://github.com/PowerShell/PowerShellEditorServices/pull/1252) -
+  Use PowerShell Daily in CI.
+- [PowerShellEditorServices #1251](https://github.com/PowerShell/PowerShellEditorServices/pull/1251) -
+  Signaturehelp cancellation and some caching.
+
 ## v2.0.0-preview.8
 ### Monday, January 13, 2020
 
