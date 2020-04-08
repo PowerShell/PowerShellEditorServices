@@ -2,7 +2,7 @@ parameters:
   pwsh: true
 
 steps:
-  powershell: |
+  - powershell: |
       Write-Host "Installing PowerShell Daily..."
 
       # Use `AGENT_TEMPDIRECTORY` to make sure the downloaded PowerShell is cleaned up.
