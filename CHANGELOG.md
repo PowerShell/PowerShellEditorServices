@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v2.1.0-preview.5
+### Thursday, April 09, 2020
+
+- ✨📟 [PowerShellEditorServices #1255](https://github.com/PowerShell/PowerShellEditorServices/pull/1255) -
+  Move PSReadLine invocation into cmdlets to get closer to supporting ConstrainedLanguage mode. Also removes hard coded PSReadLine assembly version.
+
 ## v2.1.0-preview.4
 ### Wednesday, April 08, 2020
 
