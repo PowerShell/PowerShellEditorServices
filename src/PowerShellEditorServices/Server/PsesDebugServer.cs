@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -80,8 +81,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 if (_usePSReadLine && _useTempSession && Interlocked.Exchange(ref s_hasRunPsrlStaticCtor, 1) == 0)
                 {
                     // This must be run synchronously to ensure debugging works
+                    var command = new PSCommand().AddCommand("__Invoke-ReadLineConstructor");
                     _powerShellContextService
-                        .ExecuteScriptStringAsync("[System.Runtime.CompilerServices.RuntimeHelpers]::RunClassConstructor([Microsoft.PowerShell.PSConsoleReadLine].TypeHandle)")
+                        .ExecuteCommandAsync<object>(command, sendOutputToHost: true, sendErrorToHost: true)
                         .GetAwaiter()
                         .GetResult();
                 }

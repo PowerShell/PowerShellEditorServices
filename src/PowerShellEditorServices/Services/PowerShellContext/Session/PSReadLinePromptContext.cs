@@ -18,15 +18,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
     internal class PSReadLinePromptContext : IPromptContext
     {
-        private const string ReadLineScript = @"
-            [System.Diagnostics.DebuggerHidden()]
-            [System.Diagnostics.DebuggerStepThrough()]
-            param()
-            return [Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null]::ReadLine(
-                $Host.Runspace,
-                $ExecutionContext,
-                $args[0])";
-
         private const string ReadLineInitScript = @"
             [System.Diagnostics.DebuggerHidden()]
             [System.Diagnostics.DebuggerStepThrough()]
@@ -41,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 }
 
                 Import-Module -ModuleInfo $module
-                return [Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null]
+                return [Microsoft.PowerShell.PSConsoleReadLine]
             }";
 
         private static ExecutionOptions s_psrlExecutionOptions = new ExecutionOptions
@@ -138,8 +129,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
 
             var readLineCommand = new PSCommand()
-                .AddScript(ReadLineScript)
-                .AddArgument(_readLineCancellationSource.Token);
+                .AddCommand("__Invoke-ReadLineForEditorServices")
+                .AddParameter("CancellationToken", _readLineCancellationSource.Token);
 
             IEnumerable<string> readLineResults = await _powerShellContext.ExecuteCommandAsync<string>(
                 readLineCommand,
