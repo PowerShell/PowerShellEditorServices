@@ -17,10 +17,21 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     [Cmdlet("__Invoke", "ReadLineForEditorServices")]
     public sealed class InvokeReadLineForEditorServicesCommand : PSCmdlet
     {
-        private static Lazy<MethodInfo> s_readLine = new Lazy<MethodInfo>(() =>
+        private delegate string ReadLineInvoker(
+            Runspace runspace,
+            EngineIntrinsics engineIntrinsics,
+            CancellationToken cancellationToken);
+
+        private static Lazy<ReadLineInvoker> s_readLine = new Lazy<ReadLineInvoker>(() =>
         {
             Type type = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
-            return type.GetMethod("ReadLine", new [] { typeof(Runspace), typeof(EngineIntrinsics), typeof(CancellationToken)});
+            MethodInfo method = type?.GetMethod(
+                "ReadLine",
+                new[] { typeof(Runspace), typeof(EngineIntrinsics), typeof(CancellationToken) });
+
+            // TODO: Handle method being null here. This shouldn't ever happen.
+
+            return (ReadLineInvoker)method.CreateDelegate(typeof(ReadLineInvoker));
         });
 
         /// <summary>
@@ -33,12 +44,11 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         protected override void EndProcessing()
         {
             // This returns a string.
-            object result = s_readLine.Value.Invoke(null, new object []
-                {
-                    Runspace.DefaultRunspace,
-                    SessionState.PSVariable.Get("ExecutionContext").Value,
-                    CancellationToken
-                });
+            object result = s_readLine.Value(
+                Runspace.DefaultRunspace,
+                SessionState.PSVariable.Get("ExecutionContext").Value as EngineIntrinsics,
+                CancellationToken
+            );
 
             WriteObject(result);
         }
