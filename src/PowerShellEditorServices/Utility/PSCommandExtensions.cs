@@ -18,6 +18,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 new[] { typeof(CommandInfo) },
                 modifiers: null);
 
+        // PowerShell's missing an API for us to AddCommand using a CommandInfo.
+        // An issue was filed here: https://github.com/PowerShell/PowerShell/issues/12295
+        // This works around this by creating a `Command` and passing it into PSCommand.AddCommand(Command command)
         internal static PSCommand AddCommand(this PSCommand command, CommandInfo commandInfo)
         {
             var rsCommand = (Command) s_commandCtor
