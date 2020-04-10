@@ -76,11 +76,7 @@ Copyright = '(c) 2017 Microsoft. All rights reserved.'
 FunctionsToExport = @()
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = @(
-    'Start-EditorServices',
-    '__Invoke-ReadLineForEditorServices',
-    '__Invoke-ReadLineConstructor'
-)
+CmdletsToExport = @('Start-EditorServices')
 
 # Variables to export from this module
 VariablesToExport = @()

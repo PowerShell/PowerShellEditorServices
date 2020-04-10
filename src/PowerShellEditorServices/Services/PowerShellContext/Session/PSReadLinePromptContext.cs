@@ -3,18 +3,18 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
+using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
-using System;
-using System.Management.Automation.Runspaces;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 {
-    using System.Collections.Generic;
     using System.Management.Automation;
-    using Microsoft.Extensions.Logging;
 
     internal class PSReadLinePromptContext : IPromptContext
     {
@@ -43,6 +43,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             AddToHistory = false,
             IsReadLine = true,
         };
+
+        private static readonly Lazy<Type> s_lazyReadLineCmdletType = new Lazy<Type>(() =>
+            Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting"));
 
         private readonly PowerShellContextService _powerShellContext;
 
@@ -129,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
 
             var readLineCommand = new PSCommand()
-                .AddCommand("__Invoke-ReadLineForEditorServices")
+                .AddCommand(new CmdletInfo("__Invoke-ReadLineForEditorServices", s_lazyReadLineCmdletType.Value))
                 .AddParameter("CancellationToken", _readLineCancellationSource.Token);
 
             IEnumerable<string> readLineResults = await _powerShellContext.ExecuteCommandAsync<string>(
