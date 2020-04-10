@@ -44,8 +44,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             IsReadLine = true,
         };
 
-        private static readonly Lazy<Type> s_lazyReadLineCmdletType = new Lazy<Type>(() =>
-            Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting"));
+        private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
+        {
+            var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting");
+            return new CmdletInfo("__Invoke-ReadLineForEditorServices", type);
+        });
 
         private readonly PowerShellContextService _powerShellContext;
 
@@ -132,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
 
             var readLineCommand = new PSCommand()
-                .AddCommand(new CmdletInfo("__Invoke-ReadLineForEditorServices", s_lazyReadLineCmdletType.Value))
+                .AddCommand(s_lazyInvokeReadLineForEditorServicesCmdletInfo.Value)
                 .AddParameter("CancellationToken", _readLineCancellationSource.Token);
 
             IEnumerable<string> readLineResults = await _powerShellContext.ExecuteCommandAsync<string>(

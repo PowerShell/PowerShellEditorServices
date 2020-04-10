@@ -29,8 +29,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// </summary>
         private static int s_hasRunPsrlStaticCtor = 0;
 
-        private static readonly Lazy<Type> s_lazyReadLineCmdletType = new Lazy<Type>(() =>
-            Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineConstructorCommand, Microsoft.PowerShell.EditorServices.Hosting"));
+        private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineConstructorCmdletInfo = new Lazy<CmdletInfo>(() =>
+        {
+            var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineConstructorCommand, Microsoft.PowerShell.EditorServices.Hosting");
+            return new CmdletInfo("__Invoke-ReadLineConstructor", type);
+        });
 
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
@@ -85,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 if (_usePSReadLine && _useTempSession && Interlocked.Exchange(ref s_hasRunPsrlStaticCtor, 1) == 0)
                 {
                     var command = new PSCommand()
-                        .AddCommand(new CmdletInfo("__Invoke-ReadLineConstructor", s_lazyReadLineCmdletType.Value));
+                        .AddCommand(s_lazyInvokeReadLineConstructorCmdletInfo.Value);
 
                     // This must be run synchronously to ensure debugging works
                     _powerShellContextService
