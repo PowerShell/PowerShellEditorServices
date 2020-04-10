@@ -35,6 +35,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 return [Microsoft.PowerShell.PSConsoleReadLine]
             }";
 
+        private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
+        {
+            var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting");
+            return new CmdletInfo("__Invoke-ReadLineForEditorServices", type);
+        });
+
         private static ExecutionOptions s_psrlExecutionOptions = new ExecutionOptions
         {
             WriteErrorsToHost = false,
@@ -43,12 +49,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             AddToHistory = false,
             IsReadLine = true,
         };
-
-        private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
-        {
-            var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting");
-            return new CmdletInfo("__Invoke-ReadLineForEditorServices", type);
-        });
 
         private readonly PowerShellContextService _powerShellContext;
 

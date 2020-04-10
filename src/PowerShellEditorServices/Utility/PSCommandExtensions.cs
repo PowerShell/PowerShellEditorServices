@@ -13,7 +13,6 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 {
     internal static class PSCommandExtensions
     {
-
         private static readonly Func<CommandInfo, Command> s_commandCtor;
 
         static PSCommandExtensions()
