@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v2.1.0-preview.6
+### Monday, April 13, 2020
+
+- 🐛📟 [PowerShellEditorServices #1258](https://github.com/PowerShell/PowerShellEditorServices/pull/1258) -
+  No more warning about PowerShellEditorServices module being imported with unapproved verb.
+
 ## v2.1.0-preview.5
 ### Thursday, April 09, 2020
 
