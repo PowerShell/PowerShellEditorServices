@@ -12,7 +12,6 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     /// <summary>
     /// The Start-EditorServices command, the conventional entrypoint for PowerShell Editor Services.
     /// </summary>
-    [Cmdlet("__Invoke", "ReadLineConstructor")]
     public sealed class InvokeReadLineConstructorCommand : PSCmdlet
     {
         protected override void EndProcessing()

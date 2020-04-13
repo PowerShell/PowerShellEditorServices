@@ -740,7 +740,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
 
                 PowerShell shell = this.PromptNest.GetPowerShell(executionOptions.IsReadLine);
-                shell.Commands = psCommand;
+
+                // Due to the following PowerShell bug, we can't just assign shell.Commands to psCommand
+                // because PowerShell strips out CommandInfo:
+                // https://github.com/PowerShell/PowerShell/issues/12297
+                shell.Commands.Clear();
+                foreach (Command command in psCommand.Commands)
+                {
+                    shell.Commands.AddCommand(command);
+                }
 
                 // Don't change our SessionState for ReadLine.
                 if (!executionOptions.IsReadLine)
