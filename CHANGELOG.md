@@ -1,5 +1,14 @@
 # PowerShell Editor Services Release History
 
+## v2.1.0
+### Thursday, April 15, 2020
+#### Notable features and fixes
+
+- ⚡️🧠 Better performance of overall but especially IntelliSense.
+- 🐛📟 Errors show up properly on screen in PowerShell Integrated Console.
+- ✨🐢 Run a single test in Pester v5 by setting `"powershell.pester.useLegacyCodeLens": false`.
+- 🐛🔧 Ignore files specified in `files.exclude` and `search.exclude` in reference/CodeLens search.
+
 ## v2.1.0-preview.6
 ### Monday, April 13, 2020
 
