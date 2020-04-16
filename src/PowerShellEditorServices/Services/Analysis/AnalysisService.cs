@@ -138,12 +138,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ScriptFile[] filesToAnalyze,
             CancellationToken cancellationToken)
         {
-            EnsureEngineSettingsCurrent();
-
-            if (AnalysisEngine == null)
+            if (_configurationService.CurrentSettings.ScriptAnalysis.Enable == false)
             {
                 return;
             }
+
+            EnsureEngineSettingsCurrent();
 
             // Create a cancellation token source that will cancel if we do or if the caller does
             var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -191,12 +191,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public Task<string> FormatAsync(string scriptFileContents, Hashtable formatSettings, int[] formatRange = null)
         {
             EnsureEngineSettingsCurrent();
-
-            if (AnalysisEngine == null)
-            {
-                return null;
-            }
-
             return AnalysisEngine.FormatAsync(scriptFileContents, formatSettings, formatRange);
         }
 
@@ -263,13 +257,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="settings">The new language server settings.</param>
         public void OnConfigurationUpdated(object sender, LanguageServerSettings settings)
         {
-            InitializeAnalysisEngineToCurrentSettings();
+            if (settings.ScriptAnalysis.Enable ?? true)
+            {
+                InitializeAnalysisEngineToCurrentSettings();
+            }
         }
 
         private void EnsureEngineSettingsCurrent()
         {
-            if (_pssaSettingsFilePath != null
-                && !File.Exists(_pssaSettingsFilePath))
+            if (_analysisEngineLazy == null ||
+                    (_pssaSettingsFilePath != null
+                    && !File.Exists(_pssaSettingsFilePath)))
             {
                 InitializeAnalysisEngineToCurrentSettings();
             }
@@ -277,18 +275,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void InitializeAnalysisEngineToCurrentSettings()
         {
-            // If script analysis has been disabled, just return null
-            if (_configurationService.CurrentSettings.ScriptAnalysis.Enable != true)
-            {
-                if (_analysisEngineLazy != null && _analysisEngineLazy.IsValueCreated)
-                {
-                    _analysisEngineLazy.Value.Dispose();
-                }
-
-                _analysisEngineLazy = null;
-                return;
-            }
-
             // We may be triggered after the lazy factory is set,
             // but before it's been able to instantiate
             if (_analysisEngineLazy == null)
@@ -357,7 +343,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (settingsFilePath == null
                 || !File.Exists(settingsFilePath))
             {
-                _logger.LogWarning($"Unable to find PSSA settings file at '{configuredPath}'. Loading default rules.");
+                _logger.LogInformation($"Unable to find PSSA settings file at '{configuredPath}'. Loading default rules.");
                 settingsFilePath = null;
                 return false;
             }
