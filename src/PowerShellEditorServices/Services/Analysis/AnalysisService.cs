@@ -265,9 +265,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void EnsureEngineSettingsCurrent()
         {
-            if (_analysisEngineLazy == null ||
-                    (_pssaSettingsFilePath != null
-                    && !File.Exists(_pssaSettingsFilePath)))
+            if (_analysisEngineLazy == null
+                    || (_pssaSettingsFilePath != null
+                        && !File.Exists(_pssaSettingsFilePath)))
             {
                 InitializeAnalysisEngineToCurrentSettings();
             }
