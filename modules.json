@@ -1,16 +1,13 @@
 {
     "PSScriptAnalyzer":{
         "MinimumVersion":"1.18.3",
-        "MaximumVersion":"1.99",
-        "AllowPrerelease":false
+        "MaximumVersion":"1.99"
     },
     "Plaster":{
         "MinimumVersion":"1.0",
-        "MaximumVersion":"1.99",
-        "AllowPrerelease":false
+        "MaximumVersion":"1.99"
     },
     "PSReadLine":{
-        "MinimumVersion":"2.0.0",
-        "AllowPrerelease":true
+        "MinimumVersion":"2.0.0"
     }
 }
