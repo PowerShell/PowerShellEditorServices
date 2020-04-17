@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 _settingsParameter = settingsPath;
                 return this;
             }
-            
+
             /// <summary>
             /// Uses a settings hashtable for PSSA rule configuration.
             /// </summary>
@@ -176,7 +176,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             // Invoke-Formatter throws a ParameterBinderValidationException if the ScriptDefinition is an empty string.
             if (string.IsNullOrEmpty(scriptDefinition))
             {
-                return null;
+                _logger.LogDebug("Script Definition was: " + scriptDefinition == null ? "null" : "empty string");
+                return scriptDefinition;
             }
 
             var psCommand = new PSCommand()
@@ -194,7 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             if (result == null)
             {
                 _logger.LogError("Formatter returned null result");
-                return null;
+                return scriptDefinition;
             }
 
             if (result.HasErrors)
@@ -205,7 +206,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                     errorBuilder.Append(err).Append(s_indentJoin);
                 }
                 _logger.LogWarning($"Errors found while formatting file: {errorBuilder}");
-                return null;
+                return scriptDefinition;
             }
 
             foreach (PSObject resultObj in result.Output)
@@ -216,7 +217,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 }
             }
 
-            return null;
+            _logger.LogError("Couldn't get result from output. Returning original script.");
+            return scriptDefinition;
         }
 
         /// <summary>
