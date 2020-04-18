@@ -66,6 +66,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         #endregion
 
         /// <summary>
+        /// Returns true if the host supports VT100 output codes.
+        /// </summary>
+        public override bool SupportsVirtualTerminal => internalHostUI.SupportsVirtualTerminal;
+
+        /// <summary>
         /// Gets a value indicating whether writing progress is supported.
         /// </summary>
         internal protected override bool SupportsWriteProgress => true;
