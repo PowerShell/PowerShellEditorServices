@@ -21,6 +21,8 @@ param(
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
 $script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
+$script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
+$script:IsPreview = [bool]($script:PsesCommonProps.Project.PropertyGroup.VersionSuffix)
 
 $script:NetRuntime = @{
     Core = 'netcoreapp2.1'
@@ -361,7 +363,7 @@ task RestorePsesModules -After Build {
             Name = $name
             MinimumVersion = $_.Value.MinimumVersion
             MaximumVersion = $_.Value.MaximumVersion
-            AllowPrerelease = $_.Value.AllowPrerelease
+            AllowPrerelease = $script:IsPreview
             Repository = if ($_.Value.Repository) { $_.Value.Repository } else { $DefaultModuleRepository }
             Path = $submodulePath
         }
