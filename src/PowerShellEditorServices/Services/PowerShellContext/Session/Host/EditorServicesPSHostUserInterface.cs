@@ -67,12 +67,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         #region Properties
 
-#if !PowerShellv3 && !PowerShellv4 && !PowerShellv5r1 // Only available in Windows 10 Update 1 or higher
         /// <summary>
         /// Returns true if the host supports VT100 output codes.
         /// </summary>
-        public override bool SupportsVirtualTerminal => true;
-#endif
+        public override bool SupportsVirtualTerminal => false;
 
         /// <summary>
         /// Returns true if a native application is currently running.
