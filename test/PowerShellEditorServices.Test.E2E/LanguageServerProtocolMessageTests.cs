@@ -1004,8 +1004,8 @@ function CanSendGetCommentHelpRequest {
         [Fact]
         public async Task CanSendGetCommandRequest()
         {
-            List<PSCommandMessage> pSCommandMessages =
-                await LanguageClient.SendRequest<List<PSCommandMessage>>("powerShell/getCommand", new GetCommandParams());
+            List<object> pSCommandMessages =
+                await LanguageClient.SendRequest<List<object>>("powerShell/getCommand", new GetCommandParams());
 
             Assert.NotEmpty(pSCommandMessages);
             // There should be at least 20 commands or so.
