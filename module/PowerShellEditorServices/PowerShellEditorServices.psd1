@@ -25,19 +25,21 @@ ModuleVersion = '2.0.0'
 GUID = '9ca15887-53a2-479a-9cda-48d26bcb6c47'
 
 # Author of this module
-Author = 'Microsoft'
+Author = 'Microsoft Corporation'
 
 # Company or vendor of this module
-CompanyName = 'Microsoft'
+CompanyName = 'Microsoft Corporation'
 
 # Copyright statement for this module
-Copyright = '(c) 2017 Microsoft. All rights reserved.'
+Copyright = '(c) Microsoft Corporation'
 
 # Description of the functionality provided by this module
 # Description = ''
 
 # Minimum version of the Windows PowerShell engine required by this module
-# PowerShellVersion = ''
+# NOTE: The syntax used above in the manifest means this manifest cannot be read in PS 4 or below.
+#       Instead this is just an informative field.
+PowerShellVersion = '5.1'
 
 # Name of the Windows PowerShell host required by this module
 # PowerShellHostName = ''
@@ -46,7 +48,8 @@ Copyright = '(c) 2017 Microsoft. All rights reserved.'
 # PowerShellHostVersion = ''
 
 # Minimum version of Microsoft .NET Framework required by this module
-# DotNetFrameworkVersion = ''
+# NOTE: We check this later, so that the error message is communicated properly to the user
+# DotNetFrameworkVersion = '4.6.1'
 
 # Minimum version of the common language runtime (CLR) required by this module
 # CLRVersion = ''
@@ -92,6 +95,8 @@ AliasesToExport = @()
 
 # List of all files packaged with this module
 # FileList = @()
+
+CompatiblePSEditions = @('Core', 'Desktop')
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 PrivateData = @{
