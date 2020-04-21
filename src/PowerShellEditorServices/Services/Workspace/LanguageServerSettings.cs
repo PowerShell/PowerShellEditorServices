@@ -20,6 +20,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         private readonly object updateLock = new object();
         public bool EnableProfileLoading { get; set; }
 
+        public bool PromptToUpdatePackageManagement { get; set; }
+
         public ScriptAnalysisSettings ScriptAnalysis { get; set; }
 
         public CodeFormattingSettings CodeFormatting { get; set; }
@@ -46,6 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                 lock (updateLock)
                 {
                     this.EnableProfileLoading = settings.EnableProfileLoading;
+                    this.PromptToUpdatePackageManagement = settings.PromptToUpdatePackageManagement;
                     this.ScriptAnalysis.Update(
                         settings.ScriptAnalysis,
                         workspaceRootPath,
