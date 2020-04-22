@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
                 pwsh.Runspace = runspace;
                 var psReadLineType = pwsh
-                    .AddScript(ReadLineInitScript)
+                    .AddScript(ReadLineInitScript, useLocalScope: true)
                     .Invoke<Type>()
                     .FirstOrDefault();
 

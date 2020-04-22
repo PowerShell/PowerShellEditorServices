@@ -56,7 +56,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             PSCommand infoCommand = new PSCommand();
             infoCommand.AddScript(
-                "@{ 'computerName' = if ([Environment]::MachineName) {[Environment]::MachineName}  else {'localhost'}; 'processId' = $PID; 'instanceId' = $host.InstanceId }");
+                "@{ 'computerName' = if ([Environment]::MachineName) {[Environment]::MachineName}  else {'localhost'}; 'processId' = $PID; 'instanceId' = $host.InstanceId }",
+                useLocalScope: true);
 
             return infoCommand;
         }

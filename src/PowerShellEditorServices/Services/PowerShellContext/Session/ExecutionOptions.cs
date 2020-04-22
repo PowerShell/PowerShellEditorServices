@@ -47,6 +47,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         public bool WriteInputToHost { get; set; }
 
         /// <summary>
+        /// If this is set, we will use this string for history and writing to the host
+        /// instead of grabbing the command from the PSCommand.
+        /// </summary>
+        public string InputString { get; set; }
+
+        /// <summary>
+        /// If this is set, we will use this string for history and writing to the host
+        /// instead of grabbing the command from the PSCommand.
+        /// </summary>
+        public bool UseNewScope { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether the command to
         /// be executed is a console input prompt, such as the
         /// PSConsoleHostReadLine function.

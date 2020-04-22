@@ -332,7 +332,7 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
         {
             using (var pwsh = SMA.PowerShell.Create())
             {
-                return pwsh.AddScript("$OutputEncoding.EncodingName").Invoke<string>()[0];
+                return pwsh.AddScript("$OutputEncoding.EncodingName", useLocalScope: true).Invoke<string>()[0];
             }
         }
 

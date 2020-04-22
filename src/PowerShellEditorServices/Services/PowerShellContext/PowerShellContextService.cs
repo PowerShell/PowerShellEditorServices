@@ -597,7 +597,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // cancelled prompt when it's called again.
             if (executionOptions.AddToHistory)
             {
-                this.PromptContext.AddToHistory(psCommand.Commands[0].CommandText);
+                this.PromptContext.AddToHistory(executionOptions.InputString ?? psCommand.Commands[0].CommandText);
             }
 
             bool hadErrors = false;
@@ -686,7 +686,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (executionOptions.WriteInputToHost)
                 {
                     this.WriteOutput(
-                        psCommand.Commands[0].CommandText,
+                        executionOptions.InputString ?? psCommand.Commands[0].CommandText,
                         includeNewLine: true);
                 }
 
@@ -1161,7 +1161,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             using (PowerShell pwsh = PowerShell.Create())
             {
                 pwsh.Runspace = runspace;
-                IEnumerable<TResult> results = pwsh.AddScript(scriptToExecute).Invoke<TResult>();
+                IEnumerable<TResult> results = pwsh.AddScript(scriptToExecute, useLocalScope: true).Invoke<TResult>();
                 return results.DefaultIfEmpty(defaultValue).First();
             }
         }
