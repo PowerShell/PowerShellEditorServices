@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Management.Automation;
 using System.Management.Automation.Host;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
@@ -90,6 +91,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public string LogPath { get; }
 
         /// <summary>
+        /// The language mode of the original runspace that we will inherit from.
+        /// </summary>
+        public PSLanguageMode LanguageMode { get; }
+
+        /// <summary>
         /// The minimum log level of log events to be logged.
         /// </summary>
         public int LogLevel { get; }
@@ -130,6 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             IReadOnlyList<string> featureFlags,
             IReadOnlyList<string> additionalModules,
             string logPath,
+            PSLanguageMode languageMode,
             int logLevel,
             bool consoleReplEnabled,
             bool usesLegacyReadLine)
@@ -142,6 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             FeatureFlags = featureFlags ?? Array.Empty<string>();
             AdditionalModules = additionalModules ?? Array.Empty<string>();
             LogPath = logPath;
+            LanguageMode = languageMode;
             LogLevel = logLevel;
             ConsoleReplEnabled = consoleReplEnabled;
             UsesLegacyReadLine = usesLegacyReadLine;

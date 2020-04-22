@@ -4,6 +4,7 @@
 //
 
 using System.Collections.Generic;
+using System.Management.Automation;
 using System.Management.Automation.Host;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
@@ -110,6 +111,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// If none are provided, these will be generated from the hosting PowerShell's profile paths.
         /// </summary>
         public ProfilePathConfig ProfilePaths { get; set; }
+
+        /// <summary>
+        /// The language mode of the original runspace that we will inherit from.
+        /// </summary>
+        public PSLanguageMode LanguageMode { get; internal set; }
 
         public string StartupBanner { get; set; } = @"
 

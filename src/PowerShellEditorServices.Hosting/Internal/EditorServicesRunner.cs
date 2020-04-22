@@ -238,6 +238,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 _config.FeatureFlags,
                 _config.AdditionalModules,
                 _config.LogPath,
+                _config.LanguageMode,
                 (int)_config.LogLevel,
                 consoleReplEnabled: _config.ConsoleRepl != ConsoleReplKind.None,
                 usesLegacyReadLine: _config.ConsoleRepl == ConsoleReplKind.LegacyReadLine);

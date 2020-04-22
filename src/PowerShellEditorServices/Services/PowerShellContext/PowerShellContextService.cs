@@ -213,7 +213,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     hostUserInterface,
                     logger);
 
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
+            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.LanguageMode);
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
 
             powerShellContext.ImportCommandsModuleAsync();
@@ -260,7 +260,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
             powerShellContext.ConsoleWriter = hostUserInterface;
             powerShellContext.ConsoleReader = hostUserInterface;
-            return CreateRunspace(psHost);
+            return CreateRunspace(psHost, hostDetails.LanguageMode);
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="psHost"></param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(PSHost psHost)
+        public static Runspace CreateRunspace(PSHost psHost, PSLanguageMode languageMode)
         {
             InitialSessionState initialSessionState;
             if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1") {
@@ -276,6 +276,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             } else {
                 initialSessionState = InitialSessionState.CreateDefault2();
             }
+
+            // Create and initialize a new Runspace while honoring the LanguageMode.
+            Console.WriteLine(languageMode);
+            initialSessionState.LanguageMode = languageMode;
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 

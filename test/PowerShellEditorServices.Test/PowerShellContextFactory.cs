@@ -12,6 +12,7 @@ using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -46,6 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 new List<string>(),
                 new List<string>(),
                 null,
+                PSLanguageMode.FullLanguage,
                 0,
                 consoleReplEnabled: false,
                 usesLegacyReadLine: false);
