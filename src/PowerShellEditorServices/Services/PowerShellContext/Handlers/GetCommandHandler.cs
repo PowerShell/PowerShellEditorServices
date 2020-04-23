@@ -48,29 +48,53 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             PSCommand psCommand = new PSCommand();
 
             // Executes the following:
-            // Get-Command -CommandType Function,Cmdlet,ExternalScript | Select-Object -Property Name,ModuleName | Sort-Object -Property Name
+            // Get-Command -CommandType Function,Cmdlet,ExternalScript | Sort-Object -Property Name
             psCommand
                 .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
                     .AddParameter("CommandType", new[] { "Function", "Cmdlet", "ExternalScript" })
-                .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
-                    .AddParameter("Property", new[] { "Name", "ModuleName" })
                 .AddCommand("Microsoft.PowerShell.Utility\\Sort-Object")
                     .AddParameter("Property", "Name");
 
-            IEnumerable<PSObject> result = await _powerShellContextService.ExecuteCommandAsync<PSObject>(psCommand).ConfigureAwait(false);
+            IEnumerable<CommandInfo> result = await _powerShellContextService.ExecuteCommandAsync<CommandInfo>(psCommand).ConfigureAwait(false);
 
             var commandList = new List<PSCommandMessage>();
             if (result != null)
             {
-                foreach (dynamic command in result)
+                foreach (CommandInfo command in result)
                 {
+                    // Some info objects have a quicker way to get the DefaultParameterSet. These
+                    // are also the most likely to show up so win-win.
+                    string defaultParameterSet = null;
+                    switch (command)
+                    {
+                        case CmdletInfo info:
+                            defaultParameterSet = info.DefaultParameterSet;
+                            break;
+                        case FunctionInfo info:
+                            defaultParameterSet = info.DefaultParameterSet;
+                            break;
+                    }
+
+                    if (defaultParameterSet == null)
+                    {
+                        // Try to get the default ParameterSet if it isn't streamlined (ExternalScriptInfo for example)
+                        foreach (CommandParameterSetInfo parameterSetInfo in command.ParameterSets)
+                        {
+                            if (parameterSetInfo.IsDefault)
+                            {
+                                defaultParameterSet = parameterSetInfo.Name;
+                                break;
+                            }
+                        }
+                    }
+
                     commandList.Add(new PSCommandMessage
                     {
                         Name = command.Name,
                         ModuleName = command.ModuleName,
                         Parameters = command.Parameters,
                         ParameterSets = command.ParameterSets,
-                        DefaultParameterSet = command.DefaultParameterSet
+                        DefaultParameterSet = defaultParameterSet
                     });
                 }
             }
