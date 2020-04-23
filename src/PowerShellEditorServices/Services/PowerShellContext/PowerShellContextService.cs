@@ -244,9 +244,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="hostDetails"></param>
         /// <param name="powerShellContext"></param>
-        /// <param name="hostUserInterface">
-        /// The EditorServicesPSHostUserInterface to use for this instance.
-        /// </param>
+        /// <param name="hostUserInterface">The EditorServicesPSHostUserInterface to use for this instance.</param>
         /// <param name="logger">An ILogger implementation to use for this instance.</param>
         /// <returns></returns>
         public static Runspace CreateRunspace(
@@ -266,7 +264,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         ///
         /// </summary>
-        /// <param name="psHost"></param>
+        /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
+        /// <param name="languageMode">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same language mode.</param>
         /// <returns></returns>
         public static Runspace CreateRunspace(PSHost psHost, PSLanguageMode languageMode)
         {
@@ -277,8 +276,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 initialSessionState = InitialSessionState.CreateDefault2();
             }
 
-            // Create and initialize a new Runspace while honoring the LanguageMode.
-            Console.WriteLine(languageMode);
+            // Create and initialize a new Runspace while honoring the LanguageMode of the original runspace
+            // that started PowerShell Editor Services. This is because the PowerShell Integrated Console
+            // should have the same LanguageMode of whatever is set by the system.
             initialSessionState.LanguageMode = languageMode;
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
@@ -414,6 +414,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
+                // TODO: Figure out why PSReadLine isn't working in ConstrainedLanguage mode.
+                initialRunspace.SessionStateProxy.LanguageMode == PSLanguageMode.FullLanguage &&
                 PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, out PSReadLineProxy proxy))
             {
                 this.PromptContext = new PSReadLinePromptContext(

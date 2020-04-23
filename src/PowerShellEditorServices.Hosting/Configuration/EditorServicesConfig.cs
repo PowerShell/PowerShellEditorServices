@@ -113,7 +113,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public ProfilePathConfig ProfilePaths { get; set; }
 
         /// <summary>
-        /// The language mode of the original runspace that we will inherit from.
+        /// The language mode inherited from the orginal PowerShell process.
+        /// This will be used when creating runspaces so that we honor the same language mode.
         /// </summary>
         public PSLanguageMode LanguageMode { get; internal set; }
 
