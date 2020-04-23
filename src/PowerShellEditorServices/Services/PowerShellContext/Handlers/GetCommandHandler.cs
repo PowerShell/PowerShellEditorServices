@@ -62,14 +62,29 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 foreach (CommandInfo command in result)
                 {
-                    // Get the default ParameterSet
+                    // Some info objects have a quicker way to get the DefaultParameterSet. These
+                    // are also the most likely to show up so win-win.
                     string defaultParameterSet = null;
-                    foreach (CommandParameterSetInfo parameterSetInfo in command.ParameterSets)
+                    switch (command)
                     {
-                        if (parameterSetInfo.IsDefault)
-                        {
-                            defaultParameterSet = parameterSetInfo.Name;
+                        case CmdletInfo info:
+                            defaultParameterSet = info.DefaultParameterSet;
                             break;
+                        case FunctionInfo info:
+                            defaultParameterSet = info.DefaultParameterSet;
+                            break;
+                    }
+
+                    if (defaultParameterSet == null)
+                    {
+                        // Try to get the default ParameterSet if it isn't streamlined (ExternalScriptInfo for example)
+                        foreach (CommandParameterSetInfo parameterSetInfo in command.ParameterSets)
+                        {
+                            if (parameterSetInfo.IsDefault)
+                            {
+                                defaultParameterSet = parameterSetInfo.Name;
+                                break;
+                            }
                         }
                     }
 
