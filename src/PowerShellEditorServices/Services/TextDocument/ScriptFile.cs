@@ -218,7 +218,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         {
             Validate.IsNotNull(nameof(path), path);
 
-            return path.ToLower().StartsWith("untitled:");
+            return path.ToLower().StartsWith("untitled:") || path.StartsWith("vscode-notebook:");
         }
 
         /// <summary>
