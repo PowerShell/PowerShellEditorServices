@@ -1162,12 +1162,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 cancellationToken).ConfigureAwait(false);
         }
 
-        internal static TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default)
+        internal static TResult ExecuteScriptAndGetItem<TResult>(
+            string scriptToExecute,
+            Runspace runspace,
+            TResult defaultValue = default,
+            bool useLocalScope = false)
         {
             using (PowerShell pwsh = PowerShell.Create())
             {
                 pwsh.Runspace = runspace;
-                IEnumerable<TResult> results = pwsh.AddScript(scriptToExecute, useLocalScope: true).Invoke<TResult>();
+                IEnumerable<TResult> results = pwsh.AddScript(scriptToExecute, useLocalScope).Invoke<TResult>();
                 return results.DefaultIfEmpty(defaultValue).First();
             }
         }
