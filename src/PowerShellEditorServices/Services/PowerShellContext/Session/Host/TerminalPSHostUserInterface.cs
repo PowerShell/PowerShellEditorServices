@@ -77,8 +77,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         internal override ConsoleColor ProgressForegroundColor
         {
-            get => (ConsoleColor)_privateData.Properties["ProgressForegroundColor"].Value;
-            set => _privateData.Properties["ProgressForegroundColor"].Value = value;
+            get => (ConsoleColor)_internalHostPrivateData.Properties["ProgressForegroundColor"].Value;
+            set => _internalHostPrivateData.Properties["ProgressForegroundColor"].Value = value;
         }
 
         /// <summary>
