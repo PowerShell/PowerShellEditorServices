@@ -22,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         #region Private Fields
 
         private readonly PSHostUserInterface internalHostUI;
+        private readonly PSObject _privateData;
         private ConsoleReadLine consoleReadLine;
 
         #endregion
@@ -45,6 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 logger)
         {
             this.internalHostUI = internalHost.UI;
+            _privateData = internalHost.PrivateData;
             this.consoleReadLine = new ConsoleReadLine(powerShellContext);
 
             // Set the output encoding to UTF-8 so that special
@@ -69,6 +71,36 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// Gets a value indicating whether writing progress is supported.
         /// </summary>
         internal protected override bool SupportsWriteProgress => true;
+
+        /// <summary>
+        /// Gets and sets the value of progress foreground from the internal host since Progress is handled there.
+        /// </summary>
+        internal override ConsoleColor ProgressForegroundColor
+        {
+            get
+            {
+                return (ConsoleColor) _privateData.Properties["ProgressForegroundColor"].Value;
+            }
+            set
+            {
+                _privateData.Properties["ProgressForegroundColor"].Value = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets and sets the value of progress background from the internal host since Progress is handled there.
+        /// </summary>
+        internal override ConsoleColor ProgressBackgroundColor
+        {
+            get
+            {
+                return (ConsoleColor) _privateData.Properties["ProgressBackgroundColor"].Value;
+            }
+            set
+            {
+                _privateData.Properties["ProgressBackgroundColor"].Value = value;
+            }
+        }
 
         /// <summary>
         /// Requests that the HostUI implementation read a command line
