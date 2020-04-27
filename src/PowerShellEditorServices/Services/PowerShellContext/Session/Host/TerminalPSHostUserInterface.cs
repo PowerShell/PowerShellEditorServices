@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private readonly PSHostUserInterface _internalHostUI;
         private readonly PSObject _internalHostPrivateData;
-        private ConsoleReadLine _consoleReadLine;
+        private readonly ConsoleReadLine _consoleReadLine;
 
         #endregion
 
@@ -77,14 +77,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         internal override ConsoleColor ProgressForegroundColor
         {
-            get
-            {
-                return (ConsoleColor) _internalHostPrivateData.Properties["ProgressForegroundColor"].Value;
-            }
-            set
-            {
-                _internalHostPrivateData.Properties["ProgressForegroundColor"].Value = value;
-            }
+            get => (ConsoleColor)_privateData.Properties["ProgressForegroundColor"].Value;
+            set => _privateData.Properties["ProgressForegroundColor"].Value = value;
         }
 
         /// <summary>
@@ -92,14 +86,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         internal override ConsoleColor ProgressBackgroundColor
         {
-            get
-            {
-                return (ConsoleColor) _internalHostPrivateData.Properties["ProgressBackgroundColor"].Value;
-            }
-            set
-            {
-                _internalHostPrivateData.Properties["ProgressBackgroundColor"].Value = value;
-            }
+            get => (ConsoleColor)_internalHostPrivateData.Properties["ProgressBackgroundColor"].Value;
+            set => _internalHostPrivateData.Properties["ProgressBackgroundColor"].Value = value;
         }
 
         /// <summary>
