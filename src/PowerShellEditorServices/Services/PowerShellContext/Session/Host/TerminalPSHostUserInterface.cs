@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     {
         #region Private Fields
 
-        private readonly PSHostUserInterface _internalHostUI;
+        private readonly PSHostUserInterface internalHostUI;
         private readonly PSObject _internalHostPrivateData;
         private readonly ConsoleReadLine _consoleReadLine;
 
@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 new TerminalPSHostRawUserInterface(logger, internalHost),
                 logger)
         {
-            _internalHostUI = internalHost.UI;
+            internalHostUI = internalHost.UI;
             _internalHostPrivateData = internalHost.PrivateData;
             _consoleReadLine = new ConsoleReadLine(powerShellContext);
 
@@ -182,7 +182,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </param>
         protected override void WriteProgressImpl(long sourceId, ProgressRecord record)
         {
-            _internalHostUI.WriteProgress(sourceId, record);
+            internalHostUI.WriteProgress(sourceId, record);
         }
 
         /// <summary>
