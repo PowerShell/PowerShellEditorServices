@@ -21,9 +21,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     {
         #region Private Fields
 
-        private readonly PSHostUserInterface internalHostUI;
+        private readonly PSHostUserInterface _internalHostUI;
         private readonly PSObject _privateData;
-        private ConsoleReadLine consoleReadLine;
+        private ConsoleReadLine _consoleReadLine;
 
         #endregion
 
@@ -45,9 +45,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 new TerminalPSHostRawUserInterface(logger, internalHost),
                 logger)
         {
-            this.internalHostUI = internalHost.UI;
+            _internalHostUI = internalHost.UI;
             _privateData = internalHost.PrivateData;
-            this.consoleReadLine = new ConsoleReadLine(powerShellContext);
+            _consoleReadLine = new ConsoleReadLine(powerShellContext);
 
             // Set the output encoding to UTF-8 so that special
             // characters are written to the console correctly
@@ -56,11 +56,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             System.Console.CancelKeyPress +=
                 (obj, args) =>
                 {
-                    if (!this.IsNativeApplicationRunning)
+                    if (!IsNativeApplicationRunning)
                     {
                         // We'll handle Ctrl+C
                         args.Cancel = true;
-                        this.SendControlC();
+                        SendControlC();
                     }
                 };
         }
@@ -113,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <returns>A Task that can be awaited for the resulting input string.</returns>
         protected override Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
         {
-            return this.consoleReadLine.ReadCommandLineAsync(cancellationToken);
+            return _consoleReadLine.ReadCommandLineAsync(cancellationToken);
         }
 
         /// <summary>
@@ -124,9 +124,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         protected override InputPromptHandler OnCreateInputPromptHandler()
         {
             return new TerminalInputPromptHandler(
-                this.consoleReadLine,
+                _consoleReadLine,
                 this,
-                this.Logger);
+                Logger);
         }
 
         /// <summary>
@@ -137,9 +137,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         protected override ChoicePromptHandler OnCreateChoicePromptHandler()
         {
             return new TerminalChoicePromptHandler(
-                this.consoleReadLine,
+                _consoleReadLine,
                 this,
-                this.Logger);
+                Logger);
         }
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </param>
         protected override void WriteProgressImpl(long sourceId, ProgressRecord record)
         {
-            this.internalHostUI.WriteProgress(sourceId, record);
+            _internalHostUI.WriteProgress(sourceId, record);
         }
 
         /// <summary>
