@@ -274,6 +274,16 @@ task TestE2E {
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
     exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Core (DotNetTestFilter) }
+
+    # Run E2E tests in ConstrainedLanguage mode.
+    if (!$script:IsUnix) {
+        try {
+            [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
+            exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Core (DotNetTestFilter) }
+        } finally {
+            [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
+        }
+    }
 }
 
 task LayoutModule -After Build {

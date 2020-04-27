@@ -135,9 +135,13 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Equal("CanSendWorkspaceSymbolRequest { }", symbol.Name);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileOpen()
         {
+            Skip.If(
+                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
+
             NewTestFile("$a = 4");
             await WaitForDiagnostics();
 
@@ -154,9 +158,13 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Empty(Diagnostics);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileChanged()
         {
+            Skip.If(
+                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
+
             string filePath = NewTestFile("$a = 4");
             await WaitForDiagnostics();
             Diagnostics.Clear();
@@ -191,9 +199,13 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CanReceiveDiagnosticsFromConfigurationChange()
         {
+            Skip.If(
+                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
+
             NewTestFile("gci | % { $_ }");
             await WaitForDiagnostics();
 
@@ -275,9 +287,13 @@ $_
                 });
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CanSendFormattingRequest()
         {
+            Skip.If(
+                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
+
             string scriptPath = NewTestFile(@"
 gci | % {
 Get-Process
@@ -306,9 +322,13 @@ Get-Process
             Assert.Contains("\t", textEdit.NewText);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CanSendRangeFormattingRequest()
         {
+            Skip.If(
+                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
+
             string scriptPath = NewTestFile(@"
 gci | % {
 Get-Process
@@ -756,9 +776,13 @@ CanSendReferencesCodeLensRequest
             Assert.Equal("1 reference", codeLensResolveResult.Command.Title);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CanSendCodeActionRequest()
         {
+            Skip.If(
+                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
+
             string filePath = NewTestFile("gci");
             await WaitForDiagnostics();
 
@@ -929,9 +953,11 @@ CanSendDefinitionRequest
             Assert.Equal(33, locationOrLocationLink.Location.Range.End.Character);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CanSendGetProjectTemplatesRequest()
         {
+            Skip.If(TestsFixture.RunningInConstainedLanguageMode, "Plaster doesn't work in ConstrainedLanguage mode.");
+
             GetProjectTemplatesResponse getProjectTemplatesResponse =
                 await LanguageClient.SendRequest<GetProjectTemplatesResponse>(
                     "powerShell/getProjectTemplates",
@@ -951,9 +977,13 @@ CanSendDefinitionRequest
                 });
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CanSendGetCommentHelpRequest()
         {
+            Skip.If(
+                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
+
             string scriptPath = NewTestFile(@"
 function CanSendGetCommentHelpRequest {
     param(
@@ -1012,9 +1042,13 @@ function CanSendGetCommentHelpRequest {
             Assert.True(pSCommandMessages.Count > 20);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CanSendExpandAliasRequest()
         {
+            Skip.If(
+                TestsFixture.RunningInConstainedLanguageMode,
+                "This feature currently doesn't support ConstrainedLanguage Mode.");
+
             ExpandAliasResult expandAliasResult =
                 await LanguageClient.SendRequest<ExpandAliasResult>(
                     "powerShell/expandAlias",
