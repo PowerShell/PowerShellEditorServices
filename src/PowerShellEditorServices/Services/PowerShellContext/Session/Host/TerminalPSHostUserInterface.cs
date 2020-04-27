@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         #region Private Fields
 
         private readonly PSHostUserInterface _internalHostUI;
-        private readonly PSObject _privateData;
+        private readonly PSObject _internalHostPrivateData;
         private ConsoleReadLine _consoleReadLine;
 
         #endregion
@@ -46,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 logger)
         {
             _internalHostUI = internalHost.UI;
-            _privateData = internalHost.PrivateData;
+            _internalHostPrivateData = internalHost.PrivateData;
             _consoleReadLine = new ConsoleReadLine(powerShellContext);
 
             // Set the output encoding to UTF-8 so that special
@@ -79,11 +79,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             get
             {
-                return (ConsoleColor) _privateData.Properties["ProgressForegroundColor"].Value;
+                return (ConsoleColor) _internalHostPrivateData.Properties["ProgressForegroundColor"].Value;
             }
             set
             {
-                _privateData.Properties["ProgressForegroundColor"].Value = value;
+                _internalHostPrivateData.Properties["ProgressForegroundColor"].Value = value;
             }
         }
 
@@ -94,11 +94,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             get
             {
-                return (ConsoleColor) _privateData.Properties["ProgressBackgroundColor"].Value;
+                return (ConsoleColor) _internalHostPrivateData.Properties["ProgressBackgroundColor"].Value;
             }
             set
             {
-                _privateData.Properties["ProgressBackgroundColor"].Value = value;
+                _internalHostPrivateData.Properties["ProgressBackgroundColor"].Value = value;
             }
         }
 
