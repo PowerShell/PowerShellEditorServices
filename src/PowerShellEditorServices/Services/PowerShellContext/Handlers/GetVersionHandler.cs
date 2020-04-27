@@ -118,7 +118,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         writeOutputToHost: true,
                         addToHistory: true).ConfigureAwait(false);
 
-                    // There were errors installing PackageManagement.
                     if (errors.Length == 0)
                     {
                         _languageServer.Window.ShowMessage(new ShowMessageParams
@@ -129,10 +128,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     }
                     else
                     {
+                        // There were errors installing PackageManagement.
                         _languageServer.Window.ShowMessage(new ShowMessageParams
                         {
                             Type = MessageType.Error,
-                            Message = "PackageManagement update failed. Please run the following command in a Windows PowerShell prompt and restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`"
+                            Message = "PackageManagement update failed. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`"
                         });
                     }
                 }
