@@ -1,5 +1,27 @@
 # PowerShell Editor Services Release History
 
+## v2.2.0-preview.1
+### Tuesday, April 28, 2020
+
+- 📟 🐛 [PowerShellEditorServices #1272](https://github.com/PowerShell/PowerShellEditorServices/pull/1272) -
+  Allow progress colors to be settable and gettable from the internal host.
+- 🛫 ✨ [PowerShellEditorServices #1239](https://github.com/PowerShell/PowerShellEditorServices/pull/1239) -
+  Prompt to update PackageManagement when using an old version.
+- 🛫 ✨ [PowerShellEditorServices #1269](https://github.com/PowerShell/PowerShellEditorServices/pull/1269) -
+  Support ConstrainedLanguage mode.
+- 📺 ✨ [PowerShellEditorServices #1268](https://github.com/PowerShell/PowerShellEditorServices/pull/1268) -
+  Refactor GetCommandHandler to not use dynamic.
+- 🔍 🐛 [vscode-powershell #2654](https://github.com/PowerShell/PowerShellEditorServices/pull/1270) -
+  Fix interpolation in Log points, switch to double quotes. (Thanks @rkeithhill!)
+- [PowerShellEditorServices #1267](https://github.com/PowerShell/PowerShellEditorServices/pull/1267) -
+  Update module manifest to match current module.
+- 📟 🐛 [vscode-powershell #2637](https://github.com/PowerShell/PowerShellEditorServices/pull/1264) -
+  Leverage internal HostUI to check if VT100 is supported.
+- 📟 🐛 [vscode-powershell #2637](https://github.com/PowerShell/PowerShellEditorServices/pull/1263) -
+  Use stable builds of PSReadLine for the PowerShell extension and preview builds for the PowerShell Preview extension.
+- 💎 ✨ [vscode-powershell #2543](https://github.com/PowerShell/PowerShellEditorServices/pull/1262) -
+  Allow formatting when ScriptAnalysis setting is set to disabled.
+
 ## v2.1.0
 ### Thursday, April 15, 2020
 #### Notable features and fixes
