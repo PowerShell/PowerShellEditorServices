@@ -3,28 +3,24 @@
 ## v2.2.0-preview.1
 ### Tuesday, April 28, 2020
 
-- [PowerShellEditorServices #1272](https://github.com/PowerShell/PowerShellEditorServices/pull/1272) -
+- 📟 🐛 [PowerShellEditorServices #1272](https://github.com/PowerShell/PowerShellEditorServices/pull/1272) -
   Allow progress colors to be settable and gettable from the internal host.
-- [PowerShellEditorServices #1273](https://github.com/PowerShell/PowerShellEditorServices/pull/1273) -
-  Bump Microsoft.NET.Test.Sdk from 16.6.0 to 16.6.1. (Thanks @dependabot-preview[bot]!)
-- [PowerShellEditorServices #1239](https://github.com/PowerShell/PowerShellEditorServices/pull/1239) -
+- 🛫 ✨ [PowerShellEditorServices #1239](https://github.com/PowerShell/PowerShellEditorServices/pull/1239) -
   Prompt to update PackageManagement when using an old version.
-- [PowerShellEditorServices #1269](https://github.com/PowerShell/PowerShellEditorServices/pull/1269) -
+- 🛫 ✨ [PowerShellEditorServices #1269](https://github.com/PowerShell/PowerShellEditorServices/pull/1269) -
   Support ConstrainedLanguage mode.
-- [PowerShellEditorServices #1268](https://github.com/PowerShell/PowerShellEditorServices/pull/1268) -
+- 📺 ✨ [PowerShellEditorServices #1268](https://github.com/PowerShell/PowerShellEditorServices/pull/1268) -
   Refactor GetCommandHandler to not use dynamic.
-- [vscode-powershell #2654](https://github.com/PowerShell/PowerShellEditorServices/pull/1270) -
+- 🔍 🐛 [vscode-powershell #2654](https://github.com/PowerShell/PowerShellEditorServices/pull/1270) -
   Fix interpolation in Log points, switch to double quotes. (Thanks @rkeithhill!)
 - [PowerShellEditorServices #1267](https://github.com/PowerShell/PowerShellEditorServices/pull/1267) -
   Update module manifest to match current module.
-- [PowerShellEditorServices #1266](https://github.com/PowerShell/PowerShellEditorServices/pull/1266) -
-  Bump Microsoft.NET.Test.Sdk from 16.5.0 to 16.6.0. (Thanks @dependabot-preview[bot]!)
-- 📟 🐛 🐛 [vscode-powershell #2637](https://github.com/PowerShell/PowerShellEditorServices/pull/1264) -
-  Leverage internal HostUI for VT check.
+- 📟 🐛 [vscode-powershell #2637](https://github.com/PowerShell/PowerShellEditorServices/pull/1264) -
+  Leverage internal HostUI to check if VT100 is supported.
 - 📟 🐛 [vscode-powershell #2637](https://github.com/PowerShell/PowerShellEditorServices/pull/1263) -
-  AllowPrerelease when building Preview build.
-- 💎 🐛 [vscode-powershell #2543](https://github.com/PowerShell/PowerShellEditorServices/pull/1262) -
-  Allow formatting when ScriptAnalysis is off.
+  Use stable builds of PSReadLine for the PowerShell extension and preview builds for the PowerShell Preview extension.
+- 💎 ✨ [vscode-powershell #2543](https://github.com/PowerShell/PowerShellEditorServices/pull/1262) -
+  Allow formatting when ScriptAnalysis setting is set to disabled.
 
 ## v2.0.0-preview.8
 ### Monday, January 13, 2020
