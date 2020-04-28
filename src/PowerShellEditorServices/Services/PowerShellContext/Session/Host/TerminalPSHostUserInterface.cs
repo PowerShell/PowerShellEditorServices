@@ -22,7 +22,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         #region Private Fields
 
         private readonly PSHostUserInterface internalHostUI;
-        private ConsoleReadLine consoleReadLine;
+        private readonly PSObject _internalHostPrivateData;
+        private readonly ConsoleReadLine _consoleReadLine;
 
         #endregion
 
@@ -44,8 +45,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 new TerminalPSHostRawUserInterface(logger, internalHost),
                 logger)
         {
-            this.internalHostUI = internalHost.UI;
-            this.consoleReadLine = new ConsoleReadLine(powerShellContext);
+            internalHostUI = internalHost.UI;
+            _internalHostPrivateData = internalHost.PrivateData;
+            _consoleReadLine = new ConsoleReadLine(powerShellContext);
 
             // Set the output encoding to UTF-8 so that special
             // characters are written to the console correctly
@@ -54,11 +56,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             System.Console.CancelKeyPress +=
                 (obj, args) =>
                 {
-                    if (!this.IsNativeApplicationRunning)
+                    if (!IsNativeApplicationRunning)
                     {
                         // We'll handle Ctrl+C
                         args.Cancel = true;
-                        this.SendControlC();
+                        SendControlC();
                     }
                 };
         }
@@ -76,6 +78,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         internal protected override bool SupportsWriteProgress => true;
 
         /// <summary>
+        /// Gets and sets the value of progress foreground from the internal host since Progress is handled there.
+        /// </summary>
+        internal override ConsoleColor ProgressForegroundColor
+        {
+            get => (ConsoleColor)_internalHostPrivateData.Properties["ProgressForegroundColor"].Value;
+            set => _internalHostPrivateData.Properties["ProgressForegroundColor"].Value = value;
+        }
+
+        /// <summary>
+        /// Gets and sets the value of progress background from the internal host since Progress is handled there.
+        /// </summary>
+        internal override ConsoleColor ProgressBackgroundColor
+        {
+            get => (ConsoleColor)_internalHostPrivateData.Properties["ProgressBackgroundColor"].Value;
+            set => _internalHostPrivateData.Properties["ProgressBackgroundColor"].Value = value;
+        }
+
+        /// <summary>
         /// Requests that the HostUI implementation read a command line
         /// from the user to be executed in the integrated console command
         /// loop.
@@ -86,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <returns>A Task that can be awaited for the resulting input string.</returns>
         protected override Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
         {
-            return this.consoleReadLine.ReadCommandLineAsync(cancellationToken);
+            return _consoleReadLine.ReadCommandLineAsync(cancellationToken);
         }
 
         /// <summary>
@@ -97,9 +117,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         protected override InputPromptHandler OnCreateInputPromptHandler()
         {
             return new TerminalInputPromptHandler(
-                this.consoleReadLine,
+                _consoleReadLine,
                 this,
-                this.Logger);
+                Logger);
         }
 
         /// <summary>
@@ -110,9 +130,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         protected override ChoicePromptHandler OnCreateChoicePromptHandler()
         {
             return new TerminalChoicePromptHandler(
-                this.consoleReadLine,
+                _consoleReadLine,
                 this,
-                this.Logger);
+                Logger);
         }
 
         /// <summary>
@@ -167,7 +187,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </param>
         protected override void WriteProgressImpl(long sourceId, ProgressRecord record)
         {
-            this.internalHostUI.WriteProgress(sourceId, record);
+            internalHostUI.WriteProgress(sourceId, record);
         }
 
         /// <summary>

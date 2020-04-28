@@ -802,8 +802,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         internal ConsoleColor VerboseForegroundColor { get; set; } = ConsoleColor.Yellow;
         internal ConsoleColor VerboseBackgroundColor { get; set; } = BackgroundColor;
 
-        internal ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Yellow;
-        internal ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.DarkCyan;
+        internal virtual ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal virtual ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.DarkCyan;
 
         private async Task StartReplLoopAsync(CancellationToken cancellationToken)
         {
