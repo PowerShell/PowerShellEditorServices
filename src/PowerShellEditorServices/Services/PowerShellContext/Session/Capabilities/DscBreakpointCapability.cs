@@ -121,14 +121,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         runspaceDetails.AddCapability(capability);
 
                         powerShell.Commands.Clear();
-                        powerShell.AddScript("Write-Host \"Gathering DSC resource paths, this may take a while...\"");
-                        powerShell.Invoke();
+                        powerShell
+                            .AddCommand("Microsoft.PowerShell.Utility\\Write-Host")
+                            .AddArgument("Gathering DSC resource paths, this may take a while...")
+                            .Invoke();
 
                         // Get the list of DSC resource paths
                         powerShell.Commands.Clear();
-                        powerShell.AddCommand("Get-DscResource");
-                        powerShell.AddCommand("Select-Object");
-                        powerShell.AddParameter("ExpandProperty", "ParentPath");
+                        powerShell
+                            .AddCommand("Get-DscResource")
+                            .AddCommand("Select-Object")
+                            .AddParameter("ExpandProperty", "ParentPath");
 
                         Collection<PSObject> resourcePaths = null;
 

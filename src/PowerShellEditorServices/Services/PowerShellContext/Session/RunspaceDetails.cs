@@ -223,7 +223,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         PowerShellContextService.ExecuteScriptAndGetItem<string>(
                             "$Host.Name",
                             runspace,
-                            defaultValue: string.Empty);
+                            defaultValue: string.Empty,
+                            useLocalScope: true);
 
                 // hostname is 'ServerRemoteHost' when the user enters a session.
                 // ex. Enter-PSSession

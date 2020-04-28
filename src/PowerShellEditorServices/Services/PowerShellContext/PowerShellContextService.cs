@@ -213,7 +213,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     hostUserInterface,
                     logger);
 
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost);
+            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.LanguageMode);
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
 
             powerShellContext.ImportCommandsModuleAsync();
@@ -244,9 +244,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="hostDetails"></param>
         /// <param name="powerShellContext"></param>
-        /// <param name="hostUserInterface">
-        /// The EditorServicesPSHostUserInterface to use for this instance.
-        /// </param>
+        /// <param name="hostUserInterface">The EditorServicesPSHostUserInterface to use for this instance.</param>
         /// <param name="logger">An ILogger implementation to use for this instance.</param>
         /// <returns></returns>
         public static Runspace CreateRunspace(
@@ -260,15 +258,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
             powerShellContext.ConsoleWriter = hostUserInterface;
             powerShellContext.ConsoleReader = hostUserInterface;
-            return CreateRunspace(psHost);
+            return CreateRunspace(psHost, hostDetails.LanguageMode);
         }
 
         /// <summary>
         ///
         /// </summary>
-        /// <param name="psHost"></param>
+        /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
+        /// <param name="languageMode">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same language mode.</param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(PSHost psHost)
+        public static Runspace CreateRunspace(PSHost psHost, PSLanguageMode languageMode)
         {
             InitialSessionState initialSessionState;
             if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1") {
@@ -276,6 +275,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             } else {
                 initialSessionState = InitialSessionState.CreateDefault2();
             }
+
+            // Create and initialize a new Runspace while honoring the LanguageMode of the original runspace
+            // that started PowerShell Editor Services. This is because the PowerShell Integrated Console
+            // should have the same LanguageMode of whatever is set by the system.
+            initialSessionState.LanguageMode = languageMode;
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
@@ -410,6 +414,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
+                // TODO: Figure out why PSReadLine isn't working in ConstrainedLanguage mode.
+                initialRunspace.SessionStateProxy.LanguageMode == PSLanguageMode.FullLanguage &&
                 PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, out PSReadLineProxy proxy))
             {
                 this.PromptContext = new PSReadLinePromptContext(
@@ -597,7 +603,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // cancelled prompt when it's called again.
             if (executionOptions.AddToHistory)
             {
-                this.PromptContext.AddToHistory(psCommand.Commands[0].CommandText);
+                this.PromptContext.AddToHistory(executionOptions.InputString ?? psCommand.Commands[0].CommandText);
             }
 
             bool hadErrors = false;
@@ -686,7 +692,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (executionOptions.WriteInputToHost)
                 {
                     this.WriteOutput(
-                        psCommand.Commands[0].CommandText,
+                        executionOptions.InputString ?? psCommand.Commands[0].CommandText,
                         includeNewLine: true);
                 }
 
@@ -1156,12 +1162,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 cancellationToken).ConfigureAwait(false);
         }
 
-        internal static TResult ExecuteScriptAndGetItem<TResult>(string scriptToExecute, Runspace runspace, TResult defaultValue = default)
+        internal static TResult ExecuteScriptAndGetItem<TResult>(
+            string scriptToExecute,
+            Runspace runspace,
+            TResult defaultValue = default,
+            bool useLocalScope = false)
         {
             using (PowerShell pwsh = PowerShell.Create())
             {
                 pwsh.Runspace = runspace;
-                IEnumerable<TResult> results = pwsh.AddScript(scriptToExecute).Invoke<TResult>();
+                IEnumerable<TResult> results = pwsh.AddScript(scriptToExecute, useLocalScope).Invoke<TResult>();
                 return results.DefaultIfEmpty(defaultValue).First();
             }
         }

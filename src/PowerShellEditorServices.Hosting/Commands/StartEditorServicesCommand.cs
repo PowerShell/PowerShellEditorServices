@@ -11,6 +11,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Reflection;
 using SMA = System.Management.Automation;
+using System.Management.Automation.Runspaces;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using System.Globalization;
 using System.Collections;
@@ -358,6 +359,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 AdditionalModules = AdditionalModules,
                 LanguageServiceTransport = GetLanguageServiceTransport(),
                 DebugServiceTransport = GetDebugServiceTransport(),
+                LanguageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode,
                 ProfilePaths = new ProfilePathConfig
                 {
                     AllUsersAllHosts = GetProfilePathFromProfileObject(profile, ProfileUserKind.AllUsers, ProfileHostKind.AllHosts),

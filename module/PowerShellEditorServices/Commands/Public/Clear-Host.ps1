@@ -10,7 +10,9 @@ function Clear-Host {
     param()
 
     __clearhost
-    $psEditor.Window.Terminal.Clear()
+    if ($host.Runspace.LanguageMode -eq [System.Management.Automation.PSLanguageMode]::FullLanguage) {
+        $psEditor.Window.Terminal.Clear()
+    }
 }
 
 if (!$IsMacOS -or $IsLinux) {

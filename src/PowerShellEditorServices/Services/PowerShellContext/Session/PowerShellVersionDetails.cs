@@ -101,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             try
             {
-                var psVersionTable = PowerShellContextService.ExecuteScriptAndGetItem<Hashtable>("$PSVersionTable", runspace);
+                var psVersionTable = PowerShellContextService.ExecuteScriptAndGetItem<Hashtable>("$PSVersionTable", runspace, useLocalScope: true);
                 if (psVersionTable != null)
                 {
                     var edition = psVersionTable["PSEdition"] as string;
@@ -134,7 +134,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         versionString = powerShellVersion.ToString();
                     }
 
-                    var arch = PowerShellContextService.ExecuteScriptAndGetItem<string>("$env:PROCESSOR_ARCHITECTURE", runspace);
+                    var arch = PowerShellContextService.ExecuteScriptAndGetItem<string>("$env:PROCESSOR_ARCHITECTURE", runspace, useLocalScope: true);
                     if (arch != null)
                     {
                         if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))

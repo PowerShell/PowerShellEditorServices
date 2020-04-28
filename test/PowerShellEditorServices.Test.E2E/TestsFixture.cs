@@ -5,10 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
-using OmniSharp.Extensions.LanguageServer.Client;
 using OmniSharp.Extensions.LanguageServer.Client.Processes;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
 namespace PowerShellEditorServices.Test.E2E
@@ -41,6 +38,10 @@ namespace PowerShellEditorServices.Test.E2E
         protected StdioServerProcess _psesProcess;
 
         public static string PwshExe { get; } = Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh";
+
+        public static bool IsWindowsPowerShell { get; } = PwshExe.Contains("powershell");
+        public static bool RunningInConstainedLanguageMode { get; } =
+            Environment.GetEnvironmentVariable("__PSLockdownPolicy", EnvironmentVariableTarget.Machine) != null;
 
         public virtual bool IsDebugAdapterTests { get; set; }
 
