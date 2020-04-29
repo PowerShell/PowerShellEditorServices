@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 .FirstOrDefault();
 
             // Only cache CmdletInfos since they're exposed in binaries they are likely to not change throughout the session.
-            if (commandInfo.CommandType == CommandTypes.Cmdlet)
+            if (commandInfo?.CommandType == CommandTypes.Cmdlet)
             {
                 s_commandInfoCache.TryAdd(commandName, commandInfo);
             }
