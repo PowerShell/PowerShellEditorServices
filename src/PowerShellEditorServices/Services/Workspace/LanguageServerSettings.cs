@@ -177,7 +177,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         /// <summary>
         /// Do not increase indentation level at all after pipeline.
         /// </summary>
-        NoIndentation
+        NoIndentation,
+
+        /// <summary>
+        /// Do not change pipeline indentation level at all.
+        /// </summary>
+        None,
     }
 
     internal class CodeFormattingSettings
