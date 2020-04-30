@@ -298,7 +298,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     { "CheckInnerBrace", WhitespaceInsideBrace },
                     { "CheckParameter", WhitespaceBetweenParameters },
                     { "CheckPipe", AddWhitespaceAroundPipe },
-                    { "CheckPipeForRedundantWhitespace ", TrimWhitespaceAroundPipe },
+                    { "CheckPipeForRedundantWhitespace", TrimWhitespaceAroundPipe },
                 }},
                 { "PSAlignAssignmentStatement", new Hashtable {
                     { "Enable", true },
