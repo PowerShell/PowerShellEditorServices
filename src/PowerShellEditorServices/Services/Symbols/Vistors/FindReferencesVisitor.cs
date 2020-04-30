@@ -125,11 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
-            // Get the start column number of the function name,
-            // instead of the the start column of 'function' and create new extent for the functionName
-            int startColumnNumber =
-                functionDefinitionAst.Extent.Text.IndexOf(
-                    functionDefinitionAst.Name) + 1;
+            int startColumnNumber = GetStartColumnNumberFromAst(functionDefinitionAst);
 
             IScriptExtent nameExtent = new ScriptExtent()
             {
@@ -184,6 +180,36 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                                          variableExpressionAst.Extent));
             }
             return AstVisitAction.Continue;
+        }
+
+        // Computes where the start of the actual function name is.
+        private int GetStartColumnNumberFromAst(FunctionDefinitionAst ast)
+        {
+            int astOffset = 0;
+
+            if (ast.IsFilter)
+            {
+                astOffset = "filter".Length;
+            }
+            else if (ast.IsWorkflow)
+            {
+                astOffset = "workflow".Length;
+            }
+            else
+            {
+                astOffset = "function".Length;
+            }
+
+            string astText = ast.Extent.Text;
+            for (; astOffset < astText.Length; astOffset++)
+            {
+                if (!char.IsWhiteSpace(astText[astOffset]))
+                {
+                    break;
+                }
+            }
+
+            return ast.Extent.StartColumnNumber + astOffset;
         }
     }
 }
