@@ -206,18 +206,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             }
         }
 
+        public bool AddWhitespaceAroundPipe { get; set; }
         public bool AutoCorrectAliases { get; set; }
         public CodeFormattingPreset Preset { get; set; }
         public bool OpenBraceOnSameLine { get; set; }
         public bool NewLineAfterOpenBrace { get; set; }
         public bool NewLineAfterCloseBrace { get; set; }
         public PipelineIndentationStyle PipelineIndentationStyle { get; set; }
+        public bool TrimWhitespaceAroundPipe { get; set; }
         public bool WhitespaceBeforeOpenBrace { get; set; }
         public bool WhitespaceBeforeOpenParen { get; set; }
         public bool WhitespaceAroundOperator { get; set; }
         public bool WhitespaceAfterSeparator { get; set; }
+        public bool WhitespaceBetweenParameters  { get; set; }
         public bool WhitespaceInsideBrace { get; set; }
-        public bool WhitespaceAroundPipe { get; set; }
         public bool IgnoreOneLineBlock { get; set; }
         public bool AlignPropertyValuePairs { get; set; }
         public bool UseCorrectCasing { get; set; }
@@ -294,7 +296,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     { "CheckOperator", WhitespaceAroundOperator },
                     { "CheckSeparator", WhitespaceAfterSeparator },
                     { "CheckInnerBrace", WhitespaceInsideBrace },
-                    { "CheckPipe", WhitespaceAroundPipe },
+                    { "CheckParameter", WhitespaceBetweenParameters },
+                    { "CheckPipe", AddWhitespaceAroundPipe },
+                    { "CheckPipe", TrimWhitespaceAroundPipe },
                 }},
                 { "PSAlignAssignmentStatement", new Hashtable {
                     { "Enable", true },
