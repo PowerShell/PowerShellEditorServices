@@ -183,7 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         // Computes where the start of the actual function name is.
-        private int GetStartColumnNumberFromAst(FunctionDefinitionAst ast)
+        private static int GetStartColumnNumberFromAst(FunctionDefinitionAst ast)
         {
             int astOffset = 0;
 
