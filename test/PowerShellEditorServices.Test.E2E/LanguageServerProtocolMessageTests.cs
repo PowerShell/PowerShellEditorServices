@@ -78,7 +78,7 @@ namespace PowerShellEditorServices.Test.E2E
             });
 
             // Give PSES a chance to run what it needs to run.
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
 
             return filePath;
         }
