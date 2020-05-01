@@ -125,13 +125,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
-            int startColumnNumber = GetStartColumnNumberFromAst(functionDefinitionAst);
+            (int startColumnNumber, int startLineNumber) = GetStartColumnAndLineNumbersFromAst(functionDefinitionAst);
 
             IScriptExtent nameExtent = new ScriptExtent()
             {
                 Text = functionDefinitionAst.Name,
-                StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
-                EndLineNumber = functionDefinitionAst.Extent.StartLineNumber,
+                StartLineNumber = startLineNumber,
+                EndLineNumber = startLineNumber,
                 StartColumnNumber = startColumnNumber,
                 EndColumnNumber = startColumnNumber + functionDefinitionAst.Name.Length
             };
@@ -183,8 +183,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         // Computes where the start of the actual function name is.
-        private static int GetStartColumnNumberFromAst(FunctionDefinitionAst ast)
+        private static (int, int) GetStartColumnAndLineNumbersFromAst(FunctionDefinitionAst ast)
         {
+            int startColumnNumber = ast.Extent.StartColumnNumber;
+            int startLineNumber = ast.Extent.StartLineNumber;
             int astOffset = 0;
 
             if (ast.IsFilter)
@@ -201,15 +203,31 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             }
 
             string astText = ast.Extent.Text;
-            for (; astOffset < astText.Length; astOffset++)
+            // The line offset represents the offset on the line that we're on where as
+            // astOffset is the offset on the entire text of the AST.
+            int lineOffset = astOffset;
+            for (; astOffset < astText.Length; astOffset++, lineOffset++)
             {
-                if (!char.IsWhiteSpace(astText[astOffset]))
+                if (astText[astOffset] == '\n')
                 {
+                    // reset numbers since we are operating on a different line and increment the line number.
+                    startColumnNumber = 0;
+                    startLineNumber++;
+                    lineOffset = 0;
+                }
+                else if (astText[astOffset] == '\r')
+                {
+                    // Do nothing with carriage returns... we only look for line feeds since those
+                    // are used on every platform.
+                }
+                else if (!char.IsWhiteSpace(astText[astOffset]))
+                {
+                    // This is the start of the function name so we've found our start column and line number.
                     break;
                 }
             }
 
-            return ast.Extent.StartColumnNumber + astOffset;
+            return (startColumnNumber + lineOffset, startLineNumber);
         }
     }
 }
