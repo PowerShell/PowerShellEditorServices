@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
@@ -195,6 +196,17 @@ function CanSendWorkspaceSymbolRequest {
             });
 
             await WaitForDiagnostics();
+            if (Diagnostics.Count > 1)
+            {
+                StringBuilder errorBuilder = new StringBuilder().AppendLine("Multiple diagnostics found when there should be only 1:");
+                foreach (Diagnostic diag in Diagnostics)
+                {
+                    errorBuilder.AppendLine(diag.Message);
+                }
+
+                Assert.True(Diagnostics.Count == 1, errorBuilder.ToString());
+            }
+
             Diagnostic diagnostic = Assert.Single(Diagnostics);
             Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
         }
