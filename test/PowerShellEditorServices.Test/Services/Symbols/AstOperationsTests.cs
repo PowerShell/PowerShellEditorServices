@@ -15,11 +15,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Services.Symbols
 {
     public class AstOperationsTests
     {
-        private readonly ITestOutputHelper _output;
-        public AstOperationsTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
         private static string s_scriptString = @"function BasicFunction {}
 BasicFunction
 
@@ -76,11 +71,13 @@ function
             }
         }
 
-        public static object[][] FindReferencesOfSymbolAtPostionData = new object[][]
+        public static object[][] FindReferencesOfSymbolAtPostionData => s_findReferencesOfSymbolAtPostionData;
+
+        private static readonly object[][] s_findReferencesOfSymbolAtPostionData = new object[][]
         {
-            new object[] { 2, 3, new Position[] { new Position(1, 10), new Position(2, 1) } },
-            new object[] { 7, 18, new Position[] { new Position(4, 19), new Position(7, 3) } },
-            new object[] { 22, 13, new Position[] { new Position(12, 8), new Position(22, 5) } },
+            new object[] { 2, 3, new[] { new Position(1, 10), new Position(2, 1) } },
+            new object[] { 7, 18, new[] { new Position(4, 19), new Position(7, 3) } },
+            new object[] { 22, 13, new[] { new Position(12, 8), new Position(22, 5) } },
         };
     }
 }
