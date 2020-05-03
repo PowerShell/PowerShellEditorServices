@@ -202,12 +202,6 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         [Parameter]
         public string StartupBanner { get; set; }
 
-        /// <summary>
-        /// The desired InitialSessionState, useful for using PSES in a ConstrainedRunspace.
-        /// </summary>
-        [Parameter]
-        public InitialSessionState InitialSessionState { get; set; }
-
         protected override void BeginProcessing()
         {
 #if DEBUG
