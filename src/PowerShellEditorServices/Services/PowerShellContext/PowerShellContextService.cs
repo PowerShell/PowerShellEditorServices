@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     using System.Management.Automation;
     using Microsoft.PowerShell.EditorServices.Handlers;
     using Microsoft.PowerShell.EditorServices.Hosting;
-    using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;    
+    using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -226,6 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
+            // Darren Kattan: I haven't tested it, but I have a feeling this entire bit of logic can be replaced with the bit above for non-FullLanguage mode. I think that was is cleaner anyway.            
             if (hostStartupInfo.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
             {
                 powerShellContext.ImportCommandsModuleAsync();
