@@ -26,6 +26,9 @@ using Microsoft.PowerShell.EditorServices.Utility;
 namespace Microsoft.PowerShell.EditorServices.Services
 {
     using System.Management.Automation;
+    using Microsoft.PowerShell.EditorServices.Handlers;
+    using Microsoft.PowerShell.EditorServices.Hosting;
+    using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;    
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -214,27 +217,33 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     hostUserInterface,
                     logger);
 
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.LanguageMode);
+            if (hostStartupInfo.InitialSessionState.LanguageMode != PSLanguageMode.FullLanguage)
+            {
+                hostStartupInfo.InitialSessionState.ImportPSModule(hostStartupInfo.AdditionalModules.ToArray());
+                hostStartupInfo.InitialSessionState.ImportPSModule(new string[] { s_commandsModulePath });
+            }
+            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
-
-            powerShellContext.ImportCommandsModuleAsync();
-
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach (string module in hostStartupInfo.AdditionalModules)
+            if (hostStartupInfo.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
             {
-                var command =
-                    new PSCommand()
-                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                        .AddParameter("Name", module);
+                powerShellContext.ImportCommandsModuleAsync();
+                foreach (string module in hostStartupInfo.AdditionalModules)
+                {
+                    var command =
+                        new PSCommand()
+                            .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                            .AddParameter("Name", module);
 
 #pragma warning disable CS4014
-                // This call queues the loading on the pipeline thread, so no need to await
-                powerShellContext.ExecuteCommandAsync<PSObject>(
-                    command,
-                    sendOutputToHost: false,
-                    sendErrorToHost: true);
+                    // This call queues the loading on the pipeline thread, so no need to await
+                    powerShellContext.ExecuteCommandAsync<PSObject>(
+                        command,
+                        sendOutputToHost: false,
+                        sendErrorToHost: true);
 #pragma warning restore CS4014
+                }
             }
 
             return powerShellContext;
@@ -259,29 +268,52 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
             powerShellContext.ConsoleWriter = hostUserInterface;
             powerShellContext.ConsoleReader = hostUserInterface;
-            return CreateRunspace(psHost, hostDetails.LanguageMode);
+            return CreateRunspace(psHost, hostDetails.InitialSessionState);
         }
+        private static InitialSessionState GetUsefulConstrainedISS()
+        {
+            InitialSessionState iss = InitialSessionState.Create("Microsoft.PowerShell.Core");
+            iss.LanguageMode = PSLanguageMode.ConstrainedLanguage;
+            iss.ImportPSModule(new string[] { "Microsoft.Powershell.Utility", "Microsoft.Powershell.Core", "Microsoft.PowerShell.Security" });
 
+            iss.Commands.Add(new SessionStateCmdletEntry("Get-Command", typeof(GetCommandCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("Get-ChildItem", typeof(PSCommand), null)); // 
+            iss.Commands.Add(new SessionStateCmdletEntry("Export-ModuleMember", typeof(ExportModuleMemberCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("Where-Object", typeof(WhereObjectCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("Select-Object", typeof(PSCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("Set-Variable", typeof(PSCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("ForEach-Object", typeof(ForEachObjectCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("Format-List", typeof(PSCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("Format-Table", typeof(PSCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("Set-ExecutionPolicy", typeof(PSCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("Format-Hex", typeof(PSCommand), null));
+            //iss.Commands.Add(new SessionStateCmdletEntry("Out-Default", typeof(OutDefaultCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("Microsoft.PowerShell.Core\\Out-Default", typeof(OutDefaultCommand), null) { Visibility = SessionStateEntryVisibility.Public });
+            iss.Commands.Add(new SessionStateCmdletEntry("Out-Host", typeof(OutHostCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("Import-Module", typeof(ImportModuleCommand), null));
+            iss.Commands.Add(new SessionStateCmdletEntry("Start-EditorServices", typeof(PSCommand), null));
+
+            return iss;
+        }
         /// <summary>
         ///
         /// </summary>
         /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
-        /// <param name="languageMode">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same language mode.</param>
+        /// <param name="initialSessionState">The initialSessionState inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same initialSessionState including allowed modules, cmdlets and language mode.</param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(PSHost psHost, PSLanguageMode languageMode)
+        public static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState)
         {
-            InitialSessionState initialSessionState;
-            if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1") {
-                initialSessionState = InitialSessionState.CreateDefault();
-            } else {
-                initialSessionState = InitialSessionState.CreateDefault2();
+            if (initialSessionState == null)
+            {
+                if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1")
+                {
+                    initialSessionState = InitialSessionState.CreateDefault();
+                }
+                else
+                {
+                    initialSessionState = InitialSessionState.CreateDefault2();
+                }
             }
-
-            // Create and initialize a new Runspace while honoring the LanguageMode of the original runspace
-            // that started PowerShell Editor Services. This is because the PowerShell Integrated Console
-            // should have the same LanguageMode of whatever is set by the system.
-            initialSessionState.LanguageMode = languageMode;
-
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode

@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Host;
+using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
@@ -113,10 +114,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public ProfilePathConfig ProfilePaths { get; set; }
 
         /// <summary>
-        /// The language mode inherited from the orginal PowerShell process.
-        /// This will be used when creating runspaces so that we honor the same language mode.
+        /// The InitialSessionState to use when creating runspaces. LanguageMode can be set here.
         /// </summary>
-        public PSLanguageMode LanguageMode { get; internal set; }
+        public InitialSessionState InitialSessionState { get; internal set; }
 
         public string StartupBanner { get; set; } = @"
 

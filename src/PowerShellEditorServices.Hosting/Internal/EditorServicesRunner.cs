@@ -237,7 +237,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 profilePaths,
                 _config.FeatureFlags,
                 _config.AdditionalModules,
-                _config.LanguageMode,
+                _config.InitialSessionState,
                 _config.LogPath,
                 (int)_config.LogLevel,
                 consoleReplEnabled: _config.ConsoleRepl != ConsoleReplKind.None,

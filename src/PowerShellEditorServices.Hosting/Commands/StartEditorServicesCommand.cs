@@ -202,6 +202,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         [Parameter]
         public string StartupBanner { get; set; }
 
+        /// <summary>
+        /// The desired InitialSessionState, useful for using PSES in a ConstrainedRunspace.
+        /// </summary>
+        [Parameter]
+        public InitialSessionState InitialSessionState { get; set; }
+
         protected override void BeginProcessing()
         {
 #if DEBUG
@@ -351,6 +357,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             var profile = (PSObject)GetVariableValue("profile");
 
             var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
+            var initialSessionState = InitialSessionState ?? Runspace.DefaultRunspace.InitialSessionState;
             var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, bundledModulesPath, LogPath)
             {
                 FeatureFlags = FeatureFlags,
@@ -359,7 +366,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 AdditionalModules = AdditionalModules,
                 LanguageServiceTransport = GetLanguageServiceTransport(),
                 DebugServiceTransport = GetDebugServiceTransport(),
-                LanguageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode,
+                InitialSessionState = initialSessionState,
                 ProfilePaths = new ProfilePathConfig
                 {
                     AllUsersAllHosts = GetProfilePathFromProfileObject(profile, ProfileUserKind.AllUsers, ProfileHostKind.AllHosts),
