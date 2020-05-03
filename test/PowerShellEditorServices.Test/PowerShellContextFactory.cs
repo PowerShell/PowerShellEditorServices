@@ -46,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 TestProfilePaths,
                 new List<string>(),
                 new List<string>(),
-                PSLanguageMode.FullLanguage,
+                null,
                 null,
                 0,
                 consoleReplEnabled: false,
