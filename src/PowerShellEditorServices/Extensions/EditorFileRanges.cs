@@ -204,12 +204,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// The line index of the position within the file.
         /// </summary>
-        long Line { get; }
+        int Line { get; }
 
         /// <summary>
         /// The character offset from the line of the position.
         /// </summary>
-        long Character { get; }
+        int Character { get; }
     }
 
     /// <summary>
@@ -260,9 +260,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             _position = position;
         }
 
-        public long Line => _position.Line;
+        public int Line => _position.Line;
 
-        public long Character => _position.Character;
+        public int Character => _position.Character;
 
         public bool Equals(OmnisharpLspPosition other)
         {
@@ -350,15 +350,15 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     /// </summary>
     public class LspFilePosition : ILspFilePosition
     {
-        public LspFilePosition(long line, long column)
+        public LspFilePosition(int line, int column)
         {
             Line = line;
             Character = column;
         }
 
-        public long Line { get; }
+        public int Line { get; }
 
-        public long Character { get; }
+        public int Character { get; }
     }
 
     /// <summary>
@@ -455,7 +455,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <returns>An equivalent 1-based file position.</returns>
         public static IFilePosition ToFilePosition(this ILspFilePosition position)
         {
-            return new FilePosition((int)position.Line + 1, (int)position.Character + 1);
+            return new FilePosition(position.Line + 1, position.Character + 1);
         }
 
         /// <summary>

@@ -80,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // If there are any code fixes, send these commands first so they appear at top of "Code Fix" menu in the client UI.
             foreach (Diagnostic diagnostic in request.Context.Diagnostics)
             {
-                if (string.IsNullOrEmpty(diagnostic.Code.String))
+                if (string.IsNullOrEmpty(diagnostic.Code?.String))
                 {
                     _logger.LogWarning(
                         $"textDocument/codeAction skipping diagnostic with empty Code field: {diagnostic.Source} {diagnostic.Message}");
@@ -118,13 +118,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             var ruleNamesProcessed = new HashSet<string>();
             foreach (Diagnostic diagnostic in request.Context.Diagnostics)
             {
-                if (!diagnostic.Code.IsString || string.IsNullOrEmpty(diagnostic.Code.String)) { continue; }
+                if (
+                    !diagnostic.Code.HasValue ||
+                    !diagnostic.Code.Value.IsString ||
+                    string.IsNullOrEmpty(diagnostic.Code?.String))
+                {
+                    continue;
+                }
 
                 if (string.Equals(diagnostic.Source, "PSScriptAnalyzer", StringComparison.OrdinalIgnoreCase) &&
-                    !ruleNamesProcessed.Contains(diagnostic.Code.String))
+                    !ruleNamesProcessed.Contains(diagnostic.Code?.String))
                 {
-                    ruleNamesProcessed.Add(diagnostic.Code.String);
-                    var title = $"Show documentation for: {diagnostic.Code.String}";
+                    ruleNamesProcessed.Add(diagnostic.Code?.String);
+                    var title = $"Show documentation for: {diagnostic.Code?.String}";
                     codeActions.Add(new CodeAction
                     {
                         Title = title,
@@ -136,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         {
                             Title = title,
                             Name = "PowerShell.ShowCodeActionDocumentation",
-                            Arguments = JArray.FromObject(new[] { diagnostic.Code.String })
+                            Arguments = JArray.FromObject(new[] { diagnostic.Code?.String })
                         }
                     });
                 }

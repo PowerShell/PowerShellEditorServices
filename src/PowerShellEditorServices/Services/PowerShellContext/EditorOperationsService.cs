@@ -8,6 +8,7 @@ using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services
@@ -38,9 +39,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             };
 
             ClientEditorContext clientContext =
-                await _languageServer.SendRequest<GetEditorContextRequest, ClientEditorContext>(
+                await _languageServer.SendRequest<GetEditorContextRequest>(
                     "editor/getEditorContext",
-                    new GetEditorContextRequest()).ConfigureAwait(false);
+                    new GetEditorContextRequest())
+                .Returning<ClientEditorContext>(CancellationToken.None)
+                .ConfigureAwait(false);
 
             return this.ConvertClientEditorContext(clientContext);
         }
@@ -70,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             Character = insertRange.End.Column - 1
                         }
                     }
-            }).ConfigureAwait(false);
+            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task SetSelectionAsync(BufferRange selectionRange)
@@ -96,7 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             Character = selectionRange.End.Column - 1
                         }
                     }
-            }).ConfigureAwait(false);
+            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
         }
 
         public EditorContext ConvertClientEditorContext(
@@ -111,13 +114,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     this,
                     scriptFile,
                     new BufferPosition(
-                        (int) clientContext.CursorPosition.Line + 1,
-                        (int) clientContext.CursorPosition.Character + 1),
+                        clientContext.CursorPosition.Line + 1,
+                        clientContext.CursorPosition.Character + 1),
                     new BufferRange(
-                        (int) clientContext.SelectionRange.Start.Line + 1,
-                        (int) clientContext.SelectionRange.Start.Character + 1,
-                        (int) clientContext.SelectionRange.End.Line + 1,
-                        (int) clientContext.SelectionRange.End.Character + 1),
+                        clientContext.SelectionRange.Start.Line + 1,
+                        clientContext.SelectionRange.Start.Character + 1,
+                        clientContext.SelectionRange.End.Line + 1,
+                        clientContext.SelectionRange.End.Character + 1),
                     clientContext.CurrentFileLanguage);
         }
 
@@ -128,7 +131,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest<string>("editor/newFile", null).ConfigureAwait(false);
+            await _languageServer.SendRequest<string>("editor/newFile", null)
+                .ReturningVoid(CancellationToken.None)
+                .ConfigureAwait(false);
         }
 
         public async Task OpenFileAsync(string filePath)
@@ -142,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 FilePath = filePath,
                 Preview = DefaultPreviewSetting
-            }).ConfigureAwait(false);
+            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task OpenFileAsync(string filePath, bool preview)
@@ -156,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 FilePath = filePath,
                 Preview = preview
-            }).ConfigureAwait(false);
+            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task CloseFileAsync(string filePath)
@@ -166,7 +171,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest("editor/closeFile", filePath).ConfigureAwait(false);
+            await _languageServer.SendRequest("editor/closeFile", filePath)
+                .ReturningVoid(CancellationToken.None)
+                .ConfigureAwait(false);
         }
 
         public Task SaveFileAsync(string filePath)
@@ -185,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 FilePath = currentPath,
                 NewPath = newSavePath
-            }).ConfigureAwait(false);
+            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
         }
 
         public string GetWorkspacePath()
@@ -205,7 +212,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest("editor/showInformationMessage", message).ConfigureAwait(false);
+            await _languageServer.SendRequest("editor/showInformationMessage", message)
+                .ReturningVoid(CancellationToken.None)
+                .ConfigureAwait(false);
         }
 
         public async Task ShowErrorMessageAsync(string message)
@@ -215,7 +224,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest("editor/showErrorMessage", message).ConfigureAwait(false);
+            await _languageServer.SendRequest("editor/showErrorMessage", message)
+                .ReturningVoid(CancellationToken.None)
+                .ConfigureAwait(false);
         }
 
         public async Task ShowWarningMessageAsync(string message)
@@ -225,7 +236,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             };
 
-            await _languageServer.SendRequest("editor/showWarningMessage", message).ConfigureAwait(false);
+            await _languageServer.SendRequest("editor/showWarningMessage", message)
+                .ReturningVoid(CancellationToken.None)
+                .ConfigureAwait(false);
         }
 
         public async Task SetStatusBarMessageAsync(string message, int? timeout)
@@ -239,7 +252,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 Message = message,
                 Timeout = timeout
-            }).ConfigureAwait(false);
+            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
         }
 
         public void ClearTerminal()

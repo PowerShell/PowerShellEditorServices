@@ -5,6 +5,7 @@
 
 using MediatR;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions.Services
@@ -89,27 +90,27 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
         public Task SendRequestAsync(string method)
         {
-            return _languageServer.SendRequest<Unit>(method);
+            return _languageServer.SendRequest(method).ReturningVoid(CancellationToken.None);
         }
 
         public Task SendRequestAsync<T>(string method, T parameters)
         {
-            return _languageServer.SendRequest<T, Unit>(method, parameters);
+            return _languageServer.SendRequest<T>(method, parameters).ReturningVoid(CancellationToken.None);
         }
 
         public Task<TResponse> SendRequestAsync<TResponse>(string method)
         {
-            return _languageServer.SendRequest<TResponse>(method);
+            return _languageServer.SendRequest(method).Returning<TResponse>(CancellationToken.None);
         }
 
         public Task<TResponse> SendRequestAsync<T, TResponse>(string method, T parameters)
         {
-            return _languageServer.SendRequest<T, TResponse>(method, parameters);
+            return _languageServer.SendRequest<T>(method, parameters).Returning<TResponse>(CancellationToken.None);
         }
 
         public Task<object> SendRequestAsync(string method, object parameters)
         {
-            return _languageServer.SendRequest<object, object>(method, parameters);
+            return _languageServer.SendRequest<object>(method, parameters).Returning<object>(CancellationToken.None);
         }
     }
 }

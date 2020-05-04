@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -112,12 +113,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         public async Task<string> PromptInputAsync(string message)
         {
             // The VSCode client currently doesn't use the Label field, so we ignore it
-            ShowInputPromptResponse response = await _languageServer.SendRequest<ShowInputPromptRequest, ShowInputPromptResponse>(
+            ShowInputPromptResponse response = await _languageServer.SendRequest<ShowInputPromptRequest>(
                 "powerShell/showInputPrompt",
                 new ShowInputPromptRequest
                 {
                     Name = message,
-                });
+                }).Returning<ShowInputPromptResponse>(CancellationToken.None);
 
             if (response.PromptCancelled)
             {
@@ -134,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         {
             ChoiceDetails[] choiceDetails = GetChoiceDetails(choices);
 
-            ShowChoicePromptResponse response = await _languageServer.SendRequest<ShowChoicePromptRequest, ShowChoicePromptResponse>(
+            ShowChoicePromptResponse response = await _languageServer.SendRequest<ShowChoicePromptRequest>(
                 "powerShell/showChoicePrompt",
                 new ShowChoicePromptRequest
                 {
@@ -143,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                     Message = message,
                     Choices = choiceDetails,
                     DefaultChoices = defaultChoiceIndexes?.ToArray(),
-                });
+                }).Returning<ShowChoicePromptResponse>(CancellationToken.None);
 
             if (response.PromptCancelled)
             {
@@ -160,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         {
             ChoiceDetails[] choiceDetails = GetChoiceDetails(choices);
 
-            ShowChoicePromptResponse response = await _languageServer.SendRequest<ShowChoicePromptRequest, ShowChoicePromptResponse>(
+            ShowChoicePromptResponse response = await _languageServer.SendRequest<ShowChoicePromptRequest>(
                 "powerShell/showChoicePrompt",
                 new ShowChoicePromptRequest
                 {
@@ -169,7 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                     Message = message,
                     Choices = choiceDetails,
                     DefaultChoices = defaultChoiceIndex > -1 ? new[] { defaultChoiceIndex } : null,
-                });
+                }).Returning<ShowChoicePromptResponse>(CancellationToken.None);
 
             if (response.PromptCancelled)
             {

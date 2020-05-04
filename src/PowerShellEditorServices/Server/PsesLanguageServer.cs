@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<ShowHelpHandler>()
                     .WithHandler<ExpandAliasHandler>()
                     .OnInitialize(
-                        async (languageServer, request) =>
+                        async (languageServer, request, cancellationToken) =>
                         {
                             var serviceProvider = languageServer.Services;
                             var workspaceService = serviceProvider.GetService<WorkspaceService>();
@@ -100,7 +100,17 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             // Grab the workspace path from the parameters
                             if (request.RootUri != null)
                             {
-                                workspaceService.WorkspacePath = workspaceService.ResolveFileUri(request.RootUri).LocalPath;
+                                workspaceService.WorkspacePath = request.RootUri.GetFileSystemPath();
+                            }
+                            else
+                            {
+                                // If RootUri isn't set, try to use the first WorkspaceFolder.
+                                // TODO: Support multi-workspace.
+                                foreach (var workspaceFolder in request.WorkspaceFolders)
+                                {
+                                    workspaceService.WorkspacePath = workspaceFolder.Uri.GetFileSystemPath();
+                                    break;
+                                }
                             }
 
                             // Set the working directory of the PowerShell session to the workspace path

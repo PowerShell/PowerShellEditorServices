@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             base.ShowPrompt(promptStyle);
 
-            _languageServer.SendRequest<ShowChoicePromptRequest, ShowChoicePromptResponse>(
+            _languageServer.SendRequest<ShowChoicePromptRequest>(
                 "powerShell/showChoicePrompt",
                 new ShowChoicePromptRequest
                 {
@@ -44,6 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     Choices = this.Choices,
                     DefaultChoices = this.DefaultChoices
                 })
+                .Returning<ShowChoicePromptResponse>(CancellationToken.None)
                 .ContinueWith(HandlePromptResponse)
                 .ConfigureAwait(false);
         }
@@ -115,13 +116,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             base.ShowFieldPrompt(fieldDetails);
 
-            _languageServer.SendRequest<ShowInputPromptRequest, ShowInputPromptResponse>(
+            _languageServer.SendRequest<ShowInputPromptRequest>(
                 "powerShell/showInputPrompt",
                 new ShowInputPromptRequest
                 {
                     Name = fieldDetails.Name,
                     Label = fieldDetails.Label
-                }).ContinueWith(HandlePromptResponse)
+                }).Returning<ShowInputPromptResponse>(CancellationToken.None)
+                .ContinueWith(HandlePromptResponse)
                 .ConfigureAwait(false);
         }
 

@@ -64,8 +64,8 @@ function
             int positionsIndex = 0;
             foreach (SymbolReference reference in references)
             {
-                Assert.Equal((int)positions[positionsIndex].Line, reference.ScriptRegion.StartLineNumber);
-                Assert.Equal((int)positions[positionsIndex].Character, reference.ScriptRegion.StartColumnNumber);
+                Assert.Equal(positions[positionsIndex].Line, reference.ScriptRegion.StartLineNumber);
+                Assert.Equal(positions[positionsIndex].Character, reference.ScriptRegion.StartColumnNumber);
 
                 positionsIndex++;
             }

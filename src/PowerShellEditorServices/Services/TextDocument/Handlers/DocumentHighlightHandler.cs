@@ -56,8 +56,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             IReadOnlyList<SymbolReference> symbolOccurrences = _symbolsService.FindOccurrencesInFile(
                 scriptFile,
-                (int)request.Position.Line + 1,
-                (int)request.Position.Character + 1);
+                request.Position.Line + 1,
+                request.Position.Character + 1);
 
             if (symbolOccurrences == null)
             {

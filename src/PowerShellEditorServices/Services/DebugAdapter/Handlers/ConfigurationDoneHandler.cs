@@ -46,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        public async Task<ConfigurationDoneResponse> Handle(ConfigurationDoneArguments request, CancellationToken cancellationToken)
+        public Task<ConfigurationDoneResponse> Handle(ConfigurationDoneArguments request, CancellationToken cancellationToken)
         {
             _debugService.IsClientAttached = true;
 
@@ -90,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
             }
 
-            return new ConfigurationDoneResponse();
+            return Task.FromResult(new ConfigurationDoneResponse());
         }
 
         private async Task LaunchScriptAsync(string scriptToLaunch)
