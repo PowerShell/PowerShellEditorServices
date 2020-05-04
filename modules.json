@@ -1,6 +1,6 @@
 {
     "PSScriptAnalyzer":{
-        "MinimumVersion":"1.18.3",
+        "MinimumVersion":"1.19.0",
         "MaximumVersion":"1.99"
     },
     "Plaster":{
