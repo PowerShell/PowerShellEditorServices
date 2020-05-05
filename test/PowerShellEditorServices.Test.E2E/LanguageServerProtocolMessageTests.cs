@@ -831,8 +831,8 @@ CanSendReferencesCodeLensRequest
                         "Replace gci with Get-ChildItem",
                         command.CodeAction.Title);
                     Assert.Equal(
-                        CodeActionKind.QuickFix.Kind,
-                        command.CodeAction.Kind.Kind);
+                        CodeActionKind.QuickFix,
+                        command.CodeAction.Kind);
                     Assert.Single(command.CodeAction.Edit.DocumentChanges);
                 },
                 command =>
