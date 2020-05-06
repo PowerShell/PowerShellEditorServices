@@ -1022,8 +1022,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 try
                 {
                     var scriptBlock = ScriptBlock.Create(scriptString);
-                    PowerShell powerShell = scriptBlock.GetPowerShell(isTrustedInput: false, null);
-                    command = powerShell.Commands;
+                    PowerShell ps = scriptBlock.GetPowerShell(isTrustedInput: false, null);
+                    command = ps.Commands;
                 }
                 catch (Exception e)
                 {
