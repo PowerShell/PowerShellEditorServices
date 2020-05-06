@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             {
                                 workspaceService.WorkspacePath = request.RootUri.GetFileSystemPath();
                             }
-                            else
+                            else if (request.WorkspaceFolders != null)
                             {
                                 // If RootUri isn't set, try to use the first WorkspaceFolder.
                                 // TODO: Support multi-workspace.
