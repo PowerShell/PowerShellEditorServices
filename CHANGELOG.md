@@ -3,6 +3,8 @@
 ## v2.2.0-preview.2
 ### Wednesday, May 06, 2020
 
+- 🛫🐛  [PowerShellEditorServices #1289](https://github.com/PowerShell/PowerShellEditorServices/pull/1289) -
+  Fix startup on empty workspaces.
 - 🛫🐛 [PowerShellEditorServices #1285](https://github.com/PowerShell/PowerShellEditorServices/pull/1285) -
   Use API on ScriptBlock to generate PSCommand to run in ConstrainedLanguage mode.
 - ⚡️🧠 [PowerShellEditorServices #1283](https://github.com/PowerShell/PowerShellEditorServices/pull/1283) -
