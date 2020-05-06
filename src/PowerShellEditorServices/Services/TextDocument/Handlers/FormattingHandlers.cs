@@ -127,10 +127,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             Range range = request.Range;
             var rangeList = range == null ? null : new int[]
             {
-                (int)range.Start.Line + 1,
-                (int)range.Start.Character + 1,
-                (int)range.End.Line + 1,
-                (int)range.End.Character + 1
+                range.Start.Line + 1,
+                range.Start.Character + 1,
+                range.End.Line + 1,
+                range.End.Character + 1
             };
 
             formattedScript = await _analysisService.FormatAsync(

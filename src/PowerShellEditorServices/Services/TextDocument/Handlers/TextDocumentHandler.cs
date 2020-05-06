@@ -143,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 IncludeText = true
             };
         }
-        public TextDocumentAttributes GetTextDocumentAttributes(Uri uri)
+        public TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri)
         {
             return new TextDocumentAttributes(uri, "powershell");
         }
@@ -157,10 +157,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return new FileChange
             {
                 InsertString = insertString,
-                Line = (int)(changeRange.Start.Line + 1),
-                Offset = (int)(changeRange.Start.Character + 1),
-                EndLine = (int)(changeRange.End.Line + 1),
-                EndOffset = (int)(changeRange.End.Character + 1),
+                Line = changeRange.Start.Line + 1,
+                Offset = changeRange.Start.Character + 1,
+                EndLine = changeRange.End.Line + 1,
+                EndOffset = changeRange.End.Character + 1,
                 IsReload = false
             };
         }

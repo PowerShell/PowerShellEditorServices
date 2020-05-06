@@ -88,8 +88,8 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
             SymbolReference foundSymbol = _symbolsService.FindFunctionDefinitionAtLocation(
                 scriptFile,
-                (int)codeLens.Range.Start.Line + 1,
-                (int)codeLens.Range.Start.Character + 1);
+                codeLens.Range.Start.Line + 1,
+                codeLens.Range.Start.Character + 1);
 
             List<SymbolReference> referencesResult = _symbolsService.FindReferencesOfSymbol(
                 foundSymbol,

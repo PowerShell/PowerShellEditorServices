@@ -50,8 +50,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             SymbolReference foundSymbol =
                 _symbolsService.FindSymbolAtLocation(
                     scriptFile,
-                    (int) request.Position.Line + 1,
-                    (int) request.Position.Character + 1);
+                    request.Position.Line + 1,
+                    request.Position.Character + 1);
 
             List<LocationOrLocationLink> definitionLocations = new List<LocationOrLocationLink>();
             if (foundSymbol != null)

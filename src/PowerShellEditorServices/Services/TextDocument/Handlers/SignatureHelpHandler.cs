@@ -61,8 +61,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ParameterSetSignatures parameterSets =
                 await _symbolsService.FindParameterSetsInFileAsync(
                     scriptFile,
-                    (int) request.Position.Line + 1,
-                    (int) request.Position.Character + 1,
+                    request.Position.Line + 1,
+                    request.Position.Character + 1,
                     _powerShellContextService).ConfigureAwait(false);
 
             if (parameterSets == null)

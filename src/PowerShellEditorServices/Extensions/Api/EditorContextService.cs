@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -94,16 +95,18 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         public async Task<ILspCurrentFileContext> GetCurrentLspFileContextAsync()
         {
             ClientEditorContext clientContext =
-                await _languageServer.SendRequest<GetEditorContextRequest, ClientEditorContext>(
+                await _languageServer.SendRequest<GetEditorContextRequest>(
                     "editor/getEditorContext",
-                    new GetEditorContextRequest()).ConfigureAwait(false);
+                    new GetEditorContextRequest())
+                .Returning<ClientEditorContext>(CancellationToken.None)
+                .ConfigureAwait(false);
 
             return new LspCurrentFileContext(clientContext);
         }
 
         public Task OpenNewUntitledFileAsync()
         {
-            return _languageServer.SendRequest<string>("editor/newFile", null);
+            return _languageServer.SendRequest<string>("editor/newFile", null).ReturningVoid(CancellationToken.None);
         }
 
         public Task OpenFileAsync(Uri fileUri) => OpenFileAsync(fileUri, preview: false);
@@ -114,12 +117,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             {
                 FilePath = fileUri.LocalPath,
                 Preview = preview,
-            });
+            }).ReturningVoid(CancellationToken.None);
         }
 
         public Task CloseFileAsync(Uri fileUri)
         {
-            return _languageServer.SendRequest("editor/closeFile", fileUri.LocalPath);
+            return _languageServer.SendRequest("editor/closeFile", fileUri.LocalPath).ReturningVoid(CancellationToken.None);
         }
 
         public Task SaveFileAsync(Uri fileUri) => SaveFileAsync(fileUri, null);
@@ -130,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             {
                 FilePath = oldFileUri.LocalPath,
                 NewPath = newFileUri?.LocalPath,
-            });
+            }).ReturningVoid(CancellationToken.None);
         }
 
         public Task SetSelectionAsync(ILspFileRange range)
@@ -138,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             return _languageServer.SendRequest("editor/setSelection", new SetSelectionRequest
             {
                 SelectionRange = range.ToOmnisharpRange()
-            });
+            }).ReturningVoid(CancellationToken.None);
         }
 
         public Task InsertTextAsync(Uri fileUri, string text, ILspFileRange range)
@@ -148,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                 FilePath = fileUri.LocalPath,
                 InsertText = text,
                 InsertRange = range.ToOmnisharpRange(),
-            });
+            }).ReturningVoid(CancellationToken.None);
         }
     }
 }

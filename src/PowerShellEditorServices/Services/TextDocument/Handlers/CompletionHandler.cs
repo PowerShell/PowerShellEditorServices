@@ -63,8 +63,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
         {
-            int cursorLine = (int) request.Position.Line + 1;
-            int cursorColumn = (int) request.Position.Character + 1;
+            int cursorLine = request.Position.Line + 1;
+            int cursorColumn = request.Position.Character + 1;
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 

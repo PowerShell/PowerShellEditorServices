@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
@@ -41,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var sb = new StringBuilder(256)
             .Append(diagnostic.Source ?? "?")
             .Append("_")
-            .Append(diagnostic.Code.IsString ? diagnostic.Code.String : diagnostic.Code.Long.ToString())
+            .Append(diagnostic.Code?.IsString ?? true ? diagnostic.Code?.String : diagnostic.Code?.Long.ToString())
             .Append("_")
             .Append(diagnostic.Severity?.ToString() ?? "?")
             .Append("_")
@@ -421,7 +422,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             _languageServer.Document.PublishDiagnostics(new PublishDiagnosticsParams
             {
-                Uri = new Uri(scriptFile.DocumentUri),
+                Uri = DocumentUri.From(scriptFile.DocumentUri),
                 Diagnostics = new Container<Diagnostic>(diagnostics)
             });
         }

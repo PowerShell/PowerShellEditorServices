@@ -181,8 +181,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             BreakpointDetails[] breakpointDetails = request.Breakpoints
                 .Select((srcBreakpoint) => BreakpointDetails.Create(
                     scriptFile.FilePath,
-                    (int)srcBreakpoint.Line,
-                    (int?)srcBreakpoint.Column,
+                    srcBreakpoint.Line,
+                    srcBreakpoint.Column,
                     srcBreakpoint.Condition,
                     srcBreakpoint.HitCondition,
                     srcBreakpoint.LogMessage))

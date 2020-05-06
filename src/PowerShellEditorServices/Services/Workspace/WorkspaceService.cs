@@ -16,6 +16,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using Microsoft.PowerShell.EditorServices.Services.Workspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using System.Collections.Concurrent;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -115,42 +116,53 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
         /// <see cref="WorkspaceService.TryGetFile(string, out ScriptFile)"/> instead.</para>
         /// </summary>
-        /// <param name="filePath">The file path at which the script resides.</param>
+        /// <param name="fileUri">The file URI at which the script resides.</param>
         /// <exception cref="FileNotFoundException">
         /// <paramref name="filePath"/> is not found.
         /// </exception>
         /// <exception cref="ArgumentException">
         /// <paramref name="filePath"/> contains a null or empty string.
         /// </exception>
-        public ScriptFile GetFile(Uri fileUri)
-        {
-            Validate.IsNotNull(nameof(fileUri), fileUri);
+        public ScriptFile GetFile(Uri fileUri) => GetFile(DocumentUri.From(fileUri));
 
-            // Resolve the full file path
-            Uri resolvedFileUri = ResolveFileUri(fileUri);
+        /// <summary>
+        /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
+        /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
+        /// <see cref="WorkspaceService.TryGetFile(string, out ScriptFile)"/> instead.</para>
+        /// </summary>
+        /// <param name="documentUri">The document URI at which the script resides.</param>
+        /// <exception cref="FileNotFoundException">
+        /// <paramref name="filePath"/> is not found.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="filePath"/> contains a null or empty string.
+        /// </exception>
+        public ScriptFile GetFile(DocumentUri documentUri)
+        {
+            Validate.IsNotNull(nameof(documentUri), documentUri);
 
             string keyName = VersionUtils.IsLinux
-                ? resolvedFileUri.OriginalString
-                : resolvedFileUri.OriginalString.ToLower();
+                ? documentUri.ToString()
+                : documentUri.ToString().ToLower();
 
             // Make sure the file isn't already loaded into the workspace
             if (!this.workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile))
             {
                 // This method allows FileNotFoundException to bubble up
                 // if the file isn't found.
-                using (FileStream fileStream = new FileStream(resolvedFileUri.LocalPath, FileMode.Open, FileAccess.Read))
+                using (FileStream fileStream = new FileStream(documentUri.GetFileSystemPath(), FileMode.Open, FileAccess.Read))
                 using (StreamReader streamReader = new StreamReader(fileStream, Encoding.UTF8))
                 {
                     scriptFile =
                         new ScriptFile(
-                            resolvedFileUri,
+                            documentUri.ToUri(),
                             streamReader,
                             this.powerShellVersion);
 
                     this.workspaceFiles[keyName] = scriptFile;
                 }
 
-                this.logger.LogDebug("Opened file on disk: " + resolvedFileUri.OriginalString);
+                this.logger.LogDebug("Opened file on disk: " + documentUri.ToString());
             }
 
             return scriptFile;
@@ -169,9 +181,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="fileUri">The file uri at which the script resides.</param>
         /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
-        public bool TryGetFile(Uri fileUri, out ScriptFile scriptFile)
+        public bool TryGetFile(Uri fileUri, out ScriptFile scriptFile) =>
+            TryGetFile(DocumentUri.From(fileUri), out scriptFile);
+
+        /// <summary>
+        /// Tries to get an open file in the workspace. Returns true if it succeeds, false otherwise.
+        /// </summary>
+        /// <param name="documentUri">The file uri at which the script resides.</param>
+        /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
+        public bool TryGetFile(DocumentUri documentUri, out ScriptFile scriptFile)
         {
-            switch (fileUri.Scheme)
+            switch (documentUri.Scheme)
             {
                 // List supported schemes here
                 case "file":
@@ -185,7 +205,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             try
             {
-                scriptFile = GetFile(fileUri);
+                scriptFile = GetFile(documentUri);
                 return true;
             }
             catch (Exception e) when (
@@ -197,7 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 e is SecurityException ||
                 e is UnauthorizedAccessException)
             {
-                this.logger.LogWarning($"Failed to get file for fileUri: '{fileUri.OriginalString}'", e);
+                this.logger.LogWarning($"Failed to get file for fileUri: '{documentUri.ToString()}'", e);
                 scriptFile = null;
                 return false;
             }
@@ -233,29 +253,35 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="fileUri">The file Uri for which a buffer will be retrieved.</param>
         /// <param name="initialBuffer">The initial buffer contents if there is not an existing ScriptFile for this path.</param>
         /// <returns>A ScriptFile instance for the specified path.</returns>
-        public ScriptFile GetFileBuffer(Uri fileUri, string initialBuffer)
-        {
-            Validate.IsNotNull(nameof(fileUri), fileUri);
+        public ScriptFile GetFileBuffer(Uri fileUri, string initialBuffer) => GetFileBuffer(DocumentUri.From(fileUri), initialBuffer);
 
-            // Resolve the full file path
-            Uri resolvedFileUri = ResolveFileUri(fileUri);
+        /// <summary>
+        /// Gets a new ScriptFile instance which is identified by the given file
+        /// path and initially contains the given buffer contents.
+        /// </summary>
+        /// <param name="documentUri">The file Uri for which a buffer will be retrieved.</param>
+        /// <param name="initialBuffer">The initial buffer contents if there is not an existing ScriptFile for this path.</param>
+        /// <returns>A ScriptFile instance for the specified path.</returns>
+        public ScriptFile GetFileBuffer(DocumentUri documentUri, string initialBuffer)
+        {
+            Validate.IsNotNull(nameof(documentUri), documentUri);
 
             string keyName = VersionUtils.IsLinux
-                ? resolvedFileUri.OriginalString
-                : resolvedFileUri.OriginalString.ToLower();
+                ? documentUri.ToString()
+                : documentUri.ToString().ToLower();
 
             // Make sure the file isn't already loaded into the workspace
             if (!this.workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile) && initialBuffer != null)
             {
                 scriptFile =
                     new ScriptFile(
-                        resolvedFileUri,
+                        documentUri.ToUri(),
                         initialBuffer,
                         this.powerShellVersion);
 
                 this.workspaceFiles[keyName] = scriptFile;
 
-                this.logger.LogDebug("Opened file as in-memory buffer: " + resolvedFileUri.OriginalString);
+                this.logger.LogDebug("Opened file as in-memory buffer: " + documentUri.ToString());
             }
 
             return scriptFile;
