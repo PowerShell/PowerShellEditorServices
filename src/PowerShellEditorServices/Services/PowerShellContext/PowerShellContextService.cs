@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Management.Automation.Host;
@@ -16,15 +17,15 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Hosting;
+using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
-    using System.Diagnostics.CodeAnalysis;
     using System.Management.Automation;
-    using Microsoft.PowerShell.EditorServices.Handlers;
-    using Microsoft.PowerShell.EditorServices.Hosting;
-    using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -1015,8 +1016,29 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             Validate.IsNotNull(nameof(scriptString), scriptString);
 
+            PSCommand command = null;
+            if(CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+            {
+                try
+                {
+                    var scriptBlock = ScriptBlock.Create(scriptString);
+                    PowerShell ps = scriptBlock.GetPowerShell(isTrustedInput: false, null);
+                    command = ps.Commands;
+                }
+                catch (Exception e)
+                {
+                    logger.LogException("Exception getting trusted/untrusted PSCommand.", e);
+                }
+            }
+
+            // fall back to old behavior
+            if(command == null)
+            {
+                command = new PSCommand().AddScript(scriptString.Trim());
+            }
+
             return this.ExecuteCommandAsync<object>(
-                new PSCommand().AddScript(scriptString.Trim()),
+                command,
                 errorMessages,
                 new ExecutionOptions()
                 {
