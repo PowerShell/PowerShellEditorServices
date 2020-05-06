@@ -1,5 +1,19 @@
 # PowerShell Editor Services Release History
 
+## v2.2.0-preview.2
+### Wednesday, May 06, 2020
+
+- 🛫🐛 [PowerShellEditorServices #1285](https://github.com/PowerShell/PowerShellEditorServices/pull/1285) -
+  Use API on ScriptBlock to generate PSCommand to run in ConstrainedLanguage mode.
+- ⚡️🧠 [PowerShellEditorServices #1283](https://github.com/PowerShell/PowerShellEditorServices/pull/1283) -
+  Move to Omnisharp lib 0.17.0 for increased performance.
+- ✨👮 [PowerShellEditorServices #1280](https://github.com/PowerShell/PowerShellEditorServices/pull/1280) -
+  Add additional settings for PSScriptAnalyzer 1.19. (Thanks @bergmeister!)
+- 🔗 🐛 [vscode-powershell #305](https://github.com/PowerShell/PowerShellEditorServices/pull/1279) -
+  Fix document highlight column.
+- 🐛🧠 [PowerShellEditorServices #1276](https://github.com/PowerShell/PowerShellEditorServices/pull/1276) -
+  Handle when no CommandInfo comes back from Get-Command to prevent an Exception showing up in logs.
+
 ## v2.2.0-preview.1
 ### Tuesday, April 28, 2020
 
