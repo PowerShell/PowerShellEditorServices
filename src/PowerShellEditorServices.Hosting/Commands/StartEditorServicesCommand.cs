@@ -351,6 +351,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             var profile = (PSObject)GetVariableValue("profile");
 
             var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
+            // This ensures that all Runspaces are created with the same InitialSessionState as the runspace that started EditorServices
             var initialSessionState = Runspace.DefaultRunspace.InitialSessionState;
             var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, bundledModulesPath, LogPath)
             {

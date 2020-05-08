@@ -55,8 +55,4 @@
   <ItemGroup>
     <Compile Remove="Extensions\Api\DocumentSymbolService.cs" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
 </Project>
