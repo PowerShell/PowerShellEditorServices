@@ -222,8 +222,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 hostStartupInfo.InitialSessionState.ImportPSModule((IEnumerable<Commands.ModuleSpecification>)hostStartupInfo.AdditionalModules);
                 hostStartupInfo.InitialSessionState.ImportPSModule(new string[] { s_commandsModulePath });
             }
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
-            powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
+            Runspace runspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
+            powerShellContext.Initialize(hostStartupInfo.ProfilePaths, runspace, true, hostUserInterface);
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
             // Darren Kattan: I haven't tested it, but I have a feeling this entire bit of logic can be replaced with the bit above for non-FullLanguage mode. I think that was is cleaner anyway.            
@@ -271,26 +271,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
             powerShellContext.ConsoleReader = hostUserInterface;
             return CreateRunspace(psHost, hostDetails.InitialSessionState);
         }
-        
+
         /// <summary>
         ///
         /// </summary>
         /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
         /// <param name="initialSessionState">The initialSessionState inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same initialSessionState including allowed modules, cmdlets and language mode.</param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState)
+        internal static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState)
         {
-            if (initialSessionState == null)
-            {
-                if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1")
-                {
-                    initialSessionState = InitialSessionState.CreateDefault();
-                }
-                else
-                {
-                    initialSessionState = InitialSessionState.CreateDefault2();
-                }
-            }
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode
