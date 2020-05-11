@@ -87,7 +87,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     break;
                 }
 
-                _logger.LogDebug("Old version of PackageManagement detected. Attempting to update.");
+                _logger.LogDebug("Old version of PackageManagement detected.");
+
+                if (_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+                {
+                    _languageServer.Window.ShowWarning("You have an older version of PackageManagement known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`");
+                    return;
+                }
 
                 var takeActionText = "Yes";
                 MessageActionItem messageAction = await _languageServer.Window.ShowMessage(new ShowMessageRequestParams
@@ -120,6 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                     if (errors.Length == 0)
                     {
+                        _logger.LogDebug("PackageManagement is updated.");
                         _languageServer.Window.ShowMessage(new ShowMessageParams
                         {
                             Type = MessageType.Info,
@@ -129,6 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     else
                     {
                         // There were errors installing PackageManagement.
+                        _logger.LogError($"PackageManagement installation had errors: {errors.ToString()}");
                         _languageServer.Window.ShowMessage(new ShowMessageParams
                         {
                             Type = MessageType.Error,
