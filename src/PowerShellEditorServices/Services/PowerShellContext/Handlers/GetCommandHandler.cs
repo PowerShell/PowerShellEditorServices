@@ -17,7 +17,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     [Serial, Method("powerShell/getCommand")]
     internal interface IGetCommandHandler : IJsonRpcRequestHandler<GetCommandParams, List<PSCommandMessage>> { }
 
-    internal class GetCommandParams : IRequest<List<PSCommandMessage>> { }
+    internal class GetCommandParams : IRequest<List<PSCommandMessage>>
+    {
+        public string Name { get; set; }
+    }
 
     /// <summary>
     /// Describes the message to get the details for a single PowerShell Command
@@ -47,13 +50,22 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             PSCommand psCommand = new PSCommand();
 
-            // Executes the following:
-            // Get-Command -CommandType Function,Cmdlet,ExternalScript | Sort-Object -Property Name
-            psCommand
-                .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
+            psCommand.AddCommand("Microsoft.PowerShell.Core\\Get-Command");
+            if (!string.IsNullOrEmpty(request.Name))
+            {
+                // Executes the following:
+                // Get-Command -Name <Name sent over in request>
+                psCommand.AddParameter("Name", request.Name);
+            }
+            else
+            {
+                // Executes the following:
+                // Get-Command -CommandType Function,Cmdlet,ExternalScript | Sort-Object -Property Name
+                psCommand
                     .AddParameter("CommandType", new[] { "Function", "Cmdlet", "ExternalScript" })
-                .AddCommand("Microsoft.PowerShell.Utility\\Sort-Object")
+                    .AddCommand("Microsoft.PowerShell.Utility\\Sort-Object")
                     .AddParameter("Property", "Name");
+            }
 
             IEnumerable<CommandInfo> result = await _powerShellContextService.ExecuteCommandAsync<CommandInfo>(psCommand).ConfigureAwait(false);
 
