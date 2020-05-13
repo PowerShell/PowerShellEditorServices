@@ -1,8 +1,10 @@
 # PowerShell Editor Services Release History
 
 ## v2.2.0-preview.2
-### Wednesday, May 06, 2020
+### Wednesday, May 13, 2020
 
+- 🛫🐛 [PowerShellEditorServices #1288](https://github.com/PowerShell/PowerShellEditorServices/pull/1288) -
+  Don't update PackageManagement on ConstrainedLanguage mode.
 - 🛫🐛  [PowerShellEditorServices #1289](https://github.com/PowerShell/PowerShellEditorServices/pull/1289) -
   Fix startup on empty workspaces.
 - 🛫🐛 [PowerShellEditorServices #1285](https://github.com/PowerShell/PowerShellEditorServices/pull/1285) -
