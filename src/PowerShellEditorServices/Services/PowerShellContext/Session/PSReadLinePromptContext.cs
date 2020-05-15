@@ -14,26 +14,35 @@ using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 {
+    using System.IO;
     using System.Management.Automation;
 
     internal class PSReadLinePromptContext : IPromptContext
     {
-        private const string ReadLineInitScript = @"
+        private static readonly string _psReadLineModulePath = Path.Combine(
+            Path.GetDirectoryName(typeof(PSReadLinePromptContext).Assembly.Location),
+            "..",
+            "..",
+            "..",
+            "PSReadLine");
+
+        private static readonly string ReadLineInitScript = $@"
             [System.Diagnostics.DebuggerHidden()]
             [System.Diagnostics.DebuggerStepThrough()]
             param()
-            end {
+            end {{
                 $module = Get-Module -ListAvailable PSReadLine |
-                    Where-Object { $_.Version -gt '2.0.0' -or ($_.Version -eq '2.0.0' -and -not $_.PrivateData.PSData.Prerelease) } |
+                    Where-Object {{ $_.Version -gt '2.0.0' -or ($_.Version -eq '2.0.0' -and -not $_.PrivateData.PSData.Prerelease) }} |
                     Sort-Object -Descending Version |
                     Select-Object -First 1
-                if (-not $module) {
-                    return
-                }
+                if (-not $module) {{
+                    Import-Module {_psReadLineModulePath}
+                    return [Microsoft.PowerShell.PSConsoleReadLine]
+                }}
 
                 Import-Module -ModuleInfo $module
                 return [Microsoft.PowerShell.PSConsoleReadLine]
-            }";
+            }}";
 
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
         {

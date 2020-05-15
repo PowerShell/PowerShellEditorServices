@@ -415,8 +415,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
-                // TODO: Figure out why PSReadLine isn't working in ConstrainedLanguage mode.
-                initialRunspace.SessionStateProxy.LanguageMode == PSLanguageMode.FullLanguage &&
                 PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, out PSReadLineProxy proxy))
             {
                 this.PromptContext = new PSReadLinePromptContext(
