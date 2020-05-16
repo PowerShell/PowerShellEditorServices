@@ -133,7 +133,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 StartLineNumber = startLineNumber,
                 EndLineNumber = startLineNumber,
                 StartColumnNumber = startColumnNumber,
-                EndColumnNumber = startColumnNumber + functionDefinitionAst.Name.Length
+                EndColumnNumber = startColumnNumber + functionDefinitionAst.Name.Length,
+                File = functionDefinitionAst.Extent.File
             };
 
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&

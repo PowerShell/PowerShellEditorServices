@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System;
 using System.Collections.Generic;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
@@ -11,6 +10,7 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
 
 namespace Microsoft.PowerShell.EditorServices.CodeLenses
 {
@@ -60,11 +60,14 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     {
                         Name = "PowerShell.RunPesterTests",
                         Title = $"Run {word}",
-                        Arguments = JArray.FromObject(new object[] {
+                        Arguments = JArray.FromObject(new object[]
+                        {
                             scriptFile.DocumentUri,
                             false /* No debug */,
                             pesterSymbol.TestName,
-                            pesterSymbol.ScriptRegion?.StartLineNumber })
+                            pesterSymbol.ScriptRegion?.StartLineNumber
+                        },
+                        Serializer.Instance.JsonSerializer)
                     }
                 },
 
@@ -79,11 +82,14 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     {
                         Name = "PowerShell.RunPesterTests",
                         Title = $"Debug {word}",
-                        Arguments = JArray.FromObject(new object[] {
+                        Arguments = JArray.FromObject(new object[]
+                        {
                             scriptFile.DocumentUri,
                             true /* No debug */,
                             pesterSymbol.TestName,
-                            pesterSymbol.ScriptRegion?.StartLineNumber })
+                            pesterSymbol.ScriptRegion?.StartLineNumber
+                        },
+                        Serializer.Instance.JsonSerializer)
                     }
                 }
             };

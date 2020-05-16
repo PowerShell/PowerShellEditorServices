@@ -36,7 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
                 EndLineNumber = functionDefinitionAst.Extent.EndLineNumber,
                 StartColumnNumber = functionDefinitionAst.Extent.StartColumnNumber,
-                EndColumnNumber = functionDefinitionAst.Extent.EndColumnNumber
+                EndColumnNumber = functionDefinitionAst.Extent.EndColumnNumber,
+                File = functionDefinitionAst.Extent.File
             };
 
             SymbolType symbolType =

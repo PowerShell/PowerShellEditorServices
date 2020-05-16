@@ -60,9 +60,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         {
             get
             {
+                // TODO: Have this be a DocumentUri type and stop having it be computed every time.
                 return this.ClientFilePath == null
                     ? string.Empty
-                    : WorkspaceService.ConvertPathToDocumentUri(this.ClientFilePath);
+                    : OmniSharp.Extensions.LanguageServer.Protocol.DocumentUri.FromFileSystemPath(ClientFilePath)?.ToString();
             }
         }
 

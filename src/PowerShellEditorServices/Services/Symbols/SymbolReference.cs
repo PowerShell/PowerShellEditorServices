@@ -107,10 +107,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// </summary>
         /// <param name="symbolType">The higher level type of the symbol</param>
         /// <param name="scriptExtent">The script extent of the symbol</param>
-        /// <param name="filePath">The file path of the symbol</param>
-        /// <param name="sourceLine">The line contents of the given symbol (defaults to empty string)</param>
-        public SymbolReference(SymbolType symbolType, IScriptExtent scriptExtent, string filePath = "", string sourceLine = "")
-            : this(symbolType, scriptExtent.Text, scriptExtent, filePath, sourceLine)
+        public SymbolReference(SymbolType symbolType, IScriptExtent scriptExtent)
+            : this(symbolType, scriptExtent.Text, scriptExtent, scriptExtent.File, "")
         {
         }
     }
