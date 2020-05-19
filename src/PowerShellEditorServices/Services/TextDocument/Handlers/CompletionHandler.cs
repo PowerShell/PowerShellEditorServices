@@ -266,6 +266,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     {
                         detailString = matches[0].Groups[1].Value;
                     }
+                    // The comparison operators (-eq, -not, -gt, etc) are unfortunately fall into ParameterName
+                    // but they don't have a type associated to them. This allows those tooltips to show up.
+                    else if (!string.IsNullOrEmpty(completionDetails.ToolTipText))
+                    {
+                        detailString = completionDetails.ToolTipText;
+                    }
                     break;
                 case CompletionType.Command:
                     // For Commands, let's extract the resolved command or the path for an exe
