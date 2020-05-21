@@ -635,7 +635,8 @@ First line
                 // Test UNC path
                 path = @"\\ClarissaMao\projects\Rocinate\foo's_~#-[@] +,;=%.ps1";
                 scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
-                Assert.Equal("file://ClarissaMao/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
+                // UNC authorities are lowercased. This is what VS Code does as well.
+                Assert.Equal("file://clarissamao/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
             }
             else
             {
