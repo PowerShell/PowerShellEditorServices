@@ -626,11 +626,11 @@ First line
             {
                 path = @"C:\Users\AmosBurton\projects\Rocinate\ProtoMolecule.ps1";
                 scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
-                Assert.Equal("file:///c%3A/Users/AmosBurton/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
+                Assert.Equal("file:///c:/Users/AmosBurton/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
 
                 path = @"c:\Users\BobbieDraper\projects\Rocinate\foo's_~#-[@] +,;=%.ps1";
                 scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
-                Assert.Equal("file:///c%3A/Users/BobbieDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
+                Assert.Equal("file:///c:/Users/BobbieDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
 
                 // Test UNC path
                 path = @"\\ClarissaMao\projects\Rocinate\foo's_~#-[@] +,;=%.ps1";
