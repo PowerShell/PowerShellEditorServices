@@ -191,53 +191,5 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
                     $"Testing path {testCase.Path}");
             }
         }
-
-        [Theory()]
-        [Trait("Category", "Workspace")]
-        [MemberData(nameof(PathsToResolve), parameters: 2)]
-        public void CorrectlyResolvesPaths(string givenPath, string expectedPath)
-        {
-            WorkspaceService workspace = new WorkspaceService(NullLoggerFactory.Instance);
-
-            Uri resolvedPath = workspace.ResolveFileUri(new Uri(givenPath));
-
-            Assert.Equal(expectedPath, resolvedPath.LocalPath);
-        }
-
-        public static IEnumerable<object[]> PathsToResolve
-        {
-            get
-            {
-                return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                    ? s_winPathsToResolve
-                    : s_unixPathsToResolve;
-            }
-        }
-
-        private static object[][] s_winPathsToResolve = new object[][]
-        {
-            new object[] { "file:///C%3A/banana/", @"C:\banana\" },
-            new object[] { "file:///C%3A/banana/ex.ps1", @"C:\banana\ex.ps1" },
-            new object[] { "file:///E%3A/Path/to/awful%23path", @"E:\Path\to\awful#path" },
-            new object[] { "file:///path/with/no/drive", "/path/with/no/drive" },
-            new object[] { "file:///path/wi[th]/squ[are/brackets/", "/path/wi[th]/squ[are/brackets/" },
-            new object[] { "file:///Carrots/A%5Ere/Good/", "/Carrots/A^re/Good/" },
-            new object[] { "file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", "/Users/barnaby/脚本/Reduce-Directory" },
-            new object[] { "file:///C%3A/Program%20Files%20%28x86%29/PowerShell/6/pwsh.exe", @"C:\Program Files (x86)\PowerShell\6\pwsh.exe" },
-            new object[] { "file:///home/maxim/test%20folder/%D0%9F%D0%B0%D0%BF%D0%BA%D0%B0/helloworld.ps1", "/home/maxim/test folder/Папка/helloworld.ps1" }
-        };
-
-        private static object[][] s_unixPathsToResolve = new object[][]
-        {
-            new object[] { "file:///banana/", @"/banana/" },
-            new object[] { "file:///banana/ex.ps1", @"/banana/ex.ps1" },
-            new object[] { "file:///Path/to/awful%23path", @"/Path/to/awful#path" },
-            new object[] { "file:///path/with/no/drive", @"/path/with/no/drive" },
-            new object[] { "file:///path/wi[th]/squ[are/brackets/", @"/path/wi[th]/squ[are/brackets/" },
-            new object[] { "file:///Carrots/A%5Ere/Good/", @"/Carrots/A^re/Good/" },
-            new object[] { "file:///Users/barnaby/%E8%84%9A%E6%9C%AC/Reduce-Directory", @"/Users/barnaby/脚本/Reduce-Directory" },
-            new object[] { "file:///Program%20Files%20%28x86%29/PowerShell/6/pwsh.exe", @"/Program Files (x86)/PowerShell/6/pwsh.exe" },
-            new object[] { "file:///home/maxim/test%20folder/%D0%9F%D0%B0%D0%BF%D0%BA%D0%B0/helloworld.ps1", @"/home/maxim/test folder/Папка/helloworld.ps1" }
-        };
     }
 }

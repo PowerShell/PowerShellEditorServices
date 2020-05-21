@@ -16,6 +16,7 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -74,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                                 Kind = GetSymbolKind(r.SymbolType),
                                 Location = new Location
                                 {
-                                    Uri = PathUtils.ToUri(r.FilePath),
+                                    Uri = DocumentUri.FromFileSystemPath(r.FilePath),
                                     Range = GetRangeFromScriptRegion(r.ScriptRegion)
                                 },
                                 Name = GetDecoratedSymbolName(r)

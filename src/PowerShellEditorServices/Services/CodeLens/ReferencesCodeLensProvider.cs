@@ -11,7 +11,9 @@ using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
 
 namespace Microsoft.PowerShell.EditorServices.CodeLenses
 {
@@ -113,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
                     acc.Add(new Location
                     {
-                        Uri = PathUtils.ToUri(foundReference.FilePath),
+                        Uri = DocumentUri.FromFileSystemPath(foundReference.FilePath),
                         Range = foundReference.ScriptRegion.ToRange()
                     });
                 }
@@ -133,7 +135,8 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         scriptFile.DocumentUri,
                         codeLens.Range.Start,
                         referenceLocations
-                    })
+                    },
+                    Serializer.Instance.JsonSerializer)
                 }
             };
         }

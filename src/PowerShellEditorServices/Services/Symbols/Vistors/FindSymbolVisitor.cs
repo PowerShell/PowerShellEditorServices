@@ -74,7 +74,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
                 EndLineNumber = functionDefinitionAst.Extent.EndLineNumber,
                 StartColumnNumber = startColumnNumber,
-                EndColumnNumber = startColumnNumber + functionDefinitionAst.Name.Length
+                EndColumnNumber = startColumnNumber + functionDefinitionAst.Name.Length,
+                File = functionDefinitionAst.Extent.File
             };
 
             if (this.IsPositionInExtent(nameExtent))

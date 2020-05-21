@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                     var location = new Location
                     {
-                        Uri = PathUtils.ToUri(foundOccurrence.FilePath),
+                        Uri = DocumentUri.FromFileSystemPath(foundOccurrence.FilePath),
                         Range = GetRangeFromScriptRegion(foundOccurrence.ScriptRegion)
                     };
 
