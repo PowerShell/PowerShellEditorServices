@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         public void Dispose()
         {
-            this.powerShellContext.Dispose();
+            this.powerShellContext.Close();
         }
 
         [Trait("Category", "Completions")]

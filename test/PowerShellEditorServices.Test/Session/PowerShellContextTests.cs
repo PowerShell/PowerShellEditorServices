@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public void Dispose()
         {
-            this.powerShellContext.Dispose();
+            this.powerShellContext.Close();
             this.powerShellContext = null;
         }
 
