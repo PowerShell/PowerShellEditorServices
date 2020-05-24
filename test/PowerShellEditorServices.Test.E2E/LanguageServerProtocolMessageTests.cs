@@ -14,8 +14,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Newtonsoft.Json.Linq;
-using OmniSharp.Extensions.LanguageServer.Client;
+using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Window;
+using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Xunit;
 using Xunit.Abstractions;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
@@ -29,14 +33,14 @@ namespace PowerShellEditorServices.Test.E2E
 
         private static bool s_registeredOnLogMessage;
 
-        private readonly LanguageClient LanguageClient;
+        private readonly ILanguageClient PsesLanguageClient;
         private readonly List<Diagnostic> Diagnostics;
         private readonly string PwshExe;
         private readonly ITestOutputHelper _output;
 
         public LanguageServerProtocolMessageTests(ITestOutputHelper output, LSPTestsFixture data)
         {
-            LanguageClient = data.LanguageClient;
+            PsesLanguageClient = data.PsesLanguageClient;
             Diagnostics = data.Diagnostics;
             Diagnostics.Clear();
 
@@ -46,9 +50,9 @@ namespace PowerShellEditorServices.Test.E2E
 
             if (!s_registeredOnLogMessage)
             {
-                LanguageClient.Window.OnLogMessage((message, messageType) =>
+                PsesLanguageClient.OnLogMessage(logMessageParams =>
                 {
-                    _output.WriteLine($"{messageType.ToString()}: {message}");
+                    _output.WriteLine($"{logMessageParams.Type.ToString()}: {logMessageParams.Message}");
                 });
 
                 s_registeredOnLogMessage = true;
@@ -66,7 +70,7 @@ namespace PowerShellEditorServices.Test.E2E
             string filePath = Path.Combine(s_binDir, Path.GetRandomFileName() + fileExt);
             File.WriteAllText(filePath, script);
 
-            LanguageClient.SendNotification("textDocument/didOpen", new DidOpenTextDocumentParams
+            PsesLanguageClient.SendNotification("textDocument/didOpen", new DidOpenTextDocumentParams
             {
                 TextDocument = new TextDocumentItem
                 {
@@ -103,7 +107,9 @@ namespace PowerShellEditorServices.Test.E2E
         public async Task CanSendPowerShellGetVersionRequest()
         {
             PowerShellVersion details
-                = await LanguageClient.SendRequest<PowerShellVersion>("powerShell/getVersion", new GetVersionParams());
+                = await PsesLanguageClient
+                    .SendRequest<GetVersionParams>("powerShell/getVersion", new GetVersionParams())
+                    .Returning<PowerShellVersion>(CancellationToken.None);
 
             if(PwshExe == "powershell")
             {
@@ -125,12 +131,14 @@ function CanSendWorkspaceSymbolRequest {
 }
 ");
 
-            Container<SymbolInformation> symbols = await LanguageClient.SendRequest<Container<SymbolInformation>>(
-                "workspace/symbol",
-                new WorkspaceSymbolParams
-                {
-                    Query = "CanSendWorkspaceSymbolRequest"
-                });
+            Container<SymbolInformation> symbols = await PsesLanguageClient
+                .SendRequest<WorkspaceSymbolParams>(
+                    "workspace/symbol",
+                    new WorkspaceSymbolParams
+                    {
+                        Query = "CanSendWorkspaceSymbolRequest"
+                    })
+                .Returning<Container<SymbolInformation>>(CancellationToken.None);
 
             SymbolInformation symbol = Assert.Single(symbols);
             Assert.Equal("CanSendWorkspaceSymbolRequest { }", symbol.Name);
@@ -170,7 +178,7 @@ function CanSendWorkspaceSymbolRequest {
             await WaitForDiagnostics();
             Diagnostics.Clear();
 
-            LanguageClient.SendNotification("textDocument/didChange", new DidChangeTextDocumentParams
+            PsesLanguageClient.SendNotification("textDocument/didChange", new DidChangeTextDocumentParams
             {
                 // Include several content changes to test against duplicate Diagnostics showing up.
                 ContentChanges = new Container<TextDocumentContentChangeEvent>(new []
@@ -226,7 +234,7 @@ function CanSendWorkspaceSymbolRequest {
 
             try
             {
-                LanguageClient.SendNotification("workspace/didChangeConfiguration",
+                PsesLanguageClient.SendNotification("workspace/didChangeConfiguration",
                 new DidChangeConfigurationParams
                 {
                     Settings = JToken.Parse(@"
@@ -244,7 +252,7 @@ function CanSendWorkspaceSymbolRequest {
             }
             finally
             {
-                LanguageClient.SendNotification("workspace/didChangeConfiguration",
+                PsesLanguageClient.SendNotification("workspace/didChangeConfiguration",
                 new DidChangeConfigurationParams
                 {
                     Settings = JToken.Parse(@"
@@ -272,15 +280,17 @@ $_
 }");
 
             Container<FoldingRange> foldingRanges =
-                await LanguageClient.SendRequest<Container<FoldingRange>>(
-                    "textDocument/foldingRange",
-                    new FoldingRangeRequestParam
-                    {
-                        TextDocument = new TextDocumentIdentifier
+                await PsesLanguageClient
+                    .SendRequest<FoldingRangeRequestParam>(
+                        "textDocument/foldingRange",
+                        new FoldingRangeRequestParam
                         {
-                            Uri = new Uri(scriptPath)
-                        }
-                    });
+                            TextDocument = new TextDocumentIdentifier
+                            {
+                                Uri = new Uri(scriptPath)
+                            }
+                        })
+                    .Returning<Container<FoldingRange>>(CancellationToken.None);
 
             Assert.Collection(foldingRanges.OrderBy(f => f.StartLine),
                 range1 =>
@@ -313,20 +323,22 @@ Get-Process
 
 ");
 
-            TextEditContainer textEdits = await LanguageClient.SendRequest<TextEditContainer>(
-                "textDocument/formatting",
-                new DocumentFormattingParams
-                {
-                    TextDocument = new TextDocumentIdentifier
+            TextEditContainer textEdits = await PsesLanguageClient
+                .SendRequest<DocumentFormattingParams>(
+                    "textDocument/formatting",
+                    new DocumentFormattingParams
                     {
-                        Uri = new Uri(scriptPath)
-                    },
-                    Options = new FormattingOptions
-                    {
-                        TabSize = 4,
-                        InsertSpaces = false
-                    }
-                });
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(scriptPath)
+                        },
+                        Options = new FormattingOptions
+                        {
+                            TabSize = 4,
+                            InsertSpaces = false
+                        }
+                    })
+                .Returning<TextEditContainer>(CancellationToken.None);
 
             TextEdit textEdit = Assert.Single(textEdits);
 
@@ -348,33 +360,35 @@ Get-Process
 
 ");
 
-            TextEditContainer textEdits = await LanguageClient.SendRequest<TextEditContainer>(
-                "textDocument/formatting",
-                new DocumentRangeFormattingParams
-                {
-                    Range = new Range
+            TextEditContainer textEdits = await PsesLanguageClient
+                .SendRequest<DocumentRangeFormattingParams>(
+                    "textDocument/formatting",
+                    new DocumentRangeFormattingParams
                     {
-                       Start = new Position
-                       {
-                           Line = 2,
-                           Character = 0
-                       },
-                       End = new Position
-                       {
-                           Line = 3,
-                           Character = 0
-                       }
-                    },
-                    TextDocument = new TextDocumentIdentifier
-                    {
-                        Uri = new Uri(scriptPath)
-                    },
-                    Options = new FormattingOptions
-                    {
-                        TabSize = 4,
-                        InsertSpaces = false
-                    }
-                });
+                        Range = new Range
+                        {
+                        Start = new Position
+                        {
+                            Line = 2,
+                            Character = 0
+                        },
+                        End = new Position
+                        {
+                            Line = 3,
+                            Character = 0
+                        }
+                        },
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(scriptPath)
+                        },
+                        Options = new FormattingOptions
+                        {
+                            TabSize = 4,
+                            InsertSpaces = false
+                        }
+                    })
+                .Returning<TextEditContainer>(CancellationToken.None);
 
             TextEdit textEdit = Assert.Single(textEdits);
 
@@ -394,15 +408,17 @@ CanSendDocumentSymbolRequest
 ");
 
             SymbolInformationOrDocumentSymbolContainer symbolInformationOrDocumentSymbols =
-                await LanguageClient.SendRequest<SymbolInformationOrDocumentSymbolContainer>(
-                    "textDocument/documentSymbol",
-                    new DocumentSymbolParams
-                    {
-                        TextDocument = new TextDocumentIdentifier
+                await PsesLanguageClient
+                    .SendRequest<DocumentSymbolParams>(
+                        "textDocument/documentSymbol",
+                        new DocumentSymbolParams
                         {
-                            Uri = new Uri(scriptPath)
-                        }
-                    });
+                            TextDocument = new TextDocumentIdentifier
+                            {
+                                Uri = new Uri(scriptPath)
+                            }
+                        })
+                    .Returning<SymbolInformationOrDocumentSymbolContainer>(CancellationToken.None);
 
             Assert.Collection(symbolInformationOrDocumentSymbols,
                 symInfoOrDocSym => {
@@ -426,24 +442,26 @@ function CanSendReferencesRequest {
 CanSendReferencesRequest
 ");
 
-            LocationContainer locations = await LanguageClient.SendRequest<LocationContainer>(
-                "textDocument/references",
-                new ReferenceParams
-                {
-                    TextDocument = new TextDocumentIdentifier
+            LocationContainer locations = await PsesLanguageClient
+                .SendRequest<ReferenceParams>(
+                    "textDocument/references",
+                    new ReferenceParams
                     {
-                        Uri = new Uri(scriptPath)
-                    },
-                    Position = new Position
-                    {
-                        Line = 5,
-                        Character = 0
-                    },
-                    Context = new ReferenceContext
-                    {
-                        IncludeDeclaration = false
-                    }
-                });
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(scriptPath)
+                        },
+                        Position = new Position
+                        {
+                            Line = 5,
+                            Character = 0
+                        },
+                        Context = new ReferenceContext
+                        {
+                            IncludeDeclaration = false
+                        }
+                    })
+                .Returning<LocationContainer>(CancellationToken.None);
 
             Assert.Collection(locations,
                 location1 =>
@@ -475,20 +493,22 @@ Write-Host 'Goodbye'
 ");
 
             DocumentHighlightContainer documentHighlights =
-                await LanguageClient.SendRequest<DocumentHighlightContainer>(
-                    "textDocument/documentHighlight",
-                    new DocumentHighlightParams
-                    {
-                        TextDocument = new TextDocumentIdentifier
+                await PsesLanguageClient
+                    .SendRequest<DocumentHighlightParams>(
+                        "textDocument/documentHighlight",
+                        new DocumentHighlightParams
                         {
-                            Uri = new Uri(scriptPath)
-                        },
-                        Position = new Position
-                        {
-                            Line = 3,
-                            Character = 1
-                        }
-                    });
+                            TextDocument = new TextDocumentIdentifier
+                            {
+                                Uri = new Uri(scriptPath)
+                            },
+                            Position = new Position
+                            {
+                                Line = 3,
+                                Character = 1
+                            }
+                        })
+                    .Returning<DocumentHighlightContainer>(CancellationToken.None);
 
             Assert.Collection(documentHighlights,
                 documentHighlight1 =>
@@ -536,9 +556,11 @@ Write-Host 'Goodbye'
             try
             {
                 pSHostProcessResponses =
-                    await LanguageClient.SendRequest<PSHostProcessResponse[]>(
-                        "powerShell/getPSHostProcesses",
-                        new GetPSHostProcesssesParams { });
+                    await PsesLanguageClient
+                        .SendRequest<GetPSHostProcesssesParams>(
+                            "powerShell/getPSHostProcesses",
+                            new GetPSHostProcesssesParams { })
+                        .Returning<PSHostProcessResponse[]>(CancellationToken.None);
             }
             finally
             {
@@ -574,12 +596,14 @@ Write-Host 'Goodbye'
             try
             {
                 runspaceResponses =
-                    await LanguageClient.SendRequest<RunspaceResponse[]>(
-                        "powerShell/getRunspace",
-                        new GetRunspaceParams
-                        {
-                            ProcessId = $"{process.Id}"
-                        });
+                    await PsesLanguageClient
+                        .SendRequest<GetRunspaceParams>(
+                            "powerShell/getRunspace",
+                            new GetRunspaceParams
+                            {
+                                ProcessId = $"{process.Id}"
+                            })
+                        .Returning<RunspaceResponse[]>(CancellationToken.None);
             }
             finally
             {
@@ -594,7 +618,10 @@ Write-Host 'Goodbye'
         public async Task CanSendPesterLegacyCodeLensRequest()
         {
             // Make sure LegacyCodeLens is enabled because we'll need it in this test.
-            LanguageClient.Workspace.DidChangeConfiguration(JObject.Parse(@"
+            PsesLanguageClient.Workspace.DidChangeConfiguration(
+                new DidChangeConfigurationParams
+                {
+                    Settings = JObject.Parse(@"
 {
     ""powershell"": {
         ""pester"": {
@@ -602,7 +629,8 @@ Write-Host 'Goodbye'
         }
     }
 }
-"));
+")
+                });
 
             string filePath = NewTestFile(@"
 Describe 'DescribeName' {
@@ -614,15 +642,17 @@ Describe 'DescribeName' {
 }
 ", isPester: true);
 
-            CodeLensContainer codeLenses = await LanguageClient.SendRequest<CodeLensContainer>(
-                "textDocument/codeLens",
-                new CodeLensParams
-                {
-                    TextDocument = new TextDocumentIdentifier
+            CodeLensContainer codeLenses = await PsesLanguageClient
+                .SendRequest<CodeLensParams>(
+                    "textDocument/codeLens",
+                    new CodeLensParams
                     {
-                        Uri = new Uri(filePath)
-                    }
-                });
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(filePath)
+                        }
+                    })
+                .Returning<CodeLensContainer>(CancellationToken.None);
 
             Assert.Collection(codeLenses,
                 codeLens1 =>
@@ -653,15 +683,19 @@ Describe 'DescribeName' {
         public async Task CanSendPesterCodeLensRequest()
         {
             // Make sure Pester legacy CodeLens is disabled because we'll need it in this test.
-            LanguageClient.Workspace.DidChangeConfiguration(JObject.Parse(@"
-            {
-                ""powershell"": {
-                    ""pester"": {
-                        ""useLegacyCodeLens"": false
-                    }
-                }
-            }
-            "));
+            PsesLanguageClient.Workspace.DidChangeConfiguration(
+                new DidChangeConfigurationParams
+                {
+                    Settings = JObject.Parse(@"
+{
+    ""powershell"": {
+        ""pester"": {
+            ""useLegacyCodeLens"": false
+        }
+    }
+}
+")
+                });
 
             string filePath = NewTestFile(@"
 Describe 'DescribeName' {
@@ -673,15 +707,17 @@ Describe 'DescribeName' {
 }
 ", isPester: true);
 
-            CodeLensContainer codeLenses = await LanguageClient.SendRequest<CodeLensContainer>(
-                "textDocument/codeLens",
-                new CodeLensParams
-                {
-                    TextDocument = new TextDocumentIdentifier
+            CodeLensContainer codeLenses = await PsesLanguageClient
+                .SendRequest<CodeLensParams>(
+                    "textDocument/codeLens",
+                    new CodeLensParams
                     {
-                        Uri = new Uri(filePath)
-                    }
-                });
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(filePath)
+                        }
+                    })
+                .Returning<CodeLensContainer>(CancellationToken.None);
 
             Assert.Collection(codeLenses,
                 codeLens =>
@@ -763,15 +799,17 @@ function CanSendReferencesCodeLensRequest {
 CanSendReferencesCodeLensRequest
 ");
 
-            CodeLensContainer codeLenses = await LanguageClient.SendRequest<CodeLensContainer>(
-                "textDocument/codeLens",
-                new CodeLensParams
-                {
-                    TextDocument = new TextDocumentIdentifier
+            CodeLensContainer codeLenses = await PsesLanguageClient
+                .SendRequest<CodeLensParams>(
+                    "textDocument/codeLens",
+                    new CodeLensParams
                     {
-                        Uri = new Uri(filePath)
-                    }
-                });
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(filePath)
+                        }
+                    })
+                .Returning<CodeLensContainer>(CancellationToken.None);
 
             CodeLens codeLens = Assert.Single(codeLenses);
 
@@ -781,9 +819,9 @@ CanSendReferencesCodeLensRequest
             Assert.Equal(3, range.End.Line);
             Assert.Equal(1, range.End.Character);
 
-            CodeLens codeLensResolveResult = await LanguageClient.SendRequest<CodeLens>(
-                "codeLens/resolve",
-                codeLens);
+            CodeLens codeLensResolveResult = await PsesLanguageClient
+                .SendRequest<CodeLens>("codeLens/resolve", codeLens)
+                .Returning<CodeLens>(CancellationToken.None);
 
             Assert.Equal("1 reference", codeLensResolveResult.Command.Title);
         }
@@ -799,30 +837,32 @@ CanSendReferencesCodeLensRequest
             await WaitForDiagnostics();
 
             CommandOrCodeActionContainer commandOrCodeActions =
-                await LanguageClient.SendRequest<CommandOrCodeActionContainer>(
-                    "textDocument/codeAction",
-                    new CodeActionParams
-                    {
-                        TextDocument = new TextDocumentIdentifier(
-                            new Uri(filePath, UriKind.Absolute)),
-                        Range = new Range
+                await PsesLanguageClient
+                    .SendRequest<CodeActionParams>(
+                        "textDocument/codeAction",
+                        new CodeActionParams
                         {
-                            Start = new Position
+                            TextDocument = new TextDocumentIdentifier(
+                                new Uri(filePath, UriKind.Absolute)),
+                            Range = new Range
                             {
-                                Line = 0,
-                                Character = 0
+                                Start = new Position
+                                {
+                                    Line = 0,
+                                    Character = 0
+                                },
+                                End = new Position
+                                {
+                                    Line = 0,
+                                    Character = 3
+                                }
                             },
-                            End = new Position
+                            Context = new CodeActionContext
                             {
-                                Line = 0,
-                                Character = 3
+                                Diagnostics = new Container<Diagnostic>(Diagnostics)
                             }
-                        },
-                        Context = new CodeActionContext
-                        {
-                            Diagnostics = new Container<Diagnostic>(Diagnostics)
-                        }
-                    });
+                        })
+                    .Returning<CommandOrCodeActionContainer>(CancellationToken.None);
 
             Assert.Collection(commandOrCodeActions,
                 command =>
@@ -848,15 +888,22 @@ CanSendReferencesCodeLensRequest
         {
             string filePath = NewTestFile("Write-H");
 
-            CompletionList completionItems = await LanguageClient.TextDocument.Completions(
-                filePath, line: 0, column: 7);
+            CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
+                new CompletionParams
+                {
+                    TextDocument = new TextDocumentIdentifier
+                    {
+                        Uri = DocumentUri.FromFileSystemPath(filePath)
+                    },
+                    Position = new Position(line: 0, character: 7)
+                });
 
             CompletionItem completionItem = Assert.Single(completionItems,
                 completionItem1 => completionItem1.Label == "Write-Host");
 
-            CompletionItem updatedCompletionItem = await LanguageClient.SendRequest<CompletionItem>(
-                "completionItem/resolve",
-                completionItem);
+            CompletionItem updatedCompletionItem = await PsesLanguageClient
+                .SendRequest<CompletionItem>("completionItem/resolve", completionItem)
+                .Returning<CompletionItem>(CancellationToken.None);
 
             Assert.Contains("Writes customized output to a host", updatedCompletionItem.Documentation.String);
         }
@@ -864,24 +911,33 @@ CanSendReferencesCodeLensRequest
         [Fact]
         public async Task CanSendCompletionResolveWithModulePrefixRequest()
         {
-            await LanguageClient.SendRequest<EvaluateResponseBody>(
-                "evaluate",
-                new EvaluateRequestArguments
-                {
-                    Expression = "Import-Module Microsoft.PowerShell.Archive -Prefix Slow"
-                });
+            await PsesLanguageClient
+                .SendRequest<EvaluateRequestArguments>(
+                    "evaluate",
+                    new EvaluateRequestArguments
+                    {
+                        Expression = "Import-Module Microsoft.PowerShell.Archive -Prefix Slow"
+                    })
+                .ReturningVoid(CancellationToken.None);
 
             string filePath = NewTestFile("Expand-SlowArch");
 
-            CompletionList completionItems = await LanguageClient.TextDocument.Completions(
-                filePath, line: 0, column: 15);
+            CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
+                new CompletionParams
+                {
+                    TextDocument = new TextDocumentIdentifier
+                    {
+                        Uri = DocumentUri.FromFileSystemPath(filePath)
+                    },
+                    Position = new Position(line: 0, character: 15)
+                });
 
             CompletionItem completionItem = Assert.Single(completionItems,
                 completionItem1 => completionItem1.Label == "Expand-SlowArchive");
 
-            CompletionItem updatedCompletionItem = await LanguageClient.SendRequest<CompletionItem>(
-                "completionItem/resolve",
-                completionItem);
+            CompletionItem updatedCompletionItem = await PsesLanguageClient
+                .SendRequest<CompletionItem>("completionItem/resolve", completionItem)
+                .Returning<CompletionItem>(CancellationToken.None);
 
             Assert.Contains("Extracts files from a specified archive", updatedCompletionItem.Documentation.String);
         }
@@ -891,7 +947,15 @@ CanSendReferencesCodeLensRequest
         {
             string filePath = NewTestFile("Write-Host");
 
-            Hover hover = await LanguageClient.TextDocument.Hover(filePath, line: 0, column: 1);
+            Hover hover = await PsesLanguageClient.TextDocument.RequestHover(
+                new HoverParams
+                {
+                    TextDocument = new TextDocumentIdentifier
+                    {
+                        Uri = DocumentUri.FromFileSystemPath(filePath)
+                    },
+                    Position = new Position(line: 0, character: 1)
+                });
 
             Assert.True(hover.Contents.HasMarkedStrings);
             Assert.Collection(hover.Contents.MarkedStrings,
@@ -911,20 +975,22 @@ CanSendReferencesCodeLensRequest
         {
             string filePath = NewTestFile("Get-Date ");
 
-            SignatureHelp signatureHelp = await LanguageClient.SendRequest<SignatureHelp>(
-                "textDocument/signatureHelp",
-                new SignatureHelpParams
-                {
-                    TextDocument = new TextDocumentIdentifier
+            SignatureHelp signatureHelp = await PsesLanguageClient
+                .SendRequest<SignatureHelpParams>(
+                    "textDocument/signatureHelp",
+                    new SignatureHelpParams
                     {
-                        Uri = new Uri(filePath)
-                    },
-                    Position = new Position
-                    {
-                        Line = 0,
-                        Character = 9
-                    }
-                });
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(filePath)
+                        },
+                        Position = new Position
+                        {
+                            Line = 0,
+                            Character = 9
+                        }
+                    })
+                .Returning<SignatureHelp>(CancellationToken.None);
 
             Assert.Contains("Get-Date", signatureHelp.Signatures.First().Label);
         }
@@ -941,20 +1007,22 @@ CanSendDefinitionRequest
 ");
 
             LocationOrLocationLinks locationOrLocationLinks =
-                await LanguageClient.SendRequest<LocationOrLocationLinks>(
-                    "textDocument/definition",
-                    new DefinitionParams
-                    {
-                        TextDocument = new TextDocumentIdentifier
+                await PsesLanguageClient
+                    .SendRequest<DefinitionParams>(
+                        "textDocument/definition",
+                        new DefinitionParams
                         {
-                            Uri = new Uri(scriptPath)
-                        },
-                        Position = new Position
-                        {
-                            Line = 5,
-                            Character = 2
-                        }
-                    });
+                            TextDocument = new TextDocumentIdentifier
+                            {
+                                Uri = new Uri(scriptPath)
+                            },
+                            Position = new Position
+                            {
+                                Line = 5,
+                                Character = 2
+                            }
+                        })
+                    .Returning<LocationOrLocationLinks>(CancellationToken.None);
 
             LocationOrLocationLink locationOrLocationLink =
                     Assert.Single(locationOrLocationLinks);
@@ -971,12 +1039,14 @@ CanSendDefinitionRequest
             Skip.If(TestsFixture.RunningInConstainedLanguageMode, "Plaster doesn't work in ConstrainedLanguage mode.");
 
             GetProjectTemplatesResponse getProjectTemplatesResponse =
-                await LanguageClient.SendRequest<GetProjectTemplatesResponse>(
-                    "powerShell/getProjectTemplates",
-                    new GetProjectTemplatesRequest
-                    {
-                        IncludeInstalledModules = true
-                    });
+                await PsesLanguageClient
+                    .SendRequest<GetProjectTemplatesRequest>(
+                        "powerShell/getProjectTemplates",
+                        new GetProjectTemplatesRequest
+                        {
+                            IncludeInstalledModules = true
+                        })
+                    .Returning<GetProjectTemplatesResponse>(CancellationToken.None);
 
             Assert.Collection(getProjectTemplatesResponse.Templates.OrderBy(t => t.Title),
                 template1 =>
@@ -1010,18 +1080,20 @@ function CanSendGetCommentHelpRequest {
 ");
 
             CommentHelpRequestResult commentHelpRequestResult =
-                await LanguageClient.SendRequest<CommentHelpRequestResult>(
-                    "powerShell/getCommentHelp",
-                    new CommentHelpRequestParams
-                    {
-                        DocumentUri = new Uri(scriptPath).ToString(),
-                        BlockComment = false,
-                        TriggerPosition = new Position
+                await PsesLanguageClient
+                    .SendRequest<CommentHelpRequestParams>(
+                        "powerShell/getCommentHelp",
+                        new CommentHelpRequestParams
                         {
-                            Line = 0,
-                            Character = 0
-                        }
-                    });
+                            DocumentUri = new Uri(scriptPath).ToString(),
+                            BlockComment = false,
+                            TriggerPosition = new Position
+                            {
+                                Line = 0,
+                                Character = 0
+                            }
+                        })
+                    .Returning<CommentHelpRequestResult>(CancellationToken.None);
 
             Assert.NotEmpty(commentHelpRequestResult.Content);
             Assert.Contains("myParam", commentHelpRequestResult.Content[7]);
@@ -1031,12 +1103,14 @@ function CanSendGetCommentHelpRequest {
         public async Task CanSendEvaluateRequest()
         {
             EvaluateResponseBody evaluateResponseBody =
-                await LanguageClient.SendRequest<EvaluateResponseBody>(
-                    "evaluate",
-                    new EvaluateRequestArguments
-                    {
-                        Expression = "Get-ChildItem"
-                    });
+                await PsesLanguageClient
+                    .SendRequest<EvaluateRequestArguments>(
+                        "evaluate",
+                        new EvaluateRequestArguments
+                        {
+                            Expression = "Get-ChildItem"
+                        })
+                    .Returning<EvaluateResponseBody>(CancellationToken.None);
 
             // These always gets returned so this test really just makes sure we get _any_ response.
             Assert.Equal("", evaluateResponseBody.Result);
@@ -1047,7 +1121,9 @@ function CanSendGetCommentHelpRequest {
         public async Task CanSendGetCommandRequest()
         {
             List<object> pSCommandMessages =
-                await LanguageClient.SendRequest<List<object>>("powerShell/getCommand", new GetCommandParams());
+                await PsesLanguageClient
+                    .SendRequest<GetCommandParams>("powerShell/getCommand", new GetCommandParams())
+                    .Returning<List<object>>(CancellationToken.None);
 
             Assert.NotEmpty(pSCommandMessages);
             // There should be at least 20 commands or so.
@@ -1062,13 +1138,14 @@ function CanSendGetCommentHelpRequest {
                 "This feature currently doesn't support ConstrainedLanguage Mode.");
 
             ExpandAliasResult expandAliasResult =
-                await LanguageClient.SendRequest<ExpandAliasResult>(
-                    "powerShell/expandAlias",
-                    new ExpandAliasParams
-                    {
-                        Text = "gci"
-                    }
-                );
+                await PsesLanguageClient
+                    .SendRequest<ExpandAliasParams>(
+                        "powerShell/expandAlias",
+                        new ExpandAliasParams
+                        {
+                            Text = "gci"
+                        })
+                    .Returning<ExpandAliasResult>(CancellationToken.None);
 
             Assert.Equal("Get-ChildItem", expandAliasResult.Text);
         }

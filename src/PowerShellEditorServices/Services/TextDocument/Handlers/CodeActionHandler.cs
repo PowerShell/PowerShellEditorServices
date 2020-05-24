@@ -14,12 +14,12 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class CodeActionHandler : ICodeActionHandler
+    internal class PsesCodeActionHandler : ICodeActionHandler
     {
         private static readonly CodeActionKind[] s_supportedCodeActions = new[]
         {
@@ -36,9 +36,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private CodeActionCapability _capability;
 
-        public CodeActionHandler(ILoggerFactory factory, AnalysisService analysisService, WorkspaceService workspaceService)
+        public PsesCodeActionHandler(ILoggerFactory factory, AnalysisService analysisService, WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<TextDocumentHandler>();
+            _logger = factory.CreateLogger<PsesCodeActionHandler>();
             _analysisService = analysisService;
             _workspaceService = workspaceService;
             _registrationOptions = new CodeActionRegistrationOptions

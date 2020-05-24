@@ -15,19 +15,19 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class WorkspaceSymbolsHandler : IWorkspaceSymbolsHandler
+    internal class PsesWorkspaceSymbolsHandler : IWorkspaceSymbolsHandler
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
         private WorkspaceSymbolCapability _capability;
 
-        public WorkspaceSymbolsHandler(ILoggerFactory loggerFactory, SymbolsService symbols, WorkspaceService workspace) {
-            _logger = loggerFactory.CreateLogger<WorkspaceSymbolsHandler>();
+        public PsesWorkspaceSymbolsHandler(ILoggerFactory loggerFactory, SymbolsService symbols, WorkspaceService workspace) {
+            _logger = loggerFactory.CreateLogger<PsesWorkspaceSymbolsHandler>();
             _symbolsService = symbols;
             _workspaceService = workspace;
         }

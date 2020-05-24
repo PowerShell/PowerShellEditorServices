@@ -16,12 +16,12 @@ using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class CompletionHandler : ICompletionHandler, ICompletionResolveHandler
+    internal class PsesCompletionHandler : ICompletionHandler, ICompletionResolveHandler
     {
         const int DefaultWaitTimeoutMilliseconds = 5000;
         private readonly SemaphoreSlim _completionLock = AsyncUtils.CreateSimpleLockingSemaphore();
@@ -41,12 +41,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private CompletionCapability _capability;
 
-        public CompletionHandler(
+        public PsesCompletionHandler(
             ILoggerFactory factory,
             PowerShellContextService powerShellContextService,
             WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<CompletionHandler>();
+            _logger = factory.CreateLogger<PsesCompletionHandler>();
             _powerShellContextService = powerShellContextService;
             _workspaceService = workspaceService;
         }

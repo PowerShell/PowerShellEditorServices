@@ -14,14 +14,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class TemplateHandlers : IGetProjectTemplatesHandler, INewProjectFromTemplateHandler
     {
-        private readonly ILogger<GetVersionHandler> _logger;
+        private readonly ILogger<TemplateHandlers> _logger;
         private readonly TemplateService _templateService;
 
         public TemplateHandlers(
             ILoggerFactory factory,
             TemplateService templateService)
         {
-            _logger = factory.CreateLogger<GetVersionHandler>();
+            _logger = factory.CreateLogger<TemplateHandlers>();
             _templateService = templateService;
         }
 

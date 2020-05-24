@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             PowerShellContextService powerShellContextService,
             WorkspaceService workspaceService)
         {
-            _logger = loggerFactory.CreateLogger<SetFunctionBreakpointsHandler>();
+            _logger = loggerFactory.CreateLogger<ConfigurationDoneHandler>();
             _jsonRpcServer = jsonRpcServer;
             _debugService = debugService;
             _debugStateService = debugStateService;
@@ -106,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // By doing this, we light up the ability to debug Untitled files with breakpoints.
                     // This is only possible via the direct usage of the breakpoint APIs in PowerShell because
                     // Set-PSBreakpoint validates that paths are actually on the filesystem.
-                    ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri, out Token[] tokens, out ParseError[] errors);
+                    ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri.ToString(), out Token[] tokens, out ParseError[] errors);
 
                     // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
                     var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());

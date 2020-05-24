@@ -13,12 +13,12 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class DefinitionHandler : IDefinitionHandler
+    internal class PsesDefinitionHandler : IDefinitionHandler
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
@@ -26,12 +26,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private DefinitionCapability _capability;
 
-        public DefinitionHandler(
+        public PsesDefinitionHandler(
             ILoggerFactory factory,
             SymbolsService symbolsService,
             WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<DefinitionHandler>();
+            _logger = factory.CreateLogger<PsesDefinitionHandler>();
             _symbolsService = symbolsService;
             _workspaceService = workspaceService;
         }

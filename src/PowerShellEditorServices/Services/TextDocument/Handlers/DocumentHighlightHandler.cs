@@ -9,15 +9,15 @@ using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class DocumentHighlightHandler : IDocumentHighlightHandler
+    internal class PsesDocumentHighlightHandler : IDocumentHighlightHandler
     {
         private static readonly DocumentHighlightContainer s_emptyHighlightContainer = new DocumentHighlightContainer();
 
@@ -29,12 +29,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private DocumentHighlightCapability _capability;
 
-        public DocumentHighlightHandler(
+        public PsesDocumentHighlightHandler(
             ILoggerFactory loggerFactory,
             WorkspaceService workspaceService,
             SymbolsService symbolService)
         {
-            _logger = loggerFactory.CreateLogger<DocumentHighlightHandler>();
+            _logger = loggerFactory.CreateLogger<PsesDocumentHighlightHandler>();
             _workspaceService = workspaceService;
             _symbolsService = symbolService;
             _logger.LogInformation("highlight handler loaded");

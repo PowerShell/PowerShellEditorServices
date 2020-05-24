@@ -17,12 +17,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
     internal class PSHostProcessAndRunspaceHandlers : IGetPSHostProcessesHandler, IGetRunspaceHandler
     {
-        private readonly ILogger<GetVersionHandler> _logger;
+        private readonly ILogger<PSHostProcessAndRunspaceHandlers> _logger;
         private readonly PowerShellContextService _powerShellContextService;
 
         public PSHostProcessAndRunspaceHandlers(ILoggerFactory factory, PowerShellContextService powerShellContextService)
         {
-            _logger = factory.CreateLogger<GetVersionHandler>();
+            _logger = factory.CreateLogger<PSHostProcessAndRunspaceHandlers>();
             _powerShellContextService = powerShellContextService;
         }
 

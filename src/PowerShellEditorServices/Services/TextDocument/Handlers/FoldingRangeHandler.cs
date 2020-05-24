@@ -12,11 +12,11 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using OmniSharp.Extensions.LanguageServer.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class FoldingRangeHandler : IFoldingRangeHandler
+    internal class PsesFoldingRangeHandler : IFoldingRangeHandler
     {
         private readonly ILogger _logger;
         private readonly ConfigurationService _configurationService;
@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private FoldingRangeCapability _capability;
 
-        public FoldingRangeHandler(ILoggerFactory factory, ConfigurationService configurationService, WorkspaceService workspaceService)
+        public PsesFoldingRangeHandler(ILoggerFactory factory, ConfigurationService configurationService, WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<FoldingRangeHandler>();
             _configurationService = configurationService;

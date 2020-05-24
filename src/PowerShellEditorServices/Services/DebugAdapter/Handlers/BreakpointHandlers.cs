@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugService debugService,
             DebugStateService debugStateService)
         {
-            _logger = loggerFactory.CreateLogger<SetFunctionBreakpointsHandler>();
+            _logger = loggerFactory.CreateLogger<SetExceptionBreakpointsHandler>();
             _debugService = debugService;
             _debugStateService = debugStateService;
         }
@@ -133,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugStateService debugStateService,
             WorkspaceService workspaceService)
         {
-            _logger = loggerFactory.CreateLogger<SetFunctionBreakpointsHandler>();
+            _logger = loggerFactory.CreateLogger<SetBreakpointsHandler>();
             _debugService = debugService;
             _debugStateService = debugStateService;
             _workspaceService = workspaceService;

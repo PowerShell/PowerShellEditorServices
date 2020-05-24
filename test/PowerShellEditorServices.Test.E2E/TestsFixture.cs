@@ -5,7 +5,6 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using OmniSharp.Extensions.LanguageServer.Client.Processes;
 using Xunit;
 
 namespace PowerShellEditorServices.Test.E2E
@@ -86,7 +85,7 @@ namespace PowerShellEditorServices.Test.E2E
             _psesProcess = new StdioServerProcess(factory, processStartInfo);
             await _psesProcess.Start();
 
-            await CustomInitializeAsync(factory, _psesProcess);
+            await CustomInitializeAsync(factory, _psesProcess.OutputStream, _psesProcess.InputStream);
         }
 
         public virtual async Task DisposeAsync()
@@ -96,7 +95,8 @@ namespace PowerShellEditorServices.Test.E2E
 
         public abstract Task CustomInitializeAsync(
             ILoggerFactory factory,
-            StdioServerProcess process);
+            Stream inputStream,
+            Stream outputStream);
 
         private static string SingleQuoteEscape(string str)
         {

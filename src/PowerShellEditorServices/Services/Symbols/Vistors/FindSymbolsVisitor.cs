@@ -129,7 +129,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         StartLineNumber = kvp.Item1.Extent.StartLineNumber,
                         EndLineNumber = kvp.Item2.Extent.EndLineNumber,
                         StartColumnNumber = kvp.Item1.Extent.StartColumnNumber,
-                        EndColumnNumber = kvp.Item2.Extent.EndColumnNumber
+                        EndColumnNumber = kvp.Item2.Extent.EndColumnNumber,
+                        File = hashtableAst.Extent.File
                     };
 
                     SymbolType symbolType = SymbolType.HashtableKey;

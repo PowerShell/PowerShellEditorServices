@@ -17,12 +17,12 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class CodeLensHandlers : ICodeLensHandler, ICodeLensResolveHandler
+    internal class PsesCodeLensHandlers : ICodeLensHandler, ICodeLensResolveHandler
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
@@ -30,9 +30,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private CodeLensCapability _capability;
 
-        public CodeLensHandlers(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService, ConfigurationService configurationService)
+        public PsesCodeLensHandlers(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService, ConfigurationService configurationService)
         {
-            _logger = factory.CreateLogger<FoldingRangeHandler>();
+            _logger = factory.CreateLogger<PsesCodeLensHandlers>();
             _workspaceService = workspaceService;
             _symbolsService = symbolsService;
         }

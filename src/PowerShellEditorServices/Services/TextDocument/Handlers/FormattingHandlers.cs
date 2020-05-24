@@ -10,13 +10,14 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     // TODO: Add IDocumentOnTypeFormatHandler to support on-type formatting.
-    internal class DocumentFormattingHandlers : IDocumentFormattingHandler, IDocumentRangeFormattingHandler
+    internal class PsesDocumentFormattingHandlers : IDocumentFormattingHandler, IDocumentRangeFormattingHandler
     {
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
@@ -26,13 +27,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private DocumentFormattingCapability _documentFormattingCapability;
         private DocumentRangeFormattingCapability _documentRangeFormattingCapability;
 
-        public DocumentFormattingHandlers(
+        public PsesDocumentFormattingHandlers(
             ILoggerFactory factory,
             AnalysisService analysisService,
             ConfigurationService configurationService,
             WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<DocumentFormattingHandlers>();
+            _logger = factory.CreateLogger<PsesDocumentFormattingHandlers>();
             _analysisService = analysisService;
             _configurationService = configurationService;
             _workspaceService = workspaceService;

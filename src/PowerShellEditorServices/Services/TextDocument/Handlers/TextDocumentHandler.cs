@@ -13,13 +13,13 @@ using MediatR;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    class TextDocumentHandler : ITextDocumentSyncHandler
+    class PsesTextDocumentHandler : ITextDocumentSyncHandler
     {
         private static readonly Uri s_fakeUri = new Uri("Untitled:fake");
 
@@ -31,13 +31,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public TextDocumentSyncKind Change => TextDocumentSyncKind.Incremental;
 
-        public TextDocumentHandler(
+        public PsesTextDocumentHandler(
             ILoggerFactory factory,
             AnalysisService analysisService,
             WorkspaceService workspaceService,
             RemoteFileManagerService remoteFileManagerService)
         {
-            _logger = factory.CreateLogger<TextDocumentHandler>();
+            _logger = factory.CreateLogger<PsesTextDocumentHandler>();
             _analysisService = analysisService;
             _workspaceService = workspaceService;
             _remoteFileManagerService = remoteFileManagerService;
@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // Kick off script diagnostics without blocking the response
             // TODO: Get all recently edited files in the workspace
-            _analysisService.RunScriptDiagnostics(new ScriptFile[] { changedFile }, token);
+            _analysisService.RunScriptDiagnostics(new ScriptFile[] { changedFile });
             return Unit.Task;
         }
 
@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 // Kick off script diagnostics if we got a PowerShell file without blocking the response
                 // TODO: Get all recently edited files in the workspace
-                _analysisService.RunScriptDiagnostics(new ScriptFile[] { openedFile }, token);
+                _analysisService.RunScriptDiagnostics(new ScriptFile[] { openedFile });
             }
 
             _logger.LogTrace("Finished opening document.");

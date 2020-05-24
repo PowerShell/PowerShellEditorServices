@@ -13,7 +13,7 @@ using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services;
 using Serilog;
 using Serilog.Events;
-using OmniSharp.Extensions.LanguageServer.Server;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 #if DEBUG
 using Serilog.Debugging;
@@ -126,7 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 .AddPsesLanguageServices(hostStartupInfo)
                 // For a Temp session, there is no LanguageServer so just set it to null
                 .AddSingleton(
-                    typeof(OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer),
+                    typeof(ILanguageServer),
                     _ => null)
                 .BuildServiceProvider();
 

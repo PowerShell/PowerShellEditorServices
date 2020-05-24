@@ -10,10 +10,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
 
                 var takeActionText = "Yes";
-                MessageActionItem messageAction = await _languageServer.Window.ShowMessage(new ShowMessageRequestParams
+                MessageActionItem messageAction = await _languageServer.Window.ShowMessageRequest(new ShowMessageRequestParams
                 {
                     Message = "You have an older version of PackageManagement known to cause issues with the PowerShell extension. Would you like to update PackageManagement (You will need to restart the PowerShell extension after)?",
                     Type = MessageType.Warning,
