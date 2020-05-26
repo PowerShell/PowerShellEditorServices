@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<TextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()
                     .WithHandler<ConfigurationHandler>()
-                    .WithHandler<FoldingRangeHandler>()
+                    .WithHandler<Handlers.FoldingRangeHandler>()
                     .WithHandler<DocumentFormattingHandlers>()
                     .WithHandler<ReferencesHandler>()
                     .WithHandler<DocumentSymbolHandler>()
