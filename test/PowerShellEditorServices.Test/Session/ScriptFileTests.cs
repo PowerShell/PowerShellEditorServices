@@ -6,9 +6,9 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Management.Automation;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using Xunit;
 
@@ -578,7 +578,7 @@ First line
             var path = Path.Combine(Path.GetTempPath(), "TestFile.ps1");
             var scriptFile = ScriptFileChangeTests.CreateScriptFile("");
 
-            Assert.Equal(path, scriptFile.FilePath, ignoreCase: !Platform.IsLinux);
+            Assert.Equal(path, scriptFile.FilePath, ignoreCase: !VersionUtils.IsLinux);
             Assert.True(scriptFile.IsAnalysisEnabled);
             Assert.False(scriptFile.IsInMemory);
             Assert.Empty(scriptFile.ReferencedFiles);
