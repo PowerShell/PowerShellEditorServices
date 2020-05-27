@@ -10,8 +10,7 @@ namespace PowerShellEditorServices.Test.E2E
     /// <summary>
     ///     A <see cref="StdioServerProcess"/> is a <see cref="ServerProcess"/> that launches its server as an external process and communicates with it over STDIN / STDOUT.
     /// </summary>
-    public class StdioServerProcess
-        : ServerProcess
+    public class StdioServerProcess : ServerProcess
     {
         /// <summary>
         ///     A <see cref="ProcessStartInfo"/> that describes how to start the server.
@@ -57,7 +56,9 @@ namespace PowerShellEditorServices.Test.E2E
                 if (serverProcess != null)
                 {
                     if (!serverProcess.HasExited)
+                    {
                         serverProcess.Kill();
+                    }
 
                     serverProcess.Dispose();
                 }

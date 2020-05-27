@@ -52,12 +52,13 @@ namespace PowerShellEditorServices.Test.E2E
                     });
 
                 // Enable all capabilities this this is for testing.
-                var capabilities = typeof(ICapability).Assembly.GetExportedTypes()
+                // This will be a built in feature of the Omnisharp client at some point.
+                var capabilityTypes = typeof(ICapability).Assembly.GetExportedTypes()
                     .Where(z => typeof(ICapability).IsAssignableFrom(z))
                     .Where(z => z.IsClass && !z.IsAbstract);
-                foreach (var item in capabilities)
+                foreach (Type capabilityType in capabilityTypes)
                 {
-                    options.WithCapability(Activator.CreateInstance(item, Array.Empty<object>()) as ICapability);
+                    options.WithCapability(Activator.CreateInstance(capabilityType, Array.Empty<object>()) as ICapability);
                 }
             });
 

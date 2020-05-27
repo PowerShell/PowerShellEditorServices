@@ -9,8 +9,7 @@ namespace PowerShellEditorServices.Test.E2E
     /// <summary>
     ///     A <see cref="ServerProcess"/> is responsible for launching or attaching to a language server, providing access to its input and output streams, and tracking its lifetime.
     /// </summary>
-    public abstract class ServerProcess
-        : IDisposable
+    public abstract class ServerProcess : IDisposable
     {
         private readonly ISubject<System.Reactive.Unit> _exitedSubject;
         /// <summary>
@@ -22,12 +21,12 @@ namespace PowerShellEditorServices.Test.E2E
         protected ServerProcess(ILoggerFactory loggerFactory)
         {
             if (loggerFactory == null)
+            {
                 throw new ArgumentNullException(nameof(loggerFactory));
+            }
 
             LoggerFactory = loggerFactory;
-            Log = LoggerFactory.CreateLogger(
-                categoryName: GetType().FullName
-            );
+            Log = LoggerFactory.CreateLogger(categoryName: GetType().FullName);
 
             ServerStartCompletion = new TaskCompletionSource<object>();
 

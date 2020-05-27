@@ -145,10 +145,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             EnsureEngineSettingsCurrent();
 
-            // Create a cancellation token source that will cancel if we do or if the caller does
-            var cancellationSource = new CancellationTokenSource();
-
             // If there's an existing task, we want to cancel it here;
+            var cancellationSource = new CancellationTokenSource();
             CancellationTokenSource oldTaskCancellation = Interlocked.Exchange(ref _diagnosticsCancellationTokenSource, cancellationSource);
             if (oldTaskCancellation != null)
             {
