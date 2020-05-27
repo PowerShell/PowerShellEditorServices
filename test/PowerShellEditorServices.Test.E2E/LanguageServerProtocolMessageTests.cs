@@ -1120,7 +1120,6 @@ function CanSendGetCommentHelpRequest {
         [SkippableFact]
         public async Task CanSendExpandAliasRequest()
         {
-            throw new Exception("asdf");
             Skip.If(
                 TestsFixture.RunningInConstainedLanguageMode,
                 "This feature currently doesn't support ConstrainedLanguage Mode.");

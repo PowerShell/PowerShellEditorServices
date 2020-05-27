@@ -578,7 +578,6 @@ First line
             var scriptFile = ScriptFileChangeTests.CreateScriptFile("");
 
             Assert.Equal(path, scriptFile.FilePath);
-            Assert.Equal(path, scriptFile.ClientFilePath);
             Assert.True(scriptFile.IsAnalysisEnabled);
             Assert.False(scriptFile.IsInMemory);
             Assert.Empty(scriptFile.ReferencedFiles);
@@ -604,7 +603,6 @@ First line
                 var scriptFile = new ScriptFile(DocumentUri.From(path), stringReader, PowerShellVersion);
 
                 Assert.Equal(path, scriptFile.FilePath);
-                Assert.Equal(path, scriptFile.ClientFilePath);
                 Assert.Equal(path, scriptFile.DocumentUri);
                 Assert.True(scriptFile.IsAnalysisEnabled);
                 Assert.True(scriptFile.IsInMemory);

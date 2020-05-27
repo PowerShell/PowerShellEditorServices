@@ -230,7 +230,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public void InsertText(string textToInsert, IFileRange insertRange)
         {
             this.editorOperations
-                .InsertTextAsync(this.scriptFile.ClientFilePath, textToInsert, insertRange.ToBufferRange())
+                .InsertTextAsync(this.scriptFile.DocumentUri.ToString(), textToInsert, insertRange.ToBufferRange())
                 .Wait();
         }
 
