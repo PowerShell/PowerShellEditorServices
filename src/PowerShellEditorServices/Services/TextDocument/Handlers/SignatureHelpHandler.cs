@@ -12,12 +12,12 @@ using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class SignatureHelpHandler : ISignatureHelpHandler
+    internal class PsesSignatureHelpHandler : ISignatureHelpHandler
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
@@ -26,13 +26,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private SignatureHelpCapability _capability;
 
-        public SignatureHelpHandler(
+        public PsesSignatureHelpHandler(
             ILoggerFactory factory,
             SymbolsService symbolsService,
             WorkspaceService workspaceService,
             PowerShellContextService powerShellContextService)
         {
-            _logger = factory.CreateLogger<HoverHandler>();
+            _logger = factory.CreateLogger<PsesHoverHandler>();
             _symbolsService = symbolsService;
             _workspaceService = workspaceService;
             _powerShellContextService = powerShellContextService;

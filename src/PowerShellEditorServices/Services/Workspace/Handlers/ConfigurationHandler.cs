@@ -13,11 +13,11 @@ using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using MediatR;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class ConfigurationHandler : IDidChangeConfigurationHandler
+    internal class PsesConfigurationHandler : IDidChangeConfigurationHandler
     {
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
@@ -27,14 +27,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private bool _profilesLoaded;
         private bool _consoleReplStarted;
 
-        public ConfigurationHandler(
+        public PsesConfigurationHandler(
             ILoggerFactory factory,
             WorkspaceService workspaceService,
             AnalysisService analysisService,
             ConfigurationService configurationService,
             PowerShellContextService powerShellContextService)
         {
-            _logger = factory.CreateLogger<ConfigurationHandler>();
+            _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;
             _configurationService = configurationService;
             _powerShellContextService = powerShellContextService;

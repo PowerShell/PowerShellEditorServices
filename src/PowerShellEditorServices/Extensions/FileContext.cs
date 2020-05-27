@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the URI of the file.
         /// </summary>
-        public Uri Uri { get; } 
+        public Uri Uri { get; }
 
         /// <summary>
         /// Gets the parsed token list for the file.
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             this.editorContext = editorContext;
             this.editorOperations = editorOperations;
             this.Language = language;
-            this.Uri = new Uri(scriptFile.DocumentUri);
+            this.Uri = scriptFile.DocumentUri.ToUri();
         }
 
         #endregion
@@ -230,7 +230,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public void InsertText(string textToInsert, IFileRange insertRange)
         {
             this.editorOperations
-                .InsertTextAsync(this.scriptFile.ClientFilePath, textToInsert, insertRange.ToBufferRange())
+                .InsertTextAsync(this.scriptFile.DocumentUri.ToString(), textToInsert, insertRange.ToBufferRange())
                 .Wait();
         }
 

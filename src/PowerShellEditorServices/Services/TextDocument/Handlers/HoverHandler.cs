@@ -12,12 +12,12 @@ using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class HoverHandler : IHoverHandler
+    internal class PsesHoverHandler : IHoverHandler
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
@@ -25,12 +25,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private HoverCapability _capability;
 
-        public HoverHandler(
+        public PsesHoverHandler(
             ILoggerFactory factory,
             SymbolsService symbolsService,
             WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<HoverHandler>();
+            _logger = factory.CreateLogger<PsesHoverHandler>();
             _symbolsService = symbolsService;
             _workspaceService = workspaceService;
         }

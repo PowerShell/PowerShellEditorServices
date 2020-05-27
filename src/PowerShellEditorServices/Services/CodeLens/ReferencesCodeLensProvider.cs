@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         {
                             Uri = scriptFile.DocumentUri,
                             ProviderId = nameof(ReferencesCodeLensProvider)
-                        }),
+                        }, Serializer.Instance.JsonSerializer),
                         Range = sym.ScriptRegion.ToRange()
                     });
                 }

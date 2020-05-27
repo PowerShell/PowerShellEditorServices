@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
@@ -19,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private FoldingReference[] GetRegions(string text) {
             ScriptFile scriptFile = new ScriptFile(
                 // Use any absolute path. Even if it doesn't exist.
-                new Uri(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
+                DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
                 Version.Parse("5.0"));
 

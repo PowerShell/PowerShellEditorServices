@@ -93,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             ScriptFile scriptFile)
         {
             _scriptFile = scriptFile;
-            Uri = new Uri(scriptFile.DocumentUri);
+            Uri = scriptFile.DocumentUri.ToUri();
             Lines = _scriptFile.FileLines.AsReadOnly();
         }
 

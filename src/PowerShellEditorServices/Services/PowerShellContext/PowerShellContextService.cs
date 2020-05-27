@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// Handles nested PowerShell prompts and also manages execution of
     /// commands whether inside or outside of the debugger.
     /// </summary>
-    internal class PowerShellContextService : IDisposable, IHostSupportsInteractiveSession
+    internal class PowerShellContextService : IHostSupportsInteractiveSession
     {
         private static readonly string s_commandsModulePath = Path.GetFullPath(
             Path.Combine(
@@ -1402,11 +1402,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         /// <summary>
-        /// Disposes the runspace and any other resources being used
+        /// Closes the runspace and any other resources being used
         /// by this PowerShellContext.
         /// </summary>
-        public void Dispose()
+        public void Close()
         {
+            logger.LogDebug("Closing PowerShellContextService...");
             this.PromptNest.Dispose();
             this.SessionState = PowerShellContextState.Disposed;
 

@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ILoggerFactory loggerFactory,
             DebugService debugService)
         {
-            _logger = loggerFactory.CreateLogger<ScopesHandler>();
+            _logger = loggerFactory.CreateLogger<VariablesHandler>();
             _debugService = debugService;
         }
 

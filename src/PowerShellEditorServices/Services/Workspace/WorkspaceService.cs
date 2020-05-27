@@ -154,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     scriptFile =
                         new ScriptFile(
-                            documentUri.ToUri(),
+                            documentUri,
                             streamReader,
                             this.powerShellVersion);
 
@@ -274,7 +274,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 scriptFile =
                     new ScriptFile(
-                        documentUri.ToUri(),
+                        documentUri,
                         initialBuffer,
                         this.powerShellVersion);
 

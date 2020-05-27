@@ -11,6 +11,7 @@ using System.Management.Automation;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 
 namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 {
@@ -49,23 +50,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         public string FilePath { get; private set; }
 
         /// <summary>
-        /// Gets the path which the editor client uses to identify this file.
-        /// </summary>
-        public string ClientFilePath { get; private set; }
-
-        /// <summary>
         /// Gets the file path in LSP DocumentUri form.  The ClientPath property must not be null.
         /// </summary>
-        public string DocumentUri
-        {
-            get
-            {
-                // TODO: Have this be a DocumentUri type and stop having it be computed every time.
-                return this.ClientFilePath == null
-                    ? string.Empty
-                    : OmniSharp.Extensions.LanguageServer.Protocol.DocumentUri.FromFileSystemPath(ClientFilePath)?.ToString();
-            }
-        }
+        public DocumentUri DocumentUri { get; set; }
 
         /// <summary>
         /// Gets or sets a boolean that determines whether
@@ -151,11 +138,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Creates a new ScriptFile instance by reading file contents from
         /// the given TextReader.
         /// </summary>
-        /// <param name="fileUri">The System.Uri of the file.</param>
+        /// <param name="docUri">The System.Uri of the file.</param>
         /// <param name="textReader">The TextReader to use for reading the file's contents.</param>
         /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
         internal ScriptFile(
-            Uri fileUri,
+            DocumentUri docUri,
             TextReader textReader,
             Version powerShellVersion)
         {
@@ -163,16 +150,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // so that other operations know it's untitled/in-memory
             // and don't think that it's a relative path
             // on the file system.
-            this.FilePath = fileUri.IsFile
-                ? fileUri.LocalPath
-                : fileUri.OriginalString;
-            this.ClientFilePath = fileUri.OriginalString;
-            this.IsAnalysisEnabled = true;
-            this.IsInMemory = !fileUri.IsFile;
+            IsInMemory = !docUri.ToUri().IsFile;
+            FilePath = IsInMemory
+                ? docUri.ToString()
+                : docUri.GetFileSystemPath();
+            DocumentUri = docUri;
+            IsAnalysisEnabled = true;
             this.powerShellVersion = powerShellVersion;
 
             // SetFileContents() calls ParseFileContents() which initializes the rest of the properties.
-            this.SetFileContents(textReader.ReadToEnd());
+            SetFileContents(textReader.ReadToEnd());
         }
 
         /// <summary>
@@ -182,7 +169,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <param name="initialBuffer">The initial contents of the script file.</param>
         /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
         internal ScriptFile(
-            Uri fileUri,
+            DocumentUri fileUri,
             string initialBuffer,
             Version powerShellVersion)
             : this(
@@ -633,7 +620,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // Discussed in https://github.com/PowerShell/PowerShellEditorServices/pull/815.
             // Rather than working hard to enable things for untitled files like a phantom directory,
             // users should save the file.
-            if (IsUntitledPath(this.FilePath))
+            if (IsInMemory)
             {
                 // Need to initialize the ReferencedFiles property to an empty array.
                 this.ReferencedFiles = Array.Empty<string>();

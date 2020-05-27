@@ -9,7 +9,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +17,7 @@ using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
@@ -136,8 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="cancellationToken">A cancellation token to cancel this call with.</param>
         /// <returns>A task that finishes when script diagnostics have been published.</returns>
         public void RunScriptDiagnostics(
-            ScriptFile[] filesToAnalyze,
-            CancellationToken cancellationToken)
+            ScriptFile[] filesToAnalyze)
         {
             if (_configurationService.CurrentSettings.ScriptAnalysis.Enable == false)
             {
@@ -146,10 +145,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             EnsureEngineSettingsCurrent();
 
-            // Create a cancellation token source that will cancel if we do or if the caller does
-            var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
             // If there's an existing task, we want to cancel it here;
+            var cancellationSource = new CancellationTokenSource();
             CancellationTokenSource oldTaskCancellation = Interlocked.Exchange(ref _diagnosticsCancellationTokenSource, cancellationSource);
             if (oldTaskCancellation != null)
             {
@@ -420,9 +417,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 diagnostics[i] = diagnostic;
             }
 
-            _languageServer.Document.PublishDiagnostics(new PublishDiagnosticsParams
+            _languageServer.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams
             {
-                Uri = DocumentUri.From(scriptFile.DocumentUri),
+                Uri = scriptFile.DocumentUri,
                 Diagnostics = new Container<Diagnostic>(diagnostics)
             });
         }

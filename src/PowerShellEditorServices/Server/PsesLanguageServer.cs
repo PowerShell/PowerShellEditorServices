@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
 
@@ -68,23 +69,23 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .AddSerilog(Log.Logger)
                         .AddLanguageServer(_minimumLogLevel)
                         .SetMinimumLevel(_minimumLogLevel))
-                    .WithHandler<WorkspaceSymbolsHandler>()
-                    .WithHandler<TextDocumentHandler>()
+                    .WithHandler<PsesWorkspaceSymbolsHandler>()
+                    .WithHandler<PsesTextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()
-                    .WithHandler<ConfigurationHandler>()
-                    .WithHandler<FoldingRangeHandler>()
-                    .WithHandler<DocumentFormattingHandlers>()
-                    .WithHandler<ReferencesHandler>()
-                    .WithHandler<DocumentSymbolHandler>()
-                    .WithHandler<DocumentHighlightHandler>()
+                    .WithHandler<PsesConfigurationHandler>()
+                    .WithHandler<PsesFoldingRangeHandler>()
+                    .WithHandler<PsesDocumentFormattingHandlers>()
+                    .WithHandler<PsesReferencesHandler>()
+                    .WithHandler<PsesDocumentSymbolHandler>()
+                    .WithHandler<PsesDocumentHighlightHandler>()
                     .WithHandler<PSHostProcessAndRunspaceHandlers>()
-                    .WithHandler<CodeLensHandlers>()
-                    .WithHandler<CodeActionHandler>()
+                    .WithHandler<PsesCodeLensHandlers>()
+                    .WithHandler<PsesCodeActionHandler>()
                     .WithHandler<InvokeExtensionCommandHandler>()
-                    .WithHandler<CompletionHandler>()
-                    .WithHandler<HoverHandler>()
-                    .WithHandler<SignatureHelpHandler>()
-                    .WithHandler<DefinitionHandler>()
+                    .WithHandler<PsesCompletionHandler>()
+                    .WithHandler<PsesHoverHandler>()
+                    .WithHandler<PsesSignatureHelpHandler>()
+                    .WithHandler<PsesDefinitionHandler>()
                     .WithHandler<TemplateHandlers>()
                     .WithHandler<GetCommentHelpHandler>()
                     .WithHandler<EvaluateHandler>()

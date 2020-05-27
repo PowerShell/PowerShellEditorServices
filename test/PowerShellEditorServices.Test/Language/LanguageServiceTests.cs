@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
     {
         private readonly WorkspaceService workspace;
         private readonly SymbolsService symbolsService;
-        private readonly CompletionHandler completionHandler;
+        private readonly PsesCompletionHandler completionHandler;
         private readonly PowerShellContextService powerShellContext;
         private static readonly string s_baseSharedScriptPath =
             Path.Combine(
@@ -47,12 +47,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             powerShellContext = PowerShellContextFactory.Create(logger);
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
             symbolsService = new SymbolsService(NullLoggerFactory.Instance, powerShellContext, workspace, new ConfigurationService());
-            completionHandler = new CompletionHandler(NullLoggerFactory.Instance, powerShellContext, workspace);
+            completionHandler = new PsesCompletionHandler(NullLoggerFactory.Instance, powerShellContext, workspace);
         }
 
         public void Dispose()
         {
-            this.powerShellContext.Dispose();
+            this.powerShellContext.Close();
         }
 
         [Trait("Category", "Completions")]

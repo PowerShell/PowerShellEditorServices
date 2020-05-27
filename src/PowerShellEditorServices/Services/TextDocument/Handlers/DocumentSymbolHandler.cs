@@ -18,12 +18,12 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class DocumentSymbolHandler : IDocumentSymbolHandler
+    internal class PsesDocumentSymbolHandler : IDocumentSymbolHandler
     {
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
@@ -32,9 +32,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private DocumentSymbolCapability _capability;
 
-        public DocumentSymbolHandler(ILoggerFactory factory, ConfigurationService configurationService, WorkspaceService workspaceService)
+        public PsesDocumentSymbolHandler(ILoggerFactory factory, ConfigurationService configurationService, WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<DocumentSymbolHandler>();
+            _logger = factory.CreateLogger<PsesDocumentSymbolHandler>();
             _workspaceService = workspaceService;
             _providers = new IDocumentSymbolProvider[]
             {
