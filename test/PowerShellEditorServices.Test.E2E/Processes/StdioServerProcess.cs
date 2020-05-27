@@ -36,7 +36,9 @@ namespace PowerShellEditorServices.Test.E2E
             : base(loggerFactory)
         {
             if (serverStartInfo == null)
+            {
                 throw new ArgumentNullException(nameof(serverStartInfo));
+            }
 
             _serverStartInfo = serverStartInfo;
         }
@@ -97,7 +99,9 @@ namespace PowerShellEditorServices.Test.E2E
             serverProcess.Exited += ServerProcess_Exit;
 
             if (!serverProcess.Start())
+            {
                 throw new InvalidOperationException("Failed to launch language server .");
+            }
 
             ServerStartCompletion.TrySetResult(null);
 
@@ -111,7 +115,9 @@ namespace PowerShellEditorServices.Test.E2E
         {
             Process serverProcess = Interlocked.Exchange(ref _serverProcess, null);
             if (serverProcess != null && !serverProcess.HasExited)
+            {
                 serverProcess.Kill();
+            }
 
             await ServerExitCompletion.Task;
         }

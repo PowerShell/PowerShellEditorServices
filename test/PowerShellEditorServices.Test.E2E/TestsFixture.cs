@@ -85,7 +85,7 @@ namespace PowerShellEditorServices.Test.E2E
             _psesProcess = new StdioServerProcess(factory, processStartInfo);
             await _psesProcess.Start();
 
-            await CustomInitializeAsync(factory, _psesProcess.OutputStream, _psesProcess.InputStream);
+            await CustomInitializeAsync(factory, _psesProcess.OutputStream, _psesProcess.InputStream).ConfigureAwait(false);
         }
 
         public virtual async Task DisposeAsync()

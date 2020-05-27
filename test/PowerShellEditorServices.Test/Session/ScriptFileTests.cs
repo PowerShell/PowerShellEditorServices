@@ -3,12 +3,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Test.Shared;
-using OmniSharp.Extensions.LanguageServer.Protocol;
 using System;
 using System.IO;
 using System.Linq;
+using System.Management.Automation;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using Xunit;
 
 namespace PSLanguageService.Test
@@ -577,7 +578,7 @@ First line
             var path = Path.Combine(Path.GetTempPath(), "TestFile.ps1");
             var scriptFile = ScriptFileChangeTests.CreateScriptFile("");
 
-            Assert.Equal(path, scriptFile.FilePath);
+            Assert.Equal(path, scriptFile.FilePath, ignoreCase: !Platform.IsLinux);
             Assert.True(scriptFile.IsAnalysisEnabled);
             Assert.False(scriptFile.IsInMemory);
             Assert.Empty(scriptFile.ReferencedFiles);
