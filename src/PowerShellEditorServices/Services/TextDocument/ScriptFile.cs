@@ -143,11 +143,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Creates a new ScriptFile instance by reading file contents from
         /// the given TextReader.
         /// </summary>
-        /// <param name="fileUri">The System.Uri of the file.</param>
+        /// <param name="docUri">The System.Uri of the file.</param>
         /// <param name="textReader">The TextReader to use for reading the file's contents.</param>
         /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
         internal ScriptFile(
-            Uri fileUri,
+            DocumentUri docUri,
             TextReader textReader,
             Version powerShellVersion)
         {
@@ -155,12 +155,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // so that other operations know it's untitled/in-memory
             // and don't think that it's a relative path
             // on the file system.
-            FilePath = fileUri.IsFile
-                ? fileUri.LocalPath
-                : fileUri.OriginalString;
-            DocumentUri = DocumentUri.FromFileSystemPath(FilePath);
+            IsInMemory = !docUri.ToUri().IsFile;
+            FilePath = IsInMemory
+                ? docUri.GetFileSystemPath()
+                : docUri.ToString();
+            DocumentUri = docUri;
             IsAnalysisEnabled = true;
-            IsInMemory = !fileUri.IsFile;
             this.powerShellVersion = powerShellVersion;
 
             // SetFileContents() calls ParseFileContents() which initializes the rest of the properties.
@@ -174,7 +174,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <param name="initialBuffer">The initial contents of the script file.</param>
         /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
         internal ScriptFile(
-            Uri fileUri,
+            DocumentUri fileUri,
             string initialBuffer,
             Version powerShellVersion)
             : this(
@@ -625,7 +625,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // Discussed in https://github.com/PowerShell/PowerShellEditorServices/pull/815.
             // Rather than working hard to enable things for untitled files like a phantom directory,
             // users should save the file.
-            if (IsUntitledPath(this.FilePath))
+            if (IsInMemory)
             {
                 // Need to initialize the ReferencedFiles property to an empty array.
                 this.ReferencedFiles = Array.Empty<string>();

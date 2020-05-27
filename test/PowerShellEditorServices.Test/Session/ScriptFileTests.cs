@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using System;
 using System.IO;
 using System.Linq;
@@ -191,7 +192,7 @@ namespace PSLanguageService.Test
                 ScriptFile scriptFile =
                     new ScriptFile(
                         // Use any absolute path. Even if it doesn't exist.
-                        new Uri(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
+                        DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                         stringReader,
                         PowerShellVersion);
 
@@ -248,7 +249,7 @@ namespace PSLanguageService.Test
                 ScriptFile fileToChange =
                     new ScriptFile(
                         // Use any absolute path. Even if it doesn't exist.
-                        new Uri(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
+                        DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                         stringReader,
                         PowerShellVersion);
 
@@ -600,7 +601,7 @@ First line
             using (StringReader stringReader = new StringReader(script))
             {
                 // Create an in-memory file from the StringReader
-                var scriptFile = new ScriptFile(new Uri(path), stringReader, PowerShellVersion);
+                var scriptFile = new ScriptFile(DocumentUri.From(path), stringReader, PowerShellVersion);
 
                 Assert.Equal(path, scriptFile.FilePath);
                 Assert.Equal(path, scriptFile.ClientFilePath);
@@ -625,16 +626,16 @@ First line
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
                 path = @"C:\Users\AmosBurton\projects\Rocinate\ProtoMolecule.ps1";
-                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///c:/Users/AmosBurton/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
 
                 path = @"c:\Users\BobbieDraper\projects\Rocinate\foo's_~#-[@] +,;=%.ps1";
-                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///c:/Users/BobbieDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
 
                 // Test UNC path
                 path = @"\\ClarissaMao\projects\Rocinate\foo's_~#-[@] +,;=%.ps1";
-                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 // UNC authorities are lowercased. This is what VS Code does as well.
                 Assert.Equal("file://clarissamao/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
             }
@@ -642,19 +643,19 @@ First line
             {
                 // Test the following only on Linux and macOS.
                 path = "/home/AlexKamal/projects/Rocinate/ProtoMolecule.ps1";
-                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/AlexKamal/projects/Rocinate/ProtoMolecule.ps1", scriptFile.DocumentUri);
 
                 path = "/home/BobbieDraper/projects/Rocinate/foo's_~#-[@] +,;=%.ps1";
-                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/BobbieDraper/projects/Rocinate/foo%27s_~%23-%5B%40%5D%20%2B%2C%3B%3D%25.ps1", scriptFile.DocumentUri);
 
                 path = "/home/NaomiNagata/projects/Rocinate/Proto:Mole:cule.ps1";
-                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/NaomiNagata/projects/Rocinate/Proto%3AMole%3Acule.ps1", scriptFile.DocumentUri);
 
                 path = "/home/JamesHolden/projects/Rocinate/Proto:Mole\\cule.ps1";
-                scriptFile = new ScriptFile(new Uri(path), emptyStringReader, PowerShellVersion);
+                scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/JamesHolden/projects/Rocinate/Proto%3AMole%5Ccule.ps1", scriptFile.DocumentUri);
             }
         }

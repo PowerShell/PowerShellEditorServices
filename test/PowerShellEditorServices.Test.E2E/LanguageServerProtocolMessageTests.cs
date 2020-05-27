@@ -18,7 +18,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Xunit;
 using Xunit.Abstractions;
@@ -36,27 +35,15 @@ namespace PowerShellEditorServices.Test.E2E
         private readonly ILanguageClient PsesLanguageClient;
         private readonly List<Diagnostic> Diagnostics;
         private readonly string PwshExe;
-        private readonly ITestOutputHelper _output;
 
         public LanguageServerProtocolMessageTests(ITestOutputHelper output, LSPTestsFixture data)
         {
+            data.Output = output;
             PsesLanguageClient = data.PsesLanguageClient;
             Diagnostics = data.Diagnostics;
             Diagnostics.Clear();
 
             PwshExe = TestsFixture.PwshExe;
-
-            _output = output;
-
-            if (!s_registeredOnLogMessage)
-            {
-                PsesLanguageClient.OnLogMessage(logMessageParams =>
-                {
-                    _output.WriteLine($"{logMessageParams.Type.ToString()}: {logMessageParams.Message}");
-                });
-
-                s_registeredOnLogMessage = true;
-            }
         }
 
         public void Dispose()
@@ -1133,6 +1120,7 @@ function CanSendGetCommentHelpRequest {
         [SkippableFact]
         public async Task CanSendExpandAliasRequest()
         {
+            throw new Exception("asdf");
             Skip.If(
                 TestsFixture.RunningInConstainedLanguageMode,
                 "This feature currently doesn't support ConstrainedLanguage Mode.");

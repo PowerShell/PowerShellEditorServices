@@ -12,7 +12,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+using Xunit.Abstractions;
 
 namespace PowerShellEditorServices.Test.E2E
 {
@@ -22,6 +24,8 @@ namespace PowerShellEditorServices.Test.E2E
 
         public ILanguageClient PsesLanguageClient { get; private set; }
         public List<Diagnostic> Diagnostics { get; set; }
+
+        public ITestOutputHelper Output { get; set; }
 
         public async override Task CustomInitializeAsync(
             ILoggerFactory factory,
@@ -41,6 +45,10 @@ namespace PowerShellEditorServices.Test.E2E
                     .OnPublishDiagnostics(diagnosticParams =>
                     {
                         Diagnostics.AddRange(diagnosticParams.Diagnostics.Where(d => d != null));
+                    })
+                    .OnLogMessage(logMessageParams =>
+                    {
+                        Output?.WriteLine($"{logMessageParams.Type.ToString()}: {logMessageParams.Message}");
                     });
 
                 // Enable all capabilities this this is for testing.
@@ -52,13 +60,6 @@ namespace PowerShellEditorServices.Test.E2E
                     options.WithCapability(Activator.CreateInstance(item, Array.Empty<object>()) as ICapability);
                 }
             });
-
-            await Task.Delay(2000);
-            while (!System.Diagnostics.Debugger.IsAttached)
-            {
-                System.Threading.Thread.Sleep(1000);
-                // System.Console.WriteLine(System.Diagnostics.Process.GetCurrentProcess().Id);
-            }
 
             await PsesLanguageClient.Initialize(CancellationToken.None);
 
