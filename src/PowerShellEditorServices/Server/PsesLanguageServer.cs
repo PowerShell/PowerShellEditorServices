@@ -67,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .AddPsesLanguageServices(_hostDetails))
                     .ConfigureLogging(builder => builder
                         .AddSerilog(Log.Logger)
-                        .AddLanguageServer(_minimumLogLevel)
+                        .AddLanguageProtocolLogging(_minimumLogLevel)
                         .SetMinimumLevel(_minimumLogLevel))
                     .WithHandler<PsesWorkspaceSymbolsHandler>()
                     .WithHandler<PsesTextDocumentHandler>()
