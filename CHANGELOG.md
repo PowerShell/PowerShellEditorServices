@@ -1,5 +1,23 @@
 # PowerShell Editor Services Release History
 
+## v2.2.0-preview.3
+### Monday, June 01, 2020
+
+- [PowerShellEditorServices #1301](https://github.com/PowerShell/PowerShellEditorServices/pull/1301) -
+  Fix AddLanguageProtocolLogging OmniSharp breaking change.
+- [PowerShellEditorServices #1298](https://github.com/PowerShell/PowerShellEditorServices/pull/1298) -
+  Remove leftover csproj reference to already removed project in test project PowerShellEditorServices.Test.Host.csproj. (Thanks @bergmeister!)
+- [PowerShellEditorServices #1300](https://github.com/PowerShell/PowerShellEditorServices/pull/1300) -
+  Address breaking changes in Omnisharp lib and depend on DocumentUri more.
+- [PowerShellEditorServices #1291](https://github.com/PowerShell/PowerShellEditorServices/pull/1291) -
+  Depend on DocumentUri for handing vscode Uri's.
+- 🧠 ✨ [vscode-powershell #2706](https://github.com/PowerShell/PowerShellEditorServices/pull/1294) -
+  Show tooltip for comparison operators.
+- [PowerShellEditorServices #1292](https://github.com/PowerShell/PowerShellEditorServices/pull/1292) -
+  Bump Microsoft.Extensions.Logging from 3.1.3 to 3.1.4. (Thanks @dependabot-preview[bot]!)
+- [PowerShellEditorServices #1293](https://github.com/PowerShell/PowerShellEditorServices/pull/1293) -
+  Bump Microsoft.Extensions.FileSystemGlobbing from 3.1.3 to 3.1.4. (Thanks @dependabot-preview[bot]!)
+
 ## v2.0.0-preview.8
 ### Monday, January 13, 2020
 
