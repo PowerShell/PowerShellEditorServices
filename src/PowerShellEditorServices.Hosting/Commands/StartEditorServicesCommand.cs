@@ -351,7 +351,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             var profile = (PSObject)GetVariableValue("profile");
 
             var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
-            var initialSessionState = InitialSessionState ?? Runspace.DefaultRunspace.InitialSessionState;
+            var initialSessionState = Runspace.DefaultRunspace.InitialSessionState;
             var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, bundledModulesPath, LogPath)
             {
                 FeatureFlags = FeatureFlags,

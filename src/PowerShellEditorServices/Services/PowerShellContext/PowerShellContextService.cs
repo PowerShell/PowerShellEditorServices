@@ -219,7 +219,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (hostStartupInfo.InitialSessionState.LanguageMode != PSLanguageMode.FullLanguage)
             {
-                hostStartupInfo.InitialSessionState.ImportPSModule((IEnumerable<Commands.ModuleSpecification>)hostStartupInfo.AdditionalModules);
+                if(hostStartupInfo.AdditionalModules.Count > 0)
+                    hostStartupInfo.InitialSessionState.ImportPSModule(hostStartupInfo.AdditionalModules as string[]);
                 hostStartupInfo.InitialSessionState.ImportPSModule(new string[] { s_commandsModulePath });
             }
             Runspace runspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
@@ -445,7 +446,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.PromptContext = new LegacyReadLineContext(this);
             }
 
-            if (VersionUtils.IsWindows)
+            if (VersionUtils.IsWindows && initialRunspace.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
             {
                 this.SetExecutionPolicy();
             }
@@ -2740,7 +2741,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             get
             {
-                return this.CurrentRunspace.Runspace;
+                return this.CurrentRunspace?.Runspace;
             }
         }
 
