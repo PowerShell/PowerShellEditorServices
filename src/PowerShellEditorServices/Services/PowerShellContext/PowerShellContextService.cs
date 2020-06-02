@@ -88,7 +88,61 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly Stack<RunspaceDetails> runspaceStack = new Stack<RunspaceDetails>();
 
         private int isCommandLoopRestarterSet;
+        /// <summary>
+        /// This is the default function to use for tab expansion.
+        /// </summary>
+        private static string tabExpansionFunctionText = @"
+<# Options include:
+     RelativeFilePaths - [bool]
+         Always resolve file paths using Resolve-Path -Relative.
+         The default is to use some heuristics to guess if relative or absolute is better.
 
+   To customize your own custom options, pass a hashtable to CompleteInput, e.g.
+         return [System.Management.Automation.CommandCompletion]::CompleteInput($inputScript, $cursorColumn,
+             @{ RelativeFilePaths=$false }
+#>
+
+[CmdletBinding(DefaultParameterSetName = 'ScriptInputSet')]
+Param(
+    [Parameter(ParameterSetName = 'ScriptInputSet', Mandatory = $true, Position = 0)]
+    [string] $inputScript,
+
+    [Parameter(ParameterSetName = 'ScriptInputSet', Position = 1)]
+    [int] $cursorColumn = $inputScript.Length,
+
+    [Parameter(ParameterSetName = 'AstInputSet', Mandatory = $true, Position = 0)]
+    [System.Management.Automation.Language.Ast] $ast,
+
+    [Parameter(ParameterSetName = 'AstInputSet', Mandatory = $true, Position = 1)]
+    [System.Management.Automation.Language.Token[]] $tokens,
+
+    [Parameter(ParameterSetName = 'AstInputSet', Mandatory = $true, Position = 2)]
+    [System.Management.Automation.Language.IScriptPosition] $positionOfCursor,
+
+    [Parameter(ParameterSetName = 'ScriptInputSet', Position = 2)]
+    [Parameter(ParameterSetName = 'AstInputSet', Position = 3)]
+    [Hashtable] $options = $null
+)
+
+End
+{
+    if ($psCmdlet.ParameterSetName -eq 'ScriptInputSet')
+    {
+        return [System.Management.Automation.CommandCompletion]::CompleteInput(
+            <#inputScript#>  $inputScript,
+            <#cursorColumn#> $cursorColumn,
+            <#options#>      $options)
+    }
+    else
+    {
+        return [System.Management.Automation.CommandCompletion]::CompleteInput(
+            <#ast#>              $ast,
+            <#tokens#>           $tokens,
+            <#positionOfCursor#> $positionOfCursor,
+            <#options#>          $options)
+    }
+}
+        ";
         #endregion
 
         #region Properties
@@ -220,8 +274,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (hostStartupInfo.InitialSessionState.LanguageMode != PSLanguageMode.FullLanguage)
             {
                 if(hostStartupInfo.AdditionalModules.Count > 0)
+                {
                     hostStartupInfo.InitialSessionState.ImportPSModule(hostStartupInfo.AdditionalModules as string[]);
-                hostStartupInfo.InitialSessionState.ImportPSModule(new string[] { s_commandsModulePath });
+                }
+
+                hostStartupInfo.InitialSessionState.ImportPSModule(new [] { s_commandsModulePath });
+                if(!hostStartupInfo.InitialSessionState.Commands.Any(a=> a.Name.ToLower() == "tabexpansion2"))
+                {
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateFunctionEntry("TabExpansion2", tabExpansionFunctionText));
+                }
             }
             Runspace runspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, runspace, true, hostUserInterface);

@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using SMA = System.Management.Automation;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Linq;
 
 #if CoreCLR
 using System.Runtime.Loader;
@@ -257,9 +258,15 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
 
             string psModulePath = Environment.GetEnvironmentVariable("PSModulePath").TrimEnd(Path.PathSeparator);
+            string[] psModulePaths = psModulePath.Split(Path.PathSeparator);
+            if (psModulePaths.Any(a => a == _hostConfig.BundledModulePath))
+            {
+                _logger.Log(PsesLogLevel.Verbose, $"PSModulePath already contains '{_hostConfig.BundledModulePath}'");
+                return;
+            }
+            
             psModulePath = $"{psModulePath}{Path.PathSeparator}{_hostConfig.BundledModulePath}";
             Environment.SetEnvironmentVariable("PSModulePath", psModulePath);
-
             _logger.Log(PsesLogLevel.Verbose, $"Updated PSModulePath to: '{psModulePath}'");
         }
 
