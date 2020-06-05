@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     Sort-Object -Descending Version |
                     Select-Object -First 1
                 if (-not $module) {{
-                    Import-Module {_psReadLineModulePath}
+                    Import-Module '{_psReadLineModulePath.Replace("'", "''")}'
                     return [Microsoft.PowerShell.PSConsoleReadLine]
                 }}
 
