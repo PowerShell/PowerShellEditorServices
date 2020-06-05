@@ -115,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
                     acc.Add(new Location
                     {
-                        Uri = DocumentUri.FromFileSystemPath(foundReference.FilePath),
+                        Uri = DocumentUri.From(foundReference.FilePath),
                         Range = foundReference.ScriptRegion.ToRange()
                     });
                 }

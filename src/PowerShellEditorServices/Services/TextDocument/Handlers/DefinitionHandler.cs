@@ -67,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         new LocationOrLocationLink(
                             new Location
                             {
-                                Uri = DocumentUri.FromFileSystemPath(foundDefinition.FilePath),
+                                Uri = DocumentUri.From(foundDefinition.FilePath),
                                 Range = GetRangeFromScriptRegion(foundDefinition.ScriptRegion)
                             }));
                 }

@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                                 Kind = GetSymbolKind(r.SymbolType),
                                 Location = new Location
                                 {
-                                    Uri = DocumentUri.FromFileSystemPath(r.FilePath),
+                                    Uri = DocumentUri.From(r.FilePath),
                                     Range = GetRangeFromScriptRegion(r.ScriptRegion)
                                 },
                                 Name = GetDecoratedSymbolName(r)
