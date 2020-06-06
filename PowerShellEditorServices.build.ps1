@@ -406,11 +406,16 @@ task RestorePsesModules -After Build {
 
         $splatParameters = @{
            Name = $moduleName
-           MinimumVersion = $moduleInstallDetails.MinimumVersion
-           MaximumVersion = $moduleInstallDetails.MaximumVersion
            AllowPrerelease = $moduleInstallDetails.AllowPrerelease
            Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
            Path = $submodulePath
+        }
+
+        # Only add Min and Max version if we're doing a stable release.
+        # This is due to a PSGet issue with AllowPrerelease not installing the latest preview.
+        if (!$moduleInstallDetails.AllowPrerelease) {
+            $splatParameters.MinimumVersion = $moduleInstallDetails.MinimumVersion
+            $splatParameters.MaximumVersion = $moduleInstallDetails.MaximumVersion
         }
 
         Write-Host "`tInstalling module: ${moduleName} with arguments $(ConvertTo-Json $splatParameters)"

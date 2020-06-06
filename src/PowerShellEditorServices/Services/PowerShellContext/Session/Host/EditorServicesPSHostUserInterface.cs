@@ -729,7 +729,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
             }
 
-            PSCommand promptCommand = new PSCommand().AddScript("prompt");
+            PSCommand promptCommand = new PSCommand().AddCommand("prompt");
 
             cancellationToken.ThrowIfCancellationRequested();
             string promptString =
