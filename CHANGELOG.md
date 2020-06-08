@@ -1,5 +1,13 @@
 # PowerShell Editor Services Release History
 
+## v2.2.0-preview.4
+### Monday, June 08, 2020
+
+- 🔗 🐛 [PowerShellEditorServices #1304](https://github.com/PowerShell/PowerShellEditorServices/pull/1304) -
+  Use From instead of FromFileSystem fixing CodeLens references.
+- 📟 ✨ [PowerShellEditorServices #1290](https://github.com/PowerShell/PowerShellEditorServices/pull/1290) -
+  Allow PSReadLine to work in ConstrainedLanguage mode.
+
 ## v2.2.0-preview.3
 ### Monday, June 01, 2020
 
