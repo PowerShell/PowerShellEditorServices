@@ -217,8 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         internal static bool IsUntitledPath(string path)
         {
             Validate.IsNotNull(nameof(path), path);
-
-            return path.ToLower().StartsWith("untitled:") || path.StartsWith("vscode-notebook:");
+            return DocumentUri.From(path).Scheme.ToLower() != Uri.UriSchemeFile;
         }
 
         /// <summary>

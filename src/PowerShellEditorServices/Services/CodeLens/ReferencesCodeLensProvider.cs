@@ -113,9 +113,18 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         continue;
                     }
 
+                    DocumentUri uri = DocumentUri.From(foundReference.FilePath);
+                    // For any vscode-notebook-cell, we need to ignore the backing file on disk.
+                    if (scriptFile.DocumentUri.Scheme == "vscode-notebook-cell" &&
+                        uri.Path == scriptFile.DocumentUri.Path &&
+                        uri.Scheme == "file")
+                    {
+                        continue;
+                    }
+
                     acc.Add(new Location
                     {
-                        Uri = DocumentUri.From(foundReference.FilePath),
+                        Uri = uri,
                         Range = foundReference.ScriptRegion.ToRange()
                     });
                 }
