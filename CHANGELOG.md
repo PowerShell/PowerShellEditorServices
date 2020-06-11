@@ -1,5 +1,17 @@
 # PowerShell Editor Services Release History
 
+## v2.2.0
+### Thursday, June 11, 2020
+
+- ⚡️🧠 Better performance of overall.
+- ✨🛫 Support for ConstrainedLanguage mode.
+- 🐛 Many squashed bugs
+- ✨👮 Updated PSScriptAnalyzer to 1.19.0.
+      - More formatting settings! (Thanks @bergmeister!)
+- 📟 ✨ Updated PSReadLine to 2.0.2.
+(From now on,
+the stable extension will have the latest stable version of PSReadLine and the PowerShell Preview extension will have the latest preview of PSReadLine)
+
 ## v2.2.0-preview.4
 ### Monday, June 08, 2020
 
