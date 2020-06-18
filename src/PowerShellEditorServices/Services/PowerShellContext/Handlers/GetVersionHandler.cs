@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     StringBuilder errors = new StringBuilder();
                     await _powerShellContextService.ExecuteScriptStringAsync(
-                        "powershell.exe -NoLogo -NoProfile -Command '[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber'",
+                        "powershell.exe -NoLogo -NoProfile -Command '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber' -Repository PSGallery",
                         errors,
                         writeInputToHost: true,
                         writeOutputToHost: true,
