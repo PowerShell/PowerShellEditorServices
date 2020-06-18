@@ -82,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             foreach (PSModuleInfo module in await _powerShellContextService.ExecuteCommandAsync<PSModuleInfo>(getModule))
             {
                 // The user has a good enough version of PackageManagement
-                if(module.Version >= s_desiredPackageManagementVersion)
+                if (module.Version >= s_desiredPackageManagementVersion)
                 {
                     break;
                 }
@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     Message = "You have an older version of PackageManagement known to cause issues with the PowerShell extension. Would you like to update PackageManagement (You will need to restart the PowerShell extension after)?",
                     Type = MessageType.Warning,
-                    Actions = new []
+                    Actions = new[]
                     {
                         new MessageActionItem
                         {
@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     StringBuilder errors = new StringBuilder();
                     await _powerShellContextService.ExecuteScriptStringAsync(
-                        "powershell.exe -NoLogo -NoProfile -Command '[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber'",
+                        "powershell.exe -NoLogo -NoProfile -Command '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber' -Repository PSGallery",
                         errors,
                         writeInputToHost: true,
                         writeOutputToHost: true,
@@ -140,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         _languageServer.Window.ShowMessage(new ShowMessageParams
                         {
                             Type = MessageType.Error,
-                            Message = "PackageManagement update failed. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`"
+                            Message = "PackageManagement update failed. This might be due to PowerShell Gallery using TLS 1.2. More info can be found at https://aka.ms/psgallerytls"
                         });
                     }
                 }
