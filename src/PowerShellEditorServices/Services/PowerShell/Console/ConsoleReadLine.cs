@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
     using System;
     using System.Management.Automation;
     using System.Management.Automation.Language;
@@ -18,21 +20,35 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
     internal class ConsoleReadLine
     {
-        #region Private Field
-        private readonly PowerShellExecutionService _executionService;
+        private PSReadLineProxy _psrlProxy;
 
-        #endregion
+        private EngineIntrinsics _engineIntrinsics;
+
+        private PowerShellExecutionService _executionService;
+
+        private EditorServicesConsolePSHost _editorServicesHost;
 
         #region Constructors
-
-        public ConsoleReadLine(PowerShellExecutionService executionService)
-        {
-            _executionService = executionService;
-        }
 
         #endregion
 
         #region Public Methods
+
+        public void RegisterPowerShellEngine(EditorServicesConsolePSHost editorServicesHost, EngineIntrinsics engineIntrinsics)
+        {
+            _editorServicesHost = editorServicesHost;
+            _engineIntrinsics = engineIntrinsics;
+        }
+
+        public void RegisterExecutionService(PowerShellExecutionService executionService)
+        {
+            _executionService = executionService;
+        }
+
+        public void RegisterPSReadLineProxy(PSReadLineProxy psrlProxy)
+        {
+            _psrlProxy = psrlProxy;
+        }
 
         public Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
         {
@@ -135,8 +151,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private Task<string> ReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
-            return this.powerShellContext.InvokeReadLineAsync(isCommandLine, cancellationToken);
+            return _executionService.ExecuteDelegateAsync(InvokePSReadLine, cancellationToken);
         }
+
+        private string InvokePSReadLine(CancellationToken cancellationToken)
+        {
+            return _psrlProxy.ReadLine(_editorServicesHost.Runspace, _engineIntrinsics, cancellationToken);
+        }
+
 
         /// <summary>
         /// Invokes a custom ReadLine method that is similar to but more basic than PSReadLine.
@@ -155,8 +177,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         /// </returns>
         internal async Task<string> InvokeLegacyReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
-            // TODO: Is inputBeforeCompletion used?
-            string inputBeforeCompletion = null;
             string inputAfterCompletion = null;
             CommandCompletion currentCompletion = null;
 
@@ -195,6 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     }
                     else if (keyInfo.Key == ConsoleKey.Tab && isCommandLine)
                     {
+                        /*
                         if (currentCompletion == null)
                         {
                             inputBeforeCompletion = inputLine.ToString();
@@ -218,35 +239,36 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                             }
                             else
                             {
-                                using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandleAsync().ConfigureAwait(false))
-                                using (PowerShell powerShell = PowerShell.Create())
+                            */
+                            /*
+                            using (PowerShell powerShell = PowerShell.Create())
+                            {
+                                powerShell.Runspace = _
+                                currentCompletion =
+                                    CommandCompletion.CompleteInput(
+                                        inputBeforeCompletion,
+                                        currentCursorIndex,
+                                        null,
+                                        powerShell);
+
+                                if (currentCompletion.CompletionMatches.Count > 0)
                                 {
-                                    powerShell.Runspace = runspaceHandle.Runspace;
-                                    currentCompletion =
-                                        CommandCompletion.CompleteInput(
-                                            inputBeforeCompletion,
-                                            currentCursorIndex,
-                                            null,
-                                            powerShell);
+                                    int replacementEndIndex =
+                                            currentCompletion.ReplacementIndex +
+                                            currentCompletion.ReplacementLength;
 
-                                    if (currentCompletion.CompletionMatches.Count > 0)
-                                    {
-                                        int replacementEndIndex =
-                                                currentCompletion.ReplacementIndex +
-                                                currentCompletion.ReplacementLength;
-
-                                        inputAfterCompletion =
-                                            inputLine.ToString(
-                                                replacementEndIndex,
-                                                inputLine.Length - replacementEndIndex);
-                                    }
-                                    else
-                                    {
-                                        currentCompletion = null;
-                                    }
+                                    inputAfterCompletion =
+                                        inputLine.ToString(
+                                            replacementEndIndex,
+                                            inputLine.Length - replacementEndIndex);
+                                }
+                                else
+                                {
+                                    currentCompletion = null;
                                 }
                             }
                         }
+                            */
 
                         CompletionResult completion =
                             currentCompletion?.GetNextResult(
@@ -326,12 +348,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                         {
                             historyIndex = -1;
 
-                            PSCommand command = new PSCommand();
-                            command.AddCommand("Get-History");
+                            PSCommand command = new PSCommand().AddCommand("Get-History");
 
-                            currentHistory = await this.powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false)
-                                .ConfigureAwait(false)
-                                as Collection<PSObject>;
+                            currentHistory = await _executionService.ExecutePSCommandAsync<PSObject>(
+                                command,
+                                new PowerShellExecutionOptions(),
+                                cancellationToken).ConfigureAwait(false);
 
                             if (currentHistory != null)
                             {

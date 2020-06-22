@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -28,12 +30,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class ExpandAliasHandler : IExpandAliasHandler
     {
         private readonly ILogger _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
 
-        public ExpandAliasHandler(ILoggerFactory factory, PowerShellContextService powerShellContextService)
+        public ExpandAliasHandler(ILoggerFactory factory, PowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<ExpandAliasHandler>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
         }
 
         public async Task<ExpandAliasResult> Handle(ExpandAliasParams request, CancellationToken cancellationToken)
@@ -69,7 +71,7 @@ function __Expand-Alias {
                 .AddStatement()
                 .AddCommand("__Expand-Alias")
                 .AddArgument(request.Text);
-            var result = await _powerShellContextService.ExecuteCommandAsync<string>(psCommand).ConfigureAwait(false);
+            var result = await _executionService.ExecutePSCommandAsync<string>(psCommand, new PowerShellExecutionOptions(), cancellationToken).ConfigureAwait(false);
 
             return new ExpandAliasResult
             {

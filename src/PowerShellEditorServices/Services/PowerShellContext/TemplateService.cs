@@ -3,11 +3,15 @@
 
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Management.Automation;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services
@@ -21,10 +25,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
     {
         #region Private Fields
 
-        private readonly ILogger logger;
+        private readonly ILogger _logger;
         private bool isPlasterLoaded;
         private bool? isPlasterInstalled;
-        private readonly PowerShellContextService powerShellContext;
+        private readonly PowerShellExecutionService _executionService;
 
         #endregion
 
@@ -35,12 +39,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="powerShellContext">The PowerShellContext to use for this service.</param>
         /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
-        public TemplateService(PowerShellContextService powerShellContext, ILoggerFactory factory)
+        public TemplateService(PowerShellExecutionService executionService, ILoggerFactory factory)
         {
-            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
-
-            this.logger = factory.CreateLogger<TemplateService>();
-            this.powerShellContext = powerShellContext;
+            _logger = factory.CreateLogger<TemplateService>();
+            _executionService = executionService;
         }
 
         #endregion
@@ -71,24 +73,21 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     .AddCommand("Select-Object")
                     .AddParameter("First", 1);
 
-                this.logger.LogTrace("Checking if Plaster is installed...");
+                this._logger.LogTrace("Checking if Plaster is installed...");
 
-                var getResult =
-                    await this.powerShellContext.ExecuteCommandAsync<PSObject>(
-                        psCommand, false, false).ConfigureAwait(false);
+                PSObject moduleObject = (await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false)).First();
 
-                PSObject moduleObject = getResult.First();
                 this.isPlasterInstalled = moduleObject != null;
                 string installedQualifier =
                     this.isPlasterInstalled.Value
                         ? string.Empty : "not ";
 
-                this.logger.LogTrace($"Plaster is {installedQualifier}installed!");
+                this._logger.LogTrace($"Plaster is {installedQualifier}installed!");
 
                 // Attempt to load plaster
                 if (this.isPlasterInstalled.Value && this.isPlasterLoaded == false)
                 {
-                    this.logger.LogTrace("Loading Plaster...");
+                    this._logger.LogTrace("Loading Plaster...");
 
                     psCommand = new PSCommand();
                     psCommand
@@ -96,16 +95,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         .AddParameter("ModuleInfo", (PSModuleInfo)moduleObject.ImmediateBaseObject)
                         .AddParameter("PassThru");
 
-                    var importResult =
-                        await this.powerShellContext.ExecuteCommandAsync<object>(
-                            psCommand, false, false).ConfigureAwait(false);
+                    Collection<PSModuleInfo> importResult = await _executionService.ExecutePSCommandAsync<PSModuleInfo>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
 
                     this.isPlasterLoaded = importResult.Any();
                     string loadedQualifier =
                         this.isPlasterInstalled.Value
                             ? "was" : "could not be";
 
-                    this.logger.LogTrace($"Plaster {loadedQualifier} loaded successfully!");
+                    this._logger.LogTrace($"Plaster {loadedQualifier} loaded successfully!");
                 }
             }
 
@@ -137,11 +134,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 psCommand.AddParameter("IncludeModules");
             }
 
-            var templateObjects =
-                await this.powerShellContext.ExecuteCommandAsync<PSObject>(
-                    psCommand, false, false).ConfigureAwait(false);
+            Collection<PSObject> templateObjects = await _executionService.ExecutePSCommandAsync<PSObject>(
+                psCommand,
+                new PowerShellExecutionOptions(),
+                CancellationToken.None).ConfigureAwait(false);
 
-            this.logger.LogTrace($"Found {templateObjects.Count()} Plaster templates");
+            this._logger.LogTrace($"Found {templateObjects.Count()} Plaster templates");
 
             return
                 templateObjects
@@ -161,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             string templatePath,
             string destinationPath)
         {
-            this.logger.LogTrace(
+            this._logger.LogTrace(
                 $"Invoking Plaster...\n\n    TemplatePath: {templatePath}\n    DestinationPath: {destinationPath}");
 
             PSCommand command = new PSCommand();
@@ -169,19 +167,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             command.AddParameter("TemplatePath", templatePath);
             command.AddParameter("DestinationPath", destinationPath);
 
-            var errorString = new System.Text.StringBuilder();
-            await this.powerShellContext.ExecuteCommandAsync<PSObject>(
+            await _executionService.ExecutePSCommandAsync(
                 command,
-                errorString,
-                new ExecutionOptions
-                {
-                    WriteOutputToHost = false,
-                    WriteErrorsToHost = true,
-                    InterruptCommandPrompt = true
-                }).ConfigureAwait(false);
+                new PowerShellExecutionOptions { WriteErrorsToHost = true, InterruptCommandPrompt = true },
+                CancellationToken.None).ConfigureAwait(false);
 
             // If any errors were written out, creation was not successful
-            return errorString.Length == 0;
+            return true;
         }
 
         #endregion

@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
@@ -20,25 +21,20 @@ namespace Microsoft.PowerShell.EditorServices.Server
             return collection.AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
                 .AddSingleton<ConfigurationService>()
-                .AddSingleton<PowerShellContextService>(
-                    (provider) =>
-                        PowerShellContextService.Create(
-                            provider.GetService<ILoggerFactory>(),
-                            // NOTE: Giving the context service access to the language server this
-                            // early is dangerous because it allows it to start sending
-                            // notifications etc. before it has initialized, potentially resulting
-                            // in deadlocks. We're working on a solution to this.
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>(),
-                            hostStartupInfo))
-                .AddSingleton<TemplateService>() // TODO: What's the difference between this and the TemplateHandler?
+                .AddSingleton<PowerShellStartupService>(
+                    (provider) => PowerShellStartupService.Create(provider.GetService<ILogger>(), hostStartupInfo))
+                .AddSingleton<PowerShellExecutionService>(
+                    (provider) => PowerShellExecutionService.CreateAndStart(provider.GetService<ILogger>(), hostStartupInfo, provider.GetService<PowerShellStartupService>()))
+                .AddSingleton<PowerShellConsoleService>(
+                    (provider) => PowerShellConsoleService.CreateAndStart(provider.GetService<ILogger>(), provider.GetService<PowerShellStartupService>(), provider.GetService<PowerShellExecutionService>()))
+                .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
                 .AddSingleton<ExtensionService>(
                     (provider) =>
                     {
                         var extensionService = new ExtensionService(
-                            provider.GetService<PowerShellContextService>(),
-                            // NOTE: See above warning.
+                            provider.GetService<PowerShellExecutionService>(),
                             provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>());
                         extensionService.InitializeAsync(
                             serviceProvider: provider,
@@ -55,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             PsesDebugServer psesDebugServer,
             bool useTempSession)
         {
-            return collection.AddSingleton(languageServiceProvider.GetService<PowerShellContextService>())
+            return collection.AddSingleton(languageServiceProvider.GetService<PowerShellExecutionService>())
                 .AddSingleton(languageServiceProvider.GetService<WorkspaceService>())
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
                 .AddSingleton<PsesDebugServer>(psesDebugServer)
