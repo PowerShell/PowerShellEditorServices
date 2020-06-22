@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug("Hover request canceled for file: {0}", request.TextDocument.Uri);
-                return new Hover();
+                return null;
             }
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (symbolDetails == null)
             {
-                return new Hover();
+                return null;
             }
 
             List<MarkedString> symbolInfo = new List<MarkedString>();
