@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -24,12 +26,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class ShowHelpHandler : IShowHelpHandler
     {
         private readonly ILogger _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
 
-        public ShowHelpHandler(ILoggerFactory factory, PowerShellContextService powerShellContextService)
+        public ShowHelpHandler(ILoggerFactory factory, PowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<ShowHelpHandler>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
         }
 
         public async Task<Unit> Handle(ShowHelpParams request, CancellationToken cancellationToken)
@@ -74,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // TODO: Rather than print the help in the console, we should send the string back
             //       to VSCode to display in a help pop-up (or similar)
-            await _powerShellContextService.ExecuteCommandAsync<PSObject>(checkHelpPSCommand, sendOutputToHost: true).ConfigureAwait(false);
+            await _executionService.ExecutePSCommandAsync<PSObject>(checkHelpPSCommand, new PowerShellExecutionOptions { WriteOutputToHost = true }, cancellationToken).ConfigureAwait(false);
             return Unit.Value;
         }
     }

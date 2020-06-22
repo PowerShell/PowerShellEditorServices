@@ -4,7 +4,7 @@ using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Threading;
 
-namespace PowerShellEditorServices.Services.PowerShell.Utility
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
     internal static class RunspaceExtensions
     {

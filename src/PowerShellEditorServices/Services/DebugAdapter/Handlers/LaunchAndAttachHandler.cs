@@ -18,6 +18,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -98,11 +99,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     {
         private readonly ILogger<LaunchHandler> _logger;
         private readonly DebugService _debugService;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
         private readonly IJsonRpcServer _jsonRpcServer;
         private readonly RemoteFileManagerService _remoteFileManagerService;
+
+        private readonly PowerShellContextService _powerShellContextService;
 
         public LaunchHandler(
             ILoggerFactory factory,

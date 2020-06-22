@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Serialization;
 using OmniSharp.Extensions.JsonRpc;
@@ -42,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly TaskCompletionSource<bool> _serverStopped;
 
         private IJsonRpcServer _jsonRpcServer;
-        private PowerShellContextService _powerShellContextService;
+        private PowerShellExecutionService _executionService;
 
         protected readonly ILoggerFactory _loggerFactory;
 
@@ -80,9 +81,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
                 // We need to let the PowerShell Context Service know that we are in a debug session
                 // so that it doesn't send the powerShell/startDebugger message.
-                _powerShellContextService = ServiceProvider.GetService<PowerShellContextService>();
-                _powerShellContextService.IsDebugServerActive = true;
+                _executionService = ServiceProvider.GetService<PowerShellExecutionService>();
 
+                /*
                 // Needed to make sure PSReadLine's static properties are initialized in the pipeline thread.
                 // This is only needed for Temp sessions who only have a debug server.
                 if (_usePSReadLine && _useTempSession && Interlocked.Exchange(ref s_hasRunPsrlStaticCtor, 1) == 0)
@@ -96,6 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .GetAwaiter()
                         .GetResult();
                 }
+                */
 
                 options.Services = new ServiceCollection()
                     .AddPsesDebugServices(ServiceProvider, this, _useTempSession);
@@ -134,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         public void Dispose()
         {
-            _powerShellContextService.IsDebugServerActive = false;
+            //_powerShellContextService.IsDebugServerActive = false;
             _jsonRpcServer.Dispose();
             _serverStopped.SetResult(true);
         }

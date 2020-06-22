@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
@@ -25,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
 
         public ConfigurationDoneHandler(
@@ -34,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugService debugService,
             DebugStateService debugStateService,
             DebugEventHandlerService debugEventHandlerService,
-            PowerShellContextService powerShellContextService,
+            PowerShellExecutionService executionService,
             WorkspaceService workspaceService)
         {
             _logger = loggerFactory.CreateLogger<ConfigurationDoneHandler>();
@@ -42,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugService = debugService;
             _debugStateService = debugStateService;
             _debugEventHandlerService = debugEventHandlerService;
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
             _workspaceService = workspaceService;
         }
 
@@ -54,12 +56,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 // If this is a debug-only session, we need to start
                 // the command loop manually
-                _powerShellContextService.ConsoleReader.StartCommandLoop();
+                //_powerShellContextService.ConsoleReader.StartCommandLoop();
             }
 
             if (!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))
             {
-                if (_powerShellContextService.SessionState == PowerShellContextState.Ready)
+                if (false)//_powerShellContextService.SessionState == PowerShellContextState.Ready)
                 {
                     // Configuration is done, launch the script
                     var nonAwaitedTask = LaunchScriptAsync(_debugStateService.ScriptToLaunch)
@@ -85,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     {
                         // If this is an interactive session and there's a pending breakpoint that has not been propagated through
                         // the debug service, fire the debug service's OnDebuggerStop event.
-                        _debugService.OnDebuggerStopAsync(null, _powerShellContextService.CurrentDebuggerStopEventArgs);
+                        //_debugService.OnDebuggerStopAsync(null, _powerShellContextService.CurrentDebuggerStopEventArgs);
                     }
                 }
             }
@@ -110,21 +112,24 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                     // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
                     var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());
-                    await _powerShellContextService
-                        .ExecuteCommandAsync<object>(cmd, sendOutputToHost: true, sendErrorToHost:true)
+                    await _executionService
+                        .ExecutePSCommandAsync<object>(cmd, new PowerShellExecutionOptions { WriteOutputToHost = true, WriteErrorsToHost = true }, CancellationToken.None)
                         .ConfigureAwait(false);
                 }
                 else
                 {
-                    await _powerShellContextService
-                        .ExecuteScriptStringAsync(untitledScript.Contents, writeInputToHost: true, writeOutputToHost: true)
+                    await _executionService
+                        .ExecutePSCommandAsync(
+                            new PSCommand().AddScript(untitledScript.Contents),
+                            new PowerShellExecutionOptions { WriteOutputToHost = true, WriteErrorsToHost = true },
+                            CancellationToken.None)
                         .ConfigureAwait(false);
                 }
             }
             else
             {
-                await _powerShellContextService
-                    .ExecuteScriptWithArgsAsync(scriptToLaunch, _debugStateService.Arguments, writeInputToHost: true).ConfigureAwait(false);
+                //await _powerShellContextService
+                //    .ExecuteScriptWithArgsAsync(scriptToLaunch, _debugStateService.Arguments, writeInputToHost: true).ConfigureAwait(false);
             }
 
             _jsonRpcServer.SendNotification(EventNames.Terminated);

@@ -11,6 +11,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -35,12 +37,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class GetCommandHandler : IGetCommandHandler
     {
         private readonly ILogger<GetCommandHandler> _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
 
-        public GetCommandHandler(ILoggerFactory factory, PowerShellContextService powerShellContextService)
+        public GetCommandHandler(ILoggerFactory factory, PowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<GetCommandHandler>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
         }
 
         public async Task<List<PSCommandMessage>> Handle(GetCommandParams request, CancellationToken cancellationToken)
@@ -55,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 .AddCommand("Microsoft.PowerShell.Utility\\Sort-Object")
                     .AddParameter("Property", "Name");
 
-            IEnumerable<CommandInfo> result = await _powerShellContextService.ExecuteCommandAsync<CommandInfo>(psCommand).ConfigureAwait(false);
+            IEnumerable<CommandInfo> result = await _executionService.ExecutePSCommandAsync<CommandInfo>(psCommand, new PowerShellExecutionOptions(), cancellationToken).ConfigureAwait(false);
 
             var commandList = new List<PSCommandMessage>();
             if (result != null)

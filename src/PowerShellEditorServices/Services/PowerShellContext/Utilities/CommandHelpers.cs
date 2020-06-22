@@ -5,9 +5,13 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Management.Automation;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
@@ -63,10 +67,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <returns>A CommandInfo object with details about the specified command.</returns>
         public static async Task<CommandInfo> GetCommandInfoAsync(
             string commandName,
-            PowerShellContextService powerShellContext)
+            PowerShellExecutionService executionService)
         {
             Validate.IsNotNull(nameof(commandName), commandName);
-            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
+            Validate.IsNotNull(nameof(executionService), executionService);
 
             // If we have a CommandInfo cached, return that.
             if (s_commandInfoCache.TryGetValue(commandName, out CommandInfo cmdInfo))
@@ -85,15 +89,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 return null;
             }
 
-            PSCommand command = new PSCommand();
-            command.AddCommand(@"Microsoft.PowerShell.Core\Get-Command");
-            command.AddArgument(commandName);
-            command.AddParameter("ErrorAction", "Ignore");
+            PSCommand command = new PSCommand()
+                .AddCommand(@"Microsoft.PowerShell.Core\Get-Command")
+                .AddArgument(commandName)
+                .AddParameter("ErrorAction", "Ignore");
 
-            CommandInfo commandInfo = (await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false))
-                .Select(o => o.BaseObject)
-                .OfType<CommandInfo>()
-                .FirstOrDefault();
+            CommandInfo commandInfo = null;
+            foreach (CommandInfo result in await executionService.ExecutePSCommandAsync<CommandInfo>(command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false))
+            {
+                commandInfo = result;
+                break;
+            }
 
             // Only cache CmdletInfos since they're exposed in binaries they are likely to not change throughout the session.
             if (commandInfo?.CommandType == CommandTypes.Cmdlet)
@@ -108,14 +114,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// Gets the command's "Synopsis" documentation section.
         /// </summary>
         /// <param name="commandInfo">The CommandInfo instance for the command.</param>
-        /// <param name="powerShellContext">The PowerShellContext to use for getting command documentation.</param>
+        /// <param name="executionService">The PowerShellContext to use for getting command documentation.</param>
         /// <returns></returns>
         public static async Task<string> GetCommandSynopsisAsync(
             CommandInfo commandInfo,
-            PowerShellContextService powerShellContext)
+            PowerShellExecutionService executionService)
         {
             Validate.IsNotNull(nameof(commandInfo), commandInfo);
-            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
+            Validate.IsNotNull(nameof(executionService), executionService);
 
             // A small optimization to not run Get-Help on things like DSC resources.
             if (commandInfo.CommandType != CommandTypes.Cmdlet &&
@@ -141,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 .AddParameter("Name", commandInfo.Name)
                 .AddParameter("ErrorAction", "Ignore");
 
-            var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false);
+            Collection<PSObject> results = await executionService.ExecutePSCommandAsync<PSObject>(command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
             PSObject helpObject = results.FirstOrDefault();
 
             // Extract the synopsis string from the object

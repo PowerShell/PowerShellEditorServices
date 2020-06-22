@@ -5,6 +5,7 @@
 
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -18,16 +19,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private const bool DefaultPreviewSetting = true;
 
         private readonly WorkspaceService _workspaceService;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellStartupService _startupService;
         private readonly ILanguageServer _languageServer;
 
         public EditorOperationsService(
             WorkspaceService workspaceService,
-            PowerShellContextService powerShellContextService,
+            PowerShellStartupService startupService,
             ILanguageServer languageServer)
         {
             _workspaceService = workspaceService;
-            _powerShellContextService = powerShellContextService;
+            _startupService = startupService;
             _languageServer = languageServer;
         }
 
@@ -274,7 +275,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (warnUser)
             {
-                _powerShellContextService.ExternalHost.UI.WriteWarningLine(
+                _startupService.EditorServicesHost.UI.WriteWarningLine(
                     "Editor operations are not supported in temporary consoles. Re-run the command in the main PowerShell Intergrated Console.");
             }
 

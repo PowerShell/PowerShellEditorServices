@@ -3,13 +3,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.IO;
+using System.Management.Automation;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
@@ -96,7 +100,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .OnInitialize(
                         async (languageServer, request, cancellationToken) =>
                         {
-                            var serviceProvider = languageServer.Services;
+                            IServiceProvider serviceProvider = languageServer.Services;
+
+                            serviceProvider.GetService<PowerShellConsoleService>().StartRepl();
+
                             var workspaceService = serviceProvider.GetService<WorkspaceService>();
 
                             // Grab the workspace path from the parameters
@@ -113,6 +120,18 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                     workspaceService.WorkspacePath = workspaceFolder.Uri.GetFileSystemPath();
                                     break;
                                 }
+                            }
+
+                            // Set the working directory of the PowerShell session to the workspace path
+                            if (workspaceService.WorkspacePath != null
+                                && Directory.Exists(workspaceService.WorkspacePath))
+                            {
+                                await serviceProvider.GetService<PowerShellExecutionService>()
+                                    .ExecutePSCommandAsync(
+                                        new PSCommand().AddCommand("Set-Location").AddParameter("-Path", workspaceService.WorkspacePath),
+                                        new PowerShellExecutionOptions(),
+                                        cancellationToken)
+                                    .ConfigureAwait(false);
                             }
                         });
             }).ConfigureAwait(false);

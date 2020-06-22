@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -22,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
 
         private SignatureHelpCapability _capability;
 
@@ -30,12 +31,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ILoggerFactory factory,
             SymbolsService symbolsService,
             WorkspaceService workspaceService,
-            PowerShellContextService powerShellContextService)
+            PowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<PsesHoverHandler>();
             _symbolsService = symbolsService;
             _workspaceService = workspaceService;
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
         }
 
         public SignatureHelpRegistrationOptions GetRegistrationOptions()
@@ -62,8 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await _symbolsService.FindParameterSetsInFileAsync(
                     scriptFile,
                     request.Position.Line + 1,
-                    request.Position.Character + 1,
-                    _powerShellContextService).ConfigureAwait(false);
+                    request.Position.Character + 1).ConfigureAwait(false);
 
             if (parameterSets == null)
             {

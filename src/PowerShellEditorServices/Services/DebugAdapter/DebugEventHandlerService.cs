@@ -6,6 +6,7 @@
 using System.Management.Automation;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
@@ -16,20 +17,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
     internal class DebugEventHandlerService
     {
         private readonly ILogger<DebugEventHandlerService> _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly IJsonRpcServer _jsonRpcServer;
 
         public DebugEventHandlerService(
             ILoggerFactory factory,
-            PowerShellContextService powerShellContextService,
+            PowerShellExecutionService executionService,
             DebugService debugService,
             DebugStateService debugStateService,
             IJsonRpcServer jsonRpcServer)
         {
             _logger = factory.CreateLogger<DebugEventHandlerService>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
             _debugService = debugService;
             _debugStateService = debugStateService;
             _jsonRpcServer = jsonRpcServer;
@@ -37,18 +38,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal void RegisterEventHandlers()
         {
-            _powerShellContextService.RunspaceChanged += PowerShellContext_RunspaceChanged;
+            //_powerShellContextService.RunspaceChanged += PowerShellContext_RunspaceChanged;
             _debugService.BreakpointUpdated += DebugService_BreakpointUpdated;
             _debugService.DebuggerStopped += DebugService_DebuggerStopped;
-            _powerShellContextService.DebuggerResumed += PowerShellContext_DebuggerResumed;
+            //_powerShellContextService.DebuggerResumed += PowerShellContext_DebuggerResumed;
         }
 
         internal void UnregisterEventHandlers()
         {
-            _powerShellContextService.RunspaceChanged -= PowerShellContext_RunspaceChanged;
+            //_powerShellContextService.RunspaceChanged -= PowerShellContext_RunspaceChanged;
             _debugService.BreakpointUpdated -= DebugService_BreakpointUpdated;
             _debugService.DebuggerStopped -= DebugService_DebuggerStopped;
-            _powerShellContextService.DebuggerResumed -= PowerShellContext_DebuggerResumed;
+            //_powerShellContextService.DebuggerResumed -= PowerShellContext_DebuggerResumed;
         }
 
         #region Public methods
@@ -99,8 +100,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 _jsonRpcServer.SendNotification(EventNames.Initialized);
             }
             else if (
-                e.ChangeAction == RunspaceChangeAction.Exit &&
-                _powerShellContextService.IsDebuggerStopped)
+                e.ChangeAction == RunspaceChangeAction.Exit && false)
+            //    _powerShellContextService.IsDebuggerStopped)
             {
                 // Exited the session while the debugger is stopped,
                 // send a ContinuedEvent so that the client changes the

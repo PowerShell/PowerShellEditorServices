@@ -6,8 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Management.Automation;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -46,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Gets the PowerShellContext in which extension code will be executed.
         /// </summary>
-        internal PowerShellContextService PowerShellContext { get; private set; }
+        internal PowerShellExecutionService ExecutionService { get; private set; }
 
         #endregion
 
@@ -57,9 +60,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// PowerShellContext for loading and executing extension code.
         /// </summary>
         /// <param name="powerShellContext">A PowerShellContext used to execute extension code.</param>
-        internal ExtensionService(PowerShellContextService powerShellContext, ILanguageServer languageServer)
+        internal ExtensionService(PowerShellExecutionService executionService, ILanguageServer languageServer)
         {
-            this.PowerShellContext = powerShellContext;
+            ExecutionService = executionService;
             _languageServer = languageServer;
         }
 
@@ -92,13 +95,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.EditorObject.SetAsStaticInstance();
 
             // Register the editor object in the runspace
-            PSCommand variableCommand = new PSCommand();
-            using (RunspaceHandle handle = await this.PowerShellContext.GetRunspaceHandleAsync().ConfigureAwait(false))
+            await ExecutionService.ExecuteDelegateAsync((pwsh, cancellationToken) =>
             {
-                handle.Runspace.SessionStateProxy.PSVariable.Set(
-                    "psEditor",
-                    this.EditorObject);
-            }
+                pwsh.Runspace.SessionStateProxy.PSVariable.Set("psEditor", EditorObject);
+            }, CancellationToken.None);
         }
 
         /// <summary>
@@ -117,10 +117,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 executeCommand.AddParameter("ScriptBlock", editorCommand.ScriptBlock);
                 executeCommand.AddParameter("ArgumentList", new object[] { editorContext });
 
-                await this.PowerShellContext.ExecuteCommandAsync<object>(
+                await ExecutionService.ExecutePSCommandAsync(
                     executeCommand,
-                    sendOutputToHost: !editorCommand.SuppressOutput,
-                    sendErrorToHost: true).ConfigureAwait(false);
+                    new PowerShellExecutionOptions { WriteOutputToHost = !editorCommand.SuppressOutput, WriteErrorsToHost = true },
+                    CancellationToken.None).ConfigureAwait(false);
             }
             else
             {

@@ -3,31 +3,32 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class EvaluateHandler : IEvaluateHandler
     {
         private readonly ILogger _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
 
-        public EvaluateHandler(ILoggerFactory factory, PowerShellContextService powerShellContextService)
+        public EvaluateHandler(ILoggerFactory factory, PowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<EvaluateHandler>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
         }
 
         public Task<EvaluateResponseBody> Handle(EvaluateRequestArguments request, CancellationToken cancellationToken)
         {
-            _powerShellContextService.ExecuteScriptStringAsync(
-                request.Expression,
-                writeInputToHost: true,
-                writeOutputToHost: true,
-                addToHistory: true);
+            _executionService.ExecutePSCommandAsync(
+                new PSCommand().AddScript(request.Expression),
+                new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true },
+                cancellationToken);
 
             return Task.FromResult(new EvaluateResponseBody
             {

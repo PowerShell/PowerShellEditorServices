@@ -13,17 +13,19 @@ using Microsoft.PowerShell.EditorServices.Services;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
     using System.Management.Automation;
 
     internal class PSHostProcessAndRunspaceHandlers : IGetPSHostProcessesHandler, IGetRunspaceHandler
     {
         private readonly ILogger<PSHostProcessAndRunspaceHandlers> _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
 
-        public PSHostProcessAndRunspaceHandlers(ILoggerFactory factory, PowerShellContextService powerShellContextService)
+        public PSHostProcessAndRunspaceHandlers(ILoggerFactory factory, PowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<PSHostProcessAndRunspaceHandlers>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
         }
 
         public Task<PSHostProcessResponse[]> Handle(GetPSHostProcesssesParams request, CancellationToken cancellationToken)
@@ -87,9 +89,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             else
             {
                 var psCommand = new PSCommand().AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace");
-                var sb = new StringBuilder();
                 // returns (not deserialized) Runspaces. For simpler code, we use PSObject and rely on dynamic later.
-                runspaces = await _powerShellContextService.ExecuteCommandAsync<PSObject>(psCommand, sb).ConfigureAwait(false);
+                runspaces = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, new PowerShellExecutionOptions(), cancellationToken).ConfigureAwait(false);
             }
 
             var runspaceResponses = new List<RunspaceResponse>();

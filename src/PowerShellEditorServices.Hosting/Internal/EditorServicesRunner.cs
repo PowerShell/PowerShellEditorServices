@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 _logger.Log(PsesLogLevel.Diagnostic, "Creating/running editor services");
 
                 bool creatingLanguageServer = _config.LanguageServiceTransport != null;
-                bool creatingDebugServer = _config.DebugServiceTransport != null;
+                bool creatingDebugServer = false;// _config.DebugServiceTransport != null;
                 bool isTempDebugSession = creatingDebugServer && !creatingLanguageServer;
 
                 // Set up information required to instantiate servers
