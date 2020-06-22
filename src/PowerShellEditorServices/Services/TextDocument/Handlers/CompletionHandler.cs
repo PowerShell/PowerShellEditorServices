@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -26,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly SemaphoreSlim _completionLock = AsyncUtils.CreateSimpleLockingSemaphore();
         private readonly SemaphoreSlim _completionResolveLock = AsyncUtils.CreateSimpleLockingSemaphore();
         private readonly ILogger _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
         private CompletionResults _mostRecentCompletions;
         private int _mostRecentRequestLine;
@@ -38,11 +39,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public PsesCompletionHandler(
             ILoggerFactory factory,
-            PowerShellContextService powerShellContextService,
+            PowerShellExecutionService executionService,
             WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<PsesCompletionHandler>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
             _workspaceService = workspaceService;
         }
 
@@ -139,13 +140,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 CommandInfo commandInfo =
                     await CommandHelpers.GetCommandInfoAsync(
                         request.Label,
-                        _powerShellContextService).ConfigureAwait(false);
+                        _executionService).ConfigureAwait(false);
 
                 if (commandInfo != null)
                 {
                     request = request with
                     {
-                        Documentation = await CommandHelpers.GetCommandSynopsisAsync(commandInfo, _powerShellContextService).ConfigureAwait(false)
+                        Documentation = await CommandHelpers.GetCommandSynopsisAsync(commandInfo, _executionService).ConfigureAwait(false)
                     };
                 }
 
@@ -201,7 +202,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         scriptFile.ScriptAst,
                         scriptFile.ScriptTokens,
                         fileOffset,
-                        _powerShellContextService,
+                        _executionService,
                         _logger,
                         cts.Token).ConfigureAwait(false);
             }

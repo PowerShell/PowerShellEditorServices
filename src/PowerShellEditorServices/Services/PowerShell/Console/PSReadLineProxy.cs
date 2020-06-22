@@ -11,9 +11,9 @@ using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
@@ -71,26 +71,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 return [Microsoft.PowerShell.PSConsoleReadLine]
             }}";
 
-
-        public static async Task<PSReadLineProxy> LoadAndCreateAsync(ILogger logger, PowerShellExecutionService executionService)
+        public static PSReadLineProxy LoadAndCreate(
+            ILogger logger,
+            SMA.PowerShell pwsh)
         {
-            var importPsrlCommand = new PSCommand().AddScript(ReadLineInitScript);
-            var executionOptions = new PowerShellExecutionOptions
-            {
-                UseNewScope = true,
-            };
-
-            Type psConsoleReadLineType = (await executionService.ExecutePSCommandAsync<Type>(importPsrlCommand, executionOptions, CancellationToken.None).ConfigureAwait(false)).FirstOrDefault();
+            Type psConsoleReadLineType = pwsh.AddScript(ReadLineInitScript).InvokeAndClear<Type>().FirstOrDefault();
 
             Type type = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
-            await executionService.ExecuteDelegateAsync((cancellationToken) => RuntimeHelpers.RunClassConstructor(type.TypeHandle), CancellationToken.None).ConfigureAwait(false);
 
-            return new PSReadLineProxy(psConsoleReadLineType, logger);
+            RuntimeHelpers.RunClassConstructor(type.TypeHandle);
+
+            return new PSReadLineProxy(logger, psConsoleReadLineType);
         }
 
         private readonly FieldInfo _readKeyOverrideField;
 
-        public PSReadLineProxy(Type psConsoleReadLine, ILogger logger)
+        public PSReadLineProxy(
+            ILogger logger,
+            Type psConsoleReadLine)
         {
             ReadLine = (Func<Runspace, EngineIntrinsics, CancellationToken, string>)psConsoleReadLine.GetMethod(
                 ReadLineMethodName,

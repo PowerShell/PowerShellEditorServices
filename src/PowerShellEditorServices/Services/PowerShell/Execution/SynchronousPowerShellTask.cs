@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using System;
 using System.Collections.ObjectModel;
 using System.Management.Automation;

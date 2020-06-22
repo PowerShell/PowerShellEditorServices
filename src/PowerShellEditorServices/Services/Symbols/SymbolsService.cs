@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.CodeLenses;
 using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -31,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #region Private Fields
 
         private readonly ILogger _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
 
         private readonly ConcurrentDictionary<string, ICodeLensProvider> _codeLensProviders;
@@ -48,12 +49,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
         public SymbolsService(
             ILoggerFactory factory,
-            PowerShellContextService powerShellContextService,
+            PowerShellExecutionService executionService,
             WorkspaceService workspaceService,
             ConfigurationService configurationService)
         {
             _logger = factory.CreateLogger<SymbolsService>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
             _workspaceService = workspaceService;
 
             _codeLensProviders = new ConcurrentDictionary<string, ICodeLensProvider>();
@@ -319,7 +320,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             symbolReference.FilePath = scriptFile.FilePath;
             SymbolDetails symbolDetails = await SymbolDetails.CreateAsync(
                 symbolReference,
-                _powerShellContextService).ConfigureAwait(false);
+                _executionService).ConfigureAwait(false);
 
             return symbolDetails;
         }
@@ -334,8 +335,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public async Task<ParameterSetSignatures> FindParameterSetsInFileAsync(
             ScriptFile file,
             int lineNumber,
-            int columnNumber,
-            PowerShellContextService powerShellContext)
+            int columnNumber)
         {
             SymbolReference foundSymbol =
                 AstOperations.FindCommandAtPosition(
@@ -355,7 +355,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             CommandInfo commandInfo =
                 await CommandHelpers.GetCommandInfoAsync(
                     foundSymbol.SymbolName,
-                    powerShellContext).ConfigureAwait(false);
+                    _executionService).ConfigureAwait(false);
 
             if (commandInfo == null)
             {
@@ -471,7 +471,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 CommandInfo cmdInfo =
                     await CommandHelpers.GetCommandInfoAsync(
                         foundSymbol.SymbolName,
-                        _powerShellContextService).ConfigureAwait(false);
+                        _executionService).ConfigureAwait(false);
 
                 foundDefinition =
                     FindDeclarationForBuiltinCommand(

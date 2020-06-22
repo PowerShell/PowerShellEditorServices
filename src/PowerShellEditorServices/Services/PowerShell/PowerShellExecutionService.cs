@@ -1,17 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using PowerShellEditorServices.Services.PowerShell.Utility;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Management.Automation;
-using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using SMA = System.Management.Automation;
@@ -40,18 +36,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         public static PowerShellExecutionService CreateAndStart(
             ILogger logger,
             HostStartupInfo hostInfo,
-            PSLanguageMode languageMode)
+            PowerShellStartupService startupService)
         {
-            var pwsh = SMA.PowerShell.Create();
-
-            var executionService = new PowerShellExecutionService(logger, pwsh);
-            var psHost = new EditorServicesConsolePSHost(logger, hostInfo, executionService);
-
-            executionService.PSHost = psHost;
-
-            pwsh.Runspace = CreateRunspace(psHost, languageMode);
+            var executionService = new PowerShellExecutionService(logger, startupService.PowerShell);
 
             executionService.Start();
+
+            startupService.ReadLine.RegisterExecutionService(executionService);
 
             executionService.EnqueueModuleImport(s_commandsModulePath);
 
@@ -76,7 +67,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _executionQueue = new BlockingCollection<ISynchronousTask>();
         }
 
-        public PSHost PSHost { get; private set; }
+        public Task<TResult> ExecuteDelegateAsync<TResult>(Func<SMA.PowerShell, CancellationToken, TResult> func, CancellationToken cancellationToken)
+        {
+            TResult appliedFunc(CancellationToken cancellationToken) => func(_pwsh, cancellationToken);
+            return ExecuteDelegateAsync(appliedFunc, cancellationToken);
+        }
+
+        public Task ExecuteDelegateAsync(Action<SMA.PowerShell, CancellationToken> action, CancellationToken cancellationToken)
+        {
+            void appliedAction(CancellationToken cancellationToken) => action(_pwsh, cancellationToken);
+            return ExecuteDelegateAsync(appliedAction, cancellationToken);
+        }
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(Func<CancellationToken, TResult> func, CancellationToken cancellationToken)
         {
@@ -129,12 +130,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private void Start()
         {
-            _pipelineThread = new Thread(RunConsumerLoop);
+            _pipelineThread = new Thread(RunConsumerLoop)
+            {
+                Name = "PSES Execution Service Thread"
+            };
             _pipelineThread.Start();
         }
 
         private void RunConsumerLoop()
         {
+            Runspace.DefaultRunspace = _pwsh.Runspace;
+
             try
             {
                 foreach (ISynchronousTask synchronousTask in _executionQueue.GetConsumingEnumerable())
@@ -153,22 +159,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
         }
 
-        private static Runspace CreateRunspace(
-            PSHost psHost,
-            PSLanguageMode languageMode)
-        {
-            InitialSessionState iss = Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1"
-                ? InitialSessionState.CreateDefault()
-                : InitialSessionState.CreateDefault2();
-
-            iss.LanguageMode = languageMode;
-
-            Runspace runspace = RunspaceFactory.CreateRunspace(psHost, iss);
-
-            runspace.SetApartmentStateToSta();
-            runspace.ThreadOptions = PSThreadOptions.ReuseThread;
-            return runspace;
-        }
 
         private void EnqueueModuleImport(string moduleNameOrPath)
         {

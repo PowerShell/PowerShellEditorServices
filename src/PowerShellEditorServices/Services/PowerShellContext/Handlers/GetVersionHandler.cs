@@ -3,11 +3,14 @@
 
 using System;
 using System.Management.Automation;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -20,18 +23,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private static readonly Version s_desiredPackageManagementVersion = new Version(1, 4, 6);
 
         private readonly ILogger<GetVersionHandler> _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
+        private readonly PowerShellStartupService _startupService;
         private readonly ILanguageServerFacade _languageServer;
         private readonly ConfigurationService _configurationService;
 
         public GetVersionHandler(
             ILoggerFactory factory,
-            PowerShellContextService powerShellContextService,
+            PowerShellExecutionService executionService,
+            PowerShellStartupService startupService,
             ILanguageServerFacade languageServer,
             ConfigurationService configurationService)
         {
             _logger = factory.CreateLogger<GetVersionHandler>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
+            _startupService = startupService;
             _languageServer = languageServer;
             _configurationService = configurationService;
         }
@@ -77,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private async Task CheckPackageManagement()
         {
             PSCommand getModule = new PSCommand().AddCommand("Get-Module").AddParameter("ListAvailable").AddParameter("Name", "PackageManagement");
-            foreach (PSModuleInfo module in await _powerShellContextService.ExecuteCommandAsync<PSModuleInfo>(getModule).ConfigureAwait(false))
+            foreach (PSModuleInfo module in await _executionService.ExecutePSCommandAsync<PSModuleInfo>(getModule, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false))
             {
                 // The user has a good enough version of PackageManagement
                 if (module.Version >= s_desiredPackageManagementVersion)
@@ -87,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 _logger.LogDebug("Old version of PackageManagement detected.");
 
-                if (_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+                if (_startupService.EditorServicesHost.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
                 {
                     _languageServer.Window.ShowWarning("You have an older version of PackageManagement known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`");
                     return;
@@ -114,14 +120,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // If the user chose "Not now" ignore it for the rest of the session.
                 if (messageAction?.Title == takeActionText)
                 {
-                    StringBuilder errors = new StringBuilder();
-                    await _powerShellContextService.ExecuteScriptStringAsync(
-                        "powershell.exe -NoLogo -NoProfile -Command '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber -Repository PSGallery'",
-                        errors,
-                        writeInputToHost: true,
-                        writeOutputToHost: true,
-                        addToHistory: true).ConfigureAwait(false);
+                    var command = new PSCommand().AddScript("powershell.exe -NoLogo -NoProfile -Command 'Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber'");
 
+                    await _executionService.ExecutePSCommandAsync(
+                        command,
+                        new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true },
+                        CancellationToken.None).ConfigureAwait(false);
+
+                    /*
                     if (errors.Length == 0)
                     {
                         _logger.LogDebug("PackageManagement is updated.");
@@ -141,6 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             Message = "PackageManagement update failed. This might be due to PowerShell Gallery using TLS 1.2. More info can be found at https://aka.ms/psgallerytls"
                         });
                     }
+                    */
                 }
             }
         }

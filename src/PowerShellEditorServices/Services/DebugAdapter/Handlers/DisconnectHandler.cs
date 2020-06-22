@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 
@@ -16,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class DisconnectHandler : IDisconnectHandler
     {
         private readonly ILogger<DisconnectHandler> _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
@@ -25,14 +26,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public DisconnectHandler(
             ILoggerFactory factory,
             PsesDebugServer psesDebugServer,
-            PowerShellContextService powerShellContextService,
+            PowerShellExecutionService executionService,
             DebugService debugService,
             DebugStateService debugStateService,
             DebugEventHandlerService debugEventHandlerService)
         {
             _logger = factory.CreateLogger<DisconnectHandler>();
             _psesDebugServer = psesDebugServer;
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
             _debugService = debugService;
             _debugStateService = debugStateService;
             _debugEventHandlerService = debugEventHandlerService;
@@ -44,11 +45,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (_debugStateService.ExecutionCompleted == false)
             {
                 _debugStateService.ExecutionCompleted = true;
-                _powerShellContextService.AbortExecution(shouldAbortDebugSession: true);
+                _executionService.CancelCurrentTask();
 
                 if (_debugStateService.IsInteractiveDebugSession && _debugStateService.IsAttachSession)
                 {
                     // Pop the sessions
+                    /*
                     if (_powerShellContextService.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
                     {
                         try
@@ -66,6 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             _logger.LogException("Caught exception while popping attached process after debugging", e);
                         }
                     }
+                    */
                 }
 
                 _debugService.IsClientAttached = false;

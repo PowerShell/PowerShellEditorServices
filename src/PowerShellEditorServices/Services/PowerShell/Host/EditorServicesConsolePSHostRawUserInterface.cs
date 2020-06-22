@@ -1,56 +1,322 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
+using System;
+using System.Management.Automation;
 using System.Management.Automation.Host;
-using System.Text;
+using System.Threading;
 
-namespace PowerShellEditorServices.Services.PowerShell.Host
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
     internal class EditorServicesConsolePSHostRawUserInterface : PSHostRawUserInterface
     {
-        public override ConsoleColor BackgroundColor { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override Size BufferSize { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override Coordinates CursorPosition { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override int CursorSize { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override ConsoleColor ForegroundColor { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        #region Private Fields
 
-        public override bool KeyAvailable => throw new NotImplementedException();
+        private readonly PSHostRawUserInterface _internalRawUI;
+        private readonly ILogger _logger;
+        private KeyInfo? _lastKeyDown;
 
-        public override Size MaxPhysicalWindowSize => throw new NotImplementedException();
+        #endregion
 
-        public override Size MaxWindowSize => throw new NotImplementedException();
+        #region Constructors
 
-        public override Coordinates WindowPosition { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override Size WindowSize { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override string WindowTitle { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public override void FlushInputBuffer()
+        /// <summary>
+        /// Creates a new instance of the TerminalPSHostRawUserInterface
+        /// class with the given IConsoleHost implementation.
+        /// </summary>
+        /// <param name="logger">The ILogger implementation to use for this instance.</param>
+        /// <param name="internalHost">The InternalHost instance from the origin runspace.</param>
+        public EditorServicesConsolePSHostRawUserInterface(
+            ILogger logger,
+            PSHostRawUserInterface internalRawUI)
         {
-            throw new NotImplementedException();
+            this._logger = logger;
+            this._internalRawUI = internalRawUI;
         }
 
-        public override BufferCell[,] GetBufferContents(Rectangle rectangle)
+        #endregion
+
+        #region PSHostRawUserInterface Implementation
+
+        /// <summary>
+        /// Gets or sets the background color of the console.
+        /// </summary>
+        public override ConsoleColor BackgroundColor
         {
-            throw new NotImplementedException();
+            get { return System.Console.BackgroundColor; }
+            set { System.Console.BackgroundColor = value; }
         }
 
+        /// <summary>
+        /// Gets or sets the foreground color of the console.
+        /// </summary>
+        public override ConsoleColor ForegroundColor
+        {
+            get { return System.Console.ForegroundColor; }
+            set { System.Console.ForegroundColor = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the size of the console buffer.
+        /// </summary>
+        public override Size BufferSize
+        {
+            get => this._internalRawUI.BufferSize;
+            set => this._internalRawUI.BufferSize = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the cursor's position in the console buffer.
+        /// </summary>
+        public override Coordinates CursorPosition
+        {
+            get
+            {
+                return new Coordinates(
+                    ConsoleProxy.GetCursorLeft(),
+                    ConsoleProxy.GetCursorTop());
+            }
+
+            set => this._internalRawUI.CursorPosition = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the size of the cursor in the console buffer.
+        /// </summary>
+        public override int CursorSize
+        {
+            get => this._internalRawUI.CursorSize;
+            set => this._internalRawUI.CursorSize = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the position of the console's window.
+        /// </summary>
+        public override Coordinates WindowPosition
+        {
+            get => this._internalRawUI.WindowPosition;
+            set => this._internalRawUI.WindowPosition = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the size of the console's window.
+        /// </summary>
+        public override Size WindowSize
+        {
+            get => this._internalRawUI.WindowSize;
+            set => this._internalRawUI.WindowSize = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the console window's title.
+        /// </summary>
+        public override string WindowTitle
+        {
+            get => this._internalRawUI.WindowTitle;
+            set => this._internalRawUI.WindowTitle = value;
+        }
+
+        /// <summary>
+        /// Gets a boolean that determines whether a keypress is available.
+        /// </summary>
+        public override bool KeyAvailable => this._internalRawUI.KeyAvailable;
+
+        /// <summary>
+        /// Gets the maximum physical size of the console window.
+        /// </summary>
+        public override Size MaxPhysicalWindowSize => this._internalRawUI.MaxPhysicalWindowSize;
+
+        /// <summary>
+        /// Gets the maximum size of the console window.
+        /// </summary>
+        public override Size MaxWindowSize => this._internalRawUI.MaxWindowSize;
+
+        /// <summary>
+        /// Reads the current key pressed in the console.
+        /// </summary>
+        /// <param name="options">Options for reading the current keypress.</param>
+        /// <returns>A KeyInfo struct with details about the current keypress.</returns>
         public override KeyInfo ReadKey(ReadKeyOptions options)
         {
-            throw new NotImplementedException();
+
+            bool includeUp = (options & ReadKeyOptions.IncludeKeyUp) != 0;
+
+            // Key Up was requested and we have a cached key down we can return.
+            if (includeUp && this._lastKeyDown != null)
+            {
+                KeyInfo info = this._lastKeyDown.Value;
+                this._lastKeyDown = null;
+                return new KeyInfo(
+                    info.VirtualKeyCode,
+                    info.Character,
+                    info.ControlKeyState,
+                    keyDown: false);
+            }
+
+            bool intercept = (options & ReadKeyOptions.NoEcho) != 0;
+            bool includeDown = (options & ReadKeyOptions.IncludeKeyDown) != 0;
+            if (!(includeDown || includeUp))
+            {
+                throw new PSArgumentException(
+                    "Cannot read key options. To read options, set one or both of the following: IncludeKeyDown, IncludeKeyUp.",
+                    nameof(options));
+            }
+
+            // Allow ControlC as input so we can emulate pipeline stop requests. We can't actually
+            // determine if a stop is requested without using non-public API's.
+            bool oldValue = System.Console.TreatControlCAsInput;
+            try
+            {
+                System.Console.TreatControlCAsInput = true;
+                ConsoleKeyInfo key = ConsoleProxy.ReadKey(intercept, default(CancellationToken));
+
+                if (IsCtrlC(key))
+                {
+                    // Caller wants CtrlC as input so return it.
+                    if ((options & ReadKeyOptions.AllowCtrlC) != 0)
+                    {
+                        return ProcessKey(key, includeDown);
+                    }
+
+                    // Caller doesn't want CtrlC so throw a PipelineStoppedException to emulate
+                    // a real stop.  This will not show an exception to a script based caller and it
+                    // will avoid having to return something like default(KeyInfo).
+                    throw new PipelineStoppedException();
+                }
+
+                return ProcessKey(key, includeDown);
+            }
+            finally
+            {
+                System.Console.TreatControlCAsInput = oldValue;
+            }
         }
 
-        public override void ScrollBufferContents(Rectangle source, Coordinates destination, Rectangle clip, BufferCell fill)
+        /// <summary>
+        /// Flushes the current input buffer.
+        /// </summary>
+        public override void FlushInputBuffer()
         {
-            throw new NotImplementedException();
+            _logger.LogWarning(
+                "PSHostRawUserInterface.FlushInputBuffer was called");
         }
 
-        public override void SetBufferContents(Coordinates origin, BufferCell[,] contents)
+        /// <summary>
+        /// Gets the contents of the console buffer in a rectangular area.
+        /// </summary>
+        /// <param name="rectangle">The rectangle inside which buffer contents will be accessed.</param>
+        /// <returns>A BufferCell array with the requested buffer contents.</returns>
+        public override BufferCell[,] GetBufferContents(Rectangle rectangle)
         {
-            throw new NotImplementedException();
+            return this._internalRawUI.GetBufferContents(rectangle);
         }
 
-        public override void SetBufferContents(Rectangle rectangle, BufferCell fill)
+        /// <summary>
+        /// Scrolls the contents of the console buffer.
+        /// </summary>
+        /// <param name="source">The source rectangle to scroll.</param>
+        /// <param name="destination">The destination coordinates by which to scroll.</param>
+        /// <param name="clip">The rectangle inside which the scrolling will be clipped.</param>
+        /// <param name="fill">The cell with which the buffer will be filled.</param>
+        public override void ScrollBufferContents(
+            Rectangle source,
+            Coordinates destination,
+            Rectangle clip,
+            BufferCell fill)
         {
-            throw new NotImplementedException();
+            this._internalRawUI.ScrollBufferContents(source, destination, clip, fill);
+        }
+
+        /// <summary>
+        /// Sets the contents of the buffer inside the specified rectangle.
+        /// </summary>
+        /// <param name="rectangle">The rectangle inside which buffer contents will be filled.</param>
+        /// <param name="fill">The BufferCell which will be used to fill the requested space.</param>
+        public override void SetBufferContents(
+            Rectangle rectangle,
+            BufferCell fill)
+        {
+            // If the rectangle is all -1s then it means clear the visible buffer
+            if (rectangle.Top == -1 &&
+                rectangle.Bottom == -1 &&
+                rectangle.Left == -1 &&
+                rectangle.Right == -1)
+            {
+                System.Console.Clear();
+                return;
+            }
+
+            this._internalRawUI.SetBufferContents(rectangle, fill);
+        }
+
+        /// <summary>
+        /// Sets the contents of the buffer at the given coordinate.
+        /// </summary>
+        /// <param name="origin">The coordinate at which the buffer will be changed.</param>
+        /// <param name="contents">The new contents for the buffer at the given coordinate.</param>
+        public override void SetBufferContents(
+            Coordinates origin,
+            BufferCell[,] contents)
+        {
+            this._internalRawUI.SetBufferContents(origin, contents);
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Determines if a key press represents the input Ctrl + C.
+        /// </summary>
+        /// <param name="keyInfo">The key to test.</param>
+        /// <returns>
+        /// <see langword="true" /> if the key represents the input Ctrl + C,
+        /// otherwise <see langword="false" />.
+        /// </returns>
+        private static bool IsCtrlC(ConsoleKeyInfo keyInfo)
+        {
+            // In the VSCode terminal Ctrl C is processed as virtual key code "3", which
+            // is not a named value in the ConsoleKey enum.
+            if ((int)keyInfo.Key == 3)
+            {
+                return true;
+            }
+
+            return keyInfo.Key == ConsoleKey.C && (keyInfo.Modifiers & ConsoleModifiers.Control) != 0;
+        }
+
+        /// <summary>
+        /// Converts <see cref="ConsoleKeyInfo" /> objects to <see cref="KeyInfo" /> objects and caches
+        /// key down events for the next key up request.
+        /// </summary>
+        /// <param name="key">The key to convert.</param>
+        /// <param name="isDown">
+        /// A value indicating whether the result should be a key down event.
+        /// </param>
+        /// <returns>The converted value.</returns>
+        private KeyInfo ProcessKey(ConsoleKeyInfo key, bool isDown)
+        {
+            // Translate ConsoleModifiers to ControlKeyStates
+            ControlKeyStates states = default;
+            if ((key.Modifiers & ConsoleModifiers.Alt) != 0)
+            {
+                states |= ControlKeyStates.LeftAltPressed;
+            }
+
+            if ((key.Modifiers & ConsoleModifiers.Control) != 0)
+            {
+                states |= ControlKeyStates.LeftCtrlPressed;
+            }
+
+            if ((key.Modifiers & ConsoleModifiers.Shift) != 0)
+            {
+                states |= ControlKeyStates.ShiftPressed;
+            }
+
+            var result = new KeyInfo((int)key.Key, key.KeyChar, states, isDown);
+            if (isDown)
+            {
+                this._lastKeyDown = result;
+            }
+
+            return result;
         }
     }
 }
